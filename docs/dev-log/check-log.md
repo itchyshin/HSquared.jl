@@ -2,6 +2,22 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Genomic Models Documentation Page
+
+- Goal: a reader-facing Documenter page for the implemented genomic engine.
+- Active lenses: Pat, Darwin, Florence, Rose (inline).
+- Implementation:
+  - `docs/src/genomic-models.md` with executed `@example` blocks for `G`/`Ginv`,
+    GBLUP, genomic REML (6-animal fixture — AI-REML is flat on 4 animals),
+    SNP-BLUP, and a prose section for the internal single-step `H⁻¹`; registered
+    in `docs/make.jl` after "Pedigrees and Ainv". Explicit experimental /
+    not-yet-R-wired / no-external-comparator boundary stated up front.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl` exit 0; all executed
+    examples ran clean.
+- Boundary:
+  - Documentation only; documents engine APIs, not the public R interface.
+
 ## 2026-06-13 Genomic REML Variance-Component Estimation
 
 - Goal: estimate the genomic variance components for GBLUP (previously
