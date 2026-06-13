@@ -84,6 +84,21 @@ Local checks:
   workflows, genomic fitting, GPU workflows, and existing backend speed-claim
   guardrails.
 
+Remote checks for implementation commit `81e82b0`:
+
+- CI `27464814149`: success on Julia 1 and Julia 1.10.
+- Documenter `27464814148`: success.
+- Pages deploy `27464876181`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+Live docs:
+
+- `https://itchyshin.github.io/HSquared.jl/dev/data.html`: HTTP 200 and
+  contains `Expression Metadata` and `expression_status`.
+- `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+  contains `HSDataExpressionStatusRow`.
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -111,6 +126,6 @@ Blocked wording:
 
 ## Next Actions
 
-1. Commit and push the implementation.
-2. Watch CI, Documenter, and Pages.
+1. Commit and push the remote-evidence update.
+2. Watch CI, Documenter, and Pages for the evidence commit.
 3. Update the issue ledger.
