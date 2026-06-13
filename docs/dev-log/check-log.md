@@ -38,7 +38,17 @@ Newest entries go at the top.
   - Edited-file ASCII scan returned no matches.
   - Claim scan found only status, audit, planned, or blocked-wording rows.
 - Remote checks:
-  - pending.
+  - CI `27459769402`: success.
+  - Documenter `27459769391`: success.
+  - Pages deploy `27459799372`: success.
+  - Live docs root `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+  - Live backend/algorithm page
+    `https://itchyshin.github.io/HSquared.jl/dev/backend-algorithm-roadmap`:
+    HTTP 200 and contains `Backend And Algorithm Roadmap`, `AI-REML`,
+    `Takahashi selected inversion`, and the blocked wording
+    `GPU execution works`.
+  - GitHub Actions emitted Node 20 deprecation annotations from upstream
+    actions, but all jobs completed successfully.
 - Boundary:
   - Roadmap and documentation mirror only.
   - No engine API, result payload, parser, backend execution, or model fitting
