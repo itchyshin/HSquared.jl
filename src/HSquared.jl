@@ -33,6 +33,7 @@ export AutoBackend,
     prediction_error_variance,
     reliability,
     result_payload,
+    sparse_csc_matrix,
     variance_components
 
 include("backends.jl")
@@ -40,6 +41,7 @@ include("control.jl")
 include("errors.jl")
 include("pedigree.jl")
 include("data.jl")
+include("sparse_bridge.jl")
 include("model_spec.jl")
 include("likelihood.jl")
 include("placeholders.jl")

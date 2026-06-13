@@ -20,6 +20,7 @@
   extractor contract.
 - Added `HSData`, `HSDataIDMap`, and `id_map()` as an in-memory mirror of the R
   `hs_data()` input-container contract.
+- Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

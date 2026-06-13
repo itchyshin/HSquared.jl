@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1K Sparse CSC Bridge Marshalling
+
+- Goal: add a Julia sparse CSC marshalling helper for R `Matrix::dgCMatrix`
+  slots and record the R twin's opt-in Julia engine path.
+- Active lenses: Ada, Shannon, Hopper, Karpinski, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `9eabf0d` added
+    `hsquared(..., control = hs_control(engine = "julia"))`.
+  - Default remains `hs_control(engine = "validate")`.
+  - R-specific Julia controls stay in `engine_control`: `julia_project`,
+    `initial`, and `max_dense_cells`.
+  - R-CMD-check `27456875004`, pkgdown `27456874995`, and Pages `27456904688`
+    were reported green.
+- Implementation evidence:
+  - Added `sparse_csc_matrix()`.
+  - Supports zero-based R slots and one-based Julia slots.
+  - Validates dimensions, column pointers, row indices, value lengths, and row
+    ordering within CSC columns.
+  - Added direct payload integration test showing a `Z` reconstructed from
+    zero-based slots feeds the same `fit_animal_model()` path as the original
+    sparse matrix.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 163 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims that R
+    already uses sparse `Z` marshalling, production sparse fitting works, Mrode
+    validation is complete, or bridge performance has been demonstrated.
+- Boundary:
+  - Julia helper exists.
+  - R-side bridge still needs to use sparse slots instead of dense-guarded `Z`.
+  - Production fitting, Mrode validation, and stable production controls remain
+    planned.
+
 ## 2026-06-13 R Internal Julia Bridge Smoke Sync
 
 - Goal: record the R twin's internal JuliaCall smoke evidence without changing

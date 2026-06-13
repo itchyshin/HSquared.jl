@@ -53,6 +53,21 @@ spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = "REML")
 spec.method
 ```
 
+R bridge code can pass sparse design matrices without densifying by using CSC
+slots from `Matrix::dgCMatrix`.
+
+```@example quickstart
+Z_from_slots = sparse_csc_matrix(
+    size(Z, 1),
+    size(Z, 2),
+    Z.colptr .- 1,
+    Z.rowval .- 1,
+    Z.nzval,
+)
+
+Z_from_slots == Z
+```
+
 ## Evaluate The Gaussian Likelihood
 
 The first likelihood function evaluates ML or REML at supplied variance

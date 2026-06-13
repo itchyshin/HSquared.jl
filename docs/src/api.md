@@ -13,6 +13,7 @@ HSquared.Pedigree
 HSquared.normalize_pedigree
 HSquared.inbreeding_coefficients
 HSquared.pedigree_inverse
+HSquared.sparse_csc_matrix
 HSquared.AnimalModelSpec
 HSquared.animal_model_spec
 HSquared.GaussianLikelihoodResult

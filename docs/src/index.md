@@ -10,9 +10,9 @@ GLLVM-style extensions.
 ## What Works Today
 
 This repository is still early. It has a low-level experimental dense fitting
-path for validated Julia specs, and the R twin has an internal JuliaCall smoke
-test over that path. It does not yet provide production animal-model fitting or
-public R bridge execution.
+path for validated Julia specs, and the R twin has an opt-in tiny/local
+JuliaCall path over that engine. It does not yet provide production
+animal-model fitting or production R bridge execution.
 
 Implemented engine utilities:
 
@@ -29,7 +29,8 @@ Implemented engine utilities:
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
   heritability, PEV, and reliability extractors for the dense spec path;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
-- external internal R bridge smoke evidence from the `hsquared` twin;
+- sparse CSC marshalling helper for R sparse matrix slots;
+- external opt-in R bridge evidence from the `hsquared` twin;
 - small deterministic tests for malformed pedigrees and hand-checked `Ainv`
   matrices.
 
@@ -38,7 +39,7 @@ Planned, but not implemented yet:
 - sparse production REML/ML and AI-REML fitting;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability extraction;
-- public R-to-Julia fitting bridge;
+- production R-to-Julia fitting bridge;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.

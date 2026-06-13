@@ -196,6 +196,73 @@ end
     @test_throws ArgumentError HSData(; phenotypes = (animal = ["a"], y = [1.0]))
 end
 
+@testset "Phase 1 sparse CSC bridge marshalling" begin
+    Z = sparse(
+        [1, 3, 2, 4],
+        [1, 1, 3, 3],
+        [1.0, 2.0, 3.0, 4.0],
+        4,
+        3,
+    )
+
+    from_r_slots = sparse_csc_matrix(
+        size(Z, 1),
+        size(Z, 2),
+        Z.colptr .- 1,
+        Z.rowval .- 1,
+        Z.nzval,
+    )
+    @test from_r_slots isa SparseMatrixCSC{Float64,Int}
+    @test from_r_slots == Z
+
+    from_julia_slots = sparse_csc_matrix(
+        size(Z, 1),
+        size(Z, 2),
+        Z.colptr,
+        Z.rowval,
+        Z.nzval;
+        index_base = :one,
+    )
+    @test from_julia_slots == Z
+    @test sparse_csc_matrix(4, 3, Z.colptr .- 1, Z.rowval .- 1, Z.nzval; index_base = "r") == Z
+    @test sparse_csc_matrix(4, 3, Z.colptr, Z.rowval, Z.nzval; index_base = "julia") == Z
+
+    y = [1.0, 2.0, 3.0, 4.0]
+    X = ones(4, 1)
+    Ainv = sparse(I, 3, 3)
+    fit_from_slots = fit_animal_model(
+        y,
+        X,
+        from_r_slots,
+        Ainv;
+        ids = ["a", "b", "c"],
+        method = :ML,
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        iterations = 25,
+    )
+    fit_from_sparse = fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        ids = ["a", "b", "c"],
+        method = :ML,
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        iterations = 25,
+    )
+    @test fit_from_slots.likelihood.loglik ≈ fit_from_sparse.likelihood.loglik
+
+    @test_throws ArgumentError sparse_csc_matrix(0, 3, Z.colptr .- 1, Z.rowval .- 1, Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 0, Z.colptr .- 1, Z.rowval .- 1, Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, [0, 2], Z.rowval .- 1, Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, [1, 2, 3, 5], Z.rowval .- 1, Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, [0, 3, 2, 4], Z.rowval .- 1, Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, Z.colptr .- 1, [0, 4, 1, 3], Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, Z.colptr .- 1, [2, 0, 1, 3], Z.nzval)
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, Z.colptr .- 1, Z.rowval .- 1, Z.nzval[1:3])
+    @test_throws ArgumentError sparse_csc_matrix(4, 3, Z.colptr .- 1, Z.rowval .- 1, Z.nzval; index_base = :two)
+end
+
 @testset "Phase 1 animal model spec validation" begin
     y = [1.0, 2.0, 3.0]
     X = [1.0 0.0; 1.0 1.0; 1.0 2.0]

@@ -23,9 +23,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   experimental dense variance-component optimizer for those specs.
 - The Julia twin has an in-memory `HSData` container mirroring the current R
   `hs_data()` ID-map vocabulary.
-- The R twin has an internal JuliaCall smoke over the current Julia payload path
-  and `result_payload()` at `hsquared` head `c837f2d`.
-- Public R-to-Julia bridge execution, sparse production fitting, sparse
+- The Julia twin has `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot
+  marshalling.
+- The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
+  head `9eabf0d`: `control = hs_control(engine = "julia")`.
+- Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
@@ -78,9 +80,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `result_payload()`;
   - R normalizes the result into the current internal `hsquared_fit` contract;
   - public `hsquared()` still stops before fitting.
-- Next shared seam: sparse marshalling instead of dense `Z`, stable
-  user-facing engine controls, Mrode validation, and `hs_data()` to `HSData`
-  payload parity.
+- R lane handoff from `itchyshin/hsquared` head `9eabf0d`:
+  - opt-in path: `hsquared(..., control = hs_control(engine = "julia"))`;
+  - default remains `hs_control(engine = "validate")`;
+  - R-specific Julia controls live in `engine_control`: `julia_project`,
+    `initial`, and `max_dense_cells`;
+  - local/remote R checks were reported green.
+- Next shared seam: R-side sparse marshalling using Julia `sparse_csc_matrix()`,
+  Mrode validation, and `hs_data()` to `HSData` payload parity.
 
 ## Sister References
 

@@ -47,15 +47,16 @@ Current parity state:
   for a validated spec.
 - Julia can accept the direct `y`, `X`, `Z`, `Ainv` payload once `Ainv` is built
   in Julia.
-- R head `c837f2d` has an internal JuliaCall smoke test over this path and
-  normalizes the returned `result_payload()` into an internal `hsquared_fit`.
-- Public `hsquared(..., engine = "julia")` fitting, sparse marshalling, and
-  stable user-facing engine controls are still planned.
+- R head `9eabf0d` exposes the opt-in experimental path through
+  `hs_control(engine = "julia")` and normalizes the returned
+  `result_payload()` into an internal `hsquared_fit`.
+- R-side sparse marshalling and stable production engine controls are still
+  planned.
 
-The bridge target is:
+The experimental bridge target is:
 
 ```r
-hsquared(..., engine = "julia")
+hsquared(..., control = hs_control(engine = "julia"))
 ```
 
 on the R side, translating into the same Julia engine payload that a direct

@@ -17,8 +17,8 @@ Use this register before changing README, docs, issue text, or examples.
 | Direct Julia payload fit target exists | partial | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against spec dispatch | experimental dense Julia target for bridge-shaped payloads; not R bridge execution |
 | Julia result payload matches R extractor names | partial | `result_payload()` tests for R contract names and values; R head `c837f2d` internal JuliaCall smoke | experimental result payload shape; public R fitting still planned |
 | R v0.1 formula parser can build the bridge target | external partial | `hsquared` head `b57b48e`; R checks green and pkgdown live | R can parse the narrow grammar and build an internal bridge payload; public bridge execution remains planned |
-| Internal R-to-Julia bridge smoke works | external partial | `hsquared` head `c837f2d`; R-CMD-check `27456664820`, pkgdown `27456664821`, Pages `27456696277` green | internal contract validation only; public `hsquared()` still stops before fitting |
-| Public R-to-Julia bridge execution works | planned | no public bridge return test yet | planned |
+| Opt-in R-to-Julia bridge path works for tiny/local smoke examples | external partial | `hsquared` head `9eabf0d`; R-CMD-check `27456875004`, pkgdown `27456874995`, Pages `27456904688` green | experimental tiny/local path via `hs_control(engine = "julia")`; default remains `engine = "validate"` |
+| Production R-to-Julia bridge execution works | planned | no sparse marshalling or Mrode validation yet | planned |
 | Sparse Gaussian animal model REML/ML fitting | planned | none | planned production fitting target |
 | Production sparse EBVs/BLUPs, reliability, and PEV | planned | none | planned |
 | multivariate G matrices | planned | none | roadmap |

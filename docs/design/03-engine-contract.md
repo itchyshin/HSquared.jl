@@ -53,6 +53,18 @@ This validates response/design dimensions, `Ainv`, encoded IDs, family, and
 ML/REML method. It is bridge-ready groundwork for the R `hs_build_model_spec()`
 payload. It still does not fit a model.
 
+## Implemented Sparse CSC Bridge Utility
+
+```julia
+Z = sparse_csc_matrix(nrow, ncol, colptr, rowval, nzval; index_base = :zero)
+```
+
+This constructs a Julia `SparseMatrixCSC{Float64,Int}` from compressed sparse
+column slots. It is intended for R `Matrix::dgCMatrix` payloads, where the
+`p` and `i` slots are zero-based. The utility validates column pointers, row
+indices, value lengths, and strictly increasing row indices within each column.
+It is a marshalling helper only; it does not fit a model.
+
 ## Implemented Likelihood Evaluator
 
 ```julia
@@ -204,12 +216,23 @@ an internal `hsquared_fit` object. Public `hsquared()` still stops before
 fitting, so this is bridge-contract validation rather than public model-fitting
 support.
 
-The next bridge task is sparse marshalling and stable user-facing engine
-control, not wider syntax. The Julia tests cover parent-index semantics, `ids`
-order, sparse `Z` dimensions, Julia-side `Ainv`, and parity between spec
-dispatch and direct payload dispatch. The R twin now has an external internal
-smoke test for the JuliaCall path. A parallel future task is `hs_data()` to
-`HSData` marshalling parity.
+R head `9eabf0d` adds the first opt-in experimental user path:
+
+```r
+hsquared(..., control = hs_control(engine = "julia"))
+```
+
+The default remains `hs_control(engine = "validate")`, which parses, validates,
+builds the payload, and stops. Julia-specific controls stay inside
+`engine_control`, currently including `julia_project`, `initial`, and
+`max_dense_cells`.
+
+The next bridge task is wiring the R twin to sparse CSC slot marshalling, not
+wider syntax. The Julia tests cover parent-index semantics, `ids` order, sparse
+`Z` dimensions, Julia-side `Ainv`, CSC slot reconstruction, and parity between
+spec dispatch and direct payload dispatch. The R twin now has an opt-in
+experimental Julia engine path for tiny/local examples. A parallel future task
+is `hs_data()` to `HSData` marshalling parity.
 
 ## Input Payload
 
