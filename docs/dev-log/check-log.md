@@ -37,7 +37,15 @@ Newest entries go at the top.
     claims that the diagnostic runs comparators, fits models, covers fitted
     Mrode outputs, or adds genomic/QTL support.
 - Remote checks:
-  - Pending.
+  - CI `27460547802`: success.
+  - Documenter `27460547823`: success.
+  - Pages deploy `27460576218`: success.
+  - Live validation-status page
+    `https://itchyshin.github.io/HSquared.jl/dev/validation-status`: HTTP 200
+    and contains `validation_status()`, `V1-AINV-MRODE9`, `covered_external`,
+    and `Fitted Mrode validation is not covered`.
+  - Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200
+    and contains `validation_status` plus `ValidationStatusRow`.
 - Boundary:
   - Diagnostic only.
   - No comparator execution.

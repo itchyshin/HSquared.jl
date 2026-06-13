@@ -87,7 +87,20 @@ Fitted Mrode validation is not covered.
   blocked wording, not claims that `validation_status()` runs comparators, fits
   models, covers fitted Mrode outputs, or adds genomic/QTL support.
 
-Remote checks: pending.
+Remote checks for commit `966734c`:
+
+- CI `27460547802`: success;
+- Documenter `27460547823`: success;
+- Pages deploy `27460576218`: success.
+
+Live docs:
+
+- validation-status page
+  `https://itchyshin.github.io/HSquared.jl/dev/validation-status`: HTTP 200
+  and contains `validation_status()`, `V1-AINV-MRODE9`, `covered_external`,
+  and `Fitted Mrode validation is not covered`;
+- API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200 and
+  contains `validation_status` plus `ValidationStatusRow`.
 
 ## Public Claim Audit
 
@@ -106,8 +119,7 @@ Blocked wording:
 - production sparse fitting is validated;
 - genomic, marker, QTL, or eQTL support is implemented.
 
-Rose verdict: clean with limitations after local checks; remote evidence
-pending.
+Rose verdict: clean with limitations after local and remote checks.
 
 ## Coordination Notes
 
