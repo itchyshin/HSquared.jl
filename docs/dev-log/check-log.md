@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Multivariate REML (Phase 4, estimate G0/R0)
+
+- Goal: estimate the multi-trait genetic/residual covariances by REML — the
+  capability that makes multi-trait models useful beyond a supplied covariance.
+- Active lenses: Gauss, Fisher, Kirkpatrick, Falconer, Mrode, Curie, Rose (inline).
+- Implementation (`src/multivariate.jl`):
+  - `fit_multivariate_reml(Y, X, Z, Ainv; initial, iterations, ids, traits)` —
+    dense multivariate REML. Log-Cholesky parameterization of `G0`, `R0` (keeps
+    both PD), NelderMead on the REML loglik of `V = Z(A⊗G0)Z' + block-diag R`
+    (missing-record aware). Returns `G0`/`R0`, correlations, per-trait `h²`, EBVs
+    at the estimate, loglik, converged.
+  - Refactored shared helpers `_mv_observed`, `_mv_build_Vchol`,
+    `_mv_reml_loglik_core`, `_mv_gls_blup`, `_multivariate_reml_loglik`. EBVs come
+    from the GLS BLUP form (robust to a singular `G0` at a boundary optimum — the
+    earlier MME path threw `not PD` there).
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed. New
+    testset "Phase 4 multivariate REML (estimate G0/R0)" = 21 checks: `t=1`
+    reduction recovers `fit_sparse_reml` (<1% on an interior fixture); REML loglik
+    matches the univariate one up to a constant (~1e-8); two-trait optimum beats a
+    coarse grid; EBVs match `multivariate_mme` at the estimate (~1e-6, GLS vs MME);
+    missing-record fit; supplied initials; guards. `validation_status()` 26 → 27
+    (added `V4-MV-REML`).
+  - One-off recovery (not committed; suite is RNG-free): 12-replicate t=2 sim
+    (n=400 half-sib) recovers the generating covariances on average — mean
+    Ĝ0≈[1.03,0.61;0.61,2.25] vs [1.0,0.5;0.5,2.0]; mean R̂0≈truth; r̂g≈0.40 vs
+    0.354; 12/12 converged.
+  - `julia --project=docs docs/make.jl`: green (new REML docs section + warning
+    admonition).
+- Status surfaces (lockstep): `validation_status.jl` `V4-MV-REML` (partial) +
+  `V4-MULTIVARIATE` missing-field updated; `capability-status.md`;
+  `validation-debt-register.md`; `api.md`; `changelog.md`; this report.
+- Boundary:
+  - Experimental dense/validation-scale REML; correctness is self-consistency +
+    univariate-reduction validated, but multi-trait known-truth recovery is
+    one-off only, with no external-comparator parity or adversarial review yet;
+    no committed recovery harness, no covariance SEs, no R-facing model-spec.
+
 ## 2026-06-13 Multivariate missing-trait records (Phase 4, unbalanced)
 
 - Goal: extend `multivariate_mme` to unbalanced / missing-trait records — the

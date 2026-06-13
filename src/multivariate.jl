@@ -201,3 +201,228 @@ function multivariate_mme(
         traits = tlabels,
     )
 end
+
+# Pack/unpack a t×t PD covariance as an unconstrained vector through its lower
+# Cholesky factor `L` (`cov = L·Lᵀ`), with log-diagonal entries so the diagonal
+# stays positive. Length `t(t+1)/2`, column-major lower-triangular order.
+function _chol_params_to_cov(v, t)
+    L = zeros(eltype(v), t, t)
+    idx = 1
+    for j in 1:t, i in j:t
+        L[i, j] = i == j ? exp(v[idx]) : v[idx]
+        idx += 1
+    end
+    return L * transpose(L)
+end
+
+function _cov_to_chol_params(M::AbstractMatrix, t)
+    L = cholesky(Symmetric(Matrix(Float64.(M)))).L
+    v = Vector{Float64}(undef, t * (t + 1) ÷ 2)
+    idx = 1
+    for j in 1:t, i in j:t
+        v[idx] = i == j ? log(L[i, j]) : L[i, j]
+        idx += 1
+    end
+    return v
+end
+
+# Build the observed-data design for the multivariate model in trait-fastest
+# order, dropping `missing`/`NaN` records. Returns the observed response `yvec`,
+# the dense expanded `Xfull` (N×p·t) and `Zfull` (N×q·t), the per-individual
+# `(row-range, observed-trait-set)` list `indiv` for the block-diagonal residual,
+# and the observed count `N`.
+function _mv_observed(Y, X, Z, n, t, q, p)
+    Ym = Matrix(Y)
+    present = falses(n, t)
+    @inbounds for i in 1:n, k in 1:t
+        present[i, k] = _is_present(Ym[i, k])
+    end
+    rows = [(i, k) for i in 1:n for k in 1:t if present[i, k]]
+    N = length(rows)
+    N > 0 || throw(ArgumentError("Y has no observed (non-missing) entries"))
+    Xfull = zeros(N, p * t)
+    Zfull = zeros(N, q * t)
+    yvec = zeros(N)
+    for (r, (i, k)) in enumerate(rows)
+        yvec[r] = Float64(Ym[i, k])
+        for j in 1:p
+            Xfull[r, (j - 1) * t + k] = Float64(X[i, j])
+        end
+        for a in 1:q
+            Zfull[r, (a - 1) * t + k] = Float64(Z[i, a])
+        end
+    end
+    indiv = Tuple{UnitRange{Int},Vector{Int}}[]
+    rstart = 0
+    for i in 1:n
+        Si = findall(@view present[i, :])
+        isempty(Si) && continue
+        m = length(Si)
+        push!(indiv, (rstart + 1:rstart + m, Si))
+        rstart += m
+    end
+    return yvec, Xfull, Zfull, indiv, N
+end
+
+# Cholesky factor of the marginal covariance `V = Zfull·(A⊗G0)·Zfull' + R`,
+# with `R` block-diagonal over individuals (block `i` = `R0[Sᵢ, Sᵢ]`). `V` is PD
+# whenever `R0` is PD, even if `G0` is only positive semidefinite (a boundary
+# REML optimum), so this stays well-defined at the boundary.
+function _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
+    Vg = Zfull * kron(A, G0) * transpose(Zfull)
+    R = zeros(N, N)
+    for (rng, Si) in indiv
+        R[rng, rng] = R0[Si, Si]
+    end
+    return cholesky(Symmetric(Vg .+ R))
+end
+
+# REML log-likelihood (up to an additive constant) at supplied `G0`, `R0`.
+function _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
+    Vf = _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
+    ViX = Vf \ Xfull
+    XtViX = cholesky(Symmetric(transpose(Xfull) * ViX))
+    beta = XtViX \ (transpose(Xfull) * (Vf \ yvec))
+    r = yvec .- Xfull * beta
+    return -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
+end
+
+# GLS fixed effects and BLUP breeding values at supplied `G0`, `R0`. Uses the
+# marginal-model form `u = (A⊗G0)·Zfull'·V⁻¹·(y − Xβ̂)`, which equals the MME
+# solution when `G0` is PD but also works when `G0` is singular (boundary).
+function _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0, R0, t, p, q)
+    Vf = _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
+    ViX = Vf \ Xfull
+    XtViX = cholesky(Symmetric(transpose(Xfull) * ViX))
+    betavec = XtViX \ (transpose(Xfull) * (Vf \ yvec))
+    r = yvec .- Xfull * betavec
+    uvec = kron(A, G0) * (transpose(Zfull) * (Vf \ r))
+    return permutedims(reshape(betavec, t, p)), permutedims(reshape(uvec, t, q))
+end
+
+# Convenience: multivariate REML log-likelihood directly from model inputs at
+# supplied covariances (rebuilds the observed structures). Used in validation.
+function _multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
+    n = size(Y, 1); t = size(Y, 2); q = size(Ainv, 1); p = size(X, 2)
+    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+    return _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N,
+                                Matrix(Float64.(Matrix(G0))), Matrix(Float64.(Matrix(R0))))
+end
+
+"""
+    fit_multivariate_reml(Y, X, Z, Ainv; initial = nothing, iterations = 2000,
+                          ids = nothing, traits = nothing)
+
+Estimate the genetic and residual covariance matrices `G0`, `R0` of the
+multi-trait animal model by **dense REML**. Inputs match [`multivariate_mme`](@ref)
+(balanced or with `missing`/`NaN` trait records); the marginal model is
+
+    y ~ N(X·β, V),   V = Z_full·(A ⊗ G0)·Z_full' + R,
+
+with `R` block-diagonal over individuals (individual `i`'s block `R0[Sᵢ, Sᵢ]`).
+The REML log-likelihood `-½(log|V| + log|X'V⁻¹X| + (y−Xβ̂)'V⁻¹(y−Xβ̂))` is
+maximized by Nelder–Mead over an unconstrained log-Cholesky parameterization of
+`G0` and `R0` (which keeps both positive definite). At the optimum the breeding
+values and fixed effects are obtained from [`multivariate_mme`](@ref) at the
+estimated covariances.
+
+Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
+validated by deterministic self-consistency checks (the `t = 1` reduction recovers
+the univariate REML estimate; the multivariate REML log-likelihood matches the
+univariate one up to a constant; the optimum beats a coarse grid). Known-truth
+covariance recovery for `t ≥ 2` is exercised only by one-off simulations (the test
+suite is RNG-free) and has **not** had external-comparator (sommer / ASReml /
+JWAS) parity or independent adversarial review yet — treat multi-trait variance
+estimates as experimental. There is no R-facing multivariate model-spec.
+
+Returns a `NamedTuple`:
+
+  - `genetic_covariance`, `residual_covariance` — estimated `G0`, `R0` (`t×t`);
+  - `genetic_correlation`, `residual_correlation` — derived `t×t` correlations;
+  - `heritability` — per-trait `h² = diag(G0)/(diag(G0)+diag(R0))`;
+  - `beta`, `breeding_values` — fixed effects and EBVs at the estimate;
+  - `loglik`, `converged`, `iterations`, `traits`.
+"""
+function fit_multivariate_reml(
+    Y::AbstractMatrix,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 2_000,
+    ids = nothing,
+    traits = nothing,
+)
+    n = size(Y, 1)
+    t = size(Y, 2)
+    t >= 1 || throw(ArgumentError("Y must have at least one trait column"))
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    q = size(Ainv, 1)
+    size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+    size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
+
+    p = size(X, 2)
+    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+
+    nG = t * (t + 1) ÷ 2
+
+    function negloglik(params)
+        G0 = _chol_params_to_cov(@view(params[1:nG]), t)
+        R0 = _chol_params_to_cov(@view(params[nG + 1:end]), t)
+        try
+            return -_mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
+        catch err
+            err isa PosDefException && return Inf
+            rethrow()
+        end
+    end
+
+    if initial === nothing
+        Ym = Matrix(Y)
+        phen = ones(t)
+        for k in 1:t
+            vals = [Float64(Ym[i, k]) for i in 1:n if _is_present(Ym[i, k])]
+            if length(vals) >= 2
+                mu = sum(vals) / length(vals)
+                v = sum(abs2, vals .- mu) / (length(vals) - 1)
+                v > 0 && (phen[k] = v)
+            end
+        end
+        G0_start = Matrix(Diagonal(0.5 .* phen))
+        R0_start = Matrix(Diagonal(0.5 .* phen))
+    else
+        G0_start = Matrix(Float64.(Matrix(initial.G0)))
+        R0_start = Matrix(Float64.(Matrix(initial.R0)))
+    end
+    params0 = vcat(_cov_to_chol_params(G0_start, t), _cov_to_chol_params(R0_start, t))
+
+    result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+    phat = Optim.minimizer(result)
+    G0hat = Matrix(Symmetric(_chol_params_to_cov(phat[1:nG], t)))
+    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[nG + 1:end], t)))
+
+    # EBVs via the GLS form (robust to a singular G0 at a boundary optimum).
+    beta, ebv = _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, R0hat, t, p, q)
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+    tlabels = traits === nothing ? collect(1:t) : collect(traits)
+    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
+    hsq = [G0hat[k, k] / (G0hat[k, k] + R0hat[k, k]) for k in 1:t]
+
+    return (
+        genetic_covariance = G0hat,
+        residual_covariance = R0hat,
+        genetic_correlation = genetic_correlation(G0hat),
+        residual_correlation = genetic_correlation(R0hat),
+        heritability = hsq,
+        beta = beta,
+        breeding_values = (ids = aids, traits = tlabels, values = ebv),
+        loglik = -Optim.minimum(result),
+        converged = Optim.converged(result),
+        iterations = Optim.iterations(result),
+        traits = tlabels,
+    )
+end

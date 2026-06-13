@@ -121,6 +121,14 @@
   per-individual residual precision `inv(R0[Sᵢ, Sᵢ])`; balanced data reduces to
   the previous fast path. Validated against an independent loop-built MME and a
   marginal-GLS BLUP with per-individual residual blocks.
+- Added `fit_multivariate_reml()` — estimates the multi-trait genetic/residual
+  covariances `G0`, `R0` by dense REML (log-Cholesky-parameterized Nelder–Mead;
+  handles missing records), returning the estimates, correlations, per-trait
+  heritabilities, and breeding values at the estimate. Validated by the `t = 1`
+  reduction to the univariate REML, a REML log-likelihood matching the univariate
+  one up to a constant, grid-beating, and EBV consistency with `multivariate_mme`.
+  Experimental, dense/validation-scale; multi-trait known-truth recovery is
+  one-off only, with no external-comparator parity or adversarial review yet.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

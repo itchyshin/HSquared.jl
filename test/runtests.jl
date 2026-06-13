@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 26
+    @test length(validation) == 27
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -181,6 +181,11 @@ end
     @test occursin("multivariate_mme", mv_row.evidence)
     @test occursin("missing-trait records", mv_row.evidence)
     @test occursin("does not estimate G0/R0", mv_row.claim_boundary)
+    mvreml_row = only(row for row in validation if row.id == "V4-MV-REML")
+    @test mvreml_row.phase == "Phase 4"
+    @test mvreml_row.status == "partial"
+    @test occursin("fit_multivariate_reml", mvreml_row.evidence)
+    @test occursin("one-off", mvreml_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -2157,4 +2162,69 @@ end
 
     # an all-missing Y is rejected
     @test_throws ArgumentError multivariate_mme(fill(NaN, n, t), X, Z, Ainv, G0, R0)
+end
+
+@testset "Phase 4 multivariate REML (estimate G0/R0)" begin
+    # interior-optimum fixture (same 8-animal pedigree as the univariate recovery)
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
+    spec = animal_model_spec(y1, X, sparse(Z), Ainv; ids = ped.ids, method = :REML)
+
+    # (1) t=1 reduction: multivariate REML recovers the univariate REML estimate
+    uni = fit_sparse_reml(spec)
+    mv1 = fit_multivariate_reml(reshape(y1, 8, 1), X, Z, Ainv)
+    @test mv1.converged
+    @test mv1.genetic_covariance[1, 1] ≈ uni.variance_components.sigma_a2 rtol = 1e-2
+    @test mv1.residual_covariance[1, 1] ≈ uni.variance_components.sigma_e2 rtol = 1e-2
+    @test 0 < mv1.heritability[1] < 1
+    @test mv1.genetic_correlation == reshape([1.0], 1, 1)
+
+    # (2) the multivariate REML loglik matches the univariate one up to a constant
+    h = HSquared._multivariate_reml_loglik
+    d_mv = h(reshape(y1, 8, 1), X, Z, Ainv, reshape([1.0], 1, 1), reshape([2.0], 1, 1)) -
+           h(reshape(y1, 8, 1), X, Z, Ainv, reshape([0.5], 1, 1), reshape([3.0], 1, 1))
+    d_uni = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 0.5, 3.0).loglik
+    @test d_mv ≈ d_uni atol = 1e-8
+
+    # (3) two-trait fit (non-collinear traits → interior PD estimate): optimum
+    # beats a coarse (G0, R0) grid, and EBVs match the independent MME at the
+    # estimate (MME ≡ GLS BLUP when G0 is PD)
+    Y2 = hcat(y1, reverse(y1))
+    mv2 = fit_multivariate_reml(Y2, X, Z, Ainv)
+    @test mv2.converged
+    @test size(mv2.genetic_covariance) == (2, 2)
+    @test isposdef(Symmetric(mv2.genetic_covariance))
+    @test isposdef(Symmetric(mv2.residual_covariance))
+    gridmax = -Inf
+    for va1 in (0.5, 1.5), va2 in (0.5, 1.5), ve1 in (0.5, 1.5), ve2 in (0.5, 1.5)
+        G = [va1 0.0; 0.0 va2]; R = [ve1 0.0; 0.0 ve2]
+        gridmax = max(gridmax, h(Y2, X, Z, Ainv, G, R))
+    end
+    @test mv2.loglik >= gridmax - 1e-6
+    chk = multivariate_mme(Y2, X, Z, Ainv, mv2.genetic_covariance, mv2.residual_covariance)
+    @test chk.breeding_values.values ≈ mv2.breeding_values.values atol = 1e-6   # GLS vs MME solve
+    @test -1 <= mv2.genetic_correlation[1, 2] <= 1
+    @test all(0 .<= mv2.heritability .<= 1)
+
+    # (4) missing records are handled by the estimator too (a boundary estimate
+    # is still valid — the EBV solve is robust to a singular G0)
+    Ymiss = copy(Y2); Ymiss[2, 2] = NaN; Ymiss[5, 1] = NaN
+    mvm = fit_multivariate_reml(Ymiss, X, Z, Ainv)
+    @test mvm.converged
+    @test size(mvm.breeding_values.values) == (8, 2)
+    @test -1 <= mvm.genetic_correlation[1, 2] <= 1
+    @test issymmetric(Symmetric(mvm.genetic_covariance))
+
+    # (5) supplied initial values are accepted
+    mv_init = fit_multivariate_reml(Y2, X, Z, Ainv;
+        initial = (G0 = [1.0 0.2; 0.2 1.0], R0 = [1.0 0.0; 0.0 1.0]))
+    @test mv_init.converged
+
+    # guards
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z[:, 1:3], Ainv)
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X[1:4, :], Z, Ainv)
 end

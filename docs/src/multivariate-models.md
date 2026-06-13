@@ -70,6 +70,34 @@ round.(fitm.breeding_values.values; digits = 4)
 
 With every trait observed this reduces exactly to the balanced solve above.
 
+## Estimating the covariances (REML)
+
+`fit_multivariate_reml` estimates `G0` and `R0` by dense REML — maximizing
+`-½(log|V| + log|X'V⁻¹X| + (y−Xβ̂)'V⁻¹(y−Xβ̂))` over a log-Cholesky
+parameterization that keeps both matrices positive definite. It accepts the same
+inputs (balanced or with missing records) and returns the estimated covariances,
+their correlations, per-trait heritabilities, and the breeding values at the
+estimate:
+
+```@example mv
+fitr = fit_multivariate_reml(Y, X, Z, Ainv)
+(genetic_covariance = round.(fitr.genetic_covariance; digits = 3),
+ residual_covariance = round.(fitr.residual_covariance; digits = 3),
+ heritability = round.(fitr.heritability; digits = 3),
+ converged = fitr.converged)
+```
+
+!!! warning "Experimental estimator"
+    Multivariate REML is **experimental**. Its correctness is checked by
+    deterministic self-consistency (the `t = 1` fit recovers the univariate REML
+    estimate; the REML log-likelihood matches the univariate one up to a
+    constant; the optimum beats a coarse grid). Known-truth recovery for `t ≥ 2`
+    is exercised only by one-off simulations and has **no external-comparator
+    parity (sommer / ASReml / JWAS) or independent adversarial review yet**.
+    Treat multi-trait variance estimates as provisional. On small fixtures the
+    optimum can sit on a boundary (a genetic correlation of ±1, or a zero
+    variance).
+
 ## Validation boundary
 
 Covered now (self-consistent, comparator-free):
@@ -80,7 +108,11 @@ Covered now (self-consistent, comparator-free):
 - with diagonal `G0`, `R0` it decouples into `t` independent single-trait fits;
 - **unbalanced / missing-trait records** are validated the same way (loop-built
   MME + marginal-GLS with per-individual residual blocks), and reduce to the
-  balanced solve when nothing is missing.
+  balanced solve when nothing is missing;
+- **`fit_multivariate_reml`** is validated by the `t = 1` reduction (recovers the
+  univariate REML estimate), the REML log-likelihood matching the univariate one
+  up to a constant, the optimum beating a coarse grid, and EBV consistency with
+  the MME at the estimate.
 
 The balanced checks hold to a committed `1e-10` tolerance and the missing-data
 checks to `1e-9` (the observed agreement is machine precision).
@@ -89,8 +121,9 @@ Still planned / coordinated:
 
 - a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
-- multivariate covariance-matrix **estimation** (REML / EM for `G0`, `R0`);
-- a published Mrode multi-trait fixture and external-comparator parity (sommer /
-  ASReml / JWAS);
+- a committed multivariate known-truth recovery harness, covariance standard
+  errors, and external-comparator parity (sommer / ASReml / JWAS) plus
+  independent review for the REML estimator;
+- a published Mrode multi-trait fixture;
 - the public R multivariate model-spec mapping — R lane.
 ```

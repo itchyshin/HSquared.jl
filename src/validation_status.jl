@@ -221,8 +221,17 @@ const VALIDATION_STATUS_DATA = (
         "Phase 4",
         "partial",
         "`multivariate_mme` solves the multi-trait animal model at supplied genetic/residual covariance matrices `G0`, `R0` (Kronecker MME: genetic precision `Ainv⊗G0⁻¹`, residual precision block-diagonal over individuals); its β and EBVs match an independent loop-built multivariate MME, an independent marginal-GLS BLUP, the standard univariate animal model in the `t=1` reduction, and t independent single-trait fits when `G0`, `R0` are diagonal — all to a committed 1e-10 tolerance (observed agreement is machine precision, ~1e-14), in `test/runtests.jl`. Unbalanced / missing-trait records (`missing`/`NaN` in `Y`) are handled via per-individual residual precision `inv(R0[S_i,S_i])`, validated against an independent loop-built MME and marginal-GLS BLUP on a missing-data fixture (committed 1e-9, observed ~1e-13), reducing to the balanced path when no records are missing. `genetic_correlation` is hand-checked.",
-        "per-trait fixed-effect and incidence designs, covariance-matrix estimation (multivariate REML/EM), a published Mrode multi-trait fixture, and JWAS/sommer/ASReml-style external comparators",
+        "per-trait fixed-effect and incidence designs, a published Mrode multi-trait fixture, and JWAS/sommer/ASReml-style external comparators (covariance-matrix estimation now covered by `V4-MV-REML`)",
         "Supplied-covariance with a design shared across traits; handles missing-trait records, but does not estimate G0/R0 and has no R-facing multivariate model-spec.",
+    ),
+    (
+        "V4-MV-REML",
+        "multivariate REML (genetic/residual covariance estimation)",
+        "Phase 4",
+        "partial",
+        "`fit_multivariate_reml` estimates `G0`, `R0` by dense multivariate REML (log-Cholesky-parameterized NelderMead on `V = Z(A⊗G0)Z' + block-diag R`, handling missing records). Correctness is pinned by deterministic checks in `test/runtests.jl`: the `t=1` reduction recovers the univariate REML estimate (`fit_sparse_reml`) to <1% on an interior-optimum fixture; the multivariate REML log-likelihood (`_multivariate_reml_loglik`) matches the univariate one up to a constant (~1e-8); the fitted optimum beats a coarse `(G0,R0)` grid; and the returned EBVs equal `multivariate_mme` at the estimate. A one-off 12-replicate t=2 simulation (n=400 half-sib, not committed — suite is RNG-free) recovers the generating covariances on average (mean Ĝ0≈[1.03,0.61;0.61,2.25] vs [1.0,0.5;0.5,2.0]; mean R̂0≈truth; r̂g≈0.40 vs 0.354; 12/12 converged).",
+        "an RNG-based committed recovery harness, standard errors / likelihood-ratio tests for the covariances, a published Mrode multi-trait estimate, JWAS/sommer/ASReml comparator parity, and independent adversarial review",
+        "Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated, but multi-trait known-truth recovery is one-off only and has no external-comparator parity or adversarial review yet; not the public default and no R-facing model-spec.",
     ),
     (
         "V5-GENOMIC-QTL",
