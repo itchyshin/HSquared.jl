@@ -12,6 +12,11 @@ makedocs(;
     authors = "Shinichi Nakagawa",
     modules = [HSquared],
     warnonly = true,
+    # Only require *exported* names to appear in the manual. Internal kernels and
+    # private helpers (e.g. the Takahashi selected-inverse routines,
+    # `_numerator_relationship`, `_single_step_Hinv`) keep their docstrings for
+    # source readers without being surfaced on the public API page.
+    checkdocs = :exported,
     format = MarkdownVitepress(
         repo = "github.com/itchyshin/HSquared.jl",
         devbranch = "main",

@@ -70,6 +70,10 @@ HSquared.gaussian_loglik
 HSquared.sparse_reml_loglik
 HSquared.HendersonMMEResult
 HSquared.henderson_mme
+HSquared.repeatability_mme
+HSquared.fit_repeatability_reml
+HSquared.two_effect_mme
+HSquared.fit_two_effect_reml
 HSquared.AnimalModelFit
 HSquared.BreedingValues
 HSquared.fit_sparse_reml
