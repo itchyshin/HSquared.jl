@@ -33,6 +33,12 @@ Newest entries go at the top.
   - Additions-only ASCII scan returned no matches after replacing new test
     `isapprox` shorthands with ASCII calls.
   - Claim-boundary scan found expected status and limitation wording only.
+- Remote checks for commit `18dea52`:
+  - CI `27463928722`: success on Julia 1 and Julia 1.10.
+  - Documenter `27463928730`: success.
+  - Pages deploy `27463962899`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
 - Boundary:
   - `EBV()` and `BLUP()` are aliases, not new estimators.
   - `accuracy()` is derived from reliability and adds no independent accuracy

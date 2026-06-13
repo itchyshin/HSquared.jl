@@ -91,6 +91,14 @@ Additional tests cover:
   shorthand symbols with ASCII calls.
 - Claim-boundary scan: expected status/limitation hits only.
 
+Remote checks for implementation commit `18dea52`:
+
+- CI `27463928722`: success on Julia 1 and Julia 1.10.
+- Documenter `27463928730`: success.
+- Pages deploy `27463962899`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
 ## Coordination Notes
 
 R head `afa25f1` added R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
