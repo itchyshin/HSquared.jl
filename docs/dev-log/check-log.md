@@ -34,13 +34,32 @@ Newest entries go at the top.
     diagnostics, bridge payloads, genotype parsing, relationship construction,
     marker scanning, genomic fitting, and QTL/eQTL fitting.
 - Remote checks:
-  - Pending.
+  - CI `27461262496`: success.
+  - Documenter `27461262492`: success.
+  - Pages deploy `27461295761`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions.
+  - Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP
+    200 and contains `data_status()`, ID-overlap wording, and current boundary
+    wording.
+  - Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200
+    and contains `data_status`, `HSDataStatus`, `HSDataIDOverlapRow`, and
+    `HSDataMarkerStatusRow`.
+  - Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`:
+    HTTP 200 and contains `data_status()` component-presence and
+    marker-alignment status wording.
 - Boundary:
   - Diagnostic only.
   - No bridge payload change.
   - No genotype parsing.
   - No relationship-matrix construction.
   - No marker scanning, genomic fitting, or QTL/eQTL fitting.
+- Follow-up handoff:
+  - R head `3fafa08` adds pedigree-status diagnostics to
+    `summary(hs_data(...))` and `data_status()`. Reported R remote evidence:
+    R-CMD-check `27461235870`, pkgdown `27461235877`, and Pages
+    `27461267695` success. Julia pedigree-status parity is a later slice, not
+    part of this commit.
 
 ## 2026-06-13 HSData Marker Metadata Validation
 

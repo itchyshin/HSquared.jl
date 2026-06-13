@@ -86,7 +86,22 @@ Added:
   diagnostics, bridge payloads, genotype parsing, relationship construction,
   marker scanning, genomic fitting, and QTL/eQTL fitting.
 
-Remote checks: pending.
+Remote checks:
+
+- CI `27461262496`: success.
+- Documenter `27461262492`: success.
+- Pages deploy `27461295761`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for
+  upstream actions.
+- Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP 200
+  and contains `data_status()`, ID-overlap wording, and current boundary
+  wording.
+- Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200 and
+  contains `data_status`, `HSDataStatus`, `HSDataIDOverlapRow`, and
+  `HSDataMarkerStatusRow`.
+- Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP
+  200 and contains `data_status()` component-presence and marker-alignment
+  status wording.
 
 ## Public Claim Audit
 
@@ -104,17 +119,24 @@ Blocked wording:
 - relationship construction from genotypes is implemented;
 - marker scanning, genomic fitting, or QTL/eQTL fitting is implemented.
 
-Rose verdict: locally clean with limitations; pending remote CI and deployed
-docs evidence.
+Rose verdict: clean with limitations. The public wording says diagnostic only
+and keeps bridge payload changes, genotype parsing, relationship construction,
+marker scans, genomic fitting, and QTL/eQTL fitting out of the implemented
+claim.
 
 ## Coordination Notes
 
 - Julia lane only. No R repo edits were made.
 - R `summary(hs_data(...))` marker-status diagnostics and `data_status()` are
   R-side surfaces; Julia now mirrors `data_status(::HSData)` only.
+- R head `3fafa08` added pedigree-status diagnostics to
+  `summary(hs_data(...))` and `data_status()` after this Julia slice started.
+  Reported R remote evidence: R-CMD-check `27461235870`, pkgdown
+  `27461235877`, and Pages `27461267695` success. Julia pedigree-status parity
+  is a later slice, not part of this commit.
 
 ## Next Actions
 
-1. Run Documenter and mechanical checks.
-2. Push and watch CI.
-3. Record remote evidence.
+1. Consider a later `data_status(::HSData)` pedigree-status parity slice.
+2. Continue to keep diagnostics separate from bridge payload and fitting
+   claims.
