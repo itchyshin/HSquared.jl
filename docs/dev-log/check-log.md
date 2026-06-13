@@ -2,6 +2,47 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R Bridge PEV Reliability Enrichment Sync
+
+- Goal: mirror the R twin's new tiny/local PEV/reliability bridge enrichment
+  wording without changing Julia engine APIs or base `result_payload()`.
+- Active lenses: Ada, Shannon, Hopper, Lovelace, Emmy, Rose, Grace, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `8235289` enriches opt-in local Julia bridge results with
+    PEV/reliability if sibling Julia exports `prediction_error_variance(fit)`
+    and `reliability(fit)`.
+  - R still starts from `result_payload(fit)` and merges these two fields if
+    available.
+  - Reported remote evidence: R-CMD-check `27459709156`, pkgdown
+    `27459709148`, and Pages `27459742852` success.
+- Julia-side action:
+  - Updated v0.1 contract, engine contract, public claims, capability status,
+    validation debt, README, quickstart, roadmap, changelog, and coordination
+    board.
+  - Kept `result_payload()` compact.
+  - No code or test behavior changed.
+- Local checks:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 294 checks.
+  - `git diff --check` passed.
+  - Edited-file ASCII scan returned no matches after replacing a pre-existing
+    `approx` symbol in `docs/src/quickstart.md` with `isapprox(...)`.
+  - Claim scan found only public-claims rows or after-task blocked-wording
+    rows, not unsupported claims that PEV/reliability are base
+    `result_payload()` fields or production sparse capabilities.
+- Remote checks:
+  - pending.
+- Boundary:
+  - Tiny/local bridge enrichment only.
+  - No production sparse PEV/reliability.
+  - No fitted Mrode-output validation.
+  - No general animal-model fitting claim.
+  - No base `result_payload()` widening.
+
 ## 2026-06-13 Expanded Genomics QTL GPU Roadmap Mirror
 
 - Goal: mirror the R twin's expanded genomics/QTL/GLLVM/GPU/HPC plan into

@@ -84,7 +84,7 @@ variance components; it is not an optimizer.
 
 ```@example quickstart
 sparse_lik = sparse_reml_loglik(spec, 1.0, 1.0)
-sparse_lik.loglik ≈ lik.loglik
+isapprox(sparse_lik.loglik, lik.loglik)
 ```
 
 ## Fit Variance Components Experimentally
@@ -177,6 +177,11 @@ keys(result_payload(fit))
 These outputs are useful for tiny validation examples. They are not yet sparse
 production EBVs, reliabilities, or prediction error variances.
 
+The R twin may enrich opt-in tiny/local bridge results by calling
+`prediction_error_variance(fit)` and `reliability(fit)` after
+`result_payload(fit)`. Those fields are intentionally not part of the compact
+base payload contract.
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.
@@ -190,8 +195,8 @@ end
 ```
 
 Sparse production optimization, AI-REML, production sparse reliability,
-production sparse prediction error variance, and R-to-Julia sparse marshalling
-remain Phase 1 targets.
+production sparse prediction error variance, and relationship-object
+marshalling beyond sparse `Z` remain Phase 1 targets.
 
 ## R Syntax Parity Target
 

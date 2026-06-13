@@ -33,8 +33,9 @@ Implemented:
 - sparse Henderson MME solving at supplied variance components;
 - sparse CSC marshalling helper for R sparse matrix slots;
 - external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
-- external R PEV/reliability bridge extractor contract evidence from
-  `hsquared` head `78ba5ff`, with Julia payload widening still planned.
+- external R PEV/reliability bridge enrichment evidence from `hsquared` head
+  `8235289`; R can merge those fields from exported Julia extractors for
+  tiny/local validation fits while Julia keeps base `result_payload()` compact.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and
@@ -61,7 +62,8 @@ Not implemented:
 Next engine targets:
 
 1. Mrode-style validation and comparator checks;
-2. lockstep R/Julia decision on PEV/reliability bridge payload fields;
+2. R/Julia decision on whether PEV/reliability should ever become required
+   base bridge payload fields;
 3. relationship-object marshalling beyond sparse `Z` and stable production
    engine controls;
 4. production sparse covariance/precision computations;

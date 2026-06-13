@@ -43,6 +43,8 @@
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.
+- Recorded the R twin's tiny/local bridge enrichment of PEV/reliability from
+  exported Julia extractors, still without widening base `result_payload()`.
 - Recorded the R twin's sparse `Z` bridge marshalling handoff.
 - Recorded the R twin's optional `nadiv::Mrode9` pedigree-Ainv comparator
   evidence.

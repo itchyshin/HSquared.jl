@@ -28,8 +28,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
   head `9eabf0d`: `control = hs_control(engine = "julia")`.
 - The R twin has PEV/reliability extractor contracts at `hsquared` head
-  `78ba5ff`; Julia keeps those fields out of `result_payload()` until bridge
-  tests widen in lockstep.
+  `78ba5ff`; at head `8235289` it enriches opt-in tiny/local Julia bridge
+  results from exported Julia extractors when available. Julia keeps those
+  fields out of the compact base `result_payload()`.
 - The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
   `hsquared` head `398e019`.
 - The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation
@@ -124,6 +125,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - current R live-bridge tests still expect those fields to be absent from the
     Julia payload;
   - local/remote R checks were reported green.
+- R lane handoff from `itchyshin/hsquared` head `8235289`:
+  - the opt-in local Julia bridge enriches tiny validation-path results with
+    PEV/reliability if sibling Julia exports `prediction_error_variance(fit)`
+    and `reliability(fit)`;
+  - R still starts from `result_payload(fit)` and merges those two fields if
+    available, preserving the compact base Julia payload contract;
+  - reported remote evidence: R-CMD-check `27459709156`, pkgdown
+    `27459709148`, and Pages `27459742852` success;
+  - boundary: bridge-available for tiny local validation path only. No
+    production sparse PEV/reliability, general animal-model fitting, Mrode
+    fitted-output validation, or base `result_payload()` widening claim.
 - R lane handoff from `itchyshin/hsquared` head `398e019`:
   - R now sends `Matrix::dgCMatrix` `Z` slots through
     `HSquared.sparse_csc_matrix(...; index_base = :zero)`;
@@ -234,10 +246,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - boundary: roadmap/design only. No genomic fitting, QTL/eQTL scan,
     GLLVM animal model, GPU execution, APY, Takahashi selected inverse,
     AI-REML, HPC, or performance claim.
-- Next shared seam: lockstep PEV/reliability payload widening, relationship
-  marshalling beyond `Z`, Mrode validation, `hs_data()` to `HSData` payload
-  parity, the first real genomic/QTL model-spec contract, and the first real
-  standard quantitative-genetic model-spec contract.
+- Next shared seam: deciding whether PEV/reliability should ever become
+  required base payload fields, relationship marshalling beyond `Z`, Mrode
+  validation, `hs_data()` to `HSData` payload parity, the first real
+  genomic/QTL model-spec contract, and the first real standard
+  quantitative-genetic model-spec contract.
 
 ## Sister References
 

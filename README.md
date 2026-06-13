@@ -62,7 +62,8 @@ Implemented now:
   genotype, expression, marker, annotation, and environment inputs;
 - sparse CSC marshalling helper for R `Matrix::dgCMatrix` slots;
 - external opt-in tiny/local R bridge evidence from the `hsquared` twin over
-  the current Julia payload path and `result_payload()`;
+  the current Julia payload path and `result_payload()`, with R-side
+  enrichment from Julia PEV/reliability extractors for tiny validation fits;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 

@@ -259,7 +259,20 @@ remain planned.
 
 `prediction_error_variance(fit)` and `reliability(fit)` use the dense
 mixed-model-equation inverse for tiny validation examples. They are not included
-in `result_payload(fit)` until the R result contract grows those fields.
+in the base `result_payload(fit)` contract.
+
+As of R head `8235289`, the R twin may enrich the opt-in tiny/local Julia bridge
+result by calling exported Julia extractors:
+
+```julia
+prediction_error_variance(fit)
+reliability(fit)
+```
+
+and merging `(ids = ..., values = ...)` fields on the R side when those
+functions are available. This preserves the compact base `result_payload()`
+contract. It is bridge validation for tiny dense fits, not production sparse
+PEV or production sparse reliability.
 
 ## R Result Payload Contract
 
@@ -367,22 +380,23 @@ builds the payload, and stops. Julia-specific controls stay inside
 `max_dense_cells`.
 
 R head `78ba5ff` adds R-side `prediction_error_variance()` and `reliability()`
-extractor contracts and future-compatible bridge normalization. Julia already
-has dense experimental functions with those names, but they remain deliberately
-excluded from `result_payload()` until both twins widen the bridge result tests
-in lockstep. The expected future payload shape is `(ids = ..., values = ...)`
-for each field.
+extractor contracts and future-compatible bridge normalization. R head
+`8235289` enriches the opt-in tiny/local Julia bridge result by calling the
+exported Julia extractors when available and merging `(ids = ..., values = ...)`
+fields on the R side. Julia deliberately keeps `result_payload()` compact.
+Future changes to required base payload fields still need lockstep R and Julia
+tests.
 
 R head `398e019` records green CI evidence for sparse `Z` bridge marshalling
 through Julia `sparse_csc_matrix()`. The bridge now sends R
 `Matrix::dgCMatrix` slots for `Z` and no longer passes `max_dense_cells`.
 
-The next bridge tasks are relationship-object marshalling beyond `Z`, lockstep
-PEV/reliability payload widening, Mrode validation, and `hs_data()` to `HSData`
-marshalling parity. The Julia tests cover parent-index semantics, `ids` order,
-sparse `Z` dimensions, Julia-side `Ainv`, CSC slot reconstruction, parity
-between spec dispatch and direct payload dispatch, and supplied-variance
-Henderson MME solving.
+The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
+whether PEV/reliability should ever become required base payload fields, Mrode
+validation, and `hs_data()` to `HSData` marshalling parity. The Julia tests
+cover parent-index semantics, `ids` order, sparse `Z` dimensions, Julia-side
+`Ainv`, CSC slot reconstruction, parity between spec dispatch and direct
+payload dispatch, and supplied-variance Henderson MME solving.
 
 ## Input Payload
 

@@ -45,8 +45,9 @@ pedigree/Ainv engine utility slice.
   components.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
-  head `9eabf0d`; R head `78ba5ff` adds future PEV/reliability bridge
-  extractor contracts.
+  head `9eabf0d`; R head `8235289` enriches that path with PEV/reliability
+  from exported Julia extractors when available while Julia keeps the compact
+  base `result_payload()` unchanged.
 - R head `398e019` records sparse `Z` bridge marshalling through Julia
   `sparse_csc_matrix()`.
 - R head `2c18b30` records the expanded genomics/QTL/GLLVM/GPU/HPC plan; Julia
@@ -198,8 +199,9 @@ diagnostics, and comparator context.
 
 1. Add Mrode/simple comparator validation for the dense and sparse
    supplied-variance paths.
-2. Decide with the R twin when PEV/reliability enter `result_payload()` and add
-   lockstep bridge tests if they do.
+2. Decide with the R twin whether PEV/reliability should ever become required
+   base `result_payload()` fields; keep current enrichment optional and
+   tiny/local.
 3. Add Julia-side `HSData` integration tests once the R bridge sends actual
    `hs_data()` payloads.
 4. Replace dense covariance equations with sparse production computations.
