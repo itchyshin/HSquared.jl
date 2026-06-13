@@ -33,6 +33,18 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim-boundary scan found expected blocked/status wording only.
+- Remote checks for commit `2eecd3d`:
+  - CI `27465830901`: success on Julia 1 and Julia 1.10.
+  - Documenter `27465830922`: success.
+  - Pages deploy `27465866797`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+- Live docs:
+  - `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+    contains `HSquared.fit_diagnostics`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/quickstart.html`: HTTP 200
+    and contains the metadata-only `fit_diagnostics()` example and bridge
+    payload boundary wording.
 - Boundary:
   - Metadata extraction only.
   - No optimizer rerun.

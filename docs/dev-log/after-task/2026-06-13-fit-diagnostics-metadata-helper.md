@@ -65,7 +65,21 @@ result object:
 - Additions-only ASCII scan: no matches.
 - Claim-boundary scan: expected blocked/status wording only.
 
-CI and live-site evidence are recorded in the check log after push.
+Remote evidence for commit `2eecd3d`:
+
+- CI `27465830901`: success on Julia 1 and Julia 1.10.
+- Documenter `27465830922`: success.
+- Pages deploy `27465866797`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+Live docs:
+
+- `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+  contains `HSquared.fit_diagnostics`.
+- `https://itchyshin.github.io/HSquared.jl/dev/quickstart.html`: HTTP 200 and
+  contains the metadata-only `fit_diagnostics()` example and bridge payload
+  boundary wording.
 
 ## Public Claim Audit
 
