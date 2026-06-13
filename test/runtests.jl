@@ -665,6 +665,8 @@ end
     mme = henderson_mme(spec, vc.sigma_a2, vc.sigma_e2)
     @test breeding_values(fit).ids == breeding_values(mme).ids
     @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
+    @test isapprox(fitted_values(fit), fitted_values(mme))
+    @test isapprox(fitted_values(fit; include_random = false), fitted_values(mme; include_random = false))
 
     payload = result_payload(fit)
     @test propertynames(payload) == (
@@ -842,6 +844,8 @@ end
     @test breeding_values(mme).values ≈ expected_u
     @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
     @test isapprox(fitted_values(mme), expected_fitted)
+    @test isapprox(fitted_values(fit), fitted_values(mme))
+    @test isapprox(fitted_values(fit; include_random = false), fitted_values(mme; include_random = false))
     @test isapprox(heritability(mme), expected_h2)
     @test fitted_values(mme; include_random = false) ≈ vec(Matrix(X) * expected_beta)
     @test_throws ArgumentError henderson_mme(spec, 0.0, sigma_e2)

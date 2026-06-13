@@ -279,9 +279,10 @@ reliability(fit)
 These operate on `AnimalModelFit` objects from the dense validation path. The
 variance-component, heritability, PEV, and reliability methods also accept
 supplied-variance `HendersonMMEResult` objects from `henderson_mme()`.
-`breeding_values(fit)` solves Henderson's MME at the fit's variance components
-and returns a `BreedingValues` object with encoded `ids` and animal-effect
-BLUP/EBV values.
+`breeding_values(fit)` and `fitted_values(fit)` solve Henderson's MME at the
+fit's variance components. `breeding_values(fit)` returns a `BreedingValues`
+object with encoded `ids` and animal-effect BLUP/EBV values; `fitted_values(fit)`
+returns `X * beta + Z * u` from the same supplied-variance solution.
 
 The current breeding-value equation path is:
 
@@ -290,11 +291,11 @@ The current breeding-value equation path is:
 [X'R^-1y; Z'R^-1y]
 ```
 
-This is still an experimental low-level extractor because variance components
-come from the current validation fit path, but EBV extraction itself now uses
-the same Henderson MME solve as the supplied-variance MME utility. Production
-sparse fitting, production sparse reliability, and production sparse prediction
-error variance remain planned.
+This is still an experimental low-level extractor path because variance
+components come from the current validation fit path, but EBV and fitted-value
+extraction now use the same Henderson MME solve as the supplied-variance MME
+utility. Production sparse fitting, production sparse reliability, and
+production sparse prediction error variance remain planned.
 
 `prediction_error_variance(fit)` and `reliability(fit)` use the dense
 mixed-model-equation inverse for tiny validation examples. The same extractor

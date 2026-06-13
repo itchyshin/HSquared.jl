@@ -49,8 +49,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   head `9eabf0d`: `control = hs_control(engine = "julia")`.
 - The R twin has PEV/reliability extractor contracts at `hsquared` head
   `78ba5ff`; at head `8235289` it enriches opt-in tiny/local Julia bridge
-  results from exported Julia extractors when available. Julia keeps those
-  fields out of the compact base `result_payload()`.
+  results from exported Julia extractors when available. At head `d7e8914`, it
+  also enriches supplied-variance `target = "henderson_mme"` bridge results
+  from `prediction_error_variance(mme)` and `reliability(mme)` when applicable.
+  Julia keeps those fields out of the compact base `result_payload()`.
 - Julia now provides validation-scale `prediction_error_variance(mme)` and
   `reliability(mme)` methods for supplied-variance `HendersonMMEResult`
   objects. These reuse the dense MME inverse block for tiny fixtures only and
@@ -119,9 +121,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     components with a `max_dense_cells` guard;
   - experimental dense variance-component optimization implemented for
     validated specs;
-  - experimental dense variance-component, fixed-effect, EBV/BLUP,
-    fitted-value, heritability, PEV, and reliability extractors implemented
-    for validated specs;
+  - experimental dense variance-component, fixed-effect, MME-backed EBV/BLUP
+    and fitted-value, heritability, PEV, and reliability extractors
+    implemented for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
   - sparse Henderson MME solving at supplied variance components implemented

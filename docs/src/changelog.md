@@ -32,6 +32,8 @@
   fitted-value, and heritability extractors for the dense spec path.
 - Switched `breeding_values(fit)` to the Henderson MME solve at the fit's
   variance components.
+- Switched `fitted_values(fit)` to the same Henderson MME solve at the fit's
+  variance components.
 - Added experimental dense prediction-error-variance and reliability extractors
   for the dense spec path.
 - Extended validation-scale prediction-error-variance and reliability

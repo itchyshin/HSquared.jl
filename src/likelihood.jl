@@ -347,18 +347,16 @@ end
     fitted_values(fit; include_random = true)
 
 Return fitted values for an experimental low-level [`AnimalModelFit`](@ref).
+
+The current implementation solves Henderson's mixed-model equations at the
+fit's variance components, then computes `X * beta + Z * u` from that supplied
+variance solution. Variance-component estimation is still the experimental
+dense path.
 """
 function fitted_values(fit::AnimalModelFit; include_random::Bool = true)
-    spec = fit.spec
-    X = Matrix{Float64}(spec.X)
-    fitted = X * fit.likelihood.beta
-
-    if include_random
-        Z = Matrix{Float64}(spec.Z)
-        fitted = fitted + Z * breeding_values(fit).values
-    end
-
-    return Vector{Float64}(fitted)
+    vc = fit.variance_components
+    mme = henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2)
+    return fitted_values(mme; include_random = include_random)
 end
 
 function fitted_values(result::HendersonMMEResult; include_random::Bool = true)

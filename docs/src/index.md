@@ -41,7 +41,7 @@ Implemented engine utilities:
 - sparse REML log-likelihood evaluation at supplied variance components via
   the Henderson MME determinant identity;
 - experimental dense variance-component optimization for validated specs;
-- experimental variance-component, fixed-effect, MME-backed EBV/BLUP,
+- experimental variance-component, fixed-effect, MME-backed EBV/BLUP and
   fitted-value, heritability, PEV, and reliability extractors for the dense
   spec and supplied-variance Henderson MME validation paths;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;

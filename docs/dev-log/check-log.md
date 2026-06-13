@@ -2,6 +2,41 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 MME-Backed Fitted Values
+
+- Goal: make `fitted_values(fit::AnimalModelFit)` use the same Henderson MME
+  solve as `breeding_values(fit)` at the fit's variance components.
+- Active lenses: Ada, Henderson, Fisher, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- Julia-side action:
+  - Changed `fitted_values(fit)` to call
+    `henderson_mme(fit.spec, sigma_a2, sigma_e2)` and return
+    `fitted_values(mme; include_random = include_random)`.
+  - Added tests that `fitted_values(fit)` matches `fitted_values(mme)` with
+    and without random effects for both the dense extractor fixture and the
+    shared Henderson MME fixture.
+  - Updated capability status, validation debt, public claims, engine
+    contract, README, ROADMAP, Documenter pages, validation-status evidence,
+    and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 371 checks; dense extractor testset has 33 checks and the Henderson MME
+    supplied-variance validation fixture has 37 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Boundary:
+  - EBV/BLUP and fitted-value extraction are MME-backed at fitted variance
+    components.
+  - Variance-component estimation is still the experimental dense path.
+  - No production sparse fitting claim.
+  - No production sparse reliability or PEV claim.
+  - No fitted Mrode output validation or external fitted-model comparator
+    claim.
+
 ## 2026-06-13 MME-Backed EBV Extractor
 
 - Goal: replace the dense covariance equation inside `breeding_values(fit)`

@@ -134,7 +134,8 @@ First real capability:
   validation bridge covered against the dense evaluator;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
-- experimental MME-backed EBV/BLUP, fitted-value, and heritability extractors;
+- experimental MME-backed EBV/BLUP and fitted-value extractors, plus
+  heritability extractors;
 - experimental direct payload fitting target for the R parser's intended
   `y`, `X`, `Z`, `Ainv` handoff;
 - sparse Henderson MME solve at supplied variance components, with a shared
