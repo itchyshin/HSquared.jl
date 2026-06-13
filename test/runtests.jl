@@ -1410,3 +1410,72 @@ end
     @test_throws ArgumentError prediction_error_variance(mme; method = :nope)
     @test_throws ArgumentError reliability(mme; method = :nope)
 end
+
+@testset "Phase 1 REML optimizer recovery (dense vs sparse)" begin
+    # Interior REML optimum (8-animal pedigree, one record each). The dense
+    # `fit_variance_components(:REML)` and sparse `fit_sparse_reml` optimize the
+    # SAME REML objective, so they must recover the same variance components,
+    # heritability, log-likelihood, and EBVs — and a different start must reach
+    # the same optimum. This pins optimizer correctness AT the optimum, beyond
+    # the earlier "improves over the start" check.
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+
+    dense = fit_variance_components(
+        spec;
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        method = :REML,
+    )
+    sparse_fit = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    # genuine interior optimum (not the σ²a = 0 boundary)
+    @test dense.variance_components.sigma_a2 > 0.5
+    @test 0 < heritability(dense) < 1
+
+    # dense and sparse recover the same REML optimum
+    @test sparse_fit.variance_components.sigma_a2 ≈
+          dense.variance_components.sigma_a2 rtol = 1e-3
+    @test sparse_fit.variance_components.sigma_e2 ≈
+          dense.variance_components.sigma_e2 rtol = 1e-3
+    @test heritability(sparse_fit) ≈ heritability(dense) rtol = 1e-3
+    @test sparse_fit.likelihood.loglik ≈ dense.likelihood.loglik rtol = 1e-6
+    @test breeding_values(sparse_fit).values ≈
+          breeding_values(dense).values rtol = 1e-3 atol = 1e-6
+
+    # multi-start robustness: a different start reaches the same optimum
+    sparse_alt = fit_sparse_reml(spec; initial = (sigma_a2 = 3.0, sigma_e2 = 0.3))
+    @test sparse_alt.variance_components.sigma_a2 ≈
+          sparse_fit.variance_components.sigma_a2 rtol = 1e-2
+    @test sparse_alt.variance_components.sigma_e2 ≈
+          sparse_fit.variance_components.sigma_e2 rtol = 1e-2
+
+    # boundary optimum: dense and sparse still agree when the REML optimum is at
+    # σ²a = 0 (a small all-different-start fixture)
+    bped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    bspec = animal_model_spec(
+        [1.0, 2.5, 4.0],
+        ones(3, 1),
+        sparse(1.0I, 3, 3),
+        pedigree_inverse(bped);
+        ids = bped.ids,
+        method = :REML,
+    )
+    bdense = fit_variance_components(
+        bspec;
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        method = :REML,
+    )
+    bsparse = fit_sparse_reml(bspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test bsparse.variance_components.sigma_a2 ≈
+          bdense.variance_components.sigma_a2 atol = 1e-5
+    @test bsparse.likelihood.loglik ≈ bdense.likelihood.loglik rtol = 1e-6
+end

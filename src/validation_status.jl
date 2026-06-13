@@ -58,7 +58,7 @@ const VALIDATION_STATUS_DATA = (
         "sparse REML validation optimizer",
         "Phase 1",
         "partial",
-        "`fit_sparse_reml()` optimizes the sparse REML objective on tiny fixtures and improves over the supplied starting variances.",
+        "`fit_sparse_reml()` optimizes the sparse REML objective on tiny fixtures and improves over the supplied starting variances; dense `fit_variance_components(:REML)` and sparse `fit_sparse_reml` recover the same REML optimum (variance components, heritability, log-likelihood, EBVs) on an interior 8-animal fixture, with multi-start and boundary agreement.",
         "AI-REML, fitted Mrode likelihood validation, external fitted-model comparators, production sparse diagnostics, and large sparse fixtures",
         "Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting.",
     ),

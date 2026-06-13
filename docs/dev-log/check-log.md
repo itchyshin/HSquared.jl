@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 REML Optimizer Recovery Validation
+
+- Goal: verify the dense and sparse REML optimizers recover the SAME optimum
+  (not just improve over the start), strengthening V1-OPT / V1-SPARSE-REML-OPT.
+- Active lenses: Curie, Gauss, Fisher, Rose (inline perspectives).
+- Spawned subagents: none.
+- Implementation:
+  - Added testset "Phase 1 REML optimizer recovery (dense vs sparse)": an
+    interior 8-animal fixture where `fit_variance_components(:REML)` and
+    `fit_sparse_reml` recover the same variance components, heritability,
+    log-likelihood, and EBVs; multi-start robustness; and dense/sparse agreement
+    at the σ²a = 0 boundary.
+  - Strengthened V1-SPARSE-REML-OPT and V1-OPT evidence (validation_status and
+    validation-debt-register).
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed; recovery testset =
+    11 checks. Exploratory fit: interior optimum σ²a≈1.322, σ²e≈0.226;
+    dense == sparse to ~5 digits; ll = -10.855294.
+- Boundary:
+  - Internal recovery against an independent optimizer and starting point, not
+    external comparator parity or fitted Mrode. V1-MRODE-FIT and V1-COMPARATORS
+    stay planned; the external comparator is coordinated to the R twin (issue #7).
+
 ## 2026-06-13 Sparse Selected-Inversion PEV/Reliability
 
 - Goal: production-scale sparse prediction error variance and reliability via a
