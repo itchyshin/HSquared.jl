@@ -1,0 +1,4 @@
+interface:
+  display_name: "prose style review"
+  short_description: "Review hsquared reader first prose"
+  default_prompt: "Review hsquared prose for reader-first honest wording."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "quantgen scout"
+  short_description: "Scout quantitative genetics references"
+  default_prompt: "Scout related quantitative genetics packages and methods."

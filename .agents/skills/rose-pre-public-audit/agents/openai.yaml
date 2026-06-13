@@ -1,0 +1,3 @@
+display_name: Rose pre-public audit
+short_description: Audit hsquared public claims before publication
+default_prompt: Audit hsquared public claims before making a repo, README, docs, issue, or badge public.

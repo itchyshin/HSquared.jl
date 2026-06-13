@@ -1,0 +1,4 @@
+interface:
+  display_name: "engine contract review"
+  short_description: "Review Julia engine contracts"
+  default_prompt: "Review HSquared.jl engine input and output contracts."

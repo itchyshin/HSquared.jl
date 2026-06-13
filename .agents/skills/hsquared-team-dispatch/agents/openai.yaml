@@ -1,0 +1,4 @@
+interface:
+  display_name: "hsquared team dispatch"
+  short_description: "Dispatch hsquared team lanes"
+  default_prompt: "Choose the active hsquared lane and review lenses."

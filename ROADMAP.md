@@ -8,12 +8,14 @@ contract agree.
 
 ## Current Status
 
-Phase 0 scaffold.
+Phase 0 public scaffold is complete.
 
 - Package loads.
 - Control/backend placeholders exist.
 - Fitting is not implemented.
 - Public model syntax is planned, not executable.
+- `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
+- Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
 ## Phase -1: Learn The Existing Teams
 
@@ -29,8 +31,7 @@ Learn from:
   computation, and quality checks.
 - `drmTMB/docs/agent-kit`: portable team and memory operating system.
 
-Gate: `docs/design/00-ecosystem-lessons.md` records what is borrowed, adapted,
-and refused.
+Gate: covered by `docs/design/00-ecosystem-lessons.md`.
 
 ## Phase 0: Public Twin Scaffold And Constitution
 
@@ -40,8 +41,8 @@ and refused.
   exports, tests, and CI.
 - Keep all fitting claims marked planned.
 
-Gate: package loads, tests pass, CI exists, both twins have synchronized
-operating docs, and no public docs claim model fitting.
+Gate: covered. Package loads, tests pass, CI exists, both twins have
+synchronized operating docs, and public docs do not claim model fitting.
 
 ## Phase 1: Simple Gaussian Animal Model
 
@@ -118,7 +119,8 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Keep Julia and R Phase 0 wording synchronized.
-2. Create the public GitHub repository.
-3. Run local tests.
-4. Add GitHub issues for Phase 1 design slices.
+1. Expand `HSquared.jl` issue #3 into the sparse pedigree parser checklist.
+2. Expand `HSquared.jl` issue #4 into the direct sparse `Ainv` checklist.
+3. Keep `hsquared` issue #2 synchronized with this engine contract.
+4. Start Phase 1 only when the R-Julia v0.1 contract is explicit enough to
+   test from both sides.

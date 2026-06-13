@@ -1,0 +1,4 @@
+interface:
+  display_name: "bridge contract review"
+  short_description: "Review R Julia bridge contracts"
+  default_prompt: "Review the hsquared to HSquared.jl bridge contract."

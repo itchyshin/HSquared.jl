@@ -58,5 +58,10 @@ and GLLVM-style animal models are documented as planned only.
 
 ## Next
 
-Coordinate with the R twin so the R-side scaffold, public visibility, and
-shared wording remain synchronized.
+The R twin is now public and green on GitHub Actions. The Phase 0 issue ledger
+exists in both repos. Next work should move to Phase 1 design slices: sparse
+pedigree parsing, direct sparse `Ainv`, and the explicit R-Julia v0.1 contract.
+
+Coordinator closeout added the remaining design docs, mirrored project-local
+skills and role configs, and refreshed roadmap wording so Phase 0 no longer
+lists already-completed public-repo tasks as next actions.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "formula contract review"
+  short_description: "Review formula and math contracts"
+  default_prompt: "Review hsquared formula syntax against the math and engine contract."

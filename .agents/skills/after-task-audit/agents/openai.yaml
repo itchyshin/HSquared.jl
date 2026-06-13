@@ -1,0 +1,4 @@
+interface:
+  display_name: "after task audit"
+  short_description: "Close hsquared work with evidence"
+  default_prompt: "Close a hsquared task with evidence and next actions."

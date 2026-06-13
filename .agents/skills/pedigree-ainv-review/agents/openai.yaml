@@ -1,0 +1,4 @@
+interface:
+  display_name: "pedigree Ainv review"
+  short_description: "Review pedigree and Ainv work"
+  default_prompt: "Review pedigree validation, sorting, and sparse Ainv work."

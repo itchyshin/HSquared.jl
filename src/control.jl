@@ -4,7 +4,7 @@
               save_design = false, save_factorization = false,
               disk_cache = false)
 
-Store planned engine controls for future `HSquared.jl` fits.
+Store planned engine controls for future `HSquared.jl` model calls.
 
 Phase 0 validates and records these controls so the R and Julia twins can agree
 on names before model fitting exists.

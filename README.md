@@ -3,7 +3,7 @@
 `HSquared.jl` is the planned Julia engine underneath the R package
 `hsquared`.
 
-The long-term goal is open, fast, inheritance-aware quantitative genetics:
+The long-term goal is open, sparse, inheritance-aware quantitative genetics:
 sparse animal models, pedigree and genomic relationship structures, REML/ML
 estimation, breeding values, G matrices, factor-analytic genetic covariance,
 and high-dimensional GLLVM-style extensions.
@@ -52,7 +52,7 @@ Both functions currently throw a Phase 0 not-implemented error.
 - `hsquared` is the R-facing public identity: formulas, validation, user
   documentation, S3 methods, plotting, and the eventual R-to-Julia bridge.
 - `HSquared.jl` is the Julia engine: sparse relationship matrices, solvers,
-  likelihoods, EBVs, G matrices, and performance-critical computation.
+  likelihoods, EBVs, G matrices, and computational kernels.
 
 The R package may describe planned syntax, but executable examples should not
 claim fitting support until this Julia engine implements and validates it.

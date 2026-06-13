@@ -1,0 +1,4 @@
+interface:
+  display_name: "hsquared rehydrate"
+  short_description: "Rehydrate hsquared repo state"
+  default_prompt: "Rehydrate the hsquared or HSquared.jl repo before work."

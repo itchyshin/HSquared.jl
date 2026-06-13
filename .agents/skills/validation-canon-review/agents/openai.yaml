@@ -1,0 +1,4 @@
+interface:
+  display_name: "validation canon review"
+  short_description: "Review validation evidence"
+  default_prompt: "Review hsquared validation evidence and debt rows."
