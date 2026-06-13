@@ -31,7 +31,7 @@ pedigree/Ainv engine utility slice.
 - `HSData` validates marker-map metadata and genotype-marker alignment as
   metadata hygiene only.
 - `data_status()` reports `HSData` component presence, ID-overlap counts, and
-  marker-alignment status as diagnostics only.
+  pedigree and marker-alignment status as diagnostics only.
 - R head `36efbf3` connects `hs_data()` to the v0.1 R parser for
   `model_spec()` and `hsquared()` while preserving the same bridge payload
   shape; live Julia `HSData` object marshalling remains planned.
@@ -133,7 +133,8 @@ First real capability:
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.
 - in-memory phenotype/pedigree/genotype/expression ID container plus
-  `data_status()` diagnostics; initial mirror covered.
+  `data_status()` diagnostics for ID overlap, pedigree status, and marker
+  status; initial mirror covered.
 - file-backed phenotype/genotype storage; planned.
 - genotype parsing, marker imputation, marker scanning, and genomic
   relationship construction from `HSData`; planned.

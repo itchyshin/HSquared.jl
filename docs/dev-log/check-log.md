@@ -2,6 +2,50 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Pedigree Status Diagnostic
+
+- Goal: mirror the R twin's pedigree-status diagnostics in
+  `data_status(::HSData)` without changing bridge payloads or claiming raw
+  pedigree normalization, Ainv construction, or model fitting.
+- Active lenses: Ada, Shannon, Emmy, Hopper, Henderson, Karpinski, Pat, Rose,
+  Grace.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `3fafa08` adds pedigree-status diagnostics to
+    `summary(hs_data(...))` and `data_status()`.
+  - Reported R evidence: focused hs-data tests 55 pass, full tests 263 pass,
+    pkgdown no problems, `devtools::check()` 0/0/0, R-CMD-check
+    `27461235870`, pkgdown `27461235877`, and Pages `27461267695` success.
+- Julia-side action:
+  - Added `HSDataPedigreeStatusRow`.
+  - Extended `HSDataStatus` with `pedigree_status`.
+  - `data_status()` now reports pedigree rows, unique pedigree IDs,
+    phenotype coverage, pedigree-only IDs, founders, nonfounders, known parent
+    links, missing known parent IDs, duplicate raw pedigree IDs,
+    self-parent rows, and same-known-parent rows.
+  - Raw table-like pedigree IDs can be duplicated for diagnostics; normalized
+    `Pedigree` inputs still reject duplicate, missing-parent, self-parent,
+    same-known-parent, and cycle errors before engine use.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 351 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found only expected guardrail and blocked-wording hits around
+    diagnostics, bridge payloads, raw-pedigree Ainv construction,
+    relationship construction, fitted animal-model support, genomic fitting,
+    marker scanning, and QTL/eQTL fitting.
+- Boundary:
+  - Diagnostic only.
+  - No bridge payload change.
+  - No raw-pedigree Ainv construction.
+  - No relationship-matrix construction from `HSData`.
+  - No fitted animal-model, Mrode fitted-output, genomic fitting, marker scan,
+    or QTL/eQTL claim.
+
 ## 2026-06-13 HSData Data Status Diagnostic
 
 - Goal: mirror the R twin's `data_status()` diagnostics for `HSData` without

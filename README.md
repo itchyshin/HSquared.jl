@@ -65,7 +65,7 @@ Implemented now:
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, and marker-alignment status;
+  counts, pedigree status, and marker-alignment status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -124,13 +124,20 @@ id_map(data)
 data_status(data)
 ```
 
-This records exact ID overlap only. File-backed storage, relationship
-construction from genotypes, and QTL/eQTL scans remain planned.
+This records exact ID overlap and data-container diagnostics only. File-backed
+storage, relationship construction from genotypes, and QTL/eQTL scans remain
+planned.
 
 `HSData` also validates marker-map metadata and genotype-marker alignment when
 both marker maps and genotypes are supplied. This is metadata validation only;
 it is not genotype parsing, imputation, marker scanning, genomic fitting, or
 QTL/eQTL support.
+
+`data_status()` also reports pedigree-table diagnostics such as founder rows,
+known parent links, duplicate raw pedigree IDs, missing known parent IDs,
+self-parent rows, and same-known-parent rows. These diagnostics do not
+normalize the pedigree or build `Ainv`; `normalize_pedigree()` remains the
+engine validation path.
 
 On the R side, `hs_data()` can feed the v0.1 parser for `model_spec()` and
 `hsquared()` by reading variables from `data$phenotypes` and resolving

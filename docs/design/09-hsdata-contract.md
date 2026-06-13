@@ -38,6 +38,14 @@ ID-overlap counts, and marker-map/genotype-marker alignment status. Julia
 mirrors this as `data_status(::HSData)` with typed rows. This is diagnostic
 only and does not change the bridge payload.
 
+R head `3fafa08` adds pedigree-status diagnostics to `summary(hs_data(...))`
+and `data_status()`. Julia mirrors those counts in `data_status(::HSData)`:
+pedigree rows, unique pedigree IDs, phenotype coverage, pedigree-only IDs,
+founders, nonfounders, known parent links, missing known parent IDs, duplicate
+raw pedigree IDs, self-parent rows, and same-known-parent rows. This is a
+diagnostic surface only. It does not normalize raw pedigree tables or build
+relationship matrices.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -76,8 +84,11 @@ The Julia ID map uses the same conservative vocabulary:
 - `genotypes_without_phenotypes`
 - `expression_without_phenotypes`
 
-Repeated phenotype records are allowed. Pedigree, genotype, and expression IDs
-must be unique in this first mirror.
+Repeated phenotype records are allowed. Normalized `Pedigree`, genotype, and
+expression IDs must be unique in this first mirror. Raw table-like pedigree
+inputs can contain duplicate IDs so `data_status()` can report them before any
+engine normalization step; `id_map(data).pedigree_ids` stores unique IDs in
+first-seen order.
 
 ## Matching Policy
 
@@ -98,8 +109,8 @@ Implemented:
 - exact ID overlap checks;
 - marker-map metadata validation;
 - genotype-marker alignment validation;
-- `data_status()` diagnostics for components, ID-overlap counts, and marker
-  status;
+- `data_status()` diagnostics for components, ID-overlap counts, pedigree
+  status, and marker status;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge

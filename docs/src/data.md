@@ -44,6 +44,11 @@ Raw table-like pedigrees can also be stored if they have an ID column. `HSData`
 does not normalize raw pedigree parents; use `normalize_pedigree()` for the
 engine pedigree representation.
 
+Raw pedigree tables are allowed to carry warning conditions such as duplicate
+IDs, missing known parent IDs, self-parent rows, or same-known-parent rows so
+`data_status()` can report them. A normalized `Pedigree` cannot contain those
+conditions because `normalize_pedigree()` rejects them before engine use.
+
 ## R Parser Integration
 
 On the R side, `hs_data()` can now feed the v0.1 parser. R head `36efbf3`
@@ -118,6 +123,10 @@ status = data_status(data)
 ```
 
 ```@example data
+[row.metric => row.count for row in status.pedigree_status]
+```
+
+```@example data
 [row.metric => row.value for row in status.marker_status]
 ```
 
@@ -140,8 +149,8 @@ id_map(data).expression_without_phenotypes
 - exact-ID matching;
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
-- `data_status()` diagnostics for components, ID-overlap counts, and marker
-  status;
+- `data_status()` diagnostics for components, ID-overlap counts, pedigree
+  status, and marker status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.

@@ -44,6 +44,7 @@ HSquared.HSDataIDMap
 HSquared.HSMarkerMapSpec
 HSquared.HSGenotypeMarkerSpec
 HSquared.HSDataIDOverlapRow
+HSquared.HSDataPedigreeStatusRow
 HSquared.HSDataMarkerStatusRow
 HSquared.HSDataStatus
 HSquared.id_map

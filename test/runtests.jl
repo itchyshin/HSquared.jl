@@ -332,6 +332,22 @@ end
         "expression_without_phenotypes",
     ]
     @test [row.count for row in status.id_overlap] == [2, 3, 3, 2, 0, 1, 2, 1, 1]
+    @test status.pedigree_status isa Vector{HSDataPedigreeStatusRow}
+    @test [row.metric for row in status.pedigree_status] == [
+        "pedigree_rows",
+        "pedigree_ids",
+        "phenotype_ids_with_pedigree",
+        "pedigree_only_ids",
+        "founders",
+        "nonfounders",
+        "known_sire_links",
+        "known_dam_links",
+        "missing_known_parent_ids",
+        "duplicate_pedigree_ids",
+        "self_parent_rows",
+        "same_known_parent_rows",
+    ]
+    @test [row.count for row in status.pedigree_status] == [3, 3, 2, 1, 1, 2, 2, 0, 0, 0, 0, 0]
     @test [row.metric for row in status.marker_status] == [
         "marker_map_markers",
         "genotype_marker_columns",
@@ -351,6 +367,30 @@ end
     )
     raw_data = HSData(phenotypes; pedigree = raw_pedigree)
     @test id_map(raw_data).pedigree_ids == ["animal_1", "animal_2", "founder"]
+    @test [row.count for row in data_status(raw_data).pedigree_status] == [3, 3, 2, 1, 1, 2, 2, 0, 0, 0, 0, 0]
+
+    warning_pedigree_data = HSData(
+        (id = ["a"], y = [1.0]);
+        pedigree = (
+            id = ["a", "b", "b", "c", "d"],
+            sire = Any[missing, "ghost", missing, "a", "d"],
+            dam = Any[missing, "a", missing, "a", "d"],
+        ),
+    )
+    warning_status = data_status(warning_pedigree_data).pedigree_status
+    warning_counts = Dict(row.metric => row.count for row in warning_status)
+    @test warning_counts["pedigree_rows"] == 5
+    @test warning_counts["pedigree_ids"] == 4
+    @test warning_counts["phenotype_ids_with_pedigree"] == 1
+    @test warning_counts["pedigree_only_ids"] == 3
+    @test warning_counts["founders"] == 2
+    @test warning_counts["nonfounders"] == 3
+    @test warning_counts["known_sire_links"] == 3
+    @test warning_counts["known_dam_links"] == 3
+    @test warning_counts["missing_known_parent_ids"] == 1
+    @test warning_counts["duplicate_pedigree_ids"] == 1
+    @test warning_counts["self_parent_rows"] == 1
+    @test warning_counts["same_known_parent_rows"] == 2
 
     genotype_table = (
         id = ["animal_1", "animal_2"],
@@ -384,6 +424,7 @@ end
           ["0", "2", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
 
     @test data_status(HSData(phenotypes)).marker_status === nothing
+    @test data_status(HSData(phenotypes)).pedigree_status === nothing
 
     @test_throws ArgumentError HSData((id = ["animal_1", missing], y = [1.0, 2.0]))
     @test_throws ArgumentError HSData(phenotypes; pedigree = (id = ["animal_1"],))

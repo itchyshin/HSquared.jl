@@ -64,18 +64,29 @@ struct HSDataMarkerStatusRow
 end
 
 """
+    HSDataPedigreeStatusRow
+
+One pedigree diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataPedigreeStatusRow
+    metric::String
+    count::Int
+end
+
+"""
     HSDataStatus
 
 Diagnostic container returned by [`data_status`](@ref).
 
 This mirrors the R twin's `data_status()` surface for component presence,
-ID-overlap counts, and marker-map/genotype-marker alignment status. It is
-diagnostic only and does not build model specifications or relationship
-matrices.
+ID-overlap counts, pedigree status, and marker-map/genotype-marker alignment
+status. It is diagnostic only and does not build model specifications or
+relationship matrices.
 """
 struct HSDataStatus
     components::Vector{Symbol}
     id_overlap::Vector{HSDataIDOverlapRow}
+    pedigree_status::Union{Nothing,Vector{HSDataPedigreeStatusRow}}
     marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
 end
 
@@ -99,6 +110,7 @@ struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv}
     expression::TE
     annotation::TA
     environment::TEnv
+    pedigree_id::Symbol
     id_map::HSDataIDMap
 end
 
@@ -277,6 +289,7 @@ function HSData(;
         expression,
         annotation,
         environment,
+        _column_symbol(pedigree_id, "pedigree"),
         map,
     )
 end
@@ -303,6 +316,7 @@ function data_status(data::HSData)
     return HSDataStatus(
         _data_components(data),
         _data_id_overlap(data.id_map),
+        _data_pedigree_status(data),
         _data_marker_status(data),
     )
 end
@@ -316,7 +330,7 @@ function _pedigree_ids(pedigree::Pedigree, pedigree_id)
 end
 
 function _pedigree_ids(pedigree, pedigree_id)
-    return _unique_ids(_column(pedigree, pedigree_id, "pedigree"), "pedigree"; allow_repeated = false)
+    return _unique_ids(_column(pedigree, pedigree_id, "pedigree"), "pedigree"; allow_repeated = true)
 end
 
 function _source_ids(::Nothing, column, explicit_ids, role; allow_repeated::Bool)
@@ -567,6 +581,120 @@ function _data_id_overlap(map::HSDataIDMap)
     ]
 end
 
+function _data_pedigree_status(data::HSData)
+    data.pedigree === nothing && return nothing
+    ids, sire, dam = _pedigree_status_vectors(data.pedigree, data.pedigree_id)
+    pedigree_ids = data.id_map.pedigree_ids
+    phenotype_ids = data.id_map.phenotype_ids
+    duplicate_ids = _duplicate_ids(ids)
+    missing_parents = _ordered_setdiff(_unique_known_parents(sire, dam), _unique_ids(ids, "pedigree"; allow_repeated = true))
+    founders = [sire[i] === nothing && dam[i] === nothing for i in eachindex(ids)]
+    self_parent_rows = 0
+    same_known_parent_rows = 0
+    known_sire_links = 0
+    known_dam_links = 0
+    for i in eachindex(ids)
+        row_self_parent = false
+        if sire[i] !== nothing
+            known_sire_links += 1
+            isequal(sire[i], ids[i]) && (row_self_parent = true)
+        end
+        if dam[i] !== nothing
+            known_dam_links += 1
+            isequal(dam[i], ids[i]) && (row_self_parent = true)
+        end
+        row_self_parent && (self_parent_rows += 1)
+        sire[i] !== nothing && dam[i] !== nothing && isequal(sire[i], dam[i]) && (same_known_parent_rows += 1)
+    end
+
+    return [
+        HSDataPedigreeStatusRow("pedigree_rows", length(ids)),
+        HSDataPedigreeStatusRow("pedigree_ids", length(pedigree_ids)),
+        HSDataPedigreeStatusRow("phenotype_ids_with_pedigree", length(_ordered_intersect(phenotype_ids, pedigree_ids))),
+        HSDataPedigreeStatusRow("pedigree_only_ids", length(_ordered_setdiff(pedigree_ids, phenotype_ids))),
+        HSDataPedigreeStatusRow("founders", count(founders)),
+        HSDataPedigreeStatusRow("nonfounders", length(ids) - count(founders)),
+        HSDataPedigreeStatusRow("known_sire_links", known_sire_links),
+        HSDataPedigreeStatusRow("known_dam_links", known_dam_links),
+        HSDataPedigreeStatusRow("missing_known_parent_ids", length(missing_parents)),
+        HSDataPedigreeStatusRow("duplicate_pedigree_ids", length(duplicate_ids)),
+        HSDataPedigreeStatusRow("self_parent_rows", self_parent_rows),
+        HSDataPedigreeStatusRow("same_known_parent_rows", same_known_parent_rows),
+    ]
+end
+
+function _pedigree_status_vectors(pedigree::Pedigree, pedigree_id::Symbol)
+    ids = Any[pedigree.ids...]
+    sire = Vector{Union{Nothing,Any}}(undef, length(pedigree))
+    dam = Vector{Union{Nothing,Any}}(undef, length(pedigree))
+    for i in eachindex(ids)
+        sire[i] = pedigree.sire[i] == 0 ? nothing : ids[pedigree.sire[i]]
+        dam[i] = pedigree.dam[i] == 0 ? nothing : ids[pedigree.dam[i]]
+    end
+    return ids, sire, dam
+end
+
+function _pedigree_status_vectors(pedigree, pedigree_id::Symbol)
+    id_values = Any[_column(pedigree, pedigree_id, "pedigree")...]
+    sire_values, dam_values = _raw_parent_columns(pedigree, length(id_values))
+    _unique_ids(id_values, "pedigree"; allow_repeated = true)
+    sire = _parent_status_values(sire_values)
+    dam = _parent_status_values(dam_values)
+    length(sire) == length(id_values) && length(dam) == length(id_values) ||
+        throw(ArgumentError("pedigree id, sire, and dam columns must have equal lengths"))
+    return id_values, sire, dam
+end
+
+function _raw_parent_columns(pedigree, n::Int)
+    names = _column_names(pedigree)
+    names === nothing && return fill(nothing, n), fill(nothing, n)
+
+    sire_name = _pick_optional_column(names, (:sire, :father))
+    dam_name = _pick_optional_column(names, (:dam, :mother))
+    if sire_name === nothing || dam_name === nothing
+        if length(names) >= 3
+            sire_name = names[2]
+            dam_name = names[3]
+        else
+            return fill(nothing, n), fill(nothing, n)
+        end
+    end
+
+    return Any[_column(pedigree, sire_name, "pedigree")...], Any[_column(pedigree, dam_name, "pedigree")...]
+end
+
+function _pick_optional_column(names, aliases::Tuple)
+    lower_names = lowercase.(string.(names))
+    for alias in aliases
+        hit = findfirst(==(String(alias)), lower_names)
+        hit === nothing || return names[hit]
+    end
+    return nothing
+end
+
+function _parent_status_values(values)
+    return Union{Nothing,Any}[_is_unknown_parent(value, DEFAULT_UNKNOWN_PARENT_VALUES) ? nothing : value for value in values]
+end
+
+function _unique_known_parents(sire, dam)
+    return _unique_ids(Any[parent for parent in vcat(sire, dam) if parent !== nothing], "pedigree parent"; allow_repeated = true)
+end
+
+function _duplicate_ids(ids)
+    seen = Set{Any}()
+    duplicates = Any[]
+    duplicate_seen = Set{Any}()
+    for id in ids
+        if id in seen && !(id in duplicate_seen)
+            push!(duplicates, id)
+            push!(duplicate_seen, id)
+        else
+            push!(seen, id)
+        end
+    end
+    return duplicates
+end
+
 function _data_marker_status(data::HSData)
     marker_spec = data.marker_spec
     genotype_marker_count = _data_genotype_marker_count(data)
@@ -650,6 +778,11 @@ end
 function _ordered_setdiff(left, right)
     right_set = Set(right)
     return Any[id for id in left if !(id in right_set)]
+end
+
+function _ordered_intersect(left, right)
+    right_set = Set(right)
+    return Any[id for id in left if id in right_set]
 end
 
 function _row_count(source)
