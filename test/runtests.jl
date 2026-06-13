@@ -97,3 +97,32 @@ end
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
     @test_throws ArgumentError inbreeding_coefficients(ped; max_relationship_cache = 2)
 end
+
+@testset "Phase 1 animal model spec validation" begin
+    y = [1.0, 2.0, 3.0]
+    X = [1.0 0.0; 1.0 1.0; 1.0 2.0]
+    Z = sparse(I, 3, 3)
+    Ainv = sparse(I, 3, 3)
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ["a", "b", "c"], method = "reml")
+
+    @test spec.y === y
+    @test spec.X === X
+    @test spec.Z === Z
+    @test spec.Ainv === Ainv
+    @test spec.ids == ["a", "b", "c"]
+    @test spec.family isa GaussianFamily
+    @test spec.method == :REML
+
+    ml_spec = animal_model_spec(y, X, Z, Ainv; method = :ml)
+    @test ml_spec.ids == [1, 2, 3]
+    @test ml_spec.method == :ML
+
+    @test_throws ArgumentError animal_model_spec(y, X[1:2, :], Z, Ainv)
+    @test_throws ArgumentError animal_model_spec(y, X, Z[1:2, :], Ainv)
+    @test_throws ArgumentError animal_model_spec(y, X, Z[:, 1:2], Ainv)
+    @test_throws ArgumentError animal_model_spec(y, X, Z, sparse(ones(2, 3)))
+    @test_throws ArgumentError animal_model_spec(y, X, Z, Ainv; ids = ["a", "b"])
+    @test_throws ArgumentError animal_model_spec(y, X, Z, Ainv; family = :gaussian)
+    @test_throws ArgumentError animal_model_spec(y, X, Z, Ainv; method = :AI_REML)
+end

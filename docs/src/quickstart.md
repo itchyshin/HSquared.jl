@@ -37,6 +37,22 @@ Matrix(Ainv)
 This matrix is the sparse inverse additive relationship matrix used by later
 animal-model fitting code.
 
+## Validate A Low-Level Model Spec
+
+The first bridge-ready Julia spec validates `y`, `X`, `Z`, `Ainv`, IDs, family,
+and ML/REML method. It still does not fit the model.
+
+```@example quickstart
+using LinearAlgebra, SparseArrays
+
+y = [1.0, 2.0, 3.0]
+X = [1.0 0.0; 1.0 1.0; 1.0 2.0]
+Z = sparse(I, 3, 3)
+
+spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = "REML")
+spec.method
+```
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.

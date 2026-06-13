@@ -2,6 +2,27 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1B Animal Model Spec Validation
+
+- Goal: add the Julia-side typed validator for the low-level animal-model
+  payload produced by the R parser lane.
+- Active lenses: Ada, Shannon, Hopper, Henderson, Gauss, Karpinski, Rose.
+- Spawned subagents: none.
+- Coordination note:
+  - R/coordinator lane reports an inert `animal()` marker and
+    `hs_build_model_spec()` parser are now present in `hsquared`.
+  - Julia mirrors that direction with `animal_model_spec()` for `y`, `X`, `Z`,
+    `Ainv`, IDs, `GaussianFamily()`, and ML/REML method validation.
+  - Bridge execution and model fitting remain planned.
+- Implementation evidence:
+  - Added `src/model_spec.jl`.
+  - Added exports: `GaussianFamily`, `AnimalModelSpec`, and
+    `animal_model_spec`.
+  - Added tests for valid spec construction, method normalization, default IDs,
+    dimension mismatches, ID mismatch, family mismatch, and method mismatch.
+- Rose verdict: clean with limitations. This is a bridge-ready validator, not a
+  fitting engine.
+
 ## 2026-06-13 Genomics QTL GPU HPC Roadmap
 
 - Goal: turn the extended user direction on genomics, QTL/eQTL/GWAS,

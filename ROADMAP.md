@@ -17,6 +17,8 @@ pedigree/Ainv engine utility slice.
   sorting exist.
 - Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
   hand-checked tests.
+- Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
+  Gaussian family, and ML/REML method.
 - Fitting is not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
@@ -57,6 +59,7 @@ First real capability:
 - ID recoding; initial utility covered;
 - founder and unknown-parent handling; initial utility covered;
 - direct sparse `Ainv`; initial utility covered;
+- low-level animal-model spec validation; initial bridge validator covered;
 - fixed and random-effect design;
 - univariate Gaussian REML/ML;
 - EBVs/BLUPs;

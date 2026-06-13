@@ -9,6 +9,7 @@
 | `fit_animal_model()` fitting | planned | Phase 0 placeholder only |
 | Pedigree validation | implemented | `normalize_pedigree()` valid, malformed, duplicate, missing-parent, self-parent, same-parent, and cycle tests |
 | Sparse `Ainv` | implemented | `pedigree_inverse()` hand-checked tiny pedigrees and dense inverse comparison; bounded relationship cache, no huge-scale claim |
+| Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
 | REML/ML fitting | planned | no implementation yet |
 | EBVs/BLUPs | planned | no implementation yet |
 | Heritability | planned | no implementation yet |

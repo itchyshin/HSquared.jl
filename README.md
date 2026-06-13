@@ -28,6 +28,8 @@ Implemented now:
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
   pedigrees;
+- low-level animal-model spec validation for `y`, `X`, `Z`, `Ainv`, IDs,
+  Gaussian family, and ML/REML method;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
@@ -56,6 +58,15 @@ Ainv = pedigree_inverse(ped)
 
 This is an engine utility only. It is not yet connected to a fitted animal
 model.
+
+The first bridge-ready model specification validator is also available:
+
+```julia
+spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+```
+
+This validates the low-level inputs that the R parser will eventually hand to
+Julia. It does not fit the model.
 
 The high-level modelling surface is still planned:
 

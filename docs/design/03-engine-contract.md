@@ -22,6 +22,17 @@ This utility validates and sorts a pedigree, recodes known parents to integer
 indices, keeps unknown parents as `0`, and builds a sparse inverse additive
 relationship matrix. It does not fit a model.
 
+## Implemented Model-Spec Validator
+
+```julia
+spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = GaussianFamily(),
+                         method = :REML)
+```
+
+This validates response/design dimensions, `Ainv`, encoded IDs, family, and
+ML/REML method. It is bridge-ready groundwork for the R `hs_build_model_spec()`
+payload. It still does not fit a model.
+
 ## Input Payload
 
 - `y`: numeric response vector.
