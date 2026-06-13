@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 17
+    @test length(validation) == 18
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1618,4 +1618,49 @@ end
     @test isfinite(only(fixed_effects(res)))
     @test all(isfinite, breeding_values(res).values)
     @test_throws ArgumentError fit_gblup(y, X, Z, Ginv, -1.0, 1.0)
+end
+
+@testset "Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2]   # 4 individuals x 3 markers (n > m)
+    X = ones(4, 1); y = [10.0, 12.0, 11.0, 9.0]
+    sigma_e2 = 1.0; sigma_g2 = 2.0
+
+    cm = centered_markers(M)
+    @test cm.p ≈ [0.375, 0.625, 0.625] atol = 1e-12
+    @test cm.k ≈ 1.40625 atol = 1e-12
+    @test all(abs.(vec(sum(cm.W, dims = 1))) .< 1e-12)             # columns centered
+    @test genomic_relationship_matrix(M) ≈ (cm.W * transpose(cm.W)) ./ cm.k
+
+    fit = fit_snp_blup(y, X, M, sigma_g2, sigma_e2)
+    @test fit.beta ≈ [10.5] atol = 1e-8
+    @test fit.marker_effects ≈
+          [0.5020889425308699, -0.5139727044842634, -0.50208894253087] atol = 1e-8
+    @test fit.gebv ≈
+          [-0.6246402376752391, 1.3837155324482406, 0.37953764738650075, -1.1386129421595024] atol = 1e-8
+    @test (X * fit.beta .+ fit.gebv) ≈
+          [9.875359762324761, 11.88371553244824, 10.8795376473865, 9.361387057840497] atol = 1e-8
+    @test haskey(fit, :marker_effects) && haskey(fit, :gebv)       # relabeled (not breeding_values/EBV)
+
+    # GBLUP<->SNP-BLUP equivalence: route GBLUP through the marginal V (never invert singular G)
+    function gblup_via_marginal(Mk, X, y, sg2, se2)
+        G = genomic_relationship_matrix(Mk)
+        V = sg2 .* G + se2 * I
+        beta = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+        u = sg2 .* G * (V \ (y .- X * beta))
+        return beta, u
+    end
+    bg, ug = gblup_via_marginal(M, X, y, sigma_g2, sigma_e2)
+    @test maximum(abs.(ug .- fit.gebv)) < 1e-10                    # observed ~5e-17
+    @test maximum(abs.(bg .- fit.beta)) < 1e-10
+
+    # second regime: markers > records (n < m)
+    M2 = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]    # 4 x 6
+    fit2 = fit_snp_blup(y, X, M2, sigma_g2, sigma_e2)
+    bg2, ug2 = gblup_via_marginal(M2, X, y, sigma_g2, sigma_e2)
+    @test maximum(abs.(ug2 .- fit2.gebv)) < 1e-10
+    @test maximum(abs.(bg2 .- fit2.beta)) < 1e-10
+
+    # guards
+    @test_throws ArgumentError fit_snp_blup(y, X, M, -1.0, 1.0)    # sigma_g2 <= 0
+    @test_throws ArgumentError centered_markers(fill(2.0, 4, 3))   # monomorphic (k = 0)
 end

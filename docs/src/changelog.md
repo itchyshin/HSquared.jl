@@ -33,6 +33,11 @@
   Reproduces an independent dense MME and reproduces pedigree BLUP when `G = A`;
   experimental, supplied-variance only, no variance-component estimation, no
   single-step, no external comparator.
+- Added `fit_snp_blup()` and `centered_markers()` — SNP-BLUP / RR-BLUP marker
+  effects via the existing Henderson MME (`Z = W` centered markers, identity
+  prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
+  (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
+  supplied-variance only, unweighted VanRaden method-1.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

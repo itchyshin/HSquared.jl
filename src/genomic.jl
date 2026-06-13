@@ -1,4 +1,46 @@
 """
+    centered_markers(markers; allele_frequencies = nothing)
+
+Center a biallelic marker matrix for SNP-BLUP / RR-BLUP, using the same
+allele-frequency centering and VanRaden scaling as
+[`genomic_relationship_matrix`](@ref).
+
+Returns a `NamedTuple` `(W, p, k)`: `W = markers − 2p` is the centered marker
+matrix (each column sums to zero), `p` are the per-marker allele frequencies
+(estimated from the columns unless supplied), and `k = 2 Σ_j p_j(1 − p_j)` is the
+VanRaden scale, so that `genomic_relationship_matrix(markers) == W * Wᵀ / k`.
+Computing `W`, `p`, and `k` together guarantees they share one `p`, which the
+GBLUP↔SNP-BLUP equivalence requires.
+"""
+function centered_markers(
+    markers::AbstractMatrix;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+)
+    M = Float64.(markers)
+    n, m = size(M)
+    (n >= 1 && m >= 1) || throw(ArgumentError("markers must be non-empty"))
+    all(g -> 0 <= g <= 2, M) ||
+        throw(ArgumentError("marker genotypes must be counts or dosages in [0, 2]"))
+
+    p = if allele_frequencies === nothing
+        vec(sum(M, dims = 1)) ./ (2 * n)
+    else
+        length(allele_frequencies) == m ||
+            throw(ArgumentError("allele_frequencies must have one entry per marker"))
+        Float64.(allele_frequencies)
+    end
+    all(f -> 0 <= f <= 1, p) ||
+        throw(ArgumentError("allele frequencies must lie in [0, 1]"))
+
+    k = 2 * sum(p .* (1 .- p))
+    k > 0 ||
+        throw(ArgumentError("genomic scaling is zero; all markers are monomorphic"))
+
+    W = M .- 2 .* transpose(p)
+    return (W = W, p = p, k = k)
+end
+
+"""
     genomic_relationship_matrix(markers; allele_frequencies = nothing)
 
 VanRaden (2008) method-1 genomic relationship matrix `G` from a biallelic marker
@@ -19,28 +61,8 @@ function genomic_relationship_matrix(
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
 )
-    M = Float64.(markers)
-    n, m = size(M)
-    (n >= 1 && m >= 1) || throw(ArgumentError("markers must be non-empty"))
-    all(g -> 0 <= g <= 2, M) ||
-        throw(ArgumentError("marker genotypes must be counts or dosages in [0, 2]"))
-
-    p = if allele_frequencies === nothing
-        vec(sum(M, dims = 1)) ./ (2 * n)
-    else
-        length(allele_frequencies) == m ||
-            throw(ArgumentError("allele_frequencies must have one entry per marker"))
-        Float64.(allele_frequencies)
-    end
-    all(f -> 0 <= f <= 1, p) ||
-        throw(ArgumentError("allele frequencies must lie in [0, 1]"))
-
-    scale = 2 * sum(p .* (1 .- p))
-    scale > 0 ||
-        throw(ArgumentError("genomic scaling is zero; all markers are monomorphic"))
-
-    Z = M .- 2 .* transpose(p)
-    return (Z * transpose(Z)) ./ scale
+    cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    return (cm.W * transpose(cm.W)) ./ cm.k
 end
 
 """
@@ -102,4 +124,43 @@ function fit_gblup(
 )
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = method)
     return henderson_mme(spec, sigma_a2, sigma_e2)
+end
+
+"""
+    fit_snp_blup(y, X, markers, sigma_g2, sigma_e2; allele_frequencies = nothing,
+                 ids = nothing)
+
+SNP-BLUP / RR-BLUP at supplied variance components: estimate marker effects with
+the existing Henderson MME, treating the centered markers as the random-effect
+design with an identity prior.
+
+The centered markers `W` (from [`centered_markers`](@ref)) are the random-effect
+design `Z`, the relationship inverse is the identity `I_m` (markers a priori
+independent), and the per-marker variance is `sigma_g2 / k` with
+`k = 2 Σ_j p_j(1 − p_j)`. Returns a `NamedTuple` `(marker_effects, gebv, beta, k,
+p)` where `marker_effects = â`, `gebv = W·â` are the implied genomic breeding
+values, and `beta` are the fixed effects.
+
+`gebv` equals the GBLUP genomic breeding values for the same data and variances
+(the GBLUP↔SNP-BLUP equivalence). The random block is deliberately labelled
+`marker_effects` (not `breeding_values`/EBV), because on this spec the random
+effects are marker effects, not animal breeding values. Experimental,
+supplied-variance only (no variance-component estimation); unweighted VanRaden
+method-1 / single identity prior only.
+"""
+function fit_snp_blup(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    markers::AbstractMatrix,
+    sigma_g2::Real,
+    sigma_e2::Real;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    ids = nothing,
+)
+    cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    Im = Matrix{Float64}(I, size(cm.W, 2), size(cm.W, 2))
+    spec = animal_model_spec(y, X, cm.W, Im; ids = ids, method = :REML)
+    res = henderson_mme(spec, sigma_g2 / cm.k, sigma_e2)
+    a = breeding_values(res).values
+    return (marker_effects = a, gebv = cm.W * a, beta = fixed_effects(res), k = cm.k, p = cm.p)
 end

@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 SNP-BLUP + GBLUP↔SNP-BLUP Equivalence (fit_snp_blup)
+
+- Goal: add SNP-BLUP / RR-BLUP marker effects via the existing Henderson MME and
+  prove the GBLUP↔SNP-BLUP equivalence — a strong comparator-free check that
+  also validates the VanRaden centering/scaling convention.
+- Active lenses: Kirkpatrick, Gauss, Henderson, Curie, Rose (inline).
+- Implementation:
+  - `centered_markers(markers; allele_frequencies)` in `src/genomic.jl` →
+    `(W, p, k)`; `genomic_relationship_matrix` refactored to delegate to it
+    (single source of the centering/scaling; the 9-check G testset guards the
+    refactor — still 9/9).
+  - `fit_snp_blup(y, X, markers, sigma_g2, sigma_e2; allele_frequencies, ids)` →
+    `(marker_effects, gebv = W·â, beta, k, p)`. Markers are the random effect
+    (`Z = W`, `Ainv = I_m`, `σ²_marker = σ²_g/k`); the random block is
+    deliberately relabelled `marker_effects` (not `breeding_values`/EBV). Both
+    exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 625
+    total. New testset "Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence" = 15
+    checks: pinned `p`/`k`/centering, pinned β/marker-effects/GEBV/predictions,
+    relabel check, and the equivalence `gebv == W·â` matching GBLUP via the
+    marginal `V = σ²_g·G + σ²_e·I` to ~5e-17 (`n>m`) and ~2e-16 (`n<m`), plus
+    `σ²_g ≤ 0` and monomorphic guards. `validation_status()` 17 → 18 (added
+    `V2-SNPBLUP`).
+- Boundary:
+  - Engine-internal/additive. The equivalence proves the parameterization
+    bridge, NOT field-correct absolute numbers (external comparator still gates
+    that). Unweighted VanRaden method-1 / identity prior only; supplied-variance
+    only; no REML estimation; no performance claim for large `m`.
+
 ## 2026-06-13 GBLUP Supplied-Variance Solve (fit_gblup)
 
 - Goal: graduate the genomic relationship utilities into an actual fitted GBLUP

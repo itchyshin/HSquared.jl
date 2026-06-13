@@ -144,6 +144,15 @@ const VALIDATION_STATUS_DATA = (
         "Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity.",
     ),
     (
+        "V2-SNPBLUP",
+        "SNP-BLUP / GBLUP equivalence",
+        "Phase 2",
+        "partial",
+        "`fit_snp_blup` (centered markers, identity prior, `σ²_marker = σ²_g/k`) gives GEBV `= W·â` equal to GBLUP GEBV (via the marginal `V`) to ~1e-15 for `n<m` and `n>m`; `k`, marker effects, and predictions pinned in `test/runtests.jl`.",
+        "REML estimation of `σ²_g`, weighted/standardized-marker variants, low-rank Woodbury solve for `m≫n`, and JWAS/sommer/BLUPF90 comparator parity",
+        "Supplied-variance VanRaden method-1 marker model only; no variance-component estimation, no external comparator, no weighted/Bayesian marker priors.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",
