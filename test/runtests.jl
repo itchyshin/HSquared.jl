@@ -622,11 +622,37 @@ end
 
     fit2 = fit_animal_model(spec; initial = [1.0, 1.0], iterations = 100)
     @test fit2 isa AnimalModelFit
+    target_mme = fit_animal_model(
+        spec;
+        target = :henderson_mme,
+        variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    direct_mme = henderson_mme(spec, 1.0, 1.0)
+    @test target_mme isa HendersonMMEResult
+    @test variance_components(target_mme) == (sigma_a2 = 1.0, sigma_e2 = 1.0)
+    @test isapprox(fixed_effects(target_mme), fixed_effects(direct_mme))
+    @test isapprox(breeding_values(target_mme).values, breeding_values(direct_mme).values)
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = 1.0,))
     @test_throws ArgumentError fit_variance_components(spec; initial = [1.0])
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
     @test_throws ArgumentError fit_variance_components(spec; max_dense_cells = 17)
     @test_throws ArgumentError fit_animal_model(spec; max_dense_cells = 17)
+    @test_throws ArgumentError fit_animal_model(
+        spec;
+        target = :henderson_mme,
+    )
+    @test_throws ArgumentError fit_animal_model(
+        spec;
+        target = :henderson_mme,
+        variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    @test_throws ArgumentError fit_animal_model(
+        spec;
+        target = :variance_components,
+        variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    @test_throws ArgumentError fit_animal_model(spec; target = :unknown)
 end
 
 @testset "Phase 1 dense fit extractors" begin
@@ -741,6 +767,20 @@ end
     @test payload_fit.variance_components.sigma_a2 ≈ spec_fit.variance_components.sigma_a2
     @test payload_fit.variance_components.sigma_e2 ≈ spec_fit.variance_components.sigma_e2
     @test breeding_values(payload_fit).ids == ped.ids
+    payload_mme = fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        ids = ped.ids,
+        method = :ML,
+        target = "henderson_mme",
+        variance_components = [1.2, 0.8],
+    )
+    @test payload_mme isa HendersonMMEResult
+    @test payload_mme.spec.ids == ped.ids
+    @test payload_mme.spec.method == :ML
+    @test variance_components(payload_mme) == (sigma_a2 = 1.2, sigma_e2 = 0.8)
 
     @test_throws ArgumentError fit_animal_model(y[1:2], X, Z, Ainv; ids = ped.ids)
     @test_throws ArgumentError fit_animal_model(y, X, Z, Ainv; ids = ["a"], method = :ML)

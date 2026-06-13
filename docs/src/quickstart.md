@@ -113,6 +113,22 @@ payload_fit = fit_animal_model(
 payload_fit isa AnimalModelFit
 ```
 
+For supplied-variance equation solving, the same validated spec can target
+Henderson MME explicitly:
+
+```@example quickstart
+target_mme = fit_animal_model(
+    spec;
+    target = :henderson_mme,
+    variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+)
+target_mme isa HendersonMMEResult
+```
+
+This target is a solver at supplied variance components. It does not estimate
+variance components and does not return log-likelihood, AIC, `df`, or optimizer
+diagnostics.
+
 The dense validation path is size-guarded. The guard is intended for tiny/local
 bridge checks and fails before the current implementation forms dense
 covariance or relationship matrices.

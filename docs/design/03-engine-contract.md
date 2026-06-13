@@ -400,6 +400,21 @@ The Julia direct payload method also exists:
 fit = fit_animal_model(y, X, Z, Ainv; ids = ids, method = :REML)
 ```
 
+The explicit supplied-variance Henderson target is available in Julia as a
+convenience over `animal_model_spec()` plus `henderson_mme()`:
+
+```julia
+mme = fit_animal_model(
+    spec;
+    target = :henderson_mme,
+    variance_components = (sigma_a2 = 1.2, sigma_e2 = 0.8),
+)
+```
+
+The direct payload method accepts the same target and supplied variance
+components. This returns `HendersonMMEResult`, not `AnimalModelFit`; it has no
+log-likelihood, AIC, `df`, optimizer output, or variance-component estimation.
+
 R head `c837f2d` adds an internal JuliaCall smoke test over this path:
 
 ```text

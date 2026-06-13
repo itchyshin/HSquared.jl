@@ -60,6 +60,9 @@ Implemented now:
   validation paths;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
+- explicit supplied-variance Julia target
+  `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`
+  returning `HendersonMMEResult`;
 - sparse Henderson mixed-model-equation solve at supplied variance components,
   with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
   and `h2`;
@@ -257,6 +260,15 @@ available experimentally:
 
 ```julia
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
+mme = fit_animal_model(
+    y,
+    X,
+    Z,
+    Ainv;
+    method = :REML,
+    target = :henderson_mme,
+    variance_components = (sigma_a2 = 1.2, sigma_e2 = 0.8),
+)
 ```
 
 `hsquared()` currently throws a Phase 0 not-implemented error. `fit_animal_model`

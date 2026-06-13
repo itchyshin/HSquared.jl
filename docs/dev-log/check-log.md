@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Direct Henderson MME Fit Target
+
+- Goal: add a Julia-side direct `fit_animal_model(...; target =
+  :henderson_mme, variance_components = ...)` convenience path that mirrors the
+  R twin's explicit supplied-variance bridge target without changing the
+  default dense optimizer path.
+- Active lenses: Ada, Hopper, Henderson, Fisher, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- Julia-side action:
+  - Added `target` and `variance_components` keywords to
+    `fit_animal_model(spec)` and the direct `fit_animal_model(y, X, Z, Ainv;
+    ...)` payload method.
+  - Kept the default `target = :variance_components` dispatch on the existing
+    dense validation optimizer.
+  - Added `target = :henderson_mme` dispatch returning `HendersonMMEResult` at
+    supplied variance components.
+  - Added tests for spec and direct-payload target dispatch plus missing
+    variance component, unsupported target, and unsupported optimizer-keyword
+    errors.
+  - Updated capability status, validation debt, public claims, engine
+    contract, README, ROADMAP, Documenter pages, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 383 checks; dense variance-component fitting testset has 22 checks and
+    bridge payload fit target testset has 20 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Boundary:
+  - This is supplied-variance equation solving only.
+  - The target returns `HendersonMMEResult`, not `AnimalModelFit`.
+  - No log-likelihood, AIC, `df`, optimizer output, variance-component
+    estimation, AI-REML, production sparse fitting, or fitted Mrode validation
+    claim.
+
 ## 2026-06-13 MME-Backed Fitted Values
 
 - Goal: make `fitted_values(fit::AnimalModelFit)` use the same Henderson MME

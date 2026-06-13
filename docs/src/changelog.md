@@ -42,6 +42,9 @@
   extractors to `HendersonMMEResult` objects.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
+- Added explicit `fit_animal_model(...; target = :henderson_mme,
+  variance_components = ...)` dispatch for supplied-variance Henderson MME
+  solving.
 - Added `henderson_mme()` for sparse Henderson mixed-model-equation solving at
   supplied variance components.
 - Added a shared R/Julia Henderson mixed-model-equation validation fixture for

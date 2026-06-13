@@ -54,6 +54,8 @@ pedigree/Ainv engine utility slice.
   for the dense spec and supplied-variance Henderson MME validation paths.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
+- Experimental direct supplied-variance Henderson target exists through
+  `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`.
 - Sparse Henderson mixed-model-equation solving exists at supplied variance
   components, with a shared R/Julia fixture for Ainv, fixed effects, EBVs,
   fitted values, and `h2`.
@@ -137,7 +139,8 @@ First real capability:
 - experimental MME-backed EBV/BLUP and fitted-value extractors, plus
   heritability extractors;
 - experimental direct payload fitting target for the R parser's intended
-  `y`, `X`, `Z`, `Ainv` handoff;
+  `y`, `X`, `Z`, `Ainv` handoff, including the supplied-variance
+  `target = :henderson_mme` convenience path;
 - sparse Henderson MME solve at supplied variance components, with a shared
   R/Julia supplied-variance fixture for fixed effects, EBVs, fitted values,
   and `h2`;

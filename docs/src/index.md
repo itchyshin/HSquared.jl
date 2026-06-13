@@ -45,6 +45,8 @@ Implemented engine utilities:
   fitted-value, heritability, PEV, and reliability extractors for the dense
   spec and supplied-variance Henderson MME validation paths;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
+- experimental direct supplied-variance Henderson target through
+  `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`;
 - sparse Henderson mixed-model-equation solve at supplied variance components,
   with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
   and `h2`;

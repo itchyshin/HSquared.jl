@@ -277,8 +277,37 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     )
 end
 
-function fit_animal_model(spec::AnimalModelSpec; kwargs...)
-    return fit_variance_components(spec; kwargs...)
+"""
+    fit_animal_model(spec; target = :variance_components, ...)
+
+Fit or solve the Phase 1 Gaussian animal-model engine target for a validated
+[`AnimalModelSpec`](@ref).
+
+The default `target = :variance_components` dispatches to
+[`fit_variance_components`](@ref), the experimental dense validation optimizer.
+`target = :henderson_mme` requires supplied `variance_components` and returns a
+[`HendersonMMEResult`](@ref). The Henderson target solves mixed-model equations
+at supplied variance components; it does not estimate them and does not return
+log-likelihood, AIC, `df`, or optimizer diagnostics.
+"""
+function fit_animal_model(
+    spec::AnimalModelSpec;
+    target = :variance_components,
+    variance_components = nothing,
+    kwargs...,
+)
+    normalized_target = _coerce_fit_target(target)
+
+    if normalized_target == :variance_components
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is only used when target = :henderson_mme"))
+        return fit_variance_components(spec; kwargs...)
+    end
+
+    isempty(kwargs) ||
+        throw(ArgumentError("target = :henderson_mme does not accept optimizer keyword arguments"))
+    sigma_a2, sigma_e2 = _coerce_supplied_variance_components(variance_components)
+    return henderson_mme(spec, sigma_a2, sigma_e2)
 end
 
 function fit_animal_model(
@@ -289,10 +318,17 @@ function fit_animal_model(
     ids = nothing,
     family = GaussianFamily(),
     method = :REML,
+    target = :variance_components,
+    variance_components = nothing,
     kwargs...,
 )
     spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method)
-    return fit_variance_components(spec; method = spec.method, kwargs...)
+    return fit_animal_model(
+        spec;
+        target = target,
+        variance_components = variance_components,
+        kwargs...,
+    )
 end
 
 """
@@ -520,6 +556,48 @@ end
 
 function _coerce_initial_variances(initial)
     throw(ArgumentError("initial must be a NamedTuple, tuple, or vector"))
+end
+
+function _coerce_fit_target(target::Symbol)
+    target in (:variance_components, :dense_validation) && return :variance_components
+    target == :henderson_mme && return :henderson_mme
+    throw(ArgumentError("target must be :variance_components or :henderson_mme"))
+end
+
+function _coerce_fit_target(target::AbstractString)
+    return _coerce_fit_target(Symbol(target))
+end
+
+function _coerce_fit_target(target)
+    throw(ArgumentError("target must be a Symbol or string"))
+end
+
+function _coerce_supplied_variance_components(::Nothing)
+    throw(ArgumentError("variance_components must be supplied when target = :henderson_mme"))
+end
+
+function _coerce_supplied_variance_components(variance_components::NamedTuple)
+    haskey(variance_components, :sigma_a2) ||
+        throw(ArgumentError("variance_components must include sigma_a2"))
+    haskey(variance_components, :sigma_e2) ||
+        throw(ArgumentError("variance_components must include sigma_e2"))
+    return Float64(variance_components.sigma_a2), Float64(variance_components.sigma_e2)
+end
+
+function _coerce_supplied_variance_components(variance_components::Tuple)
+    length(variance_components) == 2 ||
+        throw(ArgumentError("variance_components must contain two values"))
+    return Float64(variance_components[1]), Float64(variance_components[2])
+end
+
+function _coerce_supplied_variance_components(variance_components::AbstractVector)
+    length(variance_components) == 2 ||
+        throw(ArgumentError("variance_components must contain two values"))
+    return Float64(variance_components[1]), Float64(variance_components[2])
+end
+
+function _coerce_supplied_variance_components(variance_components)
+    throw(ArgumentError("variance_components must be a NamedTuple, tuple, or vector"))
 end
 
 function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_a2, sigma_e2)

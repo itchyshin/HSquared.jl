@@ -64,6 +64,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   simple `h2`, `nobs`, diagnostics, and convergence status into
   `hsquared_fit`; it deliberately omits `logLik`, AIC, `df`, and optimizer
   output.
+- The Julia twin now has the matching direct convenience target:
+  `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`.
+  It returns `HendersonMMEResult` and deliberately has no log-likelihood, AIC,
+  `df`, optimizer output, or variance-component estimation.
 - The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
   `hsquared` head `398e019`.
 - The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation
