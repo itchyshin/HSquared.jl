@@ -74,6 +74,27 @@ fit = fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
 fit.variance_components
 ```
 
+## Extract Experimental Low-Level Results
+
+The dense validation path has first extractors for variance components,
+fixed effects, breeding values, fitted values, and simple univariate
+heritability.
+
+```@example quickstart
+variance_components(fit)
+```
+
+```@example quickstart
+breeding_values(fit).values
+```
+
+```@example quickstart
+heritability(fit)
+```
+
+These outputs are useful for tiny validation examples. They are not yet sparse
+production EBVs, reliabilities, or prediction error variances.
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.
@@ -86,8 +107,8 @@ catch err
 end
 ```
 
-Sparse production optimization, EBVs, heritability, and R bridge execution
-remain Phase 1 targets.
+Sparse production optimization, AI-REML, reliability, prediction error
+variance, and R bridge execution remain Phase 1 targets.
 
 ## R Syntax Parity Target
 

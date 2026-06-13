@@ -60,6 +60,29 @@ log-variance parameterization and `Optim.NelderMead()`.
 This is a low-level validation path. It is not the production sparse animal
 model engine, not AI-REML, and not yet exposed through the R formula bridge.
 
+## Experimental Low-Level Extractors
+
+```julia
+variance_components(fit)
+fixed_effects(fit)
+breeding_values(fit)
+fitted_values(fit)
+heritability(fit)
+```
+
+These operate on `AnimalModelFit` objects from the dense validation path.
+`breeding_values(fit)` returns a `BreedingValues` object with encoded `ids` and
+dense animal-effect BLUP/EBV values.
+
+The current breeding-value equation is:
+
+```text
+u_hat = sigma_a2 * A * Z' * V^-1 * (y - X * beta)
+```
+
+This is intentionally dense and small-scale. Production sparse BLUP solves,
+reliability, and prediction error variance remain planned.
+
 ## Current R Bridge Handoff
 
 R head `d85f356` parses the narrow v0.1 formula:
@@ -106,6 +129,12 @@ The planned result should include:
 - `iterations`;
 - `warnings`;
 - `id_map`.
+
+Currently implemented result fields are the dense-path subset: convergence
+flag, optimizer status, log-likelihood, variance components, fixed effects,
+breeding values, fitted values, heritability, iterations, and encoded IDs.
+Gradient diagnostics, reliability, prediction error variance, and sparse solver
+metadata remain planned.
 
 ## Storage Policy
 

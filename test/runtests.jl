@@ -182,3 +182,34 @@ end
     @test_throws ArgumentError fit_variance_components(spec; initial = [1.0])
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
 end
+
+@testset "Phase 1 dense fit extractors" begin
+    y = [1.0, 2.0, 3.0]
+    X = ones(3, 1)
+    Z = sparse(I, 3, 3)
+    Ainv = sparse(I, 3, 3)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ["a", "b", "c"], method = :ML)
+    likelihood = gaussian_loglik(spec, 1.0, 1.0; method = :ML)
+    fit = AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        true,
+        "test",
+        0,
+    )
+
+    vc = variance_components(fit)
+    @test vc.sigma_a2 == 1.0
+    @test vc.sigma_e2 == 1.0
+    @test fixed_effects(fit) ≈ [2.0]
+
+    ebv = breeding_values(fit)
+    @test ebv isa BreedingValues
+    @test ebv.ids == ["a", "b", "c"]
+    @test ebv.values ≈ [-0.5, 0.0, 0.5]
+
+    @test fitted_values(fit) ≈ [1.5, 2.0, 2.5]
+    @test fitted_values(fit; include_random = false) ≈ [2.0, 2.0, 2.0]
+    @test heritability(fit) ≈ 0.5
+end

@@ -36,7 +36,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - dense Gaussian likelihood evaluation implemented for supplied variance
     components;
   - experimental dense variance-component optimization implemented for
-    validated specs.
+    validated specs;
+  - experimental dense variance-component, fixed-effect, EBV/BLUP,
+    fitted-value, and heritability extractors implemented for validated specs.
 - R lane handoff from `itchyshin/hsquared` head `d85f356`:
   - inert `animal()` marker exported;
   - `hs_build_model_spec()` parses `animal(1 | id, pedigree = ped)`;
@@ -44,9 +46,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)`;
   - R-CMD-check, pkgdown, and Pages deploy were green; site is live at
     `https://itchyshin.github.io/hsquared/`.
-- Next shared seam: explicit payload parity tests for `y`, `X`, `Z`, encoded
-  IDs, pedigree metadata, Julia-side `Ainv`, method, family, and fit-target
-  dispatch.
+- Next shared seam: explicit payload/result parity tests for `y`, `X`, `Z`,
+  encoded IDs, pedigree metadata, Julia-side `Ainv`, method, family, fit-target
+  dispatch, variance components, breeding values, and heritability.
 
 ## Sister References
 

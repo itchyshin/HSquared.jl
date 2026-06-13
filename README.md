@@ -16,8 +16,9 @@ benchmarks to learn from and test against, not claims of current superiority.
 
 ## Current Status
 
-This repository has completed Phase 0 and has started the first Phase 1 engine
-slice. It does not fit models yet.
+This repository has completed Phase 0 and has started Phase 1. It has an
+experimental dense fitting path for validated low-level Julia specs, but it is
+not yet a production animal-model engine.
 
 Implemented now:
 
@@ -34,13 +35,16 @@ Implemented now:
   components for validated animal-model specs;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
+- experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
+  heritability extractors for the dense low-level spec path;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
 - sparse production optimization or AI-REML fitting;
-- EBVs/BLUPs and heritability;
+- R bridge execution and high-level formula fitting;
+- production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
@@ -90,6 +94,16 @@ fit = fit_variance_components(spec)
 
 This is a low-level Julia validation path. It is not the production sparse
 animal-model engine, and it is not yet exposed through the R formula bridge.
+
+The dense validation path also has first extractors:
+
+```julia
+variance_components(fit)
+breeding_values(fit)
+heritability(fit)
+```
+
+These are experimental low-level outputs, not yet production sparse results.
 
 The high-level modelling surface is still planned:
 

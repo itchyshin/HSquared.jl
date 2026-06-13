@@ -13,10 +13,11 @@ Use this register before changing README, docs, issue text, or examples.
 | low-level animal model spec validation | covered | `animal_model_spec()` tests over dimensions, IDs, family, and method | bridge-ready validator; not a fitted model |
 | Gaussian animal model ML/REML likelihood value | partial | `gaussian_loglik()` tiny hand-calculated tests | experimental dense likelihood evaluator at supplied variance components |
 | Dense variance-component optimization | partial | `fit_variance_components()` tiny improvement tests | experimental low-level Julia spec path; not sparse production or R bridge fitting |
+| Dense EBV/BLUP and heritability extractors | partial | `breeding_values()` and `heritability()` tiny hand-checked tests | experimental dense low-level extractors; not production sparse EBVs, reliability, or PEV |
 | R v0.1 formula parser can build the bridge target | external partial | `hsquared` head `d85f356`; R checks green and pkgdown live | R can parse the narrow grammar and stop at the Julia boundary; bridge execution remains planned |
 | R-to-Julia bridge execution works | planned | no Julia marshalling/parity test yet | planned |
 | Sparse Gaussian animal model REML/ML fitting | planned | none | planned production fitting target |
-| EBVs/BLUPs and heritability extraction | planned | none | planned |
+| Production EBVs/BLUPs, reliability, and PEV | planned | none | planned |
 | multivariate G matrices | planned | none | roadmap |
 | factor-analytic G matrices | planned | none | roadmap |
 | genomic and single-step models | planned | none | roadmap |

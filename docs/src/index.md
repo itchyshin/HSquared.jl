@@ -25,13 +25,16 @@ Implemented engine utilities:
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components;
 - experimental dense variance-component optimization for validated specs;
+- experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
+  heritability extractors for the dense spec path;
 - small deterministic tests for malformed pedigrees and hand-checked `Ainv`
   matrices.
 
 Planned, but not implemented yet:
 
 - sparse production REML/ML and AI-REML fitting;
-- EBVs/BLUPs and heritability extraction;
+- production sparse EBVs/BLUPs, reliability, prediction error variance, and
+  heritability extraction;
 - R-to-Julia fitting bridge;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;

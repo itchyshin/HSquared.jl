@@ -2,6 +2,37 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1E Dense Fit Extractors
+
+- Goal: add first low-level result extractors for the dense Gaussian
+  validation path.
+- Active lenses: Ada, Henderson, Gauss, Fisher, Falconer, Hopper, Karpinski,
+  Grace, Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added `BreedingValues`.
+  - Added `variance_components()`, `fixed_effects()`, `breeding_values()`,
+    `fitted_values()`, and `heritability()`.
+  - Added hand-checked dense tests with identity `A`, `V = 2I`, beta = 2,
+    EBVs `[-0.5, 0, 0.5]`, fitted values `[1.5, 2, 2.5]`, and `h2 = 0.5`.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 85 checks across
+    Phase 0, pedigree/Ainv, spec validation, likelihood, dense optimizer, and
+    dense extractor testsets.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims of
+    implemented production sparse EBVs, reliability, prediction error variance,
+    AI-REML, R bridge execution, GPU, or QTL/eQTL support.
+- Boundary:
+  - Dense validation path only.
+  - Not sparse production BLUP solving.
+  - No reliability or prediction error variance yet.
+  - No R bridge execution yet.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1D Dense Variance-Component Optimizer
 
 - Goal: add a conservative dense optimizer for the Gaussian likelihood over

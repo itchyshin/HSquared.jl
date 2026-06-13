@@ -32,6 +32,16 @@ struct AnimalModelFit{TS<:AnimalModelSpec}
 end
 
 """
+    BreedingValues
+
+Experimental low-level container for animal-effect BLUPs/EBVs.
+"""
+struct BreedingValues{TID<:AbstractVector}
+    ids::TID
+    values::Vector{Float64}
+end
+
+"""
     gaussian_loglik(spec, sigma_a2, sigma_e2; method = spec.method)
 
 Evaluate the Gaussian ML or REML log-likelihood at supplied variance
@@ -68,7 +78,7 @@ function gaussian_loglik(
         throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
 
     A = inv(Symmetric(Ainv))
-    V = Symmetric(sigma_a2 * Z * A * transpose(Z) + sigma_e2 * I(n))
+    V = _dense_marginal_covariance(Z, A, sigma_a2, sigma_e2)
     cholV = cholesky(V; check = true)
 
     Vinv_y = cholV \ y
@@ -156,6 +166,82 @@ function fit_animal_model(spec::AnimalModelSpec; kwargs...)
     return fit_variance_components(spec; kwargs...)
 end
 
+"""
+    variance_components(fit)
+
+Return the additive and residual variance components from an experimental
+low-level [`AnimalModelFit`](@ref).
+"""
+function variance_components(fit::AnimalModelFit)
+    return fit.variance_components
+end
+
+"""
+    fixed_effects(fit)
+
+Return the fixed-effect estimates from an experimental low-level
+[`AnimalModelFit`](@ref).
+"""
+function fixed_effects(fit::AnimalModelFit)
+    return copy(fit.likelihood.beta)
+end
+
+"""
+    breeding_values(fit)
+
+Return dense animal-effect BLUPs/EBVs for an experimental low-level
+[`AnimalModelFit`](@ref).
+
+The current implementation uses the dense Gaussian covariance equations:
+`u_hat = sigma_a2 * A * Z' * V^-1 * (y - X * beta)`. It is for tiny validation
+examples, not production sparse solves.
+"""
+function breeding_values(fit::AnimalModelFit)
+    spec = fit.spec
+    sigma_a2 = fit.variance_components.sigma_a2
+    sigma_e2 = fit.variance_components.sigma_e2
+
+    y = Float64.(spec.y)
+    X = Matrix{Float64}(spec.X)
+    Z = Matrix{Float64}(spec.Z)
+    A = inv(Symmetric(Matrix{Float64}(spec.Ainv)))
+
+    V = _dense_marginal_covariance(Z, A, sigma_a2, sigma_e2)
+    residual = y - X * fit.likelihood.beta
+    values = sigma_a2 * A * transpose(Z) * (cholesky(V; check = true) \ residual)
+
+    return BreedingValues(collect(spec.ids), Vector{Float64}(values))
+end
+
+"""
+    fitted_values(fit; include_random = true)
+
+Return fitted values for an experimental low-level [`AnimalModelFit`](@ref).
+"""
+function fitted_values(fit::AnimalModelFit; include_random::Bool = true)
+    spec = fit.spec
+    X = Matrix{Float64}(spec.X)
+    fitted = X * fit.likelihood.beta
+
+    if include_random
+        Z = Matrix{Float64}(spec.Z)
+        fitted = fitted + Z * breeding_values(fit).values
+    end
+
+    return Vector{Float64}(fitted)
+end
+
+"""
+    heritability(fit)
+
+Return simple narrow-sense heritability for the Phase 1 univariate Gaussian
+animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
+"""
+function heritability(fit::AnimalModelFit)
+    vc = fit.variance_components
+    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
+end
+
 function _coerce_initial_variances(initial::NamedTuple)
     haskey(initial, :sigma_a2) ||
         throw(ArgumentError("initial must include sigma_a2"))
@@ -178,4 +264,9 @@ end
 
 function _coerce_initial_variances(initial)
     throw(ArgumentError("initial must be a NamedTuple, tuple, or vector"))
+end
+
+function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_a2, sigma_e2)
+    n = size(Z, 1)
+    return Symmetric(sigma_a2 * Z * A * transpose(Z) + sigma_e2 * I(n))
 end

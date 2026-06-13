@@ -14,26 +14,27 @@ Implemented:
 - control/backend markers;
 - placeholder fitting entry points;
 - pedigree validation and topological sorting;
-- direct sparse `Ainv` construction for validated pedigrees.
+- direct sparse `Ainv` construction for validated pedigrees;
+- low-level animal-model spec validation;
+- dense Gaussian likelihood evaluation;
+- experimental dense variance-component optimization;
+- experimental dense EBV/BLUP and heritability extraction.
 
 Not implemented:
 
-- animal-model REML/ML fitting;
-- EBVs/BLUPs;
-- heritability;
+- sparse production animal-model REML/ML or AI-REML fitting;
+- production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - R-to-Julia fitting bridge.
 
 ## Phase 1: Simple Gaussian Animal Model
 
 Next engine targets:
 
-1. fixed-effect and animal random-effect design handling;
-2. Gaussian ML/REML objective;
-3. conservative optimizer path;
-4. variance components;
-5. EBVs/BLUPs;
-6. heritability;
-7. Mrode-style validation and comparator checks.
+1. R-to-Julia payload parity tests;
+2. Mrode-style validation and comparator checks;
+3. production sparse covariance/precision computations;
+4. AI-REML or a documented sparse optimizer path;
+5. reliability and prediction error variance.
 
 ## Later Phases
 

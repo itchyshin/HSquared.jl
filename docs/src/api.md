@@ -15,7 +15,13 @@ HSquared.animal_model_spec
 HSquared.GaussianLikelihoodResult
 HSquared.gaussian_loglik
 HSquared.AnimalModelFit
+HSquared.BreedingValues
 HSquared.fit_variance_components
+HSquared.variance_components
+HSquared.fixed_effects
+HSquared.breeding_values
+HSquared.fitted_values
+HSquared.heritability
 HSquared.hsquared
 HSquared.fit_animal_model
 HSquared.Phase0NotImplementedError

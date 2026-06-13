@@ -23,6 +23,8 @@ pedigree/Ainv engine utility slice.
   components.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
+- Experimental low-level variance-component, fixed-effect, EBV/BLUP,
+  fitted-value, and heritability extractors exist for the dense spec path.
 - High-level formula fitting and R bridge execution are not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
@@ -69,9 +71,10 @@ First real capability:
   covered for supplied variance components;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
+- experimental dense EBV/BLUP, fitted-value, and heritability extractors;
 - sparse production optimizer and AI-REML;
-- EBVs/BLUPs;
-- variance components and heritability.
+- production sparse EBVs/BLUPs, reliability, prediction error variance, and
+  heritability.
 
 Gate: Mrode simple animal-model example plus tiny hand-checked pedigrees and
 comparator checks where available.
@@ -135,8 +138,9 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Add production-scale pedigree design notes before claiming huge-pedigree
-   performance.
-2. Start fixed-effect and animal random-effect design handling.
+1. Add R-to-Julia payload parity tests for the current R parser and Julia spec
+   assumptions.
+2. Add Mrode/simple comparator validation for the dense low-level path.
+3. Replace dense covariance equations with sparse production computations.
 3. Keep `hsquared` issue #2 synchronized with this engine contract.
 4. Add Mrode/comparator validation before promoting animal-model fitting.
