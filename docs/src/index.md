@@ -106,5 +106,6 @@ not claim model fitting until the Julia engine implements and validates it.
 - [Pedigrees and Ainv](pedigree-ainv.md)
 - [Audience and comparators](audience-comparators.md)
 - [Genomics, QTL, GPU, and HPC](genomics-qtl-gpu-hpc.md)
+- [Backend and algorithm roadmap](backend-algorithm-roadmap.md)
 - [Roadmap](roadmap.md)
 - [Reference](api.md)

@@ -49,4 +49,7 @@
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.
+- Added a backend and algorithm roadmap page for CPU, threads, CUDA, AMDGPU,
+  Metal, oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY,
+  and claim gates.
 - Kept high-level fitting entry points as honest placeholders.

@@ -33,6 +33,24 @@ Phase -1 exists so `HSquared.jl` learns before it builds.
 - Use Julia-native tests and quality gates before widening the public surface.
 - Exploit sparse and low-rank structure where the model allows it.
 
+## Concrete Local Leads
+
+The R twin's expanded plan at `hsquared` head `2c18b30` records local source
+anchors that are useful for Julia design work:
+
+- `DRM.jl/src/takahashi_selinv.jl` is a selected sparse inverse algorithm lead
+  for later PEV and reliability work after sparse factorization exists.
+- `GLLVM.jl/src/fit.jl` is a design lead for profiled nuisance variance,
+  low-rank structure, and keeping gradients close to the hot linear-algebra
+  path.
+- `GLLVM.jl/src/structured_schur.jl` is a design lead for matrix-free,
+  low-rank, and structured precision work.
+- `gllvmTMB/CLAUDE.md` is a grammar-process lead: keep long and wide user
+  paths paired, capability status explicit, and ordinary random effects
+  separate from structured kernels.
+
+These are algorithm and documentation leads, not automatic copy sources.
+
 ## Adapted For hsquared
 
 `hsquared` needs stronger animal-model and quantitative-genetic lenses:

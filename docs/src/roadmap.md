@@ -37,6 +37,9 @@ Implemented:
   `hsquared` head `78ba5ff`, with Julia payload widening still planned.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
+- roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and
+  HPC strategy mirrored from the R twin's expanded plan at `hsquared` head
+  `2c18b30`.
 
 Not implemented:
 
@@ -50,6 +53,8 @@ Not implemented:
   relationship/precision kernels;
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests.
+- APY approximation, Takahashi selected inversion, production AI-REML,
+  Woodbury-backed factor/GLLVM engines, and HPC checkpointing.
 
 ## Phase 1: Simple Gaussian Animal Model
 
@@ -65,14 +70,20 @@ Next engine targets:
 
 ## Later Phases
 
-- Phase 2: repeatability, maternal, common-environment, sire, and related
-  standard animal-model extensions.
-- Phase 3: multivariate Gaussian animal models.
-- Phase 4: factor-analytic G matrices.
-- Phase 5: genomic and single-step models.
-- Phase 6: non-Gaussian and GLLVM-style animal models.
-- Phase 7: non-standard inheritance.
-- Phase 8: huge-scale and accelerator strategy.
+- Phase 2: genomic relationship models, GBLUP, SNP-BLUP, supplied `Hinv`, and
+  first marker-effect outputs.
+- Phase 3: maternal, paternal, repeatability, common-environment, dominance,
+  cytoplasmic, and inheritance-kernel models.
+- Phase 4: multivariate G matrices with `us()`, `diag()`, `lowrank(K)`, and
+  `fa(K)`.
+- Phase 5: QTL/GWAS/eQTL scans, LOCO option, multiple testing, and basic
+  plots.
+- Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
+  examples.
+- Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,
+  and portable kernels.
+- Phase 8: HPC and production scaling with checkpointing, disk-backed data,
+  streaming marker scans, distributed computation, and multi-GPU experiments.
 
 Every new public capability must update the status tables, validation debt,
 tests, docs, and after-task report in the same slice.

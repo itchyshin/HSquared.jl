@@ -49,11 +49,16 @@ pedigree/Ainv engine utility slice.
   extractor contracts.
 - R head `398e019` records sparse `Z` bridge marshalling through Julia
   `sparse_csc_matrix()`.
+- R head `2c18b30` records the expanded genomics/QTL/GLLVM/GPU/HPC plan; Julia
+  mirrors it as roadmap and algorithm/backend documentation only.
 - Production high-level formula fitting and production R bridge execution are
   not implemented.
 - Backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests are
   not implemented.
+- APY approximation, Takahashi selected inversion, production AI-REML,
+  Woodbury-backed factor/GLLVM engines, and HPC checkpointing are not
+  implemented.
 - Genomic prediction, single-step fitting, marker-effect estimation,
   marker scans, and QTL/eQTL scans are not implemented.
 - Permanent environment, common environment, maternal/paternal effects,
@@ -122,16 +127,25 @@ First real capability:
 Gate: Mrode simple animal-model example plus tiny hand-checked pedigrees and
 comparator checks where available.
 
-## Phase 2: Standard Quantitative-Genetic Models
+## Phase 2: Genomic Relationship Models
+
+Add `G` and `Ginv`, GBLUP, SNP-BLUP, supplied `Hinv`, genotype ID matching,
+and first marker-effect outputs.
+
+Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
+style comparator checks before public fitting claims.
+
+## Phase 3: Standard Quantitative-Genetic And Inheritance Models
 
 Add repeatability, permanent environment, maternal effects, common environment,
-sire models, unknown parent groups, inbreeding, and the first random-regression
-slice.
+sire models, dominance, cytoplasmic inheritance, selfing, clonal/asexual,
+haplodiploid, polyploid, unknown parent groups, inbreeding, and the first
+random-regression slice.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.
 
-## Phase 3: Multivariate Gaussian Animal Models
+## Phase 4: Multivariate Gaussian Animal Models
 
 Add long-format trait grammar, `A kron G_A`, residual `R`, missing trait
 records, G/R/P matrices, genetic correlations, and cross-trait EBVs.
@@ -139,7 +153,7 @@ records, G/R/P matrices, genetic correlations, and cross-trait EBVs.
 Gate: long-format examples and missing-record tests land before public
 tutorial claims.
 
-## Phase 4: Factor-Analytic G Matrices
+## Phase 4B: Factor-Analytic G Matrices
 
 Add `diag()`, `lowrank(K)`, and `fa(K)` covariance structures:
 
@@ -149,12 +163,13 @@ Add `diag()`, `lowrank(K)`, and `fa(K)` covariance structures:
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.
 
-## Phase 5: Genomic And Single-Step Models
+## Phase 5: QTL, GWAS, And eQTL
 
-Add GBLUP, SNP-BLUP, single-step HBLUP, APY approximation, marker-derived
-relationships, and scaling/blending of `G` and `A`.
+Add single-marker scans, mixed-model marker scans, LOCO, LOD/p-value output,
+cis/trans eQTL, multiple testing, and basic plots.
 
-Gate: Jason scout plus Rose license/claim audit.
+Gate: marker-map validation, estimand definition, multiple-testing checks, and
+comparator/simulation evidence.
 
 ## Phase 6: Non-Gaussian And GLLVM-Style Animal Models
 
@@ -163,21 +178,21 @@ ordination, and community/ecology examples.
 
 Gate: long and wide examples are paired whenever both formats are supported.
 
-## Phase 7: Non-Standard Inheritance
+## Phase 7: CPU/GPU Acceleration
 
-Add selfing, clonal/asexual, haplodiploid, polyploid, cytoplasmic, dominance,
-epistasis, and custom precision kernels.
+CPU first, then threaded CPU, Metal, CUDA, AMDGPU, oneAPI, and portable kernels
+where benchmarks support accelerator use.
 
-Gate: each inheritance system has a documented relationship/precision
-construction and biological interpretation.
+Gate: CPU/GPU agreement tests and benchmarks report hardware, data size,
+records, animals, traits, nonzeros, memory, precision, and comparator.
 
-## Phase 8: Huge-Scale And Accelerator Strategy
+## Phase 8: HPC And Production Scaling
 
-CPU first. GPU later for dense/massively parallel pieces where evidence says it
-helps.
+Add checkpointing, disk-backed data, streaming marker scans, distributed
+simulation, multi-GPU experiments, and national-computer benchmarks.
 
-Gate: speed claims report hardware, data size, records, animals, traits,
-nonzeros, memory, and comparator.
+Gate: production runs are restartable and report machine, data shape, memory,
+diagnostics, and comparator context.
 
 ## Next Work Queue
 

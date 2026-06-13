@@ -48,10 +48,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin added `formula_status()` at `hsquared` head `7ba2df4`; Julia
   mirrors the grammar-status diagnostic with `formula_status()` and a
   Documenter status table.
+- The R twin expanded the genomics/QTL/GLLVM/GPU/HPC plan at `hsquared` head
+  `2c18b30`; Julia mirrors the plan with Documenter and design notes as
+  roadmap only.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
   benchmarking, CPU/GPU agreement tests, genomic prediction, single-step
-  fitting, marker scans, QTL/eQTL scans, standard quantitative-genetic
+  fitting, marker scans, QTL/eQTL scans, GLLVM animal models, APY, Takahashi
+  selected inversion, production AI-REML, standard quantitative-genetic
   extension fitting, and custom relationship/precision kernel fitting remain
   planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
@@ -217,6 +221,19 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - R issue note:
     `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697748409`;
   - Julia mirrors this as diagnostic only; no parser or fitting expansion.
+- R lane handoff from `itchyshin/hsquared` head `2c18b30`:
+  - expanded `docs/design/07-genomics-qtl-gpu-plan.md` with the full
+    genomics, QTL/eQTL, GLLVM, GPU, backend, benchmark, HPC, validation, and
+    first-implementation plan;
+  - added pkgdown-facing summary `vignettes/articles/genomics-gpu-roadmap.Rmd`;
+  - recorded concrete local leads from `DRM.jl/src/takahashi_selinv.jl`,
+    `GLLVM.jl/src/fit.jl`, `GLLVM.jl/src/structured_schur.jl`, and
+    `gllvmTMB/CLAUDE.md`;
+  - reported remote evidence: R-CMD-check `27459454821`, pkgdown
+    `27459454815`, and Pages `27459486904` success for the evidence commit;
+  - boundary: roadmap/design only. No genomic fitting, QTL/eQTL scan,
+    GLLVM animal model, GPU execution, APY, Takahashi selected inverse,
+    AI-REML, HPC, or performance claim.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, `hs_data()` to `HSData` payload
   parity, the first real genomic/QTL model-spec contract, and the first real

@@ -8,6 +8,11 @@ normalization plus sparse `Ainv` construction. Animal-model fitting, genomics,
 QTL/eQTL, GLLVM-style models, and GPU acceleration are planned or experimental
 future work unless a capability table says otherwise.
 
+See [Backend And Algorithm Roadmap](backend-algorithm-roadmap.md) for the
+Julia-side execution plan behind CPU, threaded CPU, CUDA, AMDGPU, Metal,
+oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY, and backend
+claim gates.
+
 The names `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
 `qtl_scan()` are now reserved in both twins. In Julia they currently throw
 planned-not-implemented errors. They do not fit genomic models, estimate marker
@@ -264,8 +269,12 @@ single_step(1 | id, Hinv = Hinv)
 dominance(1 | id, pedigree = ped)
 epistasis(1 | id, pedigree = ped)
 relmat(1 | id, K = K)
-HSquared.precision(1 | id, Q = Q)
+precision(1 | id, Q = Q)
 ```
+
+In direct Julia code the planned precision marker is qualified as
+`HSquared.precision()` because `Base.precision` already exists. The public R
+formula grammar remains `precision(1 | id, Q = Q)`.
 
 Generic engine abstraction:
 

@@ -2,6 +2,48 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Expanded Genomics QTL GPU Roadmap Mirror
+
+- Goal: mirror the R twin's expanded genomics/QTL/GLLVM/GPU/HPC plan into
+  Julia Documenter and design memory.
+- Active lenses: Ada, Shannon, Jason, Karpinski, Hopper, Rose, Pat, Grace.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `f806a96` expanded `docs/design/07-genomics-qtl-gpu-plan.md`.
+  - `hsquared` head `2c18b30` records expanded plan CI evidence.
+  - Reported remote evidence for the R evidence commit: R-CMD-check
+    `27459454821`, pkgdown `27459454815`, and Pages `27459486904` success.
+  - Boundary from R: roadmap/design only. No genomic fitting, QTL/eQTL scan,
+    GLLVM animal model, GPU execution, APY, Takahashi selected inverse,
+    AI-REML, HPC, or performance claim.
+- Julia-side action:
+  - Added Documenter page `docs/src/backend-algorithm-roadmap.md`.
+  - Added design note `docs/design/09-backend-algorithm-roadmap.md`.
+  - Linked the new page from `docs/make.jl`, `docs/src/index.md`, and
+    `docs/src/genomics-qtl-gpu-hpc.md`.
+  - Corrected the public R grammar example to `precision(1 | id, Q = Q)` and
+    kept the direct Julia qualification note for `HSquared.precision()`.
+  - Updated root and Documenter roadmaps to the expanded phase order.
+  - Updated ecosystem lessons with local leads from `DRM.jl`,
+    `GLLVM.jl`, and `gllvmTMB`.
+  - Updated capability status, validation debt, public claims, and
+    coordination board.
+- Local checks:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 294 checks.
+  - `git diff --check` passed.
+  - Edited-file ASCII scan returned no matches.
+  - Claim scan found only status, audit, planned, or blocked-wording rows.
+- Remote checks:
+  - pending.
+- Boundary:
+  - Roadmap and documentation mirror only.
+  - No engine API, result payload, parser, backend execution, or model fitting
+    behavior changed.
+
 ## 2026-06-13 Formula Status Diagnostic Mirror
 
 - Goal: mirror the R twin's `formula_status()` grammar diagnostic in Julia and
