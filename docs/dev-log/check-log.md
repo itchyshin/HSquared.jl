@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1C Gaussian Likelihood Evaluation
+
+- Goal: add a checked Gaussian ML/REML log-likelihood evaluator at supplied
+  variance components.
+- Active lenses: Ada, Henderson, Gauss, Fisher, Karpinski, Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added `src/likelihood.jl`.
+  - Added exports: `GaussianLikelihoodResult` and `gaussian_loglik`.
+  - Added tests against hand-calculated ML and REML values for a tiny `V = 2I`
+    case.
+  - Added error tests for non-positive variance components, unsupported method,
+    and saturated REML design.
+- Boundary:
+  - The evaluator intentionally densifies matrices.
+  - It evaluates an objective at supplied variance components.
+  - It does not optimize variance components, compute EBVs, or fit a model.
+- Rose verdict: clean with limitations. This may be described as experimental
+  likelihood evaluation, not as animal-model fitting.
+
 ## 2026-06-13 Phase 1B Animal Model Spec Validation
 
 - Goal: add the Julia-side typed validator for the low-level animal-model

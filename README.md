@@ -30,12 +30,14 @@ Implemented now:
   pedigrees;
 - low-level animal-model spec validation for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method;
+- dense Gaussian ML/REML log-likelihood evaluation at supplied variance
+  components for validated animal-model specs;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
-- REML/ML or AI-REML fitting;
+- variance-component optimization or AI-REML fitting;
 - EBVs/BLUPs and heritability;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
@@ -67,6 +69,16 @@ spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
 
 This validates the low-level inputs that the R parser will eventually hand to
 Julia. It does not fit the model.
+
+The first Gaussian likelihood evaluator is available for supplied variance
+components:
+
+```julia
+lik = gaussian_loglik(spec, 1.0, 1.0)
+```
+
+This evaluates an objective value. It does not optimize variance components or
+return EBVs.
 
 The high-level modelling surface is still planned:
 

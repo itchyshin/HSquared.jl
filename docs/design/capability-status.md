@@ -10,7 +10,8 @@
 | Pedigree validation | implemented | `normalize_pedigree()` valid, malformed, duplicate, missing-parent, self-parent, same-parent, and cycle tests |
 | Sparse `Ainv` | implemented | `pedigree_inverse()` hand-checked tiny pedigrees and dense inverse comparison; bounded relationship cache, no huge-scale claim |
 | Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
-| REML/ML fitting | planned | no implementation yet |
+| Gaussian ML/REML likelihood evaluation | experimental | `gaussian_loglik()` hand-calculated tiny tests; dense evaluator only, supplied variance components only |
+| Variance-component optimization / fitting | planned | no implementation yet |
 | EBVs/BLUPs | planned | no implementation yet |
 | Heritability | planned | no implementation yet |
 | Multivariate G matrices | planned | no implementation yet |

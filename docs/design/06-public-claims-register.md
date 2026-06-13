@@ -11,7 +11,8 @@ Use this register before changing README, docs, issue text, or examples.
 | pedigree validation and sorting | covered | `normalize_pedigree()` tests over valid and malformed pedigrees | implemented engine utility |
 | sparse Ainv construction | covered | `pedigree_inverse()` tests over tiny pedigrees and dense inverse comparison | direct sparse pedigree inverse utility; not a fitted model |
 | low-level animal model spec validation | covered | `animal_model_spec()` tests over dimensions, IDs, family, and method | bridge-ready validator; not a fitted model |
-| Gaussian animal model REML/ML | planned | none | planned |
+| Gaussian animal model ML/REML likelihood value | partial | `gaussian_loglik()` tiny hand-calculated tests | experimental dense likelihood evaluator at supplied variance components |
+| Gaussian animal model REML/ML fitting | planned | none | planned optimizer/fitting target |
 | EBVs/BLUPs and heritability extraction | planned | none | planned |
 | multivariate G matrices | planned | none | roadmap |
 | factor-analytic G matrices | planned | none | roadmap |

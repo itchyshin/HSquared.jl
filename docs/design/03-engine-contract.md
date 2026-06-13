@@ -33,6 +33,19 @@ This validates response/design dimensions, `Ainv`, encoded IDs, family, and
 ML/REML method. It is bridge-ready groundwork for the R `hs_build_model_spec()`
 payload. It still does not fit a model.
 
+## Implemented Likelihood Evaluator
+
+```julia
+lik = gaussian_loglik(spec, sigma_a2, sigma_e2)
+```
+
+This evaluates the Gaussian ML or REML log-likelihood at supplied variance
+components. The current implementation intentionally forms dense matrices so
+the objective can be tested before the production sparse solver lands.
+
+It does not optimize variance components, compute EBVs, or return a fitted
+model.
+
 ## Input Payload
 
 - `y`: numeric response vector.

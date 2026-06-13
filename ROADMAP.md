@@ -19,6 +19,8 @@ pedigree/Ainv engine utility slice.
   hand-checked tests.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method.
+- Dense Gaussian ML/REML log-likelihood evaluation exists for supplied variance
+  components.
 - Fitting is not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
@@ -61,7 +63,9 @@ First real capability:
 - direct sparse `Ainv`; initial utility covered;
 - low-level animal-model spec validation; initial bridge validator covered;
 - fixed and random-effect design;
-- univariate Gaussian REML/ML;
+- univariate Gaussian ML/REML likelihood evaluation; dense initial evaluator
+  covered for supplied variance components;
+- variance-component optimization and AI-REML;
 - EBVs/BLUPs;
 - variance components and heritability.
 

@@ -126,3 +126,31 @@ end
     @test_throws ArgumentError animal_model_spec(y, X, Z, Ainv; family = :gaussian)
     @test_throws ArgumentError animal_model_spec(y, X, Z, Ainv; method = :AI_REML)
 end
+
+@testset "Phase 1 Gaussian likelihood evaluation" begin
+    y = [1.0, 2.0, 3.0]
+    X = ones(3, 1)
+    Z = sparse(I, 3, 3)
+    Ainv = sparse(I, 3, 3)
+    spec = animal_model_spec(y, X, Z, Ainv)
+
+    ml = gaussian_loglik(spec, 1.0, 1.0; method = :ML)
+    @test ml.method == :ML
+    @test ml.beta ≈ [2.0]
+    @test ml.sigma_a2 == 1.0
+    @test ml.sigma_e2 == 1.0
+    @test ml.nobs == 3
+    @test ml.nfixed == 1
+    @test ml.loglik ≈ -0.5 * (3 * log(2 * pi) + 3 * log(2.0) + 1.0)
+
+    reml = gaussian_loglik(spec, 1.0, 1.0)
+    @test reml.method == :REML
+    @test reml.beta ≈ [2.0]
+    @test reml.loglik ≈ -0.5 * (2 * log(2 * pi) + 3 * log(2.0) + log(1.5) + 1.0)
+
+    @test_throws ArgumentError gaussian_loglik(spec, 0.0, 1.0)
+    @test_throws ArgumentError gaussian_loglik(spec, 1.0, -1.0)
+    @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; method = :AI_REML)
+    saturated = animal_model_spec(y, Matrix(I, 3, 3), Z, Ainv)
+    @test_throws ArgumentError gaussian_loglik(saturated, 1.0, 1.0)
+end

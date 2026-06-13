@@ -53,6 +53,16 @@ spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = "REML")
 spec.method
 ```
 
+## Evaluate The Gaussian Likelihood
+
+The first likelihood function evaluates ML or REML at supplied variance
+components. It is a checked objective value, not an optimizer.
+
+```@example quickstart
+lik = gaussian_loglik(spec, 1.0, 1.0)
+lik.loglik
+```
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.
@@ -65,8 +75,8 @@ catch err
 end
 ```
 
-REML/ML fitting, EBVs, heritability, and R bridge execution remain Phase 1
-targets.
+Variance-component optimization, EBVs, heritability, and R bridge execution
+remain Phase 1 targets.
 
 ## R Syntax Parity Target
 
