@@ -39,9 +39,16 @@ Commands run:
 ```sh
 julia --project=. test/runtests.jl
 julia --project=. -e 'using Pkg; Pkg.test()'
+gh repo create itchyshin/HSquared.jl --public --source=. --remote=origin --push
+gh run watch 27451520721 --repo itchyshin/HSquared.jl --exit-status
+gh run watch 27451548449 --repo itchyshin/HSquared.jl --exit-status
 ```
 
-Both commands pass after adding `Test` to the package test target.
+Both local Julia commands pass after adding `Test` to the package test target.
+Both GitHub Actions CI runs pass on Julia 1.10 and stable Julia.
+
+The second CI run opts actions into Node 24. GitHub still reports that upstream
+actions target Node 20, but they are forced to run on Node 24.
 
 ## Rose Audit
 
@@ -51,5 +58,5 @@ and GLLVM-style animal models are documented as planned only.
 
 ## Next
 
-Initialize git, create the public GitHub repository, push `main`, and verify
-remote visibility and CI startup.
+Coordinate with the R twin so the R-side scaffold, public visibility, and
+shared wording remain synchronized.

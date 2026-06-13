@@ -15,5 +15,15 @@ Newest entries go at the top.
     `Test` was missing from package test targets.
   - `julia --project=. -e 'using Pkg; Pkg.test()'` passed after adding
     `Test` to `[extras]` and `[targets]`.
+  - `gh repo create itchyshin/HSquared.jl --public --source=. --remote=origin --push`
+    created the public GitHub repository and pushed `main`.
+  - `gh run watch 27451520721 --repo itchyshin/HSquared.jl --exit-status`
+    passed for Julia 1.10 and stable Julia.
+  - `gh run watch 27451548449 --repo itchyshin/HSquared.jl --exit-status`
+    passed after opting workflow actions into Node 24.
+- GitHub verification:
+  - `itchyshin/HSquared.jl` visibility is `PUBLIC`.
+  - `itchyshin/hsquared` visibility was read-only checked as `PRIVATE` and
+    left to the R/coordinator lane.
 - Deliberately not run here: R package checks. The R/coordinator twin owns
   `/Users/z3437171/Dropbox/Github Local/hsquared`.
