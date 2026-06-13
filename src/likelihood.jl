@@ -760,8 +760,11 @@ Return dense animal-level reliability values for the Phase 1 univariate animal
 model.
 
 Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
-relationship matrix implied by `Ainv`. Values are not clipped; small examples
-can expose weakly informed animals directly.
+relationship matrix `A = inv(Ainv)` implied by the supplied precision. For a
+genomic spec (`Ainv = Ginv`) this `A_ii` is the genomic self-relationship
+`diag(G)` (often ≠ 1), so the same extractor yields genomic reliabilities.
+Values are not clipped; small examples can expose weakly informed animals
+directly.
 """
 function reliability(fit::AnimalModelFit; method::Symbol = :dense)
     pev = prediction_error_variance(fit; method = method)

@@ -1667,3 +1667,23 @@ end
     # cache guard still fires (now from the shared helper)
     @test_throws ArgumentError HSquared._numerator_relationship(ped; max_relationship_cache = 2)
 end
+
+@testset "Phase 2 genomic reliability / PEV / accuracy semantics" begin
+    M = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]   # 4 x 6
+    y = [10.0, 12.0, 11.0, 9.0]; X = ones(4, 1); Z = Matrix{Float64}(I, 4, 4)
+    sigma_a2 = 1.5; sigma_e2 = 1.0; ridge = 0.05
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = ridge)
+    res = fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2)
+
+    rel = reliability(res); pev = prediction_error_variance(res)
+    A_implied = inv(Symmetric(Matrix(Ginv)))                  # = G + ridge*I
+    @test all(0 .<= rel.values .<= 1)
+    # the denominator is the genomic self-relationship diag(inv(Ginv)) = diag(G)+ridge,
+    # not the pedigree diag(A) = 1
+    @test pev.values ≈ (1 .- rel.values) .* (sigma_a2 .* diag(A_implied)) atol = 1e-8
+    @test any(abs.(diag(A_implied) .- 1) .> 1e-6)
+    @test accuracy(res).values ≈ sqrt.(rel.values) atol = 1e-10
+    # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
+    @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
+end

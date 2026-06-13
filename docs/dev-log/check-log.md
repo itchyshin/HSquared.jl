@@ -2,6 +2,27 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Genomic Reliability / PEV / Accuracy Semantics
+
+- Goal: confirm and document that the existing reliability/PEV/accuracy
+  extractors produce correct genomic quantities for a GBLUP fit (denominator =
+  genomic self-relationship `diag(G)`), and that `:selinv` PEV carries over to a
+  genomic `Ginv`.
+- Active lenses: Fisher, Gauss, Kirkpatrick, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: docstring-only clarification on `reliability`
+    (`A = inv(Ainv)`; for a genomic spec `A_ii = diag(G)`). No logic change.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 637
+    total. New testset "Phase 2 genomic reliability / PEV / accuracy semantics"
+    = 5 checks: `rel ∈ [0,1]`; `PEV = (1−rel)·σ²a·diag(G+ridge·I)` to ~1e-16;
+    `diag(G+ridge·I) ≠ 1` (genomic, not pedigree `diag(A)=1`); `accuracy = √rel`;
+    `:selinv` PEV == dense PEV (~3e-16). `V2-GBLUP` evidence updated (no new row).
+- Boundary:
+  - Self-consistent only; not validated against an external genomic-reliability
+    comparator. No performance claim for selinv on dense `Ginv` (no speedup until
+    sparse/APY `G`).
+
 ## 2026-06-13 Dense NRM Helper (_numerator_relationship, internal)
 
 - Goal: extract the numerator-relationship recursion (previously computed and

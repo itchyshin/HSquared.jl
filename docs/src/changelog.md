@@ -42,6 +42,10 @@
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
   test-only duplicate. No public API or behavior change.
+- Documented and tested genomic reliability/PEV/accuracy: for a GBLUP fit the
+  existing extractors use the genomic self-relationship `diag(G)` (=
+  `diag(inv(Ginv))`) as the denominator, and `method = :selinv` PEV matches the
+  dense diagonal. No logic change.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with
