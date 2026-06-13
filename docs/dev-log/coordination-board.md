@@ -29,6 +29,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin added marker-status summary diagnostics at `hsquared` head
   `b1a4e48`; this is R-only reporting, with no bridge payload change and no
   required Julia action unless a later `HSData` summary parity slice is chosen.
+- The R twin added `data_status()` diagnostics at `hsquared` head `1fe0f4c`;
+  Julia mirrors this as `data_status(::HSData)` with typed diagnostic rows and
+  no bridge payload change.
 - The R twin can now feed `hs_data()` into `model_spec()` and `hsquared()` for
   the v0.1 parser at `hsquared` head `36efbf3`; the bridge payload shape is
   unchanged and live Julia `HSData` object marshalling remains planned.
@@ -98,6 +101,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     in-memory mirror of the R `hs_data()` input-container contract.
   - `HSData` marker-map metadata validation and genotype-marker alignment
     checks implemented.
+  - `data_status(::HSData)` diagnostics implemented.
   - `validation_status()` implemented as a diagnostic validation-evidence
     table.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:

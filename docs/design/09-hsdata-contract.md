@@ -33,6 +33,11 @@ need marker ID, chromosome, and finite non-negative position columns, and
 genotype marker names must match marker-map IDs exactly when both components
 are supplied.
 
+R head `1fe0f4c` adds `data_status()` diagnostics for component presence,
+ID-overlap counts, and marker-map/genotype-marker alignment status. Julia
+mirrors this as `data_status(::HSData)` with typed rows. This is diagnostic
+only and does not change the bridge payload.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -93,6 +98,8 @@ Implemented:
 - exact ID overlap checks;
 - marker-map metadata validation;
 - genotype-marker alignment validation;
+- `data_status()` diagnostics for components, ID-overlap counts, and marker
+  status;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge

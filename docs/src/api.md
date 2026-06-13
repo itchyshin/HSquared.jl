@@ -43,7 +43,11 @@ HSquared.HSData
 HSquared.HSDataIDMap
 HSquared.HSMarkerMapSpec
 HSquared.HSGenotypeMarkerSpec
+HSquared.HSDataIDOverlapRow
+HSquared.HSDataMarkerStatusRow
+HSquared.HSDataStatus
 HSquared.id_map
+HSquared.data_status
 HSquared.Pedigree
 HSquared.normalize_pedigree
 HSquared.inbreeding_coefficients

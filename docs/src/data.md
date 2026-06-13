@@ -110,6 +110,17 @@ data.marker_spec.marker_ids
 data.genotype_marker_spec.marker_map_index
 ```
 
+`data_status()` exposes the same diagnostics directly:
+
+```@example data
+status = data_status(data)
+[row.metric => row.count for row in status.id_overlap]
+```
+
+```@example data
+[row.metric => row.value for row in status.marker_status]
+```
+
 ```@example data
 id_map(data).genotypes_without_phenotypes
 ```
@@ -129,6 +140,8 @@ id_map(data).expression_without_phenotypes
 - exact-ID matching;
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
+- `data_status()` diagnostics for components, ID-overlap counts, and marker
+  status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.

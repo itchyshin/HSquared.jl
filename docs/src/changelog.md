@@ -44,6 +44,11 @@
   `hs_data()` input-container contract.
 - Added `HSData` marker-map metadata validation and genotype-marker alignment
   checks.
+- Added `data_status(::HSData)` diagnostics mirroring the R twin's
+  `data_status()` surface for component presence, ID-overlap counts, and
+  marker-alignment status. Diagnostic only; no bridge payload, genotype
+  parsing, relationship construction, marker scan, genomic fitting, or
+  QTL/eQTL claim.
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.

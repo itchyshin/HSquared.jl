@@ -64,6 +64,8 @@ Implemented now:
   genotype, expression, marker, annotation, and environment inputs;
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
+- `data_status()` diagnostics for `HSData` component presence, ID-overlap
+  counts, and marker-alignment status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -119,6 +121,7 @@ data = HSData(
 )
 
 id_map(data)
+data_status(data)
 ```
 
 This records exact ID overlap only. File-backed storage, relationship

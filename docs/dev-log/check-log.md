@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Data Status Diagnostic
+
+- Goal: mirror the R twin's `data_status()` diagnostics for `HSData` without
+  changing bridge payloads or claiming genotype/genomic modelling.
+- Active lenses: Ada, Shannon, Emmy, Jason, Pat, Rose, Grace.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `1fe0f4c` adds exported `data_status()` for `hs_data()`
+    objects.
+  - Reported R evidence: focused hs-data tests 46 pass, full tests 254 pass,
+    pkgdown no problems, `devtools::check()` 0/0/0, R-CMD-check
+    `27461011499`, pkgdown `27461011484`, and Pages `27461044101` success.
+- Julia-side action:
+  - Added `HSDataIDOverlapRow`, `HSDataMarkerStatusRow`, `HSDataStatus`, and
+    `data_status(::HSData)`.
+  - `data_status()` reports component presence, ID-overlap counts, and
+    marker-map/genotype-marker alignment status.
+  - Updated data docs, API docs, HSData contract, capability status,
+    validation debt, public claims, README, roadmap, changelog, and
+    coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 334 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found only expected guardrail and blocked-wording hits around
+    diagnostics, bridge payloads, genotype parsing, relationship construction,
+    marker scanning, genomic fitting, and QTL/eQTL fitting.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Diagnostic only.
+  - No bridge payload change.
+  - No genotype parsing.
+  - No relationship-matrix construction.
+  - No marker scanning, genomic fitting, or QTL/eQTL fitting.
+
 ## 2026-06-13 HSData Marker Metadata Validation
 
 - Goal: align Julia `HSData` local metadata hygiene with the R twin's marker-map

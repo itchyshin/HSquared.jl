@@ -317,6 +317,32 @@ end
     @test data.marker_spec.columns == (marker = :marker, chromosome = :chr, position = :pos)
     @test data.genotype_marker_spec.marker_ids == ["m2", "m1"]
     @test data.genotype_marker_spec.marker_map_index == [2, 1]
+    status = data_status(data)
+    @test status isa HSDataStatus
+    @test status.components == [:phenotypes, :pedigree, :genotypes, :markers, :expression]
+    @test [row.metric for row in status.id_overlap] == [
+        "phenotype_ids",
+        "pedigree_ids",
+        "genotype_ids",
+        "expression_ids",
+        "phenotypes_without_pedigree",
+        "phenotypes_without_genotypes",
+        "genotypes_without_phenotypes",
+        "phenotypes_without_expression",
+        "expression_without_phenotypes",
+    ]
+    @test [row.count for row in status.id_overlap] == [2, 3, 3, 2, 0, 1, 2, 1, 1]
+    @test [row.metric for row in status.marker_status] == [
+        "marker_map_markers",
+        "genotype_marker_columns",
+        "aligned_marker_columns",
+        "chromosomes",
+        "position_min",
+        "position_max",
+        "alignment",
+    ]
+    @test [row.value for row in status.marker_status] == ["2", "2", "2", "2", "10.0", "20.0", "checked"]
+    @test occursin("HSDataStatus", sprint(show, status))
 
     raw_pedigree = (
         id = ["animal_1", "animal_2", "founder"],
@@ -342,6 +368,22 @@ end
 
     zero_chromosome_data = HSData(phenotypes; markers = (marker = ["m1"], chr = ["0"], pos = [0]))
     @test zero_chromosome_data.marker_spec.chromosome == ["0"]
+
+    marker_only_status = data_status(HSData(phenotypes; markers = (marker = ["m1"], chr = ["1"], pos = [10])))
+    @test [row.value for row in marker_only_status.marker_status] ==
+          ["1", "0", "0", "1", "10.0", "10.0", "not_checked_no_genotypes"]
+
+    genotype_only_status = data_status(
+        HSData(
+            phenotypes;
+            genotypes = genotypes,
+            genotype_ids = ["animal_1", "animal_3", "founder"],
+        ),
+    )
+    @test [row.value for row in genotype_only_status.marker_status] ==
+          ["0", "2", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
+
+    @test data_status(HSData(phenotypes)).marker_status === nothing
 
     @test_throws ArgumentError HSData((id = ["animal_1", missing], y = [1.0, 2.0]))
     @test_throws ArgumentError HSData(phenotypes; pedigree = (id = ["animal_1"],))

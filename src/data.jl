@@ -44,6 +44,42 @@ struct HSGenotypeMarkerSpec
 end
 
 """
+    HSDataIDOverlapRow
+
+One ID-overlap count returned by [`data_status`](@ref).
+"""
+struct HSDataIDOverlapRow
+    metric::String
+    count::Int
+end
+
+"""
+    HSDataMarkerStatusRow
+
+One marker-map or genotype-marker diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataMarkerStatusRow
+    metric::String
+    value::String
+end
+
+"""
+    HSDataStatus
+
+Diagnostic container returned by [`data_status`](@ref).
+
+This mirrors the R twin's `data_status()` surface for component presence,
+ID-overlap counts, and marker-map/genotype-marker alignment status. It is
+diagnostic only and does not build model specifications or relationship
+matrices.
+"""
+struct HSDataStatus
+    components::Vector{Symbol}
+    id_overlap::Vector{HSDataIDOverlapRow}
+    marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
+end
+
+"""
     HSData
 
 In-memory container for matched phenotypes, pedigree, genotypes, expression,
@@ -86,6 +122,10 @@ function Base.show(io::IO, id_map::HSDataIDMap)
         length(id_map.phenotype_ids),
         " phenotype IDs)",
     )
+end
+
+function Base.show(io::IO, status::HSDataStatus)
+    print(io, "HSDataStatus(", join(string.(status.components), ", "), ")")
 end
 
 """
@@ -248,6 +288,23 @@ Return the conservative ID-overlap map stored in an [`HSData`](@ref).
 """
 function id_map(data::HSData)
     return data.id_map
+end
+
+"""
+    data_status(data::HSData)
+
+Return component, ID-overlap, and marker-alignment diagnostics for an
+[`HSData`](@ref) object.
+
+This mirrors the R twin's `data_status()` helper. It does not parse genotype
+files, construct genomic relationships, build bridge payloads, or fit models.
+"""
+function data_status(data::HSData)
+    return HSDataStatus(
+        _data_components(data),
+        _data_id_overlap(data.id_map),
+        _data_marker_status(data),
+    )
 end
 
 function _pedigree_ids(::Nothing, pedigree_id)
@@ -482,6 +539,84 @@ function _position_value(value)
     isfinite(position) && position >= 0 ||
         throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
     return position
+end
+
+function _data_components(data::HSData)
+    components = Symbol[]
+    push!(components, :phenotypes)
+    data.pedigree === nothing || push!(components, :pedigree)
+    data.genotypes === nothing || push!(components, :genotypes)
+    data.markers === nothing || push!(components, :markers)
+    data.expression === nothing || push!(components, :expression)
+    data.annotation === nothing || push!(components, :annotation)
+    data.environment === nothing || push!(components, :environment)
+    return components
+end
+
+function _data_id_overlap(map::HSDataIDMap)
+    return [
+        HSDataIDOverlapRow("phenotype_ids", length(map.phenotype_ids)),
+        HSDataIDOverlapRow("pedigree_ids", length(map.pedigree_ids)),
+        HSDataIDOverlapRow("genotype_ids", length(map.genotype_ids)),
+        HSDataIDOverlapRow("expression_ids", length(map.expression_ids)),
+        HSDataIDOverlapRow("phenotypes_without_pedigree", length(map.phenotypes_without_pedigree)),
+        HSDataIDOverlapRow("phenotypes_without_genotypes", length(map.phenotypes_without_genotypes)),
+        HSDataIDOverlapRow("genotypes_without_phenotypes", length(map.genotypes_without_phenotypes)),
+        HSDataIDOverlapRow("phenotypes_without_expression", length(map.phenotypes_without_expression)),
+        HSDataIDOverlapRow("expression_without_phenotypes", length(map.expression_without_phenotypes)),
+    ]
+end
+
+function _data_marker_status(data::HSData)
+    marker_spec = data.marker_spec
+    genotype_marker_count = _data_genotype_marker_count(data)
+
+    marker_spec === nothing && genotype_marker_count == 0 && return nothing
+
+    marker_count = marker_spec === nothing ? 0 : length(marker_spec.marker_ids)
+    aligned_count = data.genotype_marker_spec === nothing ? 0 : length(data.genotype_marker_spec.marker_ids)
+    chromosome_count = marker_spec === nothing ? nothing : length(unique(marker_spec.chromosome))
+    position_min = marker_spec === nothing ? nothing : minimum(marker_spec.position)
+    position_max = marker_spec === nothing ? nothing : maximum(marker_spec.position)
+    alignment = _data_marker_alignment(marker_spec, data.genotype_marker_spec, genotype_marker_count)
+
+    return [
+        HSDataMarkerStatusRow("marker_map_markers", string(marker_count)),
+        HSDataMarkerStatusRow("genotype_marker_columns", string(genotype_marker_count)),
+        HSDataMarkerStatusRow("aligned_marker_columns", string(aligned_count)),
+        HSDataMarkerStatusRow("chromosomes", _optional_status_value(chromosome_count)),
+        HSDataMarkerStatusRow("position_min", _optional_status_value(position_min)),
+        HSDataMarkerStatusRow("position_max", _optional_status_value(position_max)),
+        HSDataMarkerStatusRow("alignment", alignment),
+    ]
+end
+
+function _data_genotype_marker_count(data::HSData)
+    data.genotypes === nothing && return 0
+    data.genotype_marker_spec === nothing || return length(data.genotype_marker_spec.marker_ids)
+    return _fallback_genotype_marker_count(data.genotypes)
+end
+
+function _fallback_genotype_marker_count(genotypes::AbstractMatrix)
+    return size(genotypes, 2)
+end
+
+function _fallback_genotype_marker_count(genotypes)
+    names = _column_names(genotypes)
+    names === nothing && return 0
+    return count(name -> string(name) != "id", names)
+end
+
+function _data_marker_alignment(marker_spec, genotype_marker_spec, genotype_marker_count::Int)
+    genotype_marker_spec === nothing || return "checked"
+    marker_spec === nothing && genotype_marker_count > 0 && return "not_checked_no_marker_map"
+    marker_spec === nothing || return "not_checked_no_genotypes"
+    return "not_applicable"
+end
+
+function _optional_status_value(value)
+    value === nothing && return "not_available"
+    return string(value)
 end
 
 function _column_symbol(column::Symbol, role)
