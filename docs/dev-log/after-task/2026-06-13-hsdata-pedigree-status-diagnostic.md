@@ -99,6 +99,18 @@ engine normalization.
   construction, fitted animal-model support, genomic fitting, marker scanning,
   and QTL/eQTL fitting.
 
+Remote checks for implementation commit `41470ea`:
+
+- CI `27461589231`: success.
+- Documenter `27461589180`: success.
+- Pages deploy `27461624269`: success.
+- Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP 200
+  and contains `pedigree_status`, `duplicate IDs`, and `normalize_pedigree`.
+- Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200
+  and contains `HSDataPedigreeStatusRow` and `data_status`.
+- Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`:
+  HTTP 200 and contains `pedigree status` and `marker-alignment status`.
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -122,11 +134,19 @@ It does not widen the bridge or promote fitted-model capability.
 ## Coordination Notes
 
 - Julia lane only. No R repo edits were made.
-- The R twin is separately working on formula ergonomics for
-  `animal(1 | id)` resolving pedigree from `data = hs_data(...)`; this Julia
-  slice does not require an engine API change.
+- The R twin separately landed formula ergonomics in `hsquared` heads
+  `74eef82` and `39ca990`: `animal(1 | id)` can resolve pedigree from
+  `data = hs_data(..., pedigree = ped)`.
+- Julia docs record this as R parser/data-container ergonomics only. The
+  explicit `animal(1 | id, pedigree = ped)` spelling remains the shared
+  portable contract, and this does not require a Julia engine API or bridge
+  payload change.
+- After recording that handoff, `Pkg.test()`, Documenter, `git diff --check`,
+  additions-only ASCII scan, and shorthand/claim scan were rerun locally and
+  passed.
 
 ## Next Actions
 
-1. Commit and push the diagnostic slice.
-2. Watch CI and Documenter, then record remote evidence.
+1. Commit and push the remote-evidence plus formula-ergonomics coordination
+   note.
+2. Watch CI, Documenter, and Pages for the evidence commit.

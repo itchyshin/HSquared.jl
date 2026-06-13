@@ -26,6 +26,12 @@ R head `36efbf3` connects that container to the v0.1 R parser:
 - the bridge payload shape is unchanged: `y`, `X`, sparse `Z`, normalized
   pedigree/ID metadata, method, family, and Julia target metadata.
 
+R heads `74eef82` and `39ca990` add a narrower R-side default: if the formula
+uses `animal(1 | id)` and `data = hs_data(..., pedigree = ped)` supplies a
+pedigree, R fills the same v0.1 pedigree contract. The explicit
+`animal(1 | id, pedigree = ped)` spelling remains the shared portable syntax.
+This does not change Julia `HSData`, the engine API, or the bridge payload.
+
 R heads `5923fcd` and `d1eb174` add marker-map and genotype-marker alignment
 validation to the R container. Those handoffs did not change the bridge
 payload. Julia mirrors the same local metadata hygiene in `HSData`: marker maps

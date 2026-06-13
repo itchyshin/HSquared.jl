@@ -35,6 +35,10 @@ pedigree/Ainv engine utility slice.
 - R head `36efbf3` connects `hs_data()` to the v0.1 R parser for
   `model_spec()` and `hsquared()` while preserving the same bridge payload
   shape; live Julia `HSData` object marshalling remains planned.
+- R heads `74eef82` and `39ca990` let R use `animal(1 | id)` as shorthand
+  when `data = hs_data(..., pedigree = ped)` supplies the pedigree. The
+  explicit `animal(1 | id, pedigree = ped)` syntax remains the shared
+  portable contract, and the Julia engine API is unchanged.
 - Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
   hand-checked tests and optional R-side `nadiv::Mrode9` comparator evidence.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,

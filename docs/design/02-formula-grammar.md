@@ -27,6 +27,21 @@ formula-to-bridge contract before fitting or Julia execution. Unsupported
 trait, covariance, and non-v0.1 animal terms should be rejected in R before
 Julia is asked to fit anything.
 
+R heads `74eef82` and `39ca990` add one R-side ergonomic default:
+
+```r
+hsquared(
+  y ~ sex + age + animal(1 | id),
+  data = hs_data(phenotypes = dat, pedigree = ped),
+  family = gaussian()
+)
+```
+
+This is not a new engine term. It means the R parser may fill in the missing
+`pedigree = ped` from the `hs_data()` bundle. The explicit spelling
+`animal(1 | id, pedigree = ped)` remains the canonical portable syntax and the
+shared R-Julia contract.
+
 ## Reserved Planned Genomic/QTL Vocabulary
 
 R head `3c82c9a` reserves these planned formula markers:
@@ -124,6 +139,9 @@ Current parity state:
   columns, sparse `Z` dimensions, normalized animal IDs, observed ID mapping,
   pedigree founder count, and Julia targets without fitting or executing
   Julia.
+- R can use `animal(1 | id)` only when `data = hs_data(..., pedigree = ped)`
+  supplies the pedigree; this fills the same v0.1 payload and does not change
+  the Julia engine target.
 - R builds a bridge-shaped payload with numeric `y`, dense `X`, sparse `Z`,
   normalized IDs, parent indices, pedigree metadata, method, and family.
 - R and Julia both expose grammar status diagnostics that separate parsed,

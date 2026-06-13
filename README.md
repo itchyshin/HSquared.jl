@@ -142,7 +142,10 @@ engine validation path.
 On the R side, `hs_data()` can feed the v0.1 parser for `model_spec()` and
 `hsquared()` by reading variables from `data$phenotypes` and resolving
 `pedigree` from the bundle. That R integration still produces the same bridge
-payload shape; Julia `HSData` object marshalling remains planned.
+payload shape. R also allows `animal(1 | id)` to use the bundled pedigree when
+`data = hs_data(..., pedigree = ped)`, but the explicit
+`animal(1 | id, pedigree = ped)` spelling remains the shared portable
+contract. Julia `HSData` object marshalling remains planned.
 
 The planned genomic/QTL and standard quantitative-genetic vocabulary is
 reserved but not implemented:

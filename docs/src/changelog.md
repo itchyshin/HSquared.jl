@@ -61,6 +61,10 @@
   formula-to-bridge payload.
 - Recorded the R twin's `hs_data()` parser integration for the v0.1
   formula-to-bridge payload without changing the Julia payload shape.
+- Recorded the R twin's `animal(1 | id)` shorthand for
+  `data = hs_data(..., pedigree = ped)` as R-side formula ergonomics only; the
+  explicit `animal(1 | id, pedigree = ped)` contract and Julia payload shape
+  are unchanged.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

@@ -38,6 +38,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin can now feed `hs_data()` into `model_spec()` and `hsquared()` for
   the v0.1 parser at `hsquared` head `36efbf3`; the bridge payload shape is
   unchanged and live Julia `HSData` object marshalling remains planned.
+- The R twin added formula ergonomics at `hsquared` heads `74eef82` and
+  `39ca990`: `animal(1 | id)` may use the pedigree stored in
+  `data = hs_data(..., pedigree = ped)`. The explicit
+  `animal(1 | id, pedigree = ped)` syntax remains the shared portable
+  contract, and no Julia engine API or bridge payload change is required.
 - The Julia twin has `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot
   marshalling.
 - The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
@@ -143,6 +148,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - boundary: phenotype/pedigree parser integration only. No file-backed
     storage, genotype/omics automatic model construction, production bridge
     hardening, or general fitting.
+- R lane handoff from `itchyshin/hsquared` heads `74eef82` and `39ca990`:
+  - `animal(1 | id)` can use the pedigree stored in
+    `data = hs_data(..., pedigree = ped)`;
+  - canonical portable syntax remains `animal(1 | id, pedigree = ped)`;
+  - reported remote evidence: R-CMD-check `27461601773`, pkgdown
+    `27461601799`, and Pages `27461636297` success;
+  - boundary: R parser/data-container ergonomics only. No Julia engine API
+    change and no bridge payload shape change.
 - R lane handoff from `itchyshin/hsquared` head `c837f2d`:
   - internal `hs_fit_julia_payload()` uses JuliaCall;
   - the smoke test activates the sibling local `HSquared.jl` checkout;

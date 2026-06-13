@@ -55,10 +55,15 @@ On the R side, `hs_data()` can now feed the v0.1 parser. R head `36efbf3`
 allows `model_spec()` and `hsquared()` to accept an `hs_data()` object as
 `data`; model variables are read from `data$phenotypes`, and formula
 components such as `pedigree = pedigree` can be resolved from the bundle.
+R heads `74eef82` and `39ca990` also allow the R-side shorthand
+`animal(1 | id)` when the pedigree is already stored inside
+`data = hs_data(..., pedigree = ped)`.
 
 This does not change the Julia bridge payload shape. The bridge still targets
 `y`, `X`, sparse `Z`, normalized pedigree and ID metadata, method, family, and
-Julia target metadata. Julia `HSData` object marshalling remains planned.
+Julia target metadata. The explicit `animal(1 | id, pedigree = ped)` spelling
+remains the shared portable contract, and Julia `HSData` object marshalling
+remains planned.
 
 ## Genotype And Expression IDs
 

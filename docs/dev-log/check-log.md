@@ -38,6 +38,19 @@ Newest entries go at the top.
     diagnostics, bridge payloads, raw-pedigree Ainv construction,
     relationship construction, fitted animal-model support, genomic fitting,
     marker scanning, and QTL/eQTL fitting.
+- Remote checks:
+  - CI `27461589231`: success.
+  - Documenter `27461589180`: success.
+  - Pages deploy `27461624269`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions.
+  - Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP
+    200 and contains `pedigree_status`, `duplicate IDs`, and
+    `normalize_pedigree`.
+  - Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200
+    and contains `HSDataPedigreeStatusRow` and `data_status`.
+  - Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`:
+    HTTP 200 and contains `pedigree status` and `marker-alignment status`.
 - Boundary:
   - Diagnostic only.
   - No bridge payload change.
@@ -45,6 +58,17 @@ Newest entries go at the top.
   - No relationship-matrix construction from `HSData`.
   - No fitted animal-model, Mrode fitted-output, genomic fitting, marker scan,
     or QTL/eQTL claim.
+- Coordination update:
+  - After the Julia diagnostic slice was pushed, the R twin reported
+    `74eef82` and `39ca990`: `animal(1 | id)` can use the pedigree stored in
+    `data = hs_data(..., pedigree = ped)`.
+  - Recorded Julia-side parity wording in formula and bridge docs. This is
+    R parser/data-container ergonomics only; explicit
+    `animal(1 | id, pedigree = ped)` remains the shared portable contract, and
+    the Julia engine API plus bridge payload shape are unchanged.
+  - Reran `julia --project=. -e 'using Pkg; Pkg.test()'`,
+    `julia --project=docs docs/make.jl`, `git diff --check`, additions-only
+    ASCII scan, and shorthand/claim scan after the wording update; all passed.
 
 ## 2026-06-13 HSData Data Status Diagnostic
 

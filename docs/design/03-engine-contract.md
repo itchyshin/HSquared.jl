@@ -147,6 +147,13 @@ does not change. Julia still receives the low-level `y`, `X`, sparse `Z`,
 pedigree metadata, method, family, and target metadata contract rather than a
 live `HSData` object.
 
+R heads `74eef82` and `39ca990` add a parser-only shorthand:
+`animal(1 | id)` can use the pedigree stored in
+`data = hs_data(..., pedigree = ped)`. The explicit
+`animal(1 | id, pedigree = ped)` spelling remains the shared portable contract.
+This shorthand does not require a new Julia engine term, a new `HSData`
+marshalling path, or a bridge payload change.
+
 ## Implemented Model-Spec Validator
 
 ```julia
@@ -410,6 +417,11 @@ R head `36efbf3` allows both `model_spec()` and `hsquared()` to take an
 `hs_data()` object as `data` for this same contract. Model variables are read
 from `data$phenotypes`, formula objects such as `pedigree` can be resolved from
 the bundle, and the bridge payload shape remains unchanged.
+
+R heads `74eef82` and `39ca990` allow the R parser shorthand
+`animal(1 | id)` when the pedigree is already stored in
+`data = hs_data(..., pedigree = ped)`. The payload remains the same as the
+explicit `animal(1 | id, pedigree = ped)` contract.
 
 The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
 whether PEV/reliability should ever become required base payload fields, Mrode

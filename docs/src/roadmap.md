@@ -48,6 +48,10 @@ Implemented:
   `36efbf3`; this lets `model_spec()` and `hsquared()` read v0.1 model
   variables from `data$phenotypes` and resolve `pedigree` from the bundle
   while keeping the bridge payload shape unchanged.
+- external R formula-ergonomics evidence from `hsquared` heads `74eef82` and
+  `39ca990`; `animal(1 | id)` may use the pedigree stored in
+  `data = hs_data(..., pedigree = ped)`, while explicit
+  `animal(1 | id, pedigree = ped)` remains the shared portable contract.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and

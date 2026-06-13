@@ -10,11 +10,22 @@ validation evidence, and status rows exist.
 
 ## Parsed Today
 
-The only R formula shape parsed into the current v0.1 bridge contract is:
+The canonical portable R formula shape parsed into the current v0.1 bridge
+contract is:
 
 ```r
 y ~ fixed + animal(1 | id, pedigree = ped)
 ```
+
+When `data = hs_data(..., pedigree = ped)` supplies the pedigree bundle, the R
+parser also accepts the shorthand:
+
+```r
+y ~ fixed + animal(1 | id)
+```
+
+That shorthand fills the same explicit-pedigree contract on the R side. It is
+not a new Julia engine term and it does not change the bridge payload.
 
 Julia receives the corresponding low-level engine pieces:
 
@@ -63,6 +74,10 @@ not a fitting helper.
 In direct Julia code, the custom precision-kernel marker is qualified as
 `HSquared.precision()` because `Base.precision` already exists. The grammar
 status table keeps the R formula spelling `precision(1 | id, Q = Q)`.
+
+The R-side `animal(1 | id)` shorthand for `data = hs_data(..., pedigree = ped)`
+is intentionally not a separate Julia status row. It is an input default that
+normalizes to the explicit `animal(1 | id, pedigree = ped)` contract.
 
 ## Reserved Phase 2+ Quantitative-Genetic Terms
 
