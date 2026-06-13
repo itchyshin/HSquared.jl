@@ -16,12 +16,14 @@ Implemented:
 - pedigree validation and topological sorting;
 - direct sparse `Ainv` construction for validated pedigrees;
 - low-level animal-model spec validation;
-- dense Gaussian likelihood evaluation;
+- dense Gaussian likelihood evaluation with a `max_dense_cells` guard;
 - experimental dense variance-component optimization;
 - experimental dense EBV/BLUP, heritability, PEV, and reliability extraction;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - sparse CSC marshalling helper for R sparse matrix slots;
-- external opt-in R bridge evidence from `hsquared` head `9eabf0d`.
+- external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
+- external R PEV/reliability bridge extractor contract evidence from
+  `hsquared` head `78ba5ff`, with Julia payload widening still planned.
 
 Not implemented:
 
@@ -34,10 +36,11 @@ Not implemented:
 Next engine targets:
 
 1. R-side sparse CSC marshalling and stable production engine controls;
-2. Mrode-style validation and comparator checks;
-3. production sparse covariance/precision computations;
-4. AI-REML or a documented sparse optimizer path;
-5. production sparse reliability and prediction error variance.
+2. lockstep R/Julia decision on PEV/reliability bridge payload fields;
+3. Mrode-style validation and comparator checks;
+4. production sparse covariance/precision computations;
+5. AI-REML or a documented sparse optimizer path;
+6. production sparse reliability and prediction error variance.
 
 ## Later Phases
 

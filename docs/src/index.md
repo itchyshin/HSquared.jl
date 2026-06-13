@@ -24,7 +24,7 @@ Implemented engine utilities:
   pedigrees;
 - low-level animal-model spec validation;
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
-  components;
+  components, with a `max_dense_cells` guard for the temporary dense path;
 - experimental dense variance-component optimization for validated specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
   heritability, PEV, and reliability extractors for the dense spec path;

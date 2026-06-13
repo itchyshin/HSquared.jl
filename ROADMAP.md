@@ -21,7 +21,7 @@ pedigree/Ainv engine utility slice.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method.
 - Dense Gaussian ML/REML log-likelihood evaluation exists for supplied variance
-  components.
+  components, with a `max_dense_cells` guard for the temporary dense path.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, EBV/BLUP,
@@ -31,7 +31,8 @@ pedigree/Ainv engine utility slice.
   bridge-shaped inputs.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
-  head `9eabf0d`.
+  head `9eabf0d`; R head `78ba5ff` adds future PEV/reliability bridge
+  extractor contracts.
 - Production high-level formula fitting and production R bridge execution are
   not implemented.
 - Public model syntax is planned, not executable.
@@ -76,7 +77,7 @@ First real capability:
 - low-level animal-model spec validation; initial bridge validator covered;
 - fixed and random-effect design;
 - univariate Gaussian ML/REML likelihood evaluation; dense initial evaluator
-  covered for supplied variance components;
+  covered for supplied variance components with a dense-size guard;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
 - experimental dense EBV/BLUP, fitted-value, and heritability extractors;
@@ -152,9 +153,11 @@ nonzeros, memory, and comparator.
 ## Next Work Queue
 
 1. Wire the R twin to sparse CSC marshalling instead of dense-guarded `Z`.
-2. Add Julia-side `HSData` integration tests once the R bridge sends actual
+2. Decide with the R twin when PEV/reliability enter `result_payload()` and add
+   lockstep bridge tests if they do.
+3. Add Julia-side `HSData` integration tests once the R bridge sends actual
    `hs_data()` payloads.
-3. Add Mrode/simple comparator validation for the dense low-level path.
-4. Replace dense covariance equations with sparse production computations.
-5. Keep `hsquared` issue #2 synchronized with this engine contract.
-6. Add Mrode/comparator validation before promoting animal-model fitting.
+4. Add Mrode/simple comparator validation for the dense low-level path.
+5. Replace dense covariance equations with sparse production computations.
+6. Keep `hsquared` issue #2 synchronized with this engine contract.
+7. Add Mrode/comparator validation before promoting animal-model fitting.

@@ -2,6 +2,49 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1L Dense Validation Size Guard And R PEV Sync
+
+- Goal: add a Julia-side dense validation size guard aligned with the R
+  `engine_control$max_dense_cells` vocabulary, and record the R twin's
+  PEV/reliability extractor-contract handoff without changing Julia bridge
+  payload fields.
+- Active lenses: Ada, Shannon, Hopper, Karpinski, Gauss, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `78ba5ff` added exported
+    `prediction_error_variance()` and `reliability()` generics and fitted-object
+    methods.
+  - R has future-compatible normalization if Julia later returns
+    `prediction_error_variance` or `reliability`.
+  - Current R live-bridge tests expect those fields to be absent from Julia
+    `result_payload()`.
+- Implementation evidence:
+  - Added `max_dense_cells` to `gaussian_loglik()`.
+  - Threaded `max_dense_cells` through `fit_variance_components()`,
+    `fit_animal_model(spec)`, and direct
+    `fit_animal_model(y, X, Z, Ainv; ...)` dispatch.
+  - Guard fails before the current dense validation path converts covariance or
+    relationship matrices.
+  - Kept `result_payload()` fields unchanged.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 169 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only blocked/planned wording in old after-task reports and
+    the claims register, not public claims that PEV/reliability are returned
+    through the bridge, sparse production fitting works, Mrode validation is
+    complete, or GPU/QTL support exists.
+- Boundary:
+  - `max_dense_cells` is a guard for the temporary dense path, not a sparse
+    production solver.
+  - R PEV/reliability bridge fields remain a planned lockstep task.
+  - Sparse production fitting, Mrode validation, and production reliability/PEV
+    remain planned.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1K Sparse CSC Bridge Marshalling
 
 - Goal: add a Julia sparse CSC marshalling helper for R `Matrix::dgCMatrix`

@@ -74,6 +74,8 @@ lik = gaussian_loglik(spec, sigma_a2, sigma_e2)
 This evaluates the Gaussian ML or REML log-likelihood at supplied variance
 components. The current implementation intentionally forms dense matrices so
 the objective can be tested before the production sparse solver lands.
+The keyword `max_dense_cells` guards this temporary path before dense covariance
+or relationship matrices are formed.
 
 It does not optimize variance components, compute EBVs, or return a fitted
 model.
@@ -90,7 +92,20 @@ objective over positive additive and residual variance components using a
 log-variance parameterization and `Optim.NelderMead()`.
 
 This is a low-level validation path. It is not the production sparse animal
-model engine, not AI-REML, and not yet exposed through the R formula bridge.
+model engine, not AI-REML, and not the default public R fitting path.
+
+The dense likelihood and optimizer accept:
+
+```julia
+gaussian_loglik(spec, sigma_a2, sigma_e2; max_dense_cells = 1_000_000)
+fit_variance_components(spec; max_dense_cells = 1_000_000)
+fit_animal_model(spec; max_dense_cells = 1_000_000)
+```
+
+The guard counts the dense covariance and relationship cells that the current
+validation implementation would need. It is a stopgap to keep accidental large
+dense runs out of the bridge path; it is not evidence of production-scale
+fitting.
 
 ## Experimental Low-Level Extractors
 
@@ -227,12 +242,20 @@ builds the payload, and stops. Julia-specific controls stay inside
 `engine_control`, currently including `julia_project`, `initial`, and
 `max_dense_cells`.
 
+R head `78ba5ff` adds R-side `prediction_error_variance()` and `reliability()`
+extractor contracts and future-compatible bridge normalization. Julia already
+has dense experimental functions with those names, but they remain deliberately
+excluded from `result_payload()` until both twins widen the bridge result tests
+in lockstep. The expected future payload shape is `(ids = ..., values = ...)`
+for each field.
+
 The next bridge task is wiring the R twin to sparse CSC slot marshalling, not
 wider syntax. The Julia tests cover parent-index semantics, `ids` order, sparse
 `Z` dimensions, Julia-side `Ainv`, CSC slot reconstruction, and parity between
-spec dispatch and direct payload dispatch. The R twin now has an opt-in
-experimental Julia engine path for tiny/local examples. A parallel future task
-is `hs_data()` to `HSData` marshalling parity.
+spec dispatch and direct payload dispatch. The dense path now has a
+`max_dense_cells` guard aligned with the R engine-control vocabulary. The R twin
+has an opt-in experimental Julia engine path for tiny/local examples. A parallel
+future task is `hs_data()` to `HSData` marshalling parity.
 
 ## Input Payload
 

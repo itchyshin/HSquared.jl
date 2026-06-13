@@ -312,10 +312,14 @@ end
     @test reml.method == :REML
     @test reml.beta ≈ [2.0]
     @test reml.loglik ≈ -0.5 * (2 * log(2 * pi) + 3 * log(2.0) + log(1.5) + 1.0)
+    guarded = gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 18)
+    @test guarded.loglik ≈ reml.loglik
 
     @test_throws ArgumentError gaussian_loglik(spec, 0.0, 1.0)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, -1.0)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; method = :AI_REML)
+    @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 17)
+    @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 0)
     saturated = animal_model_spec(y, Matrix(I, 3, 3), Z, Ainv)
     @test_throws ArgumentError gaussian_loglik(saturated, 1.0, 1.0)
 end
@@ -346,6 +350,8 @@ end
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = 1.0,))
     @test_throws ArgumentError fit_variance_components(spec; initial = [1.0])
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_variance_components(spec; max_dense_cells = 17)
+    @test_throws ArgumentError fit_animal_model(spec; max_dense_cells = 17)
 end
 
 @testset "Phase 1 dense fit extractors" begin
@@ -458,6 +464,15 @@ end
 
     @test_throws ArgumentError fit_animal_model(y[1:2], X, Z, Ainv; ids = ped.ids)
     @test_throws ArgumentError fit_animal_model(y, X, Z, Ainv; ids = ["a"], method = :ML)
+    @test_throws ArgumentError fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        ids = ped.ids,
+        method = :ML,
+        max_dense_cells = 17,
+    )
 end
 
 @testset "Phase 1 Henderson MME validation fixture" begin

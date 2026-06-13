@@ -6,6 +6,7 @@
 - Added low-level animal-model specification validation.
 - Added dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components.
+- Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.
 - Added experimental low-level variance-component, fixed-effect, EBV/BLUP,
@@ -21,6 +22,8 @@
 - Added `HSData`, `HSDataIDMap`, and `id_map()` as an in-memory mirror of the R
   `hs_data()` input-container contract.
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
+- Recorded the R twin's PEV/reliability bridge extractor contract while keeping
+  Julia `result_payload()` fields unchanged.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

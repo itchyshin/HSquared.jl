@@ -27,6 +27,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   marshalling.
 - The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
   head `9eabf0d`: `control = hs_control(engine = "julia")`.
+- The R twin has PEV/reliability extractor contracts at `hsquared` head
+  `78ba5ff`; Julia keeps those fields out of `result_payload()` until bridge
+  tests widen in lockstep.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
@@ -40,7 +43,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - pedigree normalization and direct sparse `Ainv` utility implemented;
   - low-level `AnimalModelSpec` validation implemented;
   - dense Gaussian likelihood evaluation implemented for supplied variance
-    components;
+    components with a `max_dense_cells` guard;
   - experimental dense variance-component optimization implemented for
     validated specs;
   - experimental dense variance-component, fixed-effect, EBV/BLUP,
@@ -86,8 +89,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - R-specific Julia controls live in `engine_control`: `julia_project`,
     `initial`, and `max_dense_cells`;
   - local/remote R checks were reported green.
+- R lane handoff from `itchyshin/hsquared` head `78ba5ff`:
+  - exported R `prediction_error_variance()` and `reliability()` generics and
+    `hsquared_fit` methods exist;
+  - R has future-compatible normalization if Julia later returns
+    `prediction_error_variance` or `reliability`;
+  - current R live-bridge tests still expect those fields to be absent from the
+    Julia payload;
+  - local/remote R checks were reported green.
 - Next shared seam: R-side sparse marshalling using Julia `sparse_csc_matrix()`,
-  Mrode validation, and `hs_data()` to `HSData` payload parity.
+  lockstep PEV/reliability payload widening, Mrode validation, and `hs_data()`
+  to `HSData` payload parity.
 
 ## Sister References
 

@@ -32,7 +32,8 @@ Implemented now:
 - low-level animal-model spec validation for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method;
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
-  components for validated animal-model specs;
+  components for validated animal-model specs, with a `max_dense_cells` safety
+  guard for the temporary dense path;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
@@ -119,7 +120,10 @@ fit = fit_variance_components(spec)
 ```
 
 This is a low-level Julia validation path. It is not the production sparse
-animal-model engine, and it is not yet exposed through the R formula bridge.
+animal-model engine, and the R twin's opt-in path remains experimental and
+tiny/local.
+Use `max_dense_cells` for tiny/local bridge tests where accidental dense
+allocation needs to fail early.
 
 The dense validation path also has first extractors:
 

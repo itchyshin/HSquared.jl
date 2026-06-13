@@ -14,14 +14,15 @@
 | Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
 | Gaussian ML/REML likelihood evaluation | experimental | `gaussian_loglik()` hand-calculated tiny tests; dense evaluator only, supplied variance components only |
 | Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
+| Dense validation size guard | implemented | `max_dense_cells` tests for likelihood, dense optimizer, spec dispatch, and direct payload dispatch; guard only, not a sparse solver |
 | Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test and Henderson MME fixture; no sparse production solve or comparator yet |
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
 | Dense reliability / PEV | experimental | `prediction_error_variance()` and `reliability()` tested against dense Henderson MME inverse; no sparse production solve or comparator yet |
 | Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
-| R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; R head `c837f2d` has an internal JuliaCall smoke over these fields |
+| R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; R head `c837f2d` has an internal JuliaCall smoke over these fields; R head `78ba5ff` adds PEV/reliability extractor contracts, but Julia deliberately does not include those fields in `result_payload()` yet |
 | R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload; head `9eabf0d` adds opt-in experimental `hs_control(engine = "julia")` for tiny/local use |
 | R `hs_data()` data container | external implemented | `hsquared` head `644c75e`; Julia mirror exists as `HSData`, but live marshalling is not implemented |
-| Opt-in R-to-Julia bridge execution | external experimental | `hsquared` head `9eabf0d`; Julia sparse CSC marshalling helper exists, but R still uses a dense-guarded tiny/local path |
+| Opt-in R-to-Julia bridge execution | external experimental | `hsquared` head `9eabf0d`; Julia sparse CSC marshalling helper and `max_dense_cells` guard exist, but R still uses a tiny/local path |
 | File-backed phenotype/genotype storage | planned | no Arrow/Parquet/PLINK/VCF/HDF5/Zarr implementation yet |
 | Sparse production fitting / AI-REML | planned | no implementation yet |
 | Production sparse reliability / PEV | planned | no implementation yet |

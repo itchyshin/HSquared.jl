@@ -104,6 +104,18 @@ payload_fit = fit_animal_model(
 payload_fit isa AnimalModelFit
 ```
 
+The dense validation path is size-guarded. The guard is intended for tiny/local
+bridge checks and fails before the current implementation forms dense
+covariance or relationship matrices.
+
+```@example quickstart
+try
+    fit_variance_components(spec; max_dense_cells = 17)
+catch err
+    sprint(showerror, err)
+end
+```
+
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,
@@ -151,8 +163,9 @@ catch err
 end
 ```
 
-Sparse production optimization, AI-REML, reliability, prediction error
-variance, and R-to-Julia marshalling remain Phase 1 targets.
+Sparse production optimization, AI-REML, production sparse reliability,
+production sparse prediction error variance, and R-to-Julia sparse marshalling
+remain Phase 1 targets.
 
 ## R Syntax Parity Target
 

@@ -12,8 +12,9 @@ engine reality.
 - Later: factor-analytic G matrices, GLLVM-style high-dimensional responses,
   non-standard inheritance systems, and accelerator-aware computation.
 
-Phase 0 is complete. Phase 1 has started with pedigree normalization and sparse
-`Ainv` construction. Model fitting is not implemented.
+Phase 0 is complete. Phase 1 has started with pedigree normalization, sparse
+`Ainv` construction, and an experimental dense validation path. Production
+model fitting is not implemented.
 
 ## Twin Boundary
 

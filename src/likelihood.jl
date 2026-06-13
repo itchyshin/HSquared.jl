@@ -1,3 +1,5 @@
+const DEFAULT_MAX_DENSE_CELLS = 1_000_000
+
 """
     GaussianLikelihoodResult
 
@@ -42,7 +44,8 @@ struct BreedingValues{TID<:AbstractVector}
 end
 
 """
-    gaussian_loglik(spec, sigma_a2, sigma_e2; method = spec.method)
+    gaussian_loglik(spec, sigma_a2, sigma_e2; method = spec.method,
+                    max_dense_cells = 1_000_000)
 
 Evaluate the Gaussian ML or REML log-likelihood at supplied variance
 components.
@@ -50,13 +53,15 @@ components.
 This Phase 1 evaluator is deliberately conservative: it forms dense matrices
 from the validated `AnimalModelSpec` so the likelihood can be tested before the
 production sparse solver lands. It does not optimize variance components and
-does not return a fitted model.
+does not return a fitted model. `max_dense_cells` is a safety guard for this
+temporary dense path.
 """
 function gaussian_loglik(
     spec::AnimalModelSpec,
     sigma_a2::Real,
     sigma_e2::Real;
     method = spec.method,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     sigma_a2 > 0 ||
         throw(ArgumentError("sigma_a2 must be positive"))
@@ -66,6 +71,7 @@ function gaussian_loglik(
     normalized_method = _coerce_method(method)
     normalized_method in (:ML, :REML) ||
         throw(ArgumentError("method must be :ML or :REML"))
+    _check_dense_validation_size(spec, max_dense_cells)
 
     y = Float64.(spec.y)
     X = Matrix{Float64}(spec.X)
@@ -111,7 +117,8 @@ end
 
 """
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
-                            method = spec.method, iterations = 1_000)
+                            method = spec.method, iterations = 1_000,
+                            max_dense_cells = 1_000_000)
 
 Optimize the dense Gaussian ML/REML objective over positive variance
 components.
@@ -125,6 +132,7 @@ function fit_variance_components(
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     method = spec.method,
     iterations::Integer = 1_000,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     sigma_a2_start, sigma_e2_start = _coerce_initial_variances(initial)
     sigma_a2_start > 0 ||
@@ -133,11 +141,13 @@ function fit_variance_components(
         throw(ArgumentError("initial sigma_e2 must be positive"))
 
     normalized_method = _coerce_method(method)
+    _check_dense_validation_size(spec, max_dense_cells)
     objective(logtheta) = -gaussian_loglik(
         spec,
         exp(logtheta[1]),
         exp(logtheta[2]);
         method = normalized_method,
+        max_dense_cells = max_dense_cells,
     ).loglik
 
     result = optimize(
@@ -148,7 +158,13 @@ function fit_variance_components(
     )
 
     sigma_a2, sigma_e2 = exp.(Optim.minimizer(result))
-    likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = normalized_method)
+    likelihood = gaussian_loglik(
+        spec,
+        sigma_a2,
+        sigma_e2;
+        method = normalized_method,
+        max_dense_cells = max_dense_cells,
+    )
     converged = Optim.converged(result)
     status = converged ? "converged" : "not_converged"
 
@@ -358,6 +374,23 @@ end
 function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_a2, sigma_e2)
     n = size(Z, 1)
     return Symmetric(sigma_a2 * Z * A * transpose(Z) + sigma_e2 * I(n))
+end
+
+function _check_dense_validation_size(spec::AnimalModelSpec, max_dense_cells::Integer)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+
+    nobs = length(spec.y)
+    nanimals = size(spec.Ainv, 1)
+    dense_cells = nobs * nobs + nanimals * nanimals
+    dense_cells <= max_dense_cells ||
+        throw(
+            ArgumentError(
+                "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
+            ),
+        )
+
+    return dense_cells
 end
 
 function _dense_mme_random_inverse_block(fit::AnimalModelFit)
