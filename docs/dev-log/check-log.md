@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1G Henderson MME Validation Fixture
+
+- Goal: add a first MME validation fixture for the dense Phase 1 output path.
+- Active lenses: Ada, Henderson, Mrode, Gauss, Fisher, Curie, Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added a test-only Henderson mixed-model-equation solver.
+  - Added a five-animal pedigree fixture with founders, offspring, repeated
+    records, fixed effects, sparse `Z`, and supplied variance components.
+  - Cross-checked dense marginal-output fixed effects, breeding values, fitted
+    values, and heritability against the MME solution.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 105 checks
+    across Phase 0, pedigree/Ainv, spec validation, likelihood, dense
+    optimizer, dense extractor, direct payload target, and Henderson MME
+    validation testsets.
+- Boundary:
+  - MME fixture is a deterministic validation check, not a full textbook Mrode
+    reproduction.
+  - No external comparator package has been run yet.
+  - Sparse production solves remain planned.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1F Direct Bridge Payload Target
 
 - Goal: implement the Julia method that the R parser currently names as its

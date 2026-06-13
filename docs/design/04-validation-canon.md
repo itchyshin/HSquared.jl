@@ -19,6 +19,8 @@ evidence in tests, docs, and the check log.
 - Sparse `Ainv` matches tiny hand-computed examples.
 - Gaussian animal-model likelihood recovers known tiny solutions.
 - EBVs/BLUPs and heritability match the R-facing contract.
+- Dense validation-path outputs agree with Henderson mixed-model equations at
+  supplied variance components.
 
 ## Status Words
 

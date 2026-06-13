@@ -12,7 +12,7 @@
 | Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
 | Gaussian ML/REML likelihood evaluation | experimental | `gaussian_loglik()` hand-calculated tiny tests; dense evaluator only, supplied variance components only |
 | Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
-| Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test; no sparse production solve or comparator yet |
+| Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test and Henderson MME fixture; no sparse production solve or comparator yet |
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
 | Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
 | R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload but does not execute Julia fitting |

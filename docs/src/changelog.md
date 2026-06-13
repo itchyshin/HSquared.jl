@@ -12,6 +12,8 @@
   fitted-value, and heritability extractors for the dense spec path.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
+- Added a Henderson mixed-model-equation validation fixture for the dense
+  output path.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

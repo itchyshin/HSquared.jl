@@ -25,6 +25,27 @@ function _dense_relationship_for_test(pedigree)
     return A
 end
 
+function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
+    yv = Float64.(y)
+    Xd = Matrix{Float64}(X)
+    Zd = Matrix{Float64}(Z)
+    Q = Matrix{Float64}(Ainv)
+    n = length(yv)
+
+    Rinv = Matrix{Float64}(I, n, n) / sigma_e2
+    Ginv = Q / sigma_a2
+
+    lhs = [
+        transpose(Xd) * Rinv * Xd transpose(Xd) * Rinv * Zd
+        transpose(Zd) * Rinv * Xd transpose(Zd) * Rinv * Zd + Ginv
+    ]
+    rhs = [transpose(Xd) * Rinv * yv; transpose(Zd) * Rinv * yv]
+    solution = lhs \ rhs
+
+    p = size(Xd, 2)
+    return solution[1:p], solution[(p + 1):end]
+end
+
 @testset "HSquared Phase 0 scaffold" begin
     control = HSControl()
 
@@ -259,4 +280,50 @@ end
 
     @test_throws ArgumentError fit_animal_model(y[1:2], X, Z, Ainv; ids = ped.ids)
     @test_throws ArgumentError fit_animal_model(y, X, Z, Ainv; ids = ["a"], method = :ML)
+end
+
+@testset "Phase 1 Henderson MME validation fixture" begin
+    ids = ["founder_a", "founder_b", "animal_1", "animal_2", "animal_3"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "founder_a", "founder_a", "animal_1"],
+        ["0", "0", "founder_b", "founder_b", "animal_2"],
+    )
+    Ainv = pedigree_inverse(ped)
+
+    y = [3.2, 4.1, 5.4, 5.9]
+    X = [
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+    ]
+    Z = sparse(
+        [1, 2, 3, 4],
+        [3, 4, 5, 5],
+        ones(4),
+        4,
+        5,
+    )
+    sigma_a2 = 1.2
+    sigma_e2 = 0.8
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
+    likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
+    fit = AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        true,
+        "mme_fixture",
+        0,
+    )
+
+    expected_beta, expected_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
+
+    @test fixed_effects(fit) ≈ expected_beta
+    @test breeding_values(fit).ids == ped.ids
+    @test breeding_values(fit).values ≈ expected_u
+    @test fitted_values(fit) ≈ vec(Matrix(X) * expected_beta + Matrix(Z) * expected_u)
+    @test heritability(fit) ≈ sigma_a2 / (sigma_a2 + sigma_e2)
 end
