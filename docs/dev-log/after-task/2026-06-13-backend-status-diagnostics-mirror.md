@@ -91,7 +91,13 @@ all rows have `execution_available == false`, and all rows have
 - `git diff --check`: passed.
 - Claim scan: clean with limitations. Hits were blocked/audit wording or
   historical check-log notes, not public execution or speed claims.
-- GitHub CI after push: pending.
+- GitHub CI for commit `80bd8be`: success, run `27458402884`.
+- GitHub Documenter for commit `80bd8be`: success, run `27458402883`.
+- GitHub Pages deploy: success, run `27458435663`.
+- Live docs `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+
+GitHub Actions emitted Node 20 deprecation annotations for upstream actions.
+They were non-failing and do not affect the package or docs results.
 
 ## Public Claim Audit
 
