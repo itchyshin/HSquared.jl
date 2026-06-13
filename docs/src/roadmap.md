@@ -4,6 +4,8 @@ This page mirrors the repository roadmap. It is evidence-gated: a capability is
 public only when code, tests, documentation, validation status, and the R-Julia
 contract agree.
 
+For a dashboard view of this status, see [Mission control](mission-control.md).
+
 ## Current Status
 
 Phase 0 is complete. Phase 1 has started.

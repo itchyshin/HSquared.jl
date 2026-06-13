@@ -119,6 +119,7 @@ not claim model fitting until the Julia engine implements and validates it.
 
 ## Start Here
 
+- [Mission control](mission-control.md)
 - [Get started](quickstart.md)
 - [Model spec grammar](model-spec-grammar.md)
 - [Data containers](data.md)

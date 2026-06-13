@@ -19,6 +19,7 @@ makedocs(;
     ),
     pages = [
         "Home" => "index.md",
+        "Mission control" => "mission-control.md",
         "Get started" => "quickstart.md",
         "Model spec grammar" => "model-spec-grammar.md",
         "Validation status" => "validation-status.md",

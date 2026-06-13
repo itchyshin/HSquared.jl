@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Mission-Control Documenter Page
+
+- Goal: add a dashboard-style Documenter page for the Julia lane, matching the
+  R/Julia twin operating style without turning planned capabilities into
+  claims.
+- Active lenses: Ada, Shannon, Hopper, Emmy, Karpinski, Grace, Rose, Pat.
+- Spawned subagents: none.
+- Implementation:
+  - Added `docs/src/mission-control.md`.
+  - Added the page to the Documenter navigation.
+  - Linked the dashboard from the docs homepage, roadmap, and README.
+- Local checks:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+- Boundary:
+  - Documentation dashboard only.
+  - No new fitting, validation, bridge, backend, GPU, QTL/eQTL, GLLVM, or
+    performance claim.
+
 ## 2026-06-13 Fit Diagnostics Metadata Helper
 
 - Goal: mirror the R twin's `fit_diagnostics()` surface in Julia as a

@@ -20,6 +20,9 @@ This repository has completed Phase 0 and has started Phase 1. It has an
 experimental dense fitting path for validated low-level Julia specs, but it is
 not yet a production animal-model engine.
 
+The Documenter site includes a [mission-control dashboard](https://itchyshin.github.io/HSquared.jl/dev/mission-control.html)
+for the current twin-lane status, evidence gates, and blocked claims.
+
 Implemented now:
 
 - package metadata and CI;
