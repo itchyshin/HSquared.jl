@@ -80,6 +80,12 @@
   match `repeatability_mme`; optimum beats a grid) + a one-off seeded recovery.
   Experimental, dense/validation-scale, REML-only; no committed recovery test
   (suite kept RNG-free), no intervals, no R-facing model-spec.
+- Added `two_effect_mme()` — the general supplied-variance kernel for two
+  independent random effects (each with its own incidence, relationship inverse,
+  and variance), covering common-environment and maternal-environment models;
+  `repeatability_mme` is now its `Z2=Z1, A2=I` special case. Validated against an
+  independent marginal-GLS BLUP. Experimental; no correlated direct–maternal
+  genetic, no estimation, no R-facing model-spec.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

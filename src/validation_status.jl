@@ -198,6 +198,15 @@ const VALIDATION_STATUS_DATA = (
         "Dense validation-scale REML over three variance components; no committed recovery test, no uncertainty intervals, no external comparator, no R-facing model-spec.",
     ),
     (
+        "V3-TWOEFFECT",
+        "general two-random-effect MME (common environment, maternal)",
+        "Phase 3",
+        "partial",
+        "`two_effect_mme` solves a model with two independent random effects (each with its own incidence, relationship inverse, and variance); validated on a common-environment fixture against an independent marginal-GLS BLUP (~1e-9), and `repeatability_mme` is its `Z2=Z1, A2=I` special case (identical BLUPs), in `test/runtests.jl`.",
+        "REML estimation, correlated direct–maternal genetic effects (2×2 G), the R `common_env()`/maternal model-spec mapping, and comparator checks",
+        "Supplied-variance, two INDEPENDENT random effects only; no correlated maternal genetic, no variance-component estimation, no R-facing model-spec.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",

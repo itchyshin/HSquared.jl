@@ -495,6 +495,92 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
 end
 
 """
+    two_effect_mme(y, X, Z1, Ainv1, Z2, Ainv2, sigma1, sigma2, sigma_e2;
+                   ids1 = nothing, ids2 = nothing)
+
+Supplied-variance Henderson solve of a Gaussian model with **two independent
+random effects**:
+
+    y = X·β + Z1·u1 + Z2·u2 + e,
+    u1 ~ N(0, sigma1·A1),  u2 ~ N(0, sigma2·A2),  e ~ N(0, sigma_e2·I),
+
+with relationship inverses `Ainv1 = A1⁻¹`, `Ainv2 = A2⁻¹`. The mixed-model
+equations carry the block-diagonal precision `blockdiag(Ainv1/sigma1,
+Ainv2/sigma2)` for the stacked random effect `[u1; u2]`.
+
+This is the general engine kernel for the standard two-random-effect
+quantitative-genetic models: repeatability / permanent environment (`Z2 = Z1`,
+`A2 = I`; see [`repeatability_mme`](@ref)), common environment (`Z2` = group
+incidence, `A2 = I`), and maternal-environment (`Z2` = dam incidence, `A2 = I`).
+Experimental, supplied-variance, engine-internal — it does not estimate variances
+and does not cover correlated direct–maternal genetic effects (which need a 2×2
+genetic covariance). Returns `(beta, effect1, effect2, variance_components)`.
+"""
+function two_effect_mme(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix,
+    sigma1::Real,
+    sigma2::Real,
+    sigma_e2::Real;
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    sigma1 > 0 || throw(ArgumentError("sigma1 must be positive"))
+    sigma2 > 0 || throw(ArgumentError("sigma2 must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+    size(Z2, 1) == n || throw(ArgumentError("Z2 must have one row per record"))
+    n1 = size(Ainv1, 1)
+    n2 = size(Ainv2, 1)
+    size(Ainv1, 2) == n1 || throw(ArgumentError("Ainv1 must be square"))
+    size(Ainv2, 2) == n2 || throw(ArgumentError("Ainv2 must be square"))
+    size(Z1, 2) == n1 || throw(ArgumentError("Z1 columns must match Ainv1 dimensions"))
+    size(Z2, 2) == n2 || throw(ArgumentError("Z2 columns must match Ainv2 dimensions"))
+    e1ids = ids1 === nothing ? collect(1:n1) : collect(ids1)
+    e2ids = ids2 === nothing ? collect(1:n2) : collect(ids2)
+    length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+    length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    Z1s = sparse(Float64.(Z1))
+    Z2s = sparse(Float64.(Z2))
+    A1 = sparse(Float64.(Ainv1))
+    A2 = sparse(Float64.(Ainv2))
+    rp = inv(Float64(sigma_e2))
+    Zf = hcat(Z1s, Z2s)
+    Ginv = blockdiag(A1 .* inv(Float64(sigma1)), A2 .* inv(Float64(sigma2)))
+    Xt = transpose(Xs)
+    Zft = transpose(Zf)
+    nfixed = size(Xs, 2)
+    lhs = [
+        rp * (Xt * Xs) rp * (Xt * Zf)
+        rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+    ]
+    rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
+    solution = lhs \ rhs
+    beta = Vector{Float64}(solution[1:nfixed])
+    u1 = Vector{Float64}(solution[(nfixed + 1):(nfixed + n1)])
+    u2 = Vector{Float64}(solution[(nfixed + n1 + 1):(nfixed + n1 + n2)])
+    return (
+        beta = beta,
+        effect1 = (ids = e1ids, values = u1),
+        effect2 = (ids = e2ids, values = u2),
+        variance_components = (
+            sigma1 = Float64(sigma1),
+            sigma2 = Float64(sigma2),
+            sigma_e2 = Float64(sigma_e2),
+        ),
+    )
+end
+
+"""
     repeatability_mme(y, X, Z, Ainv, sigma_a2, sigma_pe2, sigma_e2; ids = nothing)
 
 Supplied-variance Henderson solve of the repeatability / permanent-environment
@@ -527,46 +613,17 @@ function repeatability_mme(
     sigma_e2::Real;
     ids = nothing,
 )
-    sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
-    sigma_pe2 > 0 || throw(ArgumentError("sigma_pe2 must be positive"))
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
-    n = length(y)
-    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
-    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
     na = size(Ainv, 1)
-    size(Ainv, 2) == na || throw(ArgumentError("Ainv must be square"))
-    size(Z, 2) == na || throw(ArgumentError("Z columns must match Ainv dimensions"))
-    encoded_ids = ids === nothing ? collect(1:na) : collect(ids)
-    length(encoded_ids) == na ||
-        throw(ArgumentError("ids length must match Ainv dimensions"))
-
-    yv = Float64.(y)
-    Xs = sparse(Float64.(X))
-    Zs = sparse(Float64.(Z))
-    Av = sparse(Float64.(Ainv))
-    rp = inv(Float64(sigma_e2))
-    Zf = hcat(Zs, Zs)
-    Ginv = blockdiag(
-        Av .* inv(Float64(sigma_a2)),
-        sparse(1.0I, na, na) .* inv(Float64(sigma_pe2)),
+    # repeatability = the two-effect model with the permanent-environment effect
+    # sharing Z and carrying an identity relationship (A2 = I).
+    result = two_effect_mme(
+        y, X, Z, Ainv, Z, sparse(1.0I, na, na),
+        sigma_a2, sigma_pe2, sigma_e2; ids1 = ids, ids2 = ids,
     )
-    Xt = transpose(Xs)
-    Zft = transpose(Zf)
-    nfixed = size(Xs, 2)
-    lhs = [
-        rp * (Xt * Xs) rp * (Xt * Zf)
-        rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
-    ]
-    rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
-    solution = lhs \ rhs
-
-    beta = Vector{Float64}(solution[1:nfixed])
-    ahat = Vector{Float64}(solution[(nfixed + 1):(nfixed + na)])
-    pehat = Vector{Float64}(solution[(nfixed + na + 1):(nfixed + 2na)])
     return (
-        beta = beta,
-        animal_effects = (ids = encoded_ids, values = ahat),
-        permanent_effects = (ids = encoded_ids, values = pehat),
+        beta = result.beta,
+        animal_effects = result.effect1,
+        permanent_effects = result.effect2,
         variance_components = (
             sigma_a2 = Float64(sigma_a2),
             sigma_pe2 = Float64(sigma_pe2),

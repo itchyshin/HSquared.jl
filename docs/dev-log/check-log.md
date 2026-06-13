@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 General Two-Random-Effect MME (common environment / maternal)
+
+- Goal: generalize the repeatability kernel into a general supplied-variance
+  two-independent-random-effect MME, covering common-environment and
+  maternal-environment models.
+- Active lenses: Henderson, Falconer, Mendel, Gauss, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `two_effect_mme(y, X, Z1, Ainv1, Z2, Ainv2, σ1, σ2, σe²)`
+    assembles the MME for `[u1; u2]` with `blockdiag(Ainv1/σ1, Ainv2/σ2)`.
+    `repeatability_mme` refactored to delegate (`Z2=Z1, A2=I`) — dedup, guarded by
+    its existing tests. Both exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 712
+    total. New testset "Phase 3 general two-effect MME (common environment)" = 8
+    checks: common-environment fixture vs an independent marginal-GLS BLUP
+    (~1e-9), one effect per group, and `repeatability_mme` == the `Z2=Z1, A2=I`
+    special case; guards. Existing repeatability tests unchanged and green
+    (refactor-safe). `validation_status()` 23 → 24 (added `V3-TWOEFFECT`).
+- Boundary:
+  - Supplied-variance, two INDEPENDENT random effects only; no correlated
+    direct–maternal genetic (2×2 G), no estimation, no R-facing model-spec.
+
 ## 2026-06-13 Repeatability REML Variance-Component Estimation
 
 - Goal: complete the repeatability model into an estimator — REML estimation of

@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 23
+    @test length(validation) == 24
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1918,4 +1918,38 @@ end
     @test_throws ArgumentError fit_repeatability_reml(y, X, Z, Ainv;
         initial = (sigma_a2 = -1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
     @test_throws ArgumentError fit_repeatability_reml(y, X, Z[:, 1:2], Ainv)
+end
+
+@testset "Phase 3 general two-effect MME (common environment)" begin
+    # common-environment model: animal (A) + common-env group (I)
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z1 = Matrix(1.0I, 4, 4)                        # record -> animal
+    Z2 = [1.0 0; 1 0; 0 1; 0 1]                    # record -> common-env group (2 groups)
+    y = [10.0, 11.0, 9.0, 12.0]; X = ones(4, 1)
+    s1 = 1.0; s2 = 0.5; se2 = 2.0
+    r = two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), s1, s2, se2)
+
+    # independent marginal-GLS cross-check of the two BLUPs
+    V = s1 .* (Z1 * A * transpose(Z1)) .+ s2 .* (Z2 * transpose(Z2)) .+ se2 .* Matrix(1.0I, 4, 4)
+    bg = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    resid = y .- X * bg
+    u1g = s1 .* A * transpose(Z1) * (V \ resid)
+    u2g = s2 .* transpose(Z2) * (V \ resid)
+    @test maximum(abs.(r.beta .- bg)) < 1e-9
+    @test maximum(abs.(r.effect1.values .- u1g)) < 1e-9
+    @test maximum(abs.(r.effect2.values .- u2g)) < 1e-9
+    @test length(r.effect2.values) == 2           # one per common-env group
+
+    # repeatability_mme is the Z2 = Z1, A2 = I special case (identical BLUPs)
+    Zr = [1.0 0 0; 1 0 0; 0 1 0; 0 1 0; 0 0 1]; yr = [10.0, 11.0, 12.0, 13.0, 9.0]; Xr = ones(5, 1)
+    Ainvr = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    rep = repeatability_mme(yr, Xr, Zr, Ainvr, 1.0, 0.5, 2.0)
+    gen = two_effect_mme(yr, Xr, Zr, Ainvr, Zr, Matrix(1.0I, 3, 3), 1.0, 0.5, 2.0)
+    @test rep.animal_effects.values ≈ gen.effect1.values atol = 1e-10
+    @test rep.permanent_effects.values ≈ gen.effect2.values atol = 1e-10
+
+    # guards
+    @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), -1.0, s2, se2)
+    @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2), s1, s2, se2)
 end
