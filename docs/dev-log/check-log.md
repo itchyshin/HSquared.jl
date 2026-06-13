@@ -35,7 +35,17 @@ Newest entries go at the top.
     rows, not unsupported claims that PEV/reliability are base
     `result_payload()` fields or production sparse capabilities.
 - Remote checks:
-  - pending.
+  - CI `27459918418`: success.
+  - Documenter `27459918414`: success.
+  - Pages deploy `27459952166`: success.
+  - Live quickstart
+    `https://itchyshin.github.io/HSquared.jl/dev/quickstart`: HTTP 200 and
+    contains the R bridge enrichment wording plus `isapprox`.
+  - Live roadmap `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP
+    200 and contains the R PEV/reliability bridge enrichment evidence plus
+    compact `result_payload()` wording.
+  - GitHub Actions emitted Node 20 deprecation annotations from upstream
+    actions, but all jobs completed successfully.
 - Boundary:
   - Tiny/local bridge enrichment only.
   - No production sparse PEV/reliability.

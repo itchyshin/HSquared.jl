@@ -65,7 +65,22 @@ No Julia code changed. `result_payload()` remains compact and unchanged.
   after-task blocked-wording rows, not unsupported claims that PEV/reliability
   are base `result_payload()` fields or production sparse capabilities.
 
-Remote checks: pending.
+Remote checks for commit `a44107f`:
+
+- CI `27459918418`: success;
+- Documenter `27459918414`: success;
+- Pages deploy `27459952166`: success.
+
+Live docs:
+
+- quickstart `https://itchyshin.github.io/HSquared.jl/dev/quickstart`: HTTP
+  200 and contains the R bridge enrichment wording plus `isapprox`;
+- roadmap `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP 200 and
+  contains the R PEV/reliability bridge enrichment evidence plus compact
+  `result_payload()` wording.
+
+GitHub Actions emitted Node 20 deprecation annotations from upstream actions,
+but all jobs completed successfully.
 
 ## Public Claim Audit
 
