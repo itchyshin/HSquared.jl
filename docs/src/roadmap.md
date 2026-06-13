@@ -14,9 +14,8 @@ Implemented:
 - control/backend markers for the shared planned `auto`, `cpu`, `threads`,
   `cuda`, `amdgpu`, `metal`, and `oneapi` vocabulary;
 - `backend_info()` status diagnostics for the planned backend vocabulary;
-- planned genomic/QTL model-term vocabulary reservations aligned to the R
-  markers `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
-  `qtl_scan()`;
+- planned model-term vocabulary reservations aligned to the R genomic/QTL and
+  standard quantitative-genetic markers;
 - placeholder fitting entry points;
 - pedigree validation and topological sorting;
 - direct sparse `Ainv` construction for validated pedigrees;
@@ -44,6 +43,9 @@ Not implemented:
 - production R-to-Julia fitting bridge;
 - genomic prediction, single-step fitting, marker-effect estimation,
   marker scans, and QTL/eQTL scans;
+- permanent environment, common environment, maternal/paternal effects,
+  cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
+  relationship/precision kernels;
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests.
 

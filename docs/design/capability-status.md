@@ -6,7 +6,8 @@
 | Backend marker types | implemented | `CPUBackend`, `ThreadsBackend`, `CUDABackend`, `AMDGPUBackend`, `MetalBackend`, `OneAPIBackend`, and `AutoBackend` tests; marker types only, no backend dispatch |
 | `HSControl` validation | implemented | validates shared R/Julia planned backend and accelerator vocabulary in `test/runtests.jl`; no backend execution claim |
 | `backend_info()` status diagnostics | implemented | typed rows for `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`; all selectable, all `execution_available == false`, all `status == :planned`; no runtime probing |
-| Planned genomic/QTL model-term vocabulary | implemented | `planned_model_terms()`, `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()` tests; functions throw planned-not-implemented errors and do not construct model specs |
+| Planned genomic/QTL model-term vocabulary | implemented | `planned_genomic_qtl_terms()`, `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()` tests; functions throw planned-not-implemented errors and do not construct model specs |
+| Planned standard quantitative-genetic model-term vocabulary | implemented | `planned_quantgen_terms()`, `permanent()`, `common_env()`, `maternal_genetic()`, `maternal_env()`, `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`, `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and `HSquared.precision()` tests; functions throw planned-not-implemented errors and do not construct model specs |
 | `HSData` input container | implemented | in-memory phenotype/pedigree/genotype/expression ID-map tests; no file-backed storage or modelling claim |
 | `hsquared()` fitting | planned | Phase 0 placeholder only |
 | `fit_animal_model(spec)` dense fitting | experimental | dispatches to `fit_variance_components()` for validated `AnimalModelSpec`; all other signatures remain placeholders |
@@ -33,6 +34,7 @@
 | Multivariate G matrices | planned | no implementation yet |
 | Factor-analytic G matrices | planned | no implementation yet |
 | Genomic prediction, single-step fitting, marker scans, and QTL/eQTL | planned | vocabulary reserved only; no implementation yet |
+| Standard QG effects and custom kernels | planned | vocabulary reserved only; no implementation yet |
 | Non-standard inheritance | planned | no implementation yet |
 | GLLVM-style animal models | planned | no implementation yet |
 

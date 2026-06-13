@@ -13,6 +13,11 @@ The names `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
 planned-not-implemented errors. They do not fit genomic models, estimate marker
 effects, or run QTL/eQTL scans yet.
 
+Related Phase 2+ names such as `permanent()`, `common_env()`,
+`maternal_genetic()`, `paternal_genetic()`, `dominance()`, `epistasis()`,
+`relmat()`, and `HSquared.precision()` are also reserved as planned vocabulary.
+They do not fit standard quantitative-genetic extensions or custom kernels yet.
+
 ## 1. Executive Summary
 
 `hsquared` and `HSquared.jl` should become a coherent, open, Julia-powered
@@ -259,7 +264,7 @@ single_step(1 | id, Hinv = Hinv)
 dominance(1 | id, pedigree = ped)
 epistasis(1 | id, pedigree = ped)
 relmat(1 | id, K = K)
-precision(1 | id, Q = Q)
+HSquared.precision(1 | id, Q = Q)
 ```
 
 Generic engine abstraction:

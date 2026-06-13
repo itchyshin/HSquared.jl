@@ -49,17 +49,36 @@ rows have `selectable == true`, `execution_available == false`, and
 
 ```julia
 planned_model_terms()
+planned_genomic_qtl_terms()
+planned_quantgen_terms()
 genomic()
 single_step()
 markers()
 marker_scan()
 qtl_scan()
+permanent()
+common_env()
+maternal_genetic()
+maternal_env()
+paternal_genetic()
+paternal_env()
+cytoplasmic()
+imprinting()
+dominance()
+epistasis()
+relmat()
+HSquared.precision()
 ```
 
-These names mirror the R twin's planned genomic/QTL formula markers from
-`hsquared` head `3c82c9a`. They are vocabulary reservations only. Calls throw
+These names mirror the R twin's planned formula markers from `hsquared` heads
+`3c82c9a` and `10e8fd7`. They are vocabulary reservations only. Calls throw
 planned-not-implemented errors and do not construct `AnimalModelSpec` objects,
-genomic relationship specs, marker scans, QTL/eQTL scans, or fitted models.
+genomic relationship specs, marker scans, QTL/eQTL scans, standard
+quantitative-genetic extension specs, custom relationship/precision specs, or
+fitted models.
+
+The term `:precision` is reserved for bridge payload vocabulary. Direct Julia
+calls should use `HSquared.precision()` because `Base.precision` already exists.
 
 ## Implemented Relationship Utility
 

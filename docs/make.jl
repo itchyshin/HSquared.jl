@@ -20,6 +20,7 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Get started" => "quickstart.md",
+        "Model spec grammar" => "model-spec-grammar.md",
         "Data containers" => "data.md",
         "Pedigrees and Ainv" => "pedigree-ainv.md",
         "Audience and comparators" => "audience-comparators.md",

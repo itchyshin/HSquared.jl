@@ -8,7 +8,8 @@ Use this register before changing README, docs, issue text, or examples.
 | `HSquared.jl` is the Julia engine package identity | covered | public repo exists and package loads | Julia engine scaffold |
 | backend and accelerator vocabulary is recorded | covered | `HSControl` tests for CPU, threaded CPU, CUDA, AMDGPU, Metal, oneAPI, generic GPU, and auto metadata; R head `5feac1f` mirrors the same vocabulary | planned control metadata only; CPU is the trusted always-available path, accelerator names are future optional-extension targets |
 | backend status diagnostics are available | covered | `backend_info()` tests mirror R `backend_info()` row shape and report all rows as planned/unavailable | honest status diagnostic only; no runtime probing |
-| planned genomic/QTL model-term vocabulary is reserved | covered | `planned_model_terms()` and planned-term error tests; R head `3c82c9a` mirrors the same public names | syntax reservation only; no genomic prediction, marker scan, single-step, QTL/eQTL, or marker-effect estimation |
+| planned genomic/QTL model-term vocabulary is reserved | covered | `planned_genomic_qtl_terms()` and planned-term error tests; R head `3c82c9a` mirrors the same public names | syntax reservation only; no genomic prediction, marker scan, single-step, QTL/eQTL, or marker-effect estimation |
+| planned standard quantitative-genetic model-term vocabulary is reserved | covered | `planned_quantgen_terms()` and planned-term error tests; R head `10e8fd7` mirrors the same public names | syntax reservation only; no permanent/common environment, maternal/paternal, cytoplasmic, imprinting, dominance, epistasis, custom relationship, or precision-kernel fitting |
 | GPU backend execution works | planned | marker types and controls only | planned |
 | Julia `hsquared()` performs model fitting | planned | placeholder only | planned |
 | high-level `fit_animal_model()` performs production Gaussian animal-model fitting | planned | unsupported signatures still use honest placeholder errors; exact low-level dense methods are experimental | planned production target |
@@ -33,6 +34,7 @@ Use this register before changing README, docs, issue text, or examples.
 | multivariate G matrices | planned | none | roadmap |
 | factor-analytic G matrices | planned | none | roadmap |
 | genomic prediction, single-step, marker scans, and QTL/eQTL | planned | syntax names are reserved only | roadmap |
+| standard QG effects and custom relationship/precision kernels | planned | syntax names are reserved only | roadmap |
 | GLLVM-style animal models | planned | none | roadmap |
 | non-standard inheritance systems | planned | none | roadmap |
 

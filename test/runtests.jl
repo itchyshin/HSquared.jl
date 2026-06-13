@@ -112,7 +112,40 @@ end
     @test only(filter(row -> row.backend == :metal, metal.rows)).requested
     @test_throws ArgumentError backend_info(nothing)
 
-    @test planned_model_terms() == (:genomic, :single_step, :markers, :marker_scan, :qtl_scan)
+    @test planned_genomic_qtl_terms() == (:genomic, :single_step, :markers, :marker_scan, :qtl_scan)
+    @test planned_quantgen_terms() == (
+        :permanent,
+        :common_env,
+        :maternal_genetic,
+        :maternal_env,
+        :paternal_genetic,
+        :paternal_env,
+        :cytoplasmic,
+        :imprinting,
+        :dominance,
+        :epistasis,
+        :relmat,
+        :precision,
+    )
+    @test planned_model_terms() == (
+        :genomic,
+        :single_step,
+        :markers,
+        :marker_scan,
+        :qtl_scan,
+        :permanent,
+        :common_env,
+        :maternal_genetic,
+        :maternal_env,
+        :paternal_genetic,
+        :paternal_env,
+        :cytoplasmic,
+        :imprinting,
+        :dominance,
+        :epistasis,
+        :relmat,
+        :precision,
+    )
 
     for (name, fn) in (
         (:genomic, genomic),
@@ -120,6 +153,18 @@ end
         (:markers, markers),
         (:marker_scan, marker_scan),
         (:qtl_scan, qtl_scan),
+        (:permanent, permanent),
+        (:common_env, common_env),
+        (:maternal_genetic, maternal_genetic),
+        (:maternal_env, maternal_env),
+        (:paternal_genetic, paternal_genetic),
+        (:paternal_env, paternal_env),
+        (:cytoplasmic, cytoplasmic),
+        (:imprinting, imprinting),
+        (:dominance, dominance),
+        (:epistasis, epistasis),
+        (:relmat, relmat),
+        (:precision, HSquared.precision),
     )
         err = try
             fn(nothing)
@@ -130,7 +175,8 @@ end
 
         @test err isa ArgumentError
         @test occursin("`$(name)()` is planned, not implemented.", sprint(showerror, err))
-        @test occursin("no genomic prediction", sprint(showerror, err))
+        @test occursin("no standard quantitative-genetic extension", sprint(showerror, err))
+        @test occursin("genomic prediction", sprint(showerror, err))
     end
 
     @test_throws Phase0NotImplementedError hsquared(nothing)

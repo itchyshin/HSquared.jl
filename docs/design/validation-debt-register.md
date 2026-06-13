@@ -4,7 +4,8 @@
 | --- | --- | --- | --- |
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
 | V0-CTRL | Control validation | covered | default and invalid control tests, planned backend/accelerator vocabulary tests for `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`, and `backend_info()` diagnostics with execution unavailable; execution dispatch remains planned |
-| V0-GENOMIC-QTL-SYNTAX | Planned genomic/QTL vocabulary | covered | `planned_model_terms()` and planned-not-implemented error tests for `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`; syntax reservation only |
+| V0-GENOMIC-QTL-SYNTAX | Planned genomic/QTL vocabulary | covered | `planned_genomic_qtl_terms()` and planned-not-implemented error tests for `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`; syntax reservation only |
+| V0-QG-SYNTAX | Planned standard QG vocabulary | covered | `planned_quantgen_terms()` and planned-not-implemented error tests for `permanent()`, `common_env()`, `maternal_genetic()`, `maternal_env()`, `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`, `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and `HSquared.precision()`; syntax reservation only |
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
 | V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
@@ -22,6 +23,7 @@
 | V1-HSDATA-BRIDGE | R `hs_data()` to Julia `HSData` parity | partial | R `hs_data()` exists in `hsquared` head `644c75e`; Julia `HSData` mirror exists; still needs live bridge marshalling tests |
 | V1-REML | Sparse Gaussian REML optimizer / AI-REML | planned | Mrode simple animal model and comparator check |
 | V1-EBV | Production sparse EBVs/BLUPs, reliability, and PEV | planned | known fitted values, reliability, and prediction error variance against comparator |
+| V2-QG | Standard QG effects and custom kernels | planned | model-spec contracts, matrix validation, recovery examples, and comparator checks for permanent/common environment, maternal/paternal, cytoplasmic, imprinting, dominance, epistasis, relmat, and precision terms; current work covers syntax reservation only |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |
 | V4-FA | Factor-analytic G matrix | planned | simulated loading and Psi recovery |
 | V5-GBLUP | Genomic and single-step models | planned | JWAS/sommer/BLUPF90 style comparator checks; current work covers syntax reservation only |

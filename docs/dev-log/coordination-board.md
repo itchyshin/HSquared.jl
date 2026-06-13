@@ -42,10 +42,15 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Julia mirrors the same planned/unavailable status surface with typed rows.
 - The R twin reserved planned genomic/QTL formula markers at `hsquared` head
   `3c82c9a`; Julia mirrors those names as planned vocabulary only.
+- The R twin reserved planned standard quantitative-genetic formula markers at
+  `hsquared` head `10e8fd7`; Julia mirrors those names as planned vocabulary
+  only.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
   benchmarking, CPU/GPU agreement tests, genomic prediction, single-step
-  fitting, marker scans, and QTL/eQTL scans remain planned.
+  fitting, marker scans, QTL/eQTL scans, standard quantitative-genetic
+  extension fitting, and custom relationship/precision kernel fitting remain
+  planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
 ## Current State
@@ -175,9 +180,33 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `27458374477` were reported green for implementation commit `dc53584`;
   - boundary: syntax reservation only; no genomic prediction, marker scan,
     single-step, QTL/eQTL, or marker-effect estimation claim.
+- R lane handoff from `itchyshin/hsquared` head `10e8fd7`:
+  - added inert planned-only formula markers `permanent()`, `common_env()`,
+    `maternal_genetic()`, `maternal_env()`, `paternal_genetic()`,
+    `paternal_env()`, `cytoplasmic()`, `imprinting()`, `dominance()`,
+    `epistasis()`, `relmat()`, and `precision()`;
+  - parser rejects those terms before model-frame construction with
+    planned-not-implemented wording;
+  - R-CMD-check `27458718993`, pkgdown `27458718981`, and Pages
+    `27458751023` were reported green for latest R head;
+  - R issue note:
+    `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697708772`;
+  - boundary: syntax reservation only; no Phase 2+ fitting, parental effect,
+    inheritance-kernel, dominance/epistasis, or custom precision fitting claim.
+- R lane docs-sync handoff from `itchyshin/hsquared` head `794722f`:
+  - added pkgdown article `vignettes/articles/formula-grammar.Rmd`;
+  - article separates parsed-today syntax, reserved Phase 2+ QG/inheritance
+    markers, reserved genomic/marker terms, planned multivariate/FA syntax,
+    and the early planned-not-implemented error rule;
+  - R-CMD-check `27458881927`, pkgdown `27458881926`, and Pages
+    `27458916142` were reported green;
+  - R issue note:
+    `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697726092`;
+  - Julia mirrors this with Documenter page `model-spec-grammar.md`.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, `hs_data()` to `HSData` payload
-  parity, and the first real genomic/QTL model-spec contract.
+  parity, the first real genomic/QTL model-spec contract, and the first real
+  standard quantitative-genetic model-spec contract.
 
 ## Sister References
 

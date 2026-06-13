@@ -2,6 +2,64 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Planned Quantitative-Genetic Marker Vocabulary Mirror
+
+- Goal: mirror the R twin's inert planned standard quantitative-genetic,
+  parental, inheritance-kernel, and custom-kernel formula markers as Julia
+  vocabulary reservations.
+- Active lenses: Ada, Shannon, Boole, Hopper, Noether, Mendel, Henderson, Rose,
+  Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `14e5781` added planned-only `permanent()`,
+    `common_env()`, `maternal_genetic()`, `maternal_env()`,
+    `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`, `imprinting()`,
+    `dominance()`, `epistasis()`, `relmat()`, and `precision()` markers.
+  - `hsquared` head `10e8fd7` records QG marker CI evidence.
+  - R parser detects these terms before model-frame construction and errors
+    with planned-not-implemented wording.
+  - Reported remote evidence: R-CMD-check `27458718993`, pkgdown
+    `27458718981`, and Pages `27458751023` success.
+- R docs-sync handoff:
+  - `hsquared` head `92c1d12` added pkgdown article
+    `vignettes/articles/formula-grammar.Rmd`.
+  - `hsquared` head `794722f` records formula-grammar article CI evidence.
+  - Reported remote evidence: R-CMD-check `27458881927`, pkgdown
+    `27458881926`, and Pages `27458916142` success.
+- Julia-side action:
+  - Extended `planned_model_terms()` and added `planned_quantgen_terms()`.
+  - Added exported `permanent()`, `common_env()`, `maternal_genetic()`,
+    `maternal_env()`, `paternal_genetic()`, `paternal_env()`,
+    `cytoplasmic()`, `imprinting()`, `dominance()`, `epistasis()`,
+    and `relmat()` functions that throw planned-not-implemented errors.
+  - Added qualified `HSquared.precision()` for the planned precision-kernel
+    marker because `Base.precision` already exists.
+  - Updated formula grammar, engine contract, README, docs pages, status
+    tables, validation debt, public claims, and coordination board.
+  - Added Documenter page `docs/src/model-spec-grammar.md` to mirror the R
+    formula-grammar status separation.
+- Local checks:
+  - First `julia --project=. -e 'using Pkg; Pkg.test()'` failed because
+    exporting `precision()` conflicted with `Base.precision`. Fixed by keeping
+    the marker available as `HSquared.precision()` and reserving `:precision`
+    in the vocabulary table without exporting the unqualified function.
+  - Final `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 282
+    checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims of
+    Phase 2+ QG fitting, custom relationship/precision kernels, genomic
+    prediction, marker scans, QTL/eQTL scans, GPU execution, ASReml
+    superiority, backend benchmarking, or CPU/GPU numerical agreement.
+- Boundary:
+  - Syntax/model-term vocabulary reservation only.
+  - No permanent/common environment fitting.
+  - No maternal or paternal effect fitting.
+  - No cytoplasmic, imprinting, dominance, or epistasis fitting.
+  - No custom relationship or precision-kernel fitting.
+
 ## 2026-06-13 Planned Genomic/QTL Marker Vocabulary Mirror
 
 - Goal: mirror the R twin's inert planned genomic/QTL formula markers as Julia

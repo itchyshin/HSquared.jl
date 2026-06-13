@@ -57,6 +57,52 @@ These Julia functions intentionally throw planned-not-implemented errors. They
 do not construct model specs, validate marker matrices, run GBLUP/single-step,
 or perform marker/QTL/eQTL scans.
 
+## Reserved Planned Standard Quantitative-Genetic Vocabulary
+
+R head `10e8fd7` reserves these planned formula markers:
+
+```r
+permanent(1 | id)
+common_env(1 | litter)
+maternal_genetic(1 | dam, pedigree = ped)
+maternal_env(1 | dam)
+paternal_genetic(1 | sire, pedigree = ped)
+paternal_env(1 | sire)
+cytoplasmic(1 | maternal_line)
+imprinting(1 | id, pedigree = ped, parent = "maternal")
+dominance(1 | id, pedigree = ped, Dinv = Dinv)
+epistasis(1 | id, pedigree = ped, Einv = Einv)
+relmat(1 | id, K = K)
+precision(1 | id, Q = Q)
+```
+
+Julia mirrors the same names as planned vocabulary reservations:
+
+```julia
+planned_quantgen_terms()
+permanent()
+common_env()
+maternal_genetic()
+maternal_env()
+paternal_genetic()
+paternal_env()
+cytoplasmic()
+imprinting()
+dominance()
+epistasis()
+relmat()
+HSquared.precision()
+```
+
+These functions intentionally throw planned-not-implemented errors. They do not
+construct model specs, validate relationship or precision matrices, or fit
+Phase 2+ quantitative-genetic effects.
+
+Julia note: `Base` already exports a `precision` function, so direct Julia code
+should refer to the planned custom precision-kernel marker as
+`HSquared.precision()`. The reserved term name remains `:precision`, matching
+the R formula marker and future bridge payload vocabulary.
+
 ## Julia Interpretation Target
 
 The R formula should normalize to a Julia engine specification with:
@@ -121,6 +167,9 @@ Julia examples should use the lower-level engine utilities.
 - factor-analytic covariance structures;
 - genomic prediction, single-step fitting, marker-effect estimation, marker
   scans, and QTL/eQTL scans;
+- permanent environment, common environment, maternal/paternal effects,
+  cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
+  relationship/precision kernels;
 - GLLVM-style response matrices;
 - GPU backend selection from the user API;
 - non-standard inheritance wrappers.

@@ -30,10 +30,13 @@ Implemented now:
   auto selection;
 - `backend_info()` status diagnostics showing that planned backend names are
   selectable metadata but not execution-ready yet;
-- planned genomic/QTL model-term vocabulary reservations:
-  `planned_model_terms()`, `genomic()`, `single_step()`, `markers()`,
-  `marker_scan()`, and `qtl_scan()`; these names error honestly and do not
-  construct model specs yet;
+- planned model-term vocabulary reservations through `planned_model_terms()`,
+  including `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
+  `qtl_scan()`, `permanent()`, `common_env()`, `maternal_genetic()`,
+  `maternal_env()`, `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`,
+  `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and
+  `HSquared.precision()`; these names error honestly and do not construct
+  model specs yet;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
@@ -109,15 +112,21 @@ id_map(data)
 This records exact ID overlap only. File-backed storage, relationship
 construction from genotypes, and QTL/eQTL scans remain planned.
 
-The planned genomic/QTL vocabulary is reserved but not implemented:
+The planned genomic/QTL and standard quantitative-genetic vocabulary is
+reserved but not implemented:
 
 ```julia
 planned_model_terms()
+planned_genomic_qtl_terms()
+planned_quantgen_terms()
 ```
 
 Calls such as `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
-`qtl_scan()` currently throw planned-not-implemented errors. They do not build
-model specs, fit genomic models, or run marker/QTL scans.
+`qtl_scan()` currently throw planned-not-implemented errors. So do planned
+standard quantitative-genetic terms such as `permanent()`, `common_env()`,
+`maternal_genetic()`, `dominance()`, `relmat()`, and
+`HSquared.precision()`. They do not build model specs, fit genomic models, run
+marker/QTL scans, or fit Phase 2+ quantitative-genetic effects.
 
 The first bridge-ready model specification validator is also available:
 

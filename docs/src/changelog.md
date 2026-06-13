@@ -14,6 +14,13 @@
   execution marked unavailable.
 - Added planned genomic/QTL model-term vocabulary reservations:
   `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`.
+- Added planned standard quantitative-genetic model-term vocabulary
+  reservations: `permanent()`, `common_env()`, `maternal_genetic()`,
+  `maternal_env()`, `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`,
+  `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and
+  `HSquared.precision()` in direct Julia code.
+- Added a Documenter model-spec grammar page mirroring the R twin's status
+  separation for parsed, reserved, and planned syntax.
 - Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.

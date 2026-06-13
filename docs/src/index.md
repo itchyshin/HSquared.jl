@@ -21,10 +21,11 @@ Implemented engine utilities:
   CUDA, AMDGPU, Metal, oneAPI, generic GPU preference, and auto selection;
 - `backend_info()` status diagnostics showing selectable planned backend names
   with execution unavailable;
-- planned genomic/QTL model-term vocabulary reservations:
-  `planned_model_terms()`, `genomic()`, `single_step()`, `markers()`,
-  `marker_scan()`, and `qtl_scan()`; these error honestly and do not build
-  model specs yet;
+- planned model-term vocabulary reservations through `planned_model_terms()`,
+  including genomic/QTL terms and standard quantitative-genetic terms such as
+  `permanent()`, `common_env()`, `maternal_genetic()`, `dominance()`,
+  `relmat()`, and `HSquared.precision()`; these error honestly and do not
+  build model specs yet;
 - honest placeholder entry points for future model fitting;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
@@ -98,6 +99,7 @@ not claim model fitting until the Julia engine implements and validates it.
 ## Start Here
 
 - [Get started](quickstart.md)
+- [Model spec grammar](model-spec-grammar.md)
 - [Data containers](data.md)
 - [Pedigrees and Ainv](pedigree-ainv.md)
 - [Audience and comparators](audience-comparators.md)

@@ -14,9 +14,15 @@ pedigree/Ainv engine utility slice.
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
   `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`.
-- Planned genomic/QTL model-term vocabulary exists for `genomic()`,
-  `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`. These names
-  error honestly and do not construct model specs yet.
+- Planned model-term vocabulary exists for genomic/QTL terms and standard
+  quantitative-genetic terms: `genomic()`, `single_step()`, `markers()`,
+  `marker_scan()`, `qtl_scan()`, `permanent()`, `common_env()`,
+  `maternal_genetic()`, `maternal_env()`, `paternal_genetic()`,
+  `paternal_env()`, `cytoplasmic()`, `imprinting()`, `dominance()`,
+  `epistasis()`, `relmat()`, and `precision()`. These names error honestly and
+  do not construct model specs yet. In direct Julia code, the precision-kernel
+  marker is qualified as `HSquared.precision()` because `Base.precision`
+  already exists.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.
@@ -50,6 +56,9 @@ pedigree/Ainv engine utility slice.
   not implemented.
 - Genomic prediction, single-step fitting, marker-effect estimation,
   marker scans, and QTL/eQTL scans are not implemented.
+- Permanent environment, common environment, maternal/paternal effects,
+  cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
+  relationship/precision kernels are not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
