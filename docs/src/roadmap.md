@@ -30,9 +30,9 @@ Implemented:
 - sparse REML likelihood evaluation at supplied variance components via the
   Henderson MME determinant identity;
 - experimental dense variance-component optimization;
-- experimental MME-backed EBV/BLUP, fitted-value, heritability, PEV, and
-  reliability extraction for dense spec and supplied-variance Henderson MME
-  validation paths;
+- experimental MME-backed EBV/BLUP aliases, fitted-value, heritability, PEV,
+  reliability, and checked accuracy extraction for dense spec and
+  supplied-variance Henderson MME validation paths;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - sparse Henderson MME solving at supplied variance components, with a shared
   R/Julia fixture for Ainv, fixed effects, EBVs, fitted values, and `h2`;
@@ -44,6 +44,9 @@ Implemented:
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for
   tiny/local validation fits while Julia keeps base `result_payload()` compact.
+- external R EBV/BLUP/accuracy extractor ergonomics evidence from `hsquared`
+  head `afa25f1`; Julia mirrors the names locally without adding payload
+  fields.
 - external R supplied-variance Henderson MME bridge evidence from `hsquared`
   head `00b9e33`; R can opt into `engine_control$target = "henderson_mme"` and
   supplied variance components, with no log-likelihood, AIC, `df`, optimizer

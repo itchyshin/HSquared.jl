@@ -680,6 +680,10 @@ end
     @test ebv isa BreedingValues
     @test ebv.ids == ["a", "b", "c"]
     @test ebv.values ≈ [-0.5, 0.0, 0.5]
+    @test EBV(fit).ids == ebv.ids
+    @test isapprox(EBV(fit).values, ebv.values)
+    @test BLUP(fit).ids == ebv.ids
+    @test isapprox(BLUP(fit).values, ebv.values)
 
     @test fitted_values(fit) ≈ [1.5, 2.0, 2.5]
     @test fitted_values(fit; include_random = false) ≈ [2.0, 2.0, 2.0]
@@ -688,9 +692,20 @@ end
     @test prediction_error_variance(fit).values ≈ diag(_mme_inverse_random_block_for_test(X, Z, Ainv, 1.0, 1.0))
     @test reliability(fit).ids == ["a", "b", "c"]
     @test reliability(fit).values ≈ 1 .- prediction_error_variance(fit).values
+    @test accuracy(fit).ids == ["a", "b", "c"]
+    @test isapprox(accuracy(fit).values, sqrt.(reliability(fit).values))
+    @test_throws ArgumentError HSquared._accuracy_from_reliability((ids = ["a"], values = [1.1]))
+    @test_throws ArgumentError HSquared._accuracy_from_reliability((ids = ["a"], values = [NaN]))
+    @test_throws ArgumentError HSquared._accuracy_from_reliability((ids = ["a", "b"], values = [0.5]))
     mme = henderson_mme(spec, vc.sigma_a2, vc.sigma_e2)
     @test breeding_values(fit).ids == breeding_values(mme).ids
     @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
+    @test EBV(mme).ids == ebv.ids
+    @test isapprox(EBV(mme).values, ebv.values)
+    @test BLUP(mme).ids == ebv.ids
+    @test isapprox(BLUP(mme).values, ebv.values)
+    @test accuracy(mme).ids == ["a", "b", "c"]
+    @test isapprox(accuracy(mme).values, sqrt.(reliability(mme).values))
     @test isapprox(fitted_values(fit), fitted_values(mme))
     @test isapprox(fitted_values(fit; include_random = false), fitted_values(mme; include_random = false))
 
@@ -882,6 +897,10 @@ end
     @test fixed_effects(mme) ≈ expected_beta
     @test breeding_values(mme).ids == ped.ids
     @test breeding_values(mme).values ≈ expected_u
+    @test EBV(mme).ids == ped.ids
+    @test isapprox(EBV(mme).values, expected_u)
+    @test BLUP(mme).ids == ped.ids
+    @test isapprox(BLUP(mme).values, expected_u)
     @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
     @test isapprox(fitted_values(mme), expected_fitted)
     @test isapprox(fitted_values(fit), fitted_values(mme))
@@ -903,4 +922,5 @@ end
     @test isapprox(prediction_error_variance(mme).values, expected_pev)
     @test reliability(mme).ids == ped.ids
     @test isapprox(reliability(mme).values, expected_reliability)
+    @test_throws ArgumentError accuracy(mme)
 end

@@ -155,6 +155,10 @@ fixed_effects(mme)
 breeding_values(mme).values
 ```
 
+```@example quickstart
+EBV(mme).values
+```
+
 This solves for fixed effects and animal-effect BLUPs/EBVs given variance
 components. It does not estimate those variance components. The same tiny
 validation path can expose supplied variance components, simple `h2`, dense
@@ -176,6 +180,10 @@ prediction_error_variance(mme).values
 reliability(mme).values
 ```
 
+`accuracy(mme)` is available only when the derived reliability values are
+finite and within `[0, 1]`. It errors instead of clipping validation-scale
+values outside that range.
+
 The test suite pins the same supplied-variance Henderson fixture as the R twin:
 `sigma_a2 = 1.2`, `sigma_e2 = 0.8`, expected fixed effects, EBVs, fitted
 values, and `h2 = 0.6`. That fixture is validation for equation solving only,
@@ -184,8 +192,9 @@ not variance-component estimation or fitted Mrode output validation.
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,
-fixed effects, breeding values, fitted values, simple univariate heritability,
-prediction error variance, and reliability. The variance-component,
+fixed effects, breeding values, EBV/BLUP aliases, fitted values, simple
+univariate heritability, prediction error variance, reliability, and derived
+accuracy. The variance-component,
 heritability, PEV, and reliability extractors also accept supplied-variance
 `HendersonMMEResult` objects. `breeding_values(fit)` and `fitted_values(fit)`
 use the Henderson MME solve at the fit's variance components.
@@ -199,6 +208,10 @@ breeding_values(fit).values
 ```
 
 ```@example quickstart
+BLUP(fit).values
+```
+
+```@example quickstart
 heritability(fit)
 ```
 
@@ -208,6 +221,10 @@ prediction_error_variance(fit).values
 
 ```@example quickstart
 reliability(fit).values
+```
+
+```@example quickstart
+accuracy(fit).values
 ```
 
 For R bridge work, `result_payload` returns the current bridge-facing names:

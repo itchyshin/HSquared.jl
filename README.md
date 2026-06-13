@@ -54,10 +54,10 @@ Implemented now:
   the Henderson MME determinant identity;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
-- experimental variance-component, fixed-effect, MME-backed EBV/BLUP and
-  fitted-value, heritability, prediction-error-variance, and reliability
-  extractors for the low-level spec and supplied-variance Henderson MME
-  validation paths;
+- experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
+  fitted-value, heritability, prediction-error-variance, reliability, and
+  derived accuracy extractors for the low-level spec and supplied-variance
+  Henderson MME validation paths;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - explicit supplied-variance Julia target
@@ -214,22 +214,27 @@ components:
 ```julia
 mme = henderson_mme(spec, 1.0, 1.0)
 breeding_values(mme)
+EBV(mme)
 ```
 
 This solves Henderson's mixed-model equations for fixed effects and animal
 effects. It does not estimate variance components. Validation-scale
 `variance_components(mme)`, `heritability(mme)`,
-`prediction_error_variance(mme)`, and `reliability(mme)` methods report
-supplied variances and dense-MME-inverse outputs for tiny fixtures only.
+`prediction_error_variance(mme)`, `reliability(mme)`, and `accuracy(mme)`
+methods report supplied variances and dense-MME-inverse outputs for tiny
+fixtures only. `accuracy()` is derived from reliability and errors instead of
+clipping when reliability is outside `[0, 1]`.
 
 The dense validation path also has first extractors:
 
 ```julia
 variance_components(fit)
 breeding_values(fit)
+BLUP(fit)
 heritability(fit)
 prediction_error_variance(fit)
 reliability(fit)
+accuracy(fit)
 ```
 
 These are experimental low-level outputs, not yet production sparse results.

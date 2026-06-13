@@ -67,10 +67,13 @@ HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.fixed_effects
 HSquared.breeding_values
+HSquared.EBV
+HSquared.BLUP
 HSquared.fitted_values
 HSquared.heritability
 HSquared.prediction_error_variance
 HSquared.reliability
+HSquared.accuracy
 HSquared.result_payload
 HSquared.hsquared
 HSquared.fit_animal_model

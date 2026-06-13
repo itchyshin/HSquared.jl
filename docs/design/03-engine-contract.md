@@ -270,10 +270,13 @@ fitting.
 variance_components(fit)
 fixed_effects(fit)
 breeding_values(fit)
+EBV(fit)
+BLUP(fit)
 fitted_values(fit)
 heritability(fit)
 prediction_error_variance(fit)
 reliability(fit)
+accuracy(fit)
 ```
 
 These operate on `AnimalModelFit` objects from the dense validation path. The
@@ -301,8 +304,11 @@ production sparse prediction error variance remain planned.
 mixed-model-equation inverse for tiny validation examples. The same extractor
 names can be used on a supplied-variance `mme` result. `variance_components(mme)`
 returns the supplied values and `heritability(mme)` computes the simple
-univariate ratio from those supplied values. These fields are not included in
-the base `result_payload(fit)` contract.
+univariate ratio from those supplied values. `EBV()` and `BLUP()` are aliases
+for `breeding_values()`. `accuracy()` is a checked square-root transformation
+of `reliability()` and errors if reliability values are non-finite or outside
+`[0, 1]`; it does not add independent accuracy validation. These fields are
+not included in the base `result_payload(fit)` contract.
 
 As of R heads `8235289` and `d7e8914`, the R twin may enrich opt-in tiny/local
 Julia bridge results by calling exported Julia extractors:
@@ -319,6 +325,10 @@ functions are available and applicable. This preserves the compact base
 `result_payload()` contract. It is bridge validation for tiny dense fits and
 supplied-variance MME results, not production sparse PEV or production sparse
 reliability.
+
+R head `afa25f1` adds R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
+ergonomics. Julia mirrors the vocabulary locally as aliases and derived output
+only; there is no new bridge payload requirement.
 
 ## R Result Payload Contract
 

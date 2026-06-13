@@ -50,8 +50,9 @@ pedigree/Ainv engine utility slice.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, MME-backed
-  EBV/BLUP, fitted-value, heritability, PEV, and reliability extractors exist
-  for the dense spec and supplied-variance Henderson MME validation paths.
+  EBV/BLUP aliases, fitted-value, heritability, PEV, reliability, and checked
+  accuracy extractors exist for the dense spec and supplied-variance Henderson
+  MME validation paths.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
 - Experimental direct supplied-variance Henderson target exists through
@@ -64,6 +65,9 @@ pedigree/Ainv engine utility slice.
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
   bridge paths with PEV/reliability from exported Julia extractors when
   available while Julia keeps the compact base `result_payload()` unchanged.
+- R head `afa25f1` adds R-side EBV/BLUP/accuracy extractor ergonomics. Julia
+  mirrors `EBV()`, `BLUP()`, and checked `accuracy()` locally without changing
+  the bridge payload.
 - R head `00b9e33` adds an explicit opt-in supplied-variance
   `target = "henderson_mme"` bridge path. It returns supplied-variance MME
   outputs but deliberately omits log-likelihood, AIC, `df`, optimizer output,
@@ -136,8 +140,8 @@ First real capability:
   validation bridge covered against the dense evaluator;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
-- experimental MME-backed EBV/BLUP and fitted-value extractors, plus
-  heritability extractors;
+- experimental MME-backed EBV/BLUP aliases and fitted-value extractors, plus
+  heritability, PEV, reliability, and checked accuracy extractors;
 - experimental direct payload fitting target for the R parser's intended
   `y`, `X`, `Z`, `Ainv` handoff, including the supplied-variance
   `target = :henderson_mme` convenience path;

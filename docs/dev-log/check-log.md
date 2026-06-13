@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 EBV BLUP Accuracy Extractor Parity
+
+- Goal: mirror the R twin's EBV/BLUP/accuracy extractor ergonomics in Julia
+  without changing the compact bridge payload or widening fitting claims.
+- Active lenses: Ada, Hopper, Henderson, Fisher, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- Julia-side action:
+  - Added exported `EBV()` and `BLUP()` aliases over `breeding_values()`.
+  - Added exported `accuracy()` as a checked square-root transform of
+    `reliability()`.
+  - Added tests for `AnimalModelFit` and supplied-variance
+    `HendersonMMEResult` objects.
+  - Added tests that invalid, non-finite, or mismatched reliability inputs
+    error before accuracy is computed.
+  - Updated API docs, quickstart, README, roadmap, engine contract, capability
+    status, validation debt, public claims register, validation-status rows,
+    and coordination board.
+- Local checks:
+  - Initial `julia --project=. -e 'using Pkg; Pkg.test()'` failed because the
+    shared Henderson MME fixture has reliability outside `[0, 1]`; the test was
+    corrected to assert that `accuracy(mme)` errors for that fixture.
+  - Final `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals
+    sum to 403 checks; dense extractor testset has 48 checks and the Henderson
+    MME supplied-variance validation fixture has 42 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches after replacing new test
+    `isapprox` shorthands with ASCII calls.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Boundary:
+  - `EBV()` and `BLUP()` are aliases, not new estimators.
+  - `accuracy()` is derived from reliability and adds no independent accuracy
+    validation.
+  - No `result_payload()` fields were added.
+  - No production sparse reliability, production sparse PEV, fitted Mrode
+    validation, or external fitted-model comparator claim.
+
 ## 2026-06-13 Direct Henderson MME Fit Target
 
 - Goal: add a Julia-side direct `fit_animal_model(...; target =

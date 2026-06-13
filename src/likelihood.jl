@@ -380,6 +380,22 @@ function breeding_values(result::HendersonMMEResult)
 end
 
 """
+    EBV(fit)
+
+Alias for [`breeding_values`](@ref), matching the R twin's applied
+quantitative-genetic extractor vocabulary.
+"""
+EBV(fit) = breeding_values(fit)
+
+"""
+    BLUP(fit)
+
+Alias for [`breeding_values`](@ref). For the Phase 1 animal-effect block, the
+returned values are the same animal BLUPs/EBVs as [`breeding_values`](@ref).
+"""
+BLUP(fit) = breeding_values(fit)
+
+"""
     fitted_values(fit; include_random = true)
 
 Return fitted values for an experimental low-level [`AnimalModelFit`](@ref).
@@ -496,6 +512,32 @@ function reliability(result::HendersonMMEResult)
         ids = pev.ids,
         values = Vector{Float64}(1 .- pev.values ./ animal_variance),
     )
+end
+
+"""
+    accuracy(fit)
+
+Return animal-level accuracy values as `sqrt(reliability(fit))`.
+
+This is a validation-scale extractor over the existing reliability method. It
+does not add independent accuracy validation and it rejects non-finite or
+out-of-range reliability values instead of silently clipping them.
+"""
+function accuracy(fit)
+    return _accuracy_from_reliability(reliability(fit))
+end
+
+function _accuracy_from_reliability(reliability_result)
+    ids = getproperty(reliability_result, :ids)
+    values = Float64.(getproperty(reliability_result, :values))
+    length(ids) == length(values) ||
+        throw(ArgumentError("reliability ids and values must have the same length"))
+    all(isfinite, values) ||
+        throw(ArgumentError("reliability values must be finite to compute accuracy"))
+    all(value -> 0 <= value <= 1, values) ||
+        throw(ArgumentError("reliability values must be within [0, 1] to compute accuracy"))
+
+    return (ids = collect(ids), values = sqrt.(values))
 end
 
 """

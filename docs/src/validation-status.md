@@ -26,7 +26,7 @@ length(status)
 | `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
 | `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
 | `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components only; no variance-component estimation or fitted Mrode claim. |
-| `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only. |
+| `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability and range-checked. |
 | `V1-MRODE-FIT` | fitted Mrode animal-model outputs | Phase 1 | planned | Fitted Mrode validation is not covered. |
 | `V1-COMPARATORS` | external fitted-model comparators | Phase 1 | planned | No fitted comparator parity claim. |
 | `V5-GENOMIC-QTL` | genomic, marker, QTL, and eQTL validation | Phase 5 | planned | No genomic prediction, marker scan, QTL, or eQTL support. |
@@ -39,8 +39,8 @@ For example, the Mrode9 row records the R twin's optional `nadiv::Mrode9` /
 `nadiv::makeAinv()` comparison against Julia `pedigree_inverse()`.
 
 That evidence covers pedigree inverse agreement only. It does not cover fitted
-Mrode variance components, EBVs, heritability, reliability, PEV, or external
-ASReml/BLUPF90/DMU/WOMBAT/sommer/MCMCglmm fitted-model parity.
+Mrode variance components, EBVs, heritability, reliability, PEV, accuracy, or
+external ASReml/BLUPF90/DMU/WOMBAT/sommer/MCMCglmm fitted-model parity.
 
 The `V1-MME` row records the shared supplied-variance Henderson MME fixture
 mirrored from the R twin at head `ca8bce1`. The fixture pins the pedigree

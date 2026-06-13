@@ -67,9 +67,9 @@ const VALIDATION_STATUS_DATA = (
         "dense output extractors",
         "Phase 1",
         "partial",
-        "breeding_values(fit) and fitted_values(fit) are MME-backed at the fit's variance components; heritability, PEV, and reliability tests match hand checks and MME inverse blocks; variance components, heritability, PEV, and reliability also cover supplied-variance HendersonMMEResult objects.",
-        "textbook Mrode and external comparator checks for fitted outputs",
-        "Experimental dense low-level outputs only.",
+        "breeding_values(fit), EBV(fit), BLUP(fit), and fitted_values(fit) are MME-backed at the fit's variance components; heritability, PEV, reliability, and checked accuracy tests match hand checks and MME inverse blocks; variance components, heritability, PEV, reliability, and range-checked accuracy also cover supplied-variance HendersonMMEResult objects.",
+        "textbook Mrode, independent accuracy validation, and external comparator checks for fitted outputs",
+        "Experimental dense low-level outputs only; accuracy is derived from reliability.",
     ),
     (
         "V1-MRODE-FIT",

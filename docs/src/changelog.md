@@ -40,6 +40,8 @@
   extractors to supplied-variance `HendersonMMEResult` objects.
 - Extended supplied-variance `variance_components()` and `heritability()`
   extractors to `HendersonMMEResult` objects.
+- Added `EBV()` and `BLUP()` aliases for `breeding_values()`, plus
+  `accuracy()` as a checked square-root transformation of reliability.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
 - Added explicit `fit_animal_model(...; target = :henderson_mme,

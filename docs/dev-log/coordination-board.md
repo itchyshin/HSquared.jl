@@ -53,6 +53,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   also enriches supplied-variance `target = "henderson_mme"` bridge results
   from `prediction_error_variance(mme)` and `reliability(mme)` when applicable.
   Julia keeps those fields out of the compact base `result_payload()`.
+- The R twin added EBV/BLUP/accuracy extractor ergonomics at `hsquared` head
+  `afa25f1`; Julia mirrors `EBV()`, `BLUP()`, and checked `accuracy()` as local
+  extractor vocabulary only, with no bridge payload change.
 - Julia now provides validation-scale `prediction_error_variance(mme)` and
   `reliability(mme)` methods for supplied-variance `HendersonMMEResult`
   objects. These reuse the dense MME inverse block for tiny fixtures only and
@@ -126,7 +129,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - experimental dense variance-component optimization implemented for
     validated specs;
   - experimental dense variance-component, fixed-effect, MME-backed EBV/BLUP
-    and fitted-value, heritability, PEV, and reliability extractors
+    aliases and fitted-value, heritability, PEV, reliability, and checked
+    accuracy extractors
     implemented for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
