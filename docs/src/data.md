@@ -79,7 +79,8 @@ genotypes = [
 
 expression = (
     id = ["animal_2", "animal_4"],
-    gene_a = [4.0, 5.0],
+    gene1 = [4.0, 5.0],
+    gene3 = [3.0, 6.0],
 )
 
 data = HSData(
@@ -134,6 +135,38 @@ status = data_status(data)
 ```@example data
 [row.metric => row.value for row in status.marker_status]
 ```
+
+## Expression Metadata
+
+When expression data are supplied, `data_status()` reports expression rows,
+matched expression IDs, feature count, named feature count, unnamed feature
+count, duplicate named feature count, and component type.
+
+```@example data
+[row.metric => row.value for row in status.expression_status]
+```
+
+Plain Julia matrices do not carry row or column names. Matrix-like expression
+therefore needs explicit `expression_ids` for ID matching and reports feature
+columns as unnamed:
+
+```@example data
+matrix_expression = [
+    1.0 2.0 3.0
+    4.0 5.0 6.0
+]
+
+matrix_expr_data = HSData(
+    phenotypes;
+    expression = matrix_expression,
+    expression_ids = ["animal_1", "animal_2"],
+)
+
+[row.metric => row.value for row in data_status(matrix_expr_data).expression_status]
+```
+
+This is metadata hygiene only. `HSData` does not join expression features into
+model matrices, fit eQTL or other omics models, or run GLLVM workflows.
 
 ## Annotation Metadata
 
@@ -241,8 +274,8 @@ id_map(data).expression_without_phenotypes
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, marker status, annotation-feature status, and environment-key
-  status;
+  status, marker status, expression status, annotation-feature status, and
+  environment-key status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.
@@ -254,6 +287,7 @@ Planned later:
 - genotype parsing and imputation;
 - QTL/eQTL scans and genomic relationship construction from genotype/marker
   data;
+- automatic expression-feature joins;
 - eQTL/omics workflows from expression/annotation metadata;
 - direct Julia `HSData` to `AnimalModelSpec` construction;
 - live Julia `HSData` object marshalling;

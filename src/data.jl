@@ -109,6 +109,16 @@ struct HSDataAnnotationStatusRow
 end
 
 """
+    HSDataExpressionStatusRow
+
+One expression-component diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataExpressionStatusRow
+    metric::String
+    value::String
+end
+
+"""
     HSDataEnvironmentStatusRow
 
 One environment-metadata diagnostic returned by [`data_status`](@ref).
@@ -135,15 +145,16 @@ Diagnostic container returned by [`data_status`](@ref).
 
 This mirrors the R twin's `data_status()` surface for component presence,
 ID-overlap counts, pedigree status, marker-map/genotype-marker alignment
-status, expression-feature annotation status, and environment-key metadata
-status. It is diagnostic only and does not build model specifications, join
-covariates, or construct relationship matrices.
+status, expression status, expression-feature annotation status, and
+environment-key metadata status. It is diagnostic only and does not build
+model specifications, join covariates, or construct relationship matrices.
 """
 struct HSDataStatus
     components::Vector{Symbol}
     id_overlap::Vector{HSDataIDOverlapRow}
     pedigree_status::Union{Nothing,Vector{HSDataPedigreeStatusRow}}
     marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
+    expression_status::Union{Nothing,Vector{HSDataExpressionStatusRow}}
     annotation_status::Union{Nothing,Vector{HSDataAnnotationStatusRow}}
     environment_status::Union{Nothing,Vector{HSDataEnvironmentStatusRow}}
 end
@@ -166,6 +177,7 @@ struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TAS,TEnv,TES}
     marker_spec::TMS
     genotype_marker_spec::TGMS
     expression::TE
+    expression_id::Symbol
     annotation::TA
     annotation_spec::TAS
     annotation_id::Union{Nothing,Symbol}
@@ -373,6 +385,7 @@ function HSData(;
         marker_spec,
         genotype_marker_spec,
         expression,
+        _column_symbol(expression_id, "expression"),
         annotation,
         annotation_spec,
         annotation_spec === nothing ? nothing : annotation_spec.key,
@@ -396,13 +409,13 @@ end
 """
     data_status(data::HSData)
 
-Return component, ID-overlap, marker-alignment, annotation-feature, and
-environment-key diagnostics for an
+Return component, ID-overlap, marker-alignment, expression, annotation-feature,
+and environment-key diagnostics for an
 [`HSData`](@ref) object.
 
 This mirrors the R twin's `data_status()` helper. It does not parse genotype
-files, construct genomic relationships, join annotation or environment
-covariates, build bridge payloads, or fit models.
+files, construct genomic relationships, join expression, annotation, or
+environment covariates, build bridge payloads, or fit models.
 """
 function data_status(data::HSData)
     return HSDataStatus(
@@ -410,6 +423,7 @@ function data_status(data::HSData)
         _data_id_overlap(data.id_map),
         _data_pedigree_status(data),
         _data_marker_status(data),
+        _data_expression_status(data),
         _data_annotation_status(data),
         _data_environment_status(data),
     )
@@ -978,9 +992,51 @@ function _data_marker_alignment(marker_spec, genotype_marker_spec, genotype_mark
     return "not_applicable"
 end
 
+function _data_expression_status(data::HSData)
+    data.expression === nothing && return nothing
+
+    features = _expression_status_feature_ids(data.expression, data.expression_id)
+    has_feature_name = [feature !== nothing && !isempty(feature) for feature in features]
+    named_features = String[feature::String for (feature, has_name) in zip(features, has_feature_name) if has_name]
+    duplicate_features = _duplicate_string_ids(named_features)
+
+    return [
+        HSDataExpressionStatusRow("expression_rows", _optional_status_value(_row_count(data.expression))),
+        HSDataExpressionStatusRow("expression_ids", string(length(data.id_map.expression_ids))),
+        HSDataExpressionStatusRow("expression_features", string(length(features))),
+        HSDataExpressionStatusRow("named_expression_features", string(length(named_features))),
+        HSDataExpressionStatusRow("unnamed_expression_features", string(count(!, has_feature_name))),
+        HSDataExpressionStatusRow("duplicate_expression_features", string(length(duplicate_features))),
+        HSDataExpressionStatusRow("component_type", _component_type(data.expression)),
+    ]
+end
+
 function _optional_status_value(value)
     value === nothing && return "not_available"
     return string(value)
+end
+
+function _expression_status_feature_ids(::Nothing, expression_id)
+    return Union{Nothing,String}[]
+end
+
+function _expression_status_feature_ids(expression::AbstractMatrix, expression_id)
+    return Union{Nothing,String}[nothing for _ in 1:size(expression, 2)]
+end
+
+function _expression_status_feature_ids(expression, expression_id)
+    names = _column_names(expression)
+    names === nothing && return Union{Nothing,String}[]
+    return Union{Nothing,String}[string(name) for name in names if !_same_column_name(name, expression_id)]
+end
+
+function _component_type(source::AbstractMatrix)
+    return "matrix"
+end
+
+function _component_type(source)
+    _column_names(source) === nothing && return string(typeof(source))
+    return "table"
 end
 
 function _expression_feature_ids(::Nothing, expression_id)

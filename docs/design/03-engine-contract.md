@@ -162,6 +162,14 @@ IDs, and duplicate environment IDs. This is metadata diagnostics only. It does
 not join environment covariates into `X`, add environmental random or fixed
 effects, change the R-Julia bridge payload, or fit multi-environment models.
 
+R head `06cdf59` adds expression-status diagnostics to `hs_data()` and
+`data_status()`. Julia mirrors this in `HSData` with expression component
+diagnostics: expression rows, matched expression IDs, feature counts, named
+and unnamed feature counts, duplicate named feature counts, and component
+type. This is metadata diagnostics only. It does not join expression features
+into `X`, change the R-Julia bridge payload, fit eQTL or omics models, or run
+GLLVM workflows.
+
 R head `87888d9` adds annotation-feature diagnostics to `hs_data()` and
 `data_status()`. Julia mirrors this in `HSData` with `annotation` and
 `annotation_id` metadata: if a key is supplied, it records annotation feature

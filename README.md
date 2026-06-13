@@ -70,11 +70,12 @@ Implemented now:
   genotype, expression, marker, annotation, and environment inputs;
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
+- expression-component metadata diagnostics inside `HSData`;
 - annotation-feature metadata diagnostics inside `HSData`;
 - environment-key metadata diagnostics inside `HSData`;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, marker-alignment status, annotation-feature status,
-  and environment-key status;
+  counts, pedigree status, marker-alignment status, expression status,
+  annotation-feature status, and environment-key status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -147,6 +148,14 @@ planned.
 both marker maps and genotypes are supplied. This is metadata validation only;
 it is not genotype parsing, imputation, marker scanning, genomic fitting, or
 QTL/eQTL support.
+
+When expression data are supplied, `data_status()` reports expression rows,
+matched expression IDs, feature-column counts, named and unnamed feature
+counts, duplicate named features where table-like inputs expose names, and
+component type. This is metadata diagnostics only. It does not join expression
+features into model matrices, fit eQTL or other omics models, or run GLLVM
+workflows. Plain Julia matrices are reported as matrix components with unnamed
+features because base matrices do not carry feature column names.
 
 When annotation metadata and `annotation_id` are supplied, `HSData` validates
 annotation feature keys against table-like expression feature columns and

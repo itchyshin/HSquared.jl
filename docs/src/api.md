@@ -48,6 +48,7 @@ HSquared.HSEnvironmentSpec
 HSquared.HSDataIDOverlapRow
 HSquared.HSDataPedigreeStatusRow
 HSquared.HSDataMarkerStatusRow
+HSquared.HSDataExpressionStatusRow
 HSquared.HSDataAnnotationStatusRow
 HSquared.HSDataEnvironmentStatusRow
 HSquared.HSDataStatus

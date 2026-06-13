@@ -52,8 +52,9 @@ Implemented engine utilities:
   and `h2`;
 - sparse CSC marshalling helper for R sparse matrix slots;
 - `HSData` in-memory data-container diagnostics for component presence,
-  ID-overlap counts, pedigree status, marker alignment, annotation-feature
-  metadata status, and environment-key metadata status;
+  ID-overlap counts, pedigree status, marker alignment, expression metadata
+  status, annotation-feature metadata status, and environment-key metadata
+  status;
 - external opt-in R bridge evidence from the `hsquared` twin;
 - small deterministic tests for malformed pedigrees, hand-checked `Ainv`
   matrices, and supplied-variance Henderson MME outputs.
@@ -67,6 +68,7 @@ Planned, but not implemented yet:
 - production R-to-Julia fitting bridge;
 - environmental model terms, automatic environment joins, and
   multi-environment animal-model workflows;
+- expression-feature joins and eQTL/omics fitting from expression metadata;
 - annotation joins, eQTL/omics fitting, and GLLVM workflows from annotation
   metadata;
 - multivariate animal models and G matrices;

@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Expression Diagnostics
+
+- Goal: mirror the R twin's `hs_data()` expression-status diagnostics in
+  Julia `HSData` without changing bridge payloads or adding eQTL/omics/GLLVM
+  modelling.
+- Active lenses: Ada, Emmy, Jason, Pat, Hopper, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- R handoff:
+  - `hsquared` head `06cdf59` adds expression-status diagnostics to
+    `summary(hs_data(...))` and `data_status()`.
+  - R evidence: focused hs-data tests 101 pass, full tests 395 pass,
+    R-CMD-check `27464585327`, pkgdown `27464585334`, Pages `27464619135`
+    passed.
+- Julia implementation:
+  - Added `HSDataExpressionStatusRow` and `expression_status` on
+    `HSDataStatus`.
+  - Added expression-status diagnostics for table-like and matrix-like
+    expression inputs.
+  - Stored `expression_id` in `HSData` so table-like feature columns can be
+    counted after excluding the expression ID column.
+  - Updated tests, README, Documenter pages, roadmap, engine/HSData contracts,
+    capability status, validation debt, public claims, coordination board, and
+    changelog.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 446 checks; the Phase 1 HSData ID container testset has 106 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Boundary:
+  - Metadata diagnostics only.
+  - No bridge payload change.
+  - No automatic expression joins, eQTL/omics fitting, GLLVM workflows,
+    marker/QTL/GWAS workflows, genomic fitting, file-backed expression
+    storage, or production modelling claim.
+
 ## 2026-06-13 HSData Annotation Diagnostics
 
 - Goal: mirror the R twin's `hs_data()` annotation-feature diagnostics in

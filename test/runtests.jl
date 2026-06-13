@@ -390,6 +390,17 @@ end
         "alignment",
     ]
     @test [row.value for row in status.marker_status] == ["2", "2", "2", "2", "10.0", "20.0", "checked"]
+    @test status.expression_status isa Vector{HSDataExpressionStatusRow}
+    @test [row.metric for row in status.expression_status] == [
+        "expression_rows",
+        "expression_ids",
+        "expression_features",
+        "named_expression_features",
+        "unnamed_expression_features",
+        "duplicate_expression_features",
+        "component_type",
+    ]
+    @test [row.value for row in status.expression_status] == ["2", "2", "2", "2", "0", "0", "table"]
     @test status.annotation_status isa Vector{HSDataAnnotationStatusRow}
     @test [row.metric for row in status.annotation_status] == [
         "annotation_rows",
@@ -481,8 +492,21 @@ end
 
     @test data_status(HSData(phenotypes)).marker_status === nothing
     @test data_status(HSData(phenotypes)).pedigree_status === nothing
+    @test data_status(HSData(phenotypes)).expression_status === nothing
     @test data_status(HSData(phenotypes)).annotation_status === nothing
     @test data_status(HSData(phenotypes)).environment_status === nothing
+
+    matrix_expression_status = data_status(
+        HSData(
+            (id = ["a", "b"], y = [1.0, 2.0]);
+            expression = [1.0 2.0 3.0; 4.0 5.0 6.0],
+            expression_ids = ["a", "b"],
+        ),
+    ).expression_status
+    @test [row.value for row in matrix_expression_status] == ["2", "2", "3", "0", "3", "0", "matrix"]
+
+    @test [row.value for row in data_status(HSData((id = ["a"], y = [1.0]); expression = (id = ["a"],))).expression_status] ==
+          ["1", "1", "0", "0", "0", "0", "table"]
 
     unkeyed_annotation_status = data_status(
         HSData(
