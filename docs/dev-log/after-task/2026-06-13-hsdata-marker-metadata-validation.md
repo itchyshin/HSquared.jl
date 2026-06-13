@@ -90,7 +90,21 @@ Added internal:
 - Claim scan: found only expected guardrail and roadmap wording around
   metadata validation, file formats, and planned genotype/genomic/QTL work.
 
-Remote checks: pending.
+Remote checks:
+
+- CI `27460961889`: success.
+- Documenter `27460961892`: success.
+- Pages deploy `27460991912`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for
+  upstream actions.
+- Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP 200
+  and contains `genotype_marker_ids`, marker-map metadata wording, genotype
+  parsing as planned, and the current boundary.
+- Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200 and
+  contains `HSMarkerMapSpec` and `HSGenotypeMarkerSpec`.
+- Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP
+  200 and contains `HSData` marker-map metadata and genotype-marker alignment
+  status.
 
 ## Public Claim Audit
 
@@ -109,8 +123,10 @@ Blocked wording:
   construction from genotypes is implemented;
 - bridge payload shape changed.
 
-Rose verdict: locally clean with limitations; pending remote CI and deployed
-docs evidence.
+Rose verdict: clean with limitations. The public wording says metadata
+validation only and keeps genotype parsing, imputation, marker scans, genomic
+fitting, QTL/eQTL fitting, and bridge payload changes out of the implemented
+claim.
 
 ## Coordination Notes
 

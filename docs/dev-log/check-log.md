@@ -42,7 +42,19 @@ Newest entries go at the top.
   - Claim scan found only expected guardrail and roadmap wording around
     metadata validation, file formats, and planned genotype/genomic/QTL work.
 - Remote checks:
-  - Pending.
+  - CI `27460961889`: success.
+  - Documenter `27460961892`: success.
+  - Pages deploy `27460991912`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions.
+  - Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP
+    200 and contains `genotype_marker_ids`, marker-map metadata wording,
+    genotype parsing as planned, and the current boundary.
+  - Live API page `https://itchyshin.github.io/HSquared.jl/dev/api`: HTTP 200
+    and contains `HSMarkerMapSpec` and `HSGenotypeMarkerSpec`.
+  - Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`:
+    HTTP 200 and contains `HSData` marker-map metadata and genotype-marker
+    alignment status.
 - Boundary:
   - Metadata validation only.
   - No bridge payload change.
