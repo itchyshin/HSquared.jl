@@ -36,7 +36,8 @@ Implemented now:
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
-  heritability extractors for the dense low-level spec path;
+  heritability, prediction-error-variance, and reliability extractors for the
+  dense low-level spec path;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
@@ -122,6 +123,8 @@ The dense validation path also has first extractors:
 variance_components(fit)
 breeding_values(fit)
 heritability(fit)
+prediction_error_variance(fit)
+reliability(fit)
 ```
 
 These are experimental low-level outputs, not yet production sparse results.

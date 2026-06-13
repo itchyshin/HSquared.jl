@@ -10,6 +10,8 @@
   low-level animal-model specs.
 - Added experimental low-level variance-component, fixed-effect, EBV/BLUP,
   fitted-value, and heritability extractors for the dense spec path.
+- Added experimental dense prediction-error-variance and reliability extractors
+  for the dense spec path.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
 - Added a Henderson mixed-model-equation validation fixture for the dense

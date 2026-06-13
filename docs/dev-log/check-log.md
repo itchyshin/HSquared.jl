@@ -2,6 +2,41 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1J Dense PEV And Reliability
+
+- Goal: add dense experimental prediction-error-variance and reliability
+  extractors for the low-level Gaussian animal-model validation path.
+- Active lenses: Ada, Henderson, Gauss, Fisher, Curie, Mrode, Grace, Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added `prediction_error_variance(fit)`.
+  - Added `reliability(fit)`.
+  - PEV uses the lower-right random-effect block of the dense
+    mixed-model-equation inverse.
+  - Reliability uses `1 - PEV_i / (sigma_a2 * A_ii)` and does not clip values.
+- Tests:
+  - Added identity-relationship checks against a test-side MME inverse.
+  - Extended the Henderson MME fixture to check PEV and reliability against the
+    same equation system used for fixed effects and EBVs.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 148 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only allowed dense-experimental wording and blocked/audit
+    rows, not public claims that production sparse reliability/PEV, sparse
+    production fitting, AI-REML, R-to-Julia bridge execution, or GPU support are
+    implemented.
+- Boundary:
+  - Dense validation path only.
+  - Not production sparse reliability/PEV.
+  - Not external comparator validation.
+  - Not included in `result_payload()` until the R result contract grows those
+    fields.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1I HSData Input Container
 
 - Goal: mirror the R `hs_data()` input-container contract in Julia without
@@ -66,8 +101,8 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Claim scan found only blocked-wording/audit rows, not public claims that R
     live execution returns fitted objects, R extractors consume real Julia
-    results, reliability/PEV/sparse diagnostics are implemented, or GPU/QTL
-    support is implemented.
+    results, production sparse reliability/PEV, sparse diagnostics, or GPU/QTL
+    support are implemented.
 - Boundary:
   - Result shape exists on the Julia side.
   - R live execution and result marshalling remain planned.

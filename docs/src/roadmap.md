@@ -18,7 +18,7 @@ Implemented:
 - low-level animal-model spec validation;
 - dense Gaussian likelihood evaluation;
 - experimental dense variance-component optimization;
-- experimental dense EBV/BLUP and heritability extraction;
+- experimental dense EBV/BLUP, heritability, PEV, and reliability extraction;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`.
 
 Not implemented:
@@ -35,7 +35,7 @@ Next engine targets:
 2. Mrode-style validation and comparator checks;
 3. production sparse covariance/precision computations;
 4. AI-REML or a documented sparse optimizer path;
-5. reliability and prediction error variance.
+5. production sparse reliability and prediction error variance.
 
 ## Later Phases
 

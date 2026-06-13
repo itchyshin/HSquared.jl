@@ -92,8 +92,8 @@ payload_fit isa AnimalModelFit
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,
-fixed effects, breeding values, fitted values, and simple univariate
-heritability.
+fixed effects, breeding values, fitted values, simple univariate heritability,
+prediction error variance, and reliability.
 
 ```@example quickstart
 variance_components(fit)
@@ -105,6 +105,14 @@ breeding_values(fit).values
 
 ```@example quickstart
 heritability(fit)
+```
+
+```@example quickstart
+prediction_error_variance(fit).values
+```
+
+```@example quickstart
+reliability(fit).values
 ```
 
 For R bridge work, `result_payload` returns the current bridge-facing names:

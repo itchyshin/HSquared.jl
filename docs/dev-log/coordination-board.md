@@ -40,7 +40,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - experimental dense variance-component optimization implemented for
     validated specs;
   - experimental dense variance-component, fixed-effect, EBV/BLUP,
-    fitted-value, and heritability extractors implemented for validated specs;
+    fitted-value, heritability, PEV, and reliability extractors implemented
+    for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative

@@ -88,6 +88,8 @@ fixed_effects(fit)
 breeding_values(fit)
 fitted_values(fit)
 heritability(fit)
+prediction_error_variance(fit)
+reliability(fit)
 ```
 
 These operate on `AnimalModelFit` objects from the dense validation path.
@@ -101,7 +103,12 @@ u_hat = sigma_a2 * A * Z' * V^-1 * (y - X * beta)
 ```
 
 This is intentionally dense and small-scale. Production sparse BLUP solves,
-reliability, and prediction error variance remain planned.
+production sparse reliability, and production sparse prediction error variance
+remain planned.
+
+`prediction_error_variance(fit)` and `reliability(fit)` use the dense
+mixed-model-equation inverse for tiny validation examples. They are not included
+in `result_payload(fit)` until the R result contract grows those fields.
 
 ## R Result Payload Contract
 
@@ -206,8 +213,8 @@ Currently implemented bridge payload fields are the dense-path subset:
 variance components, heritability, breeding values, fixed effects, random
 effects, log-likelihood, degrees of freedom, number of observations,
 predictions, diagnostics, and convergence flag. Gradient diagnostics,
-reliability, prediction error variance, and sparse solver metadata remain
-planned.
+reliability and prediction error variance in the bridge payload, and sparse
+solver metadata remain planned.
 
 ## Storage Policy
 

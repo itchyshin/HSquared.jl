@@ -257,6 +257,45 @@ function heritability(fit::AnimalModelFit)
 end
 
 """
+    prediction_error_variance(fit)
+
+Return dense prediction error variances for animal-effect BLUPs/EBVs from an
+experimental low-level [`AnimalModelFit`](@ref).
+
+The current implementation forms and inverts the dense mixed-model-equation
+coefficient matrix. It is a validation-path extractor for tiny examples, not a
+production sparse reliability calculation.
+"""
+function prediction_error_variance(fit::AnimalModelFit)
+    block = _dense_mme_random_inverse_block(fit)
+    return (ids = collect(fit.spec.ids), values = Vector{Float64}(diag(block)))
+end
+
+"""
+    reliability(fit)
+
+Return dense animal-level reliability values for the Phase 1 univariate animal
+model.
+
+Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
+relationship matrix implied by `Ainv`. Values are not clipped; small examples
+can expose weakly informed animals directly.
+"""
+function reliability(fit::AnimalModelFit)
+    pev = prediction_error_variance(fit)
+    A = inv(Symmetric(Matrix{Float64}(fit.spec.Ainv)))
+    animal_variance = fit.variance_components.sigma_a2 .* diag(A)
+
+    all(>(0), animal_variance) ||
+        throw(ArgumentError("animal-level additive variances must be positive"))
+
+    return (
+        ids = pev.ids,
+        values = Vector{Float64}(1 .- pev.values ./ animal_variance),
+    )
+end
+
+"""
     result_payload(fit)
 
 Return a bridge-facing result payload with field names aligned to the R
@@ -319,4 +358,25 @@ end
 function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_a2, sigma_e2)
     n = size(Z, 1)
     return Symmetric(sigma_a2 * Z * A * transpose(Z) + sigma_e2 * I(n))
+end
+
+function _dense_mme_random_inverse_block(fit::AnimalModelFit)
+    spec = fit.spec
+    sigma_a2 = fit.variance_components.sigma_a2
+    sigma_e2 = fit.variance_components.sigma_e2
+
+    X = Matrix{Float64}(spec.X)
+    Z = Matrix{Float64}(spec.Z)
+    Ainv = Matrix{Float64}(spec.Ainv)
+
+    residual_precision = inv(sigma_e2)
+    relationship_precision = Ainv / sigma_a2
+
+    lhs = [
+        residual_precision * transpose(X) * X residual_precision * transpose(X) * Z
+        residual_precision * transpose(Z) * X residual_precision * transpose(Z) * Z + relationship_precision
+    ]
+    inverse_lhs = inv(Symmetric(lhs))
+    nfixed = size(X, 2)
+    return inverse_lhs[(nfixed + 1):end, (nfixed + 1):end]
 end

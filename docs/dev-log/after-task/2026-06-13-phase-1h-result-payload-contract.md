@@ -60,8 +60,8 @@ Local check:
 - `git diff --check` passed.
 - Claim scan found only blocked-wording/audit rows, not public claims that R
   live execution returns fitted objects, R extractors consume real Julia
-  results, reliability/PEV/sparse diagnostics are implemented, or GPU/QTL
-  support is implemented.
+  results, production sparse reliability/PEV, sparse diagnostics, or GPU/QTL
+  support are implemented.
 
 ## Rose Audit
 
@@ -76,7 +76,8 @@ Blocked wording:
 
 - R live execution returns a fitted object;
 - R extractors consume real Julia results;
-- reliability, PEV, or sparse diagnostics are implemented.
+- production sparse reliability, production sparse PEV, or sparse diagnostics
+  are implemented.
 
 ## Next Work
 

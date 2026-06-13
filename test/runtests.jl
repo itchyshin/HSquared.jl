@@ -46,6 +46,24 @@ function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     return solution[1:p], solution[(p + 1):end]
 end
 
+function _mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2)
+    Xd = Matrix{Float64}(X)
+    Zd = Matrix{Float64}(Z)
+    Q = Matrix{Float64}(Ainv)
+    n = size(Xd, 1)
+
+    Rinv = Matrix{Float64}(I, n, n) / sigma_e2
+    Ginv = Q / sigma_a2
+
+    lhs = [
+        transpose(Xd) * Rinv * Xd transpose(Xd) * Rinv * Zd
+        transpose(Zd) * Rinv * Xd transpose(Zd) * Rinv * Zd + Ginv
+    ]
+    inverse_lhs = inv(Symmetric(lhs))
+    p = size(Xd, 2)
+    return inverse_lhs[(p + 1):end, (p + 1):end]
+end
+
 @testset "HSquared Phase 0 scaffold" begin
     control = HSControl()
 
@@ -292,6 +310,10 @@ end
     @test fitted_values(fit) ≈ [1.5, 2.0, 2.5]
     @test fitted_values(fit; include_random = false) ≈ [2.0, 2.0, 2.0]
     @test heritability(fit) ≈ 0.5
+    @test prediction_error_variance(fit).ids == ["a", "b", "c"]
+    @test prediction_error_variance(fit).values ≈ diag(_mme_inverse_random_block_for_test(X, Z, Ainv, 1.0, 1.0))
+    @test reliability(fit).ids == ["a", "b", "c"]
+    @test reliability(fit).values ≈ 1 .- prediction_error_variance(fit).values
 
     payload = result_payload(fit)
     @test propertynames(payload) == (
@@ -415,4 +437,13 @@ end
     @test breeding_values(fit).values ≈ expected_u
     @test fitted_values(fit) ≈ vec(Matrix(X) * expected_beta + Matrix(Z) * expected_u)
     @test heritability(fit) ≈ sigma_a2 / (sigma_a2 + sigma_e2)
+
+    expected_pev = diag(_mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2))
+    relationship = inv(Symmetric(Matrix(Ainv)))
+    expected_reliability = 1 .- expected_pev ./ (sigma_a2 .* diag(relationship))
+
+    @test prediction_error_variance(fit).ids == ped.ids
+    @test prediction_error_variance(fit).values ≈ expected_pev
+    @test reliability(fit).ids == ped.ids
+    @test reliability(fit).values ≈ expected_reliability
 end

@@ -26,7 +26,7 @@ Implemented engine utilities:
   components;
 - experimental dense variance-component optimization for validated specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
-  heritability extractors for the dense spec path;
+  heritability, PEV, and reliability extractors for the dense spec path;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - small deterministic tests for malformed pedigrees and hand-checked `Ainv`
   matrices.

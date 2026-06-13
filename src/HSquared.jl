@@ -30,6 +30,8 @@ export AutoBackend,
     inbreeding_coefficients,
     normalize_pedigree,
     pedigree_inverse,
+    prediction_error_variance,
+    reliability,
     result_payload,
     variance_components
 

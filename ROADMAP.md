@@ -25,7 +25,8 @@ pedigree/Ainv engine utility slice.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, EBV/BLUP,
-  fitted-value, and heritability extractors exist for the dense spec path.
+  fitted-value, heritability, PEV, and reliability extractors exist for the
+  dense spec path.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
 - High-level formula fitting and R bridge execution are not implemented.
