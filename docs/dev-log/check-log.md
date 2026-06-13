@@ -28,6 +28,19 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim-boundary scan found expected status and limitation wording only.
+- Remote checks for commit `e6e38f2`:
+  - CI `27463342065`: success on Julia 1 and Julia 1.10.
+  - Documenter `27463342069`: success.
+  - Pages deploy `27463373649`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+- Evidence update checks:
+  - `julia --project=docs docs/make.jl` passed after recording remote
+    evidence. Local deployment was skipped as expected outside CI; Vitepress
+    dependency installation still reported npm advisories in transient build
+    artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
 - Boundary:
   - EBV/BLUP and fitted-value extraction are MME-backed at fitted variance
     components.

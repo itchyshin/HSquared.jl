@@ -68,6 +68,23 @@ Rose verdict before checks: clean with limitations.
 - Additions-only ASCII scan: no matches.
 - Claim-boundary scan: expected status/limitation hits only.
 
+Remote evidence for implementation commit `e6e38f2`:
+
+- CI `27463342065`: passed on Julia 1 and Julia 1.10.
+- Documenter `27463342069`: passed.
+- Pages deploy `27463373649`: passed.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+Evidence-update checks:
+
+- `julia --project=docs docs/make.jl`: passed after recording remote evidence.
+  Local deployment was skipped as expected outside CI; generated Vitepress
+  dependency installation still reported npm advisories in transient build
+  artifacts.
+- `git diff --check`: passed.
+- Additions-only ASCII scan: no matches.
+
 ## Known Limitations
 
 - Variance components still come from the experimental dense validation fit
@@ -78,7 +95,7 @@ Rose verdict before checks: clean with limitations.
 
 ## Next Actions
 
-1. Commit and push.
-2. Watch CI, Documenter, and Pages.
+1. Record this evidence commit.
+2. Watch CI, Documenter, and Pages for the evidence commit.
 3. Continue toward Mrode fitted-output validation and sparse production
    optimization as separate evidence-gated slices.
