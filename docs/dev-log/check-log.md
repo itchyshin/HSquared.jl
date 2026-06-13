@@ -37,7 +37,15 @@ Newest entries go at the top.
     bridge hardening, no general fitting, and no live Julia `HSData` object
     marshalling.
 - Remote checks:
-  - Pending.
+  - CI `27460283615`: success.
+  - Documenter `27460283625`: success.
+  - Pages deploy `27460318154`: success.
+  - Live data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP
+    200 and contains `36efbf3`, `This does not change the Julia bridge payload
+    shape`, and `object marshalling remains planned`.
+  - Live roadmap `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP
+    200 and contains `36efbf3`, `hs_data`, and `bridge payload shape
+    unchanged`.
 - Boundary:
   - Phenotype/pedigree parser integration only.
   - No file-backed storage.

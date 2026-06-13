@@ -67,7 +67,19 @@ No Julia code changed.
   construction, no production bridge hardening, no general fitting, and no
   live Julia `HSData` object marshalling.
 
-Remote checks: pending.
+Remote checks for commit `065369a`:
+
+- CI `27460283615`: success;
+- Documenter `27460283625`: success;
+- Pages deploy `27460318154`: success.
+
+Live docs:
+
+- data page `https://itchyshin.github.io/HSquared.jl/dev/data`: HTTP 200 and
+  contains `36efbf3`, `This does not change the Julia bridge payload shape`,
+  and `object marshalling remains planned`;
+- roadmap `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP 200 and
+  contains `36efbf3`, `hs_data`, and `bridge payload shape unchanged`.
 
 ## Public Claim Audit
 
@@ -88,8 +100,8 @@ Blocked wording:
 - general fitting is available through `hs_data()`;
 - Julia receives or fits a live `HSData` object.
 
-Rose verdict: clean with limitations after local checks; remote evidence
-pending. Claim scope is documentation-only and guarded.
+Rose verdict: clean with limitations after local and remote checks. Claim scope
+is documentation-only and guarded.
 
 ## Coordination Notes
 
