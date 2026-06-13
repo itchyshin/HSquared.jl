@@ -2,6 +2,43 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1I HSData Input Container
+
+- Goal: mirror the R `hs_data()` input-container contract in Julia without
+  widening claims to file-backed storage, genomic modelling, QTL/eQTL, or model
+  fitting.
+- Active lenses: Ada, Shannon, Hopper, Emmy, Jason, Karpinski, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `644c75e` added `hs_data()` for phenotypes, optional
+    pedigree, genotypes, markers, expression, annotation, and environment.
+  - R local/remote evidence was reported green in the coordination handoff.
+- Implementation evidence:
+  - Added `HSData`, `HSDataIDMap`, and `id_map()`.
+  - Added exact ID-map fields aligned to the R vocabulary.
+  - Added tests for repeated phenotype IDs, normalized and raw pedigree IDs,
+    matrix genotypes with explicit IDs, expression IDs, mismatch fields, and
+    invalid input errors.
+  - Added Documenter page `docs/src/data.md` and design note
+    `docs/design/09-hsdata-contract.md`.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 140 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims that
+    file-backed storage, QTL/eQTL, genomic relationship construction, live
+    R-to-Julia marshalling, sparse production fitting, AI-REML, or GPU support
+    are implemented.
+- Boundary:
+  - `HSData` is an in-memory exact-ID container.
+  - It does not normalize IDs across types.
+  - It does not read large file formats, construct genomic relationships, run
+    scans, or fit models.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1H Result Payload Contract
 
 - Goal: align Julia dense fit result names with the R `hsquared_fit` extractor

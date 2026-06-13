@@ -5,6 +5,7 @@
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
 | V0-CTRL | Control validation | covered | default and invalid control tests |
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
+| V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
 | V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl` |
 | V1-SPEC | Low-level animal model spec validation | covered | dimension, ID, family, and method tests in `test/runtests.jl` |
@@ -13,6 +14,7 @@
 | V1-DENSE-OUT | Dense EBV/heritability extractors | partial | hand-checked identity-relationship BLUP and variance-ratio tests plus Henderson MME fixture; still needs textbook Mrode and comparator checks |
 | V1-BRIDGE | R-to-Julia payload parity | partial | R payload builder exists in `hsquared` head `b57b48e`; Julia direct payload target has spec-dispatch, parent-index, `ids`, sparse `Z`, and Julia-side `Ainv` parity tests; still needs cross-repo marshalling tests for R-produced payload and returned result shape |
 | V1-RESULT | R-Julia result shape parity | partial | R fitted-object extractor contract exists in `hsquared` head `e543cd7`; Julia `result_payload()` has matching field-name/value tests; still needs live bridge marshalling tests |
+| V1-HSDATA-BRIDGE | R `hs_data()` to Julia `HSData` parity | partial | R `hs_data()` exists in `hsquared` head `644c75e`; Julia `HSData` mirror exists; still needs live bridge marshalling tests |
 | V1-REML | Sparse Gaussian REML optimizer / AI-REML | planned | Mrode simple animal model and comparator check |
 | V1-EBV | Production EBVs/BLUPs, reliability, and PEV | planned | known fitted values, reliability, and prediction error variance against comparator |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |

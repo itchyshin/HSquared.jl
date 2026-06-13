@@ -6,6 +6,9 @@ HSquared.CPUBackend
 HSquared.CUDABackend
 HSquared.AutoBackend
 HSquared.GaussianFamily
+HSquared.HSData
+HSquared.HSDataIDMap
+HSquared.id_map
 HSquared.Pedigree
 HSquared.normalize_pedigree
 HSquared.inbreeding_coefficients

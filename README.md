@@ -39,6 +39,8 @@ Implemented now:
   heritability extractors for the dense low-level spec path;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
+- in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
+  genotype, expression, marker, annotation, and environment inputs;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
@@ -68,6 +70,23 @@ Ainv = pedigree_inverse(ped)
 
 This is an engine utility only. It is not yet connected to a fitted animal
 model.
+
+The first Julia data container mirrors the R `hs_data()` input contract:
+
+```julia
+data = HSData(
+    phenotypes;
+    id = :id,
+    pedigree = ped,
+    genotypes = genotype_matrix,
+    genotype_ids = genotype_ids,
+)
+
+id_map(data)
+```
+
+This records exact ID overlap only. File-backed storage, relationship
+construction from genotypes, and QTL/eQTL scans remain planned.
 
 The first bridge-ready model specification validator is also available:
 

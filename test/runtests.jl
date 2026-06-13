@@ -119,6 +119,65 @@ end
     @test_throws ArgumentError inbreeding_coefficients(ped; max_relationship_cache = 2)
 end
 
+@testset "Phase 1 HSData ID container" begin
+    phenotypes = (
+        id = ["animal_1", "animal_1", "animal_2"],
+        y = [1.0, 1.5, 2.0],
+    )
+    pedigree = normalize_pedigree(
+        ["founder", "animal_1", "animal_2"],
+        ["0", "founder", "founder"],
+        ["0", "0", "0"],
+    )
+    genotypes = [
+        0.0 1.0
+        1.0 0.0
+        2.0 2.0
+    ]
+    expression = (
+        id = ["animal_2", "animal_4"],
+        gene_a = [4.0, 5.0],
+    )
+
+    data = HSData(
+        phenotypes;
+        id = :id,
+        pedigree = pedigree,
+        genotypes = genotypes,
+        genotype_ids = ["animal_1", "animal_3", "founder"],
+        expression = expression,
+        expression_id = :id,
+    )
+
+    @test data isa HSData
+    @test data.pedigree === pedigree
+    @test id_map(data) isa HSDataIDMap
+    @test id_map(data).phenotype_ids == ["animal_1", "animal_2"]
+    @test id_map(data).pedigree_ids == pedigree.ids
+    @test id_map(data).genotype_ids == ["animal_1", "animal_3", "founder"]
+    @test id_map(data).expression_ids == ["animal_2", "animal_4"]
+    @test id_map(data).phenotypes_without_pedigree == []
+    @test id_map(data).phenotypes_without_genotypes == ["animal_2"]
+    @test id_map(data).phenotypes_without_expression == ["animal_1"]
+    @test id_map(data).genotypes_without_phenotypes == ["animal_3", "founder"]
+    @test id_map(data).expression_without_phenotypes == ["animal_4"]
+
+    raw_pedigree = (
+        id = ["animal_1", "animal_2", "founder"],
+        sire = ["founder", "founder", "0"],
+        dam = ["0", "0", "0"],
+    )
+    raw_data = HSData(phenotypes; pedigree = raw_pedigree)
+    @test id_map(raw_data).pedigree_ids == ["animal_1", "animal_2", "founder"]
+
+    @test_throws ArgumentError HSData((id = ["animal_1", missing], y = [1.0, 2.0]))
+    @test_throws ArgumentError HSData(phenotypes; pedigree = (id = ["animal_1"],))
+    @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes)
+    @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes, genotype_ids = ["a"])
+    @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes, genotype_ids = ["a", "a", "b"])
+    @test_throws ArgumentError HSData(; phenotypes = (animal = ["a"], y = [1.0]))
+end
+
 @testset "Phase 1 animal model spec validation" begin
     y = [1.0, 2.0, 3.0]
     X = [1.0 0.0; 1.0 1.0; 1.0 2.0]

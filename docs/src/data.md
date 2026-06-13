@@ -1,0 +1,105 @@
+# Data Containers
+
+`HSData` is the first Julia-side mirror of the R `hs_data()` container.
+
+It is an in-memory contract for matching phenotypes, pedigrees, genotypes,
+expression data, marker annotation, and environmental metadata. It does not
+read PLINK, VCF, Arrow, Parquet, HDF5, or Zarr files yet, and it does not build
+genomic relationship matrices or fit models.
+
+## Minimal Phenotype Data
+
+```@example data
+using HSquared
+
+phenotypes = (
+    id = ["animal_1", "animal_1", "animal_2"],
+    y = [1.0, 1.5, 2.0],
+)
+
+data = HSData(phenotypes; id = :id)
+id_map(data).phenotype_ids
+```
+
+Repeated phenotype records are allowed. The ID map stores unique phenotype IDs
+in first-seen order.
+
+## Pedigree Matching
+
+When a pedigree is supplied, every phenotyped ID must be present in the
+pedigree. Extra pedigree ancestors are allowed.
+
+```@example data
+pedigree = normalize_pedigree(
+    ["founder", "animal_1", "animal_2"],
+    ["0", "founder", "founder"],
+    ["0", "0", "0"],
+)
+
+data = HSData(phenotypes; pedigree = pedigree)
+id_map(data).pedigree_ids
+```
+
+Raw table-like pedigrees can also be stored if they have an ID column. `HSData`
+does not normalize raw pedigree parents; use `normalize_pedigree()` for the
+engine pedigree representation.
+
+## Genotype And Expression IDs
+
+Matrix-like genotype data needs explicit row IDs because Julia base matrices do
+not have row names.
+
+```@example data
+genotypes = [
+    0.0 1.0
+    1.0 0.0
+    2.0 2.0
+]
+
+expression = (
+    id = ["animal_2", "animal_4"],
+    gene_a = [4.0, 5.0],
+)
+
+data = HSData(
+    phenotypes;
+    pedigree = pedigree,
+    genotypes = genotypes,
+    genotype_ids = ["animal_1", "animal_3", "founder"],
+    expression = expression,
+)
+
+id_map(data).phenotypes_without_genotypes
+```
+
+```@example data
+id_map(data).genotypes_without_phenotypes
+```
+
+```@example data
+id_map(data).phenotypes_without_expression
+```
+
+```@example data
+id_map(data).expression_without_phenotypes
+```
+
+## Current Boundary
+
+`HSData` currently provides:
+
+- exact-ID matching;
+- repeated phenotype ID support;
+- optional pedigree, genotype, expression, marker, annotation, and environment
+  storage;
+- conservative mismatch fields for later bridge and genomic work.
+
+Planned later:
+
+- file-backed phenotype and genotype storage;
+- PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
+- marker maps, QTL/eQTL scans, and genomic relationship construction;
+- integration with `animal_model_spec()` and production model fitting.
+
+IDs are not coerced. For example, `1` and `"1"` are different IDs until an
+explicit normalization rule is added.

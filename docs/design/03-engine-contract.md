@@ -23,6 +23,25 @@ This utility validates and sorts a pedigree, recodes known parents to integer
 indices, keeps unknown parents as `0`, and builds a sparse inverse additive
 relationship matrix. It does not fit a model.
 
+## Implemented Data Container
+
+```julia
+data = HSData(
+    phenotypes;
+    id = :id,
+    pedigree = pedigree,
+    genotypes = genotypes,
+    genotype_ids = genotype_ids,
+    expression = expression,
+)
+ids = id_map(data)
+```
+
+This mirrors the R `hs_data()` input-container vocabulary from `hsquared` head
+`644c75e`. It records exact-ID overlap across phenotypes, pedigree, genotype,
+and expression inputs. It is in-memory only. It does not read file-backed
+formats, build genomic relationships, or fit a model.
+
 ## Implemented Model-Spec Validator
 
 ```julia
@@ -152,7 +171,8 @@ fit = fit_animal_model(y, X, Z, Ainv; ids = ids, method = :REML)
 The next bridge task is cross-repo marshalling, not wider syntax. The Julia
 tests now cover parent-index semantics, `ids` order, sparse `Z` dimensions,
 Julia-side `Ainv`, and parity between spec dispatch and direct payload
-dispatch. The actual R-to-Julia call still does not exist.
+dispatch. The actual R-to-Julia call still does not exist. A parallel future
+task is `hs_data()` to `HSData` marshalling parity.
 
 ## Input Payload
 

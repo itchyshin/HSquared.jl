@@ -15,6 +15,7 @@ pedigree/Ainv engine utility slice.
 - Control/backend placeholders exist.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
+- In-memory `HSData` input container and conservative ID-overlap map exist.
 - Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
   hand-checked tests.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
@@ -79,6 +80,9 @@ First real capability:
 - sparse production optimizer and AI-REML;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.
+- in-memory phenotype/pedigree/genotype/expression ID container; initial mirror
+  covered.
+- file-backed phenotype/genotype storage; planned.
 
 Gate: Mrode simple animal-model example plus tiny hand-checked pedigrees and
 comparator checks where available.
@@ -144,7 +148,9 @@ nonzeros, memory, and comparator.
 
 1. Add cross-repo R-to-Julia marshalling tests around the current R parser and
    Julia direct payload target.
-2. Add Mrode/simple comparator validation for the dense low-level path.
-3. Replace dense covariance equations with sparse production computations.
-3. Keep `hsquared` issue #2 synchronized with this engine contract.
-4. Add Mrode/comparator validation before promoting animal-model fitting.
+2. Add Julia-side `HSData` integration tests once the R bridge sends actual
+   `hs_data()` payloads.
+3. Add Mrode/simple comparator validation for the dense low-level path.
+4. Replace dense covariance equations with sparse production computations.
+5. Keep `hsquared` issue #2 synchronized with this engine contract.
+6. Add Mrode/comparator validation before promoting animal-model fitting.

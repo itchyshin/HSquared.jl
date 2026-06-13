@@ -16,6 +16,8 @@
   output path.
 - Added `result_payload()` with field names aligned to the R `hsquared_fit`
   extractor contract.
+- Added `HSData`, `HSDataIDMap`, and `id_map()` as an in-memory mirror of the R
+  `hs_data()` input-container contract.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

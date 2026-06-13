@@ -13,6 +13,8 @@ export AutoBackend,
     GaussianFamily,
     GaussianLikelihoodResult,
     HSControl,
+    HSData,
+    HSDataIDMap,
     Pedigree,
     Phase0NotImplementedError,
     animal_model_spec,
@@ -24,6 +26,7 @@ export AutoBackend,
     gaussian_loglik,
     heritability,
     hsquared,
+    id_map,
     inbreeding_coefficients,
     normalize_pedigree,
     pedigree_inverse,
@@ -34,6 +37,7 @@ include("backends.jl")
 include("control.jl")
 include("errors.jl")
 include("pedigree.jl")
+include("data.jl")
 include("model_spec.jl")
 include("likelihood.jl")
 include("placeholders.jl")

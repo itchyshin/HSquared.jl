@@ -5,6 +5,7 @@
 | Package loads | implemented | `test/runtests.jl` |
 | Backend marker types | implemented | `CPUBackend`, `CUDABackend`, `AutoBackend` tests |
 | `HSControl` validation | implemented | `test/runtests.jl` |
+| `HSData` input container | implemented | in-memory phenotype/pedigree/genotype/expression ID-map tests; no file-backed storage or modelling claim |
 | `hsquared()` fitting | planned | Phase 0 placeholder only |
 | `fit_animal_model(spec)` dense fitting | experimental | dispatches to `fit_variance_components()` for validated `AnimalModelSpec`; all other signatures remain placeholders |
 | Pedigree validation | implemented | `normalize_pedigree()` valid, malformed, duplicate, missing-parent, self-parent, same-parent, and cycle tests |
@@ -17,7 +18,9 @@
 | Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
 | R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; no live R execution yet |
 | R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload but does not execute Julia fitting |
+| R `hs_data()` data container | external implemented | `hsquared` head `644c75e`; Julia mirror exists as `HSData`, but live marshalling is not implemented |
 | R-to-Julia bridge execution | planned | no marshalling/parity test yet |
+| File-backed phenotype/genotype storage | planned | no Arrow/Parquet/PLINK/VCF/HDF5/Zarr implementation yet |
 | Sparse production fitting / AI-REML | planned | no implementation yet |
 | Reliability / PEV | planned | no implementation yet |
 | Multivariate G matrices | planned | no implementation yet |

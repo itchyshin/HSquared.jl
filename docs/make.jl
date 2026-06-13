@@ -20,6 +20,7 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Get started" => "quickstart.md",
+        "Data containers" => "data.md",
         "Pedigrees and Ainv" => "pedigree-ainv.md",
         "Audience and comparators" => "audience-comparators.md",
         "Genomics, QTL, GPU, and HPC" => "genomics-qtl-gpu-hpc.md",

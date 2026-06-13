@@ -21,8 +21,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   bridge boundary.
 - The Julia twin can validate low-level animal-model specs and run an
   experimental dense variance-component optimizer for those specs.
-- R-to-Julia bridge execution, sparse production fitting, EBVs, and
-  heritability remain planned.
+- The Julia twin has an in-memory `HSData` container mirroring the current R
+  `hs_data()` ID-map vocabulary.
+- R-to-Julia bridge execution, sparse production fitting, reliability, PEV, and
+  sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
 ## Current State
@@ -41,6 +43,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     fitted-value, and heritability extractors implemented for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
+  - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
+    in-memory mirror of the R `hs_data()` input-container contract.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:
   - inert `animal()` marker exported;
   - `hs_build_model_spec()` parses `animal(1 | id, pedigree = ped)`;
@@ -57,10 +61,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `predictions`, `diagnostics`, and `converged`;
   - R tests use mocked result fields only; live `hsquared()` fitted objects are
     not returned yet.
+- R lane handoff from `itchyshin/hsquared` head `644c75e`:
+  - `hs_data()` stores phenotypes, optional pedigree, genotypes, markers,
+    expression, annotation, and environment inputs;
+  - its `id_map` records phenotype, pedigree, genotype, and expression overlap;
+  - this is not file-backed storage, relationship construction, QTL/eQTL scan
+    support, or model fitting.
 - Next shared seam: cross-repo R-to-Julia marshalling tests that send the R
   parser payload into the Julia direct target and verify variance components,
   breeding values, heritability, and the `result_payload()` field names in the
-  returned result shape.
+  returned result shape. A second seam is `hs_data()` to `HSData` payload
+  parity once live R-to-Julia data transfer is attempted.
 
 ## Sister References
 
