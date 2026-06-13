@@ -86,6 +86,11 @@
   `repeatability_mme` is now its `Z2=Z1, A2=I` special case. Validated against an
   independent marginal-GLS BLUP. Experimental; no correlated direct–maternal
   genetic, no estimation, no R-facing model-spec.
+- Added `fit_two_effect_reml()` — REML estimation of the two-effect-model
+  variances (common-environment `c²`, maternal variance, etc.) via the dense
+  two-effect REML loglik; `fit_repeatability_reml` is the `Z2=Z1, A2=I` reduction.
+  Experimental, dense/validation-scale, REML-only; no committed recovery test, no
+  intervals, no R-facing model-spec.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

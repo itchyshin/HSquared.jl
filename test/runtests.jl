@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 24
+    @test length(validation) == 25
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1952,4 +1952,41 @@ end
     # guards
     @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), -1.0, s2, se2)
     @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2), s1, s2, se2)
+end
+
+@testset "Phase 3 two-effect REML (common-environment / maternal estimation)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Z[rec, an] = 1.0; end
+    y = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; X = ones(8, 1)
+
+    # reduction: with Z2 = Z1 and A2 = I it equals fit_repeatability_reml
+    rep = fit_repeatability_reml(y, X, Z, Ainv)
+    gen = fit_two_effect_reml(y, X, Z, Ainv, Z, Matrix(1.0I, 4, 4))
+    @test gen.variance_components.sigma1 ≈ rep.variance_components.sigma_a2 rtol = 1e-4
+    @test gen.variance_components.sigma2 ≈ rep.variance_components.sigma_pe2 atol = 1e-4
+    @test gen.variance_components.sigma_e2 ≈ rep.variance_components.sigma_e2 rtol = 1e-4
+
+    # dense loglik reduces to the animal-model REML (up to a constant) when sigma2 = 0
+    spec = animal_model_spec(y, X, sparse(Z), sparse(Matrix(Ainv)); method = :REML)
+    d = HSquared._two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, 4, 4), 1.0, 0.0, 2.0)[1] -
+        HSquared._two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, 4, 4), 2.0, 0.0, 1.0)[1]
+    s = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 2.0, 1.0).loglik
+    @test d ≈ s rtol = 1e-6
+
+    # common-environment fit: converges with valid VCs and ratios in [0,1]
+    Z2 = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]   # records -> 2 common-env groups
+    cf = fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2))
+    @test cf.converged
+    @test cf.variance_components.sigma1 >= 0
+    @test cf.variance_components.sigma2 >= 0
+    @test cf.variance_components.sigma_e2 > 0
+    @test 0 <= cf.ratio1 <= 1
+    @test 0 <= cf.ratio2 <= 1
+
+    # guards
+    @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2);
+        initial = (sigma1 = -1.0, sigma2 = 1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2))
 end

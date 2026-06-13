@@ -632,14 +632,14 @@ function repeatability_mme(
     )
 end
 
-# Dense REML log-likelihood and BLUPs for the two-random-effect repeatability
-# model: V = sigma_a2·(Z A Z') + sigma_pe2·(Z Z') + sigma_e2·I (validation-scale,
-# forms the n×n marginal covariance). `A` is the dense relationship matrix.
-function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
+# Dense REML log-likelihood and BLUPs for a general two-independent-random-effect
+# model: V = sigma1·(Z1 A1 Z1') + sigma2·(Z2 A2 Z2') + sigma_e2·I (validation-scale,
+# forms the n×n marginal covariance). `A1`, `A2` are dense relationship matrices.
+function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
     n = length(y)
     V = Symmetric(
-        sigma_a2 .* (Z * A * transpose(Z)) .+
-        sigma_pe2 .* (Z * transpose(Z)) .+
+        sigma1 .* (Z1 * A1 * transpose(Z1)) .+
+        sigma2 .* (Z2 * A2 * transpose(Z2)) .+
         sigma_e2 .* Matrix(1.0I, n, n),
     )
     Vf = cholesky(V)
@@ -649,9 +649,84 @@ function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
     r = y .- X * beta
     Vir = Vf \ r
     loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
-    ahat = sigma_a2 .* (A * (transpose(Z) * Vir))
-    pehat = sigma_pe2 .* (transpose(Z) * Vir)
-    return loglik, Vector{Float64}(beta), ahat, pehat
+    u1 = sigma1 .* (A1 * (transpose(Z1) * Vir))
+    u2 = sigma2 .* (A2 * (transpose(Z2) * Vir))
+    return loglik, Vector{Float64}(beta), u1, u2
+end
+
+"""
+    fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
+                        ids1 = nothing, ids2 = nothing)
+
+REML estimation of the variance components `(sigma1, sigma2, sigma_e2)` of the
+general two-independent-random-effect model (see [`two_effect_mme`](@ref)), by
+maximizing the dense two-effect REML log-likelihood (NelderMead). Covers
+common-environment (`c² = ratio2`) and maternal-environment variance estimation.
+
+Returns a `NamedTuple` with `variance_components`, `ratio1 = sigma1/total`,
+`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`.
+Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
+model-spec mapping are not part of this function. On small data the optimum can
+sit on a boundary (a variance → 0).
+"""
+function fit_two_effect_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    initial.sigma1 > 0 && initial.sigma2 > 0 && initial.sigma_e2 > 0 ||
+        throw(ArgumentError("initial variance components must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+    size(Z2, 1) == n || throw(ArgumentError("Z2 must have one row per record"))
+    n1 = size(Ainv1, 1)
+    n2 = size(Ainv2, 1)
+    size(Ainv1, 2) == n1 || throw(ArgumentError("Ainv1 must be square"))
+    size(Ainv2, 2) == n2 || throw(ArgumentError("Ainv2 must be square"))
+    size(Z1, 2) == n1 || throw(ArgumentError("Z1 columns must match Ainv1 dimensions"))
+    size(Z2, 2) == n2 || throw(ArgumentError("Z2 columns must match Ainv2 dimensions"))
+    e1ids = ids1 === nothing ? collect(1:n1) : collect(ids1)
+    e2ids = ids2 === nothing ? collect(1:n2) : collect(ids2)
+    length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+    length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+
+    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
+    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
+    Xd = Matrix{Float64}(X)
+    Z1d = Matrix{Float64}(Z1)
+    Z2d = Matrix{Float64}(Z2)
+    yv = Float64.(y)
+    objective(p) = -_two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, exp(p[1]), exp(p[2]), exp(p[3]))[1]
+    p0 = log.([Float64(initial.sigma1), Float64(initial.sigma2), Float64(initial.sigma_e2)])
+    result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+    sigma1, sigma2, sigma_e2 = exp.(Optim.minimizer(result))
+    loglik, beta, u1, u2 = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, sigma1, sigma2, sigma_e2)
+    total = sigma1 + sigma2 + sigma_e2
+    return (
+        variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
+        ratio1 = sigma1 / total,
+        ratio2 = sigma2 / total,
+        beta = beta,
+        effect1 = (ids = e1ids, values = u1),
+        effect2 = (ids = e2ids, values = u2),
+        loglik = loglik,
+        converged = Optim.converged(result),
+    )
+end
+
+# Repeatability dense loglik = the two-effect dense loglik with the
+# permanent-environment effect sharing Z and carrying an identity relationship.
+function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
+    na = size(A, 1)
+    return _two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, na, na), sigma_a2, sigma_pe2, sigma_e2)
 end
 
 """

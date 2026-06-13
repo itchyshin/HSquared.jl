@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Two-Effect REML (common-environment / maternal estimation)
+
+- Goal: REML estimation for the general two-effect model (common-environment `c²`,
+  maternal variance), completing the Phase-3 standard-QG engine kernel.
+- Active lenses: Gauss, Fisher, Falconer, Mendel, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `_two_effect_dense` (general dense two-effect REML loglik
+    + BLUPs; `_repeatability_dense` now delegates to it) and
+    `fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial)` (NelderMead over
+    the three log-variances → VCs, `ratio1`/`ratio2`, BLUPs). Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 724
+    total. New testset "Phase 3 two-effect REML (common-environment / maternal
+    estimation)" = 12 checks: equals `fit_repeatability_reml` in the `Z2=Z1, A2=I`
+    reduction; loglik reduces to the animal-model REML at σ2=0; common-env fit
+    converges with valid ratios; guards. `validation_status()` 24 → 25 (added
+    `V3-TWOEFFECT-REML`).
+  - One-off seeded common-env recovery: σc²/σe² recover well; σa² underestimated
+    on a small confounded design.
+- Boundary:
+  - Dense / validation-scale, REML-only; no committed recovery harness, no ratio
+    intervals, no correlated direct–maternal genetic, no R-facing model-spec.
+
 ## 2026-06-13 General Two-Random-Effect MME (common environment / maternal)
 
 - Goal: generalize the repeatability kernel into a general supplied-variance
