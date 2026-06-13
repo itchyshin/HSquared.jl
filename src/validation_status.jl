@@ -122,8 +122,17 @@ const VALIDATION_STATUS_DATA = (
         "Phase 2",
         "partial",
         "`genomic_relationship_matrix` builds VanRaden `G = ZZ'/(2Σp(1-p))` from a 0/1/2 (or dosage) marker matrix; validated on a tiny hand-computed fixture (symmetric, PSD, pinned entries) in `test/runtests.jl`.",
-        "Ginv/GBLUP, single-step, real marker datasets, and external comparator (AGHmatrix/sommer/BLUPF90) checks",
+        "GBLUP wiring, single-step, real marker datasets, and external comparator (AGHmatrix/sommer/BLUPF90) checks",
         "Experimental construction utility only; no genomic prediction, fitting, single-step, or marker-effect claim.",
+    ),
+    (
+        "V2-GINV",
+        "regularized genomic inverse (Ginv)",
+        "Phase 2",
+        "partial",
+        "`genomic_relationship_inverse(G; ridge)` returns the ridge-regularized dense inverse `inv(G + ridge·I)`; tested for the defining identity `(G + ridge·I)·Ginv ≈ I`, symmetry, a pinned hand inverse at `ridge = 0`, a rank-deficient marker-`G` round-trip, and square/PD/negative-ridge guards in `test/runtests.jl`.",
+        "GBLUP wiring into the MME, single-step `A`/`G` blending (`H`-matrix), and external comparator checks",
+        "Construction utility only; not wired into model fitting, and no single-step or genomic-prediction claim.",
     ),
     (
         "V5-GENOMIC-QTL",

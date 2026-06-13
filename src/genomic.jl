@@ -42,3 +42,26 @@ function genomic_relationship_matrix(
     Z = M .- 2 .* transpose(p)
     return (Z * transpose(Z)) ./ scale
 end
+
+"""
+    genomic_relationship_inverse(G; ridge = 0.01)
+
+Regularized inverse of a genomic relationship matrix `G` (e.g. from
+[`genomic_relationship_matrix`](@ref)). It is intended as the genomic
+relationship inverse for the animal-model engine (GBLUP), but is a construction
+utility only and is **not yet wired into model fitting**. A genomic `G` built
+from markers is usually rank-deficient (markers < individuals), so a ridge is
+added to the diagonal before inversion: `inv(G + ridge·I)`.
+
+This is a simple ridge regularization. Blending `G` with a pedigree `A`
+(single-step / `H`-matrix) is not implemented.
+"""
+function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
+    n = size(G, 1)
+    size(G, 2) == n || throw(ArgumentError("G must be square"))
+    ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    regularized = Symmetric(Matrix{Float64}(G) + ridge * I)
+    isposdef(regularized) ||
+        throw(ArgumentError("regularized G is not positive definite; increase ridge"))
+    return inv(regularized)
+end

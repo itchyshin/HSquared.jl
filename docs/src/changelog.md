@@ -24,6 +24,10 @@
 - Added `genomic_relationship_matrix()` — the VanRaden (2008) genomic
   relationship matrix `G` from a 0/1/2 (or dosage) marker matrix. Construction
   utility only (Phase 2 start); no genomic fitting yet.
+- Added `genomic_relationship_inverse()` — the ridge-regularized dense inverse
+  `inv(G + ridge·I)` of a genomic relationship matrix, intended for later GBLUP
+  use. Construction utility only; not wired into model fitting, and no
+  single-step (`H`-matrix) blending.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

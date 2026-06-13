@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 15
+    @test length(validation) == 16
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1548,4 +1548,32 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(M; allele_frequencies = [0.5, 0.5])
     @test_throws ArgumentError genomic_relationship_matrix([3.0 1.0; 0.0 2.0])
     @test_throws ArgumentError genomic_relationship_matrix(zeros(2, 2))
+end
+
+@testset "Phase 2 regularized genomic inverse (Ginv)" begin
+    # full-rank symmetric PD matrix: ridge = 0 returns the plain inverse
+    Gpd = [2.0 0.5; 0.5 2.0]
+    Ginv0 = genomic_relationship_inverse(Gpd; ridge = 0.0)
+    @test Ginv0 ≈ [2.0 -0.5; -0.5 2.0] ./ 3.75   # hand inverse, det = 2·2 − 0.5² = 3.75
+    @test Ginv0 ≈ transpose(Ginv0)               # symmetric
+    @test Gpd * Ginv0 ≈ I(2)                      # defining identity
+
+    # the ridge is added to the diagonal before inversion
+    Ginvr = genomic_relationship_inverse(Gpd; ridge = 0.01)
+    @test (Gpd + 0.01I) * Ginvr ≈ I(2)
+    @test !(Ginvr ≈ Ginv0)                        # ridge changed the result
+
+    # a singular matrix needs the ridge: ridge = 0 throws
+    @test_throws ArgumentError genomic_relationship_inverse([1.0 1.0; 1.0 1.0]; ridge = 0.0)
+
+    # round-trip: a rank-deficient marker G (m < n) inverts with the default ridge
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 markers
+    G = genomic_relationship_matrix(M)
+    Gi = genomic_relationship_inverse(G)
+    @test (G + 0.01I) * Gi ≈ I(4)
+    @test Gi ≈ transpose(Gi)
+
+    # guards
+    @test_throws ArgumentError genomic_relationship_inverse([1.0 2.0 3.0; 4 5 6])  # non-square
+    @test_throws ArgumentError genomic_relationship_inverse(Gpd; ridge = -1.0)     # negative ridge
 end

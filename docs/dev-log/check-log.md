@@ -2,6 +2,33 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Regularized Genomic Inverse (Ginv)
+
+- Goal: finish the Phase-2 `Ginv` slice (present as an uncommitted draft in the
+  working tree on resume) to Definition of Done — the ridge-regularized dense
+  inverse of a genomic relationship matrix, the engine-internal step GBLUP will
+  later consume.
+- Active lenses: Kirkpatrick, Falconer, Gauss, Curie, Rose (inline perspectives).
+- Spawned subagents: none.
+- Implementation:
+  - `genomic_relationship_inverse(G; ridge = 0.01)` in `src/genomic.jl`:
+    returns `inv(Symmetric(G) + ridge·I)` with square / non-negative-ridge /
+    positive-definite guards. Exported from the module. Docstring states it is a
+    construction utility only and is not wired into model fitting.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 599
+    total checks. New testset "Phase 2 regularized genomic inverse (Ginv)" = 10
+    checks: pinned hand inverse at `ridge = 0` (det = 3.75), the defining
+    identity `(G + ridge·I)·Ginv ≈ I`, symmetry, ridge-changes-result, a
+    singular matrix throwing at `ridge = 0`, a rank-deficient marker-`G`
+    round-trip with the default ridge, and non-square / negative-ridge guards.
+    `validation_status()` row count 15 → 16 (added `V2-GINV`).
+- Boundary:
+  - Additive engine utility — no bridge / result / model-spec change. The
+    contract-touching GBLUP wiring (G into the MME) and the R
+    `genomic()`/`markers()` → engine model-spec mapping remain the next slice and
+    will be coordinated with the R twin before landing.
+
 ## 2026-06-13 Genomic Relationship Matrix (VanRaden G)
 
 - Goal: begin Phase 2 (genomic) with the VanRaden genomic relationship matrix
