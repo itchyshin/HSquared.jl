@@ -2,6 +2,47 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1N Sparse REML Identity And Mrode9 Ainv Sync
+
+- Goal: add a sparse supplied-variance REML likelihood identity and mirror the
+  R twin's optional Mrode9/nadiv pedigree-Ainv comparator evidence.
+- Active lenses: Ada, Shannon, Henderson, Gauss, Fisher, Curie, Mrode, Grace,
+  Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added `sparse_reml_loglik(spec, sigma_a2, sigma_e2)`.
+  - The evaluator uses the sparse Henderson MME determinant identity at
+    supplied positive variance components.
+  - Shared the sparse MME system builder with `henderson_mme()`.
+  - Kept `fit_animal_model()` and `result_payload()` unchanged.
+- Test evidence:
+  - Added dense-vs-sparse REML equivalence tests on the simple identity
+    relationship fixture.
+  - Added dense-vs-sparse REML equivalence tests on the existing Henderson MME
+    validation fixture.
+  - Added error tests for non-positive variances and saturated REML design.
+- R twin handoff:
+  - Verified read-only from the sibling R repo.
+  - `hsquared` head `f0e71c7` added optional `nadiv`, the
+    `hs_mrode9_pedigree_validation_fixture()`, and
+    `tests/testthat/test-mrode-validation.R`.
+  - `hsquared` head `369d14a` recorded green CI evidence.
+  - The R test computes `nadiv::makeAinv()` for `nadiv::Mrode9` and compares
+    it with Julia `normalize_pedigree()` plus `pedigree_inverse()` at
+    tolerance `1e-10`.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 192 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+- Boundary:
+  - `sparse_reml_loglik()` evaluates REML at supplied variance components
+    only. It is not variance-component estimation, AI-REML, or production
+    sparse fitting.
+  - The Mrode9/nadiv evidence covers pedigree inverse agreement only. It is not
+    fitted Mrode animal-model validation, EBV/h2/variance-component validation,
+    ASReml/BLUPF90/DMU/WOMBAT comparison, or large-pedigree readiness.
+
 ## 2026-06-13 R Tiny Ainv Fixture Mirror
 
 - Goal: mirror the R twin's first deterministic Ainv validation atom in the

@@ -312,16 +312,27 @@ end
     @test reml.method == :REML
     @test reml.beta ≈ [2.0]
     @test reml.loglik ≈ -0.5 * (2 * log(2 * pi) + 3 * log(2.0) + log(1.5) + 1.0)
+
+    sparse_reml = sparse_reml_loglik(spec, 1.0, 1.0)
+    @test sparse_reml.method == :REML
+    @test sparse_reml.beta ≈ reml.beta
+    @test sparse_reml.loglik ≈ reml.loglik
+    @test sparse_reml.sigma_a2 == 1.0
+    @test sparse_reml.sigma_e2 == 1.0
+
     guarded = gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 18)
     @test guarded.loglik ≈ reml.loglik
 
     @test_throws ArgumentError gaussian_loglik(spec, 0.0, 1.0)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, -1.0)
+    @test_throws ArgumentError sparse_reml_loglik(spec, 0.0, 1.0)
+    @test_throws ArgumentError sparse_reml_loglik(spec, 1.0, -1.0)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; method = :AI_REML)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 17)
     @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 0)
     saturated = animal_model_spec(y, Matrix(I, 3, 3), Z, Ainv)
     @test_throws ArgumentError gaussian_loglik(saturated, 1.0, 1.0)
+    @test_throws ArgumentError sparse_reml_loglik(saturated, 1.0, 1.0)
 end
 
 @testset "Phase 1 dense variance component fitting" begin
@@ -503,6 +514,8 @@ end
 
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
     likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
+    dense_reml = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :REML)
+    sparse_reml = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     fit = AnimalModelFit(
         spec,
         likelihood,
@@ -514,6 +527,11 @@ end
 
     expected_beta, expected_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     mme = henderson_mme(spec, sigma_a2, sigma_e2)
+
+    @test sparse_reml.beta ≈ dense_reml.beta
+    @test sparse_reml.loglik ≈ dense_reml.loglik
+    @test sparse_reml.nobs == length(y)
+    @test sparse_reml.nfixed == size(X, 2)
 
     @test fixed_effects(fit) ≈ expected_beta
     @test breeding_values(fit).ids == ped.ids

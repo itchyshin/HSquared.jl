@@ -15,8 +15,12 @@ Implemented:
 - placeholder fitting entry points;
 - pedigree validation and topological sorting;
 - direct sparse `Ainv` construction for validated pedigrees;
+- optional external R-side `nadiv::Mrode9` / `nadiv::makeAinv()` comparator
+  evidence for `pedigree_inverse()`;
 - low-level animal-model spec validation;
 - dense Gaussian likelihood evaluation with a `max_dense_cells` guard;
+- sparse REML likelihood evaluation at supplied variance components via the
+  Henderson MME determinant identity;
 - experimental dense variance-component optimization;
 - experimental dense EBV/BLUP, heritability, PEV, and reliability extraction;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;

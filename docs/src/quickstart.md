@@ -78,6 +78,15 @@ lik = gaussian_loglik(spec, 1.0, 1.0)
 lik.loglik
 ```
 
+The first sparse likelihood utility evaluates the same REML objective with the
+Henderson mixed-model-equation determinant identity. It still uses supplied
+variance components; it is not an optimizer.
+
+```@example quickstart
+sparse_lik = sparse_reml_loglik(spec, 1.0, 1.0)
+sparse_lik.loglik ≈ lik.loglik
+```
+
 ## Fit Variance Components Experimentally
 
 `fit_variance_components` optimizes the dense objective for a validated spec.

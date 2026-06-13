@@ -23,6 +23,17 @@ evidence in tests, docs, and the check log.
   supplied variance components.
 - Sparse supplied-variance Henderson MME solves agree with deterministic MME
   fixtures before being used inside production fitting.
+- Pedigree inverse construction has optional external comparator coverage
+  through the R twin's `nadiv::Mrode9` / `nadiv::makeAinv()` live test.
+
+Still missing from the Mrode lane:
+
+- fitted Mrode animal-model response data;
+- estimator target;
+- expected variance components;
+- EBVs/BLUPs;
+- heritability;
+- comparator versions and tolerances for fitted outputs.
 
 ## Status Words
 

@@ -55,6 +55,9 @@ Covered now:
 - founder, one-known-parent, and two-known-parent hand checks;
 - reordering where offspring appear before parents in the input;
 - inbreeding coefficient check on a tiny pedigree;
+- external R-side optional comparator evidence: `nadiv::Mrode9` plus
+  `nadiv::makeAinv()` agrees with Julia `pedigree_inverse()` at tolerance
+  `1e-10` in the R twin's live validation test;
 - duplicate ID, unknown parent, self-parent, same known sire/dam, cycle, and
   cache-limit errors.
 
@@ -62,6 +65,6 @@ Still planned:
 
 - production-scale pedigree algorithms;
 - unknown parent groups;
-- inbreeding and relationship-matrix comparator checks against packages such as
-  `nadiv` or `AGHmatrix`;
+- further inbreeding and relationship-matrix comparator checks against packages
+  such as `AGHmatrix`;
 - Gaussian animal-model fitting.

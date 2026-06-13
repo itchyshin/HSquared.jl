@@ -17,11 +17,13 @@ pedigree/Ainv engine utility slice.
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.
 - Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
-  hand-checked tests.
+  hand-checked tests and optional R-side `nadiv::Mrode9` comparator evidence.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method.
 - Dense Gaussian ML/REML log-likelihood evaluation exists for supplied variance
   components, with a `max_dense_cells` guard for the temporary dense path.
+- Sparse REML likelihood evaluation exists at supplied variance components via
+  the Henderson MME determinant identity.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, EBV/BLUP,
@@ -78,10 +80,14 @@ First real capability:
 - ID recoding; initial utility covered;
 - founder and unknown-parent handling; initial utility covered;
 - direct sparse `Ainv`; initial utility covered;
+- optional `nadiv::Mrode9` / `nadiv::makeAinv()` Ainv comparator through the R
+  twin; pedigree inverse agreement covered externally;
 - low-level animal-model spec validation; initial bridge validator covered;
 - fixed and random-effect design;
 - univariate Gaussian ML/REML likelihood evaluation; dense initial evaluator
   covered for supplied variance components with a dense-size guard;
+- sparse REML likelihood identity at supplied variance components; initial
+  validation bridge covered against the dense evaluator;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
 - experimental dense EBV/BLUP, fitted-value, and heritability extractors;

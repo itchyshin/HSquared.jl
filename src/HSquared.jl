@@ -35,6 +35,7 @@ export AutoBackend,
     prediction_error_variance,
     reliability,
     result_payload,
+    sparse_reml_loglik,
     sparse_csc_matrix,
     variance_components
 

@@ -28,12 +28,14 @@ Implemented now:
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
-  pedigrees;
+  pedigrees, with optional R-side `nadiv::Mrode9` comparator evidence;
 - low-level animal-model spec validation for `y`, `X`, `Z`, `Ainv`, IDs,
   Gaussian family, and ML/REML method;
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components for validated animal-model specs, with a `max_dense_cells` safety
   guard for the temporary dense path;
+- sparse REML log-likelihood evaluation at supplied variance components via
+  the Henderson MME determinant identity;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
@@ -109,9 +111,10 @@ components:
 
 ```julia
 lik = gaussian_loglik(spec, 1.0, 1.0)
+sparse_lik = sparse_reml_loglik(spec, 1.0, 1.0)
 ```
 
-This evaluates an objective value. It does not optimize variance components or
+These evaluate objective values. They do not optimize variance components or
 return EBVs.
 
 The first experimental dense optimizer is available for validated specs:

@@ -9,9 +9,10 @@ Use this register before changing README, docs, issue text, or examples.
 | Julia `hsquared()` performs model fitting | planned | placeholder only | planned |
 | high-level `fit_animal_model()` performs production Gaussian animal-model fitting | planned | unsupported signatures still use honest placeholder errors; exact low-level dense methods are experimental | planned production target |
 | pedigree validation and sorting | covered | `normalize_pedigree()` tests over valid and malformed pedigrees | implemented engine utility |
-| sparse Ainv construction | covered | `pedigree_inverse()` tests over tiny pedigrees and dense inverse comparison | direct sparse pedigree inverse utility; not a fitted model |
+| sparse Ainv construction | covered | `pedigree_inverse()` tests over tiny pedigrees and dense inverse comparison; R head `369d14a` optional `nadiv::Mrode9` / `nadiv::makeAinv()` comparator | direct sparse pedigree inverse utility with optional Mrode9/nadiv comparator evidence; not a fitted model |
 | low-level animal model spec validation | covered | `animal_model_spec()` tests over dimensions, IDs, family, and method | bridge-ready validator; not a fitted model |
 | Gaussian animal model ML/REML likelihood value | partial | `gaussian_loglik()` tiny hand-calculated tests | experimental dense likelihood evaluator at supplied variance components |
+| Sparse REML likelihood identity | partial | `sparse_reml_loglik()` dense-vs-sparse REML equivalence tests on tiny fixtures | experimental sparse REML objective evaluation at supplied variance components; not a sparse optimizer, AI-REML, or production fitting |
 | Dense variance-component optimization | partial | `fit_variance_components()` tiny improvement tests | experimental low-level Julia spec path; not sparse production or R bridge fitting |
 | Dense validation path is size-guarded | covered | `max_dense_cells` tests over likelihood, optimizer, spec dispatch, and direct payload dispatch | safety guard for the temporary dense path; not evidence of sparse production scale |
 | Henderson MME equations can be solved at supplied variance components | partial | `henderson_mme()` deterministic MME fixture tests | sparse supplied-variance equation solve; not variance-component estimation, Mrode validation, or production fitting |
@@ -23,7 +24,7 @@ Use this register before changing README, docs, issue text, or examples.
 | R bridge consumes sparse `Z` slots | external partial | `hsquared` head `398e019`; R-CMD-check `27457295759`, pkgdown `27457295761`, Pages `27457326836` green | sparse `Z` marshalling through Julia `sparse_csc_matrix()`; not large-data readiness or production sparse fitting |
 | PEV/reliability are returned through the R bridge payload | planned | R head `78ba5ff` adds extractor contracts and future-compatible normalization; Julia `result_payload()` deliberately excludes these fields | planned bridge-widening task requiring lockstep R and Julia tests |
 | Production R-to-Julia bridge execution works | planned | sparse `Z` marshalling exists, but no Mrode validation, production sparse fitting, production controls, or relationship-object marshalling beyond `Z` yet | planned |
-| Sparse Gaussian animal model REML/ML fitting | planned | none | planned production fitting target |
+| Sparse Gaussian animal model REML/ML fitting | planned | sparse REML identity exists only for supplied variances | planned production fitting target |
 | Production sparse EBVs/BLUPs, reliability, and PEV | planned | none | planned |
 | multivariate G matrices | planned | none | roadmap |
 | factor-analytic G matrices | planned | none | roadmap |

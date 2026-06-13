@@ -7,10 +7,11 @@
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
 | V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
-| V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl`; shared out-of-order calf/sire/dam fixture with expected Ainv `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]` mirrored by R head `fe7e346` |
+| V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl`; shared out-of-order calf/sire/dam fixture with expected Ainv `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]` mirrored by R head `fe7e346`; optional R-side `nadiv::Mrode9` / `nadiv::makeAinv()` comparator at R head `369d14a` |
 | V1-CSC | Sparse CSC bridge marshalling | covered | zero-based R-slot, one-based Julia-slot, malformed-slot, and direct payload integration tests in `test/runtests.jl` |
 | V1-SPEC | Low-level animal model spec validation | covered | dimension, ID, family, and method tests in `test/runtests.jl` |
 | V1-LIK | Univariate Gaussian ML/REML likelihood | partial | hand-calculated tiny likelihood tests; still needs Mrode and comparator checks |
+| V1-SPARSE-REML | Sparse REML likelihood identity | partial | `sparse_reml_loglik()` matches dense REML on tiny fixtures; still needs Mrode and comparator checks and does not estimate variance components |
 | V1-OPT | Dense variance-component optimizer | partial | tiny likelihood-improvement tests; still needs Mrode and comparator checks |
 | V1-DENSE-GUARD | Dense validation path size guard | covered | `max_dense_cells` failure and boundary tests for likelihood, optimizer, spec dispatch, and direct payload dispatch in `test/runtests.jl` |
 | V1-MME | Supplied-variance Henderson MME solve | partial | sparse `henderson_mme()` matches deterministic MME fixture for fixed effects, EBVs, and fitted values; still needs Mrode and comparator checks |

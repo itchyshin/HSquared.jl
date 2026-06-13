@@ -34,6 +34,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `hsquared` head `398e019`.
 - The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation
   fixture at `hsquared` head `fe7e346`.
+- The R twin records an optional `nadiv::Mrode9` / `nadiv::makeAinv()` external
+  Ainv comparator at `hsquared` head `369d14a`.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
@@ -118,8 +120,20 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - expected parent indices are sire `0, 0, 1` and dam `0, 0, 2`;
   - expected Ainv is `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]`;
   - R local full tests, R-CMD-check, pkgdown, and Pages were reported green;
-  - this is a tiny Ainv fixture only, not Mrode validation or comparator
-    evidence.
+  - this is a tiny Ainv fixture only, not fitted Mrode validation.
+- R lane handoff from `itchyshin/hsquared` head `369d14a`:
+  - added optional `nadiv` Suggests and
+    `hs_mrode9_pedigree_validation_fixture()`;
+  - fixture loads `nadiv::Mrode9`, documented by `nadiv` as adapted from Mrode
+    example 9.1;
+  - R computes `nadiv::makeAinv()`, aligns names, and compares the result with
+    Julia `normalize_pedigree()` plus `pedigree_inverse()` at tolerance
+    `1e-10`;
+  - R local focused/full tests, R-CMD-check, pkgdown, and Pages were reported
+    green;
+  - boundary: pedigree inverse agreement only; no fitted Mrode animal-model
+    validation, EBV/h2/variance-component validation, production sparse
+    fitting, or large-pedigree readiness.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
   parity.

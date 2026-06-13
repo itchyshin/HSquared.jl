@@ -6,6 +6,8 @@
 - Added low-level animal-model specification validation.
 - Added dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components.
+- Added sparse REML log-likelihood evaluation at supplied variance components
+  using the Henderson MME determinant identity.
 - Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.
@@ -27,6 +29,8 @@
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.
 - Recorded the R twin's sparse `Z` bridge marshalling handoff.
+- Recorded the R twin's optional `nadiv::Mrode9` pedigree-Ainv comparator
+  evidence.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

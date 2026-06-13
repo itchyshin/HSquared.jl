@@ -25,6 +25,8 @@ Implemented engine utilities:
 - low-level animal-model spec validation;
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components, with a `max_dense_cells` guard for the temporary dense path;
+- sparse REML log-likelihood evaluation at supplied variance components via
+  the Henderson MME determinant identity;
 - experimental dense variance-component optimization for validated specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
   heritability, PEV, and reliability extractors for the dense spec path;
@@ -34,6 +36,7 @@ Implemented engine utilities:
 - external opt-in R bridge evidence from the `hsquared` twin;
 - small deterministic tests for malformed pedigrees and hand-checked `Ainv`
   matrices.
+- optional R-side `nadiv::Mrode9` comparator evidence for `pedigree_inverse()`.
 
 Planned, but not implemented yet:
 

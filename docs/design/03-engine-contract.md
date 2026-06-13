@@ -36,6 +36,16 @@ normalized ID order is `sire`, `dam`, `calf`; parent indices are sire
 Julia tests this directly. R head `fe7e346` now records the same fixture and
 green CI evidence from the R lane.
 
+The first external pedigree-Ainv comparator is recorded in the R twin at head
+`369d14a`. That optional test uses `nadiv::Mrode9`, documented by `nadiv` as
+adapted from Mrode example 9.1, computes `nadiv::makeAinv()`, and compares it
+with Julia `normalize_pedigree()` plus `pedigree_inverse()` at tolerance
+`1e-10`.
+
+This comparator covers pedigree inverse agreement only. It is not fitted Mrode
+animal-model validation and does not validate EBVs, heritability, REML
+estimands, or variance-component estimates.
+
 ## Implemented Data Container
 
 ```julia
@@ -82,6 +92,7 @@ It is a marshalling helper only; it does not fit a model.
 
 ```julia
 lik = gaussian_loglik(spec, sigma_a2, sigma_e2)
+sparse_lik = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
 ```
 
 This evaluates the Gaussian ML or REML log-likelihood at supplied variance
@@ -92,6 +103,17 @@ or relationship matrices are formed.
 
 It does not optimize variance components, compute EBVs, or return a fitted
 model.
+
+`sparse_reml_loglik()` evaluates the REML objective at supplied variance
+components with the sparse Henderson mixed-model-equation determinant identity:
+
+```text
+log |V| + log |X' V^-1 X| = log |R| + log |G| + log |C|
+```
+
+where `C` is the Henderson coefficient matrix. Julia tests it against the dense
+REML evaluator on tiny fixtures. It is a validation bridge toward the sparse
+production optimizer, not variance-component estimation and not AI-REML.
 
 ## Experimental Henderson MME Solver
 

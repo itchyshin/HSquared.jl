@@ -134,6 +134,51 @@ function gaussian_loglik(
 end
 
 """
+    sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+
+Evaluate the Gaussian REML log-likelihood at supplied positive variance
+components using the sparse Henderson mixed-model-equation identity.
+
+This is a Phase 1 validation bridge toward the production sparse optimizer. It
+does not estimate variance components and it only evaluates REML.
+"""
+function sparse_reml_loglik(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    sigma_a2 > 0 ||
+        throw(ArgumentError("sigma_a2 must be positive"))
+    sigma_e2 > 0 ||
+        throw(ArgumentError("sigma_e2 must be positive"))
+
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    p < n ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    lhs, rhs, y_precision_y = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+    lhs_factor = cholesky(Symmetric(lhs); check = true)
+    solution = lhs_factor \ rhs
+
+    q = size(spec.Ainv, 1)
+    Ainv = sparse(Float64.(spec.Ainv))
+    Ainv_factor = cholesky(Symmetric(Ainv); check = true)
+
+    logdetR = n * log(Float64(sigma_e2))
+    logdetG = q * log(Float64(sigma_a2)) - logdet(Ainv_factor)
+    logdetC = logdet(lhs_factor)
+    quad = y_precision_y - dot(rhs, solution)
+    loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+
+    return GaussianLikelihoodResult(
+        loglik,
+        Vector{Float64}(solution[1:p]),
+        Float64(sigma_a2),
+        Float64(sigma_e2),
+        :REML,
+        n,
+        p,
+    )
+end
+
+"""
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
                             method = spec.method, iterations = 1_000,
                             max_dense_cells = 1_000_000)
@@ -213,27 +258,10 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     sigma_e2 > 0 ||
         throw(ArgumentError("sigma_e2 must be positive"))
 
-    y = Float64.(spec.y)
-    X = sparse(Float64.(spec.X))
-    Z = sparse(Float64.(spec.Z))
-    Ainv = sparse(Float64.(spec.Ainv))
-
-    residual_precision = inv(Float64(sigma_e2))
-    relationship_precision = inv(Float64(sigma_a2))
-
-    Xt = transpose(X)
-    Zt = transpose(Z)
-    lhs = [
-        residual_precision * (Xt * X) residual_precision * (Xt * Z)
-        residual_precision * (Zt * X) residual_precision * (Zt * Z) + relationship_precision * Ainv
-    ]
-    rhs = [
-        residual_precision * (Xt * y);
-        residual_precision * (Zt * y)
-    ]
+    lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
 
     solution = lhs \ rhs
-    nfixed = size(X, 2)
+    nfixed = size(spec.X, 2)
     beta = Vector{Float64}(solution[1:nfixed])
     animal_effects = BreedingValues(
         collect(spec.ids),
@@ -464,6 +492,29 @@ end
 function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_a2, sigma_e2)
     n = size(Z, 1)
     return Symmetric(sigma_a2 * Z * A * transpose(Z) + sigma_e2 * I(n))
+end
+
+function _sparse_mme_system(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    y = Float64.(spec.y)
+    X = sparse(Float64.(spec.X))
+    Z = sparse(Float64.(spec.Z))
+    Ainv = sparse(Float64.(spec.Ainv))
+
+    residual_precision = inv(Float64(sigma_e2))
+    relationship_precision = inv(Float64(sigma_a2))
+
+    Xt = transpose(X)
+    Zt = transpose(Z)
+    lhs = [
+        residual_precision * (Xt * X) residual_precision * (Xt * Z)
+        residual_precision * (Zt * X) residual_precision * (Zt * Z) + relationship_precision * Ainv
+    ]
+    rhs = [
+        residual_precision * (Xt * y);
+        residual_precision * (Zt * y)
+    ]
+
+    return lhs, rhs, residual_precision * dot(y, y)
 end
 
 function _check_dense_validation_size(spec::AnimalModelSpec, max_dense_cells::Integer)
