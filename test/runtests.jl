@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 21
+    @test length(validation) == 22
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1839,4 +1839,39 @@ end
     gfit = fit_ai_reml(gspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
     gci = heritability_interval(gfit)
     @test 0 < gci.lower < gci.upper < 1
+end
+
+@testset "Phase 3 repeatability / permanent-environment MME (supplied variance)" begin
+    Ainv = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    Z = [1.0 0 0; 1 0 0; 0 1 0; 0 1 0; 0 0 1]   # 5 records; animals 1 & 2 repeated
+    y = [10.0, 11.0, 12.0, 13.0, 9.0]; X = ones(5, 1)
+    sa2 = 1.0; spe2 = 0.5; se2 = 2.0
+    r = repeatability_mme(y, X, Z, Ainv, sa2, spe2, se2)
+
+    # pinned hand values
+    @test r.beta ≈ [11.0] atol = 1e-8
+    @test r.animal_effects.values ≈ [-0.4, 0.4, -1 / 3] atol = 1e-8
+    @test r.permanent_effects.values ≈ [-1 / 30, 11 / 30, -1 / 3] atol = 1e-8
+    @test r.variance_components == (sigma_a2 = 1.0, sigma_pe2 = 0.5, sigma_e2 = 2.0)
+
+    # independent marginal-GLS cross-check of the a and pe BLUPs
+    A = inv(Symmetric(Matrix(Ainv)))
+    V = sa2 .* (Z * A * transpose(Z)) .+ spe2 .* (Z * transpose(Z)) .+ se2 .* Matrix(1.0I, 5, 5)
+    bg = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    resid = y .- X * bg
+    ag = sa2 .* A * transpose(Z) * (V \ resid)
+    pg = spe2 .* (transpose(Z) * (V \ resid))
+    @test maximum(abs.(r.beta .- bg)) < 1e-9
+    @test maximum(abs.(r.animal_effects.values .- ag)) < 1e-9
+    @test maximum(abs.(r.permanent_effects.values .- pg)) < 1e-9
+
+    # reduction: as sigma_pe2 -> 0 the additive effects approach the animal model
+    animal_ebv = breeding_values(henderson_mme(animal_model_spec(y, X, Z, Ainv), sa2, se2)).values
+    rr = repeatability_mme(y, X, Z, Ainv, sa2, 1e-8, se2)
+    @test maximum(abs.(rr.animal_effects.values .- animal_ebv)) < 1e-6
+
+    # guards
+    @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, -1.0, spe2, se2)
+    @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, sa2, -1.0, se2)
+    @test_throws ArgumentError repeatability_mme(y, X, Z[:, 1:2], Ainv, sa2, spe2, se2)
 end

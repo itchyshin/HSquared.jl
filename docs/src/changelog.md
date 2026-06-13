@@ -67,6 +67,12 @@
   `heritability_interval` — a logit-transform delta interval (always in (0,1))
   built on the REML AI matrix, with a self-contained standard-normal quantile.
   Asymptotic / REML-only; wide and unreliable at small n.
+- Added `repeatability_mme()` — the first Phase-3 slice: a supplied-variance
+  Henderson solve of the two-random-effect repeatability / permanent-environment
+  animal model (additive `a` + permanent-environment `pe`) via a block-diagonal
+  relationship precision. Matches an independent marginal-GLS BLUP and reduces to
+  the animal model as `σ²pe → 0`. Experimental, supplied-variance only — no REML
+  estimation of the three components, no R-facing model-spec yet.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

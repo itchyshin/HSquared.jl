@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Repeatability / Permanent-Environment MME (Phase 3 start)
+
+- Goal: first Phase-3 (standard quantitative-genetic) engine slice — a
+  supplied-variance Henderson solve of the two-random-effect repeatability /
+  permanent-environment animal model.
+- Active lenses: Henderson, Falconer, Mrode, Gauss, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `repeatability_mme(y, X, Z, Ainv, σ²a, σ²pe, σ²e; ids)`
+    assembles the MME for the stacked random effect `[a; pe]` with a
+    block-diagonal relationship precision `blockdiag(Ainv/σ²a, I/σ²pe)` and
+    solves. Additive — does not touch the single-random-effect path. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 691
+    total. New testset "Phase 3 repeatability / permanent-environment MME
+    (supplied variance)" = 11 checks: pinned hand values (β=11, â, p̂e on a
+    5-record / 3-animal repeated-records fixture), an independent marginal-GLS
+    BLUP cross-check (~1e-9), reduction to the animal model as σ²pe→0, and
+    positive-variance / dimension guards. `validation_status()` 21 → 22 (added
+    `V3-REPEAT`).
+- Boundary:
+  - Supplied-variance only — no REML estimation of the three components, no
+    R-facing `permanent()` model-spec, engine-internal. Requires repeated records
+    to identify `a` vs `pe`.
+
 ## 2026-06-13 Heritability Intervals + Variance-Component Covariance
 
 - Goal: give the heritability package an uncertainty for h² — variance-component

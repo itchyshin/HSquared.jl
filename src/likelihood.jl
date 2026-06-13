@@ -495,6 +495,87 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
 end
 
 """
+    repeatability_mme(y, X, Z, Ainv, sigma_a2, sigma_pe2, sigma_e2; ids = nothing)
+
+Supplied-variance Henderson solve of the repeatability / permanent-environment
+animal model with repeated records:
+
+    y = X·β + Z·a + Z·pe + e,
+    a ~ N(0, sigma_a2·A),  pe ~ N(0, sigma_pe2·I),  e ~ N(0, sigma_e2·I),
+
+where `Z` is the record→animal incidence (shared by the additive genetic effect
+`a` and the permanent-environment effect `pe`), and `Ainv` is the relationship
+inverse. The mixed-model equations carry a block-diagonal relationship precision
+`blockdiag(Ainv/sigma_a2, I/sigma_pe2)` for the stacked random effect `[a; pe]`.
+
+This is the first Phase-3 (standard quantitative-genetic) engine slice: a
+supplied-variance MME solve (it does **not** estimate the variance components),
+the analogue of [`henderson_mme`](@ref) for two random effects. Experimental and
+engine-internal; the R `permanent()` / repeatability model-spec mapping and REML
+estimation of the three variance components are coordinated separately and not
+part of this function. Returns a `NamedTuple`
+`(beta, animal_effects, permanent_effects, variance_components)`. Identifiability
+of `a` vs `pe` requires repeated records (animals with more than one record).
+"""
+function repeatability_mme(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_pe2::Real,
+    sigma_e2::Real;
+    ids = nothing,
+)
+    sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
+    sigma_pe2 > 0 || throw(ArgumentError("sigma_pe2 must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    na = size(Ainv, 1)
+    size(Ainv, 2) == na || throw(ArgumentError("Ainv must be square"))
+    size(Z, 2) == na || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    encoded_ids = ids === nothing ? collect(1:na) : collect(ids)
+    length(encoded_ids) == na ||
+        throw(ArgumentError("ids length must match Ainv dimensions"))
+
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    Zs = sparse(Float64.(Z))
+    Av = sparse(Float64.(Ainv))
+    rp = inv(Float64(sigma_e2))
+    Zf = hcat(Zs, Zs)
+    Ginv = blockdiag(
+        Av .* inv(Float64(sigma_a2)),
+        sparse(1.0I, na, na) .* inv(Float64(sigma_pe2)),
+    )
+    Xt = transpose(Xs)
+    Zft = transpose(Zf)
+    nfixed = size(Xs, 2)
+    lhs = [
+        rp * (Xt * Xs) rp * (Xt * Zf)
+        rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+    ]
+    rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
+    solution = lhs \ rhs
+
+    beta = Vector{Float64}(solution[1:nfixed])
+    ahat = Vector{Float64}(solution[(nfixed + 1):(nfixed + na)])
+    pehat = Vector{Float64}(solution[(nfixed + na + 1):(nfixed + 2na)])
+    return (
+        beta = beta,
+        animal_effects = (ids = encoded_ids, values = ahat),
+        permanent_effects = (ids = encoded_ids, values = pehat),
+        variance_components = (
+            sigma_a2 = Float64(sigma_a2),
+            sigma_pe2 = Float64(sigma_pe2),
+            sigma_e2 = Float64(sigma_e2),
+        ),
+    )
+end
+
+"""
     fit_animal_model(spec; target = :variance_components, ...)
 
 Fit or solve the Phase 1 Gaussian animal-model engine target for a validated

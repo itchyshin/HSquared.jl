@@ -180,6 +180,15 @@ const VALIDATION_STATUS_DATA = (
         "Reuses the Phase-1 REML optimizers on a genomic spec; no external comparator parity and no production sparse-`G` scaling.",
     ),
     (
+        "V3-REPEAT",
+        "repeatability / permanent-environment supplied-variance solve",
+        "Phase 3",
+        "partial",
+        "`repeatability_mme` solves the two-random-effect (additive + permanent-environment) animal model at supplied variance components; matches an independent marginal-GLS BLUP to ~1e-9 and reduces to the animal model as `sigma_pe2 → 0`, with a pinned repeated-records fixture in `test/runtests.jl`.",
+        "REML estimation of the three variance components, the R `permanent()`/repeatability model-spec mapping, multi-effect extractors, and comparator checks",
+        "Supplied-variance two-random-effect solve only; no variance-component estimation, no R-facing model-spec, engine-internal.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",
