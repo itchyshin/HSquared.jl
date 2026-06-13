@@ -38,6 +38,16 @@ Newest entries go at the top.
   - Claim scan found only blocked-wording/audit rows, not public claims that
     `formula_status()` parses formulas, constructs model specs, expands
     fitting, or enables any reserved/planned term.
+  - Follow-up docs alignment check: `julia --project=docs docs/make.jl`
+    passed after left-aligning the Documenter status table.
+- Remote checks for commit `72bc28f`:
+  - CI `27459348834`: success.
+  - Documenter `27459348823`: success.
+  - Pages deploy `27459383483`: success.
+  - Live docs root `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+  - Live grammar page `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`:
+    HTTP 200 and contains `formula_status()`, `experimental tiny bridge only`,
+    and `qtl_scan(position, genotype_probs = probs)`.
 
 ## 2026-06-13 Planned Quantitative-Genetic Marker Vocabulary Mirror
 

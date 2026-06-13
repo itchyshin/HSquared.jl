@@ -79,7 +79,22 @@ is iterable like other status containers in this package.
 - Claim scan: clean with limitations. Hits were blocked/audit wording, not
   public claims that `formula_status()` parses formulas, constructs model
   specs, expands fitting, or enables any reserved/planned term.
-- Remote checks: pending.
+- Follow-up docs alignment check: `julia --project=docs docs/make.jl` passed
+  after left-aligning the Documenter status table.
+- Remote checks for commit `72bc28f`: passed.
+
+Remote run IDs:
+
+- CI `27459348834`: success;
+- Documenter `27459348823`: success;
+- Pages deploy `27459383483`: success.
+
+Live docs:
+
+- root `https://itchyshin.github.io/HSquared.jl/`: HTTP 200;
+- grammar page `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`:
+  HTTP 200 and contains `formula_status()`, `experimental tiny bridge only`,
+  and `qtl_scan(position, genotype_probs = probs)`.
 
 ## Public Claim Audit
 
@@ -112,5 +127,5 @@ Rose verdict: clean with limitations.
 
 ## Next Actions
 
-1. Commit, push, and watch CI/Documenter/Pages.
-2. Record remote evidence after deployment.
+1. Push the evidence record and watch CI/Documenter/Pages.
+2. Add a GitHub issue note for the R/Jula diagnostic mirror.

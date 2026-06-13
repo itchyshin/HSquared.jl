@@ -33,7 +33,7 @@ diagnostic. It is a table of current grammar state, not a formula parser and
 not a fitting helper.
 
 | term | category | phase | syntax_status | fitting_status | current_behavior |
-| --- | --- | --- | --- | --- | --- |
+| :--- | :--- | :--- | :--- | :--- | :--- |
 | `animal(1 \| id, pedigree = ped)` | v0.1 animal model | Phase 1 | parsed | experimental tiny bridge only | Validated by the R parser; default `hsquared()` stops before general fitting. |
 | `permanent(1 \| id)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `common_env(1 \| group)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
