@@ -116,7 +116,18 @@ The reserved term remains `:precision` for bridge vocabulary parity.
   public claims of Phase 2+ QG fitting, custom relationship/precision kernels,
   genomic prediction, marker scans, QTL/eQTL scans, GPU execution, ASReml
   superiority, backend benchmarking, or CPU/GPU numerical agreement.
-- GitHub CI after push: pending.
+- GitHub CI after push for commit `d82c2a9`: passed.
+- GitHub Documenter after push for commit `d82c2a9`: passed.
+- GitHub Pages after push for commit `d82c2a9`: passed.
+- Live docs root `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+- Live grammar page `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`:
+  HTTP 200 and contains `HSquared.precision()`.
+
+Remote run IDs:
+
+- CI `27459073863`: success;
+- Documenter `27459073865`: success;
+- Pages deploy `27459131950`: success.
 
 ## Public Claim Audit
 

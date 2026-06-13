@@ -53,6 +53,12 @@ Newest entries go at the top.
     Phase 2+ QG fitting, custom relationship/precision kernels, genomic
     prediction, marker scans, QTL/eQTL scans, GPU execution, ASReml
     superiority, backend benchmarking, or CPU/GPU numerical agreement.
+- Remote checks for commit `d82c2a9`:
+  - CI `27459073863`: success.
+  - Documenter `27459073865`: success.
+  - Pages deploy `27459131950`: success.
+  - Live docs root `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+  - Live grammar page `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`: HTTP 200 and contains `HSquared.precision()`.
 - Boundary:
   - Syntax/model-term vocabulary reservation only.
   - No permanent/common environment fitting.
