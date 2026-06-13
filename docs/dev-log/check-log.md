@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Genomic REML Variance-Component Estimation
+
+- Goal: estimate the genomic variance components for GBLUP (previously
+  supplied-variance only) by reusing the existing REML optimizers on a `Ginv`
+  spec — engine-internal, additive, no new code.
+- Active lenses: Gauss, Fisher, Curie, Henderson, Rose (inline).
+- Implementation:
+  - No new code: `fit_ai_reml` / `fit_sparse_reml` / `fit_animal_model(...;
+    target = :ai_reml)` operate on a spec whose `Ainv` slot holds a genomic
+    `Ginv`, estimating σ²g/σ²e.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 661
+    total. New testset "Phase 2 GBLUP REML variance-component estimation" = 11
+    checks: AI-REML == NelderMead optimum on a genomic fixture (loglik rtol 1e-5,
+    σ² rtol 2e-2), positive VCs, converged, `fit_gblup` at the estimate
+    reproduces the REML breeding values (atol 1e-8), and target-dispatch reaches
+    the same optimum from a different start. `validation_status()` 19 → 20
+    (added `V2-GREML`; `V2-GBLUP` missing field updated).
+  - One-off seeded recovery (NOT committed, to keep the suite RNG-free): n=400,
+    m=600, true σ²g=1.0/σ²e=1.5 → estimated σ²g=0.997, h²=0.42 (true 0.40).
+- Boundary:
+  - Reuses the Phase-1 optimizers on a genomic spec; no external comparator
+    parity (sommer/rrBLUP/BLUPF90 = R lane), no production sparse-`G` scaling.
+
 ## 2026-06-13 Address Phase-2 Adversarial-Review Findings
 
 - Goal: act on the confirmed findings of the multi-lens adversarial review of the

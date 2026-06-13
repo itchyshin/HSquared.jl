@@ -140,7 +140,7 @@ const VALIDATION_STATUS_DATA = (
         "Phase 2",
         "partial",
         "`fit_gblup` feeds a genomic `Ginv` into the existing Henderson MME; matches an independent dense MME assembly to ~1e-15 and reproduces pedigree BLUP exactly when `G = A` (~1e-30) in `test/runtests.jl`; genomic reliability/PEV/accuracy reuse the existing extractors with the `diag(inv(Ginv)) = diag(G)+ridge` denominator and selinv PEV matches the dense diagonal (pinned).",
-        "REML estimation of genomic variance components, real markers→G→GEBV pipeline, sparse/APY `G`, and AGHmatrix/sommer/BLUPF90 comparator parity",
+        "real markers→G→GEBV pipeline, sparse/APY `G`, and AGHmatrix/sommer/BLUPF90 comparator parity (genomic REML estimation now covered by `V2-GREML`)",
         "Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity.",
     ),
     (
@@ -160,6 +160,15 @@ const VALIDATION_STATUS_DATA = (
         "internal `_single_step_Hinv` assembles `H⁻¹ = A⁻¹ + scatter(τG⁻¹ − ωA₂₂⁻¹)` on sorted genotyped rows; reduces to `A⁻¹` when `G = A₂₂` (~0), locality and symmetry hold, the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard (1.833 vs 2.5) is pinned, scattered genotyped rows are covered, and a singular raw `G` throws in `test/runtests.jl`.",
         "comparator-validated blending/tuning defaults (AGHmatrix::Hmatrix / BLUPF90), a Mrode Ch.11 worked H/H⁻¹ fixture, fitting wiring, and sparse/APY scaling",
         "Dense construction utility only; not exported, not wired into fitting, blending/τ/ω defaults not comparator-validated, no single-step prediction claim.",
+    ),
+    (
+        "V2-GREML",
+        "genomic REML variance-component estimation",
+        "Phase 2",
+        "partial",
+        "the existing REML optimizers estimate the genomic variance components on a `Ginv` spec: `fit_ai_reml` and `fit_sparse_reml` reach the same optimum (loglik, σ², EBVs) on a genomic fixture, and `fit_gblup` at the estimated components reproduces the REML breeding values, in `test/runtests.jl`; a seeded n=400 simulation recovers σ²g (1.0→0.997) and h² (0.40→0.42) (one-off, not committed to keep the suite RNG-free).",
+        "external comparator (sommer/rrBLUP/BLUPF90) VC parity, larger/boundary fixtures, and a committed recovery study",
+        "Reuses the Phase-1 REML optimizers on a genomic spec; no external comparator parity and no production sparse-`G` scaling.",
     ),
     (
         "V5-GENOMIC-QTL",

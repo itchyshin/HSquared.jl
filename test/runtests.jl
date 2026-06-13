@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 19
+    @test length(validation) == 20
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1739,4 +1739,36 @@ end
 
     # dimension guard: G size must match the genotyped count
     @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, A[g, g], [3, 4])
+end
+
+@testset "Phase 2 GBLUP REML variance-component estimation" begin
+    # the existing REML optimizers estimate genomic variance components on a Ginv spec
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
+    y = [10.0, 12.0, 11.0, 9.0, 13.0, 10.5]
+    X = ones(6, 1); Z = Matrix(1.0I, 6, 6)
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = 0.05)
+    spec = animal_model_spec(y, X, Z, Ginv; method = :REML)
+
+    ai = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    nm = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ai isa AnimalModelFit
+    @test ai.target == :ai_reml
+    @test ai.converged
+    @test ai.variance_components.sigma_a2 > 0
+    @test ai.variance_components.sigma_e2 > 0
+    # AI-REML and NelderMead reach the same genomic REML optimum
+    @test ai.likelihood.loglik ≈ nm.likelihood.loglik rtol = 1e-5
+    @test ai.variance_components.sigma_a2 ≈ nm.variance_components.sigma_a2 rtol = 2e-2
+    @test ai.variance_components.sigma_e2 ≈ nm.variance_components.sigma_e2 rtol = 2e-2
+
+    # GBLUP at the REML-estimated variance components reproduces the REML breeding values
+    res = fit_gblup(y, X, Z, Ginv,
+                    ai.variance_components.sigma_a2, ai.variance_components.sigma_e2)
+    @test breeding_values(res).values ≈ breeding_values(ai).values atol = 1e-8
+
+    # target dispatch reaches the same optimum from a different start
+    t = fit_animal_model(spec; target = :ai_reml, initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
+    @test t.target == :ai_reml
+    @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
 end

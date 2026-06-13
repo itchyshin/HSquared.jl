@@ -53,6 +53,11 @@
   (reduction, locality, symmetry, distinctness, scattered rows, singular-`G`
   guard); unexported, not wired into fitting, blending/τ/ω/ridge defaults not
   comparator-validated.
+- Validated genomic REML variance-component estimation: the existing REML
+  optimizers (`fit_ai_reml`, `fit_sparse_reml`) estimate σ²g/σ²e on a genomic
+  `Ginv` spec — AI and NelderMead reach the same optimum and `fit_gblup` at the
+  estimate reproduces the REML breeding values. Experimental; no external
+  comparator; no new code (reuses the Phase-1 optimizers).
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with
