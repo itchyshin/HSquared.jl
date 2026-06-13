@@ -81,7 +81,13 @@ names without constructing a model spec or scan object.
   public claims of genomic prediction, single-step fitting, marker-effect
   estimation, marker scans, QTL/eQTL scans, GPU execution, ASReml superiority,
   backend benchmarking, or CPU/GPU numerical agreement.
-- GitHub CI after push: pending.
+- GitHub CI for commit `bc0fe77`: success, run `27458684148`.
+- GitHub Documenter for commit `bc0fe77`: success, run `27458684126`.
+- GitHub Pages deploy: success, run `27458715550`.
+- Live docs `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+
+GitHub Actions emitted Node 20 deprecation annotations for upstream actions.
+They were non-failing and do not affect the package or docs results.
 
 ## Public Claim Audit
 

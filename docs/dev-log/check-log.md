@@ -33,6 +33,11 @@ Newest entries go at the top.
     genomic prediction, single-step fitting, marker-effect estimation, marker
     scans, QTL/eQTL scans, GPU execution, ASReml superiority, backend
     benchmarking, or CPU/GPU numerical agreement.
+- Remote checks for commit `bc0fe77`:
+  - CI `27458684148`: success.
+  - Documenter `27458684126`: success.
+  - Pages deploy `27458715550`: success.
+  - Live docs `https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
 - Boundary:
   - Syntax/model-term vocabulary reservation only.
   - No genomic prediction.
