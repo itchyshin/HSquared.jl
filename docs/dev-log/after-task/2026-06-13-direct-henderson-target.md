@@ -70,6 +70,14 @@ Rose verdict before checks: clean with limitations.
 - Additions-only ASCII scan: no matches.
 - Claim-boundary scan: expected status/limitation hits only.
 
+Remote checks for implementation commit `308a103`:
+
+- CI `27463613983`: success on Julia 1 and Julia 1.10.
+- Documenter `27463613984`: success.
+- Pages deploy `27463649844`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
 ## Known Limitations
 
 - Supplied variance components only.

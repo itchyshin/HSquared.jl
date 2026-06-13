@@ -33,6 +33,12 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim-boundary scan found expected status and limitation wording only.
+- Remote checks for commit `308a103`:
+  - CI `27463613983`: success on Julia 1 and Julia 1.10.
+  - Documenter `27463613984`: success.
+  - Pages deploy `27463649844`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
 - Boundary:
   - This is supplied-variance equation solving only.
   - The target returns `HendersonMMEResult`, not `AnimalModelFit`.
