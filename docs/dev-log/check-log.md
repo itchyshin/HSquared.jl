@@ -2,6 +2,38 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 MME-Backed EBV Extractor
+
+- Goal: replace the dense covariance equation inside `breeding_values(fit)`
+  with the Henderson MME solve at the fit's variance components.
+- Active lenses: Ada, Henderson, Fisher, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- Julia-side action:
+  - Changed `breeding_values(fit::AnimalModelFit)` to call
+    `henderson_mme(fit.spec, sigma_a2, sigma_e2)` and return that animal-effect
+    block.
+  - Added tests that `breeding_values(fit)` matches `breeding_values(mme)` for
+    the dense extractor fixture and the shared Henderson MME fixture.
+  - Updated capability status, validation debt, public claims, engine contract,
+    README, ROADMAP, Documenter pages, and validation-status evidence.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 366 checks; dense extractor testset has 31 checks and the Henderson MME
+    supplied-variance validation fixture has 35 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found expected status and limitation wording only.
+- Boundary:
+  - EBV/BLUP extraction is MME-backed.
+  - Variance-component estimation is still the experimental dense path.
+  - No production sparse fitting claim.
+  - No production sparse reliability or PEV claim.
+  - No fitted Mrode output validation or external fitted-model comparator
+    claim.
+
 ## 2026-06-13 R Henderson MME Bridge Target Sync
 
 - Goal: mirror the R twin's explicit opt-in supplied-variance Henderson MME

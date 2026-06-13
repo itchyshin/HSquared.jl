@@ -49,9 +49,9 @@ pedigree/Ainv engine utility slice.
   the Henderson MME determinant identity.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
-- Experimental low-level variance-component, fixed-effect, EBV/BLUP,
-  fitted-value, heritability, PEV, and reliability extractors exist for the
-  dense spec and supplied-variance Henderson MME validation paths.
+- Experimental low-level variance-component, fixed-effect, MME-backed
+  EBV/BLUP, fitted-value, heritability, PEV, and reliability extractors exist
+  for the dense spec and supplied-variance Henderson MME validation paths.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
 - Sparse Henderson mixed-model-equation solving exists at supplied variance
@@ -134,7 +134,7 @@ First real capability:
   validation bridge covered against the dense evaluator;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
-- experimental dense EBV/BLUP, fitted-value, and heritability extractors;
+- experimental MME-backed EBV/BLUP, fitted-value, and heritability extractors;
 - experimental direct payload fitting target for the R parser's intended
   `y`, `X`, `Z`, `Ainv` handoff;
 - sparse Henderson MME solve at supplied variance components, with a shared

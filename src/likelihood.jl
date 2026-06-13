@@ -326,28 +326,17 @@ end
 """
     breeding_values(fit)
 
-Return dense animal-effect BLUPs/EBVs for an experimental low-level
+Return animal-effect BLUPs/EBVs for an experimental low-level
 [`AnimalModelFit`](@ref).
 
-The current implementation uses the dense Gaussian covariance equations:
-`u_hat = sigma_a2 * A * Z' * V^-1 * (y - X * beta)`. It is for tiny validation
-examples, not production sparse solves.
+The current implementation solves Henderson's mixed-model equations at the
+fit's variance components and returns the animal-effect block. Variance
+component estimation is still the experimental dense path; this only changes
+the EBV/BLUP extraction equation solve.
 """
 function breeding_values(fit::AnimalModelFit)
-    spec = fit.spec
-    sigma_a2 = fit.variance_components.sigma_a2
-    sigma_e2 = fit.variance_components.sigma_e2
-
-    y = Float64.(spec.y)
-    X = Matrix{Float64}(spec.X)
-    Z = Matrix{Float64}(spec.Z)
-    A = inv(Symmetric(Matrix{Float64}(spec.Ainv)))
-
-    V = _dense_marginal_covariance(Z, A, sigma_a2, sigma_e2)
-    residual = y - X * fit.likelihood.beta
-    values = sigma_a2 * A * transpose(Z) * (cholesky(V; check = true) \ residual)
-
-    return BreedingValues(collect(spec.ids), Vector{Float64}(values))
+    vc = fit.variance_components
+    return breeding_values(henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2))
 end
 
 function breeding_values(result::HendersonMMEResult)

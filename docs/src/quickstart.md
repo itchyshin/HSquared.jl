@@ -171,7 +171,8 @@ The dense validation path has first extractors for variance components,
 fixed effects, breeding values, fitted values, simple univariate heritability,
 prediction error variance, and reliability. The variance-component,
 heritability, PEV, and reliability extractors also accept supplied-variance
-`HendersonMMEResult` objects.
+`HendersonMMEResult` objects. `breeding_values(fit)` uses the Henderson MME
+solve at the fit's variance components.
 
 ```@example quickstart
 variance_components(fit)

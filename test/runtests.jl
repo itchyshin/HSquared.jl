@@ -662,6 +662,9 @@ end
     @test prediction_error_variance(fit).values ≈ diag(_mme_inverse_random_block_for_test(X, Z, Ainv, 1.0, 1.0))
     @test reliability(fit).ids == ["a", "b", "c"]
     @test reliability(fit).values ≈ 1 .- prediction_error_variance(fit).values
+    mme = henderson_mme(spec, vc.sigma_a2, vc.sigma_e2)
+    @test breeding_values(fit).ids == breeding_values(mme).ids
+    @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
 
     payload = result_payload(fit)
     @test propertynames(payload) == (
@@ -837,6 +840,7 @@ end
     @test fixed_effects(mme) ≈ expected_beta
     @test breeding_values(mme).ids == ped.ids
     @test breeding_values(mme).values ≈ expected_u
+    @test isapprox(breeding_values(fit).values, breeding_values(mme).values)
     @test isapprox(fitted_values(mme), expected_fitted)
     @test isapprox(heritability(mme), expected_h2)
     @test fitted_values(mme; include_random = false) ≈ vec(Matrix(X) * expected_beta)

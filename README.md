@@ -54,9 +54,10 @@ Implemented now:
   the Henderson MME determinant identity;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
-- experimental variance-component, fixed-effect, EBV/BLUP, fitted-value,
-  heritability, prediction-error-variance, and reliability extractors for the
-  dense low-level spec and supplied-variance Henderson MME validation paths;
+- experimental variance-component, fixed-effect, MME-backed EBV/BLUP,
+  fitted-value, heritability, prediction-error-variance, and reliability
+  extractors for the low-level spec and supplied-variance Henderson MME
+  validation paths;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - sparse Henderson mixed-model-equation solve at supplied variance components,
