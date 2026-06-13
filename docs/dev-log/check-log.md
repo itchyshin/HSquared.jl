@@ -25,6 +25,12 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim scan found expected status and limitation wording only.
+- Remote checks for commit `ed2c932`:
+  - CI `27462729581`: success on Julia 1 and Julia 1.10.
+  - Documenter `27462729578`: success.
+  - Pages deploy `27462764899`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions.
 - Boundary:
   - Supplied variance components are reported; they are not estimated.
   - `heritability(mme)` is the simple ratio from supplied components.

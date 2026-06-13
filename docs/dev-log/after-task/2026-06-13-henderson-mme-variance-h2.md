@@ -46,6 +46,15 @@ Implemented:
 - Additions-only ASCII scan: no matches.
 - Claim scan: expected status/limitation hits only.
 
+Remote checks for commit `ed2c932`:
+
+- CI `27462729581`: success on Julia 1 and Julia 1.10.
+- Documenter `27462729578`: success.
+- Pages deploy `27462764899`: success.
+
+GitHub Actions emitted non-blocking Node 20 deprecation annotations from
+upstream actions.
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -72,7 +81,5 @@ Rose verdict: clean with limitations.
 
 ## Next Actions
 
-1. Commit and push this slice.
-2. Watch CI, Documenter, and Pages.
-3. Keep true Mrode fitted-output validation as a separate fixture with source,
+1. Keep true Mrode fitted-output validation as a separate fixture with source,
    estimand, and expected values recorded before public claims change.
