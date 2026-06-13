@@ -39,6 +39,10 @@ Implemented:
 - external R `model_spec()` preview evidence from `hsquared` head `bacef9c`;
   this previews the v0.1 formula-to-bridge payload without fitting or Julia
   execution.
+- external R `hs_data()` parser integration evidence from `hsquared` head
+  `36efbf3`; this lets `model_spec()` and `hsquared()` read v0.1 model
+  variables from `data$phenotypes` and resolve `pedigree` from the bundle
+  while keeping the bridge payload shape unchanged.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and
@@ -67,7 +71,8 @@ Next engine targets:
 1. Mrode-style validation and comparator checks;
 2. R/Julia decision on whether PEV/reliability should ever become required
    base bridge payload fields;
-3. relationship-object marshalling beyond sparse `Z` and stable production
+3. live Julia `HSData` object marshalling, relationship-object marshalling
+   beyond sparse `Z`, and stable production
    engine controls;
 4. production sparse covariance/precision computations;
 5. AI-REML or a documented sparse optimizer path;

@@ -23,6 +23,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   experimental dense variance-component optimizer for those specs.
 - The Julia twin has an in-memory `HSData` container mirroring the current R
   `hs_data()` ID-map vocabulary.
+- The R twin can now feed `hs_data()` into `model_spec()` and `hsquared()` for
+  the v0.1 parser at `hsquared` head `36efbf3`; the bridge payload shape is
+  unchanged and live Julia `HSData` object marshalling remains planned.
 - The Julia twin has `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot
   marshalling.
 - The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
@@ -106,6 +109,19 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - its `id_map` records phenotype, pedigree, genotype, and expression overlap;
   - this is not file-backed storage, relationship construction, QTL/eQTL scan
     support, or model fitting.
+- R lane handoff from `itchyshin/hsquared` head `36efbf3`:
+  - `model_spec()` and `hsquared()` can accept an `hs_data()` object as
+    `data`;
+  - model variables are read from `data$phenotypes`;
+  - formula components such as `pedigree = pedigree` are resolved from the
+    `hs_data()` bundle;
+  - the bridge payload shape is unchanged: `y`, `X`, sparse `Z`, normalized
+    pedigree/ID metadata, method, family, and Julia target metadata;
+  - reported remote evidence: R-CMD-check `27460091544`, pkgdown
+    `27460091551`, and Pages `27460131691` success;
+  - boundary: phenotype/pedigree parser integration only. No file-backed
+    storage, genotype/omics automatic model construction, production bridge
+    hardening, or general fitting.
 - R lane handoff from `itchyshin/hsquared` head `c837f2d`:
   - internal `hs_fit_julia_payload()` uses JuliaCall;
   - the smoke test activates the sibling local `HSquared.jl` checkout;
@@ -262,7 +278,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     AI-REML, HPC, or performance claim.
 - Next shared seam: deciding whether PEV/reliability should ever become
   required base payload fields, relationship marshalling beyond `Z`, Mrode
-  validation, `hs_data()` to `HSData` payload parity, the first real
+  validation, live Julia `HSData` object marshalling parity, the first real
   genomic/QTL model-spec contract, and the first real standard
   quantitative-genetic model-spec contract.
 

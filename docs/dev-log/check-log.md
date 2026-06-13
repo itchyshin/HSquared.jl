@@ -2,6 +2,50 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R hs_data Parser Integration Sync
+
+- Goal: mirror the R twin's `hs_data()` parser integration without changing
+  Julia payload fields or claiming live Julia `HSData` object marshalling.
+- Active lenses: Ada, Shannon, Hopper, Emmy, Rose, Grace, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `36efbf3` connects `hs_data()` to the v0.1 R parser.
+  - `model_spec()` and `hsquared()` can accept an `hs_data()` object as
+    `data`.
+  - Model variables are read from `data$phenotypes`.
+  - Formula components such as `pedigree = pedigree` are resolved from the
+    `hs_data()` bundle.
+  - The bridge payload shape is unchanged: `y`, `X`, sparse `Z`, normalized
+    pedigree/ID metadata, method, family, and Julia target metadata.
+  - Reported remote evidence: R-CMD-check `27460091544`, pkgdown
+    `27460091551`, and Pages `27460131691` success.
+- Julia-side action:
+  - Updated the HSData contract, Data Containers page, v0.1 contract, engine
+    contract, capability status, validation debt, public claims, README,
+    roadmap, changelog, and coordination board.
+  - No Julia code changed.
+- Local checks:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 294 checks.
+  - `git diff --check` passed.
+  - Edited-file ASCII scan returned no matches.
+  - Claim scan found only expected guardrail wording around no file-backed
+    storage, no genotype/omics automatic model construction, no production
+    bridge hardening, no general fitting, and no live Julia `HSData` object
+    marshalling.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Phenotype/pedigree parser integration only.
+  - No file-backed storage.
+  - No genotype/omics automatic model construction.
+  - No production bridge hardening.
+  - No general fitting.
+  - No live Julia `HSData` object marshalling.
+
 ## 2026-06-13 R Model Spec Preview Sync
 
 - Goal: mirror the R twin's exported `model_spec()` preview surface as a

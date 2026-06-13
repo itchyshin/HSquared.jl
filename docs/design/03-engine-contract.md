@@ -139,6 +139,14 @@ This mirrors the R `hs_data()` input-container vocabulary from `hsquared` head
 and expression inputs. It is in-memory only. It does not read file-backed
 formats, build genomic relationships, or fit a model.
 
+R head `36efbf3` connects `hs_data()` to the R v0.1 parser. On the R side,
+`model_spec()` and `hsquared()` can accept an `hs_data()` object as `data`,
+read model variables from `data$phenotypes`, and resolve formula components
+such as `pedigree = pedigree` from the bundle. The Julia bridge payload shape
+does not change. Julia still receives the low-level `y`, `X`, sparse `Z`,
+pedigree metadata, method, family, and target metadata contract rather than a
+live `HSData` object.
+
 ## Implemented Model-Spec Validator
 
 ```julia
@@ -398,9 +406,14 @@ fixed-effect columns, sparse `Z` dimensions, normalized animal IDs, observed ID
 mapping, pedigree founder count, and Julia targets. It does not fit models or
 execute Julia.
 
+R head `36efbf3` allows both `model_spec()` and `hsquared()` to take an
+`hs_data()` object as `data` for this same contract. Model variables are read
+from `data$phenotypes`, formula objects such as `pedigree` can be resolved from
+the bundle, and the bridge payload shape remains unchanged.
+
 The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
 whether PEV/reliability should ever become required base payload fields, Mrode
-validation, and `hs_data()` to `HSData` marshalling parity. The Julia tests
+validation, and live Julia `HSData` object marshalling parity. The Julia tests
 cover parent-index semantics, `ids` order, sparse `Z` dimensions, Julia-side
 `Ainv`, CSC slot reconstruction, parity between spec dispatch and direct
 payload dispatch, and supplied-variance Henderson MME solving.

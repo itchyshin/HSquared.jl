@@ -17,6 +17,15 @@ container. Its current contract stores:
 - optional `markers`, `expression`, `annotation`, and `environment`;
 - `id_map` fields for phenotype, pedigree, genotype, and expression overlap.
 
+R head `36efbf3` connects that container to the v0.1 R parser:
+
+- `model_spec()` and `hsquared()` can accept an `hs_data()` object as `data`;
+- model variables are read from `data$phenotypes`;
+- formula components such as `pedigree = pedigree` are resolved from the
+  `hs_data()` bundle;
+- the bridge payload shape is unchanged: `y`, `X`, sparse `Z`, normalized
+  pedigree/ID metadata, method, family, and Julia target metadata.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -77,6 +86,8 @@ Implemented:
 - exact ID overlap checks;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
+- external R parser integration from `hs_data()` to the same v0.1 bridge
+  payload shape.
 
 Planned:
 
@@ -84,7 +95,10 @@ Planned:
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
 - genotype imputation hooks;
 - marker maps, QTL/eQTL scans, and genomic relationship construction;
-- integration with `animal_model_spec()` and live R bridge execution.
+- direct Julia `HSData` to `AnimalModelSpec` construction;
+- live Julia `HSData` object marshalling.
 
 Rose audit: this can be called a conservative data-container mirror. It must
-not be described as genomic modelling, file-backed storage, or QTL/eQTL support.
+not be described as genomic modelling, file-backed storage, QTL/eQTL support,
+genotype/omics automatic model construction, production bridge hardening, or
+general fitting.

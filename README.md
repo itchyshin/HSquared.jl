@@ -60,6 +60,9 @@ Implemented now:
 - sparse Henderson mixed-model-equation solve at supplied variance components;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
+- external R `hs_data()` parser integration evidence: R `model_spec()` and
+  `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
+  preserving the same bridge payload shape;
 - sparse CSC marshalling helper for R `Matrix::dgCMatrix` slots;
 - external R `model_spec()` evidence for previewing the v0.1
   formula-to-bridge payload without fitting or Julia execution;
@@ -116,6 +119,11 @@ id_map(data)
 
 This records exact ID overlap only. File-backed storage, relationship
 construction from genotypes, and QTL/eQTL scans remain planned.
+
+On the R side, `hs_data()` can feed the v0.1 parser for `model_spec()` and
+`hsquared()` by reading variables from `data$phenotypes` and resolving
+`pedigree` from the bundle. That R integration still produces the same bridge
+payload shape; Julia `HSData` object marshalling remains planned.
 
 The planned genomic/QTL and standard quantitative-genetic vocabulary is
 reserved but not implemented:

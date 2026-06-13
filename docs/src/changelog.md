@@ -50,6 +50,8 @@
   evidence.
 - Recorded the R twin's `model_spec()` preview surface for the v0.1
   formula-to-bridge payload.
+- Recorded the R twin's `hs_data()` parser integration for the v0.1
+  formula-to-bridge payload without changing the Julia payload shape.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

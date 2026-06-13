@@ -26,6 +26,9 @@ pedigree/Ainv engine utility slice.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.
+- R head `36efbf3` connects `hs_data()` to the v0.1 R parser for
+  `model_spec()` and `hsquared()` while preserving the same bridge payload
+  shape; live Julia `HSData` object marshalling remains planned.
 - Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
   hand-checked tests and optional R-side `nadiv::Mrode9` comparator evidence.
 - Low-level animal-model spec validation exists for `y`, `X`, `Z`, `Ainv`, IDs,
@@ -204,8 +207,9 @@ diagnostics, and comparator context.
 2. Decide with the R twin whether PEV/reliability should ever become required
    base `result_payload()` fields; keep current enrichment optional and
    tiny/local.
-3. Add Julia-side `HSData` integration tests once the R bridge sends actual
-   `hs_data()` payloads.
+3. Add live Julia `HSData` object marshalling tests once the bridge contract
+   deliberately sends data-container objects rather than the current low-level
+   payload.
 4. Replace dense covariance equations with sparse production computations.
 5. Add AI-REML or a documented sparse optimizer path.
 6. Keep `hsquared` issue #2 synchronized with this engine contract.

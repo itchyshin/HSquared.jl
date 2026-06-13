@@ -44,6 +44,17 @@ Raw table-like pedigrees can also be stored if they have an ID column. `HSData`
 does not normalize raw pedigree parents; use `normalize_pedigree()` for the
 engine pedigree representation.
 
+## R Parser Integration
+
+On the R side, `hs_data()` can now feed the v0.1 parser. R head `36efbf3`
+allows `model_spec()` and `hsquared()` to accept an `hs_data()` object as
+`data`; model variables are read from `data$phenotypes`, and formula
+components such as `pedigree = pedigree` can be resolved from the bundle.
+
+This does not change the Julia bridge payload shape. The bridge still targets
+`y`, `X`, sparse `Z`, normalized pedigree and ID metadata, method, family, and
+Julia target metadata. Julia `HSData` object marshalling remains planned.
+
 ## Genotype And Expression IDs
 
 Matrix-like genotype data needs explicit row IDs because Julia base matrices do
@@ -99,7 +110,9 @@ Planned later:
 - file-backed phenotype and genotype storage;
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
 - marker maps, QTL/eQTL scans, and genomic relationship construction;
-- integration with `animal_model_spec()` and production model fitting.
+- direct Julia `HSData` to `AnimalModelSpec` construction;
+- live Julia `HSData` object marshalling;
+- production model fitting from data-container inputs.
 
 IDs are not coerced. For example, `1` and `"1"` are different IDs until an
 explicit normalization rule is added.
