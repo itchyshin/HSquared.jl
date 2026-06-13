@@ -74,6 +74,29 @@ Added:
 
 - `julia --project=. -e 'using Pkg; Pkg.test()'`: passed. Testset totals sum
   to 440 checks; the Phase 1 HSData ID container testset has 100 checks.
+- `julia --project=docs docs/make.jl`: passed. Local deployment was skipped as
+  expected outside CI; generated Vitepress dependencies reported npm
+  advisories in temporary build artifacts.
+- `git diff --check`: passed.
+- Additions-only ASCII scan: returned no matches.
+- Claim-boundary scan: found only expected guardrail and blocked-wording hits
+  around metadata diagnostics, bridge payloads, annotation joins, eQTL/omics,
+  GLLVM workflows, marker/QTL/GWAS workflows, and genomic fitting.
+
+Remote checks for implementation commit `09a3718`:
+
+- CI `27464551542`: success on Julia 1 and Julia 1.10.
+- Documenter `27464551547`: success.
+- Pages deploy `27464583353`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+Live docs:
+
+- `https://itchyshin.github.io/HSquared.jl/dev/data.html`: HTTP 200 and
+  contains `Annotation Metadata` and `annotation_status`.
+- `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+  contains `HSAnnotationSpec` and `HSDataAnnotationStatusRow`.
 
 ## Public Claim Audit
 
@@ -105,7 +128,6 @@ slice only.
 
 ## Next Actions
 
-1. Run Documenter and static checks.
-2. Commit and push the implementation.
-3. Watch CI, Documenter, and Pages.
-4. Record remote evidence and update the issue ledger.
+1. Commit and push the remote-evidence update.
+2. Watch CI, Documenter, and Pages for the evidence commit.
+3. Update the issue ledger.

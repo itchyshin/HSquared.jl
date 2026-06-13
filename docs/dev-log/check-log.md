@@ -28,6 +28,23 @@ Newest entries go at the top.
 - Local checks:
   - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
     to 440 checks; the Phase 1 HSData ID container testset has 100 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Remote checks for commit `09a3718`:
+  - CI `27464551542`: success on Julia 1 and Julia 1.10.
+  - Documenter `27464551547`: success.
+  - Pages deploy `27464583353`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+- Live docs:
+  - `https://itchyshin.github.io/HSquared.jl/dev/data.html`: HTTP 200 and
+    contains `Annotation Metadata` and `annotation_status`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+    contains `HSAnnotationSpec` and `HSDataAnnotationStatusRow`.
 - Boundary:
   - Metadata diagnostics only.
   - No bridge payload change.
