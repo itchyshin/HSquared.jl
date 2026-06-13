@@ -66,6 +66,9 @@ Implemented now:
 - sparse Henderson mixed-model-equation solve at supplied variance components,
   with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
   and `h2`;
+- a Julia-native Mrode9-shaped supplied-variance validation fixture for Ainv,
+  ML/REML likelihood values, fixed effects, EBVs, fitted values, PEV,
+  reliability, derived accuracy, and `h2`;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
 - genotype-component metadata diagnostics inside `HSData`;

@@ -32,6 +32,11 @@ capabilities.
   `sigma_a2 = 1.2` and `sigma_e2 = 0.8`. R head `ca8bce1` records an
   independent R MME reference and a live Julia comparison when the sibling
   checkout is available.
+- A Julia-native Mrode9-shaped supplied-variance fixture uses the 12-animal
+  `nadiv::Mrode9` pedigree structure and pins `Ainv`, ML/REML likelihood
+  values, fixed effects, EBVs, fitted values, PEV, reliability, derived
+  accuracy, and `h2` at supplied variance components. This is equation and
+  extractor validation only.
 - Pedigree inverse construction has optional external comparator coverage
   through the R twin's `nadiv::Mrode9` / `nadiv::makeAinv()` live test.
 
@@ -44,8 +49,8 @@ Still missing from the Mrode lane:
 - heritability;
 - comparator versions and tolerances for fitted outputs.
 
-The supplied-variance Henderson fixture is not a fitted Mrode model and does
-not estimate variance components.
+The supplied-variance Henderson and Mrode9-shaped fixtures are not fitted Mrode
+models and do not estimate variance components.
 
 ## Status Words
 

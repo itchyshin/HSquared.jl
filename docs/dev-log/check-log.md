@@ -2,6 +2,52 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Mrode-Style Supplied-Variance Validation Fixture
+
+- Goal: add a Julia-native Mrode9-shaped supplied-variance validation fixture
+  for dense/sparse likelihood identity, Henderson MME outputs, PEV,
+  reliability, derived accuracy, and `h2`, while keeping fitted Mrode and
+  variance-component-estimation claims blocked.
+- Active lenses: Ada, Shannon, Henderson, Curie, Fisher, Gauss, Grace, Rose.
+- Spawned subagents: none.
+- R coordination context:
+  - R already records optional `nadiv::Mrode9` / `nadiv::makeAinv()` pedigree
+    inverse comparator evidence at head `369d14a`.
+  - R later added `fit_diagnostics()` at head `060988d`; Julia records that as
+    a possible follow-up but did not implement diagnostics in this slice.
+- Julia implementation:
+  - Added a 12-animal Mrode9-shaped supplied-variance fixture in
+    `test/runtests.jl`.
+  - Pinned normalized IDs, `Ainv`, ML and REML likelihood values, fixed
+    effects, EBVs, fitted values, PEV, reliability, derived accuracy, and
+    `h2`.
+  - Cross-checked sparse REML against dense REML and `henderson_mme()` against
+    the independent test-only dense MME solve.
+  - Updated `validation_status()`, validation canon, capability status,
+    validation debt, public claims, README, ROADMAP, and Documenter validation
+    page.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed after the code-only
+    fixture edit.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed after docs/status
+    edits. Testset totals sum to 487 checks; the Phase 0 scaffold/status
+    testset has 138 checks and the new Mrode-style supplied-variance testset
+    has 31 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan found only Julia's existing `≈` test operator in
+    new test assertions.
+  - Claim-boundary scan found expected blocked/status wording only.
+- Boundary:
+  - Supplied variance components only.
+  - No variance-component estimation.
+  - No AI-REML.
+  - No fitted Mrode output validation.
+  - No external fitted-model comparator parity.
+  - No production sparse fitting or production sparse PEV/reliability claim.
+
 ## 2026-06-13 HSData Genotype Diagnostics
 
 - Goal: mirror the R twin's `hs_data()` genotype-status diagnostics in Julia

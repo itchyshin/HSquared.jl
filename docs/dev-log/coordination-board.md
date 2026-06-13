@@ -51,6 +51,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   only. No bridge payload, PLINK/VCF parsing, genotype imputation, genomic
   relationship construction, marker scan, QTL/GWAS/eQTL, GLLVM, or fitting
   claim changes.
+- The R twin added fit-object diagnostics at `hsquared` head `060988d`:
+  `fit_diagnostics()` reports existing result-payload metadata such as engine,
+  method, family, target, convergence, optimizer status, iterations, logLik,
+  `df`, `nobs`, dense-validation-path flags, variance-component source, and
+  scalar Julia diagnostics when present. Julia has not yet mirrored this as a
+  public helper; this is a possible low-risk follow-up.
 - The R twin added environment-key diagnostics at `hsquared` head `e7fbb31`:
   `hs_data(..., environment = env, environment_id = "site")` validates a
   shared key and reports `environment_status` in `summary()` and
@@ -142,6 +148,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   effects, EBVs, fitted values, and `h2`. This remains supplied-variance
   validation only: no variance-component estimation, AI-REML, fitted Mrode
   validation, external fitted-model parity, or production sparse fitting claim.
+- Julia now has a Mrode9-shaped supplied-variance fixture that pins `Ainv`,
+  ML/REML likelihood values, fixed effects, EBVs, fitted values, PEV,
+  reliability, derived accuracy, and `h2`. This strengthens supplied-variance
+  equation and extractor evidence, but remains not fitted Mrode output
+  validation and not variance-component estimation.
 
 ## Current State
 
@@ -163,6 +174,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     implemented for bridge-shaped payloads.
   - sparse Henderson MME solving at supplied variance components implemented
     and mirrored against the shared R/Julia supplied-variance fixture.
+  - Mrode9-shaped supplied-variance validation implemented for dense/sparse
+    likelihood identity, Henderson MME outputs, PEV, reliability, accuracy, and
+    `h2`; fitted Mrode output validation remains planned.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
     in-memory mirror of the R `hs_data()` input-container contract.
   - `HSData` marker-map metadata validation and genotype-marker alignment

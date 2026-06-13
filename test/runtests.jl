@@ -175,7 +175,12 @@ end
     mme_row = only(row for row in validation if row.id == "V1-MME")
     @test mme_row.status == "partial"
     @test occursin("ca8bce1", mme_row.evidence)
+    @test occursin("Mrode9-shaped supplied-variance fixture", mme_row.evidence)
     @test occursin("no variance-component estimation", mme_row.claim_boundary)
+    lik_row = only(row for row in validation if row.id == "V1-LIK")
+    @test occursin("Mrode9-shaped supplied-variance fixture", lik_row.evidence)
+    sparse_reml_row = only(row for row in validation if row.id == "V1-SPARSE-REML")
+    @test occursin("Mrode9-shaped supplied-variance fixture", sparse_reml_row.evidence)
     fitted_mrode_row = only(row for row in validation if row.id == "V1-MRODE-FIT")
     @test fitted_mrode_row.status == "planned"
     @test occursin("Fitted Mrode validation is not covered", fitted_mrode_row.claim_boundary)
@@ -1100,4 +1105,160 @@ end
     @test reliability(mme).ids == ped.ids
     @test isapprox(reliability(mme).values, expected_reliability)
     @test_throws ArgumentError accuracy(mme)
+end
+
+@testset "Phase 1 Mrode-style supplied-variance validation fixture" begin
+    ids = string.([2, 4, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12])
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "0", "0", "1", "3", "6", "0", "3", "3", "6", "6"],
+        ["0", "0", "0", "0", "2", "4", "5", "5", "8", "8", "8", "8"],
+    )
+    Ainv = pedigree_inverse(ped)
+    expected_ainv = [
+        1.5 0.0 0.5 0.0 -1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+        0.0 1.5 0.0 0.5 0.0 -1.0 0.0 0.0 0.0 0.0 0.0 0.0
+        0.5 0.0 1.5 0.0 -1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+        0.0 0.5 0.0 2.5 0.0 -1.0 0.0 1.0 -1.0 -1.0 0.0 0.0
+        -1.0 0.0 -1.0 0.0 2.8333333333333335 0.5 -1.0 -0.6666666666666666 0.0 0.0 0.0 0.0
+        0.0 -1.0 0.0 -1.0 0.5 3.5 -1.0 1.0 0.0 0.0 -1.0 -1.0
+        0.0 0.0 0.0 0.0 -1.0 -1.0 2.0 0.0 0.0 0.0 0.0 0.0
+        0.0 0.0 0.0 1.0 -0.6666666666666666 1.0 0.0 3.3333333333333335 -1.0 -1.0 -1.0 -1.0
+        0.0 0.0 0.0 -1.0 0.0 0.0 0.0 -1.0 2.0 0.0 0.0 0.0
+        0.0 0.0 0.0 -1.0 0.0 0.0 0.0 -1.0 0.0 2.0 0.0 0.0
+        0.0 0.0 0.0 0.0 0.0 -1.0 0.0 -1.0 0.0 0.0 2.0 0.0
+        0.0 0.0 0.0 0.0 0.0 -1.0 0.0 -1.0 0.0 0.0 0.0 2.0
+    ]
+
+    y = [10.2, 9.7, 10.8, 9.9, 11.5, 11.0, 12.4, 10.9, 12.1, 11.8, 12.9, 12.7]
+    X = [
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+        1.0 0.0
+        1.0 1.0
+    ]
+    Z = sparse(1:12, 1:12, ones(12), 12, 12)
+    sigma_a2 = 1.4
+    sigma_e2 = 0.9
+    expected_beta = [11.317393070236822, -1.0063726022361354]
+    expected_u = [
+        -0.5021061319436008,
+        -0.11525433671959359,
+        -0.13688874063925227,
+        0.20787891031852276,
+        0.1355094468877566,
+        0.7022497098504573,
+        0.7092602946040143,
+        0.8873101719197427,
+        0.6504124611509037,
+        0.9594504746292134,
+        1.1394542485192605,
+        1.4922422619975693,
+    ]
+    expected_fitted = [
+        10.815286938293221,
+        10.195766131281093,
+        11.18050432959757,
+        10.518899378319208,
+        11.452902517124578,
+        11.013270177851144,
+        12.026653364840836,
+        11.198330639920428,
+        11.967805531387725,
+        11.270470942629899,
+        12.456847318756083,
+        11.803262729998256,
+    ]
+    expected_pev = [
+        0.7995095200390083,
+        0.7610908283670357,
+        0.7995095200390082,
+        0.7311017691367848,
+        0.9080482784527696,
+        0.7881609637019633,
+        0.9046409311296871,
+        0.7330130895894281,
+        0.8217902414402057,
+        0.8599627801418696,
+        0.8487180314157624,
+        0.8907596807820399,
+    ]
+    expected_reliability = [
+        0.4289217714007082,
+        0.4563636940235458,
+        0.4289217714007084,
+        0.47778445061658215,
+        0.35139408681945017,
+        0.43702788307002605,
+        0.35382790633593764,
+        0.4764192217218369,
+        0.4130069703998529,
+        0.385740871327236,
+        0.3937728347030267,
+        0.36374308515568576,
+    ]
+    expected_h2 = 0.6086956521739131
+    expected_ml_loglik = -18.181909573827813
+    expected_reml_loglik = -16.973441618108648
+
+    @test ped.ids == ids
+    @test isapprox(Matrix(Ainv), expected_ainv)
+    @test isapprox(Matrix(Ainv), inv(Symmetric(_dense_relationship_for_test(ped))))
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
+    ml_likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
+    reml_spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    dense_reml = gaussian_loglik(reml_spec, sigma_a2, sigma_e2; method = :REML)
+    sparse_reml = sparse_reml_loglik(reml_spec, sigma_a2, sigma_e2)
+    fit = AnimalModelFit(
+        spec,
+        ml_likelihood,
+        (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        true,
+        "mrode_style_supplied_variance_fixture",
+        0,
+    )
+    mme = henderson_mme(spec, sigma_a2, sigma_e2)
+
+    reference_beta, reference_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
+    reference_pev = diag(_mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2))
+
+    @test isapprox(reference_beta, expected_beta)
+    @test isapprox(reference_u, expected_u)
+    @test isapprox(reference_pev, expected_pev)
+    @test ml_likelihood.loglik ≈ expected_ml_loglik
+    @test dense_reml.loglik ≈ expected_reml_loglik
+    @test sparse_reml.loglik ≈ expected_reml_loglik
+    @test sparse_reml.beta ≈ expected_beta
+
+    @test fixed_effects(fit) ≈ expected_beta
+    @test breeding_values(fit).ids == ped.ids
+    @test breeding_values(fit).values ≈ expected_u
+    @test EBV(fit).values ≈ expected_u
+    @test BLUP(fit).values ≈ expected_u
+    @test fitted_values(fit) ≈ expected_fitted
+    @test heritability(fit) ≈ expected_h2
+    @test prediction_error_variance(fit).values ≈ expected_pev
+    @test reliability(fit).values ≈ expected_reliability
+    @test accuracy(fit).values ≈ sqrt.(expected_reliability)
+
+    @test mme isa HendersonMMEResult
+    @test fixed_effects(mme) ≈ expected_beta
+    @test breeding_values(mme).ids == ped.ids
+    @test breeding_values(mme).values ≈ expected_u
+    @test fitted_values(mme) ≈ expected_fitted
+    @test heritability(mme) ≈ expected_h2
+    @test prediction_error_variance(mme).ids == ped.ids
+    @test prediction_error_variance(mme).values ≈ expected_pev
+    @test reliability(mme).ids == ped.ids
+    @test reliability(mme).values ≈ expected_reliability
+    @test accuracy(mme).values ≈ sqrt.(expected_reliability)
 end

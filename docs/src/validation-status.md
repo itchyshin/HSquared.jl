@@ -48,3 +48,11 @@ inverse, fixed effects, EBVs, fitted values, and simple `h2 = 0.6` for supplied
 variance components `sigma_a2 = 1.2` and `sigma_e2 = 0.8`. It is still not
 variance-component estimation, AI-REML, fitted Mrode validation, or fitted
 comparator parity.
+
+Julia also bundles a Mrode9-shaped supplied-variance fixture using the 12-animal
+`nadiv::Mrode9` pedigree structure. It pins `Ainv`, ML/REML likelihood values,
+fixed effects, EBVs, fitted values, PEV, reliability, derived accuracy, and
+`h2` at supplied variance components. This strengthens the supplied-variance
+equation and extractor checks, but it is still not fitted Mrode output
+validation, variance-component estimation, AI-REML, or external fitted-model
+parity.
