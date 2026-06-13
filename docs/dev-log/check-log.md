@@ -32,7 +32,12 @@ Newest entries go at the top.
     hygiene and makes no capability, validation, fitting, bridge,
     backend-execution, GPU, or performance claim.
 - Remote checks:
-  - Pending.
+  - CI `27461986532`: success on Julia 1 and Julia 1.10.
+  - Documenter `27461986538`: success on the first attempt after the npm-cache
+    hardening.
+  - Pages deploy `27462018363`: success.
+  - CI and Documenter reported non-blocking Node 20 deprecation annotations for
+    upstream actions; no action required in this slice.
 - Boundary:
   - Workflow hygiene only.
   - No package API change.

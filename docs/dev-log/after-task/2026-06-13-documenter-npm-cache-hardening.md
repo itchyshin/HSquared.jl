@@ -48,7 +48,13 @@ Changed `.github/workflows/Documenter.yml` so the build step:
 - Claim scan found only expected boundary wording that this is workflow hygiene
   and makes no capability, validation, fitting, bridge, backend-execution, GPU,
   or performance claim.
-- Remote checks: pending.
+- Remote checks for implementation commit `f99fa2b`:
+  - CI `27461986532`: success on Julia 1 and Julia 1.10.
+  - Documenter `27461986538`: success on the first attempt after the npm-cache
+    hardening.
+  - Pages deploy `27462018363`: success.
+  - CI and Documenter reported non-blocking Node 20 deprecation annotations for
+    upstream actions; no action required in this slice.
 
 ## Public Claim Audit
 
@@ -63,7 +69,8 @@ Blocked wording:
 - any package API, fitting, validation, bridge, backend-execution, GPU, or
   performance capability changed.
 
-Rose verdict: clean locally, pending remote CI evidence.
+Rose verdict: clean. Remote CI, Documenter, and Pages are green. This remains
+workflow hygiene only.
 
 ## Coordination Notes
 
