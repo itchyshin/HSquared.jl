@@ -1,0 +1,13 @@
+name = "HSquared"
+uuid = "a0667dea-0f38-44e8-9150-4fda00624eac"
+authors = ["Shinichi Nakagawa <itchyshin@gmail.com>"]
+version = "0.0.1"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

@@ -1,0 +1,26 @@
+# Capability Status
+
+| Capability | Status | Evidence |
+| --- | --- | --- |
+| Package loads | implemented | `test/runtests.jl` |
+| Backend marker types | implemented | `CPUBackend`, `CUDABackend`, `AutoBackend` tests |
+| `HSControl` validation | implemented | `test/runtests.jl` |
+| `hsquared()` fitting | planned | Phase 0 placeholder only |
+| `fit_animal_model()` fitting | planned | Phase 0 placeholder only |
+| Pedigree validation | planned | no implementation yet |
+| Sparse `Ainv` | planned | no implementation yet |
+| REML/ML fitting | planned | no implementation yet |
+| EBVs/BLUPs | planned | no implementation yet |
+| Heritability | planned | no implementation yet |
+| Multivariate G matrices | planned | no implementation yet |
+| Factor-analytic G matrices | planned | no implementation yet |
+| Genomic/single-step models | planned | no implementation yet |
+| Non-standard inheritance | planned | no implementation yet |
+| GLLVM-style animal models | planned | no implementation yet |
+
+Status words:
+
+- `implemented`: code, tests, and docs exist.
+- `experimental`: code exists but public claims are restricted.
+- `planned`: roadmap/design only.
+- `missing`: not yet designed.
