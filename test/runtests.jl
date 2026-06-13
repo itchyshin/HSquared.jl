@@ -833,10 +833,12 @@ end
     @test mme.spec === spec
     @test mme.sigma_a2 == sigma_a2
     @test mme.sigma_e2 == sigma_e2
+    @test variance_components(mme) == (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2)
     @test fixed_effects(mme) ≈ expected_beta
     @test breeding_values(mme).ids == ped.ids
     @test breeding_values(mme).values ≈ expected_u
     @test isapprox(fitted_values(mme), expected_fitted)
+    @test isapprox(heritability(mme), expected_h2)
     @test fitted_values(mme; include_random = false) ≈ vec(Matrix(X) * expected_beta)
     @test_throws ArgumentError henderson_mme(spec, 0.0, sigma_e2)
     @test_throws ArgumentError henderson_mme(spec, sigma_a2, -1.0)

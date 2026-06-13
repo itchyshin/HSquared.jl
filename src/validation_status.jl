@@ -67,7 +67,7 @@ const VALIDATION_STATUS_DATA = (
         "dense output extractors",
         "Phase 1",
         "partial",
-        "Dense validation-path EBV, heritability, PEV, and reliability tests match hand checks and MME inverse blocks; PEV/reliability also cover supplied-variance HendersonMMEResult objects.",
+        "Dense validation-path EBV, heritability, PEV, and reliability tests match hand checks and MME inverse blocks; variance components, heritability, PEV, and reliability also cover supplied-variance HendersonMMEResult objects.",
         "textbook Mrode and external comparator checks for fitted outputs",
         "Experimental dense low-level outputs only.",
     ),

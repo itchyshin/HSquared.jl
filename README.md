@@ -208,8 +208,9 @@ breeding_values(mme)
 
 This solves Henderson's mixed-model equations for fixed effects and animal
 effects. It does not estimate variance components. Validation-scale
-`prediction_error_variance(mme)` and `reliability(mme)` methods use a dense MME
-inverse for tiny fixtures only.
+`variance_components(mme)`, `heritability(mme)`,
+`prediction_error_variance(mme)`, and `reliability(mme)` methods report
+supplied variances and dense-MME-inverse outputs for tiny fixtures only.
 
 The dense validation path also has first extractors:
 

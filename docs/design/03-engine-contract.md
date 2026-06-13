@@ -277,10 +277,10 @@ reliability(fit)
 ```
 
 These operate on `AnimalModelFit` objects from the dense validation path. The
-PEV and reliability methods also accept supplied-variance `HendersonMMEResult`
-objects from `henderson_mme()`. `breeding_values(fit)` returns a
-`BreedingValues` object with encoded `ids` and dense animal-effect BLUP/EBV
-values.
+variance-component, heritability, PEV, and reliability methods also accept
+supplied-variance `HendersonMMEResult` objects from `henderson_mme()`.
+`breeding_values(fit)` returns a `BreedingValues` object with encoded `ids` and
+dense animal-effect BLUP/EBV values.
 
 The current breeding-value equation is:
 
@@ -294,7 +294,9 @@ remain planned.
 
 `prediction_error_variance(fit)` and `reliability(fit)` use the dense
 mixed-model-equation inverse for tiny validation examples. The same extractor
-names can be used on a supplied-variance `mme` result. They are not included in
+names can be used on a supplied-variance `mme` result. `variance_components(mme)`
+returns the supplied values and `heritability(mme)` computes the simple
+univariate ratio from those supplied values. These fields are not included in
 the base `result_payload(fit)` contract.
 
 As of R head `8235289`, the R twin may enrich the opt-in tiny/local Julia bridge

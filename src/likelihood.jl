@@ -305,6 +305,10 @@ function variance_components(fit::AnimalModelFit)
     return fit.variance_components
 end
 
+function variance_components(result::HendersonMMEResult)
+    return (sigma_a2 = result.sigma_a2, sigma_e2 = result.sigma_e2)
+end
+
 """
     fixed_effects(fit)
 
@@ -387,6 +391,11 @@ animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
 """
 function heritability(fit::AnimalModelFit)
     vc = fit.variance_components
+    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
+end
+
+function heritability(result::HendersonMMEResult)
+    vc = variance_components(result)
     return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
 end
 
