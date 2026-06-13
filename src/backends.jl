@@ -70,6 +70,50 @@ const BACKEND_SYMBOLS = (:auto, :cpu, :threads, :cuda, :amdgpu, :metal, :oneapi)
 
 const BACKEND_ERROR = "backend must be :auto, :cpu, :threads, :cuda, :amdgpu, :metal, :oneapi, or an HSquared backend object"
 
+const BACKEND_INFO_SYMBOLS = (:cpu, :threads, :cuda, :amdgpu, :metal, :oneapi)
+
+const BACKEND_INFO_ACCELERATORS = Dict(
+    :cpu => :none,
+    :threads => :none,
+    :cuda => :cuda,
+    :amdgpu => :amdgpu,
+    :metal => :metal,
+    :oneapi => :oneapi,
+)
+
+"""
+    BackendInfoRow
+
+Typed status row returned by [`backend_info`](@ref).
+
+Rows describe accepted backend names and whether a backend is execution-ready.
+In Phase 1 all rows are selectable control metadata with
+`execution_available == false` and `status == :planned`.
+"""
+struct BackendInfoRow
+    backend::Symbol
+    accelerator::Symbol
+    requested::Bool
+    selectable::Bool
+    execution_available::Bool
+    status::Symbol
+    note::String
+end
+
+"""
+    BackendInfo
+
+Container returned by [`backend_info`](@ref).
+"""
+struct BackendInfo{TC}
+    control::TC
+    rows::Vector{BackendInfoRow}
+end
+
+Base.length(info::BackendInfo) = length(info.rows)
+Base.getindex(info::BackendInfo, index::Int) = info.rows[index]
+Base.iterate(info::BackendInfo, state...) = iterate(info.rows, state...)
+
 _backend_from_symbol(::Val{:auto}) = AutoBackend()
 _backend_from_symbol(::Val{:cpu}) = CPUBackend()
 _backend_from_symbol(::Val{:threads}) = ThreadsBackend()
@@ -96,4 +140,28 @@ end
 
 function _coerce_backend(backend)
     throw(ArgumentError(BACKEND_ERROR))
+end
+
+_backend_symbol(::AutoBackend) = :auto
+_backend_symbol(::CPUBackend) = :cpu
+_backend_symbol(::ThreadsBackend) = :threads
+_backend_symbol(::CUDABackend) = :cuda
+_backend_symbol(::AMDGPUBackend) = :amdgpu
+_backend_symbol(::MetalBackend) = :metal
+_backend_symbol(::OneAPIBackend) = :oneapi
+
+function _backend_note(backend::Symbol)
+    backend == :cpu && return "Trusted default target; production backend dispatch is not implemented yet."
+    backend == :threads && return "Planned multi-threaded CPU control; execution dispatch is not implemented yet."
+    backend == :metal && return "Planned Apple/Mac accelerator control; execution dispatch is not implemented yet."
+    return "Accepted by HSControl; execution dispatch is planned."
+end
+
+function _backend_requested(backend::Symbol, control)
+    requested_backend = _backend_symbol(control.backend)
+    requested_accelerator = control.accelerator
+
+    return backend == requested_backend ||
+           backend == requested_accelerator ||
+           (requested_accelerator == :gpu && backend in (:cuda, :amdgpu, :metal, :oneapi))
 end

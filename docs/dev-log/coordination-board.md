@@ -38,6 +38,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Ainv comparator at `hsquared` head `369d14a`.
 - The R twin expanded planned backend controls at `hsquared` head `5feac1f`;
   Julia mirrors the same backend and accelerator vocabulary as metadata only.
+- The R twin added `backend_info()` diagnostics at `hsquared` head `8266a82`;
+  Julia mirrors the same planned/unavailable status surface with typed rows.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
   benchmarking, and CPU/GPU agreement tests remain planned.
@@ -147,6 +149,18 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `27457985141` were green;
   - boundary: control metadata only; no GPU execution, backend benchmarking, or
     CPU/GPU numerical agreement claim.
+- R lane handoff from `itchyshin/hsquared` head `8266a82`:
+  - added public `backend_info(control = hs_control())`;
+  - rows: `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, `oneapi`;
+  - columns: `backend`, `accelerator`, `requested`, `selectable`,
+    `execution_available`, `status`, and `note`;
+  - all rows are selectable, execution unavailable, and planned;
+  - R-CMD-check `27458148965`, pkgdown `27458148970`, and Pages
+    `27458179717` were reported green for the implementation commit;
+  - R-CMD-check `27458206919`, pkgdown `27458206905`, and Pages
+    `27458237087` were green for the evidence commit;
+  - boundary: status diagnostic only; no runtime backend probing, GPU
+    execution, backend benchmarking, or CPU/GPU agreement claim.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
   parity.

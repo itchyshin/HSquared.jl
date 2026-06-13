@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Backend Status Diagnostics Mirror
+
+- Goal: mirror the R twin's `backend_info()` honest status diagnostic in Julia.
+- Active lenses: Ada, Shannon, Hopper, Karpinski, Grace, Rose, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `498d41f` added public `backend_info()`.
+  - `hsquared` head `8266a82` records backend diagnostics CI evidence.
+  - rows: `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, `oneapi`;
+  - columns: `backend`, `accelerator`, `requested`, `selectable`,
+    `execution_available`, `status`, and `note`;
+  - all rows are selectable, execution unavailable, and planned.
+  - Reported implementation evidence: local R tests 151 pass,
+    `devtools::check()` 0/0/0, R-CMD-check `27458148965`, pkgdown
+    `27458148970`, and Pages `27458179717` success.
+  - R evidence commit checks: R-CMD-check `27458206919`, pkgdown
+    `27458206905`, and Pages `27458237087` success.
+- Julia-side action:
+  - Added `BackendInfoRow` and `BackendInfo`.
+  - Added `backend_info(control = HSControl())`.
+  - Added tests for row order, requested flags, selectable flags,
+    `execution_available == false`, and `status == :planned`.
+  - Updated README, API docs, engine contract, status tables, public claims,
+    and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 211 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims of
+    runtime backend probing, GPU execution, backend benchmarking, CPU/GPU
+    numerical agreement, QTL/eQTL support, or ASReml superiority.
+- Boundary:
+  - Status diagnostic only.
+  - No runtime backend probing.
+  - No GPU execution.
+  - No backend benchmarking.
+  - No CPU/GPU numerical agreement claim.
+
 ## 2026-06-13 Planned Backend Vocabulary Mirror
 
 - Goal: mirror the R twin's planned backend and accelerator vocabulary in

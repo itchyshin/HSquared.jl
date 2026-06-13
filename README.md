@@ -28,6 +28,8 @@ Implemented now:
   `oneapi` vocabulary;
 - backend marker types for CPU, threaded CPU, CUDA, AMDGPU, Metal, oneAPI, and
   auto selection;
+- `backend_info()` status diagnostics showing that planned backend names are
+  selectable metadata but not execution-ready yet;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
@@ -57,8 +59,8 @@ Implemented now:
 
 Planned, but not implemented yet:
 
-- backend execution dispatch, backend availability diagnostics, GPU execution,
-  backend benchmarking, and CPU/GPU numerical agreement tests;
+- backend execution dispatch, runtime backend availability probing, GPU
+  execution, backend benchmarking, and CPU/GPU numerical agreement tests;
 - sparse production optimization or AI-REML fitting;
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
@@ -156,6 +158,16 @@ reliability(fit)
 ```
 
 These are experimental low-level outputs, not yet production sparse results.
+
+The backend-control diagnostic mirrors the R twin's planned vocabulary:
+
+```julia
+info = backend_info(HSControl(accelerator = :gpu))
+info.rows
+```
+
+All rows currently report `execution_available == false` and
+`status == :planned`. This is a status surface, not runtime GPU probing.
 
 The high-level modelling surface is still planned:
 

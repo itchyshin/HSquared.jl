@@ -90,6 +90,28 @@ end
     @test_throws ArgumentError HSControl(precision = Float16)
     @test_throws ArgumentError HSControl(save = :everything)
 
+    info = backend_info()
+    @test info isa BackendInfo
+    @test length(info) == 6
+    @test [row.backend for row in info] == [:cpu, :threads, :cuda, :amdgpu, :metal, :oneapi]
+    @test [row.accelerator for row in info.rows] == [:none, :none, :cuda, :amdgpu, :metal, :oneapi]
+    @test all(row.selectable for row in info)
+    @test all(!row.execution_available for row in info)
+    @test all(row.status == :planned for row in info)
+    @test all(!row.requested for row in info)
+
+    threaded = backend_info(HSControl(backend = :threads))
+    @test only(filter(row -> row.backend == :threads, threaded.rows)).requested
+    @test !only(filter(row -> row.backend == :cpu, threaded.rows)).requested
+
+    gpu = backend_info(HSControl(accelerator = :gpu))
+    @test !only(filter(row -> row.backend == :cpu, gpu.rows)).requested
+    @test all(row.requested for row in filter(row -> row.backend in (:cuda, :amdgpu, :metal, :oneapi), gpu.rows))
+
+    metal = backend_info(HSControl(backend = :metal, accelerator = :metal))
+    @test only(filter(row -> row.backend == :metal, metal.rows)).requested
+    @test_throws ArgumentError backend_info(nothing)
+
     @test_throws Phase0NotImplementedError hsquared(nothing)
     @test_throws Phase0NotImplementedError fit_animal_model(nothing)
 end

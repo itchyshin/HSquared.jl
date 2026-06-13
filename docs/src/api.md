@@ -9,6 +9,9 @@ HSquared.AMDGPUBackend
 HSquared.MetalBackend
 HSquared.OneAPIBackend
 HSquared.AutoBackend
+HSquared.BackendInfoRow
+HSquared.BackendInfo
+HSquared.backend_info
 HSquared.GaussianFamily
 HSquared.HSData
 HSquared.HSDataIDMap

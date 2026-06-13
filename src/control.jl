@@ -62,6 +62,36 @@ function HSControl(;
     )
 end
 
+"""
+    backend_info(control = HSControl())
+
+Return typed status rows for planned compute backends.
+
+The rows mirror the R twin's `backend_info()` shape: `backend`,
+`accelerator`, `requested`, `selectable`, `execution_available`, `status`, and
+`note`. In Phase 1 all rows are accepted control metadata, all have
+`execution_available == false`, and all have `status == :planned`.
+"""
+function backend_info(control::HSControl = HSControl())
+    rows = [
+        BackendInfoRow(
+            backend,
+            BACKEND_INFO_ACCELERATORS[backend],
+            _backend_requested(backend, control),
+            true,
+            false,
+            :planned,
+            _backend_note(backend),
+        ) for backend in BACKEND_INFO_SYMBOLS
+    ]
+
+    return BackendInfo(control, rows)
+end
+
+function backend_info(control)
+    throw(ArgumentError("control must be an HSControl object"))
+end
+
 const ACCELERATOR_SYMBOLS = (:auto, :none, :gpu, :cuda, :amdgpu, :metal, :oneapi)
 
 function _coerce_symbol(value::Symbol, name::Symbol)

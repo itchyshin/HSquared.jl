@@ -23,6 +23,7 @@ HSControl(backend = :amdgpu, accelerator = :amdgpu)
 HSControl(backend = :metal, accelerator = :metal)
 HSControl(backend = :oneapi, accelerator = :oneapi)
 HSControl(accelerator = :gpu)
+info = backend_info()
 ```
 
 Julia mirrors the R twin's planned backend vocabulary from `hsquared` head
@@ -36,6 +37,13 @@ path. `CUDABackend()`, `AMDGPUBackend()`, `MetalBackend()`, and
 `OneAPIBackend()` are future optional-extension markers. There is no GPU
 execution, backend benchmarking, device availability detection, or CPU/GPU
 numerical agreement test yet.
+
+`backend_info()` returns a typed `BackendInfo` container with six
+`BackendInfoRow` records: `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and
+`oneapi`. Row fields are `backend`, `accelerator`, `requested`, `selectable`,
+`execution_available`, `status`, and `note`. In the current package state all
+rows have `selectable == true`, `execution_available == false`, and
+`status == :planned`.
 
 ## Implemented Relationship Utility
 

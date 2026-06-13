@@ -3,7 +3,7 @@
 | ID | Capability | Status | Required evidence |
 | --- | --- | --- | --- |
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
-| V0-CTRL | Control validation | covered | default and invalid control tests, plus planned backend/accelerator vocabulary tests for `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`; execution dispatch remains planned |
+| V0-CTRL | Control validation | covered | default and invalid control tests, planned backend/accelerator vocabulary tests for `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`, and `backend_info()` diagnostics with execution unavailable; execution dispatch remains planned |
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
 | V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
