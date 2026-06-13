@@ -26,6 +26,7 @@ makedocs(;
         "Data containers" => "data.md",
         "Pedigrees and Ainv" => "pedigree-ainv.md",
         "Genomic models" => "genomic-models.md",
+        "Standard QG models" => "standard-qg-models.md",
         "Audience and comparators" => "audience-comparators.md",
         "Genomics, QTL, GPU, and HPC" => "genomics-qtl-gpu-hpc.md",
         "Backend and algorithm roadmap" => "backend-algorithm-roadmap.md",

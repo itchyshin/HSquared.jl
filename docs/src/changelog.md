@@ -91,6 +91,9 @@
   two-effect REML loglik; `fit_repeatability_reml` is the `Z2=Z1, A2=I` reduction.
   Experimental, dense/validation-scale, REML-only; no committed recovery test, no
   intervals, no R-facing model-spec.
+- Added a "Standard QG models" documentation page with runnable examples for
+  repeatability (MME + REML, repeatability coefficient), common-environment, and
+  maternal-environment models, with the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with
