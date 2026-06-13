@@ -84,7 +84,20 @@ against the pinned fixture.
   variance-component estimation, no AI-REML, no fitted Mrode validation, no
   external fitted-model parity, no production sparse fitting, and no
   performance claim.
-- Remote checks: pending.
+- Remote checks for implementation commit `0a6b5f2`:
+  - CI `27462230519`: success on Julia 1 and Julia 1.10.
+  - Documenter `27462230492`: success.
+  - Pages deploy `27462261478`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions; no action required in this slice.
+- Live docs:
+  - `https://itchyshin.github.io/HSquared.jl/dev/validation-status`: HTTP 200
+    and contains `ca8bce1`, `h2 = 0.6`, and no-variance-component-estimation
+    wording.
+  - `https://itchyshin.github.io/HSquared.jl/dev/quickstart`: HTTP 200 and
+    contains the supplied-variance Henderson fixture wording.
+  - `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP 200 and
+    contains the shared R/Julia fixture wording.
 
 ## Public Claim Audit
 
@@ -105,7 +118,7 @@ Blocked wording:
   exists;
 - production sparse fitting is implemented.
 
-Rose verdict: clean locally, pending remote CI evidence.
+Rose verdict: clean. Remote CI, Documenter, Pages, and live docs are green.
 
 ## Tests Of The Tests
 

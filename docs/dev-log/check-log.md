@@ -38,7 +38,19 @@ Newest entries go at the top.
     external fitted-model parity, no production sparse fitting, and no
     performance claim.
 - Remote checks:
-  - Pending.
+  - CI `27462230519`: success on Julia 1 and Julia 1.10.
+  - Documenter `27462230492`: success.
+  - Pages deploy `27462261478`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions; no action required in this slice.
+  - Live validation-status page
+    `https://itchyshin.github.io/HSquared.jl/dev/validation-status`: HTTP 200
+    and contains `ca8bce1`, `h2 = 0.6`, and no-variance-component-estimation
+    wording.
+  - Live quickstart page `https://itchyshin.github.io/HSquared.jl/dev/quickstart`:
+    HTTP 200 and contains the supplied-variance Henderson fixture wording.
+  - Live roadmap page `https://itchyshin.github.io/HSquared.jl/dev/roadmap`:
+    HTTP 200 and contains the shared R/Julia fixture wording.
 - Boundary:
   - Supplied-variance MME validation only.
   - No variance-component estimation.
