@@ -52,6 +52,14 @@ raw pedigree IDs, self-parent rows, and same-known-parent rows. This is a
 diagnostic surface only. It does not normalize raw pedigree tables or build
 relationship matrices.
 
+R head `f067cd9` adds genotype-status diagnostics to
+`summary(hs_data(...))` and `data_status()`. Julia mirrors those counts in
+`data_status(::HSData)`: genotype rows, matched genotype IDs, genotype marker
+columns, named marker columns, unnamed marker columns, duplicate named marker
+columns, missing genotype value counts, and genotype component type. Plain
+Julia matrices are reported as matrix components with unnamed marker columns
+because base matrices do not carry marker names.
+
 R head `06cdf59` adds expression-status diagnostics to
 `summary(hs_data(...))` and `data_status()`. Julia mirrors those counts in
 `data_status(::HSData)`: expression rows, matched expression IDs, expression
@@ -141,8 +149,8 @@ Implemented:
 - marker-map metadata validation;
 - genotype-marker alignment validation;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, marker status, expression status, annotation-feature status, and
-  environment-key status;
+  status, genotype status, marker status, expression status,
+  annotation-feature status, and environment-key status;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge
@@ -153,6 +161,7 @@ Planned:
 - file-backed storage;
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
 - genotype imputation hooks;
+- automatic genotype-to-relationship construction;
 - marker maps, QTL/eQTL scans, and genomic relationship construction;
 - automatic expression-feature joins;
 - eQTL/omics workflows from expression/annotation metadata;
@@ -161,8 +170,8 @@ Planned:
 
 Rose audit: this can be called a conservative data-container mirror. It must
 not be described as genomic modelling, file-backed storage, QTL/eQTL support,
-genotype parsing, imputation, environment-covariate joining, environmental
-model terms, expression-feature joining, annotation-covariate joining,
-eQTL/omics fitting,
+genotype parsing, imputation, genotype-to-relationship construction,
+environment-covariate joining, environmental model terms, expression-feature
+joining, annotation-covariate joining, eQTL/omics fitting,
 genotype/omics/annotation/environment automatic model construction, production
 bridge hardening, or general fitting.

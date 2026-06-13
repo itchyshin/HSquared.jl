@@ -162,6 +162,15 @@ IDs, and duplicate environment IDs. This is metadata diagnostics only. It does
 not join environment covariates into `X`, add environmental random or fixed
 effects, change the R-Julia bridge payload, or fit multi-environment models.
 
+R head `f067cd9` adds genotype-status diagnostics to `hs_data()` and
+`data_status()`. Julia mirrors this in `HSData` with genotype component
+diagnostics: genotype rows, matched genotype IDs, marker-column counts,
+named/unnamed marker-column counts, duplicate named marker-column counts,
+missing genotype value counts, and component type. This is metadata
+diagnostics only. It does not parse PLINK/VCF, impute genotypes, construct
+genomic relationship matrices, add marker terms, change the R-Julia bridge
+payload, or fit genomic, QTL, GWAS, or eQTL models.
+
 R head `06cdf59` adds expression-status diagnostics to `hs_data()` and
 `data_status()`. Julia mirrors this in `HSData` with expression component
 diagnostics: expression rows, matched expression IDs, feature counts, named

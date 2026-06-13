@@ -68,14 +68,15 @@ Implemented now:
   and `h2`;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
+- genotype-component metadata diagnostics inside `HSData`;
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
 - expression-component metadata diagnostics inside `HSData`;
 - annotation-feature metadata diagnostics inside `HSData`;
 - environment-key metadata diagnostics inside `HSData`;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, marker-alignment status, expression status,
-  annotation-feature status, and environment-key status;
+  counts, pedigree status, genotype status, marker-alignment status,
+  expression status, annotation-feature status, and environment-key status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -148,6 +149,15 @@ planned.
 both marker maps and genotypes are supplied. This is metadata validation only;
 it is not genotype parsing, imputation, marker scanning, genomic fitting, or
 QTL/eQTL support.
+
+When genotypes are supplied, `data_status()` reports genotype rows, matched
+genotype IDs, marker-column counts, named and unnamed marker-column counts,
+duplicate named marker columns, missing genotype value counts, and component
+type. This is metadata diagnostics only. It does not parse PLINK/VCF, impute
+genotypes, construct genomic relationship matrices, run marker scans, or fit
+genomic/QTL/GWAS/eQTL models. Plain Julia matrices are reported as matrix
+components with unnamed marker columns because base matrices do not carry
+marker column names.
 
 When expression data are supplied, `data_status()` reports expression rows,
 matched expression IDs, feature-column counts, named and unnamed feature

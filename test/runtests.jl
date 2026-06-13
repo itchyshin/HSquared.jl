@@ -390,6 +390,18 @@ end
         "alignment",
     ]
     @test [row.value for row in status.marker_status] == ["2", "2", "2", "2", "10.0", "20.0", "checked"]
+    @test status.genotype_status isa Vector{HSDataGenotypeStatusRow}
+    @test [row.metric for row in status.genotype_status] == [
+        "genotype_rows",
+        "genotype_ids",
+        "genotype_marker_columns",
+        "named_genotype_marker_columns",
+        "unnamed_genotype_marker_columns",
+        "duplicate_genotype_marker_columns",
+        "missing_genotype_values",
+        "component_type",
+    ]
+    @test [row.value for row in status.genotype_status] == ["3", "3", "2", "0", "2", "0", "0", "matrix"]
     @test status.expression_status isa Vector{HSDataExpressionStatusRow}
     @test [row.metric for row in status.expression_status] == [
         "expression_rows",
@@ -489,12 +501,29 @@ end
     )
     @test [row.value for row in genotype_only_status.marker_status] ==
           ["0", "2", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
+    @test [row.value for row in genotype_only_status.genotype_status] == ["3", "3", "2", "0", "2", "0", "0", "matrix"]
 
     @test data_status(HSData(phenotypes)).marker_status === nothing
+    @test data_status(HSData(phenotypes)).genotype_status === nothing
     @test data_status(HSData(phenotypes)).pedigree_status === nothing
     @test data_status(HSData(phenotypes)).expression_status === nothing
     @test data_status(HSData(phenotypes)).annotation_status === nothing
     @test data_status(HSData(phenotypes)).environment_status === nothing
+
+    genotype_status_data = HSData(
+        (id = ["a", "b"], y = [1.0, 2.0]);
+        genotypes = (id = ["a", "b"], m1 = [0, missing], m2 = [1, 2]),
+    )
+    @test [row.value for row in data_status(genotype_status_data).genotype_status] ==
+          ["2", "2", "2", "2", "0", "0", "1", "table"]
+
+    duplicate_genotypes = Dict(
+        :id => ["a", "b"],
+        :m1 => [0, 1],
+        "m1" => [2, 3],
+    )
+    @test [row.value for row in data_status(HSData((id = ["a", "b"], y = [1.0, 2.0]); genotypes = duplicate_genotypes)).genotype_status] ==
+          ["not_available", "2", "2", "2", "0", "1", "0", "table"]
 
     matrix_expression_status = data_status(
         HSData(

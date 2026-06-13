@@ -99,6 +99,16 @@ struct HSDataMarkerStatusRow
 end
 
 """
+    HSDataGenotypeStatusRow
+
+One genotype-component diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataGenotypeStatusRow
+    metric::String
+    value::String
+end
+
+"""
     HSDataAnnotationStatusRow
 
 One annotation-metadata diagnostic returned by [`data_status`](@ref).
@@ -145,15 +155,17 @@ Diagnostic container returned by [`data_status`](@ref).
 
 This mirrors the R twin's `data_status()` surface for component presence,
 ID-overlap counts, pedigree status, marker-map/genotype-marker alignment
-status, expression status, expression-feature annotation status, and
-environment-key metadata status. It is diagnostic only and does not build
-model specifications, join covariates, or construct relationship matrices.
+status, genotype status, expression status, expression-feature annotation
+status, and environment-key metadata status. It is diagnostic only and does
+not build model specifications, join covariates, or construct relationship
+matrices.
 """
 struct HSDataStatus
     components::Vector{Symbol}
     id_overlap::Vector{HSDataIDOverlapRow}
     pedigree_status::Union{Nothing,Vector{HSDataPedigreeStatusRow}}
     marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
+    genotype_status::Union{Nothing,Vector{HSDataGenotypeStatusRow}}
     expression_status::Union{Nothing,Vector{HSDataExpressionStatusRow}}
     annotation_status::Union{Nothing,Vector{HSDataAnnotationStatusRow}}
     environment_status::Union{Nothing,Vector{HSDataEnvironmentStatusRow}}
@@ -173,6 +185,7 @@ struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TAS,TEnv,TES}
     phenotypes::TP
     pedigree::TPed
     genotypes::TG
+    genotype_id::Symbol
     markers::TM
     marker_spec::TMS
     genotype_marker_spec::TGMS
@@ -381,6 +394,7 @@ function HSData(;
         phenotypes,
         pedigree,
         genotypes,
+        _column_symbol(genotype_id, "genotypes"),
         markers,
         marker_spec,
         genotype_marker_spec,
@@ -409,8 +423,8 @@ end
 """
     data_status(data::HSData)
 
-Return component, ID-overlap, marker-alignment, expression, annotation-feature,
-and environment-key diagnostics for an
+Return component, ID-overlap, marker-alignment, genotype, expression,
+annotation-feature, and environment-key diagnostics for an
 [`HSData`](@ref) object.
 
 This mirrors the R twin's `data_status()` helper. It does not parse genotype
@@ -423,6 +437,7 @@ function data_status(data::HSData)
         _data_id_overlap(data.id_map),
         _data_pedigree_status(data),
         _data_marker_status(data),
+        _data_genotype_status(data),
         _data_expression_status(data),
         _data_annotation_status(data),
         _data_environment_status(data),
@@ -992,6 +1007,29 @@ function _data_marker_alignment(marker_spec, genotype_marker_spec, genotype_mark
     return "not_applicable"
 end
 
+function _data_genotype_status(data::HSData)
+    data.genotypes === nothing && return nothing
+
+    marker_ids = _genotype_status_marker_ids(data.genotypes, data.genotype_id)
+    has_marker_name = [marker !== nothing && !isempty(marker) for marker in marker_ids]
+    named_markers = String[marker::String for (marker, has_name) in zip(marker_ids, has_marker_name) if has_name]
+    duplicate_markers = _duplicate_string_ids(named_markers)
+
+    return [
+        HSDataGenotypeStatusRow("genotype_rows", _optional_status_value(_row_count(data.genotypes))),
+        HSDataGenotypeStatusRow("genotype_ids", string(length(data.id_map.genotype_ids))),
+        HSDataGenotypeStatusRow("genotype_marker_columns", string(length(marker_ids))),
+        HSDataGenotypeStatusRow("named_genotype_marker_columns", string(length(named_markers))),
+        HSDataGenotypeStatusRow("unnamed_genotype_marker_columns", string(count(!, has_marker_name))),
+        HSDataGenotypeStatusRow("duplicate_genotype_marker_columns", string(length(duplicate_markers))),
+        HSDataGenotypeStatusRow(
+            "missing_genotype_values",
+            string(_genotype_missing_value_count(data.genotypes, data.genotype_id)),
+        ),
+        HSDataGenotypeStatusRow("component_type", _component_type(data.genotypes)),
+    ]
+end
+
 function _data_expression_status(data::HSData)
     data.expression === nothing && return nothing
 
@@ -1014,6 +1052,31 @@ end
 function _optional_status_value(value)
     value === nothing && return "not_available"
     return string(value)
+end
+
+function _genotype_status_marker_ids(source::AbstractMatrix, genotype_id)
+    return Union{Nothing,String}[nothing for _ in 1:size(source, 2)]
+end
+
+function _genotype_status_marker_ids(source, genotype_id)
+    names = _column_names(source)
+    names === nothing && return Union{Nothing,String}[]
+    return Union{Nothing,String}[string(name) for name in names if !_same_column_name(name, genotype_id)]
+end
+
+function _genotype_missing_value_count(source::AbstractMatrix, genotype_id)
+    return count(_is_missing_value, source)
+end
+
+function _genotype_missing_value_count(source, genotype_id)
+    names = _column_names(source)
+    names === nothing && return 0
+    total = 0
+    for name in names
+        _same_column_name(name, genotype_id) && continue
+        total += count(_is_missing_value, _column(source, name, "genotypes"))
+    end
+    return total
 end
 
 function _expression_status_feature_ids(::Nothing, expression_id)
@@ -1163,4 +1226,8 @@ end
 
 function _is_missing_id(id)
     return ismissing(id) || id === nothing || (id isa AbstractString && isempty(id))
+end
+
+function _is_missing_value(value)
+    return ismissing(value) || value === nothing
 end

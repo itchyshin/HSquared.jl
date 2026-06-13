@@ -43,6 +43,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `data = hs_data(..., pedigree = ped)`. The explicit
   `animal(1 | id, pedigree = ped)` syntax remains the shared portable
   contract, and no Julia engine API or bridge payload change is required.
+- The R twin added genotype-status diagnostics at `hsquared` head `f067cd9`:
+  `summary(hs_data(...))` and `data_status()` report genotype rows, genotype
+  IDs, marker-column counts, named/unnamed marker-column counts, duplicate
+  named marker-column counts, missing genotype value counts, and component
+  type. Julia mirrors this as `HSDataGenotypeStatusRow` metadata diagnostics
+  only. No bridge payload, PLINK/VCF parsing, genotype imputation, genomic
+  relationship construction, marker scan, QTL/GWAS/eQTL, GLLVM, or fitting
+  claim changes.
 - The R twin added environment-key diagnostics at `hsquared` head `e7fbb31`:
   `hs_data(..., environment = env, environment_id = "site")` validates a
   shared key and reports `environment_status` in `summary()` and
@@ -160,7 +168,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - `HSData` marker-map metadata validation and genotype-marker alignment
     checks implemented.
   - `data_status(::HSData)` diagnostics implemented for component presence,
-    ID overlap, pedigree status, marker status, expression status,
+    ID overlap, pedigree status, genotype status, marker status, expression status,
     annotation-feature status, and environment-key status.
   - `validation_status()` implemented as a diagnostic validation-evidence
     table.

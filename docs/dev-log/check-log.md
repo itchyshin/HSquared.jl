@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Genotype Diagnostics
+
+- Goal: mirror the R twin's `hs_data()` genotype-status diagnostics in Julia
+  `HSData` without changing bridge payloads or adding genomic/QTL/GWAS/eQTL
+  modelling.
+- Active lenses: Ada, Emmy, Jason, Pat, Hopper, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- R handoff:
+  - `hsquared` head `f067cd9` adds genotype-status diagnostics to
+    `summary(hs_data(...))` and `data_status()`.
+  - R evidence: focused hs-data tests 108 pass, full tests 402 pass,
+    R-CMD-check `27464852608`, pkgdown `27464852619`, Pages `27464895368`
+    passed.
+- Julia implementation:
+  - Added `HSDataGenotypeStatusRow` and `genotype_status` on `HSDataStatus`.
+  - Added genotype-status diagnostics for table-like and matrix-like genotype
+    inputs.
+  - Stored `genotype_id` in `HSData` so table-like marker columns can be
+    counted after excluding the genotype ID column.
+  - Added missing-genotype-value counts for in-memory matrix and table-like
+    genotype inputs.
+  - Updated tests, README, Documenter pages, roadmap, engine/HSData contracts,
+    capability status, validation debt, public claims, coordination board, and
+    changelog.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 453 checks; the Phase 1 HSData ID container testset has 113 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
+- Boundary:
+  - Metadata diagnostics only.
+  - No bridge payload change.
+  - No PLINK/VCF parsing, genotype imputation, genomic relationship
+    construction, marker scans, QTL/GWAS/eQTL fitting, GLLVM workflows,
+    GPU workflows, or production modelling claim.
+
 ## 2026-06-13 HSData Expression Diagnostics
 
 - Goal: mirror the R twin's `hs_data()` expression-status diagnostics in

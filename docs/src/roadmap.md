@@ -39,8 +39,8 @@ Implemented:
 - sparse CSC marshalling helper for R sparse matrix slots;
 - `HSData` marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, marker-alignment status, expression status,
-  annotation-feature status, and environment-key status;
+  counts, pedigree status, genotype status, marker-alignment status,
+  expression status, annotation-feature status, and environment-key status;
 - external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for
@@ -63,6 +63,11 @@ Implemented:
   `39ca990`; `animal(1 | id)` may use the pedigree stored in
   `data = hs_data(..., pedigree = ped)`, while explicit
   `animal(1 | id, pedigree = ped)` remains the shared portable contract.
+- external R `hs_data()` genotype diagnostics evidence from `hsquared` head
+  `f067cd9`; Julia mirrors the genotype-shape metadata diagnostics locally in
+  `HSData`, with no PLINK/VCF parsing, genotype imputation, genomic
+  relationship construction, bridge payload, marker scan, QTL/GWAS/eQTL, or
+  genomic fitting claim.
 - external R `hs_data()` environment diagnostics evidence from `hsquared` head
   `e7fbb31`; Julia mirrors the shared-key metadata diagnostics locally in
   `HSData`, with no bridge payload or modelling change.

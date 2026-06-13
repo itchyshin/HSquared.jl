@@ -132,6 +132,36 @@ status = data_status(data)
 [row.metric => row.count for row in status.pedigree_status]
 ```
 
+## Genotype Metadata
+
+When genotypes are supplied, `data_status()` reports genotype rows, matched
+genotype IDs, marker-column count, named marker-column count, unnamed
+marker-column count, duplicate named marker-column count, missing genotype
+value count, and component type.
+
+```@example data
+[row.metric => row.value for row in status.genotype_status]
+```
+
+Plain Julia matrices do not carry marker column names. Matrix-like genotypes
+therefore need explicit `genotype_ids` for ID matching and report marker
+columns as unnamed unless marker names are supplied separately through
+`genotype_marker_ids` for marker-map alignment.
+
+```@example data
+matrix_genotype_data = HSData(
+    phenotypes;
+    genotypes = [0.0 1.0; 1.0 missing],
+    genotype_ids = ["animal_1", "animal_2"],
+)
+
+[row.metric => row.value for row in data_status(matrix_genotype_data).genotype_status]
+```
+
+This is metadata hygiene only. `HSData` does not parse PLINK/VCF files, impute
+genotypes, construct genomic relationships, run marker scans, or fit genomic,
+QTL, GWAS, or eQTL models.
+
 ```@example data
 [row.metric => row.value for row in status.marker_status]
 ```
@@ -274,8 +304,8 @@ id_map(data).expression_without_phenotypes
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, marker status, expression status, annotation-feature status, and
-  environment-key status;
+  status, genotype status, marker status, expression status,
+  annotation-feature status, and environment-key status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.
@@ -285,6 +315,7 @@ Planned later:
 - file-backed phenotype and genotype storage;
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
 - genotype parsing and imputation;
+- automatic genotype-to-relationship construction;
 - QTL/eQTL scans and genomic relationship construction from genotype/marker
   data;
 - automatic expression-feature joins;
