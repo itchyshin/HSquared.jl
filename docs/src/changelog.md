@@ -11,6 +11,11 @@
 - Added experimental `fit_sparse_reml()` and
   `fit_animal_model(...; target = :sparse_reml)` dispatch for REML-only sparse
   validation optimization.
+- Added an experimental sparse prediction-error-variance / reliability path:
+  `prediction_error_variance(...; method = :selinv)` and
+  `reliability(...; method = :selinv)` use a Takahashi selected inverse of the
+  sparse Henderson MME coefficient matrix (kernel adapted from DRM.jl, MIT). The
+  default stays `:dense` and matches it to machine precision on tiny fixtures.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

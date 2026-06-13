@@ -351,8 +351,9 @@ The current breeding-value equation path is:
 This is still an experimental low-level extractor path because variance
 components come from the current validation fit path, but EBV and fitted-value
 extraction now use the same Henderson MME solve as the supplied-variance MME
-utility. Production sparse fitting, production sparse reliability, and
-production sparse prediction error variance remain planned.
+utility. Production sparse fitting remains planned; experimental sparse
+prediction error variance and reliability are available via the `method =
+:selinv` selected-inversion path described below.
 
 `prediction_error_variance(fit)` and `reliability(fit)` use the dense
 mixed-model-equation inverse for tiny validation examples. The same extractor
@@ -363,6 +364,17 @@ for `breeding_values()`. `accuracy()` is a checked square-root transformation
 of `reliability()` and errors if reliability values are non-finite or outside
 `[0, 1]`; it does not add independent accuracy validation. These fields are
 not included in the base `result_payload(fit)` contract.
+
+`prediction_error_variance` and `reliability` accept `method = :dense` (default)
+or `method = :selinv`. The `:selinv` path computes the diagonal of the sparse
+Henderson MME coefficient-matrix inverse with a Takahashi selected inverse
+(`takahashi_diag` / `takahashi_selinv`, adapted from DRM.jl under the MIT
+License) in `O(nnz(L))`. The selected inverse is exact only at the `L+Lᵀ`
+sparsity pattern; the diagonal — and therefore PEV — is always in pattern and is
+exact. Both methods use the identical coefficient matrix, so they agree to
+machine precision on tiny and Mrode9-shaped fixtures. The default stays `:dense`
+and `result_payload()` is unchanged; this is an experimental sparse path, not
+large-pedigree or comparator-validated production reliability.
 
 As of R heads `8235289` and `d7e8914`, the R twin may enrich opt-in tiny/local
 Julia bridge results by calling exported Julia extractors:

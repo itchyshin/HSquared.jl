@@ -596,13 +596,14 @@ The current implementation forms and inverts the dense mixed-model-equation
 coefficient matrix. It is a validation-path extractor for tiny examples, not a
 production sparse reliability calculation.
 """
-function prediction_error_variance(fit::AnimalModelFit)
-    block = _dense_mme_random_inverse_block(
+function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :dense)
+    values = _pev_values(
         fit.spec,
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
+        method,
     )
-    return (ids = collect(fit.spec.ids), values = Vector{Float64}(diag(block)))
+    return (ids = collect(fit.spec.ids), values = values)
 end
 
 """
@@ -615,13 +616,9 @@ This uses the same dense inverse of the mixed-model-equation coefficient matrix
 as [`prediction_error_variance(::AnimalModelFit)`](@ref). It is a tiny
 validation-path extractor, not production sparse selected inversion.
 """
-function prediction_error_variance(result::HendersonMMEResult)
-    block = _dense_mme_random_inverse_block(
-        result.spec,
-        result.sigma_a2,
-        result.sigma_e2,
-    )
-    return (ids = collect(result.spec.ids), values = Vector{Float64}(diag(block)))
+function prediction_error_variance(result::HendersonMMEResult; method::Symbol = :dense)
+    values = _pev_values(result.spec, result.sigma_a2, result.sigma_e2, method)
+    return (ids = collect(result.spec.ids), values = values)
 end
 
 """
@@ -634,8 +631,8 @@ Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
 relationship matrix implied by `Ainv`. Values are not clipped; small examples
 can expose weakly informed animals directly.
 """
-function reliability(fit::AnimalModelFit)
-    pev = prediction_error_variance(fit)
+function reliability(fit::AnimalModelFit; method::Symbol = :dense)
+    pev = prediction_error_variance(fit; method = method)
     A = inv(Symmetric(Matrix{Float64}(fit.spec.Ainv)))
     animal_variance = fit.variance_components.sigma_a2 .* diag(A)
 
@@ -648,8 +645,8 @@ function reliability(fit::AnimalModelFit)
     )
 end
 
-function reliability(result::HendersonMMEResult)
-    pev = prediction_error_variance(result)
+function reliability(result::HendersonMMEResult; method::Symbol = :dense)
+    pev = prediction_error_variance(result; method = method)
     A = inv(Symmetric(Matrix{Float64}(result.spec.Ainv)))
     animal_variance = result.sigma_a2 .* diag(A)
 
@@ -856,4 +853,32 @@ function _dense_mme_random_inverse_block(
     inverse_lhs = inv(Symmetric(lhs))
     nfixed = size(X, 2)
     return inverse_lhs[(nfixed + 1):end, (nfixed + 1):end]
+end
+
+# Prediction error variances = diagonal of the random-effect block of the MME
+# coefficient-matrix inverse. `:dense` forms and inverts the dense MME (the tiny
+# validation reference); `:selinv` uses the Takahashi selected inverse of the
+# sparse MME coefficient matrix in O(nnz(L)). Both paths use the identical
+# coefficient matrix, so the diagonal agrees to machine precision.
+function _pev_values(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real, method::Symbol)
+    if method === :selinv
+        return _selinv_mme_random_pev(spec, sigma_a2, sigma_e2)
+    elseif method === :dense
+        block = _dense_mme_random_inverse_block(spec, sigma_a2, sigma_e2)
+        return Vector{Float64}(diag(block))
+    else
+        throw(ArgumentError("prediction-error-variance method must be :dense or :selinv"))
+    end
+end
+
+# Sparse selected-inversion PEV: the diagonal of C^-1 at the random-effect rows,
+# where C is the sparse Henderson MME coefficient matrix from
+# `_sparse_mme_system`. The diagonal is always in the L+Lᵀ pattern, so
+# `takahashi_diag` returns it exactly.
+function _selinv_mme_random_pev(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    lhs, _, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+    factor = cholesky(Symmetric(lhs); check = true)
+    diag_inv = takahashi_diag(factor)
+    nfixed = size(spec.X, 2)
+    return Vector{Float64}(diag_inv[(nfixed + 1):end])
 end

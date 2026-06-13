@@ -35,7 +35,7 @@
 | Opt-in R-to-Julia bridge execution | external experimental | `hsquared` head `398e019` consumes Julia `sparse_csc_matrix()` for sparse `Z`; head `00b9e33` adds an explicit opt-in `target = "henderson_mme"` path with supplied variance components and green R checks; still no variance-component estimation, AI-REML, production sparse fitting, Mrode fitted-output validation, large-data readiness, or relationship-object marshalling beyond `Z` |
 | File-backed phenotype/genotype storage | planned | no Arrow/Parquet/PLINK/VCF/HDF5/Zarr implementation yet |
 | Sparse production fitting / AI-REML | planned | sparse REML validation optimization exists for tiny low-level fixtures only; no AI-REML, fitted Mrode/comparator validation, production sparse diagnostics, or large sparse fixture yet |
-| Production sparse reliability / PEV | planned | no implementation yet |
+| Production sparse reliability / PEV | experimental | `prediction_error_variance`/`reliability` accept `method = :selinv`, a Takahashi selected inverse (kernel adapted from DRM.jl, MIT) of the sparse Henderson MME coefficient matrix; the selected-inverse diagonal matches the dense MME inverse diagonal to machine precision on tiny and Mrode9-shaped fixtures; `O(nnz(L))`, exact at the `L+Lᵀ` pattern (diagonal/PEV exact); the default extractor path stays dense and `result_payload()` is unchanged; no large-pedigree or external-comparator validation yet |
 | Multivariate G matrices | planned | no implementation yet |
 | Factor-analytic G matrices | planned | no implementation yet |
 | Genomic prediction, single-step fitting, marker scans, and QTL/eQTL | planned | vocabulary reserved only; no implementation yet |

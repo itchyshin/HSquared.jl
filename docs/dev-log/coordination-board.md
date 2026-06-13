@@ -161,6 +161,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   validation fixtures only. It does not change the compact `result_payload()`,
   does not require an R bridge change, and is not AI-REML, fitted Mrode
   validation, external fitted-model parity, or production sparse fitting.
+- Julia now has experimental production-sparse PEV/reliability:
+  `prediction_error_variance`/`reliability` accept `method = :selinv`, a
+  Takahashi selected inverse (kernel adapted from DRM.jl, MIT) of the sparse MME
+  coefficient matrix. The selinv diagonal matches the dense MME inverse diagonal
+  to machine precision on tiny + Mrode9 fixtures. The default extractor path
+  stays dense and `result_payload()` is unchanged (no R bridge change required);
+  R can opt in via its existing PEV/reliability extractor enrichment. Posted to
+  `HSquared.jl` issue #6.
 
 ## Current State
 

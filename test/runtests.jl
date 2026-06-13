@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 12
+    @test length(validation) == 13
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1364,4 +1364,49 @@ end
     @test reliability(mme).ids == ped.ids
     @test reliability(mme).values ≈ expected_reliability
     @test accuracy(mme).values ≈ sqrt.(expected_reliability)
+end
+
+@testset "Phase 1 sparse selected-inversion PEV/reliability" begin
+    # Kernel: takahashi diagonal matches the dense inverse diagonal exactly
+    # (the diagonal is always in the L+Lᵀ pattern).
+    C = sparse([4.0 1.0 0.0; 1.0 3.0 1.0; 0.0 1.0 2.0])
+    ch = cholesky(Symmetric(C))
+    Cinv_diag = diag(inv(Matrix(C)))
+    @test diag(HSquared.takahashi_selinv(ch)) ≈ Cinv_diag rtol = 1e-10
+    @test HSquared.takahashi_diag(ch) ≈ Cinv_diag rtol = 1e-10
+
+    # Animal-model PEV/reliability: sparse :selinv == dense (identical
+    # coefficient matrix, so agreement is to machine precision).
+    ids = ["sire", "dam", "calf"]
+    ped = normalize_pedigree(ids, ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    y = [1.0, 2.5, 4.0]
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    mme = henderson_mme(spec, 1.2, 0.8)
+
+    pev_dense = prediction_error_variance(mme)
+    pev_selinv = prediction_error_variance(mme; method = :selinv)
+    @test pev_selinv.ids == pev_dense.ids
+    @test pev_selinv.values ≈ pev_dense.values rtol = 1e-10
+    @test reliability(mme; method = :selinv).values ≈ reliability(mme).values rtol = 1e-10
+
+    # default stays :dense (contract unchanged)
+    @test prediction_error_variance(mme).values == pev_dense.values
+
+    # AnimalModelFit path also supports :selinv
+    fit = fit_variance_components(
+        spec;
+        initial = (sigma_a2 = 0.8, sigma_e2 = 0.8),
+        method = :REML,
+    )
+    @test prediction_error_variance(fit; method = :selinv).values ≈
+          prediction_error_variance(fit).values rtol = 1e-9
+    @test reliability(fit; method = :selinv).values ≈
+          reliability(fit).values rtol = 1e-9 atol = 1e-8
+
+    # invalid method rejected on both extractors
+    @test_throws ArgumentError prediction_error_variance(mme; method = :nope)
+    @test_throws ArgumentError reliability(mme; method = :nope)
 end

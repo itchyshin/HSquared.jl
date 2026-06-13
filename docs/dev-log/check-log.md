@@ -2,6 +2,31 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Sparse Selected-Inversion PEV/Reliability
+
+- Goal: production-scale sparse prediction error variance and reliability via a
+  Takahashi selected inverse of the sparse Henderson MME coefficient matrix,
+  reusing the MIT sibling kernel instead of reinventing it.
+- Active lenses: Gauss, Karpinski, Curie, Fisher, Rose (inline perspectives).
+- Spawned subagents: none.
+- Implementation:
+  - Added `src/takahashi_selinv.jl` (`takahashi_selinv`, `takahashi_diag`),
+    adapted near-verbatim from DRM.jl (MIT) with attribution.
+  - Added `_selinv_mme_random_pev` and a `_pev_values` dispatcher in
+    `likelihood.jl`; `prediction_error_variance`/`reliability` now accept
+    `method = :dense` (default, unchanged) or `:selinv`.
+  - Added a `validation_status()` row `V1-SELINV-PEV`.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. New testset
+    "Phase 1 sparse selected-inversion PEV/reliability" (10 checks): selinv
+    diagonal == dense MME inverse diagonal, and `:selinv` PEV/reliability ==
+    `:dense` to machine precision (3.3e-16) on tiny + fit fixtures; edge guards.
+- Boundary:
+  - Experimental sparse PEV path; exact at the `L+Lᵀ` pattern (diagonal/PEV
+    exact). Default extractor path stays dense; `result_payload()` unchanged.
+    Not AI-REML, not fitted Mrode, no external comparator, no large-pedigree
+    validation yet.
+
 ## 2026-06-13 Sparse REML Validation Optimizer
 
 - Goal: add a Julia-only sparse REML optimization atom without changing the
