@@ -23,8 +23,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   experimental dense variance-component optimizer for those specs.
 - The Julia twin has an in-memory `HSData` container mirroring the current R
   `hs_data()` ID-map vocabulary.
-- R-to-Julia bridge execution, sparse production fitting, reliability, PEV, and
-  sparse diagnostics remain planned.
+- The R twin has an internal JuliaCall smoke over the current Julia payload path
+  and `result_payload()` at `hsquared` head `c837f2d`.
+- Public R-to-Julia bridge execution, sparse production fitting, sparse
+  production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
 ## Current State
@@ -68,11 +70,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - its `id_map` records phenotype, pedigree, genotype, and expression overlap;
   - this is not file-backed storage, relationship construction, QTL/eQTL scan
     support, or model fitting.
-- Next shared seam: cross-repo R-to-Julia marshalling tests that send the R
-  parser payload into the Julia direct target and verify variance components,
-  breeding values, heritability, and the `result_payload()` field names in the
-  returned result shape. A second seam is `hs_data()` to `HSData` payload
-  parity once live R-to-Julia data transfer is attempted.
+- R lane handoff from `itchyshin/hsquared` head `c837f2d`:
+  - internal `hs_fit_julia_payload()` uses JuliaCall;
+  - the smoke test activates the sibling local `HSquared.jl` checkout;
+  - the path is `normalize_pedigree()` -> `pedigree_inverse()` ->
+    `fit_animal_model(y, X, Z, Ainv; ids = ..., method = ...)` ->
+    `result_payload()`;
+  - R normalizes the result into the current internal `hsquared_fit` contract;
+  - public `hsquared()` still stops before fitting.
+- Next shared seam: sparse marshalling instead of dense `Z`, stable
+  user-facing engine controls, Mrode validation, and `hs_data()` to `HSData`
+  payload parity.
 
 ## Sister References
 

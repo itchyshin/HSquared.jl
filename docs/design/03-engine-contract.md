@@ -133,8 +133,23 @@ Julia mirrors those names with:
 result = result_payload(fit)
 ```
 
-`result_payload(fit)` returns a `NamedTuple` with exactly those fields. This is
-the bridge-facing result shape, not a claim that R live execution is wired.
+`result_payload(fit)` returns a `NamedTuple` with exactly those fields. Keep
+these field names stable for the R bridge:
+
+- `variance_components.sigma_a2`
+- `variance_components.sigma_e2`
+- `heritability`
+- `breeding_values.ids`
+- `breeding_values.values`
+- `fixed_effects`
+- `random_effects.animal.ids`
+- `random_effects.animal.values`
+- `loglik`
+- `df`
+- `nobs`
+- `predictions`
+- `diagnostics`
+- `converged`
 
 ## Current R Bridge Handoff
 
@@ -175,11 +190,26 @@ The Julia direct payload method also exists:
 fit = fit_animal_model(y, X, Z, Ainv; ids = ids, method = :REML)
 ```
 
-The next bridge task is cross-repo marshalling, not wider syntax. The Julia
-tests now cover parent-index semantics, `ids` order, sparse `Z` dimensions,
-Julia-side `Ainv`, and parity between spec dispatch and direct payload
-dispatch. The actual R-to-Julia call still does not exist. A parallel future
-task is `hs_data()` to `HSData` marshalling parity.
+R head `c837f2d` adds an internal JuliaCall smoke test over this path:
+
+```text
+normalize_pedigree()
+pedigree_inverse()
+fit_animal_model(y, X, Z, Ainv; ids = ..., method = ...)
+result_payload()
+```
+
+That smoke test activates the sibling local `HSquared.jl` checkout and returns
+an internal `hsquared_fit` object. Public `hsquared()` still stops before
+fitting, so this is bridge-contract validation rather than public model-fitting
+support.
+
+The next bridge task is sparse marshalling and stable user-facing engine
+control, not wider syntax. The Julia tests cover parent-index semantics, `ids`
+order, sparse `Z` dimensions, Julia-side `Ainv`, and parity between spec
+dispatch and direct payload dispatch. The R twin now has an external internal
+smoke test for the JuliaCall path. A parallel future task is `hs_data()` to
+`HSData` marshalling parity.
 
 ## Input Payload
 

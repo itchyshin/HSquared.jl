@@ -42,13 +42,16 @@ Implemented now:
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
+- external internal R bridge smoke evidence from the `hsquared` twin over the
+  current Julia payload path and `result_payload()`;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
 - sparse production optimization or AI-REML fitting;
-- R-to-Julia marshalling and high-level formula fitting;
+- sparse R-to-Julia marshalling, stable user-facing engine controls, and
+  high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;

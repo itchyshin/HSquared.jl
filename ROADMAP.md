@@ -29,7 +29,10 @@ pedigree/Ainv engine utility slice.
   dense spec path.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
-- High-level formula fitting and R bridge execution are not implemented.
+- R twin has an internal JuliaCall smoke test over the Julia payload path and
+  `result_payload()` at `hsquared` head `c837f2d`.
+- High-level public formula fitting and user-facing R bridge execution are not
+  implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
@@ -147,8 +150,8 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Add cross-repo R-to-Julia marshalling tests around the current R parser and
-   Julia direct payload target.
+1. Replace the current internal dense-guarded R bridge smoke with sparse
+   marshalling and stable user-facing engine controls.
 2. Add Julia-side `HSData` integration tests once the R bridge sends actual
    `hs_data()` payloads.
 3. Add Mrode/simple comparator validation for the dense low-level path.

@@ -47,7 +47,10 @@ Current parity state:
   for a validated spec.
 - Julia can accept the direct `y`, `X`, `Z`, `Ainv` payload once `Ainv` is built
   in Julia.
-- R-to-Julia marshalling and result-object return are still planned.
+- R head `c837f2d` has an internal JuliaCall smoke test over this path and
+  normalizes the returned `result_payload()` into an internal `hsquared_fit`.
+- Public `hsquared(..., engine = "julia")` fitting, sparse marshalling, and
+  stable user-facing engine controls are still planned.
 
 The bridge target is:
 

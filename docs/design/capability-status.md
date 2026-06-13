@@ -17,10 +17,10 @@
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
 | Dense reliability / PEV | experimental | `prediction_error_variance()` and `reliability()` tested against dense Henderson MME inverse; no sparse production solve or comparator yet |
 | Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
-| R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; no live R execution yet |
-| R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload but does not execute Julia fitting |
+| R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; R head `c837f2d` has an internal JuliaCall smoke over these fields |
+| R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload; head `c837f2d` internally smoke-tests the Julia path but public `hsquared()` still stops before fitting |
 | R `hs_data()` data container | external implemented | `hsquared` head `644c75e`; Julia mirror exists as `HSData`, but live marshalling is not implemented |
-| R-to-Julia bridge execution | planned | no marshalling/parity test yet |
+| Public R-to-Julia bridge execution | planned | internal R smoke exists at `hsquared` head `c837f2d`; no public user-facing fitting bridge yet |
 | File-backed phenotype/genotype storage | planned | no Arrow/Parquet/PLINK/VCF/HDF5/Zarr implementation yet |
 | Sparse production fitting / AI-REML | planned | no implementation yet |
 | Production sparse reliability / PEV | planned | no implementation yet |

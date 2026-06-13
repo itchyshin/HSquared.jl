@@ -2,6 +2,47 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R Internal Julia Bridge Smoke Sync
+
+- Goal: record the R twin's internal JuliaCall smoke evidence without changing
+  Julia result payload fields or claiming public fitting support.
+- Active lenses: Ada, Shannon, Hopper, Lovelace, Emmy, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `c837f2d` added internal `hs_fit_julia_payload()`.
+  - The smoke activates the sibling local `HSquared.jl` checkout and calls
+    `normalize_pedigree()` -> `pedigree_inverse()` ->
+    `fit_animal_model(y, X, Z, Ainv; ids = ..., method = ...)` ->
+    `result_payload()`.
+  - R normalizes the returned result into the current internal `hsquared_fit`
+    contract.
+  - Public `hsquared()` still stops before fitting.
+- R remote evidence reported:
+  - R-CMD-check `27456664820`: success.
+  - pkgdown `27456664821`: success.
+  - Pages `27456696277`: success.
+- Julia-side action:
+  - Updated engine, formula, v0.1, roadmap, capability, validation, public
+    claims, and coordination docs.
+  - Kept `result_payload()` field names stable.
+  - Did not add dense PEV/reliability to `result_payload()` because the R result
+    contract has not grown those fields.
+- Commands run:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only planned/blocked wording, not public claims that
+    `hsquared()` fits through Julia, sparse marshalling is implemented, stable
+    user-facing engine controls exist, or Mrode validation is complete.
+- Boundary:
+  - Internal bridge smoke exists externally in the R twin.
+  - Public R fitting remains planned.
+  - Sparse `Z` marshalling, stable engine controls, and Mrode validation remain
+    next shared gates.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1J Dense PEV And Reliability
 
 - Goal: add dense experimental prediction-error-variance and reliability

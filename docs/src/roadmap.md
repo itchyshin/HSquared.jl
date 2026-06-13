@@ -19,19 +19,20 @@ Implemented:
 - dense Gaussian likelihood evaluation;
 - experimental dense variance-component optimization;
 - experimental dense EBV/BLUP, heritability, PEV, and reliability extraction;
-- experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`.
+- experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
+- external internal R bridge smoke evidence from `hsquared` head `c837f2d`.
 
 Not implemented:
 
 - sparse production animal-model REML/ML or AI-REML fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
-- R-to-Julia fitting bridge.
+- public R-to-Julia fitting bridge.
 
 ## Phase 1: Simple Gaussian Animal Model
 
 Next engine targets:
 
-1. cross-repo R-to-Julia marshalling tests;
+1. sparse bridge marshalling and stable user-facing engine controls;
 2. Mrode-style validation and comparator checks;
 3. production sparse covariance/precision computations;
 4. AI-REML or a documented sparse optimizer path;
