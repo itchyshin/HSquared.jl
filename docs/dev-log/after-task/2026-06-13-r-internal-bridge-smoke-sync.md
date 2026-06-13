@@ -55,8 +55,8 @@ Local checks:
 - Generated docs artifacts were removed after the build.
 - `git diff --check` passed.
 - Claim scan found only planned/blocked wording, not public claims that
-  `hsquared()` fits through Julia, sparse marshalling is implemented, stable
-  user-facing engine controls exist, or Mrode validation is complete.
+  `hsquared()` fits through Julia, full sparse bridge marshalling is complete,
+  stable user-facing engine controls exist, or Mrode validation is complete.
 
 ## Contract Decision
 
@@ -93,13 +93,13 @@ Allowed wording:
 Blocked wording:
 
 - public `hsquared()` fits through Julia;
-- sparse bridge marshalling is implemented;
+- sparse relationship-object marshalling beyond `Z` is implemented;
 - stable user-facing engine controls exist;
 - Mrode validation is complete.
 
 ## Next Work
 
-1. Sparse marshalling instead of dense-guarded `Z`.
+1. Relationship-object marshalling beyond sparse `Z`.
 2. Stable user-facing engine control design.
 3. Mrode validation before public fitting claims.
 4. Decide with the R twin when PEV/reliability enter the bridge result payload.

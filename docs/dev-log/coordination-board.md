@@ -30,6 +30,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin has PEV/reliability extractor contracts at `hsquared` head
   `78ba5ff`; Julia keeps those fields out of `result_payload()` until bridge
   tests widen in lockstep.
+- The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
+  `hsquared` head `398e019`.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
@@ -51,6 +53,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
+  - sparse Henderson MME solving at supplied variance components implemented.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
     in-memory mirror of the R `hs_data()` input-container contract.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:
@@ -97,9 +100,18 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - current R live-bridge tests still expect those fields to be absent from the
     Julia payload;
   - local/remote R checks were reported green.
-- Next shared seam: R-side sparse marshalling using Julia `sparse_csc_matrix()`,
-  lockstep PEV/reliability payload widening, Mrode validation, and `hs_data()`
-  to `HSData` payload parity.
+- R lane handoff from `itchyshin/hsquared` head `398e019`:
+  - R now sends `Matrix::dgCMatrix` `Z` slots through
+    `HSquared.sparse_csc_matrix(...; index_base = :zero)`;
+  - `hs_fit_julia_payload()` no longer takes or uses `max_dense_cells`;
+  - local live bridge tests and remote R-CMD-check, pkgdown, and Pages were
+    reported green;
+  - this is sparse `Z` marshalling only, not large-data readiness, relationship
+    object marshalling, production sparse fitting, performance evidence, or
+    Mrode validation.
+- Next shared seam: lockstep PEV/reliability payload widening, relationship
+  marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
+  parity.
 
 ## Sister References
 

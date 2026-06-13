@@ -513,12 +513,25 @@ end
     )
 
     expected_beta, expected_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
+    mme = henderson_mme(spec, sigma_a2, sigma_e2)
 
     @test fixed_effects(fit) ≈ expected_beta
     @test breeding_values(fit).ids == ped.ids
     @test breeding_values(fit).values ≈ expected_u
     @test fitted_values(fit) ≈ vec(Matrix(X) * expected_beta + Matrix(Z) * expected_u)
     @test heritability(fit) ≈ sigma_a2 / (sigma_a2 + sigma_e2)
+
+    @test mme isa HendersonMMEResult
+    @test mme.spec === spec
+    @test mme.sigma_a2 == sigma_a2
+    @test mme.sigma_e2 == sigma_e2
+    @test fixed_effects(mme) ≈ expected_beta
+    @test breeding_values(mme).ids == ped.ids
+    @test breeding_values(mme).values ≈ expected_u
+    @test fitted_values(mme) ≈ fitted_values(fit)
+    @test fitted_values(mme; include_random = false) ≈ vec(Matrix(X) * expected_beta)
+    @test_throws ArgumentError henderson_mme(spec, 0.0, sigma_e2)
+    @test_throws ArgumentError henderson_mme(spec, sigma_a2, -1.0)
 
     expected_pev = diag(_mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2))
     relationship = inv(Symmetric(Matrix(Ainv)))

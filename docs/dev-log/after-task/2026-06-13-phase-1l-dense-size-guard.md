@@ -96,7 +96,7 @@ Allowed wording:
 Blocked wording:
 
 - sparse production fitting works;
-- R sparse marshalling is wired;
+- sparse marshalling beyond `Z` or large-data bridge readiness exists;
 - PEV/reliability are returned through the R bridge payload;
 - Mrode validation is complete;
 - GPU, QTL/eQTL, genomic, or GLLVM support is implemented.
@@ -111,7 +111,7 @@ Blocked wording:
 
 ## Next Actions
 
-1. Coordinate R-side sparse CSC marshalling into `sparse_csc_matrix()`.
+1. Coordinate relationship-object marshalling beyond sparse `Z`.
 2. Decide when PEV/reliability enter `result_payload()` and update both twins in
    one lockstep slice.
 3. Add Mrode/simple comparator validation before promoting animal-model fitting.

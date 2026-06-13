@@ -50,8 +50,10 @@ Current parity state:
 - R head `9eabf0d` exposes the opt-in experimental path through
   `hs_control(engine = "julia")` and normalizes the returned
   `result_payload()` into an internal `hsquared_fit`.
-- R-side sparse marshalling and stable production engine controls are still
-  planned.
+- R head `398e019` consumes Julia `sparse_csc_matrix()` for sparse `Z`
+  marshalling.
+- Relationship-object marshalling beyond `Z`, stable production engine
+  controls, and Mrode validation are still planned.
 
 The experimental bridge target is:
 

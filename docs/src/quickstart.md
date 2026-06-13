@@ -116,6 +116,23 @@ catch err
 end
 ```
 
+## Solve Henderson Equations At Supplied Variances
+
+The first sparse equation-solve utility uses Henderson's mixed-model equations
+at supplied variance components.
+
+```@example quickstart
+mme = henderson_mme(spec, 1.0, 1.0)
+fixed_effects(mme)
+```
+
+```@example quickstart
+breeding_values(mme).values
+```
+
+This solves for fixed effects and animal-effect BLUPs/EBVs given variance
+components. It does not estimate those variance components.
+
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,

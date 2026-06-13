@@ -21,6 +21,8 @@ evidence in tests, docs, and the check log.
 - EBVs/BLUPs and heritability match the R-facing contract.
 - Dense validation-path outputs agree with Henderson mixed-model equations at
   supplied variance components.
+- Sparse supplied-variance Henderson MME solves agree with deterministic MME
+  fixtures before being used inside production fitting.
 
 ## Status Words
 

@@ -18,6 +18,8 @@ HSquared.AnimalModelSpec
 HSquared.animal_model_spec
 HSquared.GaussianLikelihoodResult
 HSquared.gaussian_loglik
+HSquared.HendersonMMEResult
+HSquared.henderson_mme
 HSquared.AnimalModelFit
 HSquared.BreedingValues
 HSquared.fit_variance_components

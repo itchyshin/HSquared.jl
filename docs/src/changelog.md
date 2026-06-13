@@ -15,6 +15,8 @@
   for the dense spec path.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
+- Added `henderson_mme()` for sparse Henderson mixed-model-equation solving at
+  supplied variance components.
 - Added a Henderson mixed-model-equation validation fixture for the dense
   output path.
 - Added `result_payload()` with field names aligned to the R `hsquared_fit`
@@ -24,6 +26,7 @@
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.
+- Recorded the R twin's sparse `Z` bridge marshalling handoff.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

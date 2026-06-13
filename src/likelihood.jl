@@ -44,6 +44,24 @@ struct BreedingValues{TID<:AbstractVector}
 end
 
 """
+    HendersonMMEResult
+
+Result from solving Henderson's mixed-model equations at supplied variance
+components.
+
+This is a Phase 1 engine utility. It uses sparse design and relationship
+precision matrices, but it does not estimate variance components and is not a
+production sparse fitting claim by itself.
+"""
+struct HendersonMMEResult{TS<:AnimalModelSpec,TID<:AbstractVector}
+    spec::TS
+    beta::Vector{Float64}
+    animal_effects::BreedingValues{TID}
+    sigma_a2::Float64
+    sigma_e2::Float64
+end
+
+"""
     gaussian_loglik(spec, sigma_a2, sigma_e2; method = spec.method,
                     max_dense_cells = 1_000_000)
 
@@ -178,6 +196,59 @@ function fit_variance_components(
     )
 end
 
+"""
+    henderson_mme(spec, sigma_a2, sigma_e2)
+
+Solve Henderson's mixed-model equations for fixed effects and animal-effect
+BLUPs/EBVs at supplied positive variance components.
+
+This forms the sparse equation system
+`[X'R^-1X  X'R^-1Z; Z'R^-1X  Z'R^-1Z + Ainv / sigma_a2]` with
+`R = sigma_e2 I`. It is a supplied-variance solver and does not optimize
+variance components.
+"""
+function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    sigma_a2 > 0 ||
+        throw(ArgumentError("sigma_a2 must be positive"))
+    sigma_e2 > 0 ||
+        throw(ArgumentError("sigma_e2 must be positive"))
+
+    y = Float64.(spec.y)
+    X = sparse(Float64.(spec.X))
+    Z = sparse(Float64.(spec.Z))
+    Ainv = sparse(Float64.(spec.Ainv))
+
+    residual_precision = inv(Float64(sigma_e2))
+    relationship_precision = inv(Float64(sigma_a2))
+
+    Xt = transpose(X)
+    Zt = transpose(Z)
+    lhs = [
+        residual_precision * (Xt * X) residual_precision * (Xt * Z)
+        residual_precision * (Zt * X) residual_precision * (Zt * Z) + relationship_precision * Ainv
+    ]
+    rhs = [
+        residual_precision * (Xt * y);
+        residual_precision * (Zt * y)
+    ]
+
+    solution = lhs \ rhs
+    nfixed = size(X, 2)
+    beta = Vector{Float64}(solution[1:nfixed])
+    animal_effects = BreedingValues(
+        collect(spec.ids),
+        Vector{Float64}(solution[(nfixed + 1):end]),
+    )
+
+    return HendersonMMEResult(
+        spec,
+        beta,
+        animal_effects,
+        Float64(sigma_a2),
+        Float64(sigma_e2),
+    )
+end
+
 function fit_animal_model(spec::AnimalModelSpec; kwargs...)
     return fit_variance_components(spec; kwargs...)
 end
@@ -216,6 +287,10 @@ function fixed_effects(fit::AnimalModelFit)
     return copy(fit.likelihood.beta)
 end
 
+function fixed_effects(result::HendersonMMEResult)
+    return copy(result.beta)
+end
+
 """
     breeding_values(fit)
 
@@ -243,6 +318,10 @@ function breeding_values(fit::AnimalModelFit)
     return BreedingValues(collect(spec.ids), Vector{Float64}(values))
 end
 
+function breeding_values(result::HendersonMMEResult)
+    return BreedingValues(result.animal_effects.ids, copy(result.animal_effects.values))
+end
+
 """
     fitted_values(fit; include_random = true)
 
@@ -256,6 +335,17 @@ function fitted_values(fit::AnimalModelFit; include_random::Bool = true)
     if include_random
         Z = Matrix{Float64}(spec.Z)
         fitted = fitted + Z * breeding_values(fit).values
+    end
+
+    return Vector{Float64}(fitted)
+end
+
+function fitted_values(result::HendersonMMEResult; include_random::Bool = true)
+    spec = result.spec
+    fitted = Matrix{Float64}(spec.X) * result.beta
+
+    if include_random
+        fitted = fitted + Matrix{Float64}(spec.Z) * result.animal_effects.values
     end
 
     return Vector{Float64}(fitted)

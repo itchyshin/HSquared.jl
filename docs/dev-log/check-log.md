@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1M Sparse Henderson MME Supplied-Variance Solve
+
+- Goal: add a sparse Henderson mixed-model-equation solve at supplied variance
+  components and record the R twin's sparse `Z` marshalling handoff.
+- Active lenses: Ada, Henderson, Gauss, Karpinski, Fisher, Mrode, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `2a9ba37` uses sparse `Z` bridge marshalling.
+  - `hsquared` head `398e019` records green CI evidence.
+  - R now calls `HSquared.sparse_csc_matrix(...; index_base = :zero)` for
+    `Matrix::dgCMatrix` `Z` slots.
+  - `hs_fit_julia_payload()` no longer takes or uses `max_dense_cells`.
+  - R-CMD-check `27457295759`, pkgdown `27457295761`, and Pages `27457326836`
+    were reported green.
+- Implementation evidence:
+  - Added `HendersonMMEResult`.
+  - Added `henderson_mme(spec, sigma_a2, sigma_e2)`.
+  - The solver forms Henderson's equations from sparse `X`, `Z`, and `Ainv`
+    and solves for fixed effects plus animal effects at supplied variance
+    components.
+  - Added `fixed_effects()`, `breeding_values()`, and `fitted_values()` methods
+    for `HendersonMMEResult`.
+  - Kept `result_payload()` fields unchanged.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 180 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - Generated docs artifacts were removed after the build.
+  - `git diff --check` passed.
+  - Claim scan found only blocked/planned/historical-audit wording, not public
+    claims that sparse production fitting works, Mrode validation is complete,
+    AI-REML is implemented, or PEV/reliability are returned through the bridge
+    payload.
+- Boundary:
+  - Supplied variance components only.
+  - Not variance-component estimation, AI-REML, production sparse fitting,
+    Mrode validation, external comparator validation, or a bridge payload
+    change.
+
 ## 2026-06-13 Phase 1L Dense Validation Size Guard And R PEV Sync
 
 - Goal: add a Julia-side dense validation size guard aligned with the R
@@ -79,7 +119,9 @@ Newest entries go at the top.
     validation is complete, or bridge performance has been demonstrated.
 - Boundary:
   - Julia helper exists.
-  - R-side bridge still needs to use sparse slots instead of dense-guarded `Z`.
+  - Superseded by Phase 1M: R head `398e019` now consumes sparse `Z` slots
+    through this helper; relationship-object marshalling beyond `Z` remains
+    planned.
   - Production fitting, Mrode validation, and stable production controls remain
     planned.
 
@@ -115,8 +157,8 @@ Newest entries go at the top.
   - Generated docs artifacts were removed after the build.
   - `git diff --check` passed.
   - Claim scan found only planned/blocked wording, not public claims that
-    `hsquared()` fits through Julia, sparse marshalling is implemented, stable
-    user-facing engine controls exist, or Mrode validation is complete.
+    `hsquared()` fits through Julia, full sparse bridge marshalling is complete,
+    stable user-facing engine controls exist, or Mrode validation is complete.
 - Boundary:
   - Internal bridge smoke exists externally in the R twin.
   - Public R fitting remains planned.

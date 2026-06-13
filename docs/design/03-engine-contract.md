@@ -80,6 +80,21 @@ or relationship matrices are formed.
 It does not optimize variance components, compute EBVs, or return a fitted
 model.
 
+## Experimental Henderson MME Solver
+
+```julia
+mme = henderson_mme(spec, sigma_a2, sigma_e2)
+```
+
+This solves Henderson's mixed-model equations at supplied positive additive and
+residual variance components. It builds the equation system from sparse `X`,
+`Z`, and `Ainv` inputs and returns fixed effects plus animal-effect
+BLUPs/EBVs.
+
+This is not variance-component estimation, not AI-REML, and not Mrode/comparator
+validation. It is the first sparse equation-solve utility needed by the
+production animal-model path.
+
 ## Experimental Dense Optimizer
 
 ```julia
@@ -249,13 +264,16 @@ excluded from `result_payload()` until both twins widen the bridge result tests
 in lockstep. The expected future payload shape is `(ids = ..., values = ...)`
 for each field.
 
-The next bridge task is wiring the R twin to sparse CSC slot marshalling, not
-wider syntax. The Julia tests cover parent-index semantics, `ids` order, sparse
-`Z` dimensions, Julia-side `Ainv`, CSC slot reconstruction, and parity between
-spec dispatch and direct payload dispatch. The dense path now has a
-`max_dense_cells` guard aligned with the R engine-control vocabulary. The R twin
-has an opt-in experimental Julia engine path for tiny/local examples. A parallel
-future task is `hs_data()` to `HSData` marshalling parity.
+R head `398e019` records green CI evidence for sparse `Z` bridge marshalling
+through Julia `sparse_csc_matrix()`. The bridge now sends R
+`Matrix::dgCMatrix` slots for `Z` and no longer passes `max_dense_cells`.
+
+The next bridge tasks are relationship-object marshalling beyond `Z`, lockstep
+PEV/reliability payload widening, Mrode validation, and `hs_data()` to `HSData`
+marshalling parity. The Julia tests cover parent-index semantics, `ids` order,
+sparse `Z` dimensions, Julia-side `Ainv`, CSC slot reconstruction, parity
+between spec dispatch and direct payload dispatch, and supplied-variance
+Henderson MME solving.
 
 ## Input Payload
 

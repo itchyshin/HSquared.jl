@@ -29,10 +29,14 @@ pedigree/Ainv engine utility slice.
   dense spec path.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
+- Sparse Henderson mixed-model-equation solving exists at supplied variance
+  components.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R head `78ba5ff` adds future PEV/reliability bridge
   extractor contracts.
+- R head `398e019` records sparse `Z` bridge marshalling through Julia
+  `sparse_csc_matrix()`.
 - Production high-level formula fitting and production R bridge execution are
   not implemented.
 - Public model syntax is planned, not executable.
@@ -83,6 +87,7 @@ First real capability:
 - experimental dense EBV/BLUP, fitted-value, and heritability extractors;
 - experimental direct payload fitting target for the R parser's intended
   `y`, `X`, `Z`, `Ainv` handoff;
+- sparse Henderson MME solve at supplied variance components;
 - sparse production optimizer and AI-REML;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.
@@ -152,12 +157,12 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Wire the R twin to sparse CSC marshalling instead of dense-guarded `Z`.
+1. Add Mrode/simple comparator validation for the dense and sparse
+   supplied-variance paths.
 2. Decide with the R twin when PEV/reliability enter `result_payload()` and add
    lockstep bridge tests if they do.
 3. Add Julia-side `HSData` integration tests once the R bridge sends actual
    `hs_data()` payloads.
-4. Add Mrode/simple comparator validation for the dense low-level path.
-5. Replace dense covariance equations with sparse production computations.
+4. Replace dense covariance equations with sparse production computations.
+5. Add AI-REML or a documented sparse optimizer path.
 6. Keep `hsquared` issue #2 synchronized with this engine contract.
-7. Add Mrode/comparator validation before promoting animal-model fitting.

@@ -41,6 +41,7 @@ Implemented now:
   dense low-level spec path;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
+- sparse Henderson mixed-model-equation solve at supplied variance components;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
 - sparse CSC marshalling helper for R `Matrix::dgCMatrix` slots;
@@ -52,8 +53,8 @@ Implemented now:
 Planned, but not implemented yet:
 
 - sparse production optimization or AI-REML fitting;
-- R-side sparse marshalling, production engine controls, and validated
-  high-level public formula fitting;
+- relationship-object marshalling beyond sparse `Z`, production engine
+  controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
@@ -122,8 +123,19 @@ fit = fit_variance_components(spec)
 This is a low-level Julia validation path. It is not the production sparse
 animal-model engine, and the R twin's opt-in path remains experimental and
 tiny/local.
-Use `max_dense_cells` for tiny/local bridge tests where accidental dense
+Use `max_dense_cells` in direct Julia validation runs where accidental dense
 allocation needs to fail early.
+
+The first sparse equation solve is also available at supplied variance
+components:
+
+```julia
+mme = henderson_mme(spec, 1.0, 1.0)
+breeding_values(mme)
+```
+
+This solves Henderson's mixed-model equations for fixed effects and animal
+effects. It does not estimate variance components.
 
 The dense validation path also has first extractors:
 
