@@ -59,9 +59,9 @@ pedigree/Ainv engine utility slice.
   fitted values, and `h2`.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
-  head `9eabf0d`; R head `8235289` enriches that path with PEV/reliability
-  from exported Julia extractors when available while Julia keeps the compact
-  base `result_payload()` unchanged.
+  head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
+  bridge paths with PEV/reliability from exported Julia extractors when
+  available while Julia keeps the compact base `result_payload()` unchanged.
 - R head `00b9e33` adds an explicit opt-in supplied-variance
   `target = "henderson_mme"` bridge path. It returns supplied-variance MME
   outputs but deliberately omits log-likelihood, AIC, `df`, optimizer output,

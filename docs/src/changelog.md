@@ -60,6 +60,9 @@
   Julia `result_payload()` fields unchanged.
 - Recorded the R twin's tiny/local bridge enrichment of PEV/reliability from
   exported Julia extractors, still without widening base `result_payload()`.
+- Recorded the R twin's supplied-variance `target = "henderson_mme"`
+  enrichment from `prediction_error_variance(mme)` and `reliability(mme)`,
+  still without widening base `result_payload()`.
 - Recorded the R twin's opt-in supplied-variance Henderson MME bridge target,
   with explicit no-log-likelihood/no-variance-estimation boundary.
 - Recorded the R twin's sparse `Z` bridge marshalling handoff.

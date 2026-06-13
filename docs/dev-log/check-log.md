@@ -26,6 +26,29 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim scan found expected status and limitation wording only.
+- Remote checks for commit `55e91b8`:
+  - CI `27463043491`: success on Julia 1 and Julia 1.10.
+  - Documenter `27463043481`: success.
+  - Pages deploy `27463077970`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+  - Live quickstart page contains the Henderson MME and MME-backed
+    `breeding_values(fit)` wording.
+- R twin coordination:
+  - R head `d7e8914` records green CI evidence for supplied-variance
+    `target = "henderson_mme"` bridge enrichment from
+    `prediction_error_variance(mme)` and `reliability(mme)` when those Julia
+    methods are available.
+  - Reported R evidence: R-CMD-check `27463031064`, pkgdown `27463031056`,
+    and Pages `27463061893` success.
+- Evidence update checks:
+  - `julia --project=docs docs/make.jl` passed after recording remote and R
+    evidence. Local deployment was skipped as expected outside CI; Vitepress
+    dependency installation still reported npm advisories in transient build
+    artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected status and limitation wording only.
 - Boundary:
   - EBV/BLUP extraction is MME-backed.
   - Variance-component estimation is still the experimental dense path.

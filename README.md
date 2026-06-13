@@ -77,7 +77,8 @@ Implemented now:
   formula-to-bridge payload without fitting or Julia execution;
 - external opt-in tiny/local R bridge evidence from the `hsquared` twin over
   the current Julia payload path and `result_payload()`, with R-side
-  enrichment from Julia PEV/reliability extractors for tiny validation fits;
+  enrichment from Julia PEV/reliability extractors for tiny validation fits
+  and supplied-variance `target = "henderson_mme"` results when applicable;
 - external opt-in R bridge evidence for a supplied-variance
   `target = "henderson_mme"` path; this returns fixed effects, EBVs/BLUPs,
   fitted values, supplied variance components, simple `h2`, diagnostics, and

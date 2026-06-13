@@ -303,18 +303,21 @@ returns the supplied values and `heritability(mme)` computes the simple
 univariate ratio from those supplied values. These fields are not included in
 the base `result_payload(fit)` contract.
 
-As of R head `8235289`, the R twin may enrich the opt-in tiny/local Julia bridge
-result by calling exported Julia extractors:
+As of R heads `8235289` and `d7e8914`, the R twin may enrich opt-in tiny/local
+Julia bridge results by calling exported Julia extractors:
 
 ```julia
 prediction_error_variance(fit)
 reliability(fit)
+prediction_error_variance(mme)
+reliability(mme)
 ```
 
 and merging `(ids = ..., values = ...)` fields on the R side when those
-functions are available. This preserves the compact base `result_payload()`
-contract. It is bridge validation for tiny dense fits, not production sparse
-PEV or production sparse reliability.
+functions are available and applicable. This preserves the compact base
+`result_payload()` contract. It is bridge validation for tiny dense fits and
+supplied-variance MME results, not production sparse PEV or production sparse
+reliability.
 
 ## R Result Payload Contract
 
@@ -428,6 +431,13 @@ exported Julia extractors when available and merging `(ids = ..., values = ...)`
 fields on the R side. Julia deliberately keeps `result_payload()` compact.
 Future changes to required base payload fields still need lockstep R and Julia
 tests.
+
+R head `d7e8914` extends the same opportunistic enrichment to the explicit
+supplied-variance `target = "henderson_mme"` bridge path when
+`prediction_error_variance(mme)` and `reliability(mme)` are applicable. That
+target still has no log-likelihood, AIC, `df`, optimizer output,
+variance-component estimation, AI-REML, fitted Mrode output validation, or
+production sparse PEV/reliability claim.
 
 R head `398e019` records green CI evidence for sparse `Z` bridge marshalling
 through Julia `sparse_csc_matrix()`. The bridge now sends R

@@ -66,6 +66,38 @@ Rose verdict before checks: clean with limitations.
 - Additions-only ASCII scan: no matches.
 - Claim scan: expected status/limitation hits only.
 
+Remote evidence for implementation commit `55e91b8`:
+
+- CI `27463043491`: passed on Julia 1 and Julia 1.10.
+- Documenter `27463043481`: passed.
+- Pages deploy `27463077970`: passed.
+- Live quickstart page contains the Henderson MME and MME-backed
+  `breeding_values(fit)` wording.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+R twin coordination received during closeout:
+
+- R head `d7e8914` records green CI evidence for supplied-variance
+  `target = "henderson_mme"` bridge enrichment from
+  `prediction_error_variance(mme)` and `reliability(mme)` when those Julia
+  methods are available.
+- Reported R evidence: R-CMD-check `27463031064`, pkgdown `27463031056`, and
+  Pages `27463061893` success.
+- Boundary remains validation-scale only: no variance-component estimation,
+  AI-REML, log-likelihood/AIC/df for this target, fitted Mrode output
+  validation, or production sparse PEV/reliability claim.
+
+Evidence-update checks:
+
+- `julia --project=docs docs/make.jl`: passed after recording remote and R
+  evidence. Local deployment was skipped as expected outside CI; generated
+  Vitepress dependency installation still reported npm advisories in transient
+  build artifacts.
+- `git diff --check`: passed.
+- Additions-only ASCII scan: no matches.
+- Claim-boundary scan: expected status/limitation hits only.
+
 ## Known Limitations
 
 - Variance components still come from the experimental dense validation fit
@@ -76,7 +108,7 @@ Rose verdict before checks: clean with limitations.
 
 ## Next Actions
 
-1. Commit and push.
-2. Watch CI, Documenter, and Pages.
+1. Record this evidence commit.
+2. Watch CI, Documenter, and Pages for the evidence commit.
 3. Continue toward Mrode fitted-output validation and sparse production
    optimization as separate evidence-gated slices.
