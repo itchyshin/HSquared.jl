@@ -116,6 +116,11 @@
 - Added `genetic_correlation()` — converts a covariance matrix (e.g. `G0`, `R0`)
   to the corresponding correlation matrix; also extracts the genetic correlation
   from a `multivariate_mme` result.
+- Extended `multivariate_mme()` to **unbalanced / missing-trait records**: a
+  `missing` or `NaN` entry in `Y` marks an unobserved trait, handled via the
+  per-individual residual precision `inv(R0[Sᵢ, Sᵢ])`; balanced data reduces to
+  the previous fast path. Validated against an independent loop-built MME and a
+  marginal-GLS BLUP with per-individual residual blocks.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

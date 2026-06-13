@@ -179,7 +179,8 @@ end
     @test mv_row.phase == "Phase 4"
     @test mv_row.status == "partial"
     @test occursin("multivariate_mme", mv_row.evidence)
-    @test occursin("BALANCED", mv_row.claim_boundary)
+    @test occursin("missing-trait records", mv_row.evidence)
+    @test occursin("does not estimate G0/R0", mv_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -2089,4 +2090,71 @@ end
     @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0[1:1, 1:1], R0)        # wrong t
     @test_throws ArgumentError multivariate_mme(Y, X, Z[:, 1:3], Ainv, G0, R0)          # Z/Ainv mismatch
     @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = [1, 2, 3]) # ids length
+end
+
+@testset "Phase 4 multivariate missing-trait records (unbalanced)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    q = 4; n = q; t = 2; p = 1
+    Z = Matrix(1.0I, n, q); X = ones(n, 1)
+    G0 = [1.0 0.4; 0.4 1.5]; R0 = [2.0 0.3; 0.3 1.0]
+    Yb = [10.0 50.0; 12.0 47.0; 9.0 53.0; 11.0 49.0]
+    Ymiss = [10.0 50.0; 12.0 NaN; NaN 53.0; 11.0 49.0]   # animal 2 missing t2, animal 3 missing t1
+
+    # balanced data is unchanged by the missing-aware path (no missing → fast path)
+    @test multivariate_mme(Yb, X, Z, Ainv, G0, R0).breeding_values.values ==
+          multivariate_mme(Yb, X, Z, Ainv, G0, R0).breeding_values.values
+
+    rm = multivariate_mme(Ymiss, X, Z, Ainv, G0, R0)
+    @test size(rm.breeding_values.values) == (q, t)   # EBVs for every animal × trait still returned
+
+    # Reference 1: loop-built MME over observed (i,k) rows, per-individual residual block
+    invG0 = inv(G0)
+    present = [!isnan(Ymiss[i, k]) for i in 1:n, k in 1:t]
+    rows = [(i, k) for i in 1:n for k in 1:t if present[i, k]]
+    N = length(rows)
+    Xbig = zeros(N, p * t); Zbig = zeros(N, q * t); ybig = zeros(N)
+    for (rIdx, (i, k)) in enumerate(rows)
+        ybig[rIdx] = Ymiss[i, k]
+        for j in 1:p; Xbig[rIdx, (j - 1) * t + k] = X[i, j]; end
+        for a in 1:q; Zbig[rIdx, (a - 1) * t + k] = Z[i, a]; end
+    end
+    Rinvbig = zeros(N, N); rowstart = 0
+    for i in 1:n
+        Si = findall(present[i, :]); isempty(Si) && continue
+        m = length(Si)
+        Rinvbig[rowstart + 1:rowstart + m, rowstart + 1:rowstart + m] = inv(R0[Si, Si])
+        rowstart += m
+    end
+    Ginvbig = zeros(q * t, q * t)
+    for a in 1:q, b in 1:q, k in 1:t, l in 1:t
+        Ginvbig[(a - 1) * t + k, (b - 1) * t + l] = Matrix(Ainv)[a, b] * invG0[k, l]
+    end
+    LHS = [transpose(Xbig) * Rinvbig * Xbig  transpose(Xbig) * Rinvbig * Zbig;
+           transpose(Zbig) * Rinvbig * Xbig  transpose(Zbig) * Rinvbig * Zbig + Ginvbig]
+    sol = LHS \ vcat(transpose(Xbig) * Rinvbig * ybig, transpose(Zbig) * Rinvbig * ybig)
+    @test rm.beta ≈ permutedims(reshape(sol[1:p * t], t, p)) atol = 1e-9
+    @test rm.breeding_values.values ≈ permutedims(reshape(sol[p * t + 1:end], t, q)) atol = 1e-9
+
+    # Reference 2: marginal-GLS with block-diagonal residual V over observed rows
+    AkG = kron(A, G0); Rblk = zeros(N, N); rowstart = 0
+    for i in 1:n
+        Si = findall(present[i, :]); isempty(Si) && continue
+        m = length(Si)
+        Rblk[rowstart + 1:rowstart + m, rowstart + 1:rowstart + m] = R0[Si, Si]
+        rowstart += m
+    end
+    V = Zbig * AkG * transpose(Zbig) + Rblk; Vi = inv(V)
+    beta_gls = (transpose(Xbig) * Vi * Xbig) \ (transpose(Xbig) * Vi * ybig)
+    u_gls = AkG * transpose(Zbig) * Vi * (ybig - Xbig * beta_gls)
+    @test rm.beta ≈ permutedims(reshape(beta_gls, t, p)) atol = 1e-9
+    @test rm.breeding_values.values ≈ permutedims(reshape(u_gls, t, q)) atol = 1e-9
+
+    # `missing` entries are equivalent to `NaN`
+    Ymiss2 = Union{Missing,Float64}[10.0 50.0; 12.0 missing; missing 53.0; 11.0 49.0]
+    @test multivariate_mme(Ymiss2, X, Z, Ainv, G0, R0).breeding_values.values ≈
+          rm.breeding_values.values atol = 1e-12
+
+    # an all-missing Y is rejected
+    @test_throws ArgumentError multivariate_mme(fill(NaN, n, t), X, Z, Ainv, G0, R0)
 end

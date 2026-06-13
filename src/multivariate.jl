@@ -46,6 +46,10 @@ function _check_covariance(M, name, t)
     return Ms
 end
 
+# A trait record is "missing" if it is `missing` or a NaN float; everything else
+# (including integers) is an observed value.
+_is_present(x) = !(ismissing(x) || (x isa AbstractFloat && isnan(x)))
+
 # Dense marginal-GLS reference for the balanced multivariate animal model
 # (records ordered individual-major, trait fastest):
 #   V = Z_full·(A ⊗ G0)·Z_full' + (I_n ⊗ R0),  A = Ainv⁻¹.
@@ -65,29 +69,36 @@ end
 """
     multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = nothing, traits = nothing)
 
-Supplied-(co)variance Henderson solve of the **balanced multi-trait** Gaussian
-animal model. For `t` traits, `n` records, and `q` related animals:
+Supplied-(co)variance Henderson solve of the **multi-trait** Gaussian animal
+model. For `t` traits, `n` records, and `q` related animals:
 
     Y[i, :] = (X·B)[i, :] + (Z·U)[i, :] + E[i, :],
-    vec(Uᵀ) ~ N(0, A ⊗ G0),   vec(Eᵀ) ~ N(0, I_n ⊗ R0),
+    vec(Uᵀ) ~ N(0, A ⊗ G0),   E[i, S_i] ~ N(0, R0[S_i, S_i]),
 
 where `Y` is `n×t`, the shared fixed-effect design `X` is `n×p`, the shared
 record→animal incidence `Z` is `n×q`, `Ainv = A⁻¹` is the `q×q` relationship
 inverse, `G0` is the `t×t` additive genetic covariance, and `R0` is the `t×t`
 residual covariance. Records are ordered individual-major with trait fastest, so
 the mixed-model equations carry the genetic precision `Ainv ⊗ G0⁻¹` on the random
-block and the residual precision `I_n ⊗ R0⁻¹` throughout:
+block and the residual precision `R⁻¹` (block-diagonal over individuals) on the
+data:
 
-    [ X'(I⊗R0⁻¹)X    X'(I⊗R0⁻¹)Z              ] [vec(Bᵀ)]   [ X'(I⊗R0⁻¹)·vec(Yᵀ) ]
-    [ Z'(I⊗R0⁻¹)X    Z'(I⊗R0⁻¹)Z + Ainv⊗G0⁻¹ ] [vec(Uᵀ)] = [ Z'(I⊗R0⁻¹)·vec(Yᵀ) ]
+    [ X'R⁻¹X    X'R⁻¹Z              ] [vec(Bᵀ)]   [ X'R⁻¹·y ]
+    [ Z'R⁻¹X    Z'R⁻¹Z + Ainv⊗G0⁻¹ ] [vec(Uᵀ)] = [ Z'R⁻¹·y ]
 
-This is the first Phase-4 (multivariate Gaussian) engine slice: a supplied-variance
-MME solve that does **not** estimate `G0` / `R0`, the multi-trait analogue of
-[`henderson_mme`](@ref). It assumes **balanced** data (every individual measured on
-every trait) and a fixed-effect / incidence design shared across traits; unbalanced
-/ missing-trait records, per-trait designs, and covariance-matrix estimation are not
-covered. Experimental, dense/validation-scale, engine-internal — there is no R-facing
-multivariate model-spec yet.
+**Unbalanced / missing-trait records** are supported: an entry of `Y` that is
+`missing` or `NaN` marks an unobserved trait for that record. Such observations
+are dropped from the data and individual `i`'s residual precision uses only the
+observed-trait submatrix `inv(R0[S_i, S_i])` (where `S_i` is its observed-trait
+set). With every trait observed this reduces to the balanced model with residual
+precision `I_n ⊗ R0⁻¹`.
+
+This is the Phase-4 (multivariate Gaussian) supplied-variance engine slice: an
+MME solve that does **not** estimate `G0` / `R0` (covariance-matrix estimation is
+a separate REML slice), the multi-trait analogue of [`henderson_mme`](@ref). It
+assumes a fixed-effect / incidence design shared across traits; per-trait designs
+are not covered. Experimental, dense/validation-scale, engine-internal — there is
+no R-facing multivariate model-spec yet.
 
 Returns a `NamedTuple`:
 
@@ -124,13 +135,43 @@ function multivariate_mme(
     length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
 
     p = size(X, 2)
+    # observed-record mask (handles unbalanced / missing-trait records).
+    Ym = Matrix(Y)
+    present = falses(n, t)
+    @inbounds for i in 1:n, k in 1:t
+        present[i, k] = _is_present(Ym[i, k])
+    end
+    any(present) || throw(ArgumentError("Y has no observed (non-missing) entries"))
+    Yfull = zeros(Float64, n, t)
+    @inbounds for i in 1:n, k in 1:t
+        present[i, k] && (Yfull[i, k] = Float64(Ym[i, k]))
+    end
+
     It = sparse(1.0I, t, t)
     # individual-major (trait fastest) vectorization: vec of the transpose.
-    yvec = vec(permutedims(Float64.(Matrix(Y))))
     Xfull = kron(sparse(Float64.(Matrix(X))), It)
     Zfull = kron(sparse(Float64.(Matrix(Z))), It)
-    Rinv = kron(sparse(1.0I, n, n), sparse(inv(R0s)))
+    yvec = vec(permutedims(Yfull))
     Ginv_block = kron(sparse(Float64.(Matrix(Ainv))), sparse(inv(G0s)))
+
+    if all(present)
+        # balanced: a single Kronecker residual precision I_n ⊗ R0⁻¹.
+        Rinv = kron(sparse(1.0I, n, n), sparse(inv(R0s)))
+    else
+        # unbalanced: keep observed rows; residual precision is block-diagonal
+        # over individuals with individual i's block inv(R0[S_i, S_i]).
+        maskvec = vec(permutedims(present))
+        Xfull = Xfull[maskvec, :]
+        Zfull = Zfull[maskvec, :]
+        yvec = yvec[maskvec]
+        blocks = SparseMatrixCSC{Float64,Int}[]
+        for i in 1:n
+            Si = findall(@view present[i, :])
+            isempty(Si) && continue
+            push!(blocks, sparse(inv(R0s[Si, Si])))
+        end
+        Rinv = blockdiag(blocks...)
+    end
 
     Xt = transpose(Xfull)
     Zt = transpose(Zfull)

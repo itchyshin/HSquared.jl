@@ -220,9 +220,9 @@ const VALIDATION_STATUS_DATA = (
         "multivariate (multi-trait) animal model (supplied covariance)",
         "Phase 4",
         "partial",
-        "`multivariate_mme` solves the balanced multi-trait animal model at supplied genetic/residual covariance matrices `G0`, `R0` (Kronecker MME: genetic precision `Ainv⊗G0⁻¹`, residual precision `I⊗R0⁻¹`); its β and EBVs match an independent loop-built multivariate MME, an independent marginal-GLS BLUP, the standard univariate animal model in the `t=1` reduction, and t independent single-trait fits when `G0`, `R0` are diagonal — all to a committed 1e-10 tolerance (observed agreement is machine precision, ~1e-14), in `test/runtests.jl`. `genetic_correlation` is hand-checked.",
-        "unbalanced / missing-trait records, per-trait fixed-effect and incidence designs, covariance-matrix estimation (multivariate REML/EM), a published Mrode multi-trait fixture, and JWAS/sommer/ASReml-style external comparators",
-        "Supplied-covariance, BALANCED data with a design shared across traits only; no G0/R0 estimation, no missing-record handling, no R-facing multivariate model-spec.",
+        "`multivariate_mme` solves the multi-trait animal model at supplied genetic/residual covariance matrices `G0`, `R0` (Kronecker MME: genetic precision `Ainv⊗G0⁻¹`, residual precision block-diagonal over individuals); its β and EBVs match an independent loop-built multivariate MME, an independent marginal-GLS BLUP, the standard univariate animal model in the `t=1` reduction, and t independent single-trait fits when `G0`, `R0` are diagonal — all to a committed 1e-10 tolerance (observed agreement is machine precision, ~1e-14), in `test/runtests.jl`. Unbalanced / missing-trait records (`missing`/`NaN` in `Y`) are handled via per-individual residual precision `inv(R0[S_i,S_i])`, validated against an independent loop-built MME and marginal-GLS BLUP on a missing-data fixture (committed 1e-9, observed ~1e-13), reducing to the balanced path when no records are missing. `genetic_correlation` is hand-checked.",
+        "per-trait fixed-effect and incidence designs, covariance-matrix estimation (multivariate REML/EM), a published Mrode multi-trait fixture, and JWAS/sommer/ASReml-style external comparators",
+        "Supplied-covariance with a design shared across traits; handles missing-trait records, but does not estimate G0/R0 and has no R-facing multivariate model-spec.",
     ),
     (
         "V5-GENOMIC-QTL",

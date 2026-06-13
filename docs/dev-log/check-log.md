@@ -2,6 +2,32 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Multivariate missing-trait records (Phase 4, unbalanced)
+
+- Goal: extend `multivariate_mme` to unbalanced / missing-trait records — the
+  realistic multi-trait case — at supplied covariance.
+- Active lenses: Henderson, Kirkpatrick, Mrode, Gauss, Curie, Rose (inline).
+- Implementation (`src/multivariate.jl`):
+  - `multivariate_mme` now detects `missing`/`NaN` entries in `Y` (helper
+    `_is_present`). Observed rows are kept; the residual precision becomes
+    block-diagonal over individuals with individual `i`'s block `inv(R0[Sᵢ,Sᵢ])`
+    (`Sᵢ` = observed-trait set). All-present `Y` keeps the fast Kronecker path
+    (balanced output unchanged); an all-missing `Y` errors.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed. New
+    testset "Phase 4 multivariate missing-trait records (unbalanced)": balanced
+    output unchanged; β/EBVs on a missing fixture match an independent loop-built
+    MME and a marginal-GLS BLUP with per-individual residual blocks (committed
+    1e-9, observed ~1e-13); `missing` ≡ `NaN`; all-missing guard.
+  - `julia --project=docs docs/make.jl`: green (new "Missing / unbalanced
+    records" docs section with a runnable example).
+- Status surfaces (lockstep): `validation_status.jl` `V4-MULTIVARIATE` evidence +
+  boundary updated (missing handled; "BALANCED" dropped); `capability-status.md`
+  and `validation-debt-register.md` `V4-MV` updated; `changelog.md`; this report.
+- Boundary: still supplied-covariance (no `G0`/`R0` estimation), shared design
+  across traits, no long-format interface, no Mrode fixture / external comparator,
+  no R-facing multivariate model-spec.
+
 ## 2026-06-13 Multivariate animal model (Phase 4 start, supplied covariance)
 
 - Goal: first Phase-4 engine slice — a supplied-(co)variance multivariate

@@ -54,6 +54,22 @@ correlation matrices are derived:
 round.(genetic_correlation(G0); digits = 4)
 ```
 
+## Unbalanced / missing-trait records
+
+Most multi-trait analyses are unbalanced — some animals are not measured on every
+trait. Mark an unobserved trait with `missing` or `NaN` in `Y`. That observation
+is dropped, and the animal's residual precision uses only its observed-trait
+submatrix `inv(R0[Sᵢ, Sᵢ])`. Breeding values are still returned for every animal
+and trait (the missing traits borrow information through `G0`):
+
+```@example mv
+Ymiss = [10.0 50.0; 12.0 NaN; NaN 53.0; 11.0 49.0]   # animal 2 missing trait2, animal 3 missing trait1
+fitm = multivariate_mme(Ymiss, X, Z, Ainv, G0, R0)
+round.(fitm.breeding_values.values; digits = 4)
+```
+
+With every trait observed this reduces exactly to the balanced solve above.
+
 ## Validation boundary
 
 Covered now (self-consistent, comparator-free):
@@ -61,15 +77,17 @@ Covered now (self-consistent, comparator-free):
 - `multivariate_mme` β and EBVs match an independent **loop-built** multivariate
   MME and an independent **marginal-GLS** BLUP;
 - it reduces to the univariate animal model when `t = 1`;
-- with diagonal `G0`, `R0` it decouples into `t` independent single-trait fits.
+- with diagonal `G0`, `R0` it decouples into `t` independent single-trait fits;
+- **unbalanced / missing-trait records** are validated the same way (loop-built
+  MME + marginal-GLS with per-individual residual blocks), and reduce to the
+  balanced solve when nothing is missing.
 
-All four checks hold to a committed `1e-10` tolerance (the observed agreement is
-machine precision).
+The balanced checks hold to a committed `1e-10` tolerance and the missing-data
+checks to `1e-9` (the observed agreement is machine precision).
 
 Still planned / coordinated:
 
-- **unbalanced / missing-trait records** and a long-format interface (the usual
-  reason to fit multi-trait models);
+- a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
 - multivariate covariance-matrix **estimation** (REML / EM for `G0`, `R0`);
 - a published Mrode multi-trait fixture and external-comparator parity (sommer /
