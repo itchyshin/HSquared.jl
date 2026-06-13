@@ -67,7 +67,26 @@ No Julia code changed.
   unsupported claims that `model_spec()` fits models, executes Julia, or
   expands grammar.
 
-Remote checks: pending.
+Remote checks for commit `f4ab8af`:
+
+- CI `27460048735`: success;
+- Documenter `27460048734`: success;
+- Pages deploy `27460080421`: success.
+
+Live docs:
+
+- model-spec grammar page
+  `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`: HTTP 200
+  and contains `model_spec()` plus `previews the same v0.1 formula-to-bridge
+  contract`;
+- quickstart `https://itchyshin.github.io/HSquared.jl/dev/quickstart`: HTTP
+  200 and contains `model_spec()` plus `without executing Julia`;
+- roadmap `https://itchyshin.github.io/HSquared.jl/dev/roadmap`: HTTP 200 and
+  contains `model_spec`, `preview evidence`, `bacef9c`, and `without fitting
+  or Julia execution`.
+
+GitHub Actions emitted Node 20 deprecation annotations from upstream actions,
+but all jobs completed successfully.
 
 ## Public Claim Audit
 
