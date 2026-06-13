@@ -3,27 +3,7 @@ using LinearAlgebra
 using SparseArrays
 using Test
 
-function _dense_relationship_for_test(pedigree)
-    n = length(pedigree)
-    A = zeros(Float64, n, n)
-
-    for i in 1:n
-        sire = pedigree.sire[i]
-        dam = pedigree.dam[i]
-
-        for j in 1:(i - 1)
-            value = 0.0
-            sire == 0 || (value += 0.5 * A[sire, j])
-            dam == 0 || (value += 0.5 * A[dam, j])
-            A[i, j] = value
-            A[j, i] = value
-        end
-
-        A[i, i] = sire != 0 && dam != 0 ? 1.0 + 0.5 * A[sire, dam] : 1.0
-    end
-
-    return A
-end
+# dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
 function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     yv = Float64.(y)
@@ -163,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 15
+    @test length(validation) == 25
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -265,7 +245,7 @@ end
         ["0", "0", "founder_a", "founder_a"],
         ["0", "0", "founder_b", "parent"],
     ) ≈ [0.0, 0.0, 0.0, 0.25]
-    @test Matrix(pedigree_inverse(inbred)) ≈ inv(_dense_relationship_for_test(inbred))
+    @test Matrix(pedigree_inverse(inbred)) ≈ inv(HSquared._numerator_relationship(inbred))
 
     @test_throws ArgumentError normalize_pedigree(["a", "a"], ["0", "0"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a"], ["b"], ["0"])
@@ -1314,7 +1294,7 @@ end
 
     @test ped.ids == ids
     @test isapprox(Matrix(Ainv), expected_ainv)
-    @test isapprox(Matrix(Ainv), inv(Symmetric(_dense_relationship_for_test(ped))))
+    @test isapprox(Matrix(Ainv), inv(Symmetric(HSquared._numerator_relationship(ped))))
 
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
     ml_likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
@@ -1548,4 +1528,465 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(M; allele_frequencies = [0.5, 0.5])
     @test_throws ArgumentError genomic_relationship_matrix([3.0 1.0; 0.0 2.0])
     @test_throws ArgumentError genomic_relationship_matrix(zeros(2, 2))
+end
+
+@testset "Phase 2 regularized genomic inverse (Ginv)" begin
+    # full-rank symmetric PD matrix: ridge = 0 returns the plain inverse
+    Gpd = [2.0 0.5; 0.5 2.0]
+    Ginv0 = genomic_relationship_inverse(Gpd; ridge = 0.0)
+    @test Ginv0 ≈ [2.0 -0.5; -0.5 2.0] ./ 3.75   # hand inverse, det = 2·2 − 0.5² = 3.75
+    @test Ginv0 ≈ transpose(Ginv0)               # symmetric
+    @test Gpd * Ginv0 ≈ I(2)                      # defining identity
+
+    # the ridge is added to the diagonal before inversion
+    Ginvr = genomic_relationship_inverse(Gpd; ridge = 0.01)
+    @test (Gpd + 0.01I) * Ginvr ≈ I(2)
+    @test !(Ginvr ≈ Ginv0)                        # ridge changed the result
+
+    # a singular matrix needs the ridge: ridge = 0 throws
+    @test_throws ArgumentError genomic_relationship_inverse([1.0 1.0; 1.0 1.0]; ridge = 0.0)
+
+    # round-trip: a rank-deficient marker G (m < n) inverts with the default ridge
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 markers
+    G = genomic_relationship_matrix(M)
+    Gi = genomic_relationship_inverse(G)
+    @test (G + 0.01I) * Gi ≈ I(4)
+    @test Gi ≈ transpose(Gi)
+
+    # guards
+    @test_throws ArgumentError genomic_relationship_inverse([1.0 2.0 3.0; 4 5 6])  # non-square
+    @test_throws ArgumentError genomic_relationship_inverse(Gpd; ridge = -1.0)     # negative ridge
+end
+
+@testset "Phase 2 GBLUP supplied-variance solve" begin
+    # GBLUP = animal model with a genomic relationship inverse in the Ainv slot.
+    y = [10.0, 12.0, 11.0]
+    X = reshape(ones(3), 3, 1)
+    Z = Matrix{Float64}(I, 3, 3)
+    G = [1.00 0.25 0.10; 0.25 1.00 0.30; 0.10 0.30 1.00]   # symmetric PD: ridge = 0 ok
+    @test isposdef(Symmetric(G))
+    Ginv = inv(Symmetric(G))
+    sigma_a2 = 2.0; sigma_e2 = 1.0
+    res = fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2)
+
+    # pinned hand-reproducible values
+    @test fixed_effects(res) ≈ [10.944869831546713] atol = 1e-8
+    @test breeding_values(res).values ≈
+          [-0.5620214395099584, 0.6314446145992807, 0.09596733027054087] atol = 1e-8
+
+    # invariant 1: independent dense MME assembly agrees (assembled here, not via src)
+    C = [transpose(X) * X / sigma_e2  transpose(X) * Z / sigma_e2
+         transpose(Z) * X / sigma_e2  transpose(Z) * Z / sigma_e2 + Ginv / sigma_a2]
+    rhs = [transpose(X) * y / sigma_e2; transpose(Z) * y / sigma_e2]
+    sol = C \ rhs
+    @test maximum(abs.(sol[1:1] .- fixed_effects(res))) < 1e-10
+    @test maximum(abs.(sol[2:end] .- breeding_values(res).values)) < 1e-10
+
+    # invariant 2: with G = A, GBLUP reproduces pedigree BLUP exactly
+    Ainv = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    ped_ebv = breeding_values(henderson_mme(animal_model_spec(y, X, Z, Ainv), 2.0, 1.0)).values
+    A = inv(Symmetric(Matrix(Ainv)))
+    gen_ebv = breeding_values(fit_gblup(y, X, Z, inv(Symmetric(A)), 2.0, 1.0)).values
+    @test ped_ebv ≈ [-2.0 / 3, 2.0 / 3, 0.0] atol = 1e-8
+    @test maximum(abs.(gen_ebv .- ped_ebv)) < 1e-10
+
+    # invariant 3: solution depends only on lambda = sigma_e2/sigma_a2
+    @test breeding_values(fit_gblup(y, X, Z, Ginv, 4.0, 2.0)).values ≈
+          breeding_values(res).values atol = 1e-10
+
+    # guards / finiteness
+    @test isfinite(only(fixed_effects(res)))
+    @test all(isfinite, breeding_values(res).values)
+    @test_throws ArgumentError fit_gblup(y, X, Z, Ginv, -1.0, 1.0)
+end
+
+@testset "Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2]   # 4 individuals x 3 markers (n > m)
+    X = ones(4, 1); y = [10.0, 12.0, 11.0, 9.0]
+    sigma_e2 = 1.0; sigma_g2 = 2.0
+
+    cm = centered_markers(M)
+    @test cm.p ≈ [0.375, 0.625, 0.625] atol = 1e-12
+    @test cm.k ≈ 1.40625 atol = 1e-12
+    @test all(abs.(vec(sum(cm.W, dims = 1))) .< 1e-12)             # columns centered
+    @test genomic_relationship_matrix(M) ≈ (cm.W * transpose(cm.W)) ./ cm.k
+
+    fit = fit_snp_blup(y, X, M, sigma_g2, sigma_e2)
+    @test fit.beta ≈ [10.5] atol = 1e-8
+    @test fit.marker_effects ≈
+          [0.5020889425308699, -0.5139727044842634, -0.50208894253087] atol = 1e-8
+    @test fit.gebv ≈
+          [-0.6246402376752391, 1.3837155324482406, 0.37953764738650075, -1.1386129421595024] atol = 1e-8
+    @test (X * fit.beta .+ fit.gebv) ≈
+          [9.875359762324761, 11.88371553244824, 10.8795376473865, 9.361387057840497] atol = 1e-8
+    @test haskey(fit, :marker_effects) && haskey(fit, :gebv)       # relabeled (not breeding_values/EBV)
+
+    # GBLUP<->SNP-BLUP equivalence: route GBLUP through the marginal V (never invert singular G)
+    function gblup_via_marginal(Mk, X, y, sg2, se2)
+        G = genomic_relationship_matrix(Mk)
+        V = sg2 .* G + se2 * I
+        beta = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+        u = sg2 .* G * (V \ (y .- X * beta))
+        return beta, u
+    end
+    bg, ug = gblup_via_marginal(M, X, y, sigma_g2, sigma_e2)
+    @test maximum(abs.(ug .- fit.gebv)) < 1e-10                    # observed ~5e-17
+    @test maximum(abs.(bg .- fit.beta)) < 1e-10
+
+    # second regime: markers > records (n < m)
+    M2 = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]    # 4 x 6
+    fit2 = fit_snp_blup(y, X, M2, sigma_g2, sigma_e2)
+    bg2, ug2 = gblup_via_marginal(M2, X, y, sigma_g2, sigma_e2)
+    @test maximum(abs.(ug2 .- fit2.gebv)) < 1e-10
+    @test maximum(abs.(bg2 .- fit2.beta)) < 1e-10
+
+    # guards
+    @test_throws ArgumentError fit_snp_blup(y, X, M, -1.0, 1.0)    # sigma_g2 <= 0
+    @test_throws ArgumentError centered_markers(fill(2.0, 4, 3))   # monomorphic (k = 0)
+end
+
+@testset "Phase 2 dense NRM helper" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]   # 5=(3x4), full-sib parents
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    @test A ≈ [1.0 0.0 0.5  0.5  0.5;
+               0.0 1.0 0.5  0.5  0.5;
+               0.5 0.5 1.0  0.5  0.75;
+               0.5 0.5 0.5  1.0  0.75;
+               0.5 0.5 0.75 0.75 1.25] atol = 1e-12
+    @test issymmetric(A)
+    # cross-check against the independent sparse-inverse route
+    @test A ≈ inv(Symmetric(Matrix(pedigree_inverse(ids, sire, dam)))) atol = 1e-8
+    # inbreeding extractor against the hand value: only animal 5 (full-sib parents) is inbred
+    @test inbreeding_coefficients(ids, sire, dam) ≈ [0.0, 0.0, 0.0, 0.0, 0.25] atol = 1e-12
+    # submatrix method (A22 for single-step) equals the indexed block
+    g = [3, 4, 5]
+    A22 = HSquared._numerator_relationship(ped, g)
+    @test A22 ≈ A[g, g] atol = 1e-12
+    @test A22 ≈ [1.0 0.5 0.75; 0.5 1.0 0.75; 0.75 0.75 1.25] atol = 1e-12
+    # cache guard still fires (now from the shared helper)
+    @test_throws ArgumentError HSquared._numerator_relationship(ped; max_relationship_cache = 2)
+end
+
+@testset "Phase 2 genomic reliability / PEV / accuracy semantics" begin
+    M = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]   # 4 x 6
+    y = [10.0, 12.0, 11.0, 9.0]; X = ones(4, 1); Z = Matrix{Float64}(I, 4, 4)
+    sigma_a2 = 1.5; sigma_e2 = 1.0; ridge = 0.05
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = ridge)
+    res = fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2)
+
+    rel = reliability(res); pev = prediction_error_variance(res)
+    A_implied = inv(Symmetric(Matrix(Ginv)))                  # = G + ridge*I
+
+    # independent PEV: re-assemble the MME, invert, take the random-block diagonal
+    nf = size(X, 2)
+    C = [transpose(X) * X / sigma_e2  transpose(X) * Z / sigma_e2
+         transpose(Z) * X / sigma_e2  transpose(Z) * Z / sigma_e2 + Ginv / sigma_a2]
+    pev_indep = diag(inv(Symmetric(C)))[(nf + 1):end]
+    @test pev.values ≈ pev_indep atol = 1e-8                  # PEV independently anchored
+
+    # reliability uses the regularized genomic self-relationship diag(inv(Ginv)) =
+    # diag(G) + ridge as the denominator (NOT the pedigree diag(A) = 1); rebuild it from
+    # the independent PEV so a wrong denominator in reliability() would FAIL this test
+    @test diag(A_implied) ≈ diag(G) .+ ridge atol = 1e-10
+    rel_indep = 1 .- pev_indep ./ (sigma_a2 .* diag(A_implied))
+    @test rel.values ≈ rel_indep atol = 1e-8
+    @test all(0 .<= rel.values .<= 1)
+    @test any(abs.(diag(A_implied) .- 1) .> 1e-6)            # genomic self-relationships ≠ 1
+
+    # accuracy = sqrt(reliability), checked against the INDEPENDENT reliability
+    @test accuracy(res).values ≈ sqrt.(rel_indep) atol = 1e-8
+
+    # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
+    @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
+end
+
+@testset "Phase 2 single-step H-inverse construction" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ids, sire, dam))
+    g = [3, 4, 5]
+
+    # the critical distinction: A22^-1 = inv(A[g,g]) is NOT the submatrix (A^-1)[g,g]
+    A22inv = inv(Symmetric(A[g, g]))
+    @test A22inv[1, 1] ≈ 11 / 6 atol = 1e-10
+    @test Ainv[g, g][1, 1] ≈ 2.5 atol = 1e-10
+    @test !isapprox(A22inv[1, 1], Ainv[g, g][1, 1]; atol = 1e-6)
+
+    # reduction: G = A22  =>  H^-1 = A^-1 exactly
+    Hred = HSquared._single_step_Hinv(Ainv, A, A[g, g], g)
+    @test maximum(abs.(Hred .- Ainv)) < 1e-10
+
+    # locality: only the (g,g) block changes for a generic G
+    Gtest = A[g, g] + 0.1 * I
+    H2 = HSquared._single_step_Hinv(Ainv, A, Gtest, g)
+    nong = setdiff(1:5, g)
+    @test maximum(abs.(H2[nong, :] .- Ainv[nong, :])) < 1e-12
+    @test maximum(abs.(H2[:, nong] .- Ainv[:, nong])) < 1e-12
+    @test maximum(abs.(H2 .- transpose(H2))) < 1e-12              # symmetry
+
+    # scattered (non-trailing) genotyped rows
+    gs = [1, 3, 5]; nongs = setdiff(1:5, gs)
+    Hs = HSquared._single_step_Hinv(Ainv, A, A[gs, gs] + 0.1 * I, gs)
+    @test maximum(abs.(Hs[nongs, :] .- Ainv[nongs, :])) < 1e-12
+
+    # singular raw genomic G throws unless blended/ridged
+    G3 = genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1])     # 3x3, rank-deficient
+    @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, G3, g)
+    @test all(isfinite, HSquared._single_step_Hinv(Ainv, A, G3, g; blend_weight = 0.1))
+
+    # dimension guard: G size must match the genotyped count
+    @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, A[g, g], [3, 4])
+end
+
+@testset "Phase 2 GBLUP REML variance-component estimation" begin
+    # the existing REML optimizers estimate genomic variance components on a Ginv spec
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
+    y = [10.0, 12.0, 11.0, 9.0, 13.0, 10.5]
+    X = ones(6, 1); Z = Matrix(1.0I, 6, 6)
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = 0.05)
+    spec = animal_model_spec(y, X, Z, Ginv; method = :REML)
+
+    ai = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    nm = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ai isa AnimalModelFit
+    @test ai.target == :ai_reml
+    @test ai.converged
+    @test ai.variance_components.sigma_a2 > 0
+    @test ai.variance_components.sigma_e2 > 0
+    # AI-REML and NelderMead reach the same genomic REML optimum
+    @test ai.likelihood.loglik ≈ nm.likelihood.loglik rtol = 1e-5
+    @test ai.variance_components.sigma_a2 ≈ nm.variance_components.sigma_a2 rtol = 2e-2
+    @test ai.variance_components.sigma_e2 ≈ nm.variance_components.sigma_e2 rtol = 2e-2
+
+    # GBLUP at the REML-estimated variance components reproduces the REML breeding values
+    res = fit_gblup(y, X, Z, Ginv,
+                    ai.variance_components.sigma_a2, ai.variance_components.sigma_e2)
+    @test breeding_values(res).values ≈ breeding_values(ai).values atol = 1e-8
+
+    # target dispatch reaches the same optimum from a different start
+    t = fit_animal_model(spec; target = :ai_reml, initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
+    @test t.target == :ai_reml
+    @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
+end
+
+@testset "Phase 1 variance-component covariance and heritability interval" begin
+    # standard-normal quantile (Acklam) against known values
+    @test HSquared._standard_normal_quantile(0.975) ≈ 1.959963985 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.95) ≈ 1.644853627 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.995) ≈ 2.575829304 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.5) ≈ 0.0 atol = 1e-9
+    @test_throws ArgumentError HSquared._standard_normal_quantile(0.0)
+    @test_throws ArgumentError HSquared._standard_normal_quantile(1.0)
+
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1); Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sa2 = fit.variance_components.sigma_a2; se2 = fit.variance_components.sigma_e2
+
+    # the AI information matrix matches an independent finite-difference Hessian of
+    # the REML log-likelihood (observed information) to ~8% on this fixture
+    info = HSquared._reml_information_matrix(spec, sa2, se2)
+    ll(a, e) = sparse_reml_loglik(spec, a, e).loglik
+    hh = 1e-4
+    faa = (ll(sa2 + hh, se2) - 2ll(sa2, se2) + ll(sa2 - hh, se2)) / hh^2
+    fee = (ll(sa2, se2 + hh) - 2ll(sa2, se2) + ll(sa2, se2 - hh)) / hh^2
+    fae = (ll(sa2 + hh, se2 + hh) - ll(sa2 + hh, se2 - hh) -
+           ll(sa2 - hh, se2 + hh) + ll(sa2 - hh, se2 - hh)) / (4hh^2)
+    Hobs = -[faa fae; fae fee]
+    @test isapprox(Matrix(info), Hobs; rtol = 0.12)
+
+    # variance-component covariance / standard errors
+    cov = variance_component_covariance(fit)
+    @test cov ≈ transpose(cov) atol = 1e-12
+    @test cov[1, 1] > 0 && cov[2, 2] > 0
+    ses = variance_component_standard_errors(fit)
+    @test ses.sigma_a2 ≈ sqrt(cov[1, 1]) atol = 1e-10
+    @test ses.sigma_e2 ≈ sqrt(cov[2, 2]) atol = 1e-10
+
+    # heritability SE matches a direct delta computation
+    denom = (sa2 + se2)^2
+    g = [se2 / denom, -sa2 / denom]
+    @test heritability_standard_error(fit) ≈ sqrt(dot(g, cov * g)) atol = 1e-10
+
+    # logit-delta interval stays in (0, 1), contains the estimate, and nests by level
+    ci95 = heritability_interval(fit; level = 0.95)
+    ci80 = heritability_interval(fit; level = 0.80)
+    @test ci95.heritability ≈ heritability(fit)
+    @test 0 < ci95.lower < ci95.heritability < ci95.upper < 1
+    @test ci95.lower < ci80.lower && ci80.upper < ci95.upper        # 95% ⊃ 80%
+    @test ci95.se ≈ heritability_standard_error(fit)
+
+    # guards: level range and REML-only
+    @test_throws ArgumentError heritability_interval(fit; level = 1.5)
+    ml = fit_variance_components(animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML))
+    @test_throws ArgumentError variance_component_covariance(ml)
+
+    # works on a genomic REML fit too (interval stays in (0, 1))
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]
+    Ginv = genomic_relationship_inverse(genomic_relationship_matrix(M); ridge = 0.05)
+    gspec = animal_model_spec([10.0, 12.0, 11.0, 9.0, 13.0, 10.5],
+                              ones(6, 1), Matrix(1.0I, 6, 6), Ginv)
+    gfit = fit_ai_reml(gspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    gci = heritability_interval(gfit)
+    @test 0 < gci.lower < gci.upper < 1
+end
+
+@testset "Phase 3 repeatability / permanent-environment MME (supplied variance)" begin
+    Ainv = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    Z = [1.0 0 0; 1 0 0; 0 1 0; 0 1 0; 0 0 1]   # 5 records; animals 1 & 2 repeated
+    y = [10.0, 11.0, 12.0, 13.0, 9.0]; X = ones(5, 1)
+    sa2 = 1.0; spe2 = 0.5; se2 = 2.0
+    r = repeatability_mme(y, X, Z, Ainv, sa2, spe2, se2)
+
+    # pinned hand values
+    @test r.beta ≈ [11.0] atol = 1e-8
+    @test r.animal_effects.values ≈ [-0.4, 0.4, -1 / 3] atol = 1e-8
+    @test r.permanent_effects.values ≈ [-1 / 30, 11 / 30, -1 / 3] atol = 1e-8
+    @test r.variance_components == (sigma_a2 = 1.0, sigma_pe2 = 0.5, sigma_e2 = 2.0)
+
+    # independent marginal-GLS cross-check of the a and pe BLUPs
+    A = inv(Symmetric(Matrix(Ainv)))
+    V = sa2 .* (Z * A * transpose(Z)) .+ spe2 .* (Z * transpose(Z)) .+ se2 .* Matrix(1.0I, 5, 5)
+    bg = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    resid = y .- X * bg
+    ag = sa2 .* A * transpose(Z) * (V \ resid)
+    pg = spe2 .* (transpose(Z) * (V \ resid))
+    @test maximum(abs.(r.beta .- bg)) < 1e-9
+    @test maximum(abs.(r.animal_effects.values .- ag)) < 1e-9
+    @test maximum(abs.(r.permanent_effects.values .- pg)) < 1e-9
+
+    # reduction: as sigma_pe2 -> 0 the additive effects approach the animal model
+    animal_ebv = breeding_values(henderson_mme(animal_model_spec(y, X, Z, Ainv), sa2, se2)).values
+    rr = repeatability_mme(y, X, Z, Ainv, sa2, 1e-8, se2)
+    @test maximum(abs.(rr.animal_effects.values .- animal_ebv)) < 1e-6
+
+    # guards
+    @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, -1.0, spe2, se2)
+    @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, sa2, -1.0, se2)
+    @test_throws ArgumentError repeatability_mme(y, X, Z[:, 1:2], Ainv, sa2, spe2, se2)
+end
+
+@testset "Phase 3 repeatability REML (variance-component estimation)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Z[rec, an] = 1.0; end
+    y = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; X = ones(8, 1)
+
+    # (1) dense 2-RE REML loglik reduces to the animal-model REML (up to a constant) when sigma_pe2 = 0
+    spec = animal_model_spec(y, X, sparse(Z), sparse(Matrix(Ainv)); method = :REML)
+    d = HSquared._repeatability_dense(y, X, Z, A, 1.0, 0.0, 2.0)[1] -
+        HSquared._repeatability_dense(y, X, Z, A, 2.0, 0.0, 1.0)[1]
+    s = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 2.0, 1.0).loglik
+    @test d ≈ s rtol = 1e-6
+
+    # (2) dense BLUPs at a supplied interior point equal the sparse repeatability_mme solve
+    _, _, ad, pd = HSquared._repeatability_dense(y, X, Z, A, 1.0, 0.5, 2.0)
+    rm = repeatability_mme(y, X, Z, Ainv, 1.0, 0.5, 2.0)
+    @test maximum(abs.(ad .- rm.animal_effects.values)) < 1e-10
+    @test maximum(abs.(pd .- rm.permanent_effects.values)) < 1e-10
+
+    # (3) the REML estimator: converges, valid VCs, t and h2 in [0,1], t >= h2
+    fit = fit_repeatability_reml(y, X, Z, Ainv)
+    @test fit.converged
+    @test fit.variance_components.sigma_a2 >= 0
+    @test fit.variance_components.sigma_pe2 >= 0
+    @test fit.variance_components.sigma_e2 > 0
+    @test 0 <= fit.heritability <= 1
+    @test 0 <= fit.repeatability <= 1
+    @test fit.heritability <= fit.repeatability + 1e-10
+
+    # (4) the optimum beats a coarse grid (near-global)
+    vc = fit.variance_components
+    @test all(
+        HSquared._repeatability_dense(y, X, Z, A, max(vc.sigma_a2, 1e-6) * f1,
+            max(vc.sigma_pe2, 1e-6) * f2, vc.sigma_e2 * f3)[1] <= fit.loglik + 1e-6
+        for f1 in (0.7, 1.3), f2 in (0.7, 1.3), f3 in (0.7, 1.3)
+    )
+
+    # guards
+    @test_throws ArgumentError fit_repeatability_reml(y, X, Z, Ainv;
+        initial = (sigma_a2 = -1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_repeatability_reml(y, X, Z[:, 1:2], Ainv)
+end
+
+@testset "Phase 3 general two-effect MME (common environment)" begin
+    # common-environment model: animal (A) + common-env group (I)
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z1 = Matrix(1.0I, 4, 4)                        # record -> animal
+    Z2 = [1.0 0; 1 0; 0 1; 0 1]                    # record -> common-env group (2 groups)
+    y = [10.0, 11.0, 9.0, 12.0]; X = ones(4, 1)
+    s1 = 1.0; s2 = 0.5; se2 = 2.0
+    r = two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), s1, s2, se2)
+
+    # independent marginal-GLS cross-check of the two BLUPs
+    V = s1 .* (Z1 * A * transpose(Z1)) .+ s2 .* (Z2 * transpose(Z2)) .+ se2 .* Matrix(1.0I, 4, 4)
+    bg = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    resid = y .- X * bg
+    u1g = s1 .* A * transpose(Z1) * (V \ resid)
+    u2g = s2 .* transpose(Z2) * (V \ resid)
+    @test maximum(abs.(r.beta .- bg)) < 1e-9
+    @test maximum(abs.(r.effect1.values .- u1g)) < 1e-9
+    @test maximum(abs.(r.effect2.values .- u2g)) < 1e-9
+    @test length(r.effect2.values) == 2           # one per common-env group
+
+    # repeatability_mme is the Z2 = Z1, A2 = I special case (identical BLUPs)
+    Zr = [1.0 0 0; 1 0 0; 0 1 0; 0 1 0; 0 0 1]; yr = [10.0, 11.0, 12.0, 13.0, 9.0]; Xr = ones(5, 1)
+    Ainvr = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    rep = repeatability_mme(yr, Xr, Zr, Ainvr, 1.0, 0.5, 2.0)
+    gen = two_effect_mme(yr, Xr, Zr, Ainvr, Zr, Matrix(1.0I, 3, 3), 1.0, 0.5, 2.0)
+    @test rep.animal_effects.values ≈ gen.effect1.values atol = 1e-10
+    @test rep.permanent_effects.values ≈ gen.effect2.values atol = 1e-10
+
+    # guards
+    @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), -1.0, s2, se2)
+    @test_throws ArgumentError two_effect_mme(y, X, Z1, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2), s1, s2, se2)
+end
+
+@testset "Phase 3 two-effect REML (common-environment / maternal estimation)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Z[rec, an] = 1.0; end
+    y = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; X = ones(8, 1)
+
+    # reduction: with Z2 = Z1 and A2 = I it equals fit_repeatability_reml
+    rep = fit_repeatability_reml(y, X, Z, Ainv)
+    gen = fit_two_effect_reml(y, X, Z, Ainv, Z, Matrix(1.0I, 4, 4))
+    @test gen.variance_components.sigma1 ≈ rep.variance_components.sigma_a2 rtol = 1e-4
+    @test gen.variance_components.sigma2 ≈ rep.variance_components.sigma_pe2 atol = 1e-4
+    @test gen.variance_components.sigma_e2 ≈ rep.variance_components.sigma_e2 rtol = 1e-4
+
+    # dense loglik reduces to the animal-model REML (up to a constant) when sigma2 = 0
+    spec = animal_model_spec(y, X, sparse(Z), sparse(Matrix(Ainv)); method = :REML)
+    d = HSquared._two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, 4, 4), 1.0, 0.0, 2.0)[1] -
+        HSquared._two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, 4, 4), 2.0, 0.0, 1.0)[1]
+    s = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 2.0, 1.0).loglik
+    @test d ≈ s rtol = 1e-6
+
+    # common-environment fit: converges with valid VCs and ratios in [0,1]
+    Z2 = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]   # records -> 2 common-env groups
+    cf = fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2))
+    @test cf.converged
+    @test cf.variance_components.sigma1 >= 0
+    @test cf.variance_components.sigma2 >= 0
+    @test cf.variance_components.sigma_e2 > 0
+    @test 0 <= cf.ratio1 <= 1
+    @test 0 <= cf.ratio2 <= 1
+
+    # guards
+    @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2);
+        initial = (sigma1 = -1.0, sigma2 = 1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2))
 end

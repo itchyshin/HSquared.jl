@@ -59,6 +59,9 @@ HSquared.Pedigree
 HSquared.normalize_pedigree
 HSquared.inbreeding_coefficients
 HSquared.pedigree_inverse
+HSquared.genomic_relationship_matrix
+HSquared.genomic_relationship_inverse
+HSquared.centered_markers
 HSquared.sparse_csc_matrix
 HSquared.AnimalModelSpec
 HSquared.animal_model_spec
@@ -70,8 +73,13 @@ HSquared.henderson_mme
 HSquared.AnimalModelFit
 HSquared.BreedingValues
 HSquared.fit_sparse_reml
+HSquared.fit_ai_reml
+HSquared.fit_gblup
+HSquared.fit_snp_blup
 HSquared.fit_variance_components
 HSquared.variance_components
+HSquared.variance_component_covariance
+HSquared.variance_component_standard_errors
 HSquared.fixed_effects
 HSquared.fit_diagnostics
 HSquared.breeding_values
@@ -79,6 +87,8 @@ HSquared.EBV
 HSquared.BLUP
 HSquared.fitted_values
 HSquared.heritability
+HSquared.heritability_standard_error
+HSquared.heritability_interval
 HSquared.prediction_error_variance
 HSquared.reliability
 HSquared.accuracy

@@ -2,6 +2,351 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Two-Effect REML (common-environment / maternal estimation)
+
+- Goal: REML estimation for the general two-effect model (common-environment `c²`,
+  maternal variance), completing the Phase-3 standard-QG engine kernel.
+- Active lenses: Gauss, Fisher, Falconer, Mendel, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `_two_effect_dense` (general dense two-effect REML loglik
+    + BLUPs; `_repeatability_dense` now delegates to it) and
+    `fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial)` (NelderMead over
+    the three log-variances → VCs, `ratio1`/`ratio2`, BLUPs). Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 724
+    total. New testset "Phase 3 two-effect REML (common-environment / maternal
+    estimation)" = 12 checks: equals `fit_repeatability_reml` in the `Z2=Z1, A2=I`
+    reduction; loglik reduces to the animal-model REML at σ2=0; common-env fit
+    converges with valid ratios; guards. `validation_status()` 24 → 25 (added
+    `V3-TWOEFFECT-REML`).
+  - One-off seeded common-env recovery: σc²/σe² recover well; σa² underestimated
+    on a small confounded design.
+- Boundary:
+  - Dense / validation-scale, REML-only; no committed recovery harness, no ratio
+    intervals, no correlated direct–maternal genetic, no R-facing model-spec.
+
+## 2026-06-13 General Two-Random-Effect MME (common environment / maternal)
+
+- Goal: generalize the repeatability kernel into a general supplied-variance
+  two-independent-random-effect MME, covering common-environment and
+  maternal-environment models.
+- Active lenses: Henderson, Falconer, Mendel, Gauss, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `two_effect_mme(y, X, Z1, Ainv1, Z2, Ainv2, σ1, σ2, σe²)`
+    assembles the MME for `[u1; u2]` with `blockdiag(Ainv1/σ1, Ainv2/σ2)`.
+    `repeatability_mme` refactored to delegate (`Z2=Z1, A2=I`) — dedup, guarded by
+    its existing tests. Both exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 712
+    total. New testset "Phase 3 general two-effect MME (common environment)" = 8
+    checks: common-environment fixture vs an independent marginal-GLS BLUP
+    (~1e-9), one effect per group, and `repeatability_mme` == the `Z2=Z1, A2=I`
+    special case; guards. Existing repeatability tests unchanged and green
+    (refactor-safe). `validation_status()` 23 → 24 (added `V3-TWOEFFECT`).
+- Boundary:
+  - Supplied-variance, two INDEPENDENT random effects only; no correlated
+    direct–maternal genetic (2×2 G), no estimation, no R-facing model-spec.
+
+## 2026-06-13 Repeatability REML Variance-Component Estimation
+
+- Goal: complete the repeatability model into an estimator — REML estimation of
+  (σ²a, σ²pe, σ²e) and the repeatability coefficient `t`.
+- Active lenses: Gauss, Fisher, Henderson, Falconer, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `fit_repeatability_reml(y, X, Z, Ainv; initial)`
+    maximizes the dense two-random-effect REML loglik (`_repeatability_dense`)
+    over the log-variances (NelderMead); returns VCs, repeatability `t`,
+    heritability `h²`, BLUPs, loglik, converged. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 704
+    total. New testset "Phase 3 repeatability REML (variance-component
+    estimation)" = 13 checks: dense loglik reduces to the animal-model REML (up
+    to a constant) at σ²pe=0; dense BLUPs match the sparse `repeatability_mme` at
+    a supplied interior point (~1e-15); estimator converges with valid VCs and
+    `t ≥ h²` in [0,1]; optimum beats a ±30% grid; guards. `validation_status()`
+    22 → 23 (added `V3-REPEAT-REML`).
+  - One-off seeded recovery (NOT committed; suite kept RNG-free): n=70 animals,
+    true (1.0, 0.6, 1.5) → estimated ≈(0.94, 0.83, 1.48), `t` 0.516 → 0.545.
+  - Decision note `2026-06-13-rng-recovery-test-harness.md` resolved (hybrid).
+- Boundary:
+  - Dense / validation-scale, REML-only; no committed recovery harness, no
+    `t`/`h²` intervals, no external comparator, no R-facing model-spec.
+
+## 2026-06-13 Repeatability / Permanent-Environment MME (Phase 3 start)
+
+- Goal: first Phase-3 (standard quantitative-genetic) engine slice — a
+  supplied-variance Henderson solve of the two-random-effect repeatability /
+  permanent-environment animal model.
+- Active lenses: Henderson, Falconer, Mrode, Gauss, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `repeatability_mme(y, X, Z, Ainv, σ²a, σ²pe, σ²e; ids)`
+    assembles the MME for the stacked random effect `[a; pe]` with a
+    block-diagonal relationship precision `blockdiag(Ainv/σ²a, I/σ²pe)` and
+    solves. Additive — does not touch the single-random-effect path. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 691
+    total. New testset "Phase 3 repeatability / permanent-environment MME
+    (supplied variance)" = 11 checks: pinned hand values (β=11, â, p̂e on a
+    5-record / 3-animal repeated-records fixture), an independent marginal-GLS
+    BLUP cross-check (~1e-9), reduction to the animal model as σ²pe→0, and
+    positive-variance / dimension guards. `validation_status()` 21 → 22 (added
+    `V3-REPEAT`).
+- Boundary:
+  - Supplied-variance only — no REML estimation of the three components, no
+    R-facing `permanent()` model-spec, engine-internal. Requires repeated records
+    to identify `a` vs `pe`.
+
+## 2026-06-13 Heritability Intervals + Variance-Component Covariance
+
+- Goal: give the heritability package an uncertainty for h² — variance-component
+  standard errors and a confidence interval — the central missing inference.
+- Active lenses: Fisher, Gauss, Curie, Noether, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `variance_component_covariance` (inverse of the REML AI
+    matrix), `variance_component_standard_errors`, `heritability_standard_error`
+    (delta method), and `heritability_interval(fit; level)` — a logit-transform
+    delta interval, always in (0,1). Internal helpers `_reml_information_matrix`
+    (recomputes the AI matrix) and `_standard_normal_quantile` (Acklam, self-
+    contained — no Distributions/SpecialFunctions dependency). REML-only.
+  - Exported the four public functions; `docs/src/api.md` updated.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 680
+    total. New testset "Phase 1 variance-component covariance and heritability
+    interval" = 19 checks: Acklam quantile vs known z-values; AI matrix vs an
+    independent finite-difference REML Hessian (rtol 0.12; observed ~8%);
+    covariance symmetric + positive; SEs consistent; h² SE vs direct delta;
+    logit interval in (0,1), contains the estimate, nests by level; level +
+    REML-only guards; and the interval on a genomic REML fit. `validation_status()`
+    20 → 21 (added `V1-HERIT-CI`).
+  - Decision note `2026-06-13-heritability-interval-design.md` resolved
+    (logit-delta chosen; profile / parametric-bootstrap = future).
+- Boundary:
+  - Asymptotic, REML-only; wide and unreliable at small n; not
+    coverage-calibrated; no profile-likelihood / bootstrap alternative yet.
+
+## 2026-06-13 Genomic Models Documentation Page
+
+- Goal: a reader-facing Documenter page for the implemented genomic engine.
+- Active lenses: Pat, Darwin, Florence, Rose (inline).
+- Implementation:
+  - `docs/src/genomic-models.md` with executed `@example` blocks for `G`/`Ginv`,
+    GBLUP, genomic REML (6-animal fixture — AI-REML is flat on 4 animals),
+    SNP-BLUP, and a prose section for the internal single-step `H⁻¹`; registered
+    in `docs/make.jl` after "Pedigrees and Ainv". Explicit experimental /
+    not-yet-R-wired / no-external-comparator boundary stated up front.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl` exit 0; all executed
+    examples ran clean.
+- Boundary:
+  - Documentation only; documents engine APIs, not the public R interface.
+
+## 2026-06-13 Genomic REML Variance-Component Estimation
+
+- Goal: estimate the genomic variance components for GBLUP (previously
+  supplied-variance only) by reusing the existing REML optimizers on a `Ginv`
+  spec — engine-internal, additive, no new code.
+- Active lenses: Gauss, Fisher, Curie, Henderson, Rose (inline).
+- Implementation:
+  - No new code: `fit_ai_reml` / `fit_sparse_reml` / `fit_animal_model(...;
+    target = :ai_reml)` operate on a spec whose `Ainv` slot holds a genomic
+    `Ginv`, estimating σ²g/σ²e.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 661
+    total. New testset "Phase 2 GBLUP REML variance-component estimation" = 11
+    checks: AI-REML == NelderMead optimum on a genomic fixture (loglik rtol 1e-5,
+    σ² rtol 2e-2), positive VCs, converged, `fit_gblup` at the estimate
+    reproduces the REML breeding values (atol 1e-8), and target-dispatch reaches
+    the same optimum from a different start. `validation_status()` 19 → 20
+    (added `V2-GREML`; `V2-GBLUP` missing field updated).
+  - One-off seeded recovery (NOT committed, to keep the suite RNG-free): n=400,
+    m=600, true σ²g=1.0/σ²e=1.5 → estimated σ²g=0.997, h²=0.42 (true 0.40).
+- Boundary:
+  - Reuses the Phase-1 optimizers on a genomic spec; no external comparator
+    parity (sommer/rrBLUP/BLUPF90 = R lane), no production sparse-`G` scaling.
+
+## 2026-06-13 Address Phase-2 Adversarial-Review Findings
+
+- Goal: act on the confirmed findings of the multi-lens adversarial review of the
+  five Phase-2 engine slices (workflow `phase2-engine-review`, 11 agents). The
+  review found ZERO numerical bugs and ZERO contract/claim drift; the 5 confirmed
+  findings were documentation precision (1) and test quality (4).
+- Active lenses: Curie, Gauss, Kirkpatrick, Rose (inline) + the review workflow.
+- Fixes:
+  - Reliability denominator stated precisely as `diag(inv(Ginv)) = diag(G)+ridge`
+    (not `diag(G)`; the ridge perturbs reported reliability/accuracy) in the
+    `reliability` docstring, `capability-status.md`, `validation_status.jl`
+    (`V2-GBLUP`), `changelog.md`, and the genomic-reliability after-task report.
+  - The genomic PEV test was tautological (algebraic reversal of `reliability`'s
+    own definition) — replaced with an INDEPENDENT PEV anchor (re-assembled MME
+    inverse) and reliability rebuilt from it, so a wrong denominator now fails.
+  - `accuracy ≈ sqrt(rel)` (definitional) now checked against the independent
+    reliability.
+  - `diag(A) ≈ 1 + inbreeding_coefficients` was circular after the NRM dedupe —
+    replaced with a hand-pinned inbreeding anchor `F = [0,0,0,0,0.25]`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 650
+    total (genomic-reliability testset 5 → 7).
+- Boundary:
+  - Documentation + test-quality only; no engine logic change, no contract
+    change, no new capability row.
+
+## 2026-06-13 Single-Step H-Inverse Construction (_single_step_Hinv, internal)
+
+- Goal: the single-step (ssGBLUP) H-inverse construction utility — the subtlest
+  Phase-2 piece — shipped as an unexported, property-checked construction utility
+  only (no fitting wiring, no comparator-validated blending).
+- Active lenses: Henderson, Mrode, Kirkpatrick, Gauss, Mendel, Rose (inline).
+- Implementation:
+  - `src/genomic.jl`: `_single_step_Hinv(Ainv, A, G, genotyped_rows; tau, omega,
+    blend_weight, ridge)` = `A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)`. Critically
+    `A₂₂⁻¹ = inv(A[g, g])`, NOT `(A⁻¹)[g, g]`. PD guard on the (blended/ridged)
+    genomic block. Reuses `_numerator_relationship` for `A`/`A₂₂`. Unexported,
+    validation-only.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 648
+    total. New testset "Phase 2 single-step H-inverse construction" = 11 checks:
+    `A₂₂⁻¹[1,1] = 11/6` vs `(A⁻¹)[g,g][1,1] = 2.5` distinctness, reduction
+    (`G = A₂₂ ⇒ H⁻¹ = A⁻¹`, ~0), locality (off-block unchanged), symmetry,
+    scattered genotyped rows `[1,3,5]`, singular-`G` throws / blend rescues, and
+    a dimension guard. `validation_status()` 18 → 19 (added `V2-SSHINV`).
+- Boundary:
+  - Construction utility only — NOT exported, NOT wired into fitting;
+    `single_step()` stays inert. Blending/τ/ω/ridge defaults are NOT
+    comparator-validated. Dense, validation-scale; no large-pedigree claim.
+
+## 2026-06-13 Genomic Reliability / PEV / Accuracy Semantics
+
+- Goal: confirm and document that the existing reliability/PEV/accuracy
+  extractors produce correct genomic quantities for a GBLUP fit (denominator =
+  genomic self-relationship `diag(G)`), and that `:selinv` PEV carries over to a
+  genomic `Ginv`.
+- Active lenses: Fisher, Gauss, Kirkpatrick, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: docstring-only clarification on `reliability`
+    (`A = inv(Ainv)`; for a genomic spec `A_ii = diag(G)`). No logic change.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 637
+    total. New testset "Phase 2 genomic reliability / PEV / accuracy semantics"
+    = 5 checks: `rel ∈ [0,1]`; `PEV = (1−rel)·σ²a·diag(G+ridge·I)` to ~1e-16;
+    `diag(G+ridge·I) ≠ 1` (genomic, not pedigree `diag(A)=1`); `accuracy = √rel`;
+    `:selinv` PEV == dense PEV (~3e-16). `V2-GBLUP` evidence updated (no new row).
+- Boundary:
+  - Self-consistent only; not validated against an external genomic-reliability
+    comparator. No performance claim for selinv on dense `Ginv` (no speedup until
+    sparse/APY `G`).
+
+## 2026-06-13 Dense NRM Helper (_numerator_relationship, internal)
+
+- Goal: extract the numerator-relationship recursion (previously computed and
+  discarded inside `inbreeding_coefficients`, and duplicated as a test-only
+  helper) into one internal `_numerator_relationship` — a prerequisite for the
+  single-step H-inverse and a dedupe.
+- Active lenses: Henderson, Mrode, Curie, Rose (inline).
+- Implementation:
+  - `src/pedigree.jl`: `_numerator_relationship(pedigree)` (full dense `A`) and
+    `_numerator_relationship(pedigree, rows)` (`A[rows, rows]`, for `A₂₂`);
+    `inbreeding_coefficients` now takes its diagonal. The bounded-cache guard
+    moved into the shared helper. Unexported, validation-only.
+  - `test/runtests.jl`: removed the duplicate `_dense_relationship_for_test`;
+    the two pedigree-inverse cross-checks now call
+    `HSquared._numerator_relationship`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 632
+    total. New testset "Phase 2 dense NRM helper" = 7 checks: pinned `A`
+    (5-animal pedigree, full-sib parents ⇒ inbred animal 5, `A[5,5]=1.25`),
+    symmetry, cross-check vs `inv(pedigree_inverse)`, diagonal vs
+    `inbreeding_coefficients`, `A₂₂ == A[g,g]` pinned, and the cache guard.
+    Existing pedigree/inbreeding tests unchanged and green (refactor-safe).
+- Boundary:
+  - Internal infrastructure; no capability/validation-debt/validation_status row
+    (graduates no user-facing capability), no public API change, dense /
+    validation-scale only.
+
+## 2026-06-13 SNP-BLUP + GBLUP↔SNP-BLUP Equivalence (fit_snp_blup)
+
+- Goal: add SNP-BLUP / RR-BLUP marker effects via the existing Henderson MME and
+  prove the GBLUP↔SNP-BLUP equivalence — a strong comparator-free check that
+  also validates the VanRaden centering/scaling convention.
+- Active lenses: Kirkpatrick, Gauss, Henderson, Curie, Rose (inline).
+- Implementation:
+  - `centered_markers(markers; allele_frequencies)` in `src/genomic.jl` →
+    `(W, p, k)`; `genomic_relationship_matrix` refactored to delegate to it
+    (single source of the centering/scaling; the 9-check G testset guards the
+    refactor — still 9/9).
+  - `fit_snp_blup(y, X, markers, sigma_g2, sigma_e2; allele_frequencies, ids)` →
+    `(marker_effects, gebv = W·â, beta, k, p)`. Markers are the random effect
+    (`Z = W`, `Ainv = I_m`, `σ²_marker = σ²_g/k`); the random block is
+    deliberately relabelled `marker_effects` (not `breeding_values`/EBV). Both
+    exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 625
+    total. New testset "Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence" = 15
+    checks: pinned `p`/`k`/centering, pinned β/marker-effects/GEBV/predictions,
+    relabel check, and the equivalence `gebv == W·â` matching GBLUP via the
+    marginal `V = σ²_g·G + σ²_e·I` to ~5e-17 (`n>m`) and ~2e-16 (`n<m`), plus
+    `σ²_g ≤ 0` and monomorphic guards. `validation_status()` 17 → 18 (added
+    `V2-SNPBLUP`).
+- Boundary:
+  - Engine-internal/additive. The equivalence proves the parameterization
+    bridge, NOT field-correct absolute numbers (external comparator still gates
+    that). Unweighted VanRaden method-1 / identity prior only; supplied-variance
+    only; no REML estimation; no performance claim for large `m`.
+
+## 2026-06-13 GBLUP Supplied-Variance Solve (fit_gblup)
+
+- Goal: graduate the genomic relationship utilities into an actual fitted GBLUP
+  solve by reusing the existing Henderson MME — engine-internal, additive, no
+  contract change. (Preceded by a small docs commit `ee2fa07` adding the genomic
+  + AI-REML functions to `docs/src/api.md`; local Documenter build green.)
+- Active lenses: Henderson, Gauss, Kirkpatrick, Falconer, Curie, Rose (inline).
+- Spawned subagents: 5-scout + 1-design planning workflow (`phase2-engine-plan`)
+  produced the ordered DoD-gated plan; all pinned numbers re-verified locally.
+- Implementation:
+  - `fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2; ids, method)` in
+    `src/genomic.jl`: `spec = animal_model_spec(y, X, Z, Ginv; ...)` then
+    `henderson_mme(spec, ...)`. The genomic precision enters the same `Ainv`
+    slot (`AnimalModelSpec.Ainv::AbstractMatrix`); no new solver, no new result
+    type. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 610
+    total checks. New testset "Phase 2 GBLUP supplied-variance solve" = 11
+    checks: pinned 3-individual fixture (β = 10.9448698315, GEBVs pinned),
+    independent dense-MME agreement (~7e-15), G = A reproduces pedigree BLUP
+    (~1.6e-30), variance-ratio invariance, finiteness, and a `sigma_a2 ≤ 0`
+    guard. `validation_status()` row count 16 → 17 (added `V2-GBLUP`).
+- Boundary:
+  - Engine-internal/additive. Supplied-variance only; no genomic
+    variance-component estimation, no single-step, no external comparator parity,
+    no performance claim (dense `Ginv` loses the selinv sparsity advantage). The
+    R-facing `genomic()` model-spec mapping stays coordinated with the R twin.
+
+## 2026-06-13 Regularized Genomic Inverse (Ginv)
+
+- Goal: finish the Phase-2 `Ginv` slice (present as an uncommitted draft in the
+  working tree on resume) to Definition of Done — the ridge-regularized dense
+  inverse of a genomic relationship matrix, the engine-internal step GBLUP will
+  later consume.
+- Active lenses: Kirkpatrick, Falconer, Gauss, Curie, Rose (inline perspectives).
+- Spawned subagents: none.
+- Implementation:
+  - `genomic_relationship_inverse(G; ridge = 0.01)` in `src/genomic.jl`:
+    returns `inv(Symmetric(G) + ridge·I)` with square / non-negative-ridge /
+    positive-definite guards. Exported from the module. Docstring states it is a
+    construction utility only and is not wired into model fitting.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 599
+    total checks. New testset "Phase 2 regularized genomic inverse (Ginv)" = 10
+    checks: pinned hand inverse at `ridge = 0` (det = 3.75), the defining
+    identity `(G + ridge·I)·Ginv ≈ I`, symmetry, ridge-changes-result, a
+    singular matrix throwing at `ridge = 0`, a rank-deficient marker-`G`
+    round-trip with the default ridge, and non-square / negative-ridge guards.
+    `validation_status()` row count 15 → 16 (added `V2-GINV`).
+- Boundary:
+  - Additive engine utility — no bridge / result / model-spec change. The
+    contract-touching GBLUP wiring (G into the MME) and the R
+    `genomic()`/`markers()` → engine model-spec mapping remain the next slice and
+    will be coordinated with the R twin before landing.
+
 ## 2026-06-13 Genomic Relationship Matrix (VanRaden G)
 
 - Goal: begin Phase 2 (genomic) with the VanRaden genomic relationship matrix

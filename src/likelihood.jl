@@ -495,6 +495,302 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
 end
 
 """
+    two_effect_mme(y, X, Z1, Ainv1, Z2, Ainv2, sigma1, sigma2, sigma_e2;
+                   ids1 = nothing, ids2 = nothing)
+
+Supplied-variance Henderson solve of a Gaussian model with **two independent
+random effects**:
+
+    y = X·β + Z1·u1 + Z2·u2 + e,
+    u1 ~ N(0, sigma1·A1),  u2 ~ N(0, sigma2·A2),  e ~ N(0, sigma_e2·I),
+
+with relationship inverses `Ainv1 = A1⁻¹`, `Ainv2 = A2⁻¹`. The mixed-model
+equations carry the block-diagonal precision `blockdiag(Ainv1/sigma1,
+Ainv2/sigma2)` for the stacked random effect `[u1; u2]`.
+
+This is the general engine kernel for the standard two-random-effect
+quantitative-genetic models: repeatability / permanent environment (`Z2 = Z1`,
+`A2 = I`; see [`repeatability_mme`](@ref)), common environment (`Z2` = group
+incidence, `A2 = I`), and maternal-environment (`Z2` = dam incidence, `A2 = I`).
+Experimental, supplied-variance, engine-internal — it does not estimate variances
+and does not cover correlated direct–maternal genetic effects (which need a 2×2
+genetic covariance). Returns `(beta, effect1, effect2, variance_components)`.
+"""
+function two_effect_mme(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix,
+    sigma1::Real,
+    sigma2::Real,
+    sigma_e2::Real;
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    sigma1 > 0 || throw(ArgumentError("sigma1 must be positive"))
+    sigma2 > 0 || throw(ArgumentError("sigma2 must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+    size(Z2, 1) == n || throw(ArgumentError("Z2 must have one row per record"))
+    n1 = size(Ainv1, 1)
+    n2 = size(Ainv2, 1)
+    size(Ainv1, 2) == n1 || throw(ArgumentError("Ainv1 must be square"))
+    size(Ainv2, 2) == n2 || throw(ArgumentError("Ainv2 must be square"))
+    size(Z1, 2) == n1 || throw(ArgumentError("Z1 columns must match Ainv1 dimensions"))
+    size(Z2, 2) == n2 || throw(ArgumentError("Z2 columns must match Ainv2 dimensions"))
+    e1ids = ids1 === nothing ? collect(1:n1) : collect(ids1)
+    e2ids = ids2 === nothing ? collect(1:n2) : collect(ids2)
+    length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+    length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    Z1s = sparse(Float64.(Z1))
+    Z2s = sparse(Float64.(Z2))
+    A1 = sparse(Float64.(Ainv1))
+    A2 = sparse(Float64.(Ainv2))
+    rp = inv(Float64(sigma_e2))
+    Zf = hcat(Z1s, Z2s)
+    Ginv = blockdiag(A1 .* inv(Float64(sigma1)), A2 .* inv(Float64(sigma2)))
+    Xt = transpose(Xs)
+    Zft = transpose(Zf)
+    nfixed = size(Xs, 2)
+    lhs = [
+        rp * (Xt * Xs) rp * (Xt * Zf)
+        rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+    ]
+    rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
+    solution = lhs \ rhs
+    beta = Vector{Float64}(solution[1:nfixed])
+    u1 = Vector{Float64}(solution[(nfixed + 1):(nfixed + n1)])
+    u2 = Vector{Float64}(solution[(nfixed + n1 + 1):(nfixed + n1 + n2)])
+    return (
+        beta = beta,
+        effect1 = (ids = e1ids, values = u1),
+        effect2 = (ids = e2ids, values = u2),
+        variance_components = (
+            sigma1 = Float64(sigma1),
+            sigma2 = Float64(sigma2),
+            sigma_e2 = Float64(sigma_e2),
+        ),
+    )
+end
+
+"""
+    repeatability_mme(y, X, Z, Ainv, sigma_a2, sigma_pe2, sigma_e2; ids = nothing)
+
+Supplied-variance Henderson solve of the repeatability / permanent-environment
+animal model with repeated records:
+
+    y = X·β + Z·a + Z·pe + e,
+    a ~ N(0, sigma_a2·A),  pe ~ N(0, sigma_pe2·I),  e ~ N(0, sigma_e2·I),
+
+where `Z` is the record→animal incidence (shared by the additive genetic effect
+`a` and the permanent-environment effect `pe`), and `Ainv` is the relationship
+inverse. The mixed-model equations carry a block-diagonal relationship precision
+`blockdiag(Ainv/sigma_a2, I/sigma_pe2)` for the stacked random effect `[a; pe]`.
+
+This is the first Phase-3 (standard quantitative-genetic) engine slice: a
+supplied-variance MME solve (it does **not** estimate the variance components),
+the analogue of [`henderson_mme`](@ref) for two random effects. Experimental and
+engine-internal; the R `permanent()` / repeatability model-spec mapping and REML
+estimation of the three variance components are coordinated separately and not
+part of this function. Returns a `NamedTuple`
+`(beta, animal_effects, permanent_effects, variance_components)`. Identifiability
+of `a` vs `pe` requires repeated records (animals with more than one record).
+"""
+function repeatability_mme(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_pe2::Real,
+    sigma_e2::Real;
+    ids = nothing,
+)
+    na = size(Ainv, 1)
+    # repeatability = the two-effect model with the permanent-environment effect
+    # sharing Z and carrying an identity relationship (A2 = I).
+    result = two_effect_mme(
+        y, X, Z, Ainv, Z, sparse(1.0I, na, na),
+        sigma_a2, sigma_pe2, sigma_e2; ids1 = ids, ids2 = ids,
+    )
+    return (
+        beta = result.beta,
+        animal_effects = result.effect1,
+        permanent_effects = result.effect2,
+        variance_components = (
+            sigma_a2 = Float64(sigma_a2),
+            sigma_pe2 = Float64(sigma_pe2),
+            sigma_e2 = Float64(sigma_e2),
+        ),
+    )
+end
+
+# Dense REML log-likelihood and BLUPs for a general two-independent-random-effect
+# model: V = sigma1·(Z1 A1 Z1') + sigma2·(Z2 A2 Z2') + sigma_e2·I (validation-scale,
+# forms the n×n marginal covariance). `A1`, `A2` are dense relationship matrices.
+function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
+    n = length(y)
+    V = Symmetric(
+        sigma1 .* (Z1 * A1 * transpose(Z1)) .+
+        sigma2 .* (Z2 * A2 * transpose(Z2)) .+
+        sigma_e2 .* Matrix(1.0I, n, n),
+    )
+    Vf = cholesky(V)
+    ViX = Vf \ Matrix(X)
+    XtViX = cholesky(Symmetric(transpose(X) * ViX))
+    beta = XtViX \ (transpose(X) * (Vf \ y))
+    r = y .- X * beta
+    Vir = Vf \ r
+    loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+    u1 = sigma1 .* (A1 * (transpose(Z1) * Vir))
+    u2 = sigma2 .* (A2 * (transpose(Z2) * Vir))
+    return loglik, Vector{Float64}(beta), u1, u2
+end
+
+"""
+    fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
+                        ids1 = nothing, ids2 = nothing)
+
+REML estimation of the variance components `(sigma1, sigma2, sigma_e2)` of the
+general two-independent-random-effect model (see [`two_effect_mme`](@ref)), by
+maximizing the dense two-effect REML log-likelihood (NelderMead). Covers
+common-environment (`c² = ratio2`) and maternal-environment variance estimation.
+
+Returns a `NamedTuple` with `variance_components`, `ratio1 = sigma1/total`,
+`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`.
+Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
+model-spec mapping are not part of this function. On small data the optimum can
+sit on a boundary (a variance → 0).
+"""
+function fit_two_effect_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    initial.sigma1 > 0 && initial.sigma2 > 0 && initial.sigma_e2 > 0 ||
+        throw(ArgumentError("initial variance components must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+    size(Z2, 1) == n || throw(ArgumentError("Z2 must have one row per record"))
+    n1 = size(Ainv1, 1)
+    n2 = size(Ainv2, 1)
+    size(Ainv1, 2) == n1 || throw(ArgumentError("Ainv1 must be square"))
+    size(Ainv2, 2) == n2 || throw(ArgumentError("Ainv2 must be square"))
+    size(Z1, 2) == n1 || throw(ArgumentError("Z1 columns must match Ainv1 dimensions"))
+    size(Z2, 2) == n2 || throw(ArgumentError("Z2 columns must match Ainv2 dimensions"))
+    e1ids = ids1 === nothing ? collect(1:n1) : collect(ids1)
+    e2ids = ids2 === nothing ? collect(1:n2) : collect(ids2)
+    length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+    length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+
+    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
+    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
+    Xd = Matrix{Float64}(X)
+    Z1d = Matrix{Float64}(Z1)
+    Z2d = Matrix{Float64}(Z2)
+    yv = Float64.(y)
+    objective(p) = -_two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, exp(p[1]), exp(p[2]), exp(p[3]))[1]
+    p0 = log.([Float64(initial.sigma1), Float64(initial.sigma2), Float64(initial.sigma_e2)])
+    result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+    sigma1, sigma2, sigma_e2 = exp.(Optim.minimizer(result))
+    loglik, beta, u1, u2 = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, sigma1, sigma2, sigma_e2)
+    total = sigma1 + sigma2 + sigma_e2
+    return (
+        variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
+        ratio1 = sigma1 / total,
+        ratio2 = sigma2 / total,
+        beta = beta,
+        effect1 = (ids = e1ids, values = u1),
+        effect2 = (ids = e2ids, values = u2),
+        loglik = loglik,
+        converged = Optim.converged(result),
+    )
+end
+
+# Repeatability dense loglik = the two-effect dense loglik with the
+# permanent-environment effect sharing Z and carrying an identity relationship.
+function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
+    na = size(A, 1)
+    return _two_effect_dense(y, X, Z, A, Z, Matrix(1.0I, na, na), sigma_a2, sigma_pe2, sigma_e2)
+end
+
+"""
+    fit_repeatability_reml(y, X, Z, Ainv; initial, iterations = 200, ids = nothing)
+
+Estimate the three variance components `(sigma_a2, sigma_pe2, sigma_e2)` of the
+repeatability / permanent-environment animal model by REML, by maximizing the
+dense two-random-effect REML log-likelihood over the log-variances (NelderMead).
+
+Returns a `NamedTuple` with `variance_components`, the repeatability
+`t = (sigma_a2 + sigma_pe2) / total`, the heritability `h² = sigma_a2 / total`,
+`beta`, the `a` / `pe` BLUPs at the estimate, `loglik`, and `converged`.
+
+Experimental and validation-scale: it forms the dense `n×n` marginal covariance,
+so it is for small problems, not production. REML-only. Uncertainty intervals for
+`t` / `h²` and the R model-spec mapping are not part of this function. Separating
+`sigma_a2` from `sigma_pe2` needs relationship contrast and replication; on small
+data the optimum can sit on a boundary (one variance → 0).
+"""
+function fit_repeatability_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    ids = nothing,
+)
+    initial.sigma_a2 > 0 && initial.sigma_pe2 > 0 && initial.sigma_e2 > 0 ||
+        throw(ArgumentError("initial variance components must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    na = size(Ainv, 1)
+    size(Ainv, 2) == na || throw(ArgumentError("Ainv must be square"))
+    size(Z, 2) == na || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    encoded_ids = ids === nothing ? collect(1:na) : collect(ids)
+    length(encoded_ids) == na ||
+        throw(ArgumentError("ids length must match Ainv dimensions"))
+
+    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+    Xd = Matrix{Float64}(X)
+    Zd = Matrix{Float64}(Z)
+    yv = Float64.(y)
+    objective(p) = -_repeatability_dense(yv, Xd, Zd, A, exp(p[1]), exp(p[2]), exp(p[3]))[1]
+    p0 = log.([Float64(initial.sigma_a2), Float64(initial.sigma_pe2), Float64(initial.sigma_e2)])
+    result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+    sigma_a2, sigma_pe2, sigma_e2 = exp.(Optim.minimizer(result))
+    loglik, beta, ahat, pehat =
+        _repeatability_dense(yv, Xd, Zd, A, sigma_a2, sigma_pe2, sigma_e2)
+    total = sigma_a2 + sigma_pe2 + sigma_e2
+    return (
+        variance_components = (sigma_a2 = sigma_a2, sigma_pe2 = sigma_pe2, sigma_e2 = sigma_e2),
+        repeatability = (sigma_a2 + sigma_pe2) / total,
+        heritability = sigma_a2 / total,
+        beta = beta,
+        animal_effects = (ids = encoded_ids, values = ahat),
+        permanent_effects = (ids = encoded_ids, values = pehat),
+        loglik = loglik,
+        converged = Optim.converged(result),
+    )
+end
+
+"""
     fit_animal_model(spec; target = :variance_components, ...)
 
 Fit or solve the Phase 1 Gaussian animal-model engine target for a validated
@@ -760,8 +1056,12 @@ Return dense animal-level reliability values for the Phase 1 univariate animal
 model.
 
 Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
-relationship matrix implied by `Ainv`. Values are not clipped; small examples
-can expose weakly informed animals directly.
+relationship matrix `A = inv(Ainv)` implied by the supplied precision. For a
+genomic spec (`Ainv = Ginv`) this `A_ii` is `diag(inv(Ginv)) = diag(G) + ridge`
+(the regularized genomic self-relationship, often ≠ 1), so the ridge perturbs the
+reported reliability/accuracy and the same extractor yields genomic reliabilities.
+Values are not clipped; small examples can expose weakly informed animals
+directly.
 """
 function reliability(fit::AnimalModelFit; method::Symbol = :dense)
     pev = prediction_error_variance(fit; method = method)
@@ -815,6 +1115,129 @@ function _accuracy_from_reliability(reliability_result)
         throw(ArgumentError("reliability values must be within [0, 1] to compute accuracy"))
 
     return (ids = collect(ids), values = sqrt.(values))
+end
+
+# Acklam (2003) rational approximation to the standard-normal quantile
+# (|abs error| < 1.15e-9). Lets the heritability interval pick a two-sided z
+# without a Distributions/SpecialFunctions dependency.
+function _standard_normal_quantile(p::Real)
+    0 < p < 1 || throw(ArgumentError("p must be in (0, 1)"))
+    a = (-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+         1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00)
+    b = (-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+         6.680131188771972e+01, -1.328068155288572e+01)
+    c = (-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+         -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00)
+    d = (7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+         3.754408661907416e+00)
+    plow = 0.02425
+    phigh = 1 - plow
+    if p < plow
+        q = sqrt(-2 * log(p))
+        return (((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+               ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+    elseif p <= phigh
+        q = p - 0.5
+        r = q * q
+        return (((((a[1] * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * r + a[6]) * q /
+               (((((b[1] * r + b[2]) * r + b[3]) * r + b[4]) * r + b[5]) * r + 1)
+    else
+        q = sqrt(-2 * log(1 - p))
+        return -(((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+                ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+    end
+end
+
+# 2x2 average-information (AI) matrix for (sigma_a2, sigma_e2) of the REML
+# objective at the given variance components — the same AI metric fit_ai_reml
+# uses. Its inverse is the asymptotic variance-component covariance. (Recomputed
+# here rather than shared with the fit_ai_reml hot loop, which also needs the
+# score and reuses its factor.)
+function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    X = Float64.(spec.X)
+    Z = sparse(Float64.(spec.Z))
+    y = Float64.(spec.y)
+    nfixed = size(X, 2)
+    lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+    factor = cholesky(Symmetric(lhs); check = true)
+    solution = factor \ rhs
+    beta = solution[1:nfixed]
+    u = solution[(nfixed + 1):end]
+    e = y .- X * beta .- Z * u
+    wa = (Z * u) ./ sigma_a2
+    we = e ./ sigma_e2
+    Pwa = _reml_project(factor, X, Z, wa, sigma_e2, nfixed)
+    Pwe = _reml_project(factor, X, Z, we, sigma_e2, nfixed)
+    return Symmetric(0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)])
+end
+
+"""
+    variance_component_covariance(fit)
+
+Asymptotic covariance of the estimated `(sigma_a2, sigma_e2)` for a REML
+[`AnimalModelFit`](@ref): the inverse of the average-information matrix. This is a
+large-sample approximation and is unreliable on small samples, where the REML
+surface is flat and the matrix is ill-conditioned. Experimental; REML only.
+"""
+function variance_component_covariance(fit::AnimalModelFit)
+    fit.spec.method == :REML ||
+        throw(ArgumentError("variance_component_covariance requires a REML fit"))
+    info = _reml_information_matrix(
+        fit.spec,
+        fit.variance_components.sigma_a2,
+        fit.variance_components.sigma_e2,
+    )
+    return inv(info)
+end
+
+"""
+    variance_component_standard_errors(fit)
+
+Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
+`NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
+"""
+function variance_component_standard_errors(fit::AnimalModelFit)
+    cov = variance_component_covariance(fit)
+    return (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
+end
+
+"""
+    heritability_standard_error(fit)
+
+Delta-method asymptotic standard error of `h² = sigma_a2 / (sigma_a2 + sigma_e2)`
+for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see the
+caveats there.
+"""
+function heritability_standard_error(fit::AnimalModelFit)
+    sigma_a2 = fit.variance_components.sigma_a2
+    sigma_e2 = fit.variance_components.sigma_e2
+    cov = variance_component_covariance(fit)
+    denom = (sigma_a2 + sigma_e2)^2
+    g = [sigma_e2 / denom, -sigma_a2 / denom]
+    return sqrt(max(0.0, dot(g, cov * g)))
+end
+
+"""
+    heritability_interval(fit; level = 0.95)
+
+Experimental two-sided confidence interval for `h²` of a REML
+[`AnimalModelFit`](@ref). The interval is built on the logit scale (delta method)
+and back-transformed, so it always lies in `(0, 1)`. It is a large-sample
+approximation: on small samples it is very wide and dominated by the flat REML
+surface. Returns `(heritability, lower, upper, level, se)`.
+"""
+function heritability_interval(fit::AnimalModelFit; level::Real = 0.95)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    h2 = heritability(fit)
+    0 < h2 < 1 ||
+        throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
+    se = heritability_standard_error(fit)
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(h2 / (1 - h2))
+    se_eta = se / (h2 * (1 - h2))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (heritability = h2, lower = lower, upper = upper, level = level, se = se)
 end
 
 """

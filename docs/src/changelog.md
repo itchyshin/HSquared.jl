@@ -24,6 +24,76 @@
 - Added `genomic_relationship_matrix()` — the VanRaden (2008) genomic
   relationship matrix `G` from a 0/1/2 (or dosage) marker matrix. Construction
   utility only (Phase 2 start); no genomic fitting yet.
+- Added `genomic_relationship_inverse()` — the ridge-regularized dense inverse
+  `inv(G + ridge·I)` of a genomic relationship matrix, intended for later GBLUP
+  use. Construction utility only; not wired into model fitting, and no
+  single-step (`H`-matrix) blending.
+- Added `fit_gblup()` — genomic BLUP at supplied variance components: feeds a
+  genomic `Ginv` into the existing Henderson MME (`Ginv` in the `Ainv` slot).
+  Reproduces an independent dense MME and reproduces pedigree BLUP when `G = A`;
+  experimental, supplied-variance only, no variance-component estimation, no
+  single-step, no external comparator.
+- Added `fit_snp_blup()` and `centered_markers()` — SNP-BLUP / RR-BLUP marker
+  effects via the existing Henderson MME (`Z = W` centered markers, identity
+  prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
+  (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
+  supplied-variance only, unweighted VanRaden method-1.
+- Internal: deduped the numerator-relationship recursion into
+  `_numerator_relationship(pedigree[, rows])` (one source shared by
+  `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
+  test-only duplicate. No public API or behavior change.
+- Documented and tested genomic reliability/PEV/accuracy: for a GBLUP fit the
+  existing extractors use the regularized genomic self-relationship
+  `diag(inv(Ginv)) = diag(G) + ridge` as the denominator (the ridge perturbs the
+  reported reliability/accuracy), and `method = :selinv` PEV matches the dense
+  diagonal. No logic change.
+- Added an internal single-step H-inverse construction utility
+  `_single_step_Hinv` — `H⁻¹ = A⁻¹ + scatter(τG⁻¹ − ωA₂₂⁻¹)` on the genotyped
+  rows (with the subtle `A₂₂⁻¹ = inv(A[g,g])`, not `(A⁻¹)[g,g]`). Property-checked
+  (reduction, locality, symmetry, distinctness, scattered rows, singular-`G`
+  guard); unexported, not wired into fitting, blending/τ/ω/ridge defaults not
+  comparator-validated.
+- Validated genomic REML variance-component estimation: the existing REML
+  optimizers (`fit_ai_reml`, `fit_sparse_reml`) estimate σ²g/σ²e on a genomic
+  `Ginv` spec — AI and NelderMead reach the same optimum and `fit_gblup` at the
+  estimate reproduces the REML breeding values. Experimental; no external
+  comparator; no new code (reuses the Phase-1 optimizers).
+- Added a "Genomic models" documentation page with runnable examples for
+  `G`/`Ginv`, GBLUP, genomic REML, SNP-BLUP, and the single-step `H⁻¹` utility,
+  and an explicit experimental / not-yet-R-wired / no-external-comparator
+  boundary.
+- Added experimental heritability uncertainty: `variance_component_covariance`,
+  `variance_component_standard_errors`, `heritability_standard_error`, and
+  `heritability_interval` — a logit-transform delta interval (always in (0,1))
+  built on the REML AI matrix, with a self-contained standard-normal quantile.
+  Asymptotic / REML-only; wide and unreliable at small n.
+- Added `repeatability_mme()` — the first Phase-3 slice: a supplied-variance
+  Henderson solve of the two-random-effect repeatability / permanent-environment
+  animal model (additive `a` + permanent-environment `pe`) via a block-diagonal
+  relationship precision. Matches an independent marginal-GLS BLUP and reduces to
+  the animal model as `σ²pe → 0`. Experimental, supplied-variance only — no REML
+  estimation of the three components, no R-facing model-spec yet.
+- Added `fit_repeatability_reml()` — REML estimation of (σ²a, σ²pe, σ²e) for the
+  repeatability / permanent-environment model (dense two-random-effect REML
+  loglik + NelderMead), returning the repeatability coefficient `t` and `h²`.
+  Deterministic checks (loglik reduces to the animal-model REML at σ²pe=0; BLUPs
+  match `repeatability_mme`; optimum beats a grid) + a one-off seeded recovery.
+  Experimental, dense/validation-scale, REML-only; no committed recovery test
+  (suite kept RNG-free), no intervals, no R-facing model-spec.
+- Added `two_effect_mme()` — the general supplied-variance kernel for two
+  independent random effects (each with its own incidence, relationship inverse,
+  and variance), covering common-environment and maternal-environment models;
+  `repeatability_mme` is now its `Z2=Z1, A2=I` special case. Validated against an
+  independent marginal-GLS BLUP. Experimental; no correlated direct–maternal
+  genetic, no estimation, no R-facing model-spec.
+- Added `fit_two_effect_reml()` — REML estimation of the two-effect-model
+  variances (common-environment `c²`, maternal variance, etc.) via the dense
+  two-effect REML loglik; `fit_repeatability_reml` is the `Z2=Z1, A2=I` reduction.
+  Experimental, dense/validation-scale, REML-only; no committed recovery test, no
+  intervals, no R-facing model-spec.
+- Added a "Standard QG models" documentation page with runnable examples for
+  repeatability (MME + REML, repeatability coefficient), common-environment, and
+  maternal-environment models, with the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with
