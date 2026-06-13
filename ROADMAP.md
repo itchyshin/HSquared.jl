@@ -8,8 +8,13 @@ contract agree.
 
 ## Current Status
 
-Phase 0 public scaffold is complete. Phase 1 has started with the first
-pedigree/Ainv engine utility slice.
+Phase 0 public scaffold is complete. Phases 1-3 have landed as experimental,
+validation-scale Julia engine utilities (pedigree/Ainv, supplied-variance and
+REML/AI-REML Gaussian animal-model fitting, the VanRaden genomic engine with
+GBLUP/SNP-BLUP/single-step `H`-inverse, and the repeatability / two-random-effect
+standard quantitative-genetic models). These are engine-internal and not the
+public default; production high-level fitting and the public R model-spec remain
+unimplemented.
 
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
@@ -79,6 +84,34 @@ pedigree/Ainv engine utility slice.
   likelihood values, fixed effects, EBVs, fitted values, PEV, reliability,
   derived accuracy, and `h2`. This is still not fitted Mrode output validation
   or variance-component estimation.
+- Experimental average-information REML (`fit_ai_reml`) estimates the two
+  variance components on the sparse Henderson MME (score from the Takahashi
+  selected inverse; AI matrix from working-variate re-solves); experimental,
+  REML-only, 2-component, Gaussian-only, not the public default. Known-truth
+  recovery and the published gryphon anchor are validated externally in the R
+  lane via the bridge (`V1-AI-REML`).
+- Experimental sparse selected-inversion PEV/reliability exists via
+  `method = :selinv` (Takahashi selected inverse of the sparse MME coefficient
+  matrix), matching the dense MME inverse diagonal to machine precision on
+  tiny and Mrode9-shaped fixtures.
+- Experimental variance-component covariance and a heritability confidence
+  interval (`variance_component_covariance`, `heritability_standard_error`,
+  `heritability_interval`; logit-transform delta interval) build on the REML
+  AI matrix; asymptotic, REML-only, not coverage-calibrated.
+- Experimental genomic relationship engine (Phase 2): VanRaden `G`
+  (`genomic_relationship_matrix`), regularized inverse
+  (`genomic_relationship_inverse`), GBLUP (`fit_gblup`), SNP-BLUP with
+  marker-effect output and the GBLUP/SNP-BLUP equivalence
+  (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
+  and GBLUP REML variance-component estimation exist as experimental
+  supplied-variance / validation-scale engine utilities. No production genomic
+  fitting, marker scan, or QTL/eQTL scan; not the public default.
+- Experimental standard quantitative-genetic models (Phase 3): repeatability /
+  permanent-environment (`repeatability_mme`, `fit_repeatability_reml`) and a
+  general two-random-effect model for common-environment / maternal-genetic
+  effects (`two_effect_mme`, `fit_two_effect_reml`) exist as experimental
+  dense/validation-scale engine utilities at supplied or REML-estimated
+  variance components. No R-facing model-spec; not the public default.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
@@ -102,14 +135,18 @@ pedigree/Ainv engine utility slice.
 - Backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests are
   not implemented.
-- APY approximation, Takahashi selected inversion, production AI-REML,
-  Woodbury-backed factor/GLLVM engines, and HPC checkpointing are not
-  implemented.
-- Genomic prediction, single-step fitting, marker-effect estimation,
-  marker scans, and QTL/eQTL scans are not implemented.
-- Permanent environment, common environment, maternal/paternal effects,
-  cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
-  relationship/precision kernels are not implemented.
+- APY approximation, Woodbury-backed factor/GLLVM engines, and HPC
+  checkpointing are not implemented. AI-REML and the Takahashi selected inverse
+  exist only as the experimental, validation-scale utilities above, not as
+  production-scale, sparse, large-pedigree fitting.
+- Marker scans and QTL/eQTL scans are not implemented. Genomic prediction,
+  single-step `H`-inverse, and marker-effect estimation exist only as the
+  experimental engine utilities above, not as production genomic fitting.
+- Paternal effects, cytoplasmic inheritance, imprinting, dominance, epistasis,
+  sire models, random regression, unknown-parent groups, and custom
+  relationship/precision kernels are not implemented. Permanent environment,
+  common environment, and maternal-genetic effects exist only as the
+  experimental engine utilities above, not as a public model-spec.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
@@ -191,6 +228,12 @@ comparator checks where available.
 Add `G` and `Ginv`, GBLUP, SNP-BLUP, supplied `Hinv`, genotype ID matching,
 and first marker-effect outputs.
 
+Status: the engine utilities have landed (experimental, validation-scale) —
+`genomic_relationship_matrix`, `genomic_relationship_inverse`, `fit_gblup`,
+`fit_snp_blup`/`centered_markers`, single-step `H`-inverse construction, and
+GBLUP REML. These are engine-internal; production genotype-ID matching at scale,
+a public genomic model-spec, and external comparator parity remain open.
+
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.
 
@@ -200,6 +243,14 @@ Add repeatability, permanent environment, maternal effects, common environment,
 sire models, dominance, cytoplasmic inheritance, selfing, clonal/asexual,
 haplodiploid, polyploid, unknown parent groups, inbreeding, and the first
 random-regression slice.
+
+Status: the first engine utilities have landed (experimental, validation-scale)
+— repeatability / permanent-environment (`repeatability_mme`,
+`fit_repeatability_reml`) and a general two-random-effect model covering
+common-environment and maternal-genetic effects (`two_effect_mme`,
+`fit_two_effect_reml`). Sire models, dominance, cytoplasmic inheritance,
+non-standard inheritance systems, unknown-parent groups, and random regression
+remain open, as does any public model-spec.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

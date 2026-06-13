@@ -2,6 +2,33 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 ROADMAP status reconciliation (merged Phase 1-3 reality)
+
+- Goal: remove stale "not implemented" claims from `ROADMAP.md` that became
+  false once Phases 1-3 engine utilities merged to `main` (PR #9). Honest-status
+  maintenance; doc-only, no code change.
+- Active lenses: Rose (claim-vs-evidence), Ada (phase status).
+- Findings (drift on `main`): the "Current Status" block still claimed "Genomic
+  prediction, single-step fitting, marker-effect estimation ... are not
+  implemented" and "Permanent environment, common environment, maternal/paternal
+  effects ... are not implemented", and listed the Takahashi selected inverse as
+  not implemented — all contradicted by merged code (`fit_gblup`, `fit_snp_blup`,
+  single-step `H`-inverse, genomic REML, `repeatability_mme`/`fit_repeatability_reml`,
+  `two_effect_mme`/`fit_two_effect_reml`, `method = :selinv`, `fit_ai_reml`).
+- Edits (`ROADMAP.md` only):
+  - rewrote the intro ("Phase 1 has started") to "Phases 1-3 have landed as
+    experimental, validation-scale engine utilities ... not the public default";
+  - added positive experimental bullets (AI-REML, selinv PEV, heritability
+    interval, the genomic engine, the standard-QG two-effect models);
+  - narrowed the three stale "not implemented" bullets to what genuinely remains
+    (marker/QTL scans; paternal/cytoplasmic/imprinting/dominance/epistasis/sire/
+    random-regression; APY/Woodbury/HPC), each cross-referencing the experimental
+    utilities and stressing "not the public default / not production";
+  - added Status paragraphs to the Phase 2 and Phase 3 sections.
+- Boundary: prose-only honesty fix. No new capability claim; every positive
+  statement is qualified experimental/validation-scale and was already backed by
+  merged code + validation rows. No test or docs-build impact (root markdown).
+
 ## 2026-06-13 v0.1 Gate: Validation-Status Finalization (R-lane evidence)
 
 - Goal: act on the R twin's v0.1 gate handoff — fix the `V1-AI-REML` honesty bug
