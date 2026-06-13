@@ -48,6 +48,8 @@ Newest entries go at the top.
   - Live grammar page `https://itchyshin.github.io/HSquared.jl/dev/model-spec-grammar`:
     HTTP 200 and contains `formula_status()`, `experimental tiny bridge only`,
     and `qtl_scan(position, genotype_probs = probs)`.
+  - GitHub issue note:
+    `https://github.com/itchyshin/HSquared.jl/issues/6#issuecomment-4697782885`.
 
 ## 2026-06-13 Planned Quantitative-Genetic Marker Vocabulary Mirror
 

@@ -96,6 +96,10 @@ Live docs:
   HTTP 200 and contains `formula_status()`, `experimental tiny bridge only`,
   and `qtl_scan(position, genotype_probs = probs)`.
 
+GitHub issue note:
+
+- `https://github.com/itchyshin/HSquared.jl/issues/6#issuecomment-4697782885`
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -127,5 +131,5 @@ Rose verdict: clean with limitations.
 
 ## Next Actions
 
-1. Push the evidence record and watch CI/Documenter/Pages.
-2. Add a GitHub issue note for the R/Jula diagnostic mirror.
+1. Continue with the next bridge/status slice after checking current twin
+   handoffs.
