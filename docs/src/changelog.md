@@ -101,6 +101,23 @@
   `covered_external` (the engine recovers the published gryphon REML estimate,
   Wilson 2010 h²=0.470, via supplied `A_gryphon`, and agrees with sommer, within
   the maintainer-signed-off band). Status rows + tests only; no engine change.
+- Reconciled `ROADMAP.md` with merged reality: Phases 1-3 engine utilities
+  (genomic prediction, single-step `H`-inverse, AI-REML, the Takahashi selected
+  inverse, repeatability / two-effect models) are now listed as landed
+  experimental, validation-scale utilities instead of "not implemented".
+- Added `multivariate_mme()` — the first Phase-4 (multivariate Gaussian) slice: a
+  supplied-covariance Henderson solve of the balanced multi-trait animal model
+  (Kronecker MME with genetic precision `Ainv⊗G0⁻¹` and residual `I⊗R0⁻¹`),
+  returning per-trait fixed effects and EBVs. Validated against an independent
+  loop-built MME, an independent marginal-GLS BLUP, the univariate animal model
+  at `t=1`, and `t` independent single-trait fits at diagonal `G0`/`R0`.
+  Experimental, dense/validation-scale; balanced data with a shared design only;
+  no `G0`/`R0` estimation, no missing records, no R-facing model-spec.
+- Added `genetic_correlation()` — converts a covariance matrix (e.g. `G0`, `R0`)
+  to the corresponding correlation matrix; also extracts the genetic correlation
+  from a `multivariate_mme` result.
+- Added a "Multivariate models" documentation page with a runnable balanced
+  two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

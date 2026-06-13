@@ -216,6 +216,15 @@ const VALIDATION_STATUS_DATA = (
         "Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec.",
     ),
     (
+        "V4-MULTIVARIATE",
+        "multivariate (multi-trait) animal model (supplied covariance)",
+        "Phase 4",
+        "partial",
+        "`multivariate_mme` solves the balanced multi-trait animal model at supplied genetic/residual covariance matrices `G0`, `R0` (Kronecker MME: genetic precision `Ainv⊗G0⁻¹`, residual precision `I⊗R0⁻¹`); its β and EBVs match an independent loop-built multivariate MME, an independent marginal-GLS BLUP, the standard univariate animal model in the `t=1` reduction, and t independent single-trait fits when `G0`, `R0` are diagonal — all to a committed 1e-10 tolerance (observed agreement is machine precision, ~1e-14), in `test/runtests.jl`. `genetic_correlation` is hand-checked.",
+        "unbalanced / missing-trait records, per-trait fixed-effect and incidence designs, covariance-matrix estimation (multivariate REML/EM), a published Mrode multi-trait fixture, and JWAS/sommer/ASReml-style external comparators",
+        "Supplied-covariance, BALANCED data with a design shared across traits only; no G0/R0 estimation, no missing-record handling, no R-facing multivariate model-spec.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",

@@ -76,6 +76,8 @@ HSquared.fit_sparse_reml
 HSquared.fit_ai_reml
 HSquared.fit_gblup
 HSquared.fit_snp_blup
+HSquared.multivariate_mme
+HSquared.genetic_correlation
 HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.variance_component_covariance

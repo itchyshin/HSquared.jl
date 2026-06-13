@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 25
+    @test length(validation) == 26
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -175,6 +175,11 @@ end
     @test aireml_row.status == "covered"
     @test occursin("gryphon", aireml_row.evidence)
     @test !occursin("250-animal", aireml_row.evidence)
+    mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
+    @test mv_row.phase == "Phase 4"
+    @test mv_row.status == "partial"
+    @test occursin("multivariate_mme", mv_row.evidence)
+    @test occursin("BALANCED", mv_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -1996,4 +2001,92 @@ end
     @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2);
         initial = (sigma1 = -1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2))
+end
+
+@testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    q = 4
+    n = q
+    t = 2
+    Z = Matrix(1.0I, n, q)            # one balanced record per animal
+    X = ones(n, 1)                    # shared intercept
+    Y = [10.0 50.0; 12.0 47.0; 9.0 53.0; 11.0 49.0]   # deterministic, 2 traits
+    G0 = [1.0 0.4; 0.4 1.5]
+    R0 = [2.0 0.3; 0.3 1.0]
+
+    res = multivariate_mme(Y, X, Z, Ainv, G0, R0)
+    @test size(res.beta) == (1, t)
+    @test size(res.breeding_values.values) == (q, t)
+    @test res.breeding_values.ids == collect(1:q)
+
+    # Reference 1: loop-built multivariate MME (independent assembly, trait-fastest)
+    invR0 = inv(R0); invG0 = inv(G0); p = size(X, 2)
+    Xbig = zeros(n * t, p * t); Zbig = zeros(n * t, q * t); ybig = zeros(n * t)
+    for i in 1:n, k in 1:t
+        r = (i - 1) * t + k; ybig[r] = Y[i, k]
+        for j in 1:p; Xbig[r, (j - 1) * t + k] = X[i, j]; end
+        for a in 1:q; Zbig[r, (a - 1) * t + k] = Z[i, a]; end
+    end
+    Rinvbig = zeros(n * t, n * t)
+    for i in 1:n, k1 in 1:t, k2 in 1:t
+        Rinvbig[(i - 1) * t + k1, (i - 1) * t + k2] = invR0[k1, k2]
+    end
+    Ginvbig = zeros(q * t, q * t)
+    for a in 1:q, b in 1:q, k in 1:t, l in 1:t
+        Ginvbig[(a - 1) * t + k, (b - 1) * t + l] = Matrix(Ainv)[a, b] * invG0[k, l]
+    end
+    LHS = [transpose(Xbig) * Rinvbig * Xbig  transpose(Xbig) * Rinvbig * Zbig;
+           transpose(Zbig) * Rinvbig * Xbig  transpose(Zbig) * Rinvbig * Zbig + Ginvbig]
+    RHS = vcat(transpose(Xbig) * Rinvbig * ybig, transpose(Zbig) * Rinvbig * ybig)
+    sol = LHS \ RHS
+    beta_ref = permutedims(reshape(sol[1:p * t], t, p))
+    u_ref = permutedims(reshape(sol[p * t + 1:end], t, q))
+    @test res.beta ≈ beta_ref atol = 1e-10
+    @test res.breeding_values.values ≈ u_ref atol = 1e-10
+
+    # Reference 2: marginal-GLS BLUP via the big V (independent of MME assembly)
+    AkG = kron(A, G0)
+    V = Zbig * AkG * transpose(Zbig) + kron(Matrix(1.0I, n, n), R0)
+    Vi = inv(V)
+    beta_gls = (transpose(Xbig) * Vi * Xbig) \ (transpose(Xbig) * Vi * ybig)
+    u_gls = AkG * transpose(Zbig) * Vi * (ybig - Xbig * beta_gls)
+    @test res.beta ≈ permutedims(reshape(beta_gls, t, p)) atol = 1e-10
+    @test res.breeding_values.values ≈ permutedims(reshape(u_gls, t, q)) atol = 1e-10
+
+    # Reference 3: univariate reduction (t = 1 equals the standard animal-model MME)
+    y1 = Y[:, 1:1]; G1 = reshape([1.0], 1, 1); R1 = reshape([2.0], 1, 1)
+    res1 = multivariate_mme(y1, X, Z, Ainv, G1, R1)
+    lam = R1[1, 1] / G1[1, 1]
+    LHS1 = [transpose(X) * X  transpose(X) * Z; transpose(Z) * X  transpose(Z) * Z + Matrix(Ainv) * lam]
+    sol1 = LHS1 \ vcat(transpose(X) * y1, transpose(Z) * y1)
+    @test res1.beta[1, 1] ≈ sol1[1, 1] atol = 1e-10
+    @test vec(res1.breeding_values.values) ≈ sol1[p + 1:end] atol = 1e-10
+
+    # Reference 4: diagonal G0, R0 decouple into independent single-trait fits
+    resd = multivariate_mme(Y, X, Z, Ainv, [1.0 0.0; 0.0 1.5], [2.0 0.0; 0.0 1.0])
+    rA = multivariate_mme(Y[:, 1:1], X, Z, Ainv, reshape([1.0], 1, 1), reshape([2.0], 1, 1))
+    rB = multivariate_mme(Y[:, 2:2], X, Z, Ainv, reshape([1.5], 1, 1), reshape([1.0], 1, 1))
+    @test resd.breeding_values.values[:, 1] ≈ vec(rA.breeding_values.values) atol = 1e-10
+    @test resd.breeding_values.values[:, 2] ≈ vec(rB.breeding_values.values) atol = 1e-10
+
+    # genetic_correlation extractor
+    rg = genetic_correlation(G0)
+    @test rg[1, 2] ≈ 0.4 / sqrt(1.0 * 1.5)
+    @test rg[1, 1] == 1.0 && rg[2, 2] == 1.0
+    @test genetic_correlation(res) === res.genetic_correlation
+    @test res.genetic_correlation ≈ rg
+    @test res.residual_correlation[1, 2] ≈ 0.3 / sqrt(2.0 * 1.0)
+
+    # custom trait labels propagate
+    resl = multivariate_mme(Y, X, Z, Ainv, G0, R0; traits = ["wt", "ln"])
+    @test resl.traits == ["wt", "ln"]
+    @test resl.breeding_values.traits == ["wt", "ln"]
+
+    # guards
+    @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, [1.0 0.4; 0.5 1.5], R0)  # nonsymmetric
+    @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, [1.0 2.0; 2.0 1.0], R0)  # non-PD
+    @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0[1:1, 1:1], R0)        # wrong t
+    @test_throws ArgumentError multivariate_mme(Y, X, Z[:, 1:3], Ainv, G0, R0)          # Z/Ainv mismatch
+    @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = [1, 2, 3]) # ids length
 end

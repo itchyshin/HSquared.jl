@@ -2,6 +2,42 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Multivariate animal model (Phase 4 start, supplied covariance)
+
+- Goal: first Phase-4 engine slice — a supplied-(co)variance multivariate
+  (multi-trait) animal-model MME, the multi-trait analogue of `henderson_mme` /
+  `two_effect_mme`.
+- Active lenses: Henderson, Kirkpatrick, Falconer, Noether, Gauss, Curie, Rose
+  (inline).
+- Implementation (`src/multivariate.jl`, new; included + exported):
+  - `multivariate_mme(Y, X, Z, Ainv, G0, R0; ids, traits)` — balanced multi-trait
+    animal model at supplied `G0` (genetic) / `R0` (residual) `t×t` covariances.
+    Kronecker MME, records ordered individual-major (trait fastest): genetic
+    precision `Ainv⊗G0⁻¹`, residual precision `I⊗R0⁻¹`. Returns per-trait `beta`
+    (`p×t`), `breeding_values` (`q×t` EBVs), the supplied covariances, and the
+    derived genetic/residual correlations.
+  - `genetic_correlation(C)` / `genetic_correlation(result)` — covariance →
+    correlation; PD/symmetry guards.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed. New
+    testset "Phase 4 multivariate (multi-trait) animal model (supplied
+    covariance)" = 23 checks: β/EBVs match an independent loop-built multivariate
+    MME, an independent marginal-GLS BLUP, the univariate animal model at `t=1`,
+    and `t` single-trait fits at diagonal `G0`/`R0` — all to a committed 1e-10
+    tolerance (observed ~1e-14); `genetic_correlation` hand-checked; trait labels
+    propagate; symmetry/PD/dimension/ids guards. `validation_status()` 25 → 26
+    (added `V4-MULTIVARIATE`).
+  - `julia --project=docs docs/make.jl`: green (new "Multivariate models" page with
+    a runnable balanced two-trait example).
+- Status surfaces (lockstep): `validation_status.jl` `V4-MULTIVARIATE` (partial);
+  `capability-status.md` new experimental row; `validation-debt-register.md`
+  `V3-MV`→`V4-MV` planned→partial; `api.md` + `changelog.md`.
+- Boundary:
+  - Supplied-covariance, BALANCED data with a design shared across traits only;
+    no `G0`/`R0` estimation (multivariate REML/EM), no unbalanced / missing-trait
+    records, no per-trait designs, no published Mrode multi-trait fixture or
+    external comparator, no R-facing multivariate model-spec.
+
 ## 2026-06-13 ROADMAP status reconciliation (merged Phase 1-3 reality)
 
 - Goal: remove stale "not implemented" claims from `ROADMAP.md` that became

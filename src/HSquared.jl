@@ -62,6 +62,7 @@ export AMDGPUBackend,
     fitted_values,
     fixed_effects,
     gaussian_loglik,
+    genetic_correlation,
     genomic,
     genomic_relationship_inverse,
     genomic_relationship_matrix,
@@ -77,6 +78,7 @@ export AMDGPUBackend,
     marker_scan,
     markers,
     maternal_env,
+    multivariate_mme,
     maternal_genetic,
     normalize_pedigree,
     pedigree_inverse,
@@ -111,6 +113,7 @@ include("model_spec.jl")
 include("genomic.jl")
 include("takahashi_selinv.jl")
 include("likelihood.jl")
+include("multivariate.jl")
 include("planned_terms.jl")
 include("validation_status.jl")
 include("placeholders.jl")
