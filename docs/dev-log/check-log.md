@@ -28,6 +28,11 @@ Newest entries go at the top.
   - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
     expected outside CI; generated Vitepress dependencies reported npm
     advisories in temporary build artifacts.
+- Remote checks:
+  - CI `27458145243`: success.
+  - Documenter `27458145252`: success.
+  - Pages `27458175711`: success.
+  - Live docs returned HTTP 200.
 - Boundary:
   - Control metadata only.
   - CPU remains the trusted always-available path.

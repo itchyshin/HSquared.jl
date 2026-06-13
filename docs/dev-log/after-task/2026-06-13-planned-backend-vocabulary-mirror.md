@@ -76,6 +76,9 @@ Blocked wording:
   advisories in temporary build artifacts.
 - Claim scan: clean with limitations. Hits were blocked/audit wording or
   historical check-log notes, not public execution or speed claims.
-- GitHub CI after push: pending.
+- CI `27458145243`: success.
+- Documenter `27458145252`: success.
+- Pages `27458175711`: success.
+- Live docs returned HTTP 200.
 
 Rose verdict: clean with limitations.
