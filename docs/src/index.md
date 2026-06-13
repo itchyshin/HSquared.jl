@@ -44,6 +44,7 @@ Implemented engine utilities:
 - experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
   fitted-value, heritability, PEV, reliability, and checked accuracy extractors
   for the dense spec and supplied-variance Henderson MME validation paths;
+- `fit_diagnostics()` metadata extraction for low-level fit objects;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - experimental direct supplied-variance Henderson target through
   `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`;

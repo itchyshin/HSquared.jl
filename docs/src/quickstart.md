@@ -233,6 +233,13 @@ For R bridge work, `result_payload` returns the current bridge-facing names:
 keys(result_payload(fit))
 ```
 
+`fit_diagnostics()` returns compact metadata already stored on the result
+object:
+
+```@example quickstart
+fit_diagnostics(fit)
+```
+
 These outputs are useful for tiny validation examples. They are not yet sparse
 production EBVs, reliabilities, or prediction error variances.
 
@@ -240,6 +247,11 @@ The R twin may enrich opt-in tiny/local bridge results by calling
 `prediction_error_variance(fit)` and `reliability(fit)` after
 `result_payload(fit)`. Those fields are intentionally not part of the compact
 base payload contract.
+
+For supplied-variance MME results, `fit_diagnostics(mme)` reports
+`target = :henderson_mme`, supplied-variance status, `nobs`, and
+`loglik = nothing`. It does not compute optimizer diagnostics or add
+log-likelihood output to the Henderson target.
 
 For checking R formula parity before fitting, the R twin also exposes
 `model_spec()`. It validates `animal(1 | id, pedigree = ped)` and previews the

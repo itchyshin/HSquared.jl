@@ -360,6 +360,55 @@ function fixed_effects(result::HendersonMMEResult)
 end
 
 """
+    fit_diagnostics(fit)
+
+Return compact status metadata for an experimental low-level fit result.
+
+This is an extractor over fields already stored on the result object. It does
+not refit a model, run an optimizer, compute PEV/reliability, or change the
+bridge-facing [`result_payload`](@ref) contract.
+"""
+function fit_diagnostics(fit::AnimalModelFit)
+    vc = variance_components(fit)
+
+    return (
+        engine = :julia,
+        result_type = :animal_model_fit,
+        target = :variance_components,
+        method = fit.likelihood.method,
+        family = :gaussian,
+        converged = fit.converged,
+        optimizer_status = fit.optimizer_status,
+        iterations = fit.iterations,
+        loglik = fit.likelihood.loglik,
+        df = fit.likelihood.nfixed + length(vc),
+        nobs = fit.likelihood.nobs,
+        dense_validation_path = true,
+        sparse_mme_path = false,
+        variance_components_source = :estimated_dense_validation,
+    )
+end
+
+function fit_diagnostics(result::HendersonMMEResult)
+    return (
+        engine = :julia,
+        result_type = :henderson_mme,
+        target = :henderson_mme,
+        method = result.spec.method,
+        family = :gaussian,
+        converged = true,
+        optimizer_status = "not_applicable",
+        iterations = 0,
+        loglik = nothing,
+        df = nothing,
+        nobs = length(result.spec.y),
+        dense_validation_path = false,
+        sparse_mme_path = true,
+        variance_components_source = :supplied,
+    )
+end
+
+"""
     breeding_values(fit)
 
 Return animal-effect BLUPs/EBVs for an experimental low-level

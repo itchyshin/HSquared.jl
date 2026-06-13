@@ -58,6 +58,8 @@ Implemented now:
   fitted-value, heritability, prediction-error-variance, reliability, and
   derived accuracy extractors for the low-level spec and supplied-variance
   Henderson MME validation paths;
+- `fit_diagnostics()` metadata extraction for low-level `AnimalModelFit` and
+  supplied-variance `HendersonMMEResult` objects;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - explicit supplied-variance Julia target
@@ -95,6 +97,9 @@ Implemented now:
   fitted values, supplied variance components, simple `h2`, diagnostics, and
   convergence status, but no log-likelihood, AIC, `df`, optimizer output, or
   variance-component estimation;
+- external R `fit_diagnostics()` evidence from the `hsquared` twin; Julia now
+  mirrors the same idea as metadata-only extraction without widening
+  `result_payload()`;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 

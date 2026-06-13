@@ -920,6 +920,38 @@ end
     @test payload.diagnostics.method == :ML
     @test payload.diagnostics.dense_validation_path == true
     @test payload.converged == true
+
+    diagnostics = fit_diagnostics(fit)
+    @test diagnostics.engine == :julia
+    @test diagnostics.result_type == :animal_model_fit
+    @test diagnostics.target == :variance_components
+    @test diagnostics.method == :ML
+    @test diagnostics.family == :gaussian
+    @test diagnostics.converged == true
+    @test diagnostics.optimizer_status == "test"
+    @test diagnostics.iterations == 0
+    @test diagnostics.loglik == likelihood.loglik
+    @test diagnostics.df == 3
+    @test diagnostics.nobs == 3
+    @test diagnostics.dense_validation_path == true
+    @test diagnostics.sparse_mme_path == false
+    @test diagnostics.variance_components_source == :estimated_dense_validation
+
+    mme_diagnostics = fit_diagnostics(mme)
+    @test mme_diagnostics.engine == :julia
+    @test mme_diagnostics.result_type == :henderson_mme
+    @test mme_diagnostics.target == :henderson_mme
+    @test mme_diagnostics.method == :ML
+    @test mme_diagnostics.family == :gaussian
+    @test mme_diagnostics.converged == true
+    @test mme_diagnostics.optimizer_status == "not_applicable"
+    @test mme_diagnostics.iterations == 0
+    @test mme_diagnostics.loglik === nothing
+    @test mme_diagnostics.df === nothing
+    @test mme_diagnostics.nobs == 3
+    @test mme_diagnostics.dense_validation_path == false
+    @test mme_diagnostics.sparse_mme_path == true
+    @test mme_diagnostics.variance_components_source == :supplied
 end
 
 @testset "Phase 1 bridge payload fit target" begin

@@ -55,8 +55,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `fit_diagnostics()` reports existing result-payload metadata such as engine,
   method, family, target, convergence, optimizer status, iterations, logLik,
   `df`, `nobs`, dense-validation-path flags, variance-component source, and
-  scalar Julia diagnostics when present. Julia has not yet mirrored this as a
-  public helper; this is a possible low-risk follow-up.
+  scalar Julia diagnostics when present. Julia mirrors this as
+  `fit_diagnostics()` metadata extraction for `AnimalModelFit` and
+  supplied-variance `HendersonMMEResult` objects. This does not widen
+  `result_payload()` and does not add new fitting behavior.
 - The R twin added environment-key diagnostics at `hsquared` head `e7fbb31`:
   `hs_data(..., environment = env, environment_id = "site")` validates a
   shared key and reports `environment_status` in `summary()` and
@@ -170,6 +172,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     aliases and fitted-value, heritability, PEV, reliability, and checked
     accuracy extractors
     implemented for validated specs;
+  - `fit_diagnostics()` metadata extraction implemented for low-level
+    `AnimalModelFit` and supplied-variance `HendersonMMEResult` objects;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
   - sparse Henderson MME solving at supplied variance components implemented

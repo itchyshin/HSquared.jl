@@ -72,6 +72,7 @@ HSquared.BreedingValues
 HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.fixed_effects
+HSquared.fit_diagnostics
 HSquared.breeding_values
 HSquared.EBV
 HSquared.BLUP

@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Fit Diagnostics Metadata Helper
+
+- Goal: mirror the R twin's `fit_diagnostics()` surface in Julia as a
+  metadata-only extractor for existing low-level result objects.
+- Active lenses: Ada, Shannon, Hopper, Emmy, Karpinski, Grace, Rose, Pat.
+- Spawned subagents: none.
+- R handoff:
+  - `hsquared` head `060988d` adds exported `fit_diagnostics()` for
+    `hsquared_fit` objects.
+  - R evidence reported green: R-CMD-check `27465274019`, pkgdown
+    `27465274023`, Pages `27465310482`.
+- Julia implementation:
+  - Added exported `fit_diagnostics()`.
+  - Added `fit_diagnostics(fit::AnimalModelFit)` with engine, result type,
+    target, method, family, convergence, optimizer status, iterations,
+    log-likelihood, `df`, `nobs`, path flags, and variance-component source.
+  - Added `fit_diagnostics(result::HendersonMMEResult)` with supplied-variance
+    MME metadata and `loglik = nothing`, `df = nothing`.
+  - Kept `result_payload()` unchanged.
+  - Updated README, quickstart/API docs, engine contract, capability status,
+    validation debt, public claims, coordination board, roadmap, and changelog.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed after code/test
+    edits. Testset totals sum to 515 checks; dense fit extractor testset has
+    76 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim-boundary scan found expected blocked/status wording only.
+- Boundary:
+  - Metadata extraction only.
+  - No optimizer rerun.
+  - No gradient/information diagnostics.
+  - No backend/device diagnostics.
+  - No bridge payload widening.
+  - No new fitting, sparse production, or performance claim.
+
 ## 2026-06-13 Mrode-Style Supplied-Variance Validation Fixture
 
 - Goal: add a Julia-native Mrode9-shaped supplied-variance validation fixture

@@ -33,6 +33,7 @@ Implemented:
 - experimental MME-backed EBV/BLUP aliases, fitted-value, heritability, PEV,
   reliability, and checked accuracy extraction for dense spec and
   supplied-variance Henderson MME validation paths;
+- `fit_diagnostics()` metadata extraction for low-level fit objects;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - sparse Henderson MME solving at supplied variance components, with a shared
   R/Julia fixture for Ainv, fixed effects, EBVs, fitted values, and `h2`;
@@ -48,6 +49,8 @@ Implemented:
 - external R EBV/BLUP/accuracy extractor ergonomics evidence from `hsquared`
   head `afa25f1`; Julia mirrors the names locally without adding payload
   fields.
+- external R `fit_diagnostics()` evidence from `hsquared` head `060988d`;
+  Julia mirrors this as a metadata-only helper over existing result fields.
 - external R supplied-variance Henderson MME bridge evidence from `hsquared`
   head `00b9e33`; R can opt into `engine_control$target = "henderson_mme"` and
   supplied variance components, with no log-likelihood, AIC, `df`, optimizer

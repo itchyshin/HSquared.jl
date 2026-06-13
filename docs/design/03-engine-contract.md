@@ -303,6 +303,7 @@ fitting.
 ```julia
 variance_components(fit)
 fixed_effects(fit)
+fit_diagnostics(fit)
 breeding_values(fit)
 EBV(fit)
 BLUP(fit)
@@ -363,6 +364,21 @@ reliability.
 R head `afa25f1` adds R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
 ergonomics. Julia mirrors the vocabulary locally as aliases and derived output
 only; there is no new bridge payload requirement.
+
+R head `060988d` adds R-side `fit_diagnostics()` over existing result-payload
+metadata. Julia mirrors this as:
+
+```julia
+fit_diagnostics(fit)
+fit_diagnostics(mme)
+```
+
+The Julia helper returns a compact `NamedTuple` with metadata already stored on
+`AnimalModelFit` or `HendersonMMEResult`, including engine, result type, target,
+method, family, convergence flag, optimizer status, iterations, log-likelihood
+or `nothing`, degrees of freedom or `nothing`, observation count, path flags,
+and variance-component source. It does not refit, solve equations, compute
+PEV/reliability, probe backends, or widen `result_payload()`.
 
 ## R Result Payload Contract
 
