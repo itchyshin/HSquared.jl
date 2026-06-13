@@ -24,21 +24,26 @@ already compute the correct genomic quantities for a GBLUP fit, and that the
 ## Implementation
 
 `reliability` computes `1 − PEV_i / (σ²a · A_ii)` with `A = inv(Ainv)`. For a
-genomic spec `Ainv = Ginv`, so `A = G + ridge·I` and `A_ii` is the genomic
-self-relationship `diag(G)` (often ≠ 1) — the mathematically correct denominator.
-No code change was needed; the docstring now states this explicitly.
+genomic spec `Ainv = Ginv`, so `A = G + ridge·I` and `A_ii = diag(inv(Ginv)) =
+diag(G) + ridge` (the regularized genomic self-relationship, often ≠ 1) — so the
+ridge perturbs the reported reliability/accuracy. No code change was needed; the
+docstring now states this explicitly.
 
 ## Checks
 
-- `Pkg.test()`: passed, 637 total. New testset = 5 checks. Verified independently
-  before pinning: genomic `diag(inv(Ginv))` = `[1.45, 1.45, 0.77, 1.11]` (≠ 1),
-  `rel ∈ [0,1]`, `PEV = (1−rel)·σ²a·diag` to ~1e-16, `accuracy = √rel` exactly,
-  `:selinv` == dense PEV to ~3e-16.
+- `Pkg.test()`: passed. Testset = 7 checks: PEV independently anchored against a
+  re-assembled MME inverse; reliability rebuilt from that independent PEV and the
+  `diag(inv(Ginv)) = diag(G) + ridge` denominator (so a wrong denominator fails);
+  `diag(inv(Ginv)) ≠ 1`; `rel ∈ [0,1]`; `accuracy = √reliability` vs the
+  independent reliability; `:selinv` == dense PEV. (PEV/accuracy were
+  independently anchored after an adversarial review flagged the original
+  assertions as tautological/definitional.)
 
 ## Public Claim Audit
 
-Allowed: genomic reliability/accuracy/PEV are computed from `diag(G)` via the
-existing extractors; selinv PEV diagonal matches the dense path.
+Allowed: genomic reliability/accuracy/PEV are computed from
+`diag(inv(Ginv)) = diag(G) + ridge` via the existing extractors; selinv PEV
+diagonal matches the dense path.
 
 Blocked: any claim these reliabilities are validated against an external
 genomic-reliability comparator (self-consistent only — that gap stays in

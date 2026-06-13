@@ -761,8 +761,9 @@ model.
 
 Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
 relationship matrix `A = inv(Ainv)` implied by the supplied precision. For a
-genomic spec (`Ainv = Ginv`) this `A_ii` is the genomic self-relationship
-`diag(G)` (often ≠ 1), so the same extractor yields genomic reliabilities.
+genomic spec (`Ainv = Ginv`) this `A_ii` is `diag(inv(Ginv)) = diag(G) + ridge`
+(the regularized genomic self-relationship, often ≠ 1), so the ridge perturbs the
+reported reliability/accuracy and the same extractor yields genomic reliabilities.
 Values are not clipped; small examples can expose weakly informed animals
 directly.
 """

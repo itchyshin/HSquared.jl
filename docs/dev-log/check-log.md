@@ -2,6 +2,32 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Address Phase-2 Adversarial-Review Findings
+
+- Goal: act on the confirmed findings of the multi-lens adversarial review of the
+  five Phase-2 engine slices (workflow `phase2-engine-review`, 11 agents). The
+  review found ZERO numerical bugs and ZERO contract/claim drift; the 5 confirmed
+  findings were documentation precision (1) and test quality (4).
+- Active lenses: Curie, Gauss, Kirkpatrick, Rose (inline) + the review workflow.
+- Fixes:
+  - Reliability denominator stated precisely as `diag(inv(Ginv)) = diag(G)+ridge`
+    (not `diag(G)`; the ridge perturbs reported reliability/accuracy) in the
+    `reliability` docstring, `capability-status.md`, `validation_status.jl`
+    (`V2-GBLUP`), `changelog.md`, and the genomic-reliability after-task report.
+  - The genomic PEV test was tautological (algebraic reversal of `reliability`'s
+    own definition) — replaced with an INDEPENDENT PEV anchor (re-assembled MME
+    inverse) and reliability rebuilt from it, so a wrong denominator now fails.
+  - `accuracy ≈ sqrt(rel)` (definitional) now checked against the independent
+    reliability.
+  - `diag(A) ≈ 1 + inbreeding_coefficients` was circular after the NRM dedupe —
+    replaced with a hand-pinned inbreeding anchor `F = [0,0,0,0,0.25]`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 650
+    total (genomic-reliability testset 5 → 7).
+- Boundary:
+  - Documentation + test-quality only; no engine logic change, no contract
+    change, no new capability row.
+
 ## 2026-06-13 Single-Step H-Inverse Construction (_single_step_Hinv, internal)
 
 - Goal: the single-step (ssGBLUP) H-inverse construction utility — the subtlest

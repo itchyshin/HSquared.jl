@@ -139,7 +139,7 @@ const VALIDATION_STATUS_DATA = (
         "genomic BLUP supplied-variance solve",
         "Phase 2",
         "partial",
-        "`fit_gblup` feeds a genomic `Ginv` into the existing Henderson MME; matches an independent dense MME assembly to ~1e-15 and reproduces pedigree BLUP exactly when `G = A` (~1e-30) in `test/runtests.jl`; genomic reliability/PEV/accuracy reuse the existing extractors with the `diag(G)` denominator and selinv PEV matches the dense diagonal (pinned).",
+        "`fit_gblup` feeds a genomic `Ginv` into the existing Henderson MME; matches an independent dense MME assembly to ~1e-15 and reproduces pedigree BLUP exactly when `G = A` (~1e-30) in `test/runtests.jl`; genomic reliability/PEV/accuracy reuse the existing extractors with the `diag(inv(Ginv)) = diag(G)+ridge` denominator and selinv PEV matches the dense diagonal (pinned).",
         "REML estimation of genomic variance components, real markers→G→GEBV pipeline, sparse/APY `G`, and AGHmatrix/sommer/BLUPF90 comparator parity",
         "Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity.",
     ),

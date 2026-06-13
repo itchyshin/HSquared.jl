@@ -43,9 +43,10 @@
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
   test-only duplicate. No public API or behavior change.
 - Documented and tested genomic reliability/PEV/accuracy: for a GBLUP fit the
-  existing extractors use the genomic self-relationship `diag(G)` (=
-  `diag(inv(Ginv))`) as the denominator, and `method = :selinv` PEV matches the
-  dense diagonal. No logic change.
+  existing extractors use the regularized genomic self-relationship
+  `diag(inv(Ginv)) = diag(G) + ridge` as the denominator (the ridge perturbs the
+  reported reliability/accuracy), and `method = :selinv` PEV matches the dense
+  diagonal. No logic change.
 - Added an internal single-step H-inverse construction utility
   `_single_step_Hinv` — `H⁻¹ = A⁻¹ + scatter(τG⁻¹ − ωA₂₂⁻¹)` on the genotyped
   rows (with the subtle `A₂₂⁻¹ = inv(A[g,g])`, not `(A⁻¹)[g,g]`). Property-checked

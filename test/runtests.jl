@@ -1657,8 +1657,8 @@ end
     @test issymmetric(A)
     # cross-check against the independent sparse-inverse route
     @test A ≈ inv(Symmetric(Matrix(pedigree_inverse(ids, sire, dam)))) atol = 1e-8
-    # diagonal is consistency with the inbreeding extractor
-    @test diag(A) ≈ 1 .+ inbreeding_coefficients(ids, sire, dam) atol = 1e-12
+    # inbreeding extractor against the hand value: only animal 5 (full-sib parents) is inbred
+    @test inbreeding_coefficients(ids, sire, dam) ≈ [0.0, 0.0, 0.0, 0.0, 0.25] atol = 1e-12
     # submatrix method (A22 for single-step) equals the indexed block
     g = [3, 4, 5]
     A22 = HSquared._numerator_relationship(ped, g)
@@ -1678,12 +1678,26 @@ end
 
     rel = reliability(res); pev = prediction_error_variance(res)
     A_implied = inv(Symmetric(Matrix(Ginv)))                  # = G + ridge*I
+
+    # independent PEV: re-assemble the MME, invert, take the random-block diagonal
+    nf = size(X, 2)
+    C = [transpose(X) * X / sigma_e2  transpose(X) * Z / sigma_e2
+         transpose(Z) * X / sigma_e2  transpose(Z) * Z / sigma_e2 + Ginv / sigma_a2]
+    pev_indep = diag(inv(Symmetric(C)))[(nf + 1):end]
+    @test pev.values ≈ pev_indep atol = 1e-8                  # PEV independently anchored
+
+    # reliability uses the regularized genomic self-relationship diag(inv(Ginv)) =
+    # diag(G) + ridge as the denominator (NOT the pedigree diag(A) = 1); rebuild it from
+    # the independent PEV so a wrong denominator in reliability() would FAIL this test
+    @test diag(A_implied) ≈ diag(G) .+ ridge atol = 1e-10
+    rel_indep = 1 .- pev_indep ./ (sigma_a2 .* diag(A_implied))
+    @test rel.values ≈ rel_indep atol = 1e-8
     @test all(0 .<= rel.values .<= 1)
-    # the denominator is the genomic self-relationship diag(inv(Ginv)) = diag(G)+ridge,
-    # not the pedigree diag(A) = 1
-    @test pev.values ≈ (1 .- rel.values) .* (sigma_a2 .* diag(A_implied)) atol = 1e-8
-    @test any(abs.(diag(A_implied) .- 1) .> 1e-6)
-    @test accuracy(res).values ≈ sqrt.(rel.values) atol = 1e-10
+    @test any(abs.(diag(A_implied) .- 1) .> 1e-6)            # genomic self-relationships ≠ 1
+
+    # accuracy = sqrt(reliability), checked against the INDEPENDENT reliability
+    @test accuracy(res).values ≈ sqrt.(rel_indep) atol = 1e-8
+
     # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
     @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
 end
