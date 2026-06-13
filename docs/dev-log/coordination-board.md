@@ -86,6 +86,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   extension fitting, and custom relationship/precision kernel fitting remain
   planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
+- The Documenter workflow isolates npm cache state during the docs build after
+  a transient remote DocumenterVitepress/npm cache failure on run
+  `27461779343`. This is workflow hygiene only and does not change the package
+  API, docs content, bridge contract, or capability status.
 
 ## Current State
 

@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Documenter NPM Cache Hardening
+
+- Goal: reduce repeat risk from the transient DocumenterVitepress/npm cache
+  failure seen on the first remote Documenter attempt for commit `4363512`.
+- Active lenses: Ada, Shannon, Grace, Karpinski, Hopper, Rose.
+- Spawned subagents: none.
+- Trigger:
+  - Documenter run `27461779343` initially failed with an npm cache temporary
+    file collision and a generated `docs/package-lock.json` cleanup error.
+  - Rerunning failed jobs passed, and Pages deploy `27461844908` succeeded, so
+    this was treated as CI hygiene rather than a docs-content failure.
+- Julia-side action:
+  - Set `npm_config_cache` for the Documenter build step to
+    `${{ runner.temp }}/npm-cache`.
+  - Remove transient npm cache tmp files and generated `docs/package-lock.json`
+    before running `julia --project=docs docs/make.jl`.
+- Local checks:
+  - `ruby -e 'require "yaml"; YAML.load_file(".github/workflows/Documenter.yml"); puts "yaml ok"'`:
+    passed.
+  - `julia --project=docs docs/make.jl`: passed. Local deployment was
+    skipped as expected outside CI; Vitepress dependency installation still
+    reported npm advisories in generated/transient build artifacts.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'`: passed. Testset totals
+    sum to 351 checks.
+  - `git diff --check`: passed.
+  - Additions-only ASCII scan: returned no matches.
+  - Claim scan found only expected boundary wording that this is workflow
+    hygiene and makes no capability, validation, fitting, bridge,
+    backend-execution, GPU, or performance claim.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Workflow hygiene only.
+  - No package API change.
+  - No docs content change.
+  - No capability, validation, fitting, bridge, backend-execution, GPU, or
+    performance claim.
+
 ## 2026-06-13 HSData Pedigree Status Diagnostic
 
 - Goal: mirror the R twin's pedigree-status diagnostics in

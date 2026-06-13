@@ -42,4 +42,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-        run: julia --project=docs docs/make.jl
+          npm_config_cache: ${{ runner.temp }}/npm-cache
+        run: |
+          rm -rf "$npm_config_cache/_cacache/tmp"
+          rm -f docs/package-lock.json
+          julia --project=docs docs/make.jl
