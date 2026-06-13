@@ -28,6 +28,11 @@
   `inv(G + ridge·I)` of a genomic relationship matrix, intended for later GBLUP
   use. Construction utility only; not wired into model fitting, and no
   single-step (`H`-matrix) blending.
+- Added `fit_gblup()` — genomic BLUP at supplied variance components: feeds a
+  genomic `Ginv` into the existing Henderson MME (`Ginv` in the `Ainv` slot).
+  Reproduces an independent dense MME and reproduces pedigree BLUP when `G = A`;
+  experimental, supplied-variance only, no variance-component estimation, no
+  single-step, no external comparator.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

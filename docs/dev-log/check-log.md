@@ -2,6 +2,34 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 GBLUP Supplied-Variance Solve (fit_gblup)
+
+- Goal: graduate the genomic relationship utilities into an actual fitted GBLUP
+  solve by reusing the existing Henderson MME — engine-internal, additive, no
+  contract change. (Preceded by a small docs commit `ee2fa07` adding the genomic
+  + AI-REML functions to `docs/src/api.md`; local Documenter build green.)
+- Active lenses: Henderson, Gauss, Kirkpatrick, Falconer, Curie, Rose (inline).
+- Spawned subagents: 5-scout + 1-design planning workflow (`phase2-engine-plan`)
+  produced the ordered DoD-gated plan; all pinned numbers re-verified locally.
+- Implementation:
+  - `fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2; ids, method)` in
+    `src/genomic.jl`: `spec = animal_model_spec(y, X, Z, Ginv; ...)` then
+    `henderson_mme(spec, ...)`. The genomic precision enters the same `Ainv`
+    slot (`AnimalModelSpec.Ainv::AbstractMatrix`); no new solver, no new result
+    type. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 610
+    total checks. New testset "Phase 2 GBLUP supplied-variance solve" = 11
+    checks: pinned 3-individual fixture (β = 10.9448698315, GEBVs pinned),
+    independent dense-MME agreement (~7e-15), G = A reproduces pedigree BLUP
+    (~1.6e-30), variance-ratio invariance, finiteness, and a `sigma_a2 ≤ 0`
+    guard. `validation_status()` row count 16 → 17 (added `V2-GBLUP`).
+- Boundary:
+  - Engine-internal/additive. Supplied-variance only; no genomic
+    variance-component estimation, no single-step, no external comparator parity,
+    no performance claim (dense `Ginv` loses the selinv sparsity advantage). The
+    R-facing `genomic()` model-spec mapping stays coordinated with the R twin.
+
 ## 2026-06-13 Regularized Genomic Inverse (Ginv)
 
 - Goal: finish the Phase-2 `Ginv` slice (present as an uncommitted draft in the

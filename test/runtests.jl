@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 16
+    @test length(validation) == 17
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1576,4 +1576,46 @@ end
     # guards
     @test_throws ArgumentError genomic_relationship_inverse([1.0 2.0 3.0; 4 5 6])  # non-square
     @test_throws ArgumentError genomic_relationship_inverse(Gpd; ridge = -1.0)     # negative ridge
+end
+
+@testset "Phase 2 GBLUP supplied-variance solve" begin
+    # GBLUP = animal model with a genomic relationship inverse in the Ainv slot.
+    y = [10.0, 12.0, 11.0]
+    X = reshape(ones(3), 3, 1)
+    Z = Matrix{Float64}(I, 3, 3)
+    G = [1.00 0.25 0.10; 0.25 1.00 0.30; 0.10 0.30 1.00]   # symmetric PD: ridge = 0 ok
+    @test isposdef(Symmetric(G))
+    Ginv = inv(Symmetric(G))
+    sigma_a2 = 2.0; sigma_e2 = 1.0
+    res = fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2)
+
+    # pinned hand-reproducible values
+    @test fixed_effects(res) ≈ [10.944869831546713] atol = 1e-8
+    @test breeding_values(res).values ≈
+          [-0.5620214395099584, 0.6314446145992807, 0.09596733027054087] atol = 1e-8
+
+    # invariant 1: independent dense MME assembly agrees (assembled here, not via src)
+    C = [transpose(X) * X / sigma_e2  transpose(X) * Z / sigma_e2
+         transpose(Z) * X / sigma_e2  transpose(Z) * Z / sigma_e2 + Ginv / sigma_a2]
+    rhs = [transpose(X) * y / sigma_e2; transpose(Z) * y / sigma_e2]
+    sol = C \ rhs
+    @test maximum(abs.(sol[1:1] .- fixed_effects(res))) < 1e-10
+    @test maximum(abs.(sol[2:end] .- breeding_values(res).values)) < 1e-10
+
+    # invariant 2: with G = A, GBLUP reproduces pedigree BLUP exactly
+    Ainv = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
+    ped_ebv = breeding_values(henderson_mme(animal_model_spec(y, X, Z, Ainv), 2.0, 1.0)).values
+    A = inv(Symmetric(Matrix(Ainv)))
+    gen_ebv = breeding_values(fit_gblup(y, X, Z, inv(Symmetric(A)), 2.0, 1.0)).values
+    @test ped_ebv ≈ [-2.0 / 3, 2.0 / 3, 0.0] atol = 1e-8
+    @test maximum(abs.(gen_ebv .- ped_ebv)) < 1e-10
+
+    # invariant 3: solution depends only on lambda = sigma_e2/sigma_a2
+    @test breeding_values(fit_gblup(y, X, Z, Ginv, 4.0, 2.0)).values ≈
+          breeding_values(res).values atol = 1e-10
+
+    # guards / finiteness
+    @test isfinite(only(fixed_effects(res)))
+    @test all(isfinite, breeding_values(res).values)
+    @test_throws ArgumentError fit_gblup(y, X, Z, Ginv, -1.0, 1.0)
 end

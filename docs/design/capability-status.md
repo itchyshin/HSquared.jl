@@ -40,6 +40,7 @@
 | Factor-analytic G matrices | planned | no implementation yet |
 | Genomic relationship matrix (VanRaden G) | experimental | `genomic_relationship_matrix` builds VanRaden `G = ZZ'/(2Σp(1-p))` from a 0/1/2 (or dosage) marker matrix; validated on a tiny hand-computed fixture (symmetric, PSD, pinned entries); construction only — no GBLUP, single-step, or marker-effect estimation |
 | Regularized genomic inverse (Ginv) | experimental | `genomic_relationship_inverse(G; ridge)` returns the ridge-regularized dense `inv(G + ridge·I)`; tested for the `(G + ridge·I)·Ginv ≈ I` identity, symmetry, a pinned `ridge = 0` hand inverse, a rank-deficient marker-`G` round-trip, and square/PD/negative-ridge guards; construction utility only — not wired into GBLUP/fitting, no single-step (`H`-matrix) blending |
+| Genomic prediction (GBLUP), supplied variance components | experimental | `fit_gblup` wires `genomic_relationship_inverse` into the existing Henderson MME (`Ginv` in the `Ainv` slot); reproduces an independent dense MME solve to ~1e-15 and reproduces pedigree BLUP exactly when `G = A`; supplied-variance only, dense `Ginv` (no sparsity benefit), no REML estimation of genomic variance components, no single-step, no external comparator |
 | Genomic prediction, single-step fitting, marker scans, and QTL/eQTL | planned | vocabulary reserved only; no implementation yet |
 | Standard QG effects and custom kernels | planned | vocabulary reserved only; no implementation yet |
 | Non-standard inheritance | planned | no implementation yet |

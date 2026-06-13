@@ -135,6 +135,15 @@ const VALIDATION_STATUS_DATA = (
         "Construction utility only; not wired into model fitting, and no single-step or genomic-prediction claim.",
     ),
     (
+        "V2-GBLUP",
+        "genomic BLUP supplied-variance solve",
+        "Phase 2",
+        "partial",
+        "`fit_gblup` feeds a genomic `Ginv` into the existing Henderson MME; matches an independent dense MME assembly to ~1e-15 and reproduces pedigree BLUP exactly when `G = A` (~1e-30) in `test/runtests.jl`.",
+        "REML estimation of genomic variance components, real markers→G→GEBV pipeline, sparse/APY `G`, and AGHmatrix/sommer/BLUPF90 comparator parity",
+        "Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",

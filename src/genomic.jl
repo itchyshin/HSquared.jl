@@ -65,3 +65,41 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
         throw(ArgumentError("regularized G is not positive definite; increase ridge"))
     return inv(regularized)
 end
+
+"""
+    fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2; ids = nothing, method = :REML)
+
+Genomic BLUP (GBLUP) at supplied variance components: solve the Gaussian animal
+model with a genomic relationship inverse `Ginv` in place of the pedigree `Ainv`,
+reusing the existing Henderson mixed-model-equation solve.
+
+`Ginv` is the (regularized) inverse of a genomic relationship matrix, e.g. from
+[`genomic_relationship_inverse`](@ref). A VanRaden `G` is rank-deficient
+(column-centering puts the all-ones vector in its null space, so `rank(G) ≤
+n − 1`), so it must be regularized before inversion — that is
+`genomic_relationship_inverse`'s job, not this function's. `sigma_a2` and
+`sigma_e2` are the supplied genomic and residual variances; GBLUP here does not
+estimate them.
+
+This is a thin convenience over [`animal_model_spec`](@ref) +
+[`henderson_mme`](@ref): the genomic precision enters the same `Ainv` slot the
+pedigree animal model uses, so it returns the same [`HendersonMMEResult`](@ref)
+and works with every existing extractor (`fixed_effects`, `breeding_values`,
+`heritability`, …). It is experimental and engine-internal; the user-facing R
+`genomic()` model-spec mapping is coordinated separately and not part of this
+function. The dense `Ginv` path is validation-scale only — it does not gain the
+sparse selected-inversion advantage.
+"""
+function fit_gblup(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ginv::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_e2::Real;
+    ids = nothing,
+    method = :REML,
+)
+    spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = method)
+    return henderson_mme(spec, sigma_a2, sigma_e2)
+end
