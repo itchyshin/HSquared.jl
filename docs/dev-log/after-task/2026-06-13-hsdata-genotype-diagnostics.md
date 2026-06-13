@@ -87,6 +87,21 @@ Local checks:
   scans, genomic fitting, QTL/GWAS/eQTL, GLLVM workflows, GPU workflows, and
   existing backend speed-claim guardrails.
 
+Remote checks for implementation commit `11a8421`:
+
+- CI `27465127241`: success on Julia 1 and Julia 1.10.
+- Documenter `27465127247`: success.
+- Pages deploy `27465161162`: success.
+- GitHub Actions reported non-blocking Node 20 deprecation annotations for the
+  action stack.
+
+Live docs:
+
+- `https://itchyshin.github.io/HSquared.jl/dev/data.html`: HTTP 200 and
+  contains `Genotype Metadata` and `genotype_status`.
+- `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+  contains `HSDataGenotypeStatusRow`.
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -117,6 +132,6 @@ Blocked wording:
 
 ## Next Actions
 
-1. Commit and push the implementation.
-2. Watch CI, Documenter, and Pages.
+1. Commit and push the remote-evidence update.
+2. Watch CI, Documenter, and Pages for the evidence commit.
 3. Update the issue ledger.

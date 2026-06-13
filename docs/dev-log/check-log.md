@@ -35,6 +35,17 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - Additions-only ASCII scan returned no matches.
   - Claim-boundary scan found expected status and limitation wording only.
+- Remote checks for commit `11a8421`:
+  - CI `27465127241`: success on Julia 1 and Julia 1.10.
+  - Documenter `27465127247`: success.
+  - Pages deploy `27465161162`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+- Live docs:
+  - `https://itchyshin.github.io/HSquared.jl/dev/data.html`: HTTP 200 and
+    contains `Genotype Metadata` and `genotype_status`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/api.html`: HTTP 200 and
+    contains `HSDataGenotypeStatusRow`.
 - Boundary:
   - Metadata diagnostics only.
   - No bridge payload change.
