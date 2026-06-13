@@ -849,4 +849,8 @@ end
     @test prediction_error_variance(fit).values ≈ expected_pev
     @test reliability(fit).ids == ped.ids
     @test reliability(fit).values ≈ expected_reliability
+    @test prediction_error_variance(mme).ids == ped.ids
+    @test isapprox(prediction_error_variance(mme).values, expected_pev)
+    @test reliability(mme).ids == ped.ids
+    @test isapprox(reliability(mme).values, expected_reliability)
 end

@@ -32,6 +32,8 @@
   fitted-value, and heritability extractors for the dense spec path.
 - Added experimental dense prediction-error-variance and reliability extractors
   for the dense spec path.
+- Extended validation-scale prediction-error-variance and reliability
+  extractors to supplied-variance `HendersonMMEResult` objects.
 - Added experimental direct payload `fit_animal_model(y, X, Z, Ainv; ...)`
   target for bridge-shaped inputs.
 - Added `henderson_mme()` for sparse Henderson mixed-model-equation solving at

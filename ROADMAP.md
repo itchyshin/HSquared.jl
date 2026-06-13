@@ -51,7 +51,7 @@ pedigree/Ainv engine utility slice.
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, EBV/BLUP,
   fitted-value, heritability, PEV, and reliability extractors exist for the
-  dense spec path.
+  dense spec and supplied-variance Henderson MME validation paths.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
 - Sparse Henderson mixed-model-equation solving exists at supplied variance

@@ -51,6 +51,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `78ba5ff`; at head `8235289` it enriches opt-in tiny/local Julia bridge
   results from exported Julia extractors when available. Julia keeps those
   fields out of the compact base `result_payload()`.
+- Julia now provides validation-scale `prediction_error_variance(mme)` and
+  `reliability(mme)` methods for supplied-variance `HendersonMMEResult`
+  objects. These reuse the dense MME inverse block for tiny fixtures only and
+  do not change `result_payload()`.
 - The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
   `hsquared` head `398e019`.
 - The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation

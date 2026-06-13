@@ -54,9 +54,9 @@ Implemented now:
   the Henderson MME determinant identity;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
-- experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
+- experimental variance-component, fixed-effect, EBV/BLUP, fitted-value,
   heritability, prediction-error-variance, and reliability extractors for the
-  dense low-level spec path;
+  dense low-level spec and supplied-variance Henderson MME validation paths;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - sparse Henderson mixed-model-equation solve at supplied variance components,
@@ -207,7 +207,9 @@ breeding_values(mme)
 ```
 
 This solves Henderson's mixed-model equations for fixed effects and animal
-effects. It does not estimate variance components.
+effects. It does not estimate variance components. Validation-scale
+`prediction_error_variance(mme)` and `reliability(mme)` methods use a dense MME
+inverse for tiny fixtures only.
 
 The dense validation path also has first extractors:
 
@@ -220,6 +222,7 @@ reliability(fit)
 ```
 
 These are experimental low-level outputs, not yet production sparse results.
+For supplied-variance MME results, use the same extractor names on `mme`.
 
 The backend-control diagnostic mirrors the R twin's planned vocabulary:
 

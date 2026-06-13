@@ -401,8 +401,31 @@ coefficient matrix. It is a validation-path extractor for tiny examples, not a
 production sparse reliability calculation.
 """
 function prediction_error_variance(fit::AnimalModelFit)
-    block = _dense_mme_random_inverse_block(fit)
+    block = _dense_mme_random_inverse_block(
+        fit.spec,
+        fit.variance_components.sigma_a2,
+        fit.variance_components.sigma_e2,
+    )
     return (ids = collect(fit.spec.ids), values = Vector{Float64}(diag(block)))
+end
+
+"""
+    prediction_error_variance(result::HendersonMMEResult)
+
+Return dense prediction error variances for a supplied-variance Henderson MME
+result.
+
+This uses the same dense inverse of the mixed-model-equation coefficient matrix
+as [`prediction_error_variance(::AnimalModelFit)`](@ref). It is a tiny
+validation-path extractor, not production sparse selected inversion.
+"""
+function prediction_error_variance(result::HendersonMMEResult)
+    block = _dense_mme_random_inverse_block(
+        result.spec,
+        result.sigma_a2,
+        result.sigma_e2,
+    )
+    return (ids = collect(result.spec.ids), values = Vector{Float64}(diag(block)))
 end
 
 """
@@ -419,6 +442,20 @@ function reliability(fit::AnimalModelFit)
     pev = prediction_error_variance(fit)
     A = inv(Symmetric(Matrix{Float64}(fit.spec.Ainv)))
     animal_variance = fit.variance_components.sigma_a2 .* diag(A)
+
+    all(>(0), animal_variance) ||
+        throw(ArgumentError("animal-level additive variances must be positive"))
+
+    return (
+        ids = pev.ids,
+        values = Vector{Float64}(1 .- pev.values ./ animal_variance),
+    )
+end
+
+function reliability(result::HendersonMMEResult)
+    pev = prediction_error_variance(result)
+    A = inv(Symmetric(Matrix{Float64}(result.spec.Ainv)))
+    animal_variance = result.sigma_a2 .* diag(A)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -534,11 +571,11 @@ function _check_dense_validation_size(spec::AnimalModelSpec, max_dense_cells::In
     return dense_cells
 end
 
-function _dense_mme_random_inverse_block(fit::AnimalModelFit)
-    spec = fit.spec
-    sigma_a2 = fit.variance_components.sigma_a2
-    sigma_e2 = fit.variance_components.sigma_e2
-
+function _dense_mme_random_inverse_block(
+    spec::AnimalModelSpec,
+    sigma_a2::Real,
+    sigma_e2::Real,
+)
     X = Matrix{Float64}(spec.X)
     Z = Matrix{Float64}(spec.Z)
     Ainv = Matrix{Float64}(spec.Ainv)

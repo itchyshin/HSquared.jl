@@ -140,7 +140,17 @@ breeding_values(mme).values
 ```
 
 This solves for fixed effects and animal-effect BLUPs/EBVs given variance
-components. It does not estimate those variance components.
+components. It does not estimate those variance components. The same tiny
+validation path can expose dense PEV and reliability for the supplied-variance
+MME result:
+
+```@example quickstart
+prediction_error_variance(mme).values
+```
+
+```@example quickstart
+reliability(mme).values
+```
 
 The test suite pins the same supplied-variance Henderson fixture as the R twin:
 `sigma_a2 = 1.2`, `sigma_e2 = 0.8`, expected fixed effects, EBVs, fitted
@@ -151,7 +161,8 @@ not variance-component estimation or fitted Mrode output validation.
 
 The dense validation path has first extractors for variance components,
 fixed effects, breeding values, fitted values, simple univariate heritability,
-prediction error variance, and reliability.
+prediction error variance, and reliability. The PEV and reliability extractors
+also accept supplied-variance `HendersonMMEResult` objects.
 
 ```@example quickstart
 variance_components(fit)

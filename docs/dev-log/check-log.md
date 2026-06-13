@@ -2,6 +2,39 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Henderson MME PEV Reliability Methods
+
+- Goal: extend validation-scale `prediction_error_variance()` and
+  `reliability()` to supplied-variance `HendersonMMEResult` objects without
+  changing `result_payload()` or claiming production sparse PEV/reliability.
+- Active lenses: Ada, Henderson, Fisher, Hopper, Rose, Grace.
+- Spawned subagents: none.
+- Julia-side action:
+  - Refactored the dense MME inverse-block helper so dense `AnimalModelFit` and
+    supplied-variance `HendersonMMEResult` use the same calculation.
+  - Added tests in the shared Henderson fixture for `prediction_error_variance(mme)`
+    and `reliability(mme)`.
+  - Updated capability status, validation debt, public claims, engine contract,
+    README, roadmap, and Documenter pages.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 362 checks; the Henderson MME supplied-variance validation fixture has
+    32 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found only expected status and limitation wording; no
+    production sparse PEV/reliability, variance-component estimation, AI-REML,
+    Mrode fitted-output validation, or performance claim was added.
+- Boundary:
+  - Supplied-variance validation-scale extractor methods only.
+  - No base `result_payload()` widening.
+  - No production sparse selected inversion.
+  - No variance-component estimation.
+  - No fitted Mrode or external fitted-model comparator claim.
+
 ## 2026-06-13 Henderson MME Supplied-Variance Fixture Sync
 
 - Goal: mirror the R twin's issue #7 supplied-variance Henderson MME validation
