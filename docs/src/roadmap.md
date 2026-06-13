@@ -36,6 +36,9 @@ Implemented:
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for
   tiny/local validation fits while Julia keeps base `result_payload()` compact.
+- external R `model_spec()` preview evidence from `hsquared` head `bacef9c`;
+  this previews the v0.1 formula-to-bridge payload without fitting or Julia
+  execution.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and

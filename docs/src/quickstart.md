@@ -182,6 +182,10 @@ The R twin may enrich opt-in tiny/local bridge results by calling
 `result_payload(fit)`. Those fields are intentionally not part of the compact
 base payload contract.
 
+For checking R formula parity before fitting, the R twin also exposes
+`model_spec()`. It validates `animal(1 | id, pedigree = ped)` and previews the
+bridge payload and Julia targets without executing Julia.
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.

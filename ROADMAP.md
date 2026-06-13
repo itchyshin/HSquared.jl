@@ -50,6 +50,8 @@ pedigree/Ainv engine utility slice.
   base `result_payload()` unchanged.
 - R head `398e019` records sparse `Z` bridge marshalling through Julia
   `sparse_csc_matrix()`.
+- R head `bacef9c` adds exported `model_spec()` as a preview of the same v0.1
+  formula-to-bridge payload without fitting or Julia execution.
 - R head `2c18b30` records the expanded genomics/QTL/GLLVM/GPU/HPC plan; Julia
   mirrors it as roadmap and algorithm/backend documentation only.
 - Production high-level formula fitting and production R bridge execution are

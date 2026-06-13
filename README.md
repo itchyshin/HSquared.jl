@@ -61,6 +61,8 @@ Implemented now:
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
 - sparse CSC marshalling helper for R `Matrix::dgCMatrix` slots;
+- external R `model_spec()` evidence for previewing the v0.1
+  formula-to-bridge payload without fitting or Julia execution;
 - external opt-in tiny/local R bridge evidence from the `hsquared` twin over
   the current Julia payload path and `result_payload()`, with R-side
   enrichment from Julia PEV/reliability extractors for tiny validation fits;

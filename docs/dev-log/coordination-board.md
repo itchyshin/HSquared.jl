@@ -52,6 +52,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin expanded the genomics/QTL/GLLVM/GPU/HPC plan at `hsquared` head
   `2c18b30`; Julia mirrors the plan with Documenter and design notes as
   roadmap only.
+- The R twin added exported `model_spec()` at `hsquared` head `bacef9c`; this
+  previews the v0.1 formula-to-bridge payload without fitting or Julia
+  execution.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
   benchmarking, CPU/GPU agreement tests, genomic prediction, single-step
@@ -136,6 +139,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - boundary: bridge-available for tiny local validation path only. No
     production sparse PEV/reliability, general animal-model fitting, Mrode
     fitted-output validation, or base `result_payload()` widening claim.
+- R lane handoff from `itchyshin/hsquared` head `bacef9c`:
+  - added exported `model_spec()`;
+  - validates the same v0.1 grammar as `hsquared()` and builds the same
+    internal bridge payload;
+  - previews response/family/method, fixed-effect columns, sparse `Z`
+    dimensions, normalized animal IDs, observed ID mapping, pedigree founder
+    count, and Julia targets;
+  - reported remote evidence: R-CMD-check `27459924245`, pkgdown
+    `27459924261`, and Pages `27459952909` success;
+  - boundary: preview only. No model fitting, Julia execution, expanded
+    grammar, or production bridge claim.
 - R lane handoff from `itchyshin/hsquared` head `398e019`:
   - R now sends `Matrix::dgCMatrix` `Z` slots through
     `HSquared.sparse_csc_matrix(...; index_base = :zero)`;

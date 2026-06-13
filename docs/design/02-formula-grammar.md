@@ -20,8 +20,10 @@ hsquared(
 )
 ```
 
-R head `b57b48e` now covers this narrow grammar with an inert `animal()` marker,
-`hs_build_model_spec()`, and an internal `hs_bridge_payload`. Unsupported
+R head `b57b48e` covers this narrow grammar with an inert `animal()` marker,
+`hs_build_model_spec()`, and an internal `hs_bridge_payload`. R head `bacef9c`
+adds exported `model_spec()` so users and developers can preview the same
+formula-to-bridge contract before fitting or Julia execution. Unsupported
 trait, covariance, and non-v0.1 animal terms should be rejected in R before
 Julia is asked to fit anything.
 
@@ -118,6 +120,10 @@ The R formula should normalize to a Julia engine specification with:
 Current parity state:
 
 - R parses and validates the narrow formula/data/pedigree contract.
+- R exposes `model_spec()` to preview response/family/method, fixed-effect
+  columns, sparse `Z` dimensions, normalized animal IDs, observed ID mapping,
+  pedigree founder count, and Julia targets without fitting or executing
+  Julia.
 - R builds a bridge-shaped payload with numeric `y`, dense `X`, sparse `Z`,
   normalized IDs, parent indices, pedigree metadata, method, and family.
 - R and Julia both expose grammar status diagnostics that separate parsed,

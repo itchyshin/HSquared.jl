@@ -48,6 +48,8 @@
 - Recorded the R twin's sparse `Z` bridge marshalling handoff.
 - Recorded the R twin's optional `nadiv::Mrode9` pedigree-Ainv comparator
   evidence.
+- Recorded the R twin's `model_spec()` preview surface for the v0.1
+  formula-to-bridge payload.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

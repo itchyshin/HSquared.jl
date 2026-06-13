@@ -26,6 +26,11 @@ The Julia side can validate this spec, evaluate dense and sparse objective
 pieces, and run experimental low-level dense validation paths. Production sparse
 animal-model fitting is still planned.
 
+On the R side, `model_spec()` now previews the same v0.1 formula-to-bridge
+contract without fitting or executing Julia. It reports response, family,
+method, fixed-effect columns, sparse `Z` dimensions, normalized animal IDs,
+observed ID mapping, pedigree founder count, and Julia targets.
+
 ## Status Diagnostic
 
 `formula_status()` returns the same status categories as the R twin's

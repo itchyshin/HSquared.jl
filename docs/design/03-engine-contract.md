@@ -391,6 +391,13 @@ R head `398e019` records green CI evidence for sparse `Z` bridge marshalling
 through Julia `sparse_csc_matrix()`. The bridge now sends R
 `Matrix::dgCMatrix` slots for `Z` and no longer passes `max_dense_cells`.
 
+R head `bacef9c` adds exported `model_spec()` as a preview surface for the same
+v0.1 formula-to-bridge contract. It validates `animal(1 | id, pedigree = ped)`,
+builds the same internal bridge payload, and reports response/family/method,
+fixed-effect columns, sparse `Z` dimensions, normalized animal IDs, observed ID
+mapping, pedigree founder count, and Julia targets. It does not fit models or
+execute Julia.
+
 The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
 whether PEV/reliability should ever become required base payload fields, Mrode
 validation, and `hs_data()` to `HSData` marshalling parity. The Julia tests

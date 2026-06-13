@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R Model Spec Preview Sync
+
+- Goal: mirror the R twin's exported `model_spec()` preview surface as a
+  formula-to-bridge parity tool in Julia docs/status.
+- Active lenses: Ada, Shannon, Hopper, Boole, Emmy, Rose, Grace, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `bacef9c` adds exported `model_spec()`.
+  - It validates the same v0.1 grammar as `hsquared()` and builds the same
+    internal bridge payload, but does not fit models or execute Julia.
+  - It previews response/family/method, fixed-effect columns, sparse `Z`
+    dimensions, normalized animal IDs, observed ID mapping, pedigree founder
+    count, and Julia targets.
+  - Reported remote evidence: R-CMD-check `27459924245`, pkgdown
+    `27459924261`, and Pages `27459952909` success.
+- Julia-side action:
+  - Updated formula grammar, model-spec grammar, v0.1 contract, engine
+    contract, capability status, validation debt, public claims, README,
+    roadmap, quickstart, changelog, and coordination board.
+  - No Julia code changed.
+- Local checks:
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 294 checks.
+  - `git diff --check` passed.
+  - Edited-file ASCII scan returned no matches.
+  - Claim scan found only expected preview guardrails such as "does not fit"
+    and public-claims/after-task blocked wording, not unsupported claims that
+    `model_spec()` fits models, executes Julia, or expands grammar.
+- Remote checks:
+  - pending.
+- Boundary:
+  - R preview only.
+  - No model fitting.
+  - No Julia execution.
+  - No grammar expansion beyond `animal(1 | id, pedigree = ped)`.
+
 ## 2026-06-13 R Bridge PEV Reliability Enrichment Sync
 
 - Goal: mirror the R twin's new tiny/local PEV/reliability bridge enrichment
