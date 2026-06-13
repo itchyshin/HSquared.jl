@@ -28,6 +28,19 @@ Newest entries go at the top.
   - Claim scan found only expected status and limitation wording; no
     production sparse PEV/reliability, variance-component estimation, AI-REML,
     Mrode fitted-output validation, or performance claim was added.
+- Remote checks for commit `c69e594`:
+  - CI `27462530598`: success on Julia 1 and Julia 1.10.
+  - Documenter `27462530592`: success.
+  - Pages deploy `27462564061`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    upstream actions.
+- Live docs:
+  - Quickstart page returned HTTP 200 and contains
+    `prediction_error_variance(mme)` plus `HendersonMMEResult` wording.
+  - Roadmap page returned HTTP 200 and contains the supplied-variance
+    Henderson MME validation-path wording.
+  - Validation-status page returned HTTP 200 and retains the partial
+    validation boundary.
 - Boundary:
   - Supplied-variance validation-scale extractor methods only.
   - No base `result_payload()` widening.

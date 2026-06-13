@@ -55,6 +55,24 @@ No `result_payload()` fields were added.
 - Additions-only ASCII scan: no matches.
 - Claim scan: expected status/limitation hits only.
 
+Remote checks for commit `c69e594`:
+
+- CI `27462530598`: success on Julia 1 and Julia 1.10.
+- Documenter `27462530592`: success.
+- Pages deploy `27462564061`: success.
+
+Live docs:
+
+- Quickstart page returned HTTP 200 and contains
+  `prediction_error_variance(mme)` plus `HendersonMMEResult` wording.
+- Roadmap page returned HTTP 200 and contains supplied-variance Henderson MME
+  validation-path wording.
+- Validation-status page returned HTTP 200 and retains the partial validation
+  boundary.
+
+GitHub Actions emitted non-blocking Node 20 deprecation annotations from
+upstream actions.
+
 ## Public Claim Audit
 
 Allowed wording:
@@ -85,6 +103,8 @@ Rose verdict: clean with limitations.
 
 ## Next Actions
 
-1. Commit and push this slice.
-2. Watch CI, Documenter, and Pages.
-3. Record remote evidence after green.
+1. Add Mrode/simple fitted-output fixture with explicit estimands.
+2. Decide with the R twin whether PEV/reliability ever become required base
+   payload fields.
+3. Keep production sparse PEV/reliability separate from this dense validation
+   utility.
