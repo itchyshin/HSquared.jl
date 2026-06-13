@@ -74,6 +74,21 @@ fit = fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
 fit.variance_components
 ```
 
+The same dense path is available through the direct bridge-shaped payload:
+
+```@example quickstart
+payload_fit = fit_animal_model(
+    y,
+    X,
+    Z,
+    Ainv;
+    ids = ped.ids,
+    method = :REML,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+)
+payload_fit isa AnimalModelFit
+```
+
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,
@@ -108,7 +123,7 @@ end
 ```
 
 Sparse production optimization, AI-REML, reliability, prediction error
-variance, and R bridge execution remain Phase 1 targets.
+variance, and R-to-Julia marshalling remain Phase 1 targets.
 
 ## R Syntax Parity Target
 

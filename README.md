@@ -37,13 +37,15 @@ Implemented now:
   animal-model specs;
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
   heritability extractors for the dense low-level spec path;
+- experimental direct payload fitting target
+  `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
 - sparse production optimization or AI-REML fitting;
-- R bridge execution and high-level formula fitting;
+- R-to-Julia marshalling and high-level formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
@@ -115,14 +117,16 @@ fit = hsquared(
 )
 ```
 
-For lower-level engine work, the first planned target is:
+For lower-level bridge-shaped engine work, the direct payload target is
+available experimentally:
 
 ```julia
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
 ```
 
 `hsquared()` currently throws a Phase 0 not-implemented error. `fit_animal_model`
-works only for a validated `AnimalModelSpec`; other calls remain placeholders.
+works for a validated `AnimalModelSpec` or the direct `y, X, Z, Ainv` payload;
+other calls remain placeholders.
 
 ## Twin Package Boundary
 

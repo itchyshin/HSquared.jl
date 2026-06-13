@@ -213,3 +213,50 @@ end
     @test fitted_values(fit; include_random = false) ≈ [2.0, 2.0, 2.0]
     @test heritability(fit) ≈ 0.5
 end
+
+@testset "Phase 1 bridge payload fit target" begin
+    payload_pedigree_id = ["sire", "dam", "calf"]
+    payload_pedigree_sire = ["0", "0", "sire"]
+    payload_pedigree_dam = ["0", "0", "dam"]
+    payload_sire_index = [0, 0, 1]
+    payload_dam_index = [0, 0, 2]
+    payload_original_order = [1, 2, 3]
+    ids = payload_pedigree_id
+
+    ped = normalize_pedigree(payload_pedigree_id, payload_pedigree_sire, payload_pedigree_dam)
+    @test ped.ids == ids
+    @test ped.sire == payload_sire_index
+    @test ped.dam == payload_dam_index
+    @test ped.original_order == payload_original_order
+
+    y = [1.0, 2.5, 4.0]
+    X = ones(3, 1)
+    Z = sparse(I, 3, 3)
+    Ainv = pedigree_inverse(ped)
+
+    @test size(Z) == (length(y), length(ids))
+    @test size(Ainv) == (length(ids), length(ids))
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
+    spec_fit = fit_animal_model(spec; initial = (sigma_a2 = 0.8, sigma_e2 = 0.4))
+    payload_fit = fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        ids = ped.ids,
+        method = :ML,
+        initial = (sigma_a2 = 0.8, sigma_e2 = 0.4),
+    )
+
+    @test payload_fit isa AnimalModelFit
+    @test payload_fit.spec.ids == spec.ids
+    @test payload_fit.spec.method == :ML
+    @test payload_fit.likelihood.loglik ≈ spec_fit.likelihood.loglik
+    @test payload_fit.variance_components.sigma_a2 ≈ spec_fit.variance_components.sigma_a2
+    @test payload_fit.variance_components.sigma_e2 ≈ spec_fit.variance_components.sigma_e2
+    @test breeding_values(payload_fit).ids == ped.ids
+
+    @test_throws ArgumentError fit_animal_model(y[1:2], X, Z, Ainv; ids = ped.ids)
+    @test_throws ArgumentError fit_animal_model(y, X, Z, Ainv; ids = ["a"], method = :ML)
+end

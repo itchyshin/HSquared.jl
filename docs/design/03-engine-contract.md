@@ -8,8 +8,9 @@ This file records the planned Julia-side v0.1 engine surface.
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
 ```
 
-This direct payload entry point is still a placeholder. It throws a
-not-implemented error.
+This direct payload entry point is implemented as an experimental dense path.
+It validates the payload with `animal_model_spec()` and dispatches to
+`fit_variance_components()`.
 
 ## Implemented Relationship Utility
 
@@ -85,22 +86,47 @@ reliability, and prediction error variance remain planned.
 
 ## Current R Bridge Handoff
 
-R head `d85f356` parses the narrow v0.1 formula:
+R head `b57b48e` parses the narrow v0.1 formula:
 
 ```r
 hsquared(y ~ fixed + animal(1 | id, pedigree = ped), data = dat)
 ```
 
-and stops at the intended Julia target:
+and builds an internal `hs_bridge_payload`. Current payload shape:
+
+- `y`: numeric response vector;
+- `X`: dense fixed-effect model matrix;
+- `Z`: sparse `Matrix::dgCMatrix`, with one row per observation and one column
+  per normalized pedigree ID;
+- `Ainv`: `NULL` on the R side, with `metadata$ainv_status =
+  "build_in_julia"`;
+- `method`: `"REML"` or `"ML"`;
+- `family`: `"gaussian"`;
+- `ids`: normalized parent-before-offspring pedigree IDs;
+- `pedigree`: `id`, `sire`, `dam`, `sire_index`, `dam_index`, and
+  `original_order`;
+- `metadata`: response name, fixed terms/contrasts, fixed column names,
+  observed IDs, observed ID indices, `ainv_status`, and target strings.
+
+The Julia target path is:
 
 ```julia
-HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)
+pedigree = normalize_pedigree(id, sire, dam)
+Ainv = pedigree_inverse(pedigree)
+spec = animal_model_spec(y, X, Z, Ainv; ids = ids, method = :REML)
+fit = fit_animal_model(spec)
 ```
 
-The next bridge task is payload parity, not wider syntax. The two twins need
-tests that the R-produced `y`, `X`, `Z`, encoded IDs, pedigree metadata, family,
-method, and Julia-side `Ainv` map to the same `AnimalModelSpec` assumptions
-tested here.
+The Julia direct payload method also exists:
+
+```julia
+fit = fit_animal_model(y, X, Z, Ainv; ids = ids, method = :REML)
+```
+
+The next bridge task is cross-repo marshalling, not wider syntax. The Julia
+tests now cover parent-index semantics, `ids` order, sparse `Z` dimensions,
+Julia-side `Ainv`, and parity between spec dispatch and direct payload
+dispatch. The actual R-to-Julia call still does not exist.
 
 ## Input Payload
 

@@ -38,17 +38,21 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - experimental dense variance-component optimization implemented for
     validated specs;
   - experimental dense variance-component, fixed-effect, EBV/BLUP,
-    fitted-value, and heritability extractors implemented for validated specs.
-- R lane handoff from `itchyshin/hsquared` head `d85f356`:
+    fitted-value, and heritability extractors implemented for validated specs;
+  - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
+    implemented for bridge-shaped payloads.
+- R lane handoff from `itchyshin/hsquared` head `b57b48e`:
   - inert `animal()` marker exported;
   - `hs_build_model_spec()` parses `animal(1 | id, pedigree = ped)`;
-  - `hsquared()` validates the narrow contract and stops at
-    `HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)`;
+  - internal `hs_bridge_payload` includes numeric `y`, dense `X`, sparse `Z`,
+    `Ainv = NULL`, method, family, normalized `ids`, normalized pedigree with
+    parent indices, and metadata;
+  - `hsquared()` validates the narrow contract and stops at the Julia target;
   - R-CMD-check, pkgdown, and Pages deploy were green; site is live at
     `https://itchyshin.github.io/hsquared/`.
-- Next shared seam: explicit payload/result parity tests for `y`, `X`, `Z`,
-  encoded IDs, pedigree metadata, Julia-side `Ainv`, method, family, fit-target
-  dispatch, variance components, breeding values, and heritability.
+- Next shared seam: cross-repo R-to-Julia marshalling tests that send the R
+  parser payload into the Julia direct target and verify variance components,
+  breeding values, and heritability in the returned result shape.
 
 ## Sister References
 

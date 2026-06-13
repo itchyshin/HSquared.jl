@@ -166,6 +166,20 @@ function fit_animal_model(spec::AnimalModelSpec; kwargs...)
     return fit_variance_components(spec; kwargs...)
 end
 
+function fit_animal_model(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    ids = nothing,
+    family = GaussianFamily(),
+    method = :REML,
+    kwargs...,
+)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method)
+    return fit_variance_components(spec; method = spec.method, kwargs...)
+end
+
 """
     variance_components(fit)
 

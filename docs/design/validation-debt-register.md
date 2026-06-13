@@ -11,7 +11,7 @@
 | V1-LIK | Univariate Gaussian ML/REML likelihood | partial | hand-calculated tiny likelihood tests; still needs Mrode and comparator checks |
 | V1-OPT | Dense variance-component optimizer | partial | tiny likelihood-improvement tests; still needs Mrode and comparator checks |
 | V1-DENSE-OUT | Dense EBV/heritability extractors | partial | hand-checked identity-relationship BLUP and variance-ratio tests; still needs Mrode and comparator checks |
-| V1-BRIDGE | R-to-Julia payload parity | partial | R parser exists in `hsquared` head `d85f356`; still needs parity tests for `y`, `X`, `Z`, encoded IDs, pedigree metadata, family, method, Julia-side `Ainv`, and fit-target dispatch |
+| V1-BRIDGE | R-to-Julia payload parity | partial | R payload builder exists in `hsquared` head `b57b48e`; Julia direct payload target has spec-dispatch, parent-index, `ids`, sparse `Z`, and Julia-side `Ainv` parity tests; still needs cross-repo marshalling tests for R-produced payload and returned result shape |
 | V1-REML | Sparse Gaussian REML optimizer / AI-REML | planned | Mrode simple animal model and comparator check |
 | V1-EBV | Production EBVs/BLUPs, reliability, and PEV | planned | known fitted values, reliability, and prediction error variance against comparator |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |

@@ -2,6 +2,42 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1F Direct Bridge Payload Target
+
+- Goal: implement the Julia method that the R parser currently names as its
+  bridge target: `fit_animal_model(y, X, Z, Ainv; method = :REML)`.
+- Active lenses: Ada, Shannon, Hopper, Boole, Henderson, Gauss, Karpinski,
+  Grace, Rose.
+- Spawned subagents: none.
+- Implementation evidence:
+  - Added direct payload `fit_animal_model(y, X, Z, Ainv; ids, family, method,
+    kwargs...)`.
+  - The method validates through `animal_model_spec()` and dispatches to the
+    dense `fit_variance_components()` path.
+  - Added parity tests showing direct payload fitting matches validated-spec
+    fitting for likelihood, variance components, method, IDs, and breeding
+    value IDs.
+  - Mirrored R payload semantics from `hsquared` head `b57b48e`: normalized
+    parent-before-offspring IDs, parent index vectors, sparse `Z` dimensions,
+    and Julia-side `Ainv` construction.
+  - Added error tests for payload dimension and ID mismatches.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 100 checks across
+    Phase 0, pedigree/Ainv, spec validation, likelihood, dense optimizer, dense
+    extractor, and direct payload target testsets.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims that the
+    R bridge executes, R formula calls fit through Julia, sparse production
+    fitting works, AI-REML works, or results are comparator-validated.
+- Boundary:
+  - Julia target exists; R-to-Julia marshalling still does not.
+  - Dense validation path only.
+  - Not sparse production fitting or AI-REML.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1E Dense Fit Extractors
 
 - Goal: add first low-level result extractors for the dense Gaussian

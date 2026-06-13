@@ -25,6 +25,8 @@ pedigree/Ainv engine utility slice.
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, EBV/BLUP,
   fitted-value, and heritability extractors exist for the dense spec path.
+- Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
+  bridge-shaped inputs.
 - High-level formula fitting and R bridge execution are not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
@@ -72,6 +74,8 @@ First real capability:
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
 - experimental dense EBV/BLUP, fitted-value, and heritability extractors;
+- experimental direct payload fitting target for the R parser's intended
+  `y`, `X`, `Z`, `Ainv` handoff;
 - sparse production optimizer and AI-REML;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.
@@ -138,8 +142,8 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Add R-to-Julia payload parity tests for the current R parser and Julia spec
-   assumptions.
+1. Add cross-repo R-to-Julia marshalling tests around the current R parser and
+   Julia direct payload target.
 2. Add Mrode/simple comparator validation for the dense low-level path.
 3. Replace dense covariance equations with sparse production computations.
 3. Keep `hsquared` issue #2 synchronized with this engine contract.

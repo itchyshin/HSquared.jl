@@ -14,7 +14,8 @@
 | Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
 | Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test; no sparse production solve or comparator yet |
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
-| R v0.1 formula parser | external implemented | `hsquared` head `d85f356`; R parser builds the narrow bridge target but does not execute Julia fitting |
+| Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
+| R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload but does not execute Julia fitting |
 | R-to-Julia bridge execution | planned | no marshalling/parity test yet |
 | Sparse production fitting / AI-REML | planned | no implementation yet |
 | Reliability / PEV | planned | no implementation yet |
