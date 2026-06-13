@@ -78,6 +78,8 @@ HSquared.fit_gblup
 HSquared.fit_snp_blup
 HSquared.fit_variance_components
 HSquared.variance_components
+HSquared.variance_component_covariance
+HSquared.variance_component_standard_errors
 HSquared.fixed_effects
 HSquared.fit_diagnostics
 HSquared.breeding_values
@@ -85,6 +87,8 @@ HSquared.EBV
 HSquared.BLUP
 HSquared.fitted_values
 HSquared.heritability
+HSquared.heritability_standard_error
+HSquared.heritability_interval
 HSquared.prediction_error_variance
 HSquared.reliability
 HSquared.accuracy

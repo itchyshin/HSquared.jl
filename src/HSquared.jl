@@ -65,6 +65,8 @@ export AMDGPUBackend,
     genomic_relationship_matrix,
     henderson_mme,
     heritability,
+    heritability_interval,
+    heritability_standard_error,
     hsquared,
     data_status,
     id_map,
@@ -91,6 +93,8 @@ export AMDGPUBackend,
     sparse_reml_loglik,
     sparse_csc_matrix,
     validation_status,
+    variance_component_covariance,
+    variance_component_standard_errors,
     variance_components
 
 include("backends.jl")

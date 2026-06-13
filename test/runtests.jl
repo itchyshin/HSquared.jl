@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 20
+    @test length(validation) == 21
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1771,4 +1771,72 @@ end
     t = fit_animal_model(spec; target = :ai_reml, initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
     @test t.target == :ai_reml
     @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
+end
+
+@testset "Phase 1 variance-component covariance and heritability interval" begin
+    # standard-normal quantile (Acklam) against known values
+    @test HSquared._standard_normal_quantile(0.975) ≈ 1.959963985 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.95) ≈ 1.644853627 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.995) ≈ 2.575829304 atol = 1e-6
+    @test HSquared._standard_normal_quantile(0.5) ≈ 0.0 atol = 1e-9
+    @test_throws ArgumentError HSquared._standard_normal_quantile(0.0)
+    @test_throws ArgumentError HSquared._standard_normal_quantile(1.0)
+
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1); Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sa2 = fit.variance_components.sigma_a2; se2 = fit.variance_components.sigma_e2
+
+    # the AI information matrix matches an independent finite-difference Hessian of
+    # the REML log-likelihood (observed information) to ~8% on this fixture
+    info = HSquared._reml_information_matrix(spec, sa2, se2)
+    ll(a, e) = sparse_reml_loglik(spec, a, e).loglik
+    hh = 1e-4
+    faa = (ll(sa2 + hh, se2) - 2ll(sa2, se2) + ll(sa2 - hh, se2)) / hh^2
+    fee = (ll(sa2, se2 + hh) - 2ll(sa2, se2) + ll(sa2, se2 - hh)) / hh^2
+    fae = (ll(sa2 + hh, se2 + hh) - ll(sa2 + hh, se2 - hh) -
+           ll(sa2 - hh, se2 + hh) + ll(sa2 - hh, se2 - hh)) / (4hh^2)
+    Hobs = -[faa fae; fae fee]
+    @test isapprox(Matrix(info), Hobs; rtol = 0.12)
+
+    # variance-component covariance / standard errors
+    cov = variance_component_covariance(fit)
+    @test cov ≈ transpose(cov) atol = 1e-12
+    @test cov[1, 1] > 0 && cov[2, 2] > 0
+    ses = variance_component_standard_errors(fit)
+    @test ses.sigma_a2 ≈ sqrt(cov[1, 1]) atol = 1e-10
+    @test ses.sigma_e2 ≈ sqrt(cov[2, 2]) atol = 1e-10
+
+    # heritability SE matches a direct delta computation
+    denom = (sa2 + se2)^2
+    g = [se2 / denom, -sa2 / denom]
+    @test heritability_standard_error(fit) ≈ sqrt(dot(g, cov * g)) atol = 1e-10
+
+    # logit-delta interval stays in (0, 1), contains the estimate, and nests by level
+    ci95 = heritability_interval(fit; level = 0.95)
+    ci80 = heritability_interval(fit; level = 0.80)
+    @test ci95.heritability ≈ heritability(fit)
+    @test 0 < ci95.lower < ci95.heritability < ci95.upper < 1
+    @test ci95.lower < ci80.lower && ci80.upper < ci95.upper        # 95% ⊃ 80%
+    @test ci95.se ≈ heritability_standard_error(fit)
+
+    # guards: level range and REML-only
+    @test_throws ArgumentError heritability_interval(fit; level = 1.5)
+    ml = fit_variance_components(animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML))
+    @test_throws ArgumentError variance_component_covariance(ml)
+
+    # works on a genomic REML fit too (interval stays in (0, 1))
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]
+    Ginv = genomic_relationship_inverse(genomic_relationship_matrix(M); ridge = 0.05)
+    gspec = animal_model_spec([10.0, 12.0, 11.0, 9.0, 13.0, 10.5],
+                              ones(6, 1), Matrix(1.0I, 6, 6), Ginv)
+    gfit = fit_ai_reml(gspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    gci = heritability_interval(gfit)
+    @test 0 < gci.lower < gci.upper < 1
 end

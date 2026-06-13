@@ -117,6 +117,15 @@ const VALIDATION_STATUS_DATA = (
         "No fitted comparator parity claim.",
     ),
     (
+        "V1-HERIT-CI",
+        "variance-component covariance and heritability interval",
+        "Phase 1",
+        "partial",
+        "`variance_component_covariance` / `variance_component_standard_errors`, `heritability_standard_error`, and `heritability_interval` (logit-delta, always in (0,1)) build on the REML AI matrix; the AI matrix matches an independent finite-difference REML Hessian (~8%), the interval contains the estimate and nests by level, and the Acklam normal quantile matches known z-values, in `test/runtests.jl`.",
+        "large-n coverage calibration, profile-likelihood / parametric-bootstrap alternatives, and ML (non-REML) information",
+        "Asymptotic, REML-only; unreliable at small n (wide interval, ill-conditioned AI matrix); not a coverage-calibrated interval.",
+    ),
+    (
         "V2-GRM",
         "genomic relationship matrix (VanRaden G)",
         "Phase 2",

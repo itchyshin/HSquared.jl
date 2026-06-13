@@ -62,6 +62,11 @@
   `G`/`Ginv`, GBLUP, genomic REML, SNP-BLUP, and the single-step `H⁻¹` utility,
   and an explicit experimental / not-yet-R-wired / no-external-comparator
   boundary.
+- Added experimental heritability uncertainty: `variance_component_covariance`,
+  `variance_component_standard_errors`, `heritability_standard_error`, and
+  `heritability_interval` — a logit-transform delta interval (always in (0,1))
+  built on the REML AI matrix, with a self-contained standard-normal quantile.
+  Asymptotic / REML-only; wide and unreliable at small n.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

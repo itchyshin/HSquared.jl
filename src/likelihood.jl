@@ -821,6 +821,129 @@ function _accuracy_from_reliability(reliability_result)
     return (ids = collect(ids), values = sqrt.(values))
 end
 
+# Acklam (2003) rational approximation to the standard-normal quantile
+# (|abs error| < 1.15e-9). Lets the heritability interval pick a two-sided z
+# without a Distributions/SpecialFunctions dependency.
+function _standard_normal_quantile(p::Real)
+    0 < p < 1 || throw(ArgumentError("p must be in (0, 1)"))
+    a = (-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+         1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00)
+    b = (-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+         6.680131188771972e+01, -1.328068155288572e+01)
+    c = (-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+         -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00)
+    d = (7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+         3.754408661907416e+00)
+    plow = 0.02425
+    phigh = 1 - plow
+    if p < plow
+        q = sqrt(-2 * log(p))
+        return (((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+               ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+    elseif p <= phigh
+        q = p - 0.5
+        r = q * q
+        return (((((a[1] * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * r + a[6]) * q /
+               (((((b[1] * r + b[2]) * r + b[3]) * r + b[4]) * r + b[5]) * r + 1)
+    else
+        q = sqrt(-2 * log(1 - p))
+        return -(((((c[1] * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) * q + c[6]) /
+                ((((d[1] * q + d[2]) * q + d[3]) * q + d[4]) * q + 1)
+    end
+end
+
+# 2x2 average-information (AI) matrix for (sigma_a2, sigma_e2) of the REML
+# objective at the given variance components — the same AI metric fit_ai_reml
+# uses. Its inverse is the asymptotic variance-component covariance. (Recomputed
+# here rather than shared with the fit_ai_reml hot loop, which also needs the
+# score and reuses its factor.)
+function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    X = Float64.(spec.X)
+    Z = sparse(Float64.(spec.Z))
+    y = Float64.(spec.y)
+    nfixed = size(X, 2)
+    lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+    factor = cholesky(Symmetric(lhs); check = true)
+    solution = factor \ rhs
+    beta = solution[1:nfixed]
+    u = solution[(nfixed + 1):end]
+    e = y .- X * beta .- Z * u
+    wa = (Z * u) ./ sigma_a2
+    we = e ./ sigma_e2
+    Pwa = _reml_project(factor, X, Z, wa, sigma_e2, nfixed)
+    Pwe = _reml_project(factor, X, Z, we, sigma_e2, nfixed)
+    return Symmetric(0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)])
+end
+
+"""
+    variance_component_covariance(fit)
+
+Asymptotic covariance of the estimated `(sigma_a2, sigma_e2)` for a REML
+[`AnimalModelFit`](@ref): the inverse of the average-information matrix. This is a
+large-sample approximation and is unreliable on small samples, where the REML
+surface is flat and the matrix is ill-conditioned. Experimental; REML only.
+"""
+function variance_component_covariance(fit::AnimalModelFit)
+    fit.spec.method == :REML ||
+        throw(ArgumentError("variance_component_covariance requires a REML fit"))
+    info = _reml_information_matrix(
+        fit.spec,
+        fit.variance_components.sigma_a2,
+        fit.variance_components.sigma_e2,
+    )
+    return inv(info)
+end
+
+"""
+    variance_component_standard_errors(fit)
+
+Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
+`NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
+"""
+function variance_component_standard_errors(fit::AnimalModelFit)
+    cov = variance_component_covariance(fit)
+    return (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
+end
+
+"""
+    heritability_standard_error(fit)
+
+Delta-method asymptotic standard error of `h² = sigma_a2 / (sigma_a2 + sigma_e2)`
+for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see the
+caveats there.
+"""
+function heritability_standard_error(fit::AnimalModelFit)
+    sigma_a2 = fit.variance_components.sigma_a2
+    sigma_e2 = fit.variance_components.sigma_e2
+    cov = variance_component_covariance(fit)
+    denom = (sigma_a2 + sigma_e2)^2
+    g = [sigma_e2 / denom, -sigma_a2 / denom]
+    return sqrt(max(0.0, dot(g, cov * g)))
+end
+
+"""
+    heritability_interval(fit; level = 0.95)
+
+Experimental two-sided confidence interval for `h²` of a REML
+[`AnimalModelFit`](@ref). The interval is built on the logit scale (delta method)
+and back-transformed, so it always lies in `(0, 1)`. It is a large-sample
+approximation: on small samples it is very wide and dominated by the flat REML
+surface. Returns `(heritability, lower, upper, level, se)`.
+"""
+function heritability_interval(fit::AnimalModelFit; level::Real = 0.95)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    h2 = heritability(fit)
+    0 < h2 < 1 ||
+        throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
+    se = heritability_standard_error(fit)
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(h2 / (1 - h2))
+    se_eta = se / (h2 * (1 - h2))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (heritability = h2, lower = lower, upper = upper, level = level, se = se)
+end
+
 """
     result_payload(fit)
 

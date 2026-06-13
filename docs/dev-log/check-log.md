@@ -2,6 +2,34 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Heritability Intervals + Variance-Component Covariance
+
+- Goal: give the heritability package an uncertainty for h² — variance-component
+  standard errors and a confidence interval — the central missing inference.
+- Active lenses: Fisher, Gauss, Curie, Noether, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `variance_component_covariance` (inverse of the REML AI
+    matrix), `variance_component_standard_errors`, `heritability_standard_error`
+    (delta method), and `heritability_interval(fit; level)` — a logit-transform
+    delta interval, always in (0,1). Internal helpers `_reml_information_matrix`
+    (recomputes the AI matrix) and `_standard_normal_quantile` (Acklam, self-
+    contained — no Distributions/SpecialFunctions dependency). REML-only.
+  - Exported the four public functions; `docs/src/api.md` updated.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 680
+    total. New testset "Phase 1 variance-component covariance and heritability
+    interval" = 19 checks: Acklam quantile vs known z-values; AI matrix vs an
+    independent finite-difference REML Hessian (rtol 0.12; observed ~8%);
+    covariance symmetric + positive; SEs consistent; h² SE vs direct delta;
+    logit interval in (0,1), contains the estimate, nests by level; level +
+    REML-only guards; and the interval on a genomic REML fit. `validation_status()`
+    20 → 21 (added `V1-HERIT-CI`).
+  - Decision note `2026-06-13-heritability-interval-design.md` resolved
+    (logit-delta chosen; profile / parametric-bootstrap = future).
+- Boundary:
+  - Asymptotic, REML-only; wide and unreliable at small n; not
+    coverage-calibrated; no profile-likelihood / bootstrap alternative yet.
+
 ## 2026-06-13 Genomic Models Documentation Page
 
 - Goal: a reader-facing Documenter page for the implemented genomic engine.

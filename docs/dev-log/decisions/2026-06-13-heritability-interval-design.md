@@ -1,6 +1,8 @@
 # Decision needed: how to report heritability uncertainty (h² intervals)
 
-Status: **open — needs a design decision before implementation.**
+Status: **resolved — logit-transform delta interval shipped as the experimental
+default (same day); profile-likelihood and parametric-bootstrap remain future
+alternatives.**
 Date: 2026-06-13. Lens: Fisher (inference), Gauss (numerics), Curie (validation).
 
 ## Context
@@ -52,6 +54,18 @@ bootstrap, with an explicit "asymptotic; unreliable at small n" caveat. Hold
 until the user/Fisher confirms the approach — this is an inference-design call,
 not a mechanical slice.
 
-## Not done
+## Resolution (2026-06-13)
 
-No h²-interval code was shipped. `heritability(fit)` remains a point estimate.
+Shipped the **logit-transform delta interval** as the experimental default:
+`heritability_interval(fit; level)` (+ `variance_component_covariance`,
+`variance_component_standard_errors`, `heritability_standard_error`), built on the
+REML AI matrix, with a self-contained Acklam standard-normal quantile. The
+interval is always in `(0, 1)` by construction. Validated deterministically
+(`test/runtests.jl`): AI matrix ≈ finite-difference REML Hessian (~8%), interval
+contains the estimate and nests by level, quantile matches known z-values.
+
+Still open as future work (recorded, not blocking): large-n **coverage
+calibration**, **profile-likelihood** and **parametric-bootstrap** alternatives
+(the latter needs RNG, which the suite currently avoids), and ML (non-REML)
+information. The shipped interval is asymptotic and unreliable at small n — stated
+in the docstring and capability rows.
