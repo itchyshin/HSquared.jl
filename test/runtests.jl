@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 18
+    @test length(validation) == 19
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1686,4 +1686,43 @@ end
     @test accuracy(res).values ≈ sqrt.(rel.values) atol = 1e-10
     # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
     @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
+end
+
+@testset "Phase 2 single-step H-inverse construction" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ids, sire, dam))
+    g = [3, 4, 5]
+
+    # the critical distinction: A22^-1 = inv(A[g,g]) is NOT the submatrix (A^-1)[g,g]
+    A22inv = inv(Symmetric(A[g, g]))
+    @test A22inv[1, 1] ≈ 11 / 6 atol = 1e-10
+    @test Ainv[g, g][1, 1] ≈ 2.5 atol = 1e-10
+    @test !isapprox(A22inv[1, 1], Ainv[g, g][1, 1]; atol = 1e-6)
+
+    # reduction: G = A22  =>  H^-1 = A^-1 exactly
+    Hred = HSquared._single_step_Hinv(Ainv, A, A[g, g], g)
+    @test maximum(abs.(Hred .- Ainv)) < 1e-10
+
+    # locality: only the (g,g) block changes for a generic G
+    Gtest = A[g, g] + 0.1 * I
+    H2 = HSquared._single_step_Hinv(Ainv, A, Gtest, g)
+    nong = setdiff(1:5, g)
+    @test maximum(abs.(H2[nong, :] .- Ainv[nong, :])) < 1e-12
+    @test maximum(abs.(H2[:, nong] .- Ainv[:, nong])) < 1e-12
+    @test maximum(abs.(H2 .- transpose(H2))) < 1e-12              # symmetry
+
+    # scattered (non-trailing) genotyped rows
+    gs = [1, 3, 5]; nongs = setdiff(1:5, gs)
+    Hs = HSquared._single_step_Hinv(Ainv, A, A[gs, gs] + 0.1 * I, gs)
+    @test maximum(abs.(Hs[nongs, :] .- Ainv[nongs, :])) < 1e-12
+
+    # singular raw genomic G throws unless blended/ridged
+    G3 = genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1])     # 3x3, rank-deficient
+    @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, G3, g)
+    @test all(isfinite, HSquared._single_step_Hinv(Ainv, A, G3, g; blend_weight = 0.1))
+
+    # dimension guard: G size must match the genotyped count
+    @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, A[g, g], [3, 4])
 end

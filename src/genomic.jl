@@ -164,3 +164,57 @@ function fit_snp_blup(
     a = breeding_values(res).values
     return (marker_effects = a, gebv = cm.W * a, beta = fixed_effects(res), k = cm.k, p = cm.p)
 end
+
+"""
+    _single_step_Hinv(Ainv, A, G, genotyped_rows; tau = 1.0, omega = 1.0,
+                      blend_weight = 0.0, ridge = 0.0)
+
+Single-step genomic relationship inverse `H⁻¹` (Aguilar et al. 2010;
+Christensen & Lund 2009):
+
+    H⁻¹ = A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)  over the genotyped rows `g`,
+
+where `Ainv` is the pedigree inverse `A⁻¹`, `A` the dense pedigree relationship
+matrix, `A₂₂ = A[g, g]` the block among the genotyped animals (in sorted
+pedigree-row order), and `Gʷ = (1 − blend_weight)·G + blend_weight·A₂₂` the
+optionally blended/ridged genomic relationship among them.
+
+Critically, `A₂₂⁻¹` is the inverse of the *submatrix* `A[g, g]`, **not** the
+submatrix `(A⁻¹)[g, g]` — the two differ.
+
+Internal validation-only construction utility: dense, not exported, and **not**
+wired into fitting. The `blend_weight` / `tau` / `omega` / `ridge` knobs are not
+comparator-validated; defaults are `blend_weight = ridge = 0`, `tau = omega = 1`.
+"""
+function _single_step_Hinv(
+    Ainv::AbstractMatrix,
+    A::AbstractMatrix,
+    G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer};
+    tau::Real = 1.0,
+    omega::Real = 1.0,
+    blend_weight::Real = 0.0,
+    ridge::Real = 0.0,
+)
+    n = size(Ainv, 1)
+    size(Ainv, 2) == n || throw(ArgumentError("Ainv must be square"))
+    size(A) == (n, n) || throw(ArgumentError("A must match Ainv dimensions"))
+    g = collect(genotyped_rows)
+    ng = length(g)
+    all(r -> 1 <= r <= n, g) ||
+        throw(ArgumentError("genotyped_rows must be valid row indices of Ainv"))
+    size(G) == (ng, ng) ||
+        throw(ArgumentError("G must be square of size length(genotyped_rows)"))
+
+    A22 = Matrix{Float64}(A[g, g])
+    A22inv = inv(Symmetric(A22))                     # inverse of the SUBMATRIX of A
+    Gblend = (1 - blend_weight) .* Matrix{Float64}(G) .+ blend_weight .* A22
+    Greg = Symmetric(Gblend + ridge * I)
+    isposdef(Greg) ||
+        throw(ArgumentError("genotyped genomic block is not positive definite; increase ridge or blend_weight"))
+    Gwinv = inv(Greg)
+
+    Hinv = Matrix{Float64}(Ainv)
+    Hinv[g, g] = Hinv[g, g] .+ (tau .* Gwinv .- omega .* A22inv)
+    return Hinv
+end

@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Single-Step H-Inverse Construction (_single_step_Hinv, internal)
+
+- Goal: the single-step (ssGBLUP) H-inverse construction utility — the subtlest
+  Phase-2 piece — shipped as an unexported, property-checked construction utility
+  only (no fitting wiring, no comparator-validated blending).
+- Active lenses: Henderson, Mrode, Kirkpatrick, Gauss, Mendel, Rose (inline).
+- Implementation:
+  - `src/genomic.jl`: `_single_step_Hinv(Ainv, A, G, genotyped_rows; tau, omega,
+    blend_weight, ridge)` = `A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)`. Critically
+    `A₂₂⁻¹ = inv(A[g, g])`, NOT `(A⁻¹)[g, g]`. PD guard on the (blended/ridged)
+    genomic block. Reuses `_numerator_relationship` for `A`/`A₂₂`. Unexported,
+    validation-only.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 648
+    total. New testset "Phase 2 single-step H-inverse construction" = 11 checks:
+    `A₂₂⁻¹[1,1] = 11/6` vs `(A⁻¹)[g,g][1,1] = 2.5` distinctness, reduction
+    (`G = A₂₂ ⇒ H⁻¹ = A⁻¹`, ~0), locality (off-block unchanged), symmetry,
+    scattered genotyped rows `[1,3,5]`, singular-`G` throws / blend rescues, and
+    a dimension guard. `validation_status()` 18 → 19 (added `V2-SSHINV`).
+- Boundary:
+  - Construction utility only — NOT exported, NOT wired into fitting;
+    `single_step()` stays inert. Blending/τ/ω/ridge defaults are NOT
+    comparator-validated. Dense, validation-scale; no large-pedigree claim.
+
 ## 2026-06-13 Genomic Reliability / PEV / Accuracy Semantics
 
 - Goal: confirm and document that the existing reliability/PEV/accuracy
