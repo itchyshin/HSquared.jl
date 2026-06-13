@@ -7,7 +7,7 @@
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
 | V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
-| V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl` |
+| V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl`; shared out-of-order calf/sire/dam fixture with expected Ainv `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]` mirrored by R head `fe7e346` |
 | V1-CSC | Sparse CSC bridge marshalling | covered | zero-based R-slot, one-based Julia-slot, malformed-slot, and direct payload integration tests in `test/runtests.jl` |
 | V1-SPEC | Low-level animal model spec validation | covered | dimension, ID, family, and method tests in `test/runtests.jl` |
 | V1-LIK | Univariate Gaussian ML/REML likelihood | partial | hand-calculated tiny likelihood tests; still needs Mrode and comparator checks |

@@ -23,6 +23,19 @@ This utility validates and sorts a pedigree, recodes known parents to integer
 indices, keeps unknown parents as `0`, and builds a sparse inverse additive
 relationship matrix. It does not fit a model.
 
+The shared tiny Ainv fixture is the out-of-order calf/sire/dam pedigree. The
+normalized ID order is `sire`, `dam`, `calf`; parent indices are sire
+`0, 0, 1` and dam `0, 0, 2`; expected `Ainv` is:
+
+```text
+1.5   0.5  -1.0
+0.5   1.5  -1.0
+-1.0 -1.0   2.0
+```
+
+Julia tests this directly. R head `fe7e346` now records the same fixture and
+green CI evidence from the R lane.
+
 ## Implemented Data Container
 
 ```julia

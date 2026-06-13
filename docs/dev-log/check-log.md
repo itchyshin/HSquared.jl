@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R Tiny Ainv Fixture Mirror
+
+- Goal: mirror the R twin's first deterministic Ainv validation atom in the
+  Julia design/status ledger.
+- Active lenses: Ada, Henderson, Curie, Mrode, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `c161a7f` added `hs_tiny_animal_validation_fixture()`.
+  - `hsquared` head `fe7e346` recorded green CI evidence.
+  - Fixture: out-of-order calf/sire/dam input; normalized IDs `sire`, `dam`,
+    `calf`; sire indices `0, 0, 1`; dam indices `0, 0, 2`; expected Ainv
+    `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]`.
+  - R-CMD-check `27457553099`, pkgdown `27457553093`, and Pages
+    `27457582221` were reported green.
+- Julia-side action:
+  - Recorded the shared fixture in the engine contract, capability status,
+    validation debt, and coordination board.
+  - No code changed.
+- Boundary:
+  - Tiny Ainv fixture only.
+  - Not Mrode validation, external comparator validation, production sparse
+    fitting, large-pedigree readiness, or genomic/single-step validation.
+
 ## 2026-06-13 Phase 1M Sparse Henderson MME Supplied-Variance Solve
 
 - Goal: add a sparse Henderson mixed-model-equation solve at supplied variance

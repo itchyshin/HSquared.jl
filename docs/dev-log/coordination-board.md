@@ -32,6 +32,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   tests widen in lockstep.
 - The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
   `hsquared` head `398e019`.
+- The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation
+  fixture at `hsquared` head `fe7e346`.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, and sparse diagnostics remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
@@ -109,6 +111,15 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - this is sparse `Z` marshalling only, not large-data readiness, relationship
     object marshalling, production sparse fitting, performance evidence, or
     Mrode validation.
+- R lane handoff from `itchyshin/hsquared` head `fe7e346`:
+  - added internal `hs_tiny_animal_validation_fixture()`;
+  - fixture uses out-of-order calf/sire/dam input and expected normalized IDs
+    `sire`, `dam`, `calf`;
+  - expected parent indices are sire `0, 0, 1` and dam `0, 0, 2`;
+  - expected Ainv is `[1.5 0.5 -1.0; 0.5 1.5 -1.0; -1.0 -1.0 2.0]`;
+  - R local full tests, R-CMD-check, pkgdown, and Pages were reported green;
+  - this is a tiny Ainv fixture only, not Mrode validation or comparator
+    evidence.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
   parity.
