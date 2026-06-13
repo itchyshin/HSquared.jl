@@ -40,9 +40,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Julia mirrors the same backend and accelerator vocabulary as metadata only.
 - The R twin added `backend_info()` diagnostics at `hsquared` head `8266a82`;
   Julia mirrors the same planned/unavailable status surface with typed rows.
+- The R twin reserved planned genomic/QTL formula markers at `hsquared` head
+  `3c82c9a`; Julia mirrors those names as planned vocabulary only.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
-  benchmarking, and CPU/GPU agreement tests remain planned.
+  benchmarking, CPU/GPU agreement tests, genomic prediction, single-step
+  fitting, marker scans, and QTL/eQTL scans remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
 ## Current State
@@ -161,9 +164,20 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     `27458237087` were green for the evidence commit;
   - boundary: status diagnostic only; no runtime backend probing, GPU
     execution, backend benchmarking, or CPU/GPU agreement claim.
+- R lane handoff from `itchyshin/hsquared` head `3c82c9a`:
+  - added inert planned-only formula markers `genomic()`, `single_step()`,
+    `markers()`, `marker_scan()`, and `qtl_scan()`;
+  - parser rejects those terms before model-frame construction with
+    planned-not-implemented wording;
+  - local R formula tests, full tests, and `devtools::check()` were reported
+    green;
+  - R-CMD-check `27458338370`, pkgdown `27458338374`, and Pages
+    `27458374477` were reported green for implementation commit `dc53584`;
+  - boundary: syntax reservation only; no genomic prediction, marker scan,
+    single-step, QTL/eQTL, or marker-effect estimation claim.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
-  marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
-  parity.
+  marshalling beyond `Z`, Mrode validation, `hs_data()` to `HSData` payload
+  parity, and the first real genomic/QTL model-spec contract.
 
 ## Sister References
 

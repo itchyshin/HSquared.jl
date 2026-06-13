@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Planned Genomic/QTL Marker Vocabulary Mirror
+
+- Goal: mirror the R twin's inert planned genomic/QTL formula markers as Julia
+  vocabulary reservations.
+- Active lenses: Ada, Shannon, Boole, Hopper, Noether, Jason, Rose, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `dc53584` added planned-only `genomic()`,
+    `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()` markers.
+  - `hsquared` head `3c82c9a` records genomic marker CI evidence.
+  - R parser detects these terms before model-frame construction and errors
+    with planned-not-implemented wording.
+  - Reported implementation evidence: local formula tests 17 pass, local full
+    tests 158 pass, `devtools::check()` 0/0/0, R-CMD-check `27458338370`,
+    pkgdown `27458338374`, and Pages `27458374477` success.
+- Julia-side action:
+  - Added `planned_model_terms()`.
+  - Added exported `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
+    and `qtl_scan()` functions that throw planned-not-implemented errors.
+  - Updated formula grammar, engine contract, README, docs pages, status
+    tables, validation debt, public claims, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 227 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims of
+    genomic prediction, single-step fitting, marker-effect estimation, marker
+    scans, QTL/eQTL scans, GPU execution, ASReml superiority, backend
+    benchmarking, or CPU/GPU numerical agreement.
+- Boundary:
+  - Syntax/model-term vocabulary reservation only.
+  - No genomic prediction.
+  - No marker-effect estimation.
+  - No marker scans, QTL scans, or eQTL scans.
+  - No single-step fitting.
+
 ## 2026-06-13 Backend Status Diagnostics Mirror
 
 - Goal: mirror the R twin's `backend_info()` honest status diagnostic in Julia.

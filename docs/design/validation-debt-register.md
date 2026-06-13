@@ -4,6 +4,7 @@
 | --- | --- | --- | --- |
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
 | V0-CTRL | Control validation | covered | default and invalid control tests, planned backend/accelerator vocabulary tests for `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`, and `backend_info()` diagnostics with execution unavailable; execution dispatch remains planned |
+| V0-GENOMIC-QTL-SYNTAX | Planned genomic/QTL vocabulary | covered | `planned_model_terms()` and planned-not-implemented error tests for `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`; syntax reservation only |
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
 | V1-DATA | HSData in-memory input container | covered | phenotype, pedigree, genotype, expression ID-map tests and failure-mode tests in `test/runtests.jl` |
 | V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
@@ -23,7 +24,8 @@
 | V1-EBV | Production sparse EBVs/BLUPs, reliability, and PEV | planned | known fitted values, reliability, and prediction error variance against comparator |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |
 | V4-FA | Factor-analytic G matrix | planned | simulated loading and Psi recovery |
-| V5-GBLUP | Genomic and single-step models | planned | JWAS/sommer/BLUPF90 style comparator checks |
+| V5-GBLUP | Genomic and single-step models | planned | JWAS/sommer/BLUPF90 style comparator checks; current work covers syntax reservation only |
+| V5-QTL | Marker scans and QTL/eQTL | planned | marker-map validation, estimand definition, multiple-testing checks, and comparator/simulation evidence; current work covers syntax reservation only |
 | V7-INHERIT | Non-standard inheritance | planned | relationship construction and biological interpretation checks |
 
 Rows must be updated before public docs promote a capability.

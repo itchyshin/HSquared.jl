@@ -112,6 +112,27 @@ end
     @test only(filter(row -> row.backend == :metal, metal.rows)).requested
     @test_throws ArgumentError backend_info(nothing)
 
+    @test planned_model_terms() == (:genomic, :single_step, :markers, :marker_scan, :qtl_scan)
+
+    for (name, fn) in (
+        (:genomic, genomic),
+        (:single_step, single_step),
+        (:markers, markers),
+        (:marker_scan, marker_scan),
+        (:qtl_scan, qtl_scan),
+    )
+        err = try
+            fn(nothing)
+            nothing
+        catch caught
+            caught
+        end
+
+        @test err isa ArgumentError
+        @test occursin("`$(name)()` is planned, not implemented.", sprint(showerror, err))
+        @test occursin("no genomic prediction", sprint(showerror, err))
+    end
+
     @test_throws Phase0NotImplementedError hsquared(nothing)
     @test_throws Phase0NotImplementedError fit_animal_model(nothing)
 end

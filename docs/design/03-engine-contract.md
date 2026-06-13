@@ -45,6 +45,22 @@ numerical agreement test yet.
 rows have `selectable == true`, `execution_available == false`, and
 `status == :planned`.
 
+## Implemented Planned-Term Vocabulary
+
+```julia
+planned_model_terms()
+genomic()
+single_step()
+markers()
+marker_scan()
+qtl_scan()
+```
+
+These names mirror the R twin's planned genomic/QTL formula markers from
+`hsquared` head `3c82c9a`. They are vocabulary reservations only. Calls throw
+planned-not-implemented errors and do not construct `AnimalModelSpec` objects,
+genomic relationship specs, marker scans, QTL/eQTL scans, or fitted models.
+
 ## Implemented Relationship Utility
 
 ```julia

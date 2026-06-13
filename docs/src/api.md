@@ -12,6 +12,12 @@ HSquared.AutoBackend
 HSquared.BackendInfoRow
 HSquared.BackendInfo
 HSquared.backend_info
+HSquared.planned_model_terms
+HSquared.genomic
+HSquared.single_step
+HSquared.markers
+HSquared.marker_scan
+HSquared.qtl_scan
 HSquared.GaussianFamily
 HSquared.HSData
 HSquared.HSDataIDMap

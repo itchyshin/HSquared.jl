@@ -30,6 +30,10 @@ Implemented now:
   auto selection;
 - `backend_info()` status diagnostics showing that planned backend names are
   selectable metadata but not execution-ready yet;
+- planned genomic/QTL model-term vocabulary reservations:
+  `planned_model_terms()`, `genomic()`, `single_step()`, `markers()`,
+  `marker_scan()`, and `qtl_scan()`; these names error honestly and do not
+  construct model specs yet;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
@@ -66,7 +70,8 @@ Planned, but not implemented yet:
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - multivariate animal models and G matrices;
-- genomic, single-step, and non-standard inheritance models;
+- genomic prediction, single-step fitting, marker-effect estimation,
+  marker scans, QTL/eQTL scans, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 
 ## Julia Surface
@@ -103,6 +108,16 @@ id_map(data)
 
 This records exact ID overlap only. File-backed storage, relationship
 construction from genotypes, and QTL/eQTL scans remain planned.
+
+The planned genomic/QTL vocabulary is reserved but not implemented:
+
+```julia
+planned_model_terms()
+```
+
+Calls such as `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
+`qtl_scan()` currently throw planned-not-implemented errors. They do not build
+model specs, fit genomic models, or run marker/QTL scans.
 
 The first bridge-ready model specification validator is also available:
 

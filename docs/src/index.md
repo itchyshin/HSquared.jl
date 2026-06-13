@@ -21,6 +21,10 @@ Implemented engine utilities:
   CUDA, AMDGPU, Metal, oneAPI, generic GPU preference, and auto selection;
 - `backend_info()` status diagnostics showing selectable planned backend names
   with execution unavailable;
+- planned genomic/QTL model-term vocabulary reservations:
+  `planned_model_terms()`, `genomic()`, `single_step()`, `markers()`,
+  `marker_scan()`, and `qtl_scan()`; these error honestly and do not build
+  model specs yet;
 - honest placeholder entry points for future model fitting;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
@@ -49,7 +53,8 @@ Planned, but not implemented yet:
   heritability extraction;
 - production R-to-Julia fitting bridge;
 - multivariate animal models and G matrices;
-- genomic, single-step, and non-standard inheritance models;
+- genomic prediction, single-step fitting, marker-effect estimation,
+  marker scans, QTL/eQTL scans, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests.

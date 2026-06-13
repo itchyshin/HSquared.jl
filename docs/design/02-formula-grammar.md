@@ -25,6 +25,38 @@ R head `b57b48e` now covers this narrow grammar with an inert `animal()` marker,
 trait, covariance, and non-v0.1 animal terms should be rejected in R before
 Julia is asked to fit anything.
 
+## Reserved Planned Genomic/QTL Vocabulary
+
+R head `3c82c9a` reserves these planned formula markers:
+
+```r
+genomic(1 | id, Ginv = Ginv)
+single_step(1 | id, Hinv = Hinv)
+markers(M, model = "random")
+marker_scan(M, map = marker_map)
+qtl_scan(position, genotype_probs = probs)
+```
+
+The R parser rejects them with planned-not-implemented wording before ordinary
+model-frame construction. This prevents undefined marker objects from being
+evaluated and prevents planned genomics/QTL terms from being silently treated
+as fixed effects.
+
+Julia mirrors the same names as planned vocabulary reservations:
+
+```julia
+planned_model_terms()
+genomic()
+single_step()
+markers()
+marker_scan()
+qtl_scan()
+```
+
+These Julia functions intentionally throw planned-not-implemented errors. They
+do not construct model specs, validate marker matrices, run GBLUP/single-step,
+or perform marker/QTL/eQTL scans.
+
 ## Julia Interpretation Target
 
 The R formula should normalize to a Julia engine specification with:
@@ -87,7 +119,8 @@ Julia examples should use the lower-level engine utilities.
 
 - multivariate trait syntax;
 - factor-analytic covariance structures;
-- genomic or single-step models;
+- genomic prediction, single-step fitting, marker-effect estimation, marker
+  scans, and QTL/eQTL scans;
 - GLLVM-style response matrices;
 - GPU backend selection from the user API;
 - non-standard inheritance wrappers.

@@ -12,6 +12,8 @@
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with
   execution marked unavailable.
+- Added planned genomic/QTL model-term vocabulary reservations:
+  `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()`.
 - Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.

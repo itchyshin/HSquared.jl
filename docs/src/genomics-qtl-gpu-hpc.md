@@ -8,6 +8,11 @@ normalization plus sparse `Ainv` construction. Animal-model fitting, genomics,
 QTL/eQTL, GLLVM-style models, and GPU acceleration are planned or experimental
 future work unless a capability table says otherwise.
 
+The names `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
+`qtl_scan()` are now reserved in both twins. In Julia they currently throw
+planned-not-implemented errors. They do not fit genomic models, estimate marker
+effects, or run QTL/eQTL scans yet.
+
 ## 1. Executive Summary
 
 `hsquared` and `HSquared.jl` should become a coherent, open, Julia-powered
