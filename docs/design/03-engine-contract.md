@@ -154,6 +154,14 @@ R heads `74eef82` and `39ca990` add a parser-only shorthand:
 This shorthand does not require a new Julia engine term, a new `HSData`
 marshalling path, or a bridge payload change.
 
+R head `e7fbb31` adds environment-key diagnostics to `hs_data()` and
+`data_status()`. Julia mirrors this in `HSData` with `environment` and
+`environment_id` metadata: if a key is supplied, it records phenotype
+environment IDs, environment metadata IDs, missing metadata, environment-only
+IDs, and duplicate environment IDs. This is metadata diagnostics only. It does
+not join environment covariates into `X`, add environmental random or fixed
+effects, change the R-Julia bridge payload, or fit multi-environment models.
+
 ## Implemented Model-Spec Validator
 
 ```julia

@@ -59,9 +59,13 @@
   checks.
 - Added `data_status(::HSData)` diagnostics mirroring the R twin's
   `data_status()` surface for component presence, ID-overlap counts, pedigree
-  status, and marker-alignment status. Diagnostic only; no bridge payload,
-  raw-pedigree Ainv construction, genotype parsing, relationship
-  construction, marker scan, genomic fitting, or QTL/eQTL claim.
+  status, marker-alignment status, and environment-key status. Diagnostic
+  only; no bridge payload, raw-pedigree Ainv construction, genotype parsing,
+  relationship construction, environment-covariate joins, environmental model
+  terms, marker scan, genomic fitting, or QTL/eQTL claim.
+- Recorded the R twin's `hs_data()` environment-key diagnostics from
+  `hsquared` head `e7fbb31` and mirrored them in Julia `HSData` as metadata
+  diagnostics only.
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.

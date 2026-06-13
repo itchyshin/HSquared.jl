@@ -269,6 +269,7 @@ end
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],
+        env = ["E1", "E1", "E3"],
         y = [1.0, 1.5, 2.0],
     )
     pedigree = normalize_pedigree(
@@ -290,6 +291,10 @@ end
         id = ["animal_2", "animal_4"],
         gene_a = [4.0, 5.0],
     )
+    environment = (
+        env = ["E1", "E2", "E2"],
+        temperature = [18.0, 20.0, 21.0],
+    )
 
     data = HSData(
         phenotypes;
@@ -301,10 +306,19 @@ end
         markers = markers,
         expression = expression,
         expression_id = :id,
+        environment = environment,
+        environment_id = :env,
     )
 
     @test data isa HSData
     @test data.pedigree === pedigree
+    @test data.environment_spec isa HSEnvironmentSpec
+    @test data.environment_spec.key == :env
+    @test data.environment_spec.phenotype_environment_ids == ["E1", "E3"]
+    @test data.environment_spec.environment_ids == ["E1", "E2"]
+    @test data.environment_spec.phenotypes_without_environment == ["E3"]
+    @test data.environment_spec.environment_without_phenotypes == ["E2"]
+    @test data.environment_spec.duplicate_environment_ids == ["E2"]
     @test id_map(data) isa HSDataIDMap
     @test id_map(data).phenotype_ids == ["animal_1", "animal_2"]
     @test id_map(data).pedigree_ids == pedigree.ids
@@ -323,7 +337,7 @@ end
     @test data.genotype_marker_spec.marker_map_index == [2, 1]
     status = data_status(data)
     @test status isa HSDataStatus
-    @test status.components == [:phenotypes, :pedigree, :genotypes, :markers, :expression]
+    @test status.components == [:phenotypes, :pedigree, :genotypes, :markers, :expression, :environment]
     @test [row.metric for row in status.id_overlap] == [
         "phenotype_ids",
         "pedigree_ids",
@@ -362,6 +376,18 @@ end
         "alignment",
     ]
     @test [row.value for row in status.marker_status] == ["2", "2", "2", "2", "10.0", "20.0", "checked"]
+    @test status.environment_status isa Vector{HSDataEnvironmentStatusRow}
+    @test [row.metric for row in status.environment_status] == [
+        "environment_rows",
+        "environment_key",
+        "environment_ids",
+        "phenotype_environment_ids",
+        "phenotype_environment_ids_with_metadata",
+        "environment_only_ids",
+        "phenotype_environment_ids_without_metadata",
+        "duplicate_environment_ids",
+    ]
+    @test [row.value for row in status.environment_status] == ["3", "env", "2", "2", "1", "1", "1", "1"]
     @test occursin("HSDataStatus", sprint(show, status))
 
     raw_pedigree = (
@@ -429,6 +455,24 @@ end
 
     @test data_status(HSData(phenotypes)).marker_status === nothing
     @test data_status(HSData(phenotypes)).pedigree_status === nothing
+    @test data_status(HSData(phenotypes)).environment_status === nothing
+
+    unkeyed_environment_status = data_status(
+        HSData(
+            (id = ["a"], y = [1.0]);
+            environment = (env = ["E1"], rainfall = [4.0]),
+        ),
+    ).environment_status
+    @test [row.value for row in unkeyed_environment_status] == [
+        "1",
+        "not_checked_no_environment_id",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+    ]
 
     @test_throws ArgumentError HSData((id = ["animal_1", missing], y = [1.0, 2.0]))
     @test_throws ArgumentError HSData(phenotypes; pedigree = (id = ["animal_1"],))
@@ -457,6 +501,20 @@ end
         phenotypes;
         genotypes = (id = ["animal_1"],),
         markers = (marker = ["m1"], chr = ["1"], pos = [1]),
+    )
+    @test_throws ArgumentError HSData(phenotypes; environment_id = :env)
+    @test_throws ArgumentError HSData(phenotypes; environment = [1 2; 3 4])
+    @test_throws ArgumentError HSData(phenotypes; environment = (env = ["E1"],), environment_id = "")
+    @test_throws ArgumentError HSData((id = ["a"], y = [1.0]); environment = (env = ["E1"],), environment_id = :env)
+    @test_throws ArgumentError HSData(
+        (id = ["a"], env = [missing], y = [1.0]);
+        environment = (env = ["E1"],),
+        environment_id = :env,
+    )
+    @test_throws ArgumentError HSData(
+        (id = ["a"], env = ["E1"], y = [1.0]);
+        environment = (env = [""],),
+        environment_id = :env,
     )
 end
 

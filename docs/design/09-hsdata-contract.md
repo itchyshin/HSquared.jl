@@ -52,6 +52,13 @@ raw pedigree IDs, self-parent rows, and same-known-parent rows. This is a
 diagnostic surface only. It does not normalize raw pedigree tables or build
 relationship matrices.
 
+R head `e7fbb31` adds environment-key diagnostics to `summary(hs_data(...))`
+and `data_status()`. Julia mirrors those counts with `environment` plus
+`environment_id`: keyed containers record phenotype environment IDs,
+environment metadata IDs, phenotype environment IDs with and without metadata,
+environment-only IDs, and duplicate environment IDs. Unkeyed environment
+tables are accepted and reported as not key-checked.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -67,6 +74,7 @@ HSData(
     expression = expression,
     annotation = annotation,
     environment = environment,
+    environment_id = :site,
 )
 ```
 
@@ -116,7 +124,7 @@ Implemented:
 - marker-map metadata validation;
 - genotype-marker alignment validation;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, and marker status;
+  status, marker status, and environment-key status;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge
@@ -133,5 +141,6 @@ Planned:
 
 Rose audit: this can be called a conservative data-container mirror. It must
 not be described as genomic modelling, file-backed storage, QTL/eQTL support,
-genotype parsing, imputation, genotype/omics automatic model construction,
+genotype parsing, imputation, environment-covariate joining, environmental
+model terms, genotype/omics/environment automatic model construction,
 production bridge hardening, or general fitting.

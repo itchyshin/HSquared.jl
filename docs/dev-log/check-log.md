@@ -2,6 +2,38 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Environment Diagnostics
+
+- Goal: mirror the R twin's `hs_data()` environment-key diagnostics in Julia
+  `HSData` without changing bridge payloads or adding environmental model
+  terms.
+- Active lenses: Ada, Emmy, Darwin, Pat, Hopper, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- R handoff:
+  - `hsquared` head `e7fbb31` adds environment-key diagnostics to
+    `summary(hs_data(...))` and `data_status()`.
+  - Reported R evidence: R-CMD-check `27463966276`, pkgdown `27463966261`,
+    and Pages `27463998276` success.
+- Julia-side action:
+  - Added `HSEnvironmentSpec` for keyed environment metadata.
+  - Added `HSDataEnvironmentStatusRow` and `environment_status` on
+    `HSDataStatus`.
+  - Added `environment_id` validation for `HSData`.
+  - Added keyed and unkeyed environment-status tests plus missing-key,
+    missing-value, and duplicate-environment-ID coverage.
+  - Updated API docs, data-container docs, README, ROADMAP, Documenter
+    roadmap, engine contract, HSData contract, capability status, validation
+    debt, public claims register, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 421 checks; the Phase 1 HSData ID container testset has 81 checks.
+- Boundary:
+  - Metadata diagnostics only.
+  - No bridge payload change.
+  - No environment-covariate joins, environmental model terms,
+    multi-environment fitting, genotype parsing, marker scanning, QTL/eQTL, or
+    GLLVM workflow claim.
+
 ## 2026-06-13 EBV BLUP Accuracy Extractor Parity
 
 - Goal: mirror the R twin's EBV/BLUP/accuracy extractor ergonomics in Julia

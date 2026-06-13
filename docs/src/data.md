@@ -135,6 +135,46 @@ status = data_status(data)
 [row.metric => row.value for row in status.marker_status]
 ```
 
+## Environment Metadata
+
+`HSData` can also store an environment metadata table. If `environment_id` is
+supplied, the same key column must be present in `phenotypes` and
+`environment`; `data_status()` then reports overlap between phenotype
+environment keys and environment metadata keys.
+
+```@example data
+environment = (
+    env = ["E1", "E2", "E2"],
+    temperature = [18.0, 20.0, 21.0],
+)
+
+pheno_env = (
+    id = ["animal_1", "animal_1", "animal_2"],
+    env = ["E1", "E1", "E3"],
+    y = [1.0, 1.5, 2.0],
+)
+
+env_data = HSData(pheno_env; environment = environment, environment_id = :env)
+env_data.environment_spec.phenotypes_without_environment
+```
+
+```@example data
+env_status = data_status(env_data)
+[row.metric => row.value for row in env_status.environment_status]
+```
+
+If an environment table is supplied without `environment_id`, it is stored but
+reported as unkeyed:
+
+```@example data
+unkeyed_env_data = HSData(phenotypes; environment = (site = ["S1"],))
+[row.metric => row.value for row in data_status(unkeyed_env_data).environment_status]
+```
+
+This is metadata hygiene only. `HSData` does not join environment covariates
+into model matrices, add environmental model terms, or fit multi-environment
+models.
+
 ```@example data
 id_map(data).genotypes_without_phenotypes
 ```
@@ -155,7 +195,7 @@ id_map(data).expression_without_phenotypes
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, and marker status;
+  status, marker status, and environment-key status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.

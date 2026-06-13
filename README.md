@@ -70,8 +70,10 @@ Implemented now:
   genotype, expression, marker, annotation, and environment inputs;
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
+- environment-key metadata diagnostics inside `HSData`;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, and marker-alignment status;
+  counts, pedigree status, marker-alignment status, and environment-key
+  status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -150,6 +152,13 @@ known parent links, duplicate raw pedigree IDs, missing known parent IDs,
 self-parent rows, and same-known-parent rows. These diagnostics do not
 normalize the pedigree or build `Ainv`; `normalize_pedigree()` remains the
 engine validation path.
+
+When an environment table and `environment_id` are supplied, `HSData` validates
+that the key exists in both phenotype and environment metadata and
+`data_status()` reports overlap, missing metadata keys, environment-only keys,
+and duplicate environment IDs. This is metadata diagnostics only. It does not
+join environment covariates into model matrices or fit environmental,
+multi-environment, QTL/eQTL, or GLLVM workflows.
 
 On the R side, `hs_data()` can feed the v0.1 parser for `model_spec()` and
 `hsquared()` by reading variables from `data$phenotypes` and resolving

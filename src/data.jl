@@ -44,6 +44,24 @@ struct HSGenotypeMarkerSpec
 end
 
 """
+    HSEnvironmentSpec
+
+Validated environment-key metadata stored by [`HSData`](@ref).
+
+This is metadata hygiene only. It does not add environmental model terms,
+join environment covariates into design matrices, or fit multi-environment
+models.
+"""
+struct HSEnvironmentSpec
+    key::Symbol
+    phenotype_environment_ids::Vector{String}
+    environment_ids::Vector{String}
+    phenotypes_without_environment::Vector{String}
+    environment_without_phenotypes::Vector{String}
+    duplicate_environment_ids::Vector{String}
+end
+
+"""
     HSDataIDOverlapRow
 
 One ID-overlap count returned by [`data_status`](@ref).
@@ -64,6 +82,16 @@ struct HSDataMarkerStatusRow
 end
 
 """
+    HSDataEnvironmentStatusRow
+
+One environment-metadata diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataEnvironmentStatusRow
+    metric::String
+    value::String
+end
+
+"""
     HSDataPedigreeStatusRow
 
 One pedigree diagnostic returned by [`data_status`](@ref).
@@ -79,15 +107,17 @@ end
 Diagnostic container returned by [`data_status`](@ref).
 
 This mirrors the R twin's `data_status()` surface for component presence,
-ID-overlap counts, pedigree status, and marker-map/genotype-marker alignment
-status. It is diagnostic only and does not build model specifications or
-relationship matrices.
+ID-overlap counts, pedigree status, marker-map/genotype-marker alignment
+status, and environment-key metadata status. It is diagnostic only and does
+not build model specifications, join covariates, or construct relationship
+matrices.
 """
 struct HSDataStatus
     components::Vector{Symbol}
     id_overlap::Vector{HSDataIDOverlapRow}
     pedigree_status::Union{Nothing,Vector{HSDataPedigreeStatusRow}}
     marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
+    environment_status::Union{Nothing,Vector{HSDataEnvironmentStatusRow}}
 end
 
 """
@@ -100,7 +130,7 @@ This is a conservative Phase 1 mirror of the R `hs_data()` contract. It stores
 the supplied objects and records exact-ID overlap diagnostics, but it does not
 construct relationship matrices, read file-backed data, or fit a model.
 """
-struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv}
+struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv,TES}
     phenotypes::TP
     pedigree::TPed
     genotypes::TG
@@ -110,6 +140,8 @@ struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv}
     expression::TE
     annotation::TA
     environment::TEnv
+    environment_spec::TES
+    environment_id::Union{Nothing,Symbol}
     pedigree_id::Symbol
     id_map::HSDataIDMap
 end
@@ -158,14 +190,19 @@ Optional:
   for matrix-like data, or an ID column for table-like data;
 - `markers`: table-like marker metadata with marker, chromosome, and position
   columns, using common aliases;
-- `expression`, `annotation`, and `environment`: stored as supplied.
+- `expression`, `annotation`, and `environment`: stored as supplied;
+- `environment_id`: optional shared key column for phenotype/environment
+  metadata diagnostics.
 
 When a pedigree is supplied, every unique phenotype ID must appear in the
 pedigree IDs. Genotype and expression mismatches are recorded in `id_map`
 instead of rejected, because ungenotyped and unexpressed phenotyped individuals
 are valid inputs for later phases. When both `genotypes` and `markers` are
 supplied, genotype marker names must match marker-map IDs exactly after marker
-names are normalized to strings.
+names are normalized to strings. When `environment` and `environment_id` are
+supplied, `HSData` records overlap between phenotype environment keys and
+environment metadata keys. It does not join environment covariates into model
+matrices.
 """
 function HSData(
     phenotypes;
@@ -185,6 +222,7 @@ function HSData(
     expression_ids = nothing,
     annotation = nothing,
     environment = nothing,
+    environment_id = nothing,
 )
     return HSData(;
         phenotypes = phenotypes,
@@ -204,6 +242,7 @@ function HSData(
         expression_ids = expression_ids,
         annotation = annotation,
         environment = environment,
+        environment_id = environment_id,
     )
 end
 
@@ -225,6 +264,7 @@ function HSData(;
     expression_ids = nothing,
     annotation = nothing,
     environment = nothing,
+    environment_id = nothing,
 )
     phenotype_ids = _unique_ids(_column(phenotypes, id, "phenotypes"), "phenotype"; allow_repeated = true)
     isempty(phenotype_ids) &&
@@ -256,6 +296,11 @@ function HSData(;
         genotype_id,
         genotype_marker_ids,
         marker_spec,
+    )
+    environment_spec = _environment_spec(
+        environment,
+        phenotypes;
+        environment_id = environment_id,
     )
 
     phenotypes_without_pedigree = _ordered_setdiff(phenotype_ids, pedigree_ids)
@@ -289,6 +334,8 @@ function HSData(;
         expression,
         annotation,
         environment,
+        environment_spec,
+        environment_spec === nothing ? nothing : environment_spec.key,
         _column_symbol(pedigree_id, "pedigree"),
         map,
     )
@@ -306,11 +353,13 @@ end
 """
     data_status(data::HSData)
 
-Return component, ID-overlap, and marker-alignment diagnostics for an
+Return component, ID-overlap, marker-alignment, and environment-key
+diagnostics for an
 [`HSData`](@ref) object.
 
 This mirrors the R twin's `data_status()` helper. It does not parse genotype
-files, construct genomic relationships, build bridge payloads, or fit models.
+files, construct genomic relationships, join environment covariates, build
+bridge payloads, or fit models.
 """
 function data_status(data::HSData)
     return HSDataStatus(
@@ -318,6 +367,7 @@ function data_status(data::HSData)
         _data_id_overlap(data.id_map),
         _data_pedigree_status(data),
         _data_marker_status(data),
+        _data_environment_status(data),
     )
 end
 
@@ -368,6 +418,42 @@ end
 
 function _marker_map_spec(::Nothing; marker_id, chromosome, position)
     return nothing
+end
+
+function _environment_spec(::Nothing, phenotypes; environment_id)
+    environment_id === nothing ||
+        throw(ArgumentError("environment_id can be supplied only when environment is supplied"))
+    return nothing
+end
+
+function _environment_spec(environment, phenotypes; environment_id)
+    _column_names(environment) !== nothing ||
+        throw(ArgumentError("environment must be table-like when supplied"))
+    environment_id === nothing && return nothing
+
+    key = _key_column_symbol(environment_id, "environment")
+    phenotype_values = _environment_key_values(
+        _column(phenotypes, key, "phenotypes"),
+        "phenotypes",
+        key,
+    )
+    environment_values = _environment_key_values(
+        _column(environment, key, "environment"),
+        "environment",
+        key,
+    )
+    phenotype_ids = _unique_strings(phenotype_values)
+    environment_ids = _unique_strings(environment_values)
+    duplicates = _duplicate_string_ids(environment_values)
+
+    return HSEnvironmentSpec(
+        key,
+        phenotype_ids,
+        environment_ids,
+        _ordered_setdiff(phenotype_ids, environment_ids),
+        _ordered_setdiff(environment_ids, phenotype_ids),
+        duplicates,
+    )
 end
 
 function _marker_map_spec(markers; marker_id, chromosome, position)
@@ -719,6 +805,43 @@ function _data_marker_status(data::HSData)
     ]
 end
 
+function _data_environment_status(data::HSData)
+    data.environment === nothing && return nothing
+    environment_rows = _row_count(data.environment)
+    row_value = environment_rows === nothing ? "not_available" : string(environment_rows)
+
+    if data.environment_spec === nothing
+        return [
+            HSDataEnvironmentStatusRow("environment_rows", row_value),
+            HSDataEnvironmentStatusRow("environment_key", "not_checked_no_environment_id"),
+            HSDataEnvironmentStatusRow("environment_ids", "not_available"),
+            HSDataEnvironmentStatusRow("phenotype_environment_ids", "not_available"),
+            HSDataEnvironmentStatusRow("phenotype_environment_ids_with_metadata", "not_available"),
+            HSDataEnvironmentStatusRow("environment_only_ids", "not_available"),
+            HSDataEnvironmentStatusRow("phenotype_environment_ids_without_metadata", "not_available"),
+            HSDataEnvironmentStatusRow("duplicate_environment_ids", "not_available"),
+        ]
+    end
+
+    spec = data.environment_spec
+    return [
+        HSDataEnvironmentStatusRow("environment_rows", row_value),
+        HSDataEnvironmentStatusRow("environment_key", String(spec.key)),
+        HSDataEnvironmentStatusRow("environment_ids", string(length(spec.environment_ids))),
+        HSDataEnvironmentStatusRow("phenotype_environment_ids", string(length(spec.phenotype_environment_ids))),
+        HSDataEnvironmentStatusRow(
+            "phenotype_environment_ids_with_metadata",
+            string(length(_ordered_intersect(spec.phenotype_environment_ids, spec.environment_ids))),
+        ),
+        HSDataEnvironmentStatusRow("environment_only_ids", string(length(spec.environment_without_phenotypes))),
+        HSDataEnvironmentStatusRow(
+            "phenotype_environment_ids_without_metadata",
+            string(length(spec.phenotypes_without_environment)),
+        ),
+        HSDataEnvironmentStatusRow("duplicate_environment_ids", string(length(spec.duplicate_environment_ids))),
+    ]
+end
+
 function _data_genotype_marker_count(data::HSData)
     data.genotypes === nothing && return 0
     data.genotype_marker_spec === nothing || return length(data.genotype_marker_spec.marker_ids)
@@ -745,6 +868,53 @@ end
 function _optional_status_value(value)
     value === nothing && return "not_available"
     return string(value)
+end
+
+function _key_column_symbol(column, role)
+    name = _column_symbol(column, role)
+    isempty(String(name)) &&
+        throw(ArgumentError("$(role) key column must be non-empty"))
+    return name
+end
+
+function _environment_key_values(values, role::AbstractString, key::Symbol)
+    out = String[]
+    for value in values
+        (ismissing(value) || value === nothing) &&
+            throw(ArgumentError("$(role) column :$(key) cannot contain missing or empty values"))
+        text = string(value)
+        isempty(text) &&
+            throw(ArgumentError("$(role) column :$(key) cannot contain missing or empty values"))
+        push!(out, text)
+    end
+    return out
+end
+
+function _unique_strings(values)
+    out = String[]
+    seen = Set{String}()
+    for value in values
+        if !(value in seen)
+            push!(out, value)
+            push!(seen, value)
+        end
+    end
+    return out
+end
+
+function _duplicate_string_ids(values)
+    seen = Set{String}()
+    duplicates = String[]
+    duplicate_seen = Set{String}()
+    for value in values
+        if value in seen && !(value in duplicate_seen)
+            push!(duplicates, value)
+            push!(duplicate_seen, value)
+        else
+            push!(seen, value)
+        end
+    end
+    return duplicates
 end
 
 function _column_symbol(column::Symbol, role)
@@ -788,6 +958,17 @@ end
 function _row_count(source)
     try
         return size(source, 1)
+    catch
+        return nothing
+    end
+end
+
+function _row_count(source::NamedTuple)
+    names = propertynames(source)
+    isempty(names) && return 0
+    first_column = getproperty(source, names[1])
+    try
+        return length(first_column)
     catch
         return nothing
     end
