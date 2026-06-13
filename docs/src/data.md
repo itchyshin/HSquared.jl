@@ -135,6 +135,52 @@ status = data_status(data)
 [row.metric => row.value for row in status.marker_status]
 ```
 
+## Annotation Metadata
+
+`HSData` can store feature annotation metadata. If `annotation_id` is supplied,
+the key column must be present in `annotation`; `data_status()` then reports
+overlap between expression feature columns and annotation feature keys.
+
+```@example data
+expr_features = (
+    id = ["animal_1", "animal_2"],
+    gene1 = [4.0, 5.0],
+    gene3 = [3.0, 6.0],
+)
+
+annotation = (
+    gene_id = ["gene1", "gene2", "gene2"],
+    chromosome = ["1", "1", "2"],
+)
+
+ann_data = HSData(
+    phenotypes;
+    expression = expr_features,
+    annotation = annotation,
+    annotation_id = :gene_id,
+)
+
+ann_data.annotation_spec.expression_without_annotation
+```
+
+```@example data
+ann_status = data_status(ann_data)
+[row.metric => row.value for row in ann_status.annotation_status]
+```
+
+If an annotation table is supplied without `annotation_id`, it is stored but
+reported as unkeyed:
+
+```@example data
+unkeyed_ann_data = HSData(phenotypes; annotation = (gene = ["gene1"], chr = ["1"]))
+[row.metric => row.value for row in data_status(unkeyed_ann_data).annotation_status]
+```
+
+This is metadata hygiene only. `HSData` does not join annotation metadata into
+model matrices, fit eQTL or other omics models, or run GLLVM workflows. In
+this slice, keyed annotation diagnostics require table-like expression inputs
+with feature columns; plain Julia matrices do not carry feature column names.
+
 ## Environment Metadata
 
 `HSData` can also store an environment metadata table. If `environment_id` is
@@ -195,7 +241,8 @@ id_map(data).expression_without_phenotypes
 - repeated phenotype ID support;
 - marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, marker status, and environment-key status;
+  status, marker status, annotation-feature status, and environment-key
+  status;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.
@@ -207,6 +254,7 @@ Planned later:
 - genotype parsing and imputation;
 - QTL/eQTL scans and genomic relationship construction from genotype/marker
   data;
+- eQTL/omics workflows from expression/annotation metadata;
 - direct Julia `HSData` to `AnimalModelSpec` construction;
 - live Julia `HSData` object marshalling;
 - production model fitting from data-container inputs.

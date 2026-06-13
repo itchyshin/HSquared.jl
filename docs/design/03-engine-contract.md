@@ -162,6 +162,15 @@ IDs, and duplicate environment IDs. This is metadata diagnostics only. It does
 not join environment covariates into `X`, add environmental random or fixed
 effects, change the R-Julia bridge payload, or fit multi-environment models.
 
+R head `87888d9` adds annotation-feature diagnostics to `hs_data()` and
+`data_status()`. Julia mirrors this in `HSData` with `annotation` and
+`annotation_id` metadata: if a key is supplied, it records annotation feature
+IDs, expression feature IDs, expression features with and without annotation
+metadata, annotation-only features, and duplicate annotation feature IDs. This
+is metadata diagnostics only. It does not join annotation covariates into `X`,
+add eQTL/omics/GLLVM model terms, change the R-Julia bridge payload, or fit
+omics workflows.
+
 ## Implemented Model-Spec Validator
 
 ```julia

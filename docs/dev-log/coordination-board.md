@@ -49,6 +49,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `data_status()`. Julia mirrors this as `HSEnvironmentSpec` and
   `HSDataEnvironmentStatusRow` metadata diagnostics only. No bridge payload,
   model-term, automatic join, or fitting claim changes.
+- The R twin added annotation-feature diagnostics at `hsquared` head
+  `87888d9`: `hs_data(..., annotation = annot, annotation_id = "gene_id")`
+  validates expression-feature annotation metadata and reports
+  `annotation_status` in `summary()` and `data_status()`. Julia mirrors this
+  as `HSAnnotationSpec` and `HSDataAnnotationStatusRow` metadata diagnostics
+  only. No bridge payload, automatic annotation join, eQTL/omics, GLLVM, or
+  fitting claim changes.
 - The Julia twin has `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot
   marshalling.
 - The R twin has an opt-in experimental tiny/local Julia path at `hsquared`
@@ -147,7 +154,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - `HSData` marker-map metadata validation and genotype-marker alignment
     checks implemented.
   - `data_status(::HSData)` diagnostics implemented for component presence,
-    ID overlap, pedigree status, marker status, and environment-key status.
+    ID overlap, pedigree status, marker status, annotation-feature status, and
+    environment-key status.
   - `validation_status()` implemented as a diagnostic validation-evidence
     table.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:

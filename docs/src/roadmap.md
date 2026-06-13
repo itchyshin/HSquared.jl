@@ -39,7 +39,8 @@ Implemented:
 - sparse CSC marshalling helper for R sparse matrix slots;
 - `HSData` marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, marker-alignment status, and environment-key status;
+  counts, pedigree status, marker-alignment status, annotation-feature status,
+  and environment-key status;
 - external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for
@@ -65,6 +66,10 @@ Implemented:
 - external R `hs_data()` environment diagnostics evidence from `hsquared` head
   `e7fbb31`; Julia mirrors the shared-key metadata diagnostics locally in
   `HSData`, with no bridge payload or modelling change.
+- external R `hs_data()` annotation diagnostics evidence from `hsquared` head
+  `87888d9`; Julia mirrors the expression-feature metadata diagnostics
+  locally in `HSData`, with no bridge payload, automatic join, eQTL, omics, or
+  GLLVM workflow claim.
 - external sparse `Z` bridge marshalling evidence from `hsquared` head
   `398e019`.
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and

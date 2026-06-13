@@ -44,6 +44,23 @@ struct HSGenotypeMarkerSpec
 end
 
 """
+    HSAnnotationSpec
+
+Validated expression-feature annotation metadata stored by [`HSData`](@ref).
+
+This is metadata hygiene only. It does not join annotation covariates into
+model matrices, fit eQTL or omics models, or run GLLVM workflows.
+"""
+struct HSAnnotationSpec
+    key::Symbol
+    annotation_features::Vector{String}
+    expression_features::Vector{String}
+    expression_without_annotation::Vector{String}
+    annotation_without_expression::Vector{String}
+    duplicate_annotation_features::Vector{String}
+end
+
+"""
     HSEnvironmentSpec
 
 Validated environment-key metadata stored by [`HSData`](@ref).
@@ -82,6 +99,16 @@ struct HSDataMarkerStatusRow
 end
 
 """
+    HSDataAnnotationStatusRow
+
+One annotation-metadata diagnostic returned by [`data_status`](@ref).
+"""
+struct HSDataAnnotationStatusRow
+    metric::String
+    value::String
+end
+
+"""
     HSDataEnvironmentStatusRow
 
 One environment-metadata diagnostic returned by [`data_status`](@ref).
@@ -108,15 +135,16 @@ Diagnostic container returned by [`data_status`](@ref).
 
 This mirrors the R twin's `data_status()` surface for component presence,
 ID-overlap counts, pedigree status, marker-map/genotype-marker alignment
-status, and environment-key metadata status. It is diagnostic only and does
-not build model specifications, join covariates, or construct relationship
-matrices.
+status, expression-feature annotation status, and environment-key metadata
+status. It is diagnostic only and does not build model specifications, join
+covariates, or construct relationship matrices.
 """
 struct HSDataStatus
     components::Vector{Symbol}
     id_overlap::Vector{HSDataIDOverlapRow}
     pedigree_status::Union{Nothing,Vector{HSDataPedigreeStatusRow}}
     marker_status::Union{Nothing,Vector{HSDataMarkerStatusRow}}
+    annotation_status::Union{Nothing,Vector{HSDataAnnotationStatusRow}}
     environment_status::Union{Nothing,Vector{HSDataEnvironmentStatusRow}}
 end
 
@@ -130,7 +158,7 @@ This is a conservative Phase 1 mirror of the R `hs_data()` contract. It stores
 the supplied objects and records exact-ID overlap diagnostics, but it does not
 construct relationship matrices, read file-backed data, or fit a model.
 """
-struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv,TES}
+struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TAS,TEnv,TES}
     phenotypes::TP
     pedigree::TPed
     genotypes::TG
@@ -139,6 +167,8 @@ struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv,TES}
     genotype_marker_spec::TGMS
     expression::TE
     annotation::TA
+    annotation_spec::TAS
+    annotation_id::Union{Nothing,Symbol}
     environment::TEnv
     environment_spec::TES
     environment_id::Union{Nothing,Symbol}
@@ -191,6 +221,8 @@ Optional:
 - `markers`: table-like marker metadata with marker, chromosome, and position
   columns, using common aliases;
 - `expression`, `annotation`, and `environment`: stored as supplied;
+- `annotation_id`: optional feature key column for expression/annotation
+  metadata diagnostics;
 - `environment_id`: optional shared key column for phenotype/environment
   metadata diagnostics.
 
@@ -221,6 +253,7 @@ function HSData(
     expression_id = :id,
     expression_ids = nothing,
     annotation = nothing,
+    annotation_id = nothing,
     environment = nothing,
     environment_id = nothing,
 )
@@ -241,6 +274,7 @@ function HSData(
         expression_id = expression_id,
         expression_ids = expression_ids,
         annotation = annotation,
+        annotation_id = annotation_id,
         environment = environment,
         environment_id = environment_id,
     )
@@ -263,6 +297,7 @@ function HSData(;
     expression_id = :id,
     expression_ids = nothing,
     annotation = nothing,
+    annotation_id = nothing,
     environment = nothing,
     environment_id = nothing,
 )
@@ -296,6 +331,12 @@ function HSData(;
         genotype_id,
         genotype_marker_ids,
         marker_spec,
+    )
+    annotation_spec = _annotation_spec(
+        annotation,
+        expression;
+        expression_id = expression_id,
+        annotation_id = annotation_id,
     )
     environment_spec = _environment_spec(
         environment,
@@ -333,6 +374,8 @@ function HSData(;
         genotype_marker_spec,
         expression,
         annotation,
+        annotation_spec,
+        annotation_spec === nothing ? nothing : annotation_spec.key,
         environment,
         environment_spec,
         environment_spec === nothing ? nothing : environment_spec.key,
@@ -353,13 +396,13 @@ end
 """
     data_status(data::HSData)
 
-Return component, ID-overlap, marker-alignment, and environment-key
-diagnostics for an
+Return component, ID-overlap, marker-alignment, annotation-feature, and
+environment-key diagnostics for an
 [`HSData`](@ref) object.
 
 This mirrors the R twin's `data_status()` helper. It does not parse genotype
-files, construct genomic relationships, join environment covariates, build
-bridge payloads, or fit models.
+files, construct genomic relationships, join annotation or environment
+covariates, build bridge payloads, or fit models.
 """
 function data_status(data::HSData)
     return HSDataStatus(
@@ -367,6 +410,7 @@ function data_status(data::HSData)
         _data_id_overlap(data.id_map),
         _data_pedigree_status(data),
         _data_marker_status(data),
+        _data_annotation_status(data),
         _data_environment_status(data),
     )
 end
@@ -424,6 +468,38 @@ function _environment_spec(::Nothing, phenotypes; environment_id)
     environment_id === nothing ||
         throw(ArgumentError("environment_id can be supplied only when environment is supplied"))
     return nothing
+end
+
+function _annotation_spec(::Nothing, expression; expression_id, annotation_id)
+    annotation_id === nothing ||
+        throw(ArgumentError("annotation_id can be supplied only when annotation is supplied"))
+    return nothing
+end
+
+function _annotation_spec(annotation, expression; expression_id, annotation_id)
+    _column_names(annotation) !== nothing ||
+        throw(ArgumentError("annotation must be table-like when supplied"))
+    annotation_id === nothing && return nothing
+
+    key = _key_column_symbol(annotation_id, "annotation")
+    annotation_features = _environment_key_values(
+        _column(annotation, key, "annotation"),
+        "annotation",
+        key,
+    )
+    expression_features = _expression_feature_ids(expression, expression_id)
+    duplicates = _duplicate_string_ids(annotation_features)
+    unique_annotation = _unique_strings(annotation_features)
+    unique_expression = _unique_strings(expression_features)
+
+    return HSAnnotationSpec(
+        key,
+        unique_annotation,
+        unique_expression,
+        _ordered_setdiff(unique_expression, unique_annotation),
+        _ordered_setdiff(unique_annotation, unique_expression),
+        duplicates,
+    )
 end
 
 function _environment_spec(environment, phenotypes; environment_id)
@@ -805,6 +881,43 @@ function _data_marker_status(data::HSData)
     ]
 end
 
+function _data_annotation_status(data::HSData)
+    data.annotation === nothing && return nothing
+    annotation_rows = _row_count(data.annotation)
+    row_value = annotation_rows === nothing ? "not_available" : string(annotation_rows)
+
+    if data.annotation_spec === nothing
+        return [
+            HSDataAnnotationStatusRow("annotation_rows", row_value),
+            HSDataAnnotationStatusRow("annotation_key", "not_checked_no_annotation_id"),
+            HSDataAnnotationStatusRow("annotation_features", "not_available"),
+            HSDataAnnotationStatusRow("expression_features", "not_available"),
+            HSDataAnnotationStatusRow("expression_features_with_annotation", "not_available"),
+            HSDataAnnotationStatusRow("annotation_only_features", "not_available"),
+            HSDataAnnotationStatusRow("expression_features_without_annotation", "not_available"),
+            HSDataAnnotationStatusRow("duplicate_annotation_features", "not_available"),
+        ]
+    end
+
+    spec = data.annotation_spec
+    return [
+        HSDataAnnotationStatusRow("annotation_rows", row_value),
+        HSDataAnnotationStatusRow("annotation_key", String(spec.key)),
+        HSDataAnnotationStatusRow("annotation_features", string(length(spec.annotation_features))),
+        HSDataAnnotationStatusRow("expression_features", string(length(spec.expression_features))),
+        HSDataAnnotationStatusRow(
+            "expression_features_with_annotation",
+            string(length(_ordered_intersect(spec.expression_features, spec.annotation_features))),
+        ),
+        HSDataAnnotationStatusRow("annotation_only_features", string(length(spec.annotation_without_expression))),
+        HSDataAnnotationStatusRow(
+            "expression_features_without_annotation",
+            string(length(spec.expression_without_annotation)),
+        ),
+        HSDataAnnotationStatusRow("duplicate_annotation_features", string(length(spec.duplicate_annotation_features))),
+    ]
+end
+
 function _data_environment_status(data::HSData)
     data.environment === nothing && return nothing
     environment_rows = _row_count(data.environment)
@@ -868,6 +981,24 @@ end
 function _optional_status_value(value)
     value === nothing && return "not_available"
     return string(value)
+end
+
+function _expression_feature_ids(::Nothing, expression_id)
+    return String[]
+end
+
+function _expression_feature_ids(expression::AbstractMatrix, expression_id)
+    throw(ArgumentError("matrix-like expression requires named feature columns when annotation_id is supplied"))
+end
+
+function _expression_feature_ids(expression, expression_id)
+    names = _column_names(expression)
+    names === nothing &&
+        throw(ArgumentError("expression must be table-like when annotation_id is supplied"))
+    feature_columns = Any[name for name in names if !_same_column_name(name, expression_id)]
+    isempty(feature_columns) &&
+        throw(ArgumentError("expression must contain at least one feature column when annotation_id is supplied"))
+    return _string_ids(feature_columns, "expression feature columns"; allow_repeated = false)
 end
 
 function _key_column_symbol(column, role)

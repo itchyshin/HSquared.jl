@@ -59,6 +59,14 @@ environment metadata IDs, phenotype environment IDs with and without metadata,
 environment-only IDs, and duplicate environment IDs. Unkeyed environment
 tables are accepted and reported as not key-checked.
 
+R head `87888d9` adds annotation-feature diagnostics to
+`summary(hs_data(...))` and `data_status()`. Julia mirrors those counts with
+`annotation` plus `annotation_id`: keyed containers record annotation feature
+IDs, expression feature IDs, expression features with annotation metadata,
+annotation-only features, expression features without annotation metadata, and
+duplicate annotation feature IDs. Unkeyed annotation tables are accepted and
+reported as not key-checked.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -73,6 +81,7 @@ HSData(
     markers = markers,
     expression = expression,
     annotation = annotation,
+    annotation_id = :feature,
     environment = environment,
     environment_id = :site,
 )
@@ -124,7 +133,8 @@ Implemented:
 - marker-map metadata validation;
 - genotype-marker alignment validation;
 - `data_status()` diagnostics for components, ID-overlap counts, pedigree
-  status, marker status, and environment-key status;
+  status, marker status, annotation-feature status, and environment-key
+  status;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge
@@ -136,11 +146,13 @@ Planned:
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
 - genotype imputation hooks;
 - marker maps, QTL/eQTL scans, and genomic relationship construction;
+- eQTL/omics workflows from expression/annotation metadata;
 - direct Julia `HSData` to `AnimalModelSpec` construction;
 - live Julia `HSData` object marshalling.
 
 Rose audit: this can be called a conservative data-container mirror. It must
 not be described as genomic modelling, file-backed storage, QTL/eQTL support,
 genotype parsing, imputation, environment-covariate joining, environmental
-model terms, genotype/omics/environment automatic model construction,
-production bridge hardening, or general fitting.
+model terms, annotation-covariate joining, eQTL/omics fitting,
+genotype/omics/annotation/environment automatic model construction, production
+bridge hardening, or general fitting.

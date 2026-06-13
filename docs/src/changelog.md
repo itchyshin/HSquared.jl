@@ -59,10 +59,14 @@
   checks.
 - Added `data_status(::HSData)` diagnostics mirroring the R twin's
   `data_status()` surface for component presence, ID-overlap counts, pedigree
-  status, marker-alignment status, and environment-key status. Diagnostic
-  only; no bridge payload, raw-pedigree Ainv construction, genotype parsing,
-  relationship construction, environment-covariate joins, environmental model
-  terms, marker scan, genomic fitting, or QTL/eQTL claim.
+  status, marker-alignment status, annotation-feature status, and
+  environment-key status. Diagnostic only; no bridge payload, raw-pedigree
+  Ainv construction, genotype parsing, relationship construction, annotation
+  or environment covariate joins, environmental model terms, marker scan,
+  genomic fitting, eQTL/omics fitting, or QTL/eQTL claim.
+- Recorded the R twin's `hs_data()` annotation-feature diagnostics from
+  `hsquared` head `87888d9` and mirrored them in Julia `HSData` as metadata
+  diagnostics only.
 - Recorded the R twin's `hs_data()` environment-key diagnostics from
   `hsquared` head `e7fbb31` and mirrored them in Julia `HSData` as metadata
   diagnostics only.

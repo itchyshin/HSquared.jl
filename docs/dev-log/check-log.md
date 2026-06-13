@@ -2,6 +2,39 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Annotation Diagnostics
+
+- Goal: mirror the R twin's `hs_data()` annotation-feature diagnostics in
+  Julia `HSData` without changing bridge payloads or adding eQTL/omics/GLLVM
+  workflows.
+- Active lenses: Ada, Emmy, Jason, Pat, Hopper, Karpinski, Rose, Grace.
+- Spawned subagents: none.
+- R handoff:
+  - `hsquared` head `87888d9` adds annotation-feature diagnostics to
+    `summary(hs_data(...))` and `data_status()`.
+  - Reported R evidence: R-CMD-check `27464280256`, pkgdown `27464280265`,
+    and Pages `27464310951` success.
+- Julia-side action:
+  - Added `HSAnnotationSpec` for keyed annotation metadata.
+  - Added `HSDataAnnotationStatusRow` and `annotation_status` on
+    `HSDataStatus`.
+  - Added `annotation_id` validation for `HSData`.
+  - Added keyed and unkeyed annotation-status tests plus missing-key,
+    missing-value, duplicate-annotation-feature, empty-expression-feature, and
+    matrix-expression-without-feature-name coverage.
+  - Updated API docs, data-container docs, README, ROADMAP, Documenter
+    roadmap, engine contract, HSData contract, capability status, validation
+    debt, public claims register, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 440 checks; the Phase 1 HSData ID container testset has 100 checks.
+- Boundary:
+  - Metadata diagnostics only.
+  - No bridge payload change.
+  - No automatic annotation joins, eQTL/omics fitting, GLLVM workflows,
+    marker/QTL/GWAS workflows, genomic fitting, or production data-container
+    modelling claim.
+
 ## 2026-06-13 HSData Environment Diagnostics
 
 - Goal: mirror the R twin's `hs_data()` environment-key diagnostics in Julia

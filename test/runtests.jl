@@ -289,7 +289,12 @@ end
     )
     expression = (
         id = ["animal_2", "animal_4"],
-        gene_a = [4.0, 5.0],
+        gene1 = [4.0, 5.0],
+        gene3 = [3.0, 6.0],
+    )
+    annotation = (
+        gene_id = ["gene1", "gene2", "gene2"],
+        chromosome = ["1", "1", "2"],
     )
     environment = (
         env = ["E1", "E2", "E2"],
@@ -306,6 +311,8 @@ end
         markers = markers,
         expression = expression,
         expression_id = :id,
+        annotation = annotation,
+        annotation_id = :gene_id,
         environment = environment,
         environment_id = :env,
     )
@@ -319,6 +326,13 @@ end
     @test data.environment_spec.phenotypes_without_environment == ["E3"]
     @test data.environment_spec.environment_without_phenotypes == ["E2"]
     @test data.environment_spec.duplicate_environment_ids == ["E2"]
+    @test data.annotation_spec isa HSAnnotationSpec
+    @test data.annotation_spec.key == :gene_id
+    @test data.annotation_spec.annotation_features == ["gene1", "gene2"]
+    @test data.annotation_spec.expression_features == ["gene1", "gene3"]
+    @test data.annotation_spec.expression_without_annotation == ["gene3"]
+    @test data.annotation_spec.annotation_without_expression == ["gene2"]
+    @test data.annotation_spec.duplicate_annotation_features == ["gene2"]
     @test id_map(data) isa HSDataIDMap
     @test id_map(data).phenotype_ids == ["animal_1", "animal_2"]
     @test id_map(data).pedigree_ids == pedigree.ids
@@ -337,7 +351,7 @@ end
     @test data.genotype_marker_spec.marker_map_index == [2, 1]
     status = data_status(data)
     @test status isa HSDataStatus
-    @test status.components == [:phenotypes, :pedigree, :genotypes, :markers, :expression, :environment]
+    @test status.components == [:phenotypes, :pedigree, :genotypes, :markers, :expression, :annotation, :environment]
     @test [row.metric for row in status.id_overlap] == [
         "phenotype_ids",
         "pedigree_ids",
@@ -376,6 +390,18 @@ end
         "alignment",
     ]
     @test [row.value for row in status.marker_status] == ["2", "2", "2", "2", "10.0", "20.0", "checked"]
+    @test status.annotation_status isa Vector{HSDataAnnotationStatusRow}
+    @test [row.metric for row in status.annotation_status] == [
+        "annotation_rows",
+        "annotation_key",
+        "annotation_features",
+        "expression_features",
+        "expression_features_with_annotation",
+        "annotation_only_features",
+        "expression_features_without_annotation",
+        "duplicate_annotation_features",
+    ]
+    @test [row.value for row in status.annotation_status] == ["3", "gene_id", "2", "2", "1", "1", "1", "1"]
     @test status.environment_status isa Vector{HSDataEnvironmentStatusRow}
     @test [row.metric for row in status.environment_status] == [
         "environment_rows",
@@ -455,7 +481,25 @@ end
 
     @test data_status(HSData(phenotypes)).marker_status === nothing
     @test data_status(HSData(phenotypes)).pedigree_status === nothing
+    @test data_status(HSData(phenotypes)).annotation_status === nothing
     @test data_status(HSData(phenotypes)).environment_status === nothing
+
+    unkeyed_annotation_status = data_status(
+        HSData(
+            (id = ["a"], y = [1.0]);
+            annotation = (gene = ["gene1"], chr = ["1"]),
+        ),
+    ).annotation_status
+    @test [row.value for row in unkeyed_annotation_status] == [
+        "1",
+        "not_checked_no_annotation_id",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+        "not_available",
+    ]
 
     unkeyed_environment_status = data_status(
         HSData(
@@ -501,6 +545,28 @@ end
         phenotypes;
         genotypes = (id = ["animal_1"],),
         markers = (marker = ["m1"], chr = ["1"], pos = [1]),
+    )
+    @test_throws ArgumentError HSData(phenotypes; annotation_id = :gene_id)
+    @test_throws ArgumentError HSData(phenotypes; annotation = [1 2; 3 4])
+    @test_throws ArgumentError HSData(phenotypes; annotation = (gene_id = ["gene1"],), annotation_id = "")
+    @test_throws ArgumentError HSData(phenotypes; annotation = (feature = ["gene1"],), annotation_id = :gene_id)
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        expression = [1.0 2.0; 3.0 4.0],
+        expression_ids = ["animal_1", "animal_2"],
+        annotation = (gene_id = ["gene1"],),
+        annotation_id = :gene_id,
+    )
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        expression = (id = ["animal_1"],),
+        annotation = (gene_id = ["gene1"],),
+        annotation_id = :gene_id,
+    )
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        annotation = (gene_id = [missing],),
+        annotation_id = :gene_id,
     )
     @test_throws ArgumentError HSData(phenotypes; environment_id = :env)
     @test_throws ArgumentError HSData(phenotypes; environment = [1 2; 3 4])

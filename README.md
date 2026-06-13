@@ -70,10 +70,11 @@ Implemented now:
   genotype, expression, marker, annotation, and environment inputs;
 - marker-map metadata validation and genotype-marker alignment checks inside
   `HSData`;
+- annotation-feature metadata diagnostics inside `HSData`;
 - environment-key metadata diagnostics inside `HSData`;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap
-  counts, pedigree status, marker-alignment status, and environment-key
-  status;
+  counts, pedigree status, marker-alignment status, annotation-feature status,
+  and environment-key status;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -146,6 +147,13 @@ planned.
 both marker maps and genotypes are supplied. This is metadata validation only;
 it is not genotype parsing, imputation, marker scanning, genomic fitting, or
 QTL/eQTL support.
+
+When annotation metadata and `annotation_id` are supplied, `HSData` validates
+annotation feature keys against table-like expression feature columns and
+`data_status()` reports feature coverage, annotation-only features, expression
+features without annotation, and duplicate annotation features. This is
+metadata diagnostics only. It does not join annotation covariates into model
+matrices, fit eQTL or other omics models, or run GLLVM workflows.
 
 `data_status()` also reports pedigree-table diagnostics such as founder rows,
 known parent links, duplicate raw pedigree IDs, missing known parent IDs,
