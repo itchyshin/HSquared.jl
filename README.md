@@ -37,6 +37,8 @@ Implemented now:
   `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and
   `HSquared.precision()`; these names error honestly and do not construct
   model specs yet;
+- `formula_status()` grammar diagnostics that mirror the R twin's parsed,
+  reserved, and planned formula-status table;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
@@ -119,6 +121,7 @@ reserved but not implemented:
 planned_model_terms()
 planned_genomic_qtl_terms()
 planned_quantgen_terms()
+formula_status()
 ```
 
 Calls such as `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and

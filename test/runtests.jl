@@ -147,6 +147,20 @@ end
         :precision,
     )
 
+    grammar = formula_status()
+    @test grammar isa FormulaStatus
+    @test length(grammar) == 20
+    @test [row.term for row in grammar][1] == "animal(1 | id, pedigree = ped)"
+    @test grammar[end].term == "animal(trait | id, pedigree = ped, cov = fa(K = 2))"
+    @test [row.syntax_status for row in grammar][1] == "parsed"
+    @test [row.fitting_status for row in grammar][1] == "experimental tiny bridge only"
+    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status != "parsed")
+    @test "permanent(1 | id)" in [row.term for row in grammar]
+    @test "precision(1 | id, Q = Q)" in [row.term for row in grammar]
+    @test "genomic(1 | id, Ginv = Ginv)" in [row.term for row in grammar]
+    @test any(row.syntax_status == "planned" for row in grammar)
+    @test Set(row.syntax_status for row in grammar) == Set(["parsed", "reserved", "planned"])
+
     for (name, fn) in (
         (:genomic, genomic),
         (:single_step, single_step),

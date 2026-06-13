@@ -6,6 +6,7 @@
 | Backend marker types | implemented | `CPUBackend`, `ThreadsBackend`, `CUDABackend`, `AMDGPUBackend`, `MetalBackend`, `OneAPIBackend`, and `AutoBackend` tests; marker types only, no backend dispatch |
 | `HSControl` validation | implemented | validates shared R/Julia planned backend and accelerator vocabulary in `test/runtests.jl`; no backend execution claim |
 | `backend_info()` status diagnostics | implemented | typed rows for `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`; all selectable, all `execution_available == false`, all `status == :planned`; no runtime probing |
+| `formula_status()` grammar diagnostics | implemented | 20 typed rows matching the R twin's parsed, reserved, and planned grammar status categories; diagnostic only |
 | Planned genomic/QTL model-term vocabulary | implemented | `planned_genomic_qtl_terms()`, `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and `qtl_scan()` tests; functions throw planned-not-implemented errors and do not construct model specs |
 | Planned standard quantitative-genetic model-term vocabulary | implemented | `planned_quantgen_terms()`, `permanent()`, `common_env()`, `maternal_genetic()`, `maternal_env()`, `paternal_genetic()`, `paternal_env()`, `cytoplasmic()`, `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and `HSquared.precision()` tests; functions throw planned-not-implemented errors and do not construct model specs |
 | `HSData` input container | implemented | in-memory phenotype/pedigree/genotype/expression ID-map tests; no file-backed storage or modelling claim |

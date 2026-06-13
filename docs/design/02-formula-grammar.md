@@ -120,6 +120,8 @@ Current parity state:
 - R parses and validates the narrow formula/data/pedigree contract.
 - R builds a bridge-shaped payload with numeric `y`, dense `X`, sparse `Z`,
   normalized IDs, parent indices, pedigree metadata, method, and family.
+- R and Julia both expose grammar status diagnostics that separate parsed,
+  reserved, and planned formula rows without enabling fitting.
 - Julia validates the low-level `AnimalModelSpec`.
 - Julia can evaluate and experimentally optimize the dense Gaussian objective
   for a validated spec.

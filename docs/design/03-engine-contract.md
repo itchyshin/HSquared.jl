@@ -48,6 +48,7 @@ rows have `selectable == true`, `execution_available == false`, and
 ## Implemented Planned-Term Vocabulary
 
 ```julia
+formula_status()
 planned_model_terms()
 planned_genomic_qtl_terms()
 planned_quantgen_terms()
@@ -76,6 +77,11 @@ planned-not-implemented errors and do not construct `AnimalModelSpec` objects,
 genomic relationship specs, marker scans, QTL/eQTL scans, standard
 quantitative-genetic extension specs, custom relationship/precision specs, or
 fitted models.
+
+`formula_status()` mirrors the R twin's 20-row grammar diagnostic with columns
+`term`, `category`, `phase`, `syntax_status`, `fitting_status`, and
+`current_behavior`. It is a status table only; it does not parse formulas,
+construct model specs, or enable fitting.
 
 The term `:precision` is reserved for bridge payload vocabulary. Direct Julia
 calls should use `HSquared.precision()` because `Base.precision` already exists.

@@ -21,6 +21,8 @@
   `HSquared.precision()` in direct Julia code.
 - Added a Documenter model-spec grammar page mirroring the R twin's status
   separation for parsed, reserved, and planned syntax.
+- Added `formula_status()` grammar diagnostics and a Documenter status table
+  mirroring the R twin's parsed/reserved/planned grammar rows.
 - Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.

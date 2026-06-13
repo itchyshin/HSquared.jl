@@ -2,6 +2,43 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Formula Status Diagnostic Mirror
+
+- Goal: mirror the R twin's `formula_status()` grammar diagnostic in Julia and
+  Documenter.
+- Active lenses: Ada, Shannon, Boole, Hopper, Noether, Rose, Pat.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `52d57dd` added exported `formula_status()`.
+  - `hsquared` head `7ba2df4` records formula status CI evidence.
+  - Reported remote evidence: R-CMD-check `27459105695`, pkgdown
+    `27459105696`, and Pages `27459143480` success.
+  - R issue note:
+    `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697748409`.
+- Julia-side action:
+  - Added `FormulaStatusRow`, `FormulaStatus`, and `formula_status()`.
+  - Mirrored the R table columns: `term`, `category`, `phase`,
+    `syntax_status`, `fitting_status`, and `current_behavior`.
+  - Added a 20-row Documenter status table to `model-spec-grammar.md`.
+  - Updated API docs, README, roadmap, capability status, validation debt,
+    public claims, and coordination notes.
+- Boundary:
+  - Diagnostic only.
+  - No formula parser expansion.
+  - No model-spec construction for reserved/planned terms.
+  - No fitting expansion.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 293 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - `julia --project=. -e 'using HSquared; s = formula_status(); println(length(s)); println(s[1].term); println(s[1].syntax_status); println(s[end].term); println(s[end].syntax_status)'`
+    printed the expected 20-row boundary rows.
+  - Claim scan found only blocked-wording/audit rows, not public claims that
+    `formula_status()` parses formulas, constructs model specs, expands
+    fitting, or enables any reserved/planned term.
+
 ## 2026-06-13 Planned Quantitative-Genetic Marker Vocabulary Mirror
 
 - Goal: mirror the R twin's inert planned standard quantitative-genetic,

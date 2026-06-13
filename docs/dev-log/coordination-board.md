@@ -45,6 +45,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin reserved planned standard quantitative-genetic formula markers at
   `hsquared` head `10e8fd7`; Julia mirrors those names as planned vocabulary
   only.
+- The R twin added `formula_status()` at `hsquared` head `7ba2df4`; Julia
+  mirrors the grammar-status diagnostic with `formula_status()` and a
+  Documenter status table.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
   production reliability/PEV, sparse diagnostics, GPU execution, backend
   benchmarking, CPU/GPU agreement tests, genomic prediction, single-step
@@ -203,6 +206,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - R issue note:
     `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697726092`;
   - Julia mirrors this with Documenter page `model-spec-grammar.md`.
+- R lane handoff from `itchyshin/hsquared` head `7ba2df4`:
+  - added `formula_status()` grammar diagnostics;
+  - table has 20 rows and columns `term`, `category`, `phase`,
+    `syntax_status`, `fitting_status`, and `current_behavior`;
+  - separates parsed v0.1 animal syntax, reserved inert Phase 2+ and genomic
+    markers, and planned multivariate/factor-analytic syntax;
+  - R-CMD-check `27459105695`, pkgdown `27459105696`, and Pages
+    `27459143480` were reported green;
+  - R issue note:
+    `https://github.com/itchyshin/hsquared/issues/4#issuecomment-4697748409`;
+  - Julia mirrors this as diagnostic only; no parser or fitting expansion.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, `hs_data()` to `HSData` payload
   parity, the first real genomic/QTL model-spec contract, and the first real

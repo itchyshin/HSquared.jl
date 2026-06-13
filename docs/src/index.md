@@ -21,6 +21,8 @@ Implemented engine utilities:
   CUDA, AMDGPU, Metal, oneAPI, generic GPU preference, and auto selection;
 - `backend_info()` status diagnostics showing selectable planned backend names
   with execution unavailable;
+- `formula_status()` grammar diagnostics showing parsed, reserved, and planned
+  syntax rows without enabling fitting;
 - planned model-term vocabulary reservations through `planned_model_terms()`,
   including genomic/QTL terms and standard quantitative-genetic terms such as
   `permanent()`, `common_env()`, `maternal_genetic()`, `dominance()`,
