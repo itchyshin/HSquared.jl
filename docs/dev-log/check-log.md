@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1D Dense Variance-Component Optimizer
+
+- Goal: add a conservative dense optimizer for the Gaussian likelihood over
+  positive additive and residual variance components.
+- Active lenses: Ada, Shannon, Hopper, Henderson, Gauss, Fisher, Karpinski,
+  Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff recorded:
+  - `hsquared` head `d85f356` parses the narrow `animal(1 | id, pedigree = ped)`
+    grammar and stops at the Julia bridge boundary.
+  - R local and remote checks were reported green, and the R pkgdown site is
+    live at `https://itchyshin.github.io/hsquared/`.
+  - Julia mirrored this as a payload-parity next seam; bridge execution remains
+    planned.
+- Implementation evidence:
+  - Added `AnimalModelFit`.
+  - Added `fit_variance_components()`.
+  - Added `fit_animal_model(spec::AnimalModelSpec)` dispatch.
+  - Added tests that the optimizer improves the tiny likelihood from a starting
+    point, returns positive variance components, and validates bad initial
+    values.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 76 checks across
+    Phase 0, pedigree/Ainv, spec validation, likelihood, and dense optimizer
+    testsets.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims of
+    implemented sparse fitting, AI-REML, EBVs, heritability, GPU, or
+    QTL/eQTL support.
+- Boundary:
+  - Uses dense matrices and `Optim.NelderMead()`.
+  - Low-level Julia spec path only.
+  - Not sparse production fitting, not AI-REML, not R bridge execution, and no
+    EBVs/heritability yet.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1C Gaussian Likelihood Evaluation
 
 - Goal: add a checked Gaussian ML/REML log-likelihood evaluator at supplied

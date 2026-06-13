@@ -32,12 +32,14 @@ Implemented now:
   Gaussian family, and ML/REML method;
 - dense Gaussian ML/REML log-likelihood evaluation at supplied variance
   components for validated animal-model specs;
+- experimental dense variance-component optimization for low-level validated
+  animal-model specs;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
-- variance-component optimization or AI-REML fitting;
+- sparse production optimization or AI-REML fitting;
 - EBVs/BLUPs and heritability;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
@@ -80,6 +82,15 @@ lik = gaussian_loglik(spec, 1.0, 1.0)
 This evaluates an objective value. It does not optimize variance components or
 return EBVs.
 
+The first experimental dense optimizer is available for validated specs:
+
+```julia
+fit = fit_variance_components(spec)
+```
+
+This is a low-level Julia validation path. It is not the production sparse
+animal-model engine, and it is not yet exposed through the R formula bridge.
+
 The high-level modelling surface is still planned:
 
 ```julia
@@ -96,7 +107,8 @@ For lower-level engine work, the first planned target is:
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
 ```
 
-Both functions currently throw a Phase 0 not-implemented error.
+`hsquared()` currently throws a Phase 0 not-implemented error. `fit_animal_model`
+works only for a validated `AnimalModelSpec`; other calls remain placeholders.
 
 ## Twin Package Boundary
 

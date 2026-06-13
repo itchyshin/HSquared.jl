@@ -1,9 +1,11 @@
 module HSquared
 
 using LinearAlgebra
+using Optim
 using SparseArrays
 
 export AutoBackend,
+    AnimalModelFit,
     AnimalModelSpec,
     CPUBackend,
     CUDABackend,
@@ -14,6 +16,7 @@ export AutoBackend,
     Phase0NotImplementedError,
     animal_model_spec,
     fit_animal_model,
+    fit_variance_components,
     gaussian_loglik,
     hsquared,
     inbreeding_coefficients,

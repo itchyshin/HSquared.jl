@@ -21,7 +21,9 @@ pedigree/Ainv engine utility slice.
   Gaussian family, and ML/REML method.
 - Dense Gaussian ML/REML log-likelihood evaluation exists for supplied variance
   components.
-- Fitting is not implemented.
+- Experimental dense variance-component optimization exists for low-level
+  validated Julia specs.
+- High-level formula fitting and R bridge execution are not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
@@ -65,7 +67,9 @@ First real capability:
 - fixed and random-effect design;
 - univariate Gaussian ML/REML likelihood evaluation; dense initial evaluator
   covered for supplied variance components;
-- variance-component optimization and AI-REML;
+- experimental dense variance-component optimization; initial low-level path
+  covered for validated specs;
+- sparse production optimizer and AI-REML;
 - EBVs/BLUPs;
 - variance components and heritability.
 

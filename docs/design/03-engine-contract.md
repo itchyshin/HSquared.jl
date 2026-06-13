@@ -8,8 +8,8 @@ This file records the planned Julia-side v0.1 engine surface.
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
 ```
 
-This fitting entry point is still a placeholder. It throws a not-implemented
-error.
+This direct payload entry point is still a placeholder. It throws a
+not-implemented error.
 
 ## Implemented Relationship Utility
 
@@ -45,6 +45,39 @@ the objective can be tested before the production sparse solver lands.
 
 It does not optimize variance components, compute EBVs, or return a fitted
 model.
+
+## Experimental Dense Optimizer
+
+```julia
+fit = fit_variance_components(spec)
+fit = fit_animal_model(spec)
+```
+
+For a validated `AnimalModelSpec`, Julia can now optimize the dense Gaussian
+objective over positive additive and residual variance components using a
+log-variance parameterization and `Optim.NelderMead()`.
+
+This is a low-level validation path. It is not the production sparse animal
+model engine, not AI-REML, and not yet exposed through the R formula bridge.
+
+## Current R Bridge Handoff
+
+R head `d85f356` parses the narrow v0.1 formula:
+
+```r
+hsquared(y ~ fixed + animal(1 | id, pedigree = ped), data = dat)
+```
+
+and stops at the intended Julia target:
+
+```julia
+HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)
+```
+
+The next bridge task is payload parity, not wider syntax. The two twins need
+tests that the R-produced `y`, `X`, `Z`, encoded IDs, pedigree metadata, family,
+method, and Julia-side `Ainv` map to the same `AnimalModelSpec` assumptions
+tested here.
 
 ## Input Payload
 

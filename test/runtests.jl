@@ -154,3 +154,31 @@ end
     saturated = animal_model_spec(y, Matrix(I, 3, 3), Z, Ainv)
     @test_throws ArgumentError gaussian_loglik(saturated, 1.0, 1.0)
 end
+
+@testset "Phase 1 dense variance component fitting" begin
+    ids = ["sire", "dam", "calf"]
+    ped = normalize_pedigree(ids, ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    y = [1.0, 2.5, 4.0]
+    X = ones(3, 1)
+    Z = sparse(I, 3, 3)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
+
+    start = gaussian_loglik(spec, 1.0, 1.0; method = :ML)
+    fit = fit_variance_components(spec; initial = (sigma_a2 = 0.5, sigma_e2 = 0.5), method = :ML)
+
+    @test fit isa AnimalModelFit
+    @test fit.spec === spec
+    @test fit.likelihood.method == :ML
+    @test fit.likelihood.loglik >= start.loglik
+    @test fit.variance_components.sigma_a2 > 0
+    @test fit.variance_components.sigma_e2 > 0
+    @test fit.iterations > 0
+    @test fit.optimizer_status in ("converged", "not_converged")
+
+    fit2 = fit_animal_model(spec; initial = [1.0, 1.0], iterations = 100)
+    @test fit2 isa AnimalModelFit
+    @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = 1.0,))
+    @test_throws ArgumentError fit_variance_components(spec; initial = [1.0])
+    @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+end

@@ -11,7 +11,10 @@
 | Sparse `Ainv` | implemented | `pedigree_inverse()` hand-checked tiny pedigrees and dense inverse comparison; bounded relationship cache, no huge-scale claim |
 | Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
 | Gaussian ML/REML likelihood evaluation | experimental | `gaussian_loglik()` hand-calculated tiny tests; dense evaluator only, supplied variance components only |
-| Variance-component optimization / fitting | planned | no implementation yet |
+| Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
+| R v0.1 formula parser | external implemented | `hsquared` head `d85f356`; R parser builds the narrow bridge target but does not execute Julia fitting |
+| R-to-Julia bridge execution | planned | no marshalling/parity test yet |
+| Sparse production fitting / AI-REML | planned | no implementation yet |
 | EBVs/BLUPs | planned | no implementation yet |
 | Heritability | planned | no implementation yet |
 | Multivariate G matrices | planned | no implementation yet |

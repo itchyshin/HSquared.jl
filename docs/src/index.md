@@ -9,7 +9,9 @@ GLLVM-style extensions.
 
 ## What Works Today
 
-This repository is still early. It does not fit animal models yet.
+This repository is still early. It has a low-level experimental dense fitting
+path for validated Julia specs, but it does not yet provide production animal
+model fitting or R bridge execution.
 
 Implemented engine utilities:
 
@@ -19,12 +21,16 @@ Implemented engine utilities:
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
   pedigrees;
+- low-level animal-model spec validation;
+- dense Gaussian ML/REML log-likelihood evaluation at supplied variance
+  components;
+- experimental dense variance-component optimization for validated specs;
 - small deterministic tests for malformed pedigrees and hand-checked `Ainv`
   matrices.
 
 Planned, but not implemented yet:
 
-- REML/ML or AI-REML fitting;
+- sparse production REML/ML and AI-REML fitting;
 - EBVs/BLUPs and heritability extraction;
 - R-to-Julia fitting bridge;
 - multivariate animal models and G matrices;

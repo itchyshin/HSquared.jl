@@ -63,6 +63,17 @@ lik = gaussian_loglik(spec, 1.0, 1.0)
 lik.loglik
 ```
 
+## Fit Variance Components Experimentally
+
+`fit_variance_components` optimizes the dense objective for a validated spec.
+This is the first low-level fitting path, but it is still for tiny validation
+examples rather than production sparse analysis.
+
+```@example quickstart
+fit = fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+fit.variance_components
+```
+
 ## What Does Not Work Yet
 
 The high-level fitting functions are placeholders.
@@ -75,7 +86,7 @@ catch err
 end
 ```
 
-Variance-component optimization, EBVs, heritability, and R bridge execution
+Sparse production optimization, EBVs, heritability, and R bridge execution
 remain Phase 1 targets.
 
 ## R Syntax Parity Target
