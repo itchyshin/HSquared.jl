@@ -15,6 +15,7 @@ Use this register before changing README, docs, issue text, or examples.
 | Dense variance-component optimization | partial | `fit_variance_components()` tiny improvement tests | experimental low-level Julia spec path; not sparse production or R bridge fitting |
 | Dense EBV/BLUP and heritability extractors | partial | `breeding_values()` and `heritability()` tiny hand-checked tests plus Henderson MME fixture | experimental dense low-level extractors; not production sparse EBVs, reliability, or PEV |
 | Direct Julia payload fit target exists | partial | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against spec dispatch | experimental dense Julia target for bridge-shaped payloads; not R bridge execution |
+| Julia result payload matches R extractor names | partial | `result_payload()` tests for R contract names and values | experimental result payload shape; R live execution still planned |
 | R v0.1 formula parser can build the bridge target | external partial | `hsquared` head `b57b48e`; R checks green and pkgdown live | R can parse the narrow grammar, build an internal bridge payload, and stop at the Julia boundary; bridge execution remains planned |
 | R-to-Julia bridge execution works | planned | no Julia marshalling/parity test yet | planned |
 | Sparse Gaussian animal model REML/ML fitting | planned | none | planned production fitting target |

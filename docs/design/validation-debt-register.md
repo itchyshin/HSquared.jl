@@ -12,6 +12,7 @@
 | V1-OPT | Dense variance-component optimizer | partial | tiny likelihood-improvement tests; still needs Mrode and comparator checks |
 | V1-DENSE-OUT | Dense EBV/heritability extractors | partial | hand-checked identity-relationship BLUP and variance-ratio tests plus Henderson MME fixture; still needs textbook Mrode and comparator checks |
 | V1-BRIDGE | R-to-Julia payload parity | partial | R payload builder exists in `hsquared` head `b57b48e`; Julia direct payload target has spec-dispatch, parent-index, `ids`, sparse `Z`, and Julia-side `Ainv` parity tests; still needs cross-repo marshalling tests for R-produced payload and returned result shape |
+| V1-RESULT | R-Julia result shape parity | partial | R fitted-object extractor contract exists in `hsquared` head `e543cd7`; Julia `result_payload()` has matching field-name/value tests; still needs live bridge marshalling tests |
 | V1-REML | Sparse Gaussian REML optimizer / AI-REML | planned | Mrode simple animal model and comparator check |
 | V1-EBV | Production EBVs/BLUPs, reliability, and PEV | planned | known fitted values, reliability, and prediction error variance against comparator |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |

@@ -84,6 +84,32 @@ u_hat = sigma_a2 * A * Z' * V^-1 * (y - X * beta)
 This is intentionally dense and small-scale. Production sparse BLUP solves,
 reliability, and prediction error variance remain planned.
 
+## R Result Payload Contract
+
+R head `e543cd7` defines an `hsquared_fit` contract with extractors looking for
+these result names:
+
+- `variance_components`
+- `heritability`
+- `breeding_values`
+- `fixed_effects`
+- `random_effects`
+- `loglik`
+- `df`
+- `nobs`
+- `predictions`
+- `diagnostics`
+- `converged`
+
+Julia mirrors those names with:
+
+```julia
+result = result_payload(fit)
+```
+
+`result_payload(fit)` returns a `NamedTuple` with exactly those fields. This is
+the bridge-facing result shape, not a claim that R live execution is wired.
+
 ## Current R Bridge Handoff
 
 R head `b57b48e` parses the narrow v0.1 formula:
@@ -156,11 +182,12 @@ The planned result should include:
 - `warnings`;
 - `id_map`.
 
-Currently implemented result fields are the dense-path subset: convergence
-flag, optimizer status, log-likelihood, variance components, fixed effects,
-breeding values, fitted values, heritability, iterations, and encoded IDs.
-Gradient diagnostics, reliability, prediction error variance, and sparse solver
-metadata remain planned.
+Currently implemented bridge payload fields are the dense-path subset:
+variance components, heritability, breeding values, fixed effects, random
+effects, log-likelihood, degrees of freedom, number of observations,
+predictions, diagnostics, and convergence flag. Gradient diagnostics,
+reliability, prediction error variance, and sparse solver metadata remain
+planned.
 
 ## Storage Policy
 

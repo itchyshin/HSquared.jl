@@ -233,6 +233,36 @@ end
     @test fitted_values(fit) ≈ [1.5, 2.0, 2.5]
     @test fitted_values(fit; include_random = false) ≈ [2.0, 2.0, 2.0]
     @test heritability(fit) ≈ 0.5
+
+    payload = result_payload(fit)
+    @test propertynames(payload) == (
+        :variance_components,
+        :heritability,
+        :breeding_values,
+        :fixed_effects,
+        :random_effects,
+        :loglik,
+        :df,
+        :nobs,
+        :predictions,
+        :diagnostics,
+        :converged,
+    )
+    @test payload.variance_components == vc
+    @test payload.heritability ≈ 0.5
+    @test payload.breeding_values.ids == ["a", "b", "c"]
+    @test payload.breeding_values.values ≈ [-0.5, 0.0, 0.5]
+    @test payload.fixed_effects ≈ [2.0]
+    @test payload.random_effects.animal.values ≈ payload.breeding_values.values
+    @test payload.loglik == likelihood.loglik
+    @test payload.df == 3
+    @test payload.nobs == 3
+    @test payload.predictions ≈ [1.5, 2.0, 2.5]
+    @test payload.diagnostics.converged == true
+    @test payload.diagnostics.optimizer_status == "test"
+    @test payload.diagnostics.method == :ML
+    @test payload.diagnostics.dense_validation_path == true
+    @test payload.converged == true
 end
 
 @testset "Phase 1 bridge payload fit target" begin

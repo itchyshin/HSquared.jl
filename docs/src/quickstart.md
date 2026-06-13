@@ -107,6 +107,12 @@ breeding_values(fit).values
 heritability(fit)
 ```
 
+For R bridge work, `result_payload` returns the current bridge-facing names:
+
+```@example quickstart
+keys(result_payload(fit))
+```
+
 These outputs are useful for tiny validation examples. They are not yet sparse
 production EBVs, reliabilities, or prediction error variances.
 

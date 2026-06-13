@@ -256,6 +256,42 @@ function heritability(fit::AnimalModelFit)
     return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
 end
 
+"""
+    result_payload(fit)
+
+Return a bridge-facing result payload with field names aligned to the R
+`hsquared_fit` contract.
+
+This is a dense experimental payload. It is intended to make the R-Julia result
+shape explicit before live bridge execution is wired.
+"""
+function result_payload(fit::AnimalModelFit)
+    vc = variance_components(fit)
+    beta = fixed_effects(fit)
+    bv = breeding_values(fit)
+    predictions = fitted_values(fit)
+
+    return (
+        variance_components = vc,
+        heritability = heritability(fit),
+        breeding_values = (ids = bv.ids, values = bv.values),
+        fixed_effects = beta,
+        random_effects = (animal = (ids = bv.ids, values = bv.values),),
+        loglik = fit.likelihood.loglik,
+        df = fit.likelihood.nfixed + length(vc),
+        nobs = fit.likelihood.nobs,
+        predictions = predictions,
+        diagnostics = (
+            converged = fit.converged,
+            optimizer_status = fit.optimizer_status,
+            iterations = fit.iterations,
+            method = fit.likelihood.method,
+            dense_validation_path = true,
+        ),
+        converged = fit.converged,
+    )
+end
+
 function _coerce_initial_variances(initial::NamedTuple)
     haskey(initial, :sigma_a2) ||
         throw(ArgumentError("initial must include sigma_a2"))

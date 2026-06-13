@@ -15,6 +15,7 @@
 | Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test and Henderson MME fixture; no sparse production solve or comparator yet |
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
 | Direct payload fit target | experimental | `fit_animal_model(y, X, Z, Ainv; ...)` parity tests against validated-spec dispatch; dense path only |
+| R result payload shape | experimental | `result_payload()` field-name/value tests aligned to R `hsquared_fit` extractor contract; no live R execution yet |
 | R v0.1 formula parser and payload builder | external implemented | `hsquared` head `b57b48e`; R parser builds the narrow bridge payload but does not execute Julia fitting |
 | R-to-Julia bridge execution | planned | no marshalling/parity test yet |
 | Sparse production fitting / AI-REML | planned | no implementation yet |

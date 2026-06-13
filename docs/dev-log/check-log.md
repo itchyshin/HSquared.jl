@@ -2,6 +2,41 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1H Result Payload Contract
+
+- Goal: align Julia dense fit result names with the R `hsquared_fit` extractor
+  contract before live bridge execution is wired.
+- Active lenses: Ada, Shannon, Hopper, Emmy, Fisher, Karpinski, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `e543cd7` added `hs_new_fit()` and extractors over mocked
+    result fields.
+  - Expected result names are `variance_components`, `heritability`,
+    `breeding_values`, `fixed_effects`, `random_effects`, `loglik`, `df`,
+    `nobs`, `predictions`, `diagnostics`, and `converged`.
+- Implementation evidence:
+  - Added `result_payload(fit)`.
+  - Added exact field-name tests and value tests for the R contract names.
+  - Kept internal `AnimalModelFit` stable; bridge result shaping is explicit.
+- Commands run:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 121 checks
+    across Phase 0, pedigree/Ainv, spec validation, likelihood, dense
+    optimizer, dense extractor/result payload, direct payload target, and
+    Henderson MME validation testsets.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Claim scan found only blocked-wording/audit rows, not public claims that R
+    live execution returns fitted objects, R extractors consume real Julia
+    results, reliability/PEV/sparse diagnostics are implemented, or GPU/QTL
+    support is implemented.
+- Boundary:
+  - Result shape exists on the Julia side.
+  - R live execution and result marshalling remain planned.
+  - Reliability, PEV, and sparse solver diagnostics remain planned.
+- Rose verdict: clean with limitations.
+
 ## 2026-06-13 Phase 1G Henderson MME Validation Fixture
 
 - Goal: add a first MME validation fixture for the dense Phase 1 output path.

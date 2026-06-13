@@ -14,6 +14,8 @@
   target for bridge-shaped inputs.
 - Added a Henderson mixed-model-equation validation fixture for the dense
   output path.
+- Added `result_payload()` with field names aligned to the R `hsquared_fit`
+  extractor contract.
 - Added DocumenterVitepress documentation scaffold.
 - Added audience and comparator programme notes.
 - Added genomics/QTL/eQTL/GLLVM/GPU/HPC strategic roadmap.

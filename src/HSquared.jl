@@ -27,6 +27,7 @@ export AutoBackend,
     inbreeding_coefficients,
     normalize_pedigree,
     pedigree_inverse,
+    result_payload,
     variance_components
 
 include("backends.jl")

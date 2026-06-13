@@ -22,6 +22,7 @@ HSquared.fixed_effects
 HSquared.breeding_values
 HSquared.fitted_values
 HSquared.heritability
+HSquared.result_payload
 HSquared.hsquared
 HSquared.fit_animal_model
 HSquared.Phase0NotImplementedError

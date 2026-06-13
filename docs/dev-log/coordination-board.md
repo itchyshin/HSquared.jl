@@ -50,9 +50,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - `hsquared()` validates the narrow contract and stops at the Julia target;
   - R-CMD-check, pkgdown, and Pages deploy were green; site is live at
     `https://itchyshin.github.io/hsquared/`.
+- R lane handoff from `itchyshin/hsquared` head `e543cd7`:
+  - internal `hs_new_fit()` and exported extractors expect result fields
+    `variance_components`, `heritability`, `breeding_values`,
+    `fixed_effects`, `random_effects`, `loglik`, `df`, `nobs`,
+    `predictions`, `diagnostics`, and `converged`;
+  - R tests use mocked result fields only; live `hsquared()` fitted objects are
+    not returned yet.
 - Next shared seam: cross-repo R-to-Julia marshalling tests that send the R
   parser payload into the Julia direct target and verify variance components,
-  breeding values, and heritability in the returned result shape.
+  breeding values, heritability, and the `result_payload()` field names in the
+  returned result shape.
 
 ## Sister References
 
