@@ -575,6 +575,89 @@ function repeatability_mme(
     )
 end
 
+# Dense REML log-likelihood and BLUPs for the two-random-effect repeatability
+# model: V = sigma_a2·(Z A Z') + sigma_pe2·(Z Z') + sigma_e2·I (validation-scale,
+# forms the n×n marginal covariance). `A` is the dense relationship matrix.
+function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
+    n = length(y)
+    V = Symmetric(
+        sigma_a2 .* (Z * A * transpose(Z)) .+
+        sigma_pe2 .* (Z * transpose(Z)) .+
+        sigma_e2 .* Matrix(1.0I, n, n),
+    )
+    Vf = cholesky(V)
+    ViX = Vf \ Matrix(X)
+    XtViX = cholesky(Symmetric(transpose(X) * ViX))
+    beta = XtViX \ (transpose(X) * (Vf \ y))
+    r = y .- X * beta
+    Vir = Vf \ r
+    loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+    ahat = sigma_a2 .* (A * (transpose(Z) * Vir))
+    pehat = sigma_pe2 .* (transpose(Z) * Vir)
+    return loglik, Vector{Float64}(beta), ahat, pehat
+end
+
+"""
+    fit_repeatability_reml(y, X, Z, Ainv; initial, iterations = 200, ids = nothing)
+
+Estimate the three variance components `(sigma_a2, sigma_pe2, sigma_e2)` of the
+repeatability / permanent-environment animal model by REML, by maximizing the
+dense two-random-effect REML log-likelihood over the log-variances (NelderMead).
+
+Returns a `NamedTuple` with `variance_components`, the repeatability
+`t = (sigma_a2 + sigma_pe2) / total`, the heritability `h² = sigma_a2 / total`,
+`beta`, the `a` / `pe` BLUPs at the estimate, `loglik`, and `converged`.
+
+Experimental and validation-scale: it forms the dense `n×n` marginal covariance,
+so it is for small problems, not production. REML-only. Uncertainty intervals for
+`t` / `h²` and the R model-spec mapping are not part of this function. Separating
+`sigma_a2` from `sigma_pe2` needs relationship contrast and replication; on small
+data the optimum can sit on a boundary (one variance → 0).
+"""
+function fit_repeatability_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    ids = nothing,
+)
+    initial.sigma_a2 > 0 && initial.sigma_pe2 > 0 && initial.sigma_e2 > 0 ||
+        throw(ArgumentError("initial variance components must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    na = size(Ainv, 1)
+    size(Ainv, 2) == na || throw(ArgumentError("Ainv must be square"))
+    size(Z, 2) == na || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    encoded_ids = ids === nothing ? collect(1:na) : collect(ids)
+    length(encoded_ids) == na ||
+        throw(ArgumentError("ids length must match Ainv dimensions"))
+
+    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+    Xd = Matrix{Float64}(X)
+    Zd = Matrix{Float64}(Z)
+    yv = Float64.(y)
+    objective(p) = -_repeatability_dense(yv, Xd, Zd, A, exp(p[1]), exp(p[2]), exp(p[3]))[1]
+    p0 = log.([Float64(initial.sigma_a2), Float64(initial.sigma_pe2), Float64(initial.sigma_e2)])
+    result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+    sigma_a2, sigma_pe2, sigma_e2 = exp.(Optim.minimizer(result))
+    loglik, beta, ahat, pehat =
+        _repeatability_dense(yv, Xd, Zd, A, sigma_a2, sigma_pe2, sigma_e2)
+    total = sigma_a2 + sigma_pe2 + sigma_e2
+    return (
+        variance_components = (sigma_a2 = sigma_a2, sigma_pe2 = sigma_pe2, sigma_e2 = sigma_e2),
+        repeatability = (sigma_a2 + sigma_pe2) / total,
+        heritability = sigma_a2 / total,
+        beta = beta,
+        animal_effects = (ids = encoded_ids, values = ahat),
+        permanent_effects = (ids = encoded_ids, values = pehat),
+        loglik = loglik,
+        converged = Optim.converged(result),
+    )
+end
+
 """
     fit_animal_model(spec; target = :variance_components, ...)
 

@@ -73,6 +73,13 @@
   relationship precision. Matches an independent marginal-GLS BLUP and reduces to
   the animal model as `σ²pe → 0`. Experimental, supplied-variance only — no REML
   estimation of the three components, no R-facing model-spec yet.
+- Added `fit_repeatability_reml()` — REML estimation of (σ²a, σ²pe, σ²e) for the
+  repeatability / permanent-environment model (dense two-random-effect REML
+  loglik + NelderMead), returning the repeatability coefficient `t` and `h²`.
+  Deterministic checks (loglik reduces to the animal-model REML at σ²pe=0; BLUPs
+  match `repeatability_mme`; optimum beats a grid) + a one-off seeded recovery.
+  Experimental, dense/validation-scale, REML-only; no committed recovery test
+  (suite kept RNG-free), no intervals, no R-facing model-spec.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

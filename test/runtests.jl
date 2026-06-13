@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 22
+    @test length(validation) == 23
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1874,4 +1874,48 @@ end
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, -1.0, spe2, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, sa2, -1.0, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z[:, 1:2], Ainv, sa2, spe2, se2)
+end
+
+@testset "Phase 3 repeatability REML (variance-component estimation)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Z[rec, an] = 1.0; end
+    y = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; X = ones(8, 1)
+
+    # (1) dense 2-RE REML loglik reduces to the animal-model REML (up to a constant) when sigma_pe2 = 0
+    spec = animal_model_spec(y, X, sparse(Z), sparse(Matrix(Ainv)); method = :REML)
+    d = HSquared._repeatability_dense(y, X, Z, A, 1.0, 0.0, 2.0)[1] -
+        HSquared._repeatability_dense(y, X, Z, A, 2.0, 0.0, 1.0)[1]
+    s = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 2.0, 1.0).loglik
+    @test d ≈ s rtol = 1e-6
+
+    # (2) dense BLUPs at a supplied interior point equal the sparse repeatability_mme solve
+    _, _, ad, pd = HSquared._repeatability_dense(y, X, Z, A, 1.0, 0.5, 2.0)
+    rm = repeatability_mme(y, X, Z, Ainv, 1.0, 0.5, 2.0)
+    @test maximum(abs.(ad .- rm.animal_effects.values)) < 1e-10
+    @test maximum(abs.(pd .- rm.permanent_effects.values)) < 1e-10
+
+    # (3) the REML estimator: converges, valid VCs, t and h2 in [0,1], t >= h2
+    fit = fit_repeatability_reml(y, X, Z, Ainv)
+    @test fit.converged
+    @test fit.variance_components.sigma_a2 >= 0
+    @test fit.variance_components.sigma_pe2 >= 0
+    @test fit.variance_components.sigma_e2 > 0
+    @test 0 <= fit.heritability <= 1
+    @test 0 <= fit.repeatability <= 1
+    @test fit.heritability <= fit.repeatability + 1e-10
+
+    # (4) the optimum beats a coarse grid (near-global)
+    vc = fit.variance_components
+    @test all(
+        HSquared._repeatability_dense(y, X, Z, A, max(vc.sigma_a2, 1e-6) * f1,
+            max(vc.sigma_pe2, 1e-6) * f2, vc.sigma_e2 * f3)[1] <= fit.loglik + 1e-6
+        for f1 in (0.7, 1.3), f2 in (0.7, 1.3), f3 in (0.7, 1.3)
+    )
+
+    # guards
+    @test_throws ArgumentError fit_repeatability_reml(y, X, Z, Ainv;
+        initial = (sigma_a2 = -1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_repeatability_reml(y, X, Z[:, 1:2], Ainv)
 end

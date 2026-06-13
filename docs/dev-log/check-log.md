@@ -2,6 +2,31 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Repeatability REML Variance-Component Estimation
+
+- Goal: complete the repeatability model into an estimator — REML estimation of
+  (σ²a, σ²pe, σ²e) and the repeatability coefficient `t`.
+- Active lenses: Gauss, Fisher, Henderson, Falconer, Curie, Rose (inline).
+- Implementation:
+  - `src/likelihood.jl`: `fit_repeatability_reml(y, X, Z, Ainv; initial)`
+    maximizes the dense two-random-effect REML loglik (`_repeatability_dense`)
+    over the log-variances (NelderMead); returns VCs, repeatability `t`,
+    heritability `h²`, BLUPs, loglik, converged. Exported.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 704
+    total. New testset "Phase 3 repeatability REML (variance-component
+    estimation)" = 13 checks: dense loglik reduces to the animal-model REML (up
+    to a constant) at σ²pe=0; dense BLUPs match the sparse `repeatability_mme` at
+    a supplied interior point (~1e-15); estimator converges with valid VCs and
+    `t ≥ h²` in [0,1]; optimum beats a ±30% grid; guards. `validation_status()`
+    22 → 23 (added `V3-REPEAT-REML`).
+  - One-off seeded recovery (NOT committed; suite kept RNG-free): n=70 animals,
+    true (1.0, 0.6, 1.5) → estimated ≈(0.94, 0.83, 1.48), `t` 0.516 → 0.545.
+  - Decision note `2026-06-13-rng-recovery-test-harness.md` resolved (hybrid).
+- Boundary:
+  - Dense / validation-scale, REML-only; no committed recovery harness, no
+    `t`/`h²` intervals, no external comparator, no R-facing model-spec.
+
 ## 2026-06-13 Repeatability / Permanent-Environment MME (Phase 3 start)
 
 - Goal: first Phase-3 (standard quantitative-genetic) engine slice — a

@@ -1,6 +1,10 @@
 # Decision needed: an RNG-based recovery-test harness (or not)
 
-Status: **open — a cross-cutting test-discipline decision.**
+Status: **resolved (hybrid) — same day, user-approved.** CI stays RNG-free;
+estimators ship with deterministic correctness checks in CI + a one-off seeded
+recovery documented in the after-task. The 3-component repeatability REML
+(`fit_repeatability_reml`) was shipped on this basis. A committed seeded recovery
+*harness* remains future (open sub-item).
 Date: 2026-06-13. Lens: Curie (validation), Fisher (inference), Gauss (numerics).
 
 ## Context
@@ -53,8 +57,11 @@ with deterministic correctness in CI and recovery in the opt-in script.
 This is a discipline call (does CI gain RNG?) — flagged for the user before
 shipping the multi-component REML estimator.
 
-## Not done
+## Outcome
 
-The 3-component REML estimator was **not** committed. `repeatability_mme`
-(supplied-variance, deterministically validated) is shipped; estimating its three
-variance components awaits this decision.
+`fit_repeatability_reml` (3-component REML, returning the repeatability `t` and
+`h²`) **was shipped** under the hybrid: deterministic correctness checks in CI
+(loglik reduces to the animal-model REML at σ²pe=0; BLUPs match `repeatability_mme`;
+optimum beats a grid) + a one-off seeded recovery documented in the after-task
+(CI stays RNG-free). Open sub-items: a committed seeded-recovery *harness*,
+`t`/`h²` uncertainty intervals, and ML information.
