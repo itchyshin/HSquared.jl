@@ -2,6 +2,33 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Dense NRM Helper (_numerator_relationship, internal)
+
+- Goal: extract the numerator-relationship recursion (previously computed and
+  discarded inside `inbreeding_coefficients`, and duplicated as a test-only
+  helper) into one internal `_numerator_relationship` — a prerequisite for the
+  single-step H-inverse and a dedupe.
+- Active lenses: Henderson, Mrode, Curie, Rose (inline).
+- Implementation:
+  - `src/pedigree.jl`: `_numerator_relationship(pedigree)` (full dense `A`) and
+    `_numerator_relationship(pedigree, rows)` (`A[rows, rows]`, for `A₂₂`);
+    `inbreeding_coefficients` now takes its diagonal. The bounded-cache guard
+    moved into the shared helper. Unexported, validation-only.
+  - `test/runtests.jl`: removed the duplicate `_dense_relationship_for_test`;
+    the two pedigree-inverse cross-checks now call
+    `HSquared._numerator_relationship`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed; 632
+    total. New testset "Phase 2 dense NRM helper" = 7 checks: pinned `A`
+    (5-animal pedigree, full-sib parents ⇒ inbred animal 5, `A[5,5]=1.25`),
+    symmetry, cross-check vs `inv(pedigree_inverse)`, diagonal vs
+    `inbreeding_coefficients`, `A₂₂ == A[g,g]` pinned, and the cache guard.
+    Existing pedigree/inbreeding tests unchanged and green (refactor-safe).
+- Boundary:
+  - Internal infrastructure; no capability/validation-debt/validation_status row
+    (graduates no user-facing capability), no public API change, dense /
+    validation-scale only.
+
 ## 2026-06-13 SNP-BLUP + GBLUP↔SNP-BLUP Equivalence (fit_snp_blup)
 
 - Goal: add SNP-BLUP / RR-BLUP marker effects via the existing Henderson MME and

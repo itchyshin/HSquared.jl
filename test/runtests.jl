@@ -3,27 +3,7 @@ using LinearAlgebra
 using SparseArrays
 using Test
 
-function _dense_relationship_for_test(pedigree)
-    n = length(pedigree)
-    A = zeros(Float64, n, n)
-
-    for i in 1:n
-        sire = pedigree.sire[i]
-        dam = pedigree.dam[i]
-
-        for j in 1:(i - 1)
-            value = 0.0
-            sire == 0 || (value += 0.5 * A[sire, j])
-            dam == 0 || (value += 0.5 * A[dam, j])
-            A[i, j] = value
-            A[j, i] = value
-        end
-
-        A[i, i] = sire != 0 && dam != 0 ? 1.0 + 0.5 * A[sire, dam] : 1.0
-    end
-
-    return A
-end
+# dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
 function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     yv = Float64.(y)
@@ -265,7 +245,7 @@ end
         ["0", "0", "founder_a", "founder_a"],
         ["0", "0", "founder_b", "parent"],
     ) ≈ [0.0, 0.0, 0.0, 0.25]
-    @test Matrix(pedigree_inverse(inbred)) ≈ inv(_dense_relationship_for_test(inbred))
+    @test Matrix(pedigree_inverse(inbred)) ≈ inv(HSquared._numerator_relationship(inbred))
 
     @test_throws ArgumentError normalize_pedigree(["a", "a"], ["0", "0"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a"], ["b"], ["0"])
@@ -1314,7 +1294,7 @@ end
 
     @test ped.ids == ids
     @test isapprox(Matrix(Ainv), expected_ainv)
-    @test isapprox(Matrix(Ainv), inv(Symmetric(_dense_relationship_for_test(ped))))
+    @test isapprox(Matrix(Ainv), inv(Symmetric(HSquared._numerator_relationship(ped))))
 
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
     ml_likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
@@ -1663,4 +1643,27 @@ end
     # guards
     @test_throws ArgumentError fit_snp_blup(y, X, M, -1.0, 1.0)    # sigma_g2 <= 0
     @test_throws ArgumentError centered_markers(fill(2.0, 4, 3))   # monomorphic (k = 0)
+end
+
+@testset "Phase 2 dense NRM helper" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]   # 5=(3x4), full-sib parents
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    @test A ≈ [1.0 0.0 0.5  0.5  0.5;
+               0.0 1.0 0.5  0.5  0.5;
+               0.5 0.5 1.0  0.5  0.75;
+               0.5 0.5 0.5  1.0  0.75;
+               0.5 0.5 0.75 0.75 1.25] atol = 1e-12
+    @test issymmetric(A)
+    # cross-check against the independent sparse-inverse route
+    @test A ≈ inv(Symmetric(Matrix(pedigree_inverse(ids, sire, dam)))) atol = 1e-8
+    # diagonal is consistency with the inbreeding extractor
+    @test diag(A) ≈ 1 .+ inbreeding_coefficients(ids, sire, dam) atol = 1e-12
+    # submatrix method (A22 for single-step) equals the indexed block
+    g = [3, 4, 5]
+    A22 = HSquared._numerator_relationship(ped, g)
+    @test A22 ≈ A[g, g] atol = 1e-12
+    @test A22 ≈ [1.0 0.5 0.75; 0.5 1.0 0.75; 0.75 0.75 1.25] atol = 1e-12
+    # cache guard still fires (now from the shared helper)
+    @test_throws ArgumentError HSquared._numerator_relationship(ped; max_relationship_cache = 2)
 end

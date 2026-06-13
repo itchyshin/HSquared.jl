@@ -38,6 +38,10 @@
   prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
   (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
   supplied-variance only, unweighted VanRaden method-1.
+- Internal: deduped the numerator-relationship recursion into
+  `_numerator_relationship(pedigree[, rows])` (one source shared by
+  `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
+  test-only duplicate. No public API or behavior change.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

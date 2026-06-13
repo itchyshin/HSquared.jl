@@ -84,19 +84,21 @@ function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PAR
 end
 
 """
-    inbreeding_coefficients(pedigree; max_relationship_cache = 10_000)
-    inbreeding_coefficients(ids, sire, dam; max_relationship_cache = 10_000)
+    _numerator_relationship(pedigree; max_relationship_cache = 10_000)
+    _numerator_relationship(pedigree, rows; max_relationship_cache = 10_000)
 
-Return the inbreeding coefficient for each row of a normalized pedigree.
+Build the dense numerator (additive) relationship matrix `A` for a normalized
+pedigree by the tabular recursion, or the submatrix `A[rows, rows]`.
 
-This Phase 1 utility uses a bounded numerator-relationship cache to compute the
-parental inbreeding values needed by Henderson's direct inverse rules. It is
-intended for validation and initial engine work, not for huge-scale claims.
+Internal validation-only helper: dense and bounded by `max_relationship_cache`,
+not production-scale. It is the single source of the relationship recursion,
+shared by [`inbreeding_coefficients`](@ref) (which takes its diagonal) and by
+single-step `A₂₂` construction.
 """
-function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
+function _numerator_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
     n = length(pedigree)
     n <= max_relationship_cache ||
-        throw(ArgumentError("inbreeding_coefficients currently uses a bounded relationship cache; got $(n) rows and max_relationship_cache = $(max_relationship_cache)"))
+        throw(ArgumentError("_numerator_relationship currently uses a bounded relationship cache; got $(n) rows and max_relationship_cache = $(max_relationship_cache)"))
 
     relationship = zeros(Float64, n, n)
 
@@ -115,7 +117,31 @@ function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Int
         relationship[i, i] = sire != 0 && dam != 0 ? 1.0 + 0.5 * relationship[sire, dam] : 1.0
     end
 
-    return [relationship[i, i] - 1.0 for i in 1:n]
+    return relationship
+end
+
+function _numerator_relationship(
+    pedigree::Pedigree,
+    rows::AbstractVector{<:Integer};
+    max_relationship_cache::Integer = 10_000,
+)
+    A = _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
+    return A[rows, rows]
+end
+
+"""
+    inbreeding_coefficients(pedigree; max_relationship_cache = 10_000)
+    inbreeding_coefficients(ids, sire, dam; max_relationship_cache = 10_000)
+
+Return the inbreeding coefficient for each row of a normalized pedigree.
+
+This Phase 1 utility uses a bounded numerator-relationship cache to compute the
+parental inbreeding values needed by Henderson's direct inverse rules. It is
+intended for validation and initial engine work, not for huge-scale claims.
+"""
+function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
+    relationship = _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
+    return [relationship[i, i] - 1.0 for i in 1:length(pedigree)]
 end
 
 """
