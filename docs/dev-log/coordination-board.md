@@ -25,4 +25,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - Phase 0 public scaffold: complete.
 - Public repos: `itchyshin/hsquared` and `itchyshin/HSquared.jl`.
 - Initial GitHub issue ledger: issues #1-#7 in both repos.
-- Next Julia lane: sparse pedigree parser and direct sparse `Ainv` design.
+- Phase 1 Julia lane started: pedigree normalization and direct sparse `Ainv`
+  utility implemented locally.
+- Next Julia lane: fixed-effect and animal random-effect design handling.
+- R/coordinator sync needed after this slice: R docs should say `Ainv`
+  construction exists in the Julia engine, but fitting remains planned.
+
+## Sister References
+
+- `DRM.jl`: Julia twin discipline, DocumenterVitepress structure, bridge
+  contract, quality gates, and GPL-to-MIT provenance guardrails.
+- `GLLVM.jl`: Julia engine role discipline, Documenter status pages, speed-claim
+  evidence rules, and cross-project scout cadence.
+- `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
+  fitted/planned/missing separation.

@@ -8,10 +8,15 @@ contract agree.
 
 ## Current Status
 
-Phase 0 public scaffold is complete.
+Phase 0 public scaffold is complete. Phase 1 has started with the first
+pedigree/Ainv engine utility slice.
 
 - Package loads.
 - Control/backend placeholders exist.
+- Pedigree validation, ID recoding, unknown-parent handling, and topological
+  sorting exist.
+- Direct sparse `Ainv` construction exists for validated pedigrees, with tiny
+  hand-checked tests.
 - Fitting is not implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
@@ -48,10 +53,10 @@ synchronized operating docs, and public docs do not claim model fitting.
 
 First real capability:
 
-- pedigree validation and sorting;
-- ID recoding;
-- founder and unknown-parent handling;
-- direct sparse `Ainv`;
+- pedigree validation and sorting; initial utility covered;
+- ID recoding; initial utility covered;
+- founder and unknown-parent handling; initial utility covered;
+- direct sparse `Ainv`; initial utility covered;
 - fixed and random-effect design;
 - univariate Gaussian REML/ML;
 - EBVs/BLUPs;
@@ -119,8 +124,8 @@ nonzeros, memory, and comparator.
 
 ## Next Work Queue
 
-1. Expand `HSquared.jl` issue #3 into the sparse pedigree parser checklist.
-2. Expand `HSquared.jl` issue #4 into the direct sparse `Ainv` checklist.
+1. Add production-scale pedigree design notes before claiming huge-pedigree
+   performance.
+2. Start fixed-effect and animal random-effect design handling.
 3. Keep `hsquared` issue #2 synchronized with this engine contract.
-4. Start Phase 1 only when the R-Julia v0.1 contract is explicit enough to
-   test from both sides.
+4. Add Mrode/comparator validation before promoting animal-model fitting.

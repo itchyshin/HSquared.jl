@@ -8,8 +8,19 @@ This file records the planned Julia-side v0.1 engine surface.
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
 ```
 
-Phase 0 exports the function as a placeholder only. It throws a not-implemented
+This fitting entry point is still a placeholder. It throws a not-implemented
 error.
+
+## Implemented Relationship Utility
+
+```julia
+ped = normalize_pedigree(ids, sire, dam)
+Ainv = pedigree_inverse(ped)
+```
+
+This utility validates and sorts a pedigree, recodes known parents to integer
+indices, keeps unknown parents as `0`, and builds a sparse inverse additive
+relationship matrix. It does not fit a model.
 
 ## Input Payload
 

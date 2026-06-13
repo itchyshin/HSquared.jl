@@ -2,6 +2,56 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Phase 1A Pedigree And Ainv Utility
+
+- Goal: finish the first Julia Phase 1A engine slice: pedigree normalization,
+  direct sparse `Ainv`, and docs-site scaffold.
+- Active lenses: Ada, Shannon, Henderson, Mrode, Gauss, Karpinski, Grace,
+  Jason, Rose, Pat.
+- Spawned subagents: none.
+- Coordination boundary:
+  - Julia lane edited only `HSquared.jl`.
+  - R/coordinator twin owns matching `hsquared` formula/model-spec/status work.
+  - Shared contract note: R docs may say Julia `Ainv` construction exists, but
+    model fitting remains planned.
+- Sister references checked:
+  - `DRM.jl/AGENTS.md`, `DRM.jl/docs/make.jl`, `DRM.jl/docs/src/index.md`
+  - `GLLVM.jl/AGENTS.md`, `GLLVM.jl/docs/make.jl`,
+    `GLLVM.jl/docs/src/index.md`
+- Implementation evidence:
+  - Added `src/pedigree.jl`.
+  - Added exports: `Pedigree`, `normalize_pedigree`,
+    `inbreeding_coefficients`, and `pedigree_inverse`.
+  - Added tests for valid sorting, malformed parents, duplicate IDs,
+    self-parent, same known sire/dam, cycle detection, cache limit, tiny
+    hand-checked `Ainv`, and dense inverse comparison.
+- Documentation evidence:
+  - Added DocumenterVitepress scaffold: `docs/Project.toml`, `docs/make.jl`,
+    `docs/src/`.
+  - Updated formula/v0.1 contract notes to make R syntax parity the target and
+    to require documented, tested bridge translations for any Julia
+    discrepancies.
+  - Added user-needs and comparator programme docs for breeders, evolutionary
+    geneticists, genomic users, and production breeding comparators, while
+    keeping superiority claims evidence-gated.
+  - Added `Documenter.yml` workflow.
+  - Updated README, roadmap, capability status, validation debt, public claims,
+    engine contract, coordination board, and AGENTS.
+  - Added scout note
+    `docs/dev-log/scout/2026-06-13-julia-sister-boundaries.md`.
+- Commands run:
+  - `julia --project=. test/runtests.jl` passed: 17 Phase 0 checks and 15
+    initial Phase 1A checks.
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed: 17 Phase 0 checks
+    and 17 Phase 1A checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped,
+    as expected outside CI. VitePress dependency audit reported npm advisories
+    in generated dependencies; build succeeded.
+  - `git diff --check` passed.
+- Rose verdict: clean with limitations. `Ainv` construction is implemented as
+  an engine utility with tiny deterministic evidence; animal-model fitting,
+  EBVs, heritability, and R bridge execution remain planned.
+
 ## 2026-06-13 Phase 0 Julia Scaffold
 
 - Goal: create the initial `HSquared.jl` package scaffold and operating docs.

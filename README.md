@@ -8,28 +8,56 @@ sparse animal models, pedigree and genomic relationship structures, REML/ML
 estimation, breeding values, G matrices, factor-analytic genetic covariance,
 and high-dimensional GLLVM-style extensions.
 
+The intended users are breeders, plant and livestock geneticists, evolutionary
+geneticists, genomic prediction users, and applied analysts who need R syntax
+with a fast Julia engine underneath. Comparator packages such as ASReml,
+BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, and nadiv are
+benchmarks to learn from and test against, not claims of current superiority.
+
 ## Current Status
 
-This repository is a **Phase 0 scaffold**. It does not fit models yet.
+This repository has completed Phase 0 and has started the first Phase 1 engine
+slice. It does not fit models yet.
 
 Implemented now:
 
 - package metadata and CI;
 - a small control object for future backend/save/precision choices;
 - backend marker types;
+- pedigree validation, ID recoding, unknown-parent handling, and topological
+  sorting;
+- direct sparse inverse additive relationship matrix construction for validated
+  pedigrees;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
 Planned, but not implemented yet:
 
-- pedigree validation and sparse `Ainv` construction;
 - REML/ML or AI-REML fitting;
 - EBVs/BLUPs and heritability;
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 
-## Planned Julia Surface
+## Julia Surface
+
+The first Phase 1 utility surface is available for pedigree checks:
+
+```julia
+using HSquared
+
+ped = normalize_pedigree(
+    ["calf", "sire", "dam"],
+    ["sire", "0", "0"],
+    ["dam", "0", "0"],
+)
+Ainv = pedigree_inverse(ped)
+```
+
+This is an engine utility only. It is not yet connected to a fitted animal
+model.
+
+The high-level modelling surface is still planned:
 
 ```julia
 using HSquared

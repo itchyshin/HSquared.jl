@@ -8,7 +8,8 @@ Use this register before changing README, docs, issue text, or examples.
 | `HSquared.jl` is the Julia engine package identity | covered | public repo exists and package loads | Julia engine scaffold |
 | Julia `hsquared()` performs model fitting | planned | placeholder only | planned |
 | `fit_animal_model()` performs Gaussian animal-model fitting | planned | placeholder only | planned Phase 1 target |
-| sparse Ainv construction | planned | none | planned |
+| pedigree validation and sorting | covered | `normalize_pedigree()` tests over valid and malformed pedigrees | implemented engine utility |
+| sparse Ainv construction | covered | `pedigree_inverse()` tests over tiny pedigrees and dense inverse comparison | direct sparse pedigree inverse utility; not a fitted model |
 | Gaussian animal model REML/ML | planned | none | planned |
 | EBVs/BLUPs and heritability extraction | planned | none | planned |
 | multivariate G matrices | planned | none | roadmap |

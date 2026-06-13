@@ -5,8 +5,8 @@
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
 | V0-CTRL | Control validation | covered | default and invalid control tests |
 | V0-PLACEHOLDER | Honest placeholder errors | covered | Phase 0 error tests |
-| V1-PED | Pedigree validation | planned | tiny malformed and valid pedigrees |
-| V1-AINV | Sparse `Ainv` | planned | hand-checked tiny pedigrees and reference values |
+| V1-PED | Pedigree validation | covered | tiny malformed and valid pedigrees in `test/runtests.jl` |
+| V1-AINV | Sparse `Ainv` | covered | hand-checked tiny pedigrees and dense inverse comparison in `test/runtests.jl` |
 | V1-REML | Univariate Gaussian REML | planned | Mrode simple animal model and comparator check |
 | V1-EBV | EBVs/BLUPs | planned | known fitted values against comparator |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |

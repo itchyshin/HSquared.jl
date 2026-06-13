@@ -13,9 +13,9 @@ Status: covered.
 
 ## Phase 1: Simple Gaussian Animal Model
 
-- Pedigree validation and sorting.
-- ID recoding.
-- Sparse direct `Ainv`.
+- Pedigree validation and sorting. Covered for initial utility surface.
+- ID recoding. Covered inside `normalize_pedigree()`.
+- Sparse direct `Ainv`. Covered for initial utility surface.
 - Gaussian REML/ML objective.
 - EBVs/BLUPs.
 - Variance components and heritability.

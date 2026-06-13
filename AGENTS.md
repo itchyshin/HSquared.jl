@@ -12,7 +12,8 @@ engine reality.
 - Later: factor-analytic G matrices, GLLVM-style high-dimensional responses,
   non-standard inheritance systems, and accelerator-aware computation.
 
-Phase 0 is an honest scaffold. Model fitting is not implemented.
+Phase 0 is complete. Phase 1 has started with pedigree normalization and sparse
+`Ainv` construction. Model fitting is not implemented.
 
 ## Twin Boundary
 
@@ -50,6 +51,41 @@ actual subagents are running.
 | Kirkpatrick | G matrices and factor-analytic genetic covariance |
 | Mrode | Textbook animal-model validation canon |
 
+## Current Member Routing
+
+- **Ada + Shannon**: keep the programme aligned across `HSquared.jl`,
+  `hsquared`, `DRM.jl`, `GLLVM.jl`, `drmTMB`, and `gllvmTMB`.
+- **Henderson + Mrode + Gauss**: own the Phase 1 pedigree/Ainv and later
+  animal-model equation checks.
+- **Karpinski + Grace**: own Julia package hygiene, CI, Documenter, dispatch,
+  and sparse performance review.
+- **Hopper + Boole + Emmy**: keep Julia engine utilities compatible with the
+  future R formula and bridge contract.
+- **Jason + Rose**: scout sister packages and comparator tools, then prevent
+  unsupported public claims.
+- **Pat + Darwin + Florence**: keep docs readable for applied quantitative
+  geneticists and ecological/evolutionary users.
+
+These names remain review lenses unless an actual subagent is spawned and named
+separately.
+
+## Sister Project Boundaries
+
+Use the local sister projects as references:
+
+- `DRM.jl`: Julia twin operating model, DocumenterVitepress setup, quality
+  gates, and R-bridge discipline.
+- `GLLVM.jl`: Julia engine structure, status-page discipline, performance claim
+  gates, and high-dimensional design patterns.
+- `drmTMB`: R package process, formula grammar discipline, validation debt,
+  after-task reporting, and fitted/planned/missing separation.
+- `gllvmTMB`: long/wide documentation discipline, covariance grammar, and
+  reader-first public docs.
+
+Code reuse rule: adapt architecture and process patterns freely, but do not copy
+statistical code or public claims from sister projects without checking license,
+provenance, tests, and fit for `HSquared.jl`.
+
 ## Memory Rules
 
 Private memory may suggest where to look. Repository state, tests, docs,
@@ -67,7 +103,8 @@ Maintain repo-visible memory in:
 
 ## Development Rules
 
-1. Keep Phase 0 honest: no model-fitting claims without code and validation.
+1. Keep status language honest: no model-fitting claims without code and
+   validation.
 2. Do not change the public R-Julia contract without updating both twins.
 3. Do not add a fitted capability without tests, documentation, capability
    status, validation-debt rows, and a Rose audit.
@@ -79,6 +116,7 @@ Maintain repo-visible memory in:
 
 ```sh
 julia --project=. -e 'using Pkg; Pkg.test()'
+julia --project=docs docs/make.jl
 git status --short --branch
 gh run list --limit 3
 ```
