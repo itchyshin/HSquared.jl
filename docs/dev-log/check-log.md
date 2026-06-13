@@ -40,6 +40,16 @@ Newest entries go at the top.
   - Additions-only ASCII scan found only Julia's existing `≈` test operator in
     new test assertions.
   - Claim-boundary scan found expected blocked/status wording only.
+- Remote checks for commit `b8c75d0`:
+  - CI `27465516616`: success on Julia 1 and Julia 1.10.
+  - Documenter `27465516626`: success.
+  - Pages deploy `27465552850`: success.
+  - GitHub Actions reported non-blocking Node 20 deprecation annotations for
+    the action stack.
+- Live docs:
+  - `https://itchyshin.github.io/HSquared.jl/dev/validation-status.html`:
+    HTTP 200 and contains `Mrode9-shaped supplied-variance fixture` plus the
+    fitted-Mrode boundary wording.
 - Boundary:
   - Supplied variance components only.
   - No variance-component estimation.

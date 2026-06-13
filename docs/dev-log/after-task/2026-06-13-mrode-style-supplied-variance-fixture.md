@@ -64,8 +64,12 @@ methods.
 - Additions-only ASCII scan: found only Julia's existing `≈` test operator in
   new test assertions.
 - Claim-boundary scan: found expected blocked/status wording only.
-
-CI and live-site checks are recorded in the main check log after push.
+- CI for commit `b8c75d0`: passed, run `27465516616`.
+- Documenter for commit `b8c75d0`: passed, run `27465516626`.
+- Pages deployment: passed, run `27465552850`.
+- Live validation page: HTTP 200 and contains
+  `Mrode9-shaped supplied-variance fixture` plus the fitted-Mrode boundary
+  wording.
 
 ## Public Claim Audit
 
