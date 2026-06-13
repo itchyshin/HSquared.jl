@@ -2,6 +2,55 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 HSData Marker Metadata Validation
+
+- Goal: align Julia `HSData` local metadata hygiene with the R twin's marker-map
+  and genotype-marker alignment validation, without changing bridge payloads or
+  claiming genomic modelling.
+- Active lenses: Ada, Shannon, Emmy, Jason, Pat, Rose, Grace.
+- Spawned subagents: none.
+- R twin handoffs:
+  - `hsquared` head `5923fcd` validates marker-map metadata columns, including
+    marker ID, chromosome, and finite non-negative position.
+  - `hsquared` head `d1eb174` validates genotype marker columns against
+    marker-map IDs exactly, allowing different order but rejecting missing or
+    extra marker IDs.
+  - `hsquared` head `b1a4e48` adds marker-status summaries to
+    `summary(hs_data(...))`; this is R-only diagnostic reporting with no
+    bridge payload change and no required Julia action.
+  - Reported R remote evidence: R-CMD-check `27460445869` / `27460602501`,
+    pkgdown `27460445866` / `27460602502`, and Pages `27460479795` /
+    `27460635647` success.
+  - Reported R remote evidence for the R-only marker-status summary:
+    R-CMD-check `27460847536`, pkgdown `27460847546`, and Pages
+    `27460886355` success.
+- Julia-side action:
+  - Added internal `HSMarkerMapSpec` and `HSGenotypeMarkerSpec`.
+  - `HSData` now validates marker-map aliases, marker ID uniqueness,
+    non-missing chromosomes, finite non-negative positions, matrix genotype
+    marker IDs, and genotype-marker/map alignment.
+  - Updated data docs, HSData contract, capability status, validation debt,
+    public claims, README, roadmap, changelog, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 324 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found only expected guardrail and roadmap wording around
+    metadata validation, file formats, and planned genotype/genomic/QTL work.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Metadata validation only.
+  - No bridge payload change.
+  - No genotype parsing.
+  - No PLINK/VCF ingestion.
+  - No marker imputation.
+  - No marker scanning, genomic fitting, or QTL/eQTL fitting.
+
 ## 2026-06-13 Validation Status Diagnostic
 
 - Goal: add a Julia-side validation evidence diagnostic that makes covered,

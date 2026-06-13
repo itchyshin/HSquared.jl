@@ -28,6 +28,8 @@ pedigree/Ainv engine utility slice.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.
+- `HSData` validates marker-map metadata and genotype-marker alignment as
+  metadata hygiene only.
 - R head `36efbf3` connects `hs_data()` to the v0.1 R parser for
   `model_spec()` and `hsquared()` while preserving the same bridge payload
   shape; live Julia `HSData` object marshalling remains planned.
@@ -131,6 +133,8 @@ First real capability:
 - in-memory phenotype/pedigree/genotype/expression ID container; initial mirror
   covered.
 - file-backed phenotype/genotype storage; planned.
+- genotype parsing, marker imputation, marker scanning, and genomic
+  relationship construction from `HSData`; planned.
 
 Gate: Mrode simple animal-model example plus tiny hand-checked pedigrees and
 comparator checks where available.

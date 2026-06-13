@@ -34,6 +34,7 @@ Implemented:
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
 - sparse Henderson MME solving at supplied variance components;
 - sparse CSC marshalling helper for R sparse matrix slots;
+- `HSData` marker-map metadata validation and genotype-marker alignment checks;
 - external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for

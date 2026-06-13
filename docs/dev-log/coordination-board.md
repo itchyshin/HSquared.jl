@@ -23,6 +23,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   experimental dense variance-component optimizer for those specs.
 - The Julia twin has an in-memory `HSData` container mirroring the current R
   `hs_data()` ID-map vocabulary.
+- The Julia twin mirrors the R twin's marker-map and genotype-marker metadata
+  validation semantics locally in `HSData`; this does not change bridge
+  payloads or add genomic fitting.
+- The R twin added marker-status summary diagnostics at `hsquared` head
+  `b1a4e48`; this is R-only reporting, with no bridge payload change and no
+  required Julia action unless a later `HSData` summary parity slice is chosen.
 - The R twin can now feed `hs_data()` into `model_spec()` and `hsquared()` for
   the v0.1 parser at `hsquared` head `36efbf3`; the bridge payload shape is
   unchanged and live Julia `HSData` object marshalling remains planned.
@@ -90,6 +96,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - sparse Henderson MME solving at supplied variance components implemented.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
     in-memory mirror of the R `hs_data()` input-container contract.
+  - `HSData` marker-map metadata validation and genotype-marker alignment
+    checks implemented.
   - `validation_status()` implemented as a diagnostic validation-evidence
     table.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:

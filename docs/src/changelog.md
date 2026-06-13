@@ -42,6 +42,8 @@
   extractor contract.
 - Added `HSData`, `HSDataIDMap`, and `id_map()` as an in-memory mirror of the R
   `hs_data()` input-container contract.
+- Added `HSData` marker-map metadata validation and genotype-marker alignment
+  checks.
 - Added `sparse_csc_matrix()` for R `Matrix::dgCMatrix` slot marshalling.
 - Recorded the R twin's PEV/reliability bridge extractor contract while keeping
   Julia `result_payload()` fields unchanged.

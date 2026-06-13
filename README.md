@@ -62,6 +62,8 @@ Implemented now:
 - sparse Henderson mixed-model-equation solve at supplied variance components;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
+- marker-map metadata validation and genotype-marker alignment checks inside
+  `HSData`;
 - external R `hs_data()` parser integration evidence: R `model_spec()` and
   `hsquared()` can start from an `hs_data()` bundle for the v0.1 parser while
   preserving the same bridge payload shape;
@@ -121,6 +123,11 @@ id_map(data)
 
 This records exact ID overlap only. File-backed storage, relationship
 construction from genotypes, and QTL/eQTL scans remain planned.
+
+`HSData` also validates marker-map metadata and genotype-marker alignment when
+both marker maps and genotypes are supplied. This is metadata validation only;
+it is not genotype parsing, imputation, marker scanning, genomic fitting, or
+QTL/eQTL support.
 
 On the R side, `hs_data()` can feed the v0.1 parser for `model_spec()` and
 `hsquared()` by reading variables from `data$phenotypes` and resolving

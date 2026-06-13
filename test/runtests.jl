@@ -277,6 +277,11 @@ end
         1.0 0.0
         2.0 2.0
     ]
+    markers = (
+        marker = ["m1", "m2"],
+        chr = ["1", "2"],
+        pos = [10, 20],
+    )
     expression = (
         id = ["animal_2", "animal_4"],
         gene_a = [4.0, 5.0],
@@ -288,6 +293,8 @@ end
         pedigree = pedigree,
         genotypes = genotypes,
         genotype_ids = ["animal_1", "animal_3", "founder"],
+        genotype_marker_ids = ["m2", "m1"],
+        markers = markers,
         expression = expression,
         expression_id = :id,
     )
@@ -304,6 +311,12 @@ end
     @test id_map(data).phenotypes_without_expression == ["animal_1"]
     @test id_map(data).genotypes_without_phenotypes == ["animal_3", "founder"]
     @test id_map(data).expression_without_phenotypes == ["animal_4"]
+    @test data.marker_spec.marker_ids == ["m1", "m2"]
+    @test data.marker_spec.chromosome == ["1", "2"]
+    @test data.marker_spec.position == [10.0, 20.0]
+    @test data.marker_spec.columns == (marker = :marker, chromosome = :chr, position = :pos)
+    @test data.genotype_marker_spec.marker_ids == ["m2", "m1"]
+    @test data.genotype_marker_spec.marker_map_index == [2, 1]
 
     raw_pedigree = (
         id = ["animal_1", "animal_2", "founder"],
@@ -313,12 +326,51 @@ end
     raw_data = HSData(phenotypes; pedigree = raw_pedigree)
     @test id_map(raw_data).pedigree_ids == ["animal_1", "animal_2", "founder"]
 
+    genotype_table = (
+        id = ["animal_1", "animal_2"],
+        m2 = [1, 0],
+        m1 = [0, 2],
+    )
+    table_data = HSData(
+        phenotypes;
+        genotypes = genotype_table,
+        markers = (snp = ["m1", "m2"], chrom = ["1", "1"], bp = ["5", "7"]),
+    )
+    @test table_data.marker_spec.columns == (marker = :snp, chromosome = :chrom, position = :bp)
+    @test table_data.genotype_marker_spec.marker_ids == ["m2", "m1"]
+    @test table_data.genotype_marker_spec.marker_map_index == [2, 1]
+
+    zero_chromosome_data = HSData(phenotypes; markers = (marker = ["m1"], chr = ["0"], pos = [0]))
+    @test zero_chromosome_data.marker_spec.chromosome == ["0"]
+
     @test_throws ArgumentError HSData((id = ["animal_1", missing], y = [1.0, 2.0]))
     @test_throws ArgumentError HSData(phenotypes; pedigree = (id = ["animal_1"],))
     @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes)
     @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes, genotype_ids = ["a"])
     @test_throws ArgumentError HSData(phenotypes; genotypes = genotypes, genotype_ids = ["a", "a", "b"])
     @test_throws ArgumentError HSData(; phenotypes = (animal = ["a"], y = [1.0]))
+    @test_throws ArgumentError HSData(phenotypes; markers = (marker = ["m1"], chr = ["1"]))
+    @test_throws ArgumentError HSData(phenotypes; markers = (marker = ["m1", "m1"], chr = ["1", "1"], pos = [1, 2]))
+    @test_throws ArgumentError HSData(phenotypes; markers = (marker = ["m1"], chr = [""], pos = [1]))
+    @test_throws ArgumentError HSData(phenotypes; markers = (marker = ["m1"], chr = ["1"], pos = [-1]))
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        genotypes = genotypes,
+        genotype_ids = ["animal_1", "animal_3", "founder"],
+        markers = markers,
+    )
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        genotypes = genotypes,
+        genotype_ids = ["animal_1", "animal_3", "founder"],
+        genotype_marker_ids = ["m1", "m_extra"],
+        markers = markers,
+    )
+    @test_throws ArgumentError HSData(
+        phenotypes;
+        genotypes = (id = ["animal_1"],),
+        markers = (marker = ["m1"], chr = ["1"], pos = [1]),
+    )
 end
 
 @testset "Phase 1 sparse CSC bridge marshalling" begin

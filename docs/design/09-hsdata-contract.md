@@ -26,6 +26,13 @@ R head `36efbf3` connects that container to the v0.1 R parser:
 - the bridge payload shape is unchanged: `y`, `X`, sparse `Z`, normalized
   pedigree/ID metadata, method, family, and Julia target metadata.
 
+R heads `5923fcd` and `d1eb174` add marker-map and genotype-marker alignment
+validation to the R container. Those handoffs did not change the bridge
+payload. Julia mirrors the same local metadata hygiene in `HSData`: marker maps
+need marker ID, chromosome, and finite non-negative position columns, and
+genotype marker names must match marker-map IDs exactly when both components
+are supplied.
+
 ## Julia Mirror
 
 `HSquared.jl` mirrors the in-memory contract with:
@@ -84,6 +91,8 @@ Implemented:
 
 - in-memory data storage;
 - exact ID overlap checks;
+- marker-map metadata validation;
+- genotype-marker alignment validation;
 - matrix-like genotype inputs with explicit row IDs;
 - table-like phenotype, pedigree, genotype, and expression ID columns.
 - external R parser integration from `hs_data()` to the same v0.1 bridge
@@ -100,5 +109,5 @@ Planned:
 
 Rose audit: this can be called a conservative data-container mirror. It must
 not be described as genomic modelling, file-backed storage, QTL/eQTL support,
-genotype/omics automatic model construction, production bridge hardening, or
-general fitting.
+genotype parsing, imputation, genotype/omics automatic model construction,
+production bridge hardening, or general fitting.

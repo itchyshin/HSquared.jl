@@ -41,6 +41,8 @@ HSquared.precision
 HSquared.GaussianFamily
 HSquared.HSData
 HSquared.HSDataIDMap
+HSquared.HSMarkerMapSpec
+HSquared.HSGenotypeMarkerSpec
 HSquared.id_map
 HSquared.Pedigree
 HSquared.normalize_pedigree

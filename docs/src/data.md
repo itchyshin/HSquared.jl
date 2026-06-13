@@ -77,10 +77,37 @@ data = HSData(
     pedigree = pedigree,
     genotypes = genotypes,
     genotype_ids = ["animal_1", "animal_3", "founder"],
+    genotype_marker_ids = ["m2", "m1"],
+    markers = (
+        marker = ["m1", "m2"],
+        chr = ["1", "1"],
+        pos = [10, 20],
+    ),
     expression = expression,
 )
 
 id_map(data).phenotypes_without_genotypes
+```
+
+When marker metadata is supplied, `HSData` validates common marker-map aliases:
+
+- marker ID: `marker`, `marker_id`, `snp`, `snp_id`, or `id`;
+- chromosome: `chromosome`, `chr`, or `chrom`;
+- position: `position`, `pos`, `bp`, or `base_pair`.
+
+Marker IDs must be unique and non-missing. Chromosomes must be non-missing.
+Positions must be finite, non-negative numeric values. If both `genotypes` and
+`markers` are supplied, genotype marker names must match marker-map IDs
+exactly after marker names are normalized to strings. For matrix-like
+genotypes, use `genotype_marker_ids` because Julia base matrices do not carry
+column names.
+
+```@example data
+data.marker_spec.marker_ids
+```
+
+```@example data
+data.genotype_marker_spec.marker_map_index
 ```
 
 ```@example data
@@ -101,6 +128,7 @@ id_map(data).expression_without_phenotypes
 
 - exact-ID matching;
 - repeated phenotype ID support;
+- marker-map metadata validation and genotype-marker alignment checks;
 - optional pedigree, genotype, expression, marker, annotation, and environment
   storage;
 - conservative mismatch fields for later bridge and genomic work.
@@ -109,7 +137,9 @@ Planned later:
 
 - file-backed phenotype and genotype storage;
 - PLINK, VCF/BCF, Arrow, Parquet, HDF5, and Zarr readers;
-- marker maps, QTL/eQTL scans, and genomic relationship construction;
+- genotype parsing and imputation;
+- QTL/eQTL scans and genomic relationship construction from genotype/marker
+  data;
 - direct Julia `HSData` to `AnimalModelSpec` construction;
 - live Julia `HSData` object marshalling;
 - production model fitting from data-container inputs.

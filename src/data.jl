@@ -19,6 +19,31 @@ struct HSDataIDMap
 end
 
 """
+    HSMarkerMapSpec
+
+Validated marker-map metadata stored by [`HSData`](@ref).
+
+This is metadata hygiene only. It does not parse genotype files, impute marker
+dosages, construct genomic relationships, or run marker scans.
+"""
+struct HSMarkerMapSpec
+    columns::NamedTuple{(:marker, :chromosome, :position),Tuple{Any,Any,Any}}
+    marker_ids::Vector{String}
+    chromosome::Vector{String}
+    position::Vector{Float64}
+end
+
+"""
+    HSGenotypeMarkerSpec
+
+Validated alignment between genotype marker columns and a marker map.
+"""
+struct HSGenotypeMarkerSpec
+    marker_ids::Vector{String}
+    marker_map_index::Vector{Int}
+end
+
+"""
     HSData
 
 In-memory container for matched phenotypes, pedigree, genotypes, expression,
@@ -28,11 +53,13 @@ This is a conservative Phase 1 mirror of the R `hs_data()` contract. It stores
 the supplied objects and records exact-ID overlap diagnostics, but it does not
 construct relationship matrices, read file-backed data, or fit a model.
 """
-struct HSData{TP,TPed,TG,TM,TE,TA,TEnv}
+struct HSData{TP,TPed,TG,TM,TMS,TGMS,TE,TA,TEnv}
     phenotypes::TP
     pedigree::TPed
     genotypes::TG
     markers::TM
+    marker_spec::TMS
+    genotype_marker_spec::TGMS
     expression::TE
     annotation::TA
     environment::TEnv
@@ -77,12 +104,16 @@ Optional:
   a pedigree ID column;
 - `genotypes`: table-like or matrix-like object with `genotype_ids` supplied
   for matrix-like data, or an ID column for table-like data;
-- `markers`, `expression`, `annotation`, and `environment`: stored as supplied.
+- `markers`: table-like marker metadata with marker, chromosome, and position
+  columns, using common aliases;
+- `expression`, `annotation`, and `environment`: stored as supplied.
 
 When a pedigree is supplied, every unique phenotype ID must appear in the
 pedigree IDs. Genotype and expression mismatches are recorded in `id_map`
 instead of rejected, because ungenotyped and unexpressed phenotyped individuals
-are valid inputs for later phases.
+are valid inputs for later phases. When both `genotypes` and `markers` are
+supplied, genotype marker names must match marker-map IDs exactly after marker
+names are normalized to strings.
 """
 function HSData(
     phenotypes;
@@ -92,7 +123,11 @@ function HSData(
     genotypes = nothing,
     genotype_id = :id,
     genotype_ids = nothing,
+    genotype_marker_ids = nothing,
     markers = nothing,
+    marker_id = nothing,
+    chromosome = nothing,
+    position = nothing,
     expression = nothing,
     expression_id = :id,
     expression_ids = nothing,
@@ -107,7 +142,11 @@ function HSData(
         genotypes = genotypes,
         genotype_id = genotype_id,
         genotype_ids = genotype_ids,
+        genotype_marker_ids = genotype_marker_ids,
         markers = markers,
+        marker_id = marker_id,
+        chromosome = chromosome,
+        position = position,
         expression = expression,
         expression_id = expression_id,
         expression_ids = expression_ids,
@@ -124,7 +163,11 @@ function HSData(;
     genotypes = nothing,
     genotype_id = :id,
     genotype_ids = nothing,
+    genotype_marker_ids = nothing,
     markers = nothing,
+    marker_id = nothing,
+    chromosome = nothing,
+    position = nothing,
     expression = nothing,
     expression_id = :id,
     expression_ids = nothing,
@@ -149,6 +192,18 @@ function HSData(;
         expression_ids,
         "expression";
         allow_repeated = false,
+    )
+    marker_spec = _marker_map_spec(
+        markers;
+        marker_id = marker_id,
+        chromosome = chromosome,
+        position = position,
+    )
+    genotype_marker_spec = _genotype_marker_spec(
+        genotypes,
+        genotype_id,
+        genotype_marker_ids,
+        marker_spec,
     )
 
     phenotypes_without_pedigree = _ordered_setdiff(phenotype_ids, pedigree_ids)
@@ -177,6 +232,8 @@ function HSData(;
         pedigree,
         genotypes,
         markers,
+        marker_spec,
+        genotype_marker_spec,
         expression,
         annotation,
         environment,
@@ -236,6 +293,195 @@ function _column(source, column, role::AbstractString)
     end
 
     throw(ArgumentError("$(role) must contain ID column :$(name), or explicit IDs must be supplied"))
+end
+
+function _marker_map_spec(::Nothing; marker_id, chromosome, position)
+    return nothing
+end
+
+function _marker_map_spec(markers; marker_id, chromosome, position)
+    marker_column = _pick_marker_column(markers, marker_id, (:marker, :marker_id, :snp, :snp_id, :id), "marker")
+    chromosome_column = _pick_marker_column(markers, chromosome, (:chromosome, :chr, :chrom), "chromosome")
+    position_column = _pick_marker_column(markers, position, (:position, :pos, :bp, :base_pair), "position")
+
+    marker_ids = _string_ids(_column(markers, marker_column, "markers"), "markers"; allow_repeated = false)
+    chromosome_values = _chromosome_values(_column(markers, chromosome_column, "markers"))
+    position_values = _position_values(_column(markers, position_column, "markers"))
+    length(marker_ids) == length(chromosome_values) == length(position_values) ||
+        throw(ArgumentError("markers columns must have equal lengths"))
+
+    return HSMarkerMapSpec(
+        (marker = marker_column, chromosome = chromosome_column, position = position_column),
+        marker_ids,
+        chromosome_values,
+        position_values,
+    )
+end
+
+function _genotype_marker_spec(genotypes, genotype_id, genotype_marker_ids, ::Nothing)
+    genotype_marker_ids === nothing ||
+        throw(ArgumentError("genotype_marker_ids requires markers to be supplied"))
+    return nothing
+end
+
+function _genotype_marker_spec(::Nothing, genotype_id, genotype_marker_ids, marker_spec::HSMarkerMapSpec)
+    genotype_marker_ids === nothing ||
+        throw(ArgumentError("genotype_marker_ids were supplied but genotypes data is nothing"))
+    return nothing
+end
+
+function _genotype_marker_spec(genotypes, genotype_id, genotype_marker_ids, marker_spec::HSMarkerMapSpec)
+    marker_ids = _genotype_marker_ids(genotypes, genotype_id, genotype_marker_ids)
+
+    missing_from_map = _ordered_setdiff(marker_ids, marker_spec.marker_ids)
+    missing_from_genotypes = _ordered_setdiff(marker_spec.marker_ids, marker_ids)
+    if !isempty(missing_from_map) || !isempty(missing_from_genotypes)
+        details = String[]
+        isempty(missing_from_map) || push!(details, "missing from markers: $(join(missing_from_map, ", "))")
+        isempty(missing_from_genotypes) || push!(details, "missing from genotypes: $(join(missing_from_genotypes, ", "))")
+        throw(ArgumentError("genotype marker columns must match marker IDs exactly; $(join(details, "; "))"))
+    end
+
+    marker_map_index = [findfirst(==(id), marker_spec.marker_ids)::Int for id in marker_ids]
+    return HSGenotypeMarkerSpec(marker_ids, marker_map_index)
+end
+
+function _genotype_marker_ids(source::AbstractMatrix, genotype_id, genotype_marker_ids)
+    genotype_marker_ids !== nothing ||
+        throw(ArgumentError("matrix-like genotypes require genotype_marker_ids when markers are supplied"))
+    marker_ids = _string_ids(genotype_marker_ids, "genotype marker columns"; allow_repeated = false)
+    length(marker_ids) == size(source, 2) ||
+        throw(ArgumentError("genotype_marker_ids length must match the number of columns in genotypes"))
+    return marker_ids
+end
+
+function _genotype_marker_ids(source, genotype_id, genotype_marker_ids)
+    if genotype_marker_ids !== nothing
+        marker_ids = _string_ids(genotype_marker_ids, "genotype marker columns"; allow_repeated = false)
+        column_count = _genotype_marker_column_count(source, genotype_id)
+        column_count === nothing || length(marker_ids) == column_count ||
+            throw(ArgumentError("genotype_marker_ids length must match the number of marker columns in genotypes"))
+        return marker_ids
+    end
+
+    names = _column_names(source)
+    names === nothing &&
+        throw(ArgumentError("genotypes must be table-like or supply genotype_marker_ids when markers are supplied"))
+    marker_columns = Any[name for name in names if !_same_column_name(name, genotype_id)]
+    isempty(marker_columns) &&
+        throw(ArgumentError("genotypes must contain at least one marker column when markers are supplied"))
+    return _string_ids(marker_columns, "genotype marker columns"; allow_repeated = false)
+end
+
+function _pick_marker_column(source, explicit, aliases::Tuple, label::AbstractString)
+    if explicit !== nothing
+        name = _column_symbol(explicit, "markers")
+        _column(source, name, "markers")
+        return name
+    end
+
+    names = _column_names(source)
+    names === nothing &&
+        throw(ArgumentError("markers must be table-like with marker, chromosome, and position columns"))
+    lower_names = lowercase.(string.(names))
+    for alias in aliases
+        hit = findfirst(==(String(alias)), lower_names)
+        hit === nothing || return names[hit]
+    end
+
+    throw(
+        ArgumentError(
+            "markers must contain a $(label) column; recognized aliases include $(join(string.(aliases), ", "))",
+        ),
+    )
+end
+
+function _column_names(source)
+    if source isa AbstractDict
+        return collect(keys(source))
+    elseif source isa AbstractMatrix
+        return nothing
+    else
+        names = propertynames(source)
+        isempty(names) && return nothing
+        return collect(names)
+    end
+end
+
+function _genotype_marker_column_count(source::AbstractMatrix, genotype_id)
+    return size(source, 2)
+end
+
+function _genotype_marker_column_count(source, genotype_id)
+    names = _column_names(source)
+    names === nothing && return nothing
+    return count(name -> !_same_column_name(name, genotype_id), names)
+end
+
+function _same_column_name(left, right)
+    return string(left) == string(_column_symbol(right, "genotypes"))
+end
+
+function _string_ids(ids, role::AbstractString; allow_repeated::Bool)
+    values = String[]
+    seen = Set{String}()
+    for id in ids
+        _is_missing_id(id) &&
+            throw(ArgumentError("$(role) IDs cannot contain missing, nothing, empty strings, or `0`"))
+        value = string(id)
+        (isempty(value) || value == "0") &&
+            throw(ArgumentError("$(role) IDs cannot contain missing, nothing, empty strings, or `0`"))
+        if !(value in seen)
+            push!(values, value)
+            push!(seen, value)
+        elseif !allow_repeated
+            throw(ArgumentError("duplicate $(role) ID: $(value)"))
+        end
+    end
+    return values
+end
+
+function _chromosome_values(values)
+    out = String[]
+    for value in values
+        _is_missing_id(value) &&
+            throw(ArgumentError("markers chromosome column cannot contain missing or empty values"))
+        chromosome = string(value)
+        isempty(chromosome) &&
+            throw(ArgumentError("markers chromosome column cannot contain missing or empty values"))
+        push!(out, chromosome)
+    end
+    return out
+end
+
+function _position_values(values)
+    return [_position_value(value) for value in values]
+end
+
+function _position_value(value)
+    (ismissing(value) || value === nothing) &&
+        throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
+    position = if value isa Real
+        Float64(value)
+    elseif value isa AbstractString
+        isempty(value) &&
+            throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
+        try
+            parse(Float64, value)
+        catch
+            throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
+        end
+    else
+        try
+            Float64(value)
+        catch
+            throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
+        end
+    end
+
+    isfinite(position) && position >= 0 ||
+        throw(ArgumentError("markers position column must contain finite non-negative numeric positions"))
+    return position
 end
 
 function _column_symbol(column::Symbol, role)
