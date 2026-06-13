@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Genomic Relationship Matrix (VanRaden G)
+
+- Goal: begin Phase 2 (genomic) with the VanRaden genomic relationship matrix
+  construction — a self-contained, GPU-relevant dense engine utility.
+- Active lenses: Falconer, Kirkpatrick, Curie, Jason, Rose (inline perspectives).
+- Spawned subagents: none.
+- Implementation:
+  - Added `src/genomic.jl` with `genomic_relationship_matrix(markers;
+    allele_frequencies = nothing)`: VanRaden (2008) `G = ZZ'/(2Σp(1-p))`,
+    `Z = markers - 2p`, frequencies estimated from the columns unless supplied.
+    Included in the module and exported.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. New testset
+    "Phase 2 genomic relationship matrix (VanRaden)" = 9 checks: pinned
+    hand-computed entries (G[1,1]=1.130435, G[1,2]=-1.304348), symmetry, PSD,
+    supplied-frequency parity, and coding/length/monomorphic guards.
+- Boundary:
+  - Phase boundary; heads-up posted to `hsquared` issue #9. Construction utility
+    ONLY — additive, no bridge / result / model-spec change. No Ginv, GBLUP,
+    single-step, or marker-effect estimation. G is rank-deficient when markers <
+    individuals and needs regularization before inversion (the next slice).
+
 ## 2026-06-13 Average-Information REML (fit_ai_reml)
 
 - Goal: a fast, validated sparse REML variance-component estimator —

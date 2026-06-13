@@ -179,6 +179,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   REML-only, Gaussian, experimental; `result_payload()` unchanged; no external
   comparator yet. Posted to `HSquared.jl` issue #5. For future non-Gaussian
   phases, observed-information Newton (DRM's solution) is the reuse path.
+- Phase 2 (genomic) started on the Julia lane: `genomic_relationship_matrix`
+  builds the VanRaden `G` from a marker matrix — engine-internal, additive, no
+  bridge/result/model-spec change. The contract-touching part (Ginv + GBLUP
+  wiring + the genomic model-spec mapping R's `genomic()`/`markers()` to the
+  engine) is the NEXT slice and will be coordinated with the R twin before
+  landing. Phase-boundary heads-up posted to `hsquared` issue #9. The dense `G`
+  ops are the Apple M1 Ultra (Metal) GPU target later; clusters deferred.
 
 ## Current State
 

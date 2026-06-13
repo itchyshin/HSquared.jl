@@ -21,6 +21,9 @@
   by AI/Newton steps on the sparse Henderson MME (score from the selected
   inverse, AI matrix from working-variate re-solves). Validated to recover the
   same optimum as the NelderMead optimizers; REML-only, Gaussian, experimental.
+- Added `genomic_relationship_matrix()` — the VanRaden (2008) genomic
+  relationship matrix `G` from a 0/1/2 (or dosage) marker matrix. Construction
+  utility only (Phase 2 start); no genomic fitting yet.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 14
+    @test length(validation) == 15
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1529,4 +1529,23 @@ end
         target = :ai_reml,
         variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     )
+end
+
+@testset "Phase 2 genomic relationship matrix (VanRaden)" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 biallelic markers
+    G = genomic_relationship_matrix(M)
+    @test size(G) == (4, 4)
+    @test G ≈ transpose(G)                          # symmetric
+    @test G[1, 1] ≈ 1.130435 rtol = 1e-5            # hand-computed VanRaden entries
+    @test G[1, 2] ≈ -1.304348 rtol = 1e-5
+    @test minimum(eigvals(Symmetric(G))) > -1e-8    # PSD (rank-deficient: m < n)
+
+    # supplied allele frequencies reproduce the estimated-frequency result
+    G2 = genomic_relationship_matrix(M; allele_frequencies = [0.375, 0.625, 0.5])
+    @test G2 ≈ G
+
+    # guards
+    @test_throws ArgumentError genomic_relationship_matrix(M; allele_frequencies = [0.5, 0.5])
+    @test_throws ArgumentError genomic_relationship_matrix([3.0 1.0; 0.0 2.0])
+    @test_throws ArgumentError genomic_relationship_matrix(zeros(2, 2))
 end

@@ -58,6 +58,7 @@ export AMDGPUBackend,
     fixed_effects,
     gaussian_loglik,
     genomic,
+    genomic_relationship_matrix,
     henderson_mme,
     heritability,
     hsquared,
@@ -95,6 +96,7 @@ include("pedigree.jl")
 include("data.jl")
 include("sparse_bridge.jl")
 include("model_spec.jl")
+include("genomic.jl")
 include("takahashi_selinv.jl")
 include("likelihood.jl")
 include("planned_terms.jl")

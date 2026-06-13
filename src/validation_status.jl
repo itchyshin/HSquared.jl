@@ -117,6 +117,15 @@ const VALIDATION_STATUS_DATA = (
         "No fitted comparator parity claim.",
     ),
     (
+        "V2-GRM",
+        "genomic relationship matrix (VanRaden G)",
+        "Phase 2",
+        "partial",
+        "`genomic_relationship_matrix` builds VanRaden `G = ZZ'/(2Σp(1-p))` from a 0/1/2 (or dosage) marker matrix; validated on a tiny hand-computed fixture (symmetric, PSD, pinned entries) in `test/runtests.jl`.",
+        "Ginv/GBLUP, single-step, real marker datasets, and external comparator (AGHmatrix/sommer/BLUPF90) checks",
+        "Experimental construction utility only; no genomic prediction, fitting, single-step, or marker-effect claim.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",

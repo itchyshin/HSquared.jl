@@ -32,6 +32,7 @@
 | V2-QG | Standard QG effects and custom kernels | planned | model-spec contracts, matrix validation, recovery examples, and comparator checks for permanent/common environment, maternal/paternal, cytoplasmic, imprinting, dominance, epistasis, relmat, and precision terms; current work covers syntax reservation only |
 | V3-MV | Multivariate Gaussian animal model | planned | long-format missing-record recovery |
 | V4-FA | Factor-analytic G matrix | planned | simulated loading and Psi recovery |
+| V2-GRM | Genomic relationship matrix (VanRaden G) | partial | `genomic_relationship_matrix` builds VanRaden G; hand-computed tiny fixture (pinned entries, symmetry, PSD) in `test/runtests.jl`; still needs Ginv/GBLUP, single-step, real marker datasets, and AGHmatrix/sommer/BLUPF90 comparator checks |
 | V5-GBLUP | Genomic and single-step models | planned | JWAS/sommer/BLUPF90 style comparator checks; current work covers syntax reservation only |
 | V5-QTL | Marker scans and QTL/eQTL | planned | marker-map validation, estimand definition, multiple-testing checks, and comparator/simulation evidence; current work covers syntax reservation only |
 | V7-INHERIT | Non-standard inheritance | planned | relationship construction and biological interpretation checks |

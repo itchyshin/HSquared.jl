@@ -38,6 +38,7 @@
 | Production sparse reliability / PEV | experimental | `prediction_error_variance`/`reliability` accept `method = :selinv`, a Takahashi selected inverse (kernel adapted from DRM.jl, MIT) of the sparse Henderson MME coefficient matrix; the selected-inverse diagonal matches the dense MME inverse diagonal to machine precision on tiny and Mrode9-shaped fixtures; `O(nnz(L))`, exact at the `L+Lᵀ` pattern (diagonal/PEV exact); the default extractor path stays dense and `result_payload()` is unchanged; no large-pedigree or external-comparator validation yet |
 | Multivariate G matrices | planned | no implementation yet |
 | Factor-analytic G matrices | planned | no implementation yet |
+| Genomic relationship matrix (VanRaden G) | experimental | `genomic_relationship_matrix` builds VanRaden `G = ZZ'/(2Σp(1-p))` from a 0/1/2 (or dosage) marker matrix; validated on a tiny hand-computed fixture (symmetric, PSD, pinned entries); construction only — no Ginv, GBLUP, single-step, or marker-effect estimation |
 | Genomic prediction, single-step fitting, marker scans, and QTL/eQTL | planned | vocabulary reserved only; no implementation yet |
 | Standard QG effects and custom kernels | planned | vocabulary reserved only; no implementation yet |
 | Non-standard inheritance | planned | no implementation yet |
