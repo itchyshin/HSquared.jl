@@ -2,6 +2,35 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 v0.1 Gate: Validation-Status Finalization (R-lane evidence)
+
+- Goal: act on the R twin's v0.1 gate handoff — fix the `V1-AI-REML` honesty bug
+  and record the R-lane external validation of the Julia engine.
+- Active lenses: Rose, Fisher, Mrode, Curie (inline) + R-twin handoff.
+- Changes (`validation_status.jl` + `capability-status.md` +
+  `validation-debt-register.md` in lockstep, + `runtests.jl`):
+  - `V1-AI-REML`: dropped the uncommitted "250-animal observed-information (ratio
+    ~0.99)" claim (Rose-blocking — no backing test); now cites the committed
+    finite-difference REML Hessian check (`V1-HERIT-CI`) + the R-lane DGP/gryphon
+    recovery. partial → covered.
+  - `V1-MRODE-FIT`: planned → covered_external — the engine (`fit_sparse_reml`,
+    `fit_ai_reml`) recovers the published gryphon REML estimate (Wilson 2010:
+    VA=3.3954, VE=3.8286, h²=0.470) exactly via supplied `A_gryphon` (R-lane test).
+  - `V1-COMPARATORS`: planned → covered_external — sommer agreement on the gryphon
+    anchor within the maintainer-signed-off band.
+- Provenance: the `validation_status.jl` + `runtests.jl` edits were staged in the
+  working tree by the user / a parallel lane implementing the handoff; this slice
+  verifies them, completes the lockstep (`capability-status` + `validation-debt`),
+  and documents.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed (724);
+    `julia --project=docs docs/make.jl` green.
+- Boundary:
+  - Status/evidence + tests only; no engine code change. The external evidence is
+    R-lane (via the bridge); Julia-native recovery/fitted fixtures still pending.
+    Default `hsquared()` fit stays validate-and-stop until the full predicate plus
+    the maintainer default-flip.
+
 ## 2026-06-13 Two-Effect REML (common-environment / maternal estimation)
 
 - Goal: REML estimation for the general two-effect model (common-environment `c²`,

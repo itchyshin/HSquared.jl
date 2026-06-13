@@ -94,6 +94,13 @@
 - Added a "Standard QG models" documentation page with runnable examples for
   repeatability (MME + REML, repeatability coefficient), common-environment, and
   maternal-environment models, with the experimental / not-yet-R-wired boundary.
+- Validation status (v0.1 gate): corrected the `V1-AI-REML` evidence to cite the
+  committed finite-difference REML Hessian check (`V1-HERIT-CI`) instead of an
+  uncommitted "250-animal observed-information" claim, and recorded the R-lane
+  external validation — `V1-MRODE-FIT` and `V1-COMPARATORS` move to
+  `covered_external` (the engine recovers the published gryphon REML estimate,
+  Wilson 2010 h²=0.470, via supplied `A_gryphon`, and agrees with sommer, within
+  the maintainer-signed-off band). Status rows + tests only; no engine change.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

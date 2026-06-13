@@ -166,8 +166,15 @@ end
     @test occursin("fit_sparse_reml", sparse_reml_opt_row.evidence)
     @test occursin("not AI-REML", sparse_reml_opt_row.claim_boundary)
     fitted_mrode_row = only(row for row in validation if row.id == "V1-MRODE-FIT")
-    @test fitted_mrode_row.status == "planned"
-    @test occursin("Fitted Mrode validation is not covered", fitted_mrode_row.claim_boundary)
+    @test fitted_mrode_row.status == "covered_external"
+    @test occursin("validated via the R-lane bridge", fitted_mrode_row.claim_boundary)
+    comparators_row = only(row for row in validation if row.id == "V1-COMPARATORS")
+    @test comparators_row.status == "covered_external"
+    @test occursin("sommer", comparators_row.evidence)
+    aireml_row = only(row for row in validation if row.id == "V1-AI-REML")
+    @test aireml_row.status == "covered"
+    @test occursin("gryphon", aireml_row.evidence)
+    @test !occursin("250-animal", aireml_row.evidence)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
