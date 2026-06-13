@@ -90,6 +90,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   a transient remote DocumenterVitepress/npm cache failure on run
   `27461779343`. This is workflow hygiene only and does not change the package
   API, docs content, bridge contract, or capability status.
+- The R twin added a supplied-variance Henderson MME fixture at `hsquared`
+  heads `ec2a9cc` and `ca8bce1`; Julia mirrors the fixture for `Ainv`, fixed
+  effects, EBVs, fitted values, and `h2`. This remains supplied-variance
+  validation only: no variance-component estimation, AI-REML, fitted Mrode
+  validation, external fitted-model parity, or production sparse fitting claim.
 
 ## Current State
 
@@ -108,7 +113,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
     for validated specs;
   - experimental direct `fit_animal_model(y, X, Z, Ainv; ...)` target
     implemented for bridge-shaped payloads.
-  - sparse Henderson MME solving at supplied variance components implemented.
+  - sparse Henderson MME solving at supplied variance components implemented
+    and mirrored against the shared R/Julia supplied-variance fixture.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
     in-memory mirror of the R `hs_data()` input-container contract.
   - `HSData` marker-map metadata validation and genotype-marker alignment

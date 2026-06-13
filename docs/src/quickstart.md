@@ -142,6 +142,11 @@ breeding_values(mme).values
 This solves for fixed effects and animal-effect BLUPs/EBVs given variance
 components. It does not estimate those variance components.
 
+The test suite pins the same supplied-variance Henderson fixture as the R twin:
+`sigma_a2 = 1.2`, `sigma_e2 = 0.8`, expected fixed effects, EBVs, fitted
+values, and `h2 = 0.6`. That fixture is validation for equation solving only,
+not variance-component estimation or fitted Mrode output validation.
+
 ## Extract Experimental Low-Level Results
 
 The dense validation path has first extractors for variance components,

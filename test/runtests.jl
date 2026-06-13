@@ -172,6 +172,10 @@ end
     @test mrode9_row.status == "covered_external"
     @test occursin("nadiv::Mrode9", mrode9_row.evidence)
     @test occursin("Pedigree inverse agreement only", mrode9_row.claim_boundary)
+    mme_row = only(row for row in validation if row.id == "V1-MME")
+    @test mme_row.status == "partial"
+    @test occursin("ca8bce1", mme_row.evidence)
+    @test occursin("no variance-component estimation", mme_row.claim_boundary)
     fitted_mrode_row = only(row for row in validation if row.id == "V1-MRODE-FIT")
     @test fitted_mrode_row.status == "planned"
     @test occursin("Fitted Mrode validation is not covered", fitted_mrode_row.claim_boundary)
@@ -746,7 +750,7 @@ end
     )
 end
 
-@testset "Phase 1 Henderson MME validation fixture" begin
+@testset "Phase 1 Henderson MME supplied-variance validation fixture" begin
     ids = ["founder_a", "founder_b", "animal_1", "animal_2", "animal_3"]
     ped = normalize_pedigree(
         ids,
@@ -754,6 +758,13 @@ end
         ["0", "0", "founder_b", "founder_b", "animal_2"],
     )
     Ainv = pedigree_inverse(ped)
+    expected_ainv = [
+        2.0 1.0 -1.0 -1.0 0.0
+        1.0 2.0 -1.0 -1.0 0.0
+        -1.0 -1.0 2.5 0.5 -1.0
+        -1.0 -1.0 0.5 2.5 -1.0
+        0.0 0.0 -1.0 -1.0 2.0
+    ]
 
     y = [3.2, 4.1, 5.4, 5.9]
     X = [
@@ -771,7 +782,24 @@ end
     )
     sigma_a2 = 1.2
     sigma_e2 = 0.8
+    expected_beta = [3.898701298701298, 0.6454545454545471]
+    expected_u = [
+        0.0,
+        0.0,
+        -0.054545454545454695,
+        0.05454545454545385,
+        0.8571428571428561,
+    ]
+    expected_fitted = [
+        3.844155844155843,
+        4.5987012987012985,
+        4.755844155844154,
+        5.401298701298701,
+    ]
+    expected_h2 = 0.6
 
+    @test ped.ids == ids
+    @test isapprox(Matrix(Ainv), expected_ainv)
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML)
     likelihood = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :ML)
     dense_reml = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :REML)
@@ -785,9 +813,11 @@ end
         0,
     )
 
-    expected_beta, expected_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
+    reference_beta, reference_u = _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     mme = henderson_mme(spec, sigma_a2, sigma_e2)
 
+    @test isapprox(reference_beta, expected_beta)
+    @test isapprox(reference_u, expected_u)
     @test sparse_reml.beta ≈ dense_reml.beta
     @test sparse_reml.loglik ≈ dense_reml.loglik
     @test sparse_reml.nobs == length(y)
@@ -796,8 +826,8 @@ end
     @test fixed_effects(fit) ≈ expected_beta
     @test breeding_values(fit).ids == ped.ids
     @test breeding_values(fit).values ≈ expected_u
-    @test fitted_values(fit) ≈ vec(Matrix(X) * expected_beta + Matrix(Z) * expected_u)
-    @test heritability(fit) ≈ sigma_a2 / (sigma_a2 + sigma_e2)
+    @test isapprox(fitted_values(fit), expected_fitted)
+    @test isapprox(heritability(fit), expected_h2)
 
     @test mme isa HendersonMMEResult
     @test mme.spec === spec
@@ -806,7 +836,7 @@ end
     @test fixed_effects(mme) ≈ expected_beta
     @test breeding_values(mme).ids == ped.ids
     @test breeding_values(mme).values ≈ expected_u
-    @test fitted_values(mme) ≈ fitted_values(fit)
+    @test isapprox(fitted_values(mme), expected_fitted)
     @test fitted_values(mme; include_random = false) ≈ vec(Matrix(X) * expected_beta)
     @test_throws ArgumentError henderson_mme(spec, 0.0, sigma_e2)
     @test_throws ArgumentError henderson_mme(spec, sigma_a2, -1.0)

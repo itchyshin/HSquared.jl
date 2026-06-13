@@ -32,7 +32,8 @@ Implemented:
 - experimental dense variance-component optimization;
 - experimental dense EBV/BLUP, heritability, PEV, and reliability extraction;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
-- sparse Henderson MME solving at supplied variance components;
+- sparse Henderson MME solving at supplied variance components, with a shared
+  R/Julia fixture for Ainv, fixed effects, EBVs, fitted values, and `h2`;
 - sparse CSC marshalling helper for R sparse matrix slots;
 - `HSData` marker-map metadata validation and genotype-marker alignment checks;
 - `data_status()` diagnostics for `HSData` component presence, ID-overlap

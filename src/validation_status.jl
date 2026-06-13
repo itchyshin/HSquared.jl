@@ -58,9 +58,9 @@ const VALIDATION_STATUS_DATA = (
         "Henderson MME supplied-variance solve",
         "Phase 1",
         "partial",
-        "`henderson_mme()` matches deterministic MME fixtures for fixed effects, EBVs, and fitted values.",
-        "Mrode fitted-output fixture and production sparse solve validation",
-        "Supplied variance components only.",
+        "`henderson_mme()` matches the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and h2; R head ca8bce1 also compares Julia against an independent R MME reference when available.",
+        "Mrode fitted-output fixture, external fitted-model comparators, variance-component estimation, and production sparse solve validation",
+        "Supplied variance components only; no variance-component estimation or fitted Mrode claim.",
     ),
     (
         "V1-DENSE-OUT",

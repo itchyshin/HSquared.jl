@@ -2,6 +2,51 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Henderson MME Supplied-Variance Fixture Sync
+
+- Goal: mirror the R twin's issue #7 supplied-variance Henderson MME validation
+  fixture in Julia tests and docs without promoting variance-component
+  estimation, AI-REML, fitted Mrode validation, or production sparse fitting.
+- Active lenses: Ada, Shannon, Curie, Henderson, Fisher, Hopper, Karpinski,
+  Rose, Grace.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `ec2a9cc` adds
+    `hs_henderson_mme_validation_fixture()` and an independent R MME reference
+    solve.
+  - `hsquared` head `ca8bce1` records CI evidence.
+  - Reported R evidence: R-CMD-check `27461992645`, pkgdown `27461992626`,
+    and Pages `27462024756` success.
+- Julia-side action:
+  - Pinned the shared five-animal fixture in `test/runtests.jl`.
+  - The fixture checks expected `Ainv`, fixed effects, EBVs, fitted values,
+    and `h2 = 0.6` at `sigma_a2 = 1.2` and `sigma_e2 = 0.8`.
+  - Updated `validation_status()`, validation canon, capability status,
+    validation debt, public claims, engine contract, README, roadmap, and
+    Documenter pages with supplied-variance-only wording.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 358 checks; the Henderson MME supplied-variance validation fixture has
+    28 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; Vitepress dependency installation still reported
+    npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches.
+  - Claim scan found only expected boundary wording around no
+    variance-component estimation, no AI-REML, no fitted Mrode validation, no
+    external fitted-model parity, no production sparse fitting, and no
+    performance claim.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Supplied-variance MME validation only.
+  - No variance-component estimation.
+  - No AI-REML.
+  - No fitted Mrode animal-model validation.
+  - No ASReml/BLUPF90/DMU/WOMBAT/sommer/MCMCglmm fitted-model parity.
+  - No production sparse fitting claim.
+
 ## 2026-06-13 Documenter NPM Cache Hardening
 
 - Goal: reduce repeat risk from the transient DocumenterVitepress/npm cache

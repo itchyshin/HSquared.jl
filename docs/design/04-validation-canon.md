@@ -27,6 +27,11 @@ capabilities.
   supplied variance components.
 - Sparse supplied-variance Henderson MME solves agree with deterministic MME
   fixtures before being used inside production fitting.
+- The shared R/Julia supplied-variance Henderson MME fixture pins a five-animal
+  pedigree, `Ainv`, fixed effects, EBVs, fitted values, and `h2 = 0.6` at
+  `sigma_a2 = 1.2` and `sigma_e2 = 0.8`. R head `ca8bce1` records an
+  independent R MME reference and a live Julia comparison when the sibling
+  checkout is available.
 - Pedigree inverse construction has optional external comparator coverage
   through the R twin's `nadiv::Mrode9` / `nadiv::makeAinv()` live test.
 
@@ -38,6 +43,9 @@ Still missing from the Mrode lane:
 - EBVs/BLUPs;
 - heritability;
 - comparator versions and tolerances for fitted outputs.
+
+The supplied-variance Henderson fixture is not a fitted Mrode model and does
+not estimate variance components.
 
 ## Status Words
 

@@ -22,7 +22,7 @@
 | Sparse REML likelihood identity | experimental | `sparse_reml_loglik()` matches dense REML on tiny fixtures using the Henderson MME determinant identity; supplied variance components only, no optimizer or AI-REML |
 | Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
 | Dense validation size guard | implemented | `max_dense_cells` tests for likelihood, dense optimizer, spec dispatch, and direct payload dispatch; guard only, not a sparse solver |
-| Supplied-variance Henderson MME solve | experimental | `henderson_mme()` sparse solve tested against deterministic Henderson MME fixture; does not estimate variance components or claim production fitting |
+| Supplied-variance Henderson MME solve | experimental | `henderson_mme()` sparse solve tested against the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and `h2`; R head `ca8bce1` also compares Julia against an independent R MME reference when available; does not estimate variance components or claim production fitting |
 | Dense EBVs/BLUPs | experimental | `breeding_values()` hand-checked dense identity-relationship test and Henderson MME fixture; no sparse production solve or comparator yet |
 | Dense heritability | experimental | `heritability()` hand-checked simple univariate variance-ratio test |
 | Dense reliability / PEV | experimental | `prediction_error_variance()` and `reliability()` tested against dense Henderson MME inverse; no sparse production solve or comparator yet |

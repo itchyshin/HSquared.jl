@@ -55,7 +55,8 @@ pedigree/Ainv engine utility slice.
 - Experimental direct payload fitting target exists for `y`, `X`, `Z`, `Ainv`
   bridge-shaped inputs.
 - Sparse Henderson mixed-model-equation solving exists at supplied variance
-  components.
+  components, with a shared R/Julia fixture for Ainv, fixed effects, EBVs,
+  fitted values, and `h2`.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R head `8235289` enriches that path with PEV/reliability
@@ -132,7 +133,9 @@ First real capability:
 - experimental dense EBV/BLUP, fitted-value, and heritability extractors;
 - experimental direct payload fitting target for the R parser's intended
   `y`, `X`, `Z`, `Ainv` handoff;
-- sparse Henderson MME solve at supplied variance components;
+- sparse Henderson MME solve at supplied variance components, with a shared
+  R/Julia supplied-variance fixture for fixed effects, EBVs, fitted values,
+  and `h2`;
 - sparse production optimizer and AI-REML;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.

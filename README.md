@@ -59,7 +59,9 @@ Implemented now:
   dense low-level spec path;
 - experimental direct payload fitting target
   `fit_animal_model(y, X, Z, Ainv; ...)` for bridge-shaped inputs;
-- sparse Henderson mixed-model-equation solve at supplied variance components;
+- sparse Henderson mixed-model-equation solve at supplied variance components,
+  with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
+  and `h2`;
 - in-memory `HSData` container and ID-overlap map for phenotype, pedigree,
   genotype, expression, marker, annotation, and environment inputs;
 - marker-map metadata validation and genotype-marker alignment checks inside

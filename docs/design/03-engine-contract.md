@@ -219,6 +219,24 @@ This is not variance-component estimation, not AI-REML, and not Mrode/comparator
 validation. It is the first sparse equation-solve utility needed by the
 production animal-model path.
 
+The shared supplied-variance validation fixture from the R twin uses:
+
+- IDs `founder_a`, `founder_b`, `animal_1`, `animal_2`, `animal_3`;
+- supplied variance components `sigma_a2 = 1.2` and `sigma_e2 = 0.8`;
+- expected fixed effects `(Intercept) = 3.898701298701298` and
+  `x = 0.6454545454545471`;
+- expected EBVs `0`, `0`, `-0.054545454545454695`,
+  `0.05454545454545385`, and `0.8571428571428561`;
+- expected fitted values `3.844155844155843`, `4.5987012987012985`,
+  `4.755844155844154`, and `5.401298701298701`;
+- `h2 = 0.6`.
+
+R head `ca8bce1` records an independent R MME reference and a live Julia
+comparison when a sibling `HSquared.jl` checkout is available. This is
+supplied-variance validation only. It is not variance-component estimation,
+AI-REML, fitted Mrode validation, external fitted-model parity, or production
+sparse fitting.
+
 ## Experimental Dense Optimizer
 
 ```julia

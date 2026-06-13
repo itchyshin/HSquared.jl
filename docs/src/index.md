@@ -44,11 +44,13 @@ Implemented engine utilities:
 - experimental variance-component, fixed-effect, EBV/BLUP, fitted-value, and
   heritability, PEV, and reliability extractors for the dense spec path;
 - experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
-- sparse Henderson mixed-model-equation solve at supplied variance components;
+- sparse Henderson mixed-model-equation solve at supplied variance components,
+  with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
+  and `h2`;
 - sparse CSC marshalling helper for R sparse matrix slots;
 - external opt-in R bridge evidence from the `hsquared` twin;
-- small deterministic tests for malformed pedigrees and hand-checked `Ainv`
-  matrices.
+- small deterministic tests for malformed pedigrees, hand-checked `Ainv`
+  matrices, and supplied-variance Henderson MME outputs.
 - optional R-side `nadiv::Mrode9` comparator evidence for `pedigree_inverse()`.
 
 Planned, but not implemented yet:

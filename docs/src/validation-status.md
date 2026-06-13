@@ -25,7 +25,7 @@ length(status)
 | `V1-AINV-MRODE9` | Mrode9 pedigree inverse comparator | Phase 1 | covered_external | Pedigree inverse agreement only; not fitted Mrode output validation. |
 | `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
 | `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
-| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components only. |
+| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components only; no variance-component estimation or fitted Mrode claim. |
 | `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only. |
 | `V1-MRODE-FIT` | fitted Mrode animal-model outputs | Phase 1 | planned | Fitted Mrode validation is not covered. |
 | `V1-COMPARATORS` | external fitted-model comparators | Phase 1 | planned | No fitted comparator parity claim. |
@@ -41,3 +41,10 @@ For example, the Mrode9 row records the R twin's optional `nadiv::Mrode9` /
 That evidence covers pedigree inverse agreement only. It does not cover fitted
 Mrode variance components, EBVs, heritability, reliability, PEV, or external
 ASReml/BLUPF90/DMU/WOMBAT/sommer/MCMCglmm fitted-model parity.
+
+The `V1-MME` row records the shared supplied-variance Henderson MME fixture
+mirrored from the R twin at head `ca8bce1`. The fixture pins the pedigree
+inverse, fixed effects, EBVs, fitted values, and simple `h2 = 0.6` for supplied
+variance components `sigma_a2 = 1.2` and `sigma_e2 = 0.8`. It is still not
+variance-component estimation, AI-REML, fitted Mrode validation, or fitted
+comparator parity.

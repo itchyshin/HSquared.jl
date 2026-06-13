@@ -36,8 +36,8 @@
   target for bridge-shaped inputs.
 - Added `henderson_mme()` for sparse Henderson mixed-model-equation solving at
   supplied variance components.
-- Added a Henderson mixed-model-equation validation fixture for the dense
-  output path.
+- Added a shared R/Julia Henderson mixed-model-equation validation fixture for
+  the supplied-variance output path.
 - Added `result_payload()` with field names aligned to the R `hsquared_fit`
   extractor contract.
 - Added `HSData`, `HSDataIDMap`, and `id_map()` as an in-memory mirror of the R
