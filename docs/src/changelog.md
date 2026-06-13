@@ -23,6 +23,8 @@
   separation for parsed, reserved, and planned syntax.
 - Added `formula_status()` grammar diagnostics and a Documenter status table
   mirroring the R twin's parsed/reserved/planned grammar rows.
+- Added `validation_status()` diagnostics for covered, external, partial, and
+  planned validation rows.
 - Added `max_dense_cells` guards for the temporary dense validation path.
 - Added experimental dense variance-component optimization for validated
   low-level animal-model specs.

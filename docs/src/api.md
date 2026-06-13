@@ -15,6 +15,9 @@ HSquared.backend_info
 HSquared.FormulaStatusRow
 HSquared.FormulaStatus
 HSquared.formula_status
+HSquared.ValidationStatusRow
+HSquared.ValidationStatus
+HSquared.validation_status
 HSquared.planned_model_terms
 HSquared.planned_genomic_qtl_terms
 HSquared.planned_quantgen_terms

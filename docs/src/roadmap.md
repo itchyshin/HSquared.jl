@@ -16,6 +16,8 @@ Implemented:
 - `backend_info()` status diagnostics for the planned backend vocabulary;
 - `formula_status()` grammar diagnostics for parsed, reserved, and planned
   syntax rows;
+- `validation_status()` diagnostics for covered, external, partial, and
+  planned validation rows;
 - planned model-term vocabulary reservations aligned to the R genomic/QTL and
   standard quantitative-genetic markers;
 - placeholder fitting entry points;

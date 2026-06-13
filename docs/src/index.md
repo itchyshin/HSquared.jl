@@ -23,6 +23,8 @@ Implemented engine utilities:
   with execution unavailable;
 - `formula_status()` grammar diagnostics showing parsed, reserved, and planned
   syntax rows without enabling fitting;
+- `validation_status()` diagnostics showing covered, external, partial, and
+  planned validation rows without running comparator packages;
 - planned model-term vocabulary reservations through `planned_model_terms()`,
   including genomic/QTL terms and standard quantitative-genetic terms such as
   `permanent()`, `common_env()`, `maternal_genetic()`, `dominance()`,

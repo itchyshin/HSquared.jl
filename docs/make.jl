@@ -21,6 +21,7 @@ makedocs(;
         "Home" => "index.md",
         "Get started" => "quickstart.md",
         "Model spec grammar" => "model-spec-grammar.md",
+        "Validation status" => "validation-status.md",
         "Data containers" => "data.md",
         "Pedigrees and Ainv" => "pedigree-ainv.md",
         "Audience and comparators" => "audience-comparators.md",

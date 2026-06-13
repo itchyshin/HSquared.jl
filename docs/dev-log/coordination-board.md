@@ -52,6 +52,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - The R twin added `formula_status()` at `hsquared` head `7ba2df4`; Julia
   mirrors the grammar-status diagnostic with `formula_status()` and a
   Documenter status table.
+- The Julia twin now exposes `validation_status()` as a diagnostic validation
+  ladder for covered, external, partial, and planned evidence. It does not run
+  comparators or promote fitted Mrode support.
 - The R twin expanded the genomics/QTL/GLLVM/GPU/HPC plan at `hsquared` head
   `2c18b30`; Julia mirrors the plan with Documenter and design notes as
   roadmap only.
@@ -87,6 +90,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - sparse Henderson MME solving at supplied variance components implemented.
   - `HSData`, `HSDataIDMap`, and `id_map()` implemented as a conservative
     in-memory mirror of the R `hs_data()` input-container contract.
+  - `validation_status()` implemented as a diagnostic validation-evidence
+    table.
 - R lane handoff from `itchyshin/hsquared` head `b57b48e`:
   - inert `animal()` marker exported;
   - `hs_build_model_spec()` parses `animal(1 | id, pedigree = ped)`;

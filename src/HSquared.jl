@@ -26,6 +26,8 @@ export AMDGPUBackend,
     Pedigree,
     Phase0NotImplementedError,
     ThreadsBackend,
+    ValidationStatus,
+    ValidationStatusRow,
     animal_model_spec,
     backend_info,
     breeding_values,
@@ -66,6 +68,7 @@ export AMDGPUBackend,
     single_step,
     sparse_reml_loglik,
     sparse_csc_matrix,
+    validation_status,
     variance_components
 
 include("backends.jl")
@@ -77,6 +80,7 @@ include("sparse_bridge.jl")
 include("model_spec.jl")
 include("likelihood.jl")
 include("planned_terms.jl")
+include("validation_status.jl")
 include("placeholders.jl")
 
 end

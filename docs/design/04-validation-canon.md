@@ -14,6 +14,10 @@ evidence in tests, docs, and the check log.
 
 ## V0.1 Validation Targets
 
+`validation_status()` exposes the current validation ladder as a typed Julia
+diagnostic. It does not run comparator packages, fit models, or promote planned
+capabilities.
+
 - ID recoding preserves animal labels.
 - Pedigree sorting handles founders and unknown parents.
 - Sparse `Ainv` matches tiny hand-computed examples.
@@ -40,7 +44,11 @@ Still missing from the Mrode lane:
 - `planned`
 - `partial`
 - `covered`
+- `covered_external`
 - `blocked`
 - `deprecated`
 
 Only `covered` capabilities may be described as working in public docs.
+`covered_external` may be described only with its external-evidence boundary,
+such as pedigree inverse agreement in the R twin, not as bundled Julia
+coverage or fitted-model support.

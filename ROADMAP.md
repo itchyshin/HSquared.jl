@@ -23,6 +23,8 @@ pedigree/Ainv engine utility slice.
   do not construct model specs yet. In direct Julia code, the precision-kernel
   marker is qualified as `HSquared.precision()` because `Base.precision`
   already exists.
+- Validation-status diagnostics exist for covered, external, partial, and
+  planned validation rows.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.

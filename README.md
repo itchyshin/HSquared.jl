@@ -39,6 +39,8 @@ Implemented now:
   model specs yet;
 - `formula_status()` grammar diagnostics that mirror the R twin's parsed,
   reserved, and planned formula-status table;
+- `validation_status()` diagnostics for the validation evidence ladder,
+  including covered, external, partial, and planned rows;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated

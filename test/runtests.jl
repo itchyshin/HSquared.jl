@@ -161,6 +161,23 @@ end
     @test any(row.syntax_status == "planned" for row in grammar)
     @test Set(row.syntax_status for row in grammar) == Set(["parsed", "reserved", "planned"])
 
+    validation = validation_status()
+    @test validation isa ValidationStatus
+    @test length(validation) == 11
+    @test validation[begin].id == "V0-LOAD"
+    @test validation[end].id == "V5-GENOMIC-QTL"
+    @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
+    @test "V1-AINV-MRODE9" in [row.id for row in validation]
+    mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
+    @test mrode9_row.status == "covered_external"
+    @test occursin("nadiv::Mrode9", mrode9_row.evidence)
+    @test occursin("Pedigree inverse agreement only", mrode9_row.claim_boundary)
+    fitted_mrode_row = only(row for row in validation if row.id == "V1-MRODE-FIT")
+    @test fitted_mrode_row.status == "planned"
+    @test occursin("Fitted Mrode validation is not covered", fitted_mrode_row.claim_boundary)
+    @test all(!isempty(row.evidence) for row in validation)
+    @test all(!isempty(row.missing) for row in validation)
+
     for (name, fn) in (
         (:genomic, genomic),
         (:single_step, single_step),

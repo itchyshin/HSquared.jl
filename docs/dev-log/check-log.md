@@ -2,6 +2,49 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Validation Status Diagnostic
+
+- Goal: add a Julia-side validation evidence diagnostic that makes covered,
+  external, partial, and planned validation rows queryable without running
+  comparator packages or widening modelling claims.
+- Active lenses: Ada, Shannon, Henderson, Mrode, Fisher, Curie, Rose, Grace.
+- Spawned subagents: none.
+- R twin context:
+  - the R twin has optional `nadiv::Mrode9` / `nadiv::makeAinv()` pedigree-Ainv
+    comparator evidence;
+  - the latest R-only `hs_data()` summary and marker-map validation handoffs
+    had no Julia payload changes and required no Julia action.
+- Julia-side action:
+  - Added `ValidationStatusRow`, `ValidationStatus`, and
+    `validation_status()`.
+  - Added a Documenter Validation Status page.
+  - Updated API docs, README, roadmap, validation canon, capability status,
+    validation debt, public claims, and changelog.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. Testset totals sum
+    to 307 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped
+    as expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+  - `git diff --check` passed.
+  - Additions-only ASCII scan returned no matches. Full edited-file scan sees
+    pre-existing approximate-equality test operators in `test/runtests.jl`,
+    not new text.
+  - Smoke check printed validation rows: `length(validation_status()) == 11`,
+    `V1-AINV-MRODE9` as `covered_external`, and `V1-MRODE-FIT` as planned with
+    `Fitted Mrode validation is not covered.`
+  - Claim scan found only expected status, planned, and blocked wording, not
+    claims that the diagnostic runs comparators, fits models, covers fitted
+    Mrode outputs, or adds genomic/QTL support.
+- Remote checks:
+  - Pending.
+- Boundary:
+  - Diagnostic only.
+  - No comparator execution.
+  - No fitted Mrode validation.
+  - No fitted comparator parity.
+  - No fitting expansion.
+
 ## 2026-06-13 R hs_data Parser Integration Sync
 
 - Goal: mirror the R twin's `hs_data()` parser integration without changing
