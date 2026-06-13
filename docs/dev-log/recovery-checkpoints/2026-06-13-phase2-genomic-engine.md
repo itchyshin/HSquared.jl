@@ -59,3 +59,21 @@ Live at **http://localhost:8791** (persistent dir `~/.claude/hsquared-control-ce
 gh pr view 9
 ```
 (`julia` is not on the non-interactive PATH; use `~/.juliaup/bin/julia`.)
+
+## Update — later same day
+
+- **Phase 3 started**: `repeatability_mme` (supplied-variance two-random-effect
+  solve: additive + permanent-environment) landed (`V3-REPEAT`). Suite now **691
+  tests**. PR #9 has all of the above, CI green, still unmerged.
+- **Two open decisions recorded** (`docs/dev-log/decisions/`):
+  - `2026-06-13-heritability-interval-design.md` — *resolved* (logit-delta shipped).
+  - `2026-06-13-rng-recovery-test-harness.md` — **open**: shipping the
+    **3-component REML** estimator (to estimate σ²a/σ²pe/σ²e and the repeatability
+    coefficient) needs a recovery validation that requires simulated data; the
+    suite is RNG-free. The dense 2-random-effect REML loglik is prototyped and
+    verified (matches the animal-model REML to 1e-6), but the estimator was NOT
+    shipped pending the RNG-test-harness decision. This is the current frontier.
+- Net: the clean, deterministically-validatable autonomous frontier for Phases
+  1–3 (engine side) is reached. Further engine progress (multi-component REML,
+  general multi-random-effect models, maternal/common-env) needs either the RNG
+  decision above or the R-twin model-spec contract.
