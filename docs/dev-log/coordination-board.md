@@ -169,6 +169,16 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   stays dense and `result_payload()` is unchanged (no R bridge change required);
   R can opt in via its existing PEV/reliability extractor enrichment. Posted to
   `HSquared.jl` issue #6.
+- Julia now has an experimental average-information REML estimator:
+  `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
+  same optimum as the dense/sparse NelderMead optimizers, and its AI matrix
+  matches the observed information (ratio ~0.99) on a 250-animal sim — a valid
+  Newton metric (a read-only forensic study of DRM.jl found its AI-REML failed
+  because its augmented-state Laplace model gives a ~5× undersized AI metric;
+  HSquared's exact-Gaussian animal model is the regime where AI-REML is valid).
+  REML-only, Gaussian, experimental; `result_payload()` unchanged; no external
+  comparator yet. Posted to `HSquared.jl` issue #5. For future non-Gaussian
+  phases, observed-information Newton (DRM's solution) is the reuse path.
 
 ## Current State
 

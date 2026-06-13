@@ -2,6 +2,37 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Average-Information REML (fit_ai_reml)
+
+- Goal: a fast, validated sparse REML variance-component estimator —
+  average-information (AI) REML — built on the selinv score traces.
+- Active lenses: Gauss, Fisher, Curie, Karpinski, Rose (inline perspectives).
+- Spawned subagents: forensic DRM.jl AI-REML investigation (workflow
+  `wf_81a0948a`, read-only); no code-writing subagents.
+- Implementation:
+  - Added `fit_ai_reml(spec; ...)` to `likelihood.jl`: each iteration solves the
+    sparse MME, reads the variance-component score from the BLUP solution + the
+    Takahashi selected inverse, forms the average-information matrix from two
+    working-variate re-solves (reusing the factor), and takes an AI/Newton step
+    with positivity step-halving. REML-only, 2-component, Gaussian.
+  - Helpers `_reml_project`, `_ai_newton_step`; `target = :ai_reml` dispatch;
+    exported `fit_ai_reml`; `validation_status` row `V1-AI-REML`.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed. New testset
+    "Phase 1 AI-REML estimator" = 16 checks: AI recovers the same optimum as the
+    NelderMead optimizer (logLik identical), diagnostics, dispatch, guards.
+  - AI-validity check: the AI matrix matches the observed information at the
+    optimum (ratio 0.988 / 0.986) on a 250-animal simulation — a valid Newton
+    metric (the DRM.jl failure mode was a ~5× undersized AI metric).
+  - Benchmark (warmed): AI-REML 10 / 7 iters at N=250 / 1000; vs EM-REML
+    169 / 195 iters; AI fastest at N=1000 (386 ms vs NelderMead 645 ms vs EM
+    11.4 s); NelderMead fastest at N=250.
+- Boundary:
+  - Experimental Gaussian-only REML estimator. The AI form is exact for the
+    Gaussian LMM, NOT for non-Gaussian/Laplace models (observed-info Newton
+    there). No external comparator, large-pedigree, or boundary hardening yet;
+    not the public default; `result_payload()` unchanged.
+
 ## 2026-06-13 REML Optimizer Recovery Validation
 
 - Goal: verify the dense and sparse REML optimizers recover the SAME optimum

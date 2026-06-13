@@ -90,6 +90,15 @@ const VALIDATION_STATUS_DATA = (
         "Experimental sparse PEV path; exact at the L+Lᵀ pattern (diagonal/PEV exact); the default extractor path remains dense.",
     ),
     (
+        "V1-AI-REML",
+        "average-information REML estimator",
+        "Phase 1",
+        "partial",
+        "`fit_ai_reml` estimates the two variance components by average-information REML on the sparse MME (score from the Takahashi selected inverse, AI matrix from working-variate re-solves); it recovers the same optimum as the dense/sparse NelderMead optimizers on tiny + simulated fixtures, and its AI matrix matches the observed information (ratio ~0.99) on a 250-animal simulation.",
+        "external comparator checks, Mrode fitted validation, large-pedigree/boundary hardening, and >2-component generalization",
+        "Experimental Gaussian-only REML estimator; the AI form is exact for the Gaussian linear mixed model but not for non-Gaussian/Laplace models (which need observed-information Newton); not the public default.",
+    ),
+    (
         "V1-MRODE-FIT",
         "fitted Mrode animal-model outputs",
         "Phase 1",

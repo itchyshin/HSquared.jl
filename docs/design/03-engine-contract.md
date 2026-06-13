@@ -253,9 +253,33 @@ validation optimizer.
 This path calls `sparse_reml_loglik()` inside the objective and records
 `target = :sparse_reml`, `dense_validation_path = false`, `sparse_mme_path =
 true`, and `variance_components_source = :estimated_sparse_reml_validation` in
-`fit_diagnostics()`. It is REML-only. It is not AI-REML, not the default public
-R fitting path, not a production sparse solver, and not fitted Mrode or ASReml
-parity evidence.
+`fit_diagnostics()`. It is REML-only. It is not the default public R fitting
+path, not a production sparse solver, and not fitted Mrode or ASReml parity
+evidence.
+
+## Experimental Average-Information REML
+
+```julia
+fit = fit_ai_reml(spec)
+fit = fit_animal_model(spec; target = :ai_reml)
+```
+
+`fit_ai_reml` estimates the two variance components by average-information (AI)
+REML: each iteration solves the sparse Henderson MME, reads the
+variance-component score from the BLUP solution and the Takahashi selected
+inverse, forms the average-information matrix from two working-variate re-solves
+that reuse the Cholesky factor, and takes an AI/Newton step (with step-halving to
+keep variances positive). It records `target = :ai_reml`, `sparse_mme_path =
+true`, and `variance_components_source = :estimated_ai_reml`.
+
+It is REML-only, two-component, and Gaussian. It is validated to recover the same
+optimum as the dense and sparse NelderMead optimizers, and its AI matrix matches
+the observed information (ratio ~0.99 on a 250-animal simulation), so it is a
+valid Newton metric for this model. The AI form is exact only for the Gaussian
+linear mixed model; non-Gaussian / Laplace-approximated models require
+observed-information Newton instead. It is experimental: not externally
+comparator-validated, not large-pedigree or boundary hardened, and not the public
+default.
 
 ## Experimental Henderson MME Solver
 

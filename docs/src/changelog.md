@@ -16,6 +16,11 @@
   `reliability(...; method = :selinv)` use a Takahashi selected inverse of the
   sparse Henderson MME coefficient matrix (kernel adapted from DRM.jl, MIT). The
   default stays `:dense` and matches it to machine precision on tiny fixtures.
+- Added an experimental average-information REML estimator: `fit_ai_reml()` and
+  `fit_animal_model(...; target = :ai_reml)` estimate the two variance components
+  by AI/Newton steps on the sparse Henderson MME (score from the selected
+  inverse, AI matrix from working-variate re-solves). Validated to recover the
+  same optimum as the NelderMead optimizers; REML-only, Gaussian, experimental.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

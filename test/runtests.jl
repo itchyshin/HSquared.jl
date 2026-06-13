@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 13
+    @test length(validation) == 14
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -1478,4 +1478,55 @@ end
     @test bsparse.variance_components.sigma_a2 ≈
           bdense.variance_components.sigma_a2 atol = 1e-5
     @test bsparse.likelihood.loglik ≈ bdense.likelihood.loglik rtol = 1e-6
+end
+
+@testset "Phase 1 AI-REML estimator" begin
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+
+    ai = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    nm = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    @test ai isa AnimalModelFit
+    @test ai.target == :ai_reml
+    @test ai.converged
+    # AI-REML recovers the same REML optimum as the NelderMead optimizer: the
+    # log-likelihood matches tightly; the variance components agree (looser, the
+    # surface is flat for this tiny fixture).
+    @test ai.likelihood.loglik ≈ nm.likelihood.loglik rtol = 1e-5
+    @test ai.variance_components.sigma_a2 ≈ nm.variance_components.sigma_a2 rtol = 2e-2
+    @test ai.variance_components.sigma_e2 ≈ nm.variance_components.sigma_e2 rtol = 2e-2
+    @test heritability(ai) ≈ heritability(nm) rtol = 1e-2
+    @test breeding_values(ai).values ≈ breeding_values(nm).values rtol = 1e-2 atol = 1e-6
+
+    # path-aware diagnostics
+    d = fit_diagnostics(ai)
+    @test d.target == :ai_reml
+    @test d.sparse_mme_path == true
+    @test d.variance_components_source == :estimated_ai_reml
+
+    # target dispatch reaches the same optimum from a different start
+    t = fit_animal_model(spec; target = :ai_reml, initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
+    @test t.target == :ai_reml
+    @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
+
+    # guards
+    @test_throws ArgumentError fit_ai_reml(
+        animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML),
+    )
+    @test_throws ArgumentError fit_ai_reml(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_animal_model(
+        spec;
+        target = :ai_reml,
+        variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
 end

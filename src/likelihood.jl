@@ -333,6 +333,132 @@ function fit_sparse_reml(
 end
 
 """
+    fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+                iterations = 100, tol = 1e-8)
+
+Estimate the Phase 1 Gaussian animal-model variance components by
+average-information (AI) REML.
+
+Each iteration solves the sparse Henderson mixed-model equations, reads the
+variance-component score from the BLUP solution and the Takahashi selected
+inverse (the `tr(Ainv * C^uu)` term), forms the average-information matrix from
+two working-variate re-solves that reuse the same Cholesky factor, and takes an
+AI/Newton step with step-halving to keep the variance components positive.
+
+REML-only and experimental: it is validated to recover the same optimum as the
+dense and sparse NelderMead optimizers, but is not yet checked against external
+comparators or hardened for boundary/large-pedigree cases. The AI form is exact
+for the *Gaussian* linear mixed model (the information matrix uses the data
+directly, so it matches the observed information); it does NOT transfer to
+Laplace-approximated / non-Gaussian models, where observed-information Newton is
+required instead.
+"""
+function fit_ai_reml(
+    spec::AnimalModelSpec;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+)
+    spec.method == :REML ||
+        throw(ArgumentError("fit_ai_reml requires spec.method == :REML"))
+    sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
+    sigma_a2 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("initial sigma_e2 must be positive"))
+
+    X = Float64.(spec.X)
+    Z = sparse(Float64.(spec.Z))
+    Ainv = sparse(Float64.(spec.Ainv))
+    y = Float64.(spec.y)
+    nfixed = size(X, 2)
+    nrandom = size(Z, 2)
+    nobs = length(y)
+
+    converged = false
+    iters = 0
+    for it in 1:iterations
+        iters = it
+        lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factor = cholesky(Symmetric(lhs); check = true)
+        solution = factor \ rhs
+        beta = solution[1:nfixed]
+        u = solution[(nfixed + 1):end]
+        e = y .- X * beta .- Z * u
+        trace_AC =
+            sum(Ainv .* takahashi_selinv(factor)[(nfixed + 1):end, (nfixed + 1):end])
+        uAu = dot(u, Ainv * u)
+
+        score_a = -0.5 / sigma_a2^2 * (nrandom * sigma_a2 - trace_AC - uAu)
+        score_e =
+            -0.5 / sigma_e2^2 *
+            (sigma_e2 * (nobs - nfixed - nrandom + trace_AC / sigma_a2) - dot(e, e))
+        if hypot(score_a, score_e) < tol
+            converged = true
+            break
+        end
+
+        wa = (Z * u) ./ sigma_a2
+        we = e ./ sigma_e2
+        Pwa = _reml_project(factor, X, Z, wa, sigma_e2, nfixed)
+        Pwe = _reml_project(factor, X, Z, we, sigma_e2, nfixed)
+        information = 0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)]
+        step = _ai_newton_step(information, [score_a, score_e])
+
+        a_new = sigma_a2 + step[1]
+        e_new = sigma_e2 + step[2]
+        halvings = 0
+        while (a_new <= 0 || e_new <= 0) && halvings < 60
+            step = step ./ 2
+            a_new = sigma_a2 + step[1]
+            e_new = sigma_e2 + step[2]
+            halvings += 1
+        end
+        (a_new > 0 && e_new > 0) || throw(
+            ErrorException(
+                "fit_ai_reml could not keep variance components positive; try a different start",
+            ),
+        )
+        sigma_a2, sigma_e2 = a_new, e_new
+    end
+
+    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    status = converged ? "converged" : "not_converged"
+    return AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        converged,
+        status,
+        iters,
+        :ai_reml,
+        false,
+        true,
+        :estimated_ai_reml,
+    )
+end
+
+# Apply the REML projection P to a vector via an MME re-solve that reuses
+# `factor`: P w = (w - X b_w - Z u_w) / sigma_e2, where [b_w; u_w] solves the
+# mixed-model equations with `w` in place of `y`.
+function _reml_project(factor, X, Z, w, sigma_e2, nfixed)
+    solution =
+        factor \ vcat(transpose(X) * w ./ sigma_e2, transpose(Z) * w ./ sigma_e2)
+    return (w .- X * solution[1:nfixed] .- Z * solution[(nfixed + 1):end]) ./ sigma_e2
+end
+
+# AI/Newton step for the 2x2 average-information matrix (symmetric PSD); ridge
+# slightly if it is near-singular so the solve stays stable near a boundary.
+function _ai_newton_step(information, score)
+    detinfo = information[1, 1] * information[2, 2] - information[1, 2]^2
+    scale = abs(information[1, 1]) * abs(information[2, 2]) + 1.0
+    matrix = if detinfo <= 1e-12 * scale
+        Symmetric(information + 1e-8 * (tr(information) / 2 + 1) * Matrix{Float64}(I, 2, 2))
+    else
+        Symmetric(information)
+    end
+    return matrix \ score
+end
+
+"""
     henderson_mme(spec, sigma_a2, sigma_e2)
 
 Solve Henderson's mixed-model equations for fixed effects and animal-effect
@@ -401,6 +527,12 @@ function fit_animal_model(
         variance_components === nothing ||
             throw(ArgumentError("variance_components is not used when target = :sparse_reml"))
         return fit_sparse_reml(spec; kwargs...)
+    end
+
+    if normalized_target == :ai_reml
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is not used when target = :ai_reml"))
+        return fit_ai_reml(spec; kwargs...)
     end
 
     isempty(kwargs) ||
@@ -749,8 +881,9 @@ end
 function _coerce_fit_target(target::Symbol)
     target in (:variance_components, :dense_validation) && return :variance_components
     target in (:sparse_reml, :sparse_reml_validation) && return :sparse_reml
+    target in (:ai_reml, :ai_reml_validation) && return :ai_reml
     target == :henderson_mme && return :henderson_mme
-    throw(ArgumentError("target must be :variance_components, :sparse_reml, or :henderson_mme"))
+    throw(ArgumentError("target must be :variance_components, :sparse_reml, :ai_reml, or :henderson_mme"))
 end
 
 function _coerce_fit_target(target::AbstractString)
