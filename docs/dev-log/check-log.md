@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Genomics QTL GPU HPC Roadmap
+
+- Goal: turn the extended user direction on genomics, QTL/eQTL/GWAS,
+  GLLVM-style models, CPU/GPU backends, and HPC into repo-visible Julia docs.
+- Active lenses: Ada, Shannon, Jason, Hopper, Karpinski, Grace, Rose, Darwin,
+  Falconer, Kirkpatrick.
+- Spawned subagents: none.
+- Added:
+  - `docs/src/genomics-qtl-gpu-hpc.md`
+  - `docs/design/08-genomics-qtl-gpu-hpc-plan.md`
+- Updated:
+  - `docs/make.jl`
+  - `docs/src/index.md`
+  - `docs/src/changelog.md`
+- Source anchors checked:
+  - CUDA.jl array and backend docs.
+  - AMDGPU.jl quick-start docs.
+  - Metal.jl docs and `MtlArray` docs.
+  - oneAPI.jl repository.
+  - KernelAbstractions.jl docs.
+- Rose verdict: clean with limitations. The roadmap is ambitious and public,
+  but wording marks genomics/QTL/eQTL/GPU/HPC as planned or experimental until
+  implementation, validation, and benchmark evidence exist.
+
 ## 2026-06-13 Phase 1A Pedigree And Ainv Utility
 
 - Goal: finish the first Julia Phase 1A engine slice: pedigree normalization,

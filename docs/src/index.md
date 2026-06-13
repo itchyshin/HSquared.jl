@@ -72,5 +72,6 @@ not claim model fitting until the Julia engine implements and validates it.
 - [Get started](quickstart.md)
 - [Pedigrees and Ainv](pedigree-ainv.md)
 - [Audience and comparators](audience-comparators.md)
+- [Genomics, QTL, GPU, and HPC](genomics-qtl-gpu-hpc.md)
 - [Roadmap](roadmap.md)
 - [Reference](api.md)
