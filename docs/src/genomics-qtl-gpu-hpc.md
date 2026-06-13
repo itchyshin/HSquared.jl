@@ -31,7 +31,7 @@ Strategic niche:
 - ASReml-style animal and genomic models;
 - open-source and community-oriented;
 - R-friendly syntax;
-- Julia speed and experimental headroom;
+- Julia engine headroom;
 - sparse precision computation;
 - pedigree, genomic, QTL/eQTL, omics, G-matrix, GLLVM, and inheritance-system
   integration;
@@ -65,8 +65,8 @@ Existing tools each cover important parts of this space:
 - XSim.jl: simulation of genomes, pedigrees, and breeding programs.
 - GLLVM.jl / gllvmTMB: high-dimensional latent-variable and response-matrix
   modelling.
-- drmTMB / DRM.jl: R-Julia twin discipline, formula grammar, and fast Julia
-  engine design.
+- drmTMB / DRM.jl: R-Julia twin discipline, formula grammar, and Julia engine
+  design.
 
 `hsquared` should differ by integrating these ideas into one structured
 quantitative-genetic modelling language. Superiority claims must wait for
@@ -495,7 +495,6 @@ CUDABackend()
 AMDGPUBackend()
 MetalBackend()
 OneAPIBackend()
-AutoGPUBackend()
 AutoBackend()
 ```
 
@@ -512,7 +511,7 @@ Julia control:
 
 ```julia
 fit_cpu = hsquared(model, data; backend = CPUBackend())
-fit_gpu = hsquared(model, data; backend = AutoGPUBackend())
+fit_gpu = hsquared(model, data; backend = AutoBackend(), accelerator = :gpu)
 compare_backends(fit_cpu, fit_gpu)
 ```
 

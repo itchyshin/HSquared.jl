@@ -10,7 +10,7 @@ and high-dimensional GLLVM-style extensions.
 
 The intended users are breeders, plant and livestock geneticists, evolutionary
 geneticists, genomic prediction users, and applied analysts who need R syntax
-with a fast Julia engine underneath. Comparator packages such as ASReml,
+with a Julia engine underneath. Comparator packages such as ASReml,
 BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, and nadiv are
 benchmarks to learn from and test against, not claims of current superiority.
 
@@ -23,8 +23,11 @@ not yet a production animal-model engine.
 Implemented now:
 
 - package metadata and CI;
-- a small control object for future backend/save/precision choices;
-- backend marker types;
+- a small control object for future backend/save/precision choices, aligned to
+  the R twin's planned `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and
+  `oneapi` vocabulary;
+- backend marker types for CPU, threaded CPU, CUDA, AMDGPU, Metal, oneAPI, and
+  auto selection;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
 - direct sparse inverse additive relationship matrix construction for validated
@@ -54,6 +57,8 @@ Implemented now:
 
 Planned, but not implemented yet:
 
+- backend execution dispatch, backend availability diagnostics, GPU execution,
+  backend benchmarking, and CPU/GPU numerical agreement tests;
 - sparse production optimization or AI-REML fitting;
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;

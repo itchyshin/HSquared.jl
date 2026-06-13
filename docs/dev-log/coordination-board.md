@@ -36,8 +36,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   fixture at `hsquared` head `fe7e346`.
 - The R twin records an optional `nadiv::Mrode9` / `nadiv::makeAinv()` external
   Ainv comparator at `hsquared` head `369d14a`.
+- The R twin expanded planned backend controls at `hsquared` head `5feac1f`;
+  Julia mirrors the same backend and accelerator vocabulary as metadata only.
 - Production R-to-Julia bridge execution, sparse production fitting, sparse
-  production reliability/PEV, and sparse diagnostics remain planned.
+  production reliability/PEV, sparse diagnostics, GPU execution, backend
+  benchmarking, and CPU/GPU agreement tests remain planned.
 - Public claims require code, tests, docs, validation rows, and Rose audit.
 
 ## Current State
@@ -134,6 +137,16 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - boundary: pedigree inverse agreement only; no fitted Mrode animal-model
     validation, EBV/h2/variance-component validation, production sparse
     fitting, or large-pedigree readiness.
+- R lane handoff from `itchyshin/hsquared` head `5feac1f`:
+  - expanded `hs_control()` metadata vocabulary;
+  - backend names: `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`,
+    `oneapi`;
+  - accelerator names: `auto`, `none`, `gpu`, `cuda`, `amdgpu`, `metal`,
+    `oneapi`;
+  - R-CMD-check `27457948686`, pkgdown `27457948693`, and Pages
+    `27457985141` were green;
+  - boundary: control metadata only; no GPU execution, backend benchmarking, or
+    CPU/GPU numerical agreement claim.
 - Next shared seam: lockstep PEV/reliability payload widening, relationship
   marshalling beyond `Z`, Mrode validation, and `hs_data()` to `HSData` payload
   parity.

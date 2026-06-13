@@ -19,12 +19,12 @@ Users need:
 
 - formula syntax that feels familiar from R mixed-model packages;
 - clear pedigree, genomic, and custom relationship input rules;
-- fast, free, reproducible fitting;
+- free, reproducible, benchmarked fitting;
 - honest diagnostics when models are weakly identified;
 - extractors for breeding values, variance components, heritability, genetic
   correlations, G matrices, and uncertainty;
 - examples in livestock, plant breeding, and evolutionary ecology;
-- bridge access from R so they can use Julia speed without becoming Julia
+- bridge access from R so they can use a Julia engine without becoming Julia
   programmers on day one.
 
 ## Comparator Targets
@@ -58,10 +58,10 @@ user can move between them without relearning the model language.
 
 ## Evidence Gate
 
-The long-term ambition is to be a free, fast, open engine that can compete with
-proprietary and production animal-breeding software. Public wording must not say
-it is faster, more accurate, or a replacement for any comparator until the
-claim has benchmark evidence with:
+The long-term ambition is to be a free, open, benchmarked engine that can
+compete with proprietary and production animal-breeding software. Public
+wording must not say it is faster, more accurate, or a replacement for any
+comparator until the claim has benchmark evidence with:
 
 - software versions;
 - machine and hardware details;

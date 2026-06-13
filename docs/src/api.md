@@ -3,7 +3,11 @@
 ```@docs
 HSquared.HSControl
 HSquared.CPUBackend
+HSquared.ThreadsBackend
 HSquared.CUDABackend
+HSquared.AMDGPUBackend
+HSquared.MetalBackend
+HSquared.OneAPIBackend
 HSquared.AutoBackend
 HSquared.GaussianFamily
 HSquared.HSData

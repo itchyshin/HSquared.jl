@@ -6,8 +6,10 @@
 
 Store planned engine controls for future `HSquared.jl` model calls.
 
-Phase 0 validates and records these controls so the R and Julia twins can agree
-on names before model fitting exists.
+Phase 1 validates and records these controls so the R and Julia twins can agree
+on names before production backend dispatch exists. CPU is the trusted
+always-available path; accelerator names are future optional-extension
+metadata.
 """
 struct HSControl
     backend::AbstractBackend
@@ -36,8 +38,12 @@ function HSControl(;
     normalized_accelerator = _coerce_symbol(accelerator, :accelerator)
     normalized_save = _coerce_symbol(save, :save)
 
-    normalized_accelerator in (:auto, :none, :cuda) ||
-        throw(ArgumentError("accelerator must be :auto, :none, or :cuda"))
+    normalized_accelerator in ACCELERATOR_SYMBOLS ||
+        throw(
+            ArgumentError(
+                "accelerator must be :auto, :none, :gpu, :cuda, :amdgpu, :metal, or :oneapi",
+            ),
+        )
     normalized_save in (:minimal, :full, :tiny) ||
         throw(ArgumentError("save must be :minimal, :full, or :tiny"))
     precision in (Float64, Float32) ||
@@ -55,6 +61,8 @@ function HSControl(;
         disk_cache,
     )
 end
+
+const ACCELERATOR_SYMBOLS = (:auto, :none, :gpu, :cuda, :amdgpu, :metal, :oneapi)
 
 function _coerce_symbol(value::Symbol, name::Symbol)
     return value

@@ -6,6 +6,8 @@ Use this register before changing README, docs, issue text, or examples.
 | --- | --- | --- | --- |
 | `HSquared.jl` is a Julia package scaffold | covered | local tests and GitHub Actions CI green | implemented scaffold |
 | `HSquared.jl` is the Julia engine package identity | covered | public repo exists and package loads | Julia engine scaffold |
+| backend and accelerator vocabulary is recorded | covered | `HSControl` tests for CPU, threaded CPU, CUDA, AMDGPU, Metal, oneAPI, generic GPU, and auto metadata; R head `5feac1f` mirrors the same vocabulary | planned control metadata only; CPU is the trusted always-available path, accelerator names are future optional-extension targets |
+| GPU backend execution works | planned | marker types and controls only | planned |
 | Julia `hsquared()` performs model fitting | planned | placeholder only | planned |
 | high-level `fit_animal_model()` performs production Gaussian animal-model fitting | planned | unsupported signatures still use honest placeholder errors; exact low-level dense methods are experimental | planned production target |
 | pedigree validation and sorting | covered | `normalize_pedigree()` tests over valid and malformed pedigrees | implemented engine utility |

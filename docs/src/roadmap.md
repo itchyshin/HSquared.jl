@@ -11,7 +11,8 @@ Phase 0 is complete. Phase 1 has started.
 Implemented:
 
 - package scaffold and CI;
-- control/backend markers;
+- control/backend markers for the shared planned `auto`, `cpu`, `threads`,
+  `cuda`, `amdgpu`, `metal`, and `oneapi` vocabulary;
 - placeholder fitting entry points;
 - pedigree validation and topological sorting;
 - direct sparse `Ainv` construction for validated pedigrees;
@@ -37,6 +38,8 @@ Not implemented:
 - sparse production animal-model REML/ML or AI-REML fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - production R-to-Julia fitting bridge.
+- backend execution dispatch, backend availability diagnostics, GPU execution,
+  backend benchmarking, and CPU/GPU numerical agreement tests.
 
 ## Phase 1: Simple Gaussian Animal Model
 

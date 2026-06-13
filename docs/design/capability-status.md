@@ -3,8 +3,8 @@
 | Capability | Status | Evidence |
 | --- | --- | --- |
 | Package loads | implemented | `test/runtests.jl` |
-| Backend marker types | implemented | `CPUBackend`, `CUDABackend`, `AutoBackend` tests |
-| `HSControl` validation | implemented | `test/runtests.jl` |
+| Backend marker types | implemented | `CPUBackend`, `ThreadsBackend`, `CUDABackend`, `AMDGPUBackend`, `MetalBackend`, `OneAPIBackend`, and `AutoBackend` tests; marker types only, no backend dispatch |
+| `HSControl` validation | implemented | validates shared R/Julia planned backend and accelerator vocabulary in `test/runtests.jl`; no backend execution claim |
 | `HSData` input container | implemented | in-memory phenotype/pedigree/genotype/expression ID-map tests; no file-backed storage or modelling claim |
 | `hsquared()` fitting | planned | Phase 0 placeholder only |
 | `fit_animal_model(spec)` dense fitting | experimental | dispatches to `fit_variance_components()` for validated `AnimalModelSpec`; all other signatures remain placeholders |

@@ -22,7 +22,7 @@ The package should make common work straightforward:
   correlations, G matrices, and uncertainty;
 - compare models with diagnostics that distinguish weak evidence from software
   failure;
-- move from R syntax to Julia speed through a bridge.
+- move from R syntax to a Julia engine through a bridge.
 
 ## Comparator Discipline
 
@@ -30,9 +30,9 @@ The package should make common work straightforward:
 ASReml, BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, nadiv, and
 XSim-based simulations where appropriate.
 
-The ambition is to become a free, fast, open engine for pedigree, genomic,
-livestock, plant-breeding, and evolutionary quantitative genetics. That is a
-roadmap goal. It is not yet a benchmark claim.
+The ambition is to become a free, open, benchmarked engine for pedigree,
+genomic, livestock, plant-breeding, and evolutionary quantitative genetics.
+That is a roadmap goal. It is not yet a benchmark claim.
 
 Any public speed or superiority claim must report the machine, software
 versions, model, data size, number of records, animals, traits, nonzeros,

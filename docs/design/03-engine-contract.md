@@ -12,6 +12,31 @@ This direct payload entry point is implemented as an experimental dense path.
 It validates the payload with `animal_model_spec()` and dispatches to
 `fit_variance_components()`.
 
+## Implemented Control Metadata
+
+```julia
+HSControl(backend = :auto, accelerator = :auto)
+HSControl(backend = :cpu, accelerator = :none)
+HSControl(backend = :threads)
+HSControl(backend = :cuda, accelerator = :cuda)
+HSControl(backend = :amdgpu, accelerator = :amdgpu)
+HSControl(backend = :metal, accelerator = :metal)
+HSControl(backend = :oneapi, accelerator = :oneapi)
+HSControl(accelerator = :gpu)
+```
+
+Julia mirrors the R twin's planned backend vocabulary from `hsquared` head
+`5feac1f`:
+
+- backend: `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, `oneapi`;
+- accelerator: `auto`, `none`, `gpu`, `cuda`, `amdgpu`, `metal`, `oneapi`.
+
+This is control metadata only. `CPUBackend()` is the trusted always-available
+path. `CUDABackend()`, `AMDGPUBackend()`, `MetalBackend()`, and
+`OneAPIBackend()` are future optional-extension markers. There is no GPU
+execution, backend benchmarking, device availability detection, or CPU/GPU
+numerical agreement test yet.
+
 ## Implemented Relationship Utility
 
 ```julia

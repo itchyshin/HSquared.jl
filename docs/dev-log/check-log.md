@@ -2,6 +2,39 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Planned Backend Vocabulary Mirror
+
+- Goal: mirror the R twin's planned backend and accelerator vocabulary in
+  Julia controls and docs.
+- Active lenses: Ada, Shannon, Hopper, Karpinski, Grace, Rose.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `5feac1f` expanded `hs_control()` metadata vocabulary.
+  - backend names: `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`,
+    `oneapi`;
+  - accelerator names: `auto`, `none`, `gpu`, `cuda`, `amdgpu`, `metal`,
+    `oneapi`;
+  - R-CMD-check `27457948686`, pkgdown `27457948693`, and Pages
+    `27457985141` were green.
+- Julia-side action:
+  - Added marker types: `ThreadsBackend`, `AMDGPUBackend`, `MetalBackend`, and
+    `OneAPIBackend`.
+  - Expanded `HSControl()` validation for the shared backend and accelerator
+    vocabulary.
+  - Updated API docs, roadmap, capability status, validation debt, public
+    claims, and coordination board.
+- Local checks:
+  - `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 197 checks.
+  - `julia --project=docs docs/make.jl` passed. Local deployment was skipped as
+    expected outside CI; generated Vitepress dependencies reported npm
+    advisories in temporary build artifacts.
+- Boundary:
+  - Control metadata only.
+  - CPU remains the trusted always-available path.
+  - CUDA, AMDGPU, Metal, and oneAPI are future optional-extension markers.
+  - No GPU execution, backend availability diagnostics, backend benchmarking,
+    or CPU/GPU numerical agreement claim.
+
 ## 2026-06-13 Phase 1N Sparse REML Identity And Mrode9 Ainv Sync
 
 - Goal: add a sparse supplied-variance REML likelihood identity and mirror the

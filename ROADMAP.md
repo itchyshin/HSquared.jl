@@ -12,7 +12,8 @@ Phase 0 public scaffold is complete. Phase 1 has started with the first
 pedigree/Ainv engine utility slice.
 
 - Package loads.
-- Control/backend placeholders exist.
+- Control/backend placeholders exist for the shared planned vocabulary:
+  `auto`, `cpu`, `threads`, `cuda`, `amdgpu`, `metal`, and `oneapi`.
 - Pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting exist.
 - In-memory `HSData` input container and conservative ID-overlap map exist.
@@ -41,6 +42,9 @@ pedigree/Ainv engine utility slice.
   `sparse_csc_matrix()`.
 - Production high-level formula fitting and production R bridge execution are
   not implemented.
+- Backend execution dispatch, backend availability diagnostics, GPU execution,
+  backend benchmarking, and CPU/GPU numerical agreement tests are not
+  implemented.
 - Public model syntax is planned, not executable.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.

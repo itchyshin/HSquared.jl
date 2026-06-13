@@ -17,6 +17,8 @@ animal-model fitting or production R bridge execution.
 Implemented engine utilities:
 
 - package loading and control/backend marker types;
+- planned backend and accelerator control vocabulary for CPU, threaded CPU,
+  CUDA, AMDGPU, Metal, oneAPI, generic GPU preference, and auto selection;
 - honest placeholder entry points for future model fitting;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
   sorting;
@@ -47,6 +49,8 @@ Planned, but not implemented yet:
 - multivariate animal models and G matrices;
 - genomic, single-step, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
+- backend execution dispatch, backend availability diagnostics, GPU execution,
+  backend benchmarking, and CPU/GPU numerical agreement tests.
 
 ## Install
 

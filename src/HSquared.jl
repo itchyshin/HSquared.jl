@@ -4,7 +4,8 @@ using LinearAlgebra
 using Optim
 using SparseArrays
 
-export AutoBackend,
+export AMDGPUBackend,
+    AutoBackend,
     AnimalModelFit,
     AnimalModelSpec,
     BreedingValues,
@@ -16,8 +17,11 @@ export AutoBackend,
     HSControl,
     HSData,
     HSDataIDMap,
+    MetalBackend,
+    OneAPIBackend,
     Pedigree,
     Phase0NotImplementedError,
+    ThreadsBackend,
     animal_model_spec,
     breeding_values,
     fit_animal_model,

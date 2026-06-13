@@ -78,10 +78,15 @@ end
     @test control.disk_cache == false
 
     @test HSControl(backend = :cpu).backend isa CPUBackend
+    @test HSControl(backend = "threads").backend isa ThreadsBackend
     @test HSControl(backend = "cuda", accelerator = "cuda", precision = Float32, save = "tiny").backend isa CUDABackend
+    @test HSControl(backend = :amdgpu, accelerator = :amdgpu).backend isa AMDGPUBackend
+    @test HSControl(backend = :metal, accelerator = "metal").backend isa MetalBackend
+    @test HSControl(backend = "oneapi", accelerator = :oneapi).backend isa OneAPIBackend
+    @test HSControl(accelerator = :gpu).accelerator == :gpu
 
     @test_throws ArgumentError HSControl(backend = :bogus)
-    @test_throws ArgumentError HSControl(accelerator = :metal)
+    @test_throws ArgumentError HSControl(accelerator = :threads)
     @test_throws ArgumentError HSControl(precision = Float16)
     @test_throws ArgumentError HSControl(save = :everything)
 
