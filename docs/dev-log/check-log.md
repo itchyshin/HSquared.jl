@@ -2,6 +2,49 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Sparse REML Validation Optimizer
+
+- Goal: add a Julia-only sparse REML optimization atom without changing the
+  R bridge payload or claiming production sparse fitting.
+- Active lenses: Ada, Shannon, Henderson, Gauss, Fisher, Curie, Karpinski,
+  Grace, Rose, Hopper.
+- Spawned subagents: none.
+- R lane boundary:
+  - The sibling R repo was observed with an uncommitted edit in
+    `R/validation-fixtures.R`; this Julia slice did not touch the R repo.
+  - No R bridge payload fields were added or required.
+- Julia implementation:
+  - Added exported `fit_sparse_reml()`.
+  - Added `fit_animal_model(...; target = :sparse_reml)` dispatch for validated
+    REML specs and direct `y`, `X`, `Z`, `Ainv` payloads.
+  - Extended `AnimalModelFit` with metadata for `target`,
+    `dense_validation_path`, `sparse_mme_path`, and
+    `variance_components_source`, while preserving the existing constructor
+    used by current tests and fixtures.
+  - Updated `fit_diagnostics()` and compact `result_payload()` diagnostics to
+    report the stored validation-path metadata.
+  - Kept `result_payload()` field names unchanged.
+- Local checks so far:
+  - Initial `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 540
+    checks.
+  - Initial `julia --project=docs docs/make.jl` exposed a
+    non-positive-definite sparse objective trial in the quickstart example.
+  - Updated `fit_sparse_reml()` to treat non-positive-definite sparse objective
+    trial points as invalid optimizer points rather than aborting.
+  - Final `julia --project=. -e 'using Pkg; Pkg.test()'` passed with 543
+    checks.
+  - Final `julia --project=docs docs/make.jl` passed. Local deployment was
+    skipped as expected outside CI; Vitepress dependency installation still
+    reported npm advisories in generated/transient build artifacts.
+  - `git diff --check` passed.
+  - Claim-boundary scan found expected blocked/status wording only.
+- Boundary:
+  - Experimental REML-only sparse validation optimizer.
+  - Not AI-REML.
+  - Not the default public R fitting path.
+  - Not production sparse fitting.
+  - No fitted Mrode or external fitted-model comparator claim.
+
 ## 2026-06-13 Mission-Control Documenter Page
 
 - Goal: add a dashboard-style Documenter page for the Julia lane, matching the

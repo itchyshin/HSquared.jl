@@ -8,6 +8,9 @@
   components.
 - Added sparse REML log-likelihood evaluation at supplied variance components
   using the Henderson MME determinant identity.
+- Added experimental `fit_sparse_reml()` and
+  `fit_animal_model(...; target = :sparse_reml)` dispatch for REML-only sparse
+  validation optimization.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,
   AMDGPU, Metal, and oneAPI markers alongside CPU, CUDA, and auto metadata.
 - Added `backend_info()` typed status diagnostics for planned backend rows with

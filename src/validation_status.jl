@@ -54,6 +54,15 @@ const VALIDATION_STATUS_DATA = (
         "Supplied-variance REML objective only; no variance-component estimation.",
     ),
     (
+        "V1-SPARSE-REML-OPT",
+        "sparse REML validation optimizer",
+        "Phase 1",
+        "partial",
+        "`fit_sparse_reml()` optimizes the sparse REML objective on tiny fixtures and improves over the supplied starting variances.",
+        "AI-REML, fitted Mrode likelihood validation, external fitted-model comparators, production sparse diagnostics, and large sparse fixtures",
+        "Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting.",
+    ),
+    (
         "V1-MME",
         "Henderson MME supplied-variance solve",
         "Phase 1",

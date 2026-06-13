@@ -69,6 +69,7 @@ HSquared.HendersonMMEResult
 HSquared.henderson_mme
 HSquared.AnimalModelFit
 HSquared.BreedingValues
+HSquared.fit_sparse_reml
 HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.fixed_effects

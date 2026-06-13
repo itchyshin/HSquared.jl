@@ -155,6 +155,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   reliability, derived accuracy, and `h2`. This strengthens supplied-variance
   equation and extractor evidence, but remains not fitted Mrode output
   validation and not variance-component estimation.
+- Julia now has an experimental `fit_sparse_reml()` path and matching
+  `fit_animal_model(...; target = :sparse_reml)` dispatch for validated REML
+  specs and direct payloads. This optimizes the sparse REML objective for tiny
+  validation fixtures only. It does not change the compact `result_payload()`,
+  does not require an R bridge change, and is not AI-REML, fitted Mrode
+  validation, external fitted-model parity, or production sparse fitting.
 
 ## Current State
 
@@ -166,6 +172,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   - low-level `AnimalModelSpec` validation implemented;
   - dense Gaussian likelihood evaluation implemented for supplied variance
     components with a `max_dense_cells` guard;
+  - experimental sparse REML validation optimization implemented for validated
+    REML specs;
   - experimental dense variance-component optimization implemented for
     validated specs;
   - experimental dense variance-component, fixed-effect, MME-backed EBV/BLUP

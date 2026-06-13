@@ -60,6 +60,8 @@ pedigree/Ainv engine utility slice.
   components, with a `max_dense_cells` guard for the temporary dense path.
 - Sparse REML likelihood evaluation exists at supplied variance components via
   the Henderson MME determinant identity.
+- Experimental sparse REML validation optimization exists for validated REML
+  specs; it is not AI-REML and not production sparse fitting.
 - Experimental dense variance-component optimization exists for low-level
   validated Julia specs.
 - Experimental low-level variance-component, fixed-effect, MME-backed
@@ -155,6 +157,8 @@ First real capability:
   covered for supplied variance components with a dense-size guard;
 - sparse REML likelihood identity at supplied variance components; initial
   validation bridge covered against the dense evaluator;
+- experimental sparse REML validation optimization; initial low-level REML-only
+  path covered on tiny fixtures;
 - experimental dense variance-component optimization; initial low-level path
   covered for validated specs;
 - experimental MME-backed EBV/BLUP aliases and fitted-value extractors, plus
@@ -168,7 +172,7 @@ First real capability:
 - Mrode9-shaped supplied-variance validation for dense/sparse likelihood
   identity, Henderson MME outputs, PEV, reliability, derived accuracy, and
   `h2`;
-- sparse production optimizer and AI-REML;
+- production sparse optimizer and AI-REML;
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability.
 - in-memory phenotype/pedigree/genotype/expression ID container plus

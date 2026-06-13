@@ -55,6 +55,8 @@ Implemented now:
   guard for the temporary dense path;
 - sparse REML log-likelihood evaluation at supplied variance components via
   the Henderson MME determinant identity;
+- experimental sparse REML validation optimization for low-level validated
+  animal-model specs;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
 - experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
@@ -110,7 +112,7 @@ Planned, but not implemented yet:
 
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests;
-- sparse production optimization or AI-REML fitting;
+- production sparse optimization or AI-REML fitting;
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
@@ -255,6 +257,16 @@ tiny/local.
 Use `max_dense_cells` in direct Julia validation runs where accidental dense
 allocation needs to fail early.
 
+An experimental sparse REML validation optimizer is also available:
+
+```julia
+sparse_fit = fit_sparse_reml(spec)
+```
+
+This optimizes the same sparse REML objective used by `sparse_reml_loglik()`.
+It is REML-only, not AI-REML, not the default fitting path, and not production
+sparse fitting.
+
 The first sparse equation solve is also available at supplied variance
 components:
 
@@ -312,6 +324,7 @@ available experimentally:
 
 ```julia
 fit = fit_animal_model(y, X, Z, Ainv; method = :REML)
+sparse_fit = fit_animal_model(y, X, Z, Ainv; method = :REML, target = :sparse_reml)
 mme = fit_animal_model(
     y,
     X,

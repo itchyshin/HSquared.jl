@@ -22,7 +22,8 @@ end
 Experimental low-level Gaussian animal-model fit object.
 
 This is returned only for validated [`AnimalModelSpec`](@ref) inputs. It uses
-the current dense likelihood evaluator and a conservative optimizer path.
+the current dense likelihood evaluator or sparse REML validation objective and
+a conservative optimizer path.
 """
 struct AnimalModelFit{TS<:AnimalModelSpec}
     spec::TS
@@ -31,6 +32,32 @@ struct AnimalModelFit{TS<:AnimalModelSpec}
     converged::Bool
     optimizer_status::String
     iterations::Int
+    target::Symbol
+    dense_validation_path::Bool
+    sparse_mme_path::Bool
+    variance_components_source::Symbol
+end
+
+function AnimalModelFit(
+    spec::AnimalModelSpec,
+    likelihood::GaussianLikelihoodResult,
+    variance_components::NamedTuple{(:sigma_a2, :sigma_e2),Tuple{Float64,Float64}},
+    converged::Bool,
+    optimizer_status::AbstractString,
+    iterations::Integer,
+)
+    return AnimalModelFit(
+        spec,
+        likelihood,
+        variance_components,
+        converged,
+        String(optimizer_status),
+        Int(iterations),
+        :variance_components,
+        true,
+        false,
+        :estimated_dense_validation,
+    )
 end
 
 """
@@ -242,6 +269,70 @@ function fit_variance_components(
 end
 
 """
+    fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+                    iterations = 1_000)
+
+Optimize the sparse Gaussian REML validation objective over positive variance
+components.
+
+The optimizer works on log-variance parameters and uses
+[`sparse_reml_loglik`](@ref) as the objective. This is a Phase 1 validation
+path toward sparse fitting. It is REML-only, not AI-REML, not the default
+fitting path, and not a production sparse solver.
+"""
+function fit_sparse_reml(
+    spec::AnimalModelSpec;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 1_000,
+)
+    spec.method == :REML ||
+        throw(ArgumentError("fit_sparse_reml requires spec.method == :REML"))
+    sigma_a2_start, sigma_e2_start = _coerce_initial_variances(initial)
+    sigma_a2_start > 0 ||
+        throw(ArgumentError("initial sigma_a2 must be positive"))
+    sigma_e2_start > 0 ||
+        throw(ArgumentError("initial sigma_e2 must be positive"))
+
+    function objective(logtheta)
+        try
+            return -sparse_reml_loglik(
+                spec,
+                exp(logtheta[1]),
+                exp(logtheta[2]),
+            ).loglik
+        catch err
+            err isa PosDefException && return Inf
+            rethrow()
+        end
+    end
+
+    result = optimize(
+        objective,
+        log.([sigma_a2_start, sigma_e2_start]),
+        NelderMead(),
+        Optim.Options(iterations = iterations),
+    )
+
+    sigma_a2, sigma_e2 = exp.(Optim.minimizer(result))
+    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    converged = Optim.converged(result)
+    status = converged ? "converged" : "not_converged"
+
+    return AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        converged,
+        status,
+        Optim.iterations(result),
+        :sparse_reml,
+        false,
+        true,
+        :estimated_sparse_reml_validation,
+    )
+end
+
+"""
     henderson_mme(spec, sigma_a2, sigma_e2)
 
 Solve Henderson's mixed-model equations for fixed effects and animal-effect
@@ -285,6 +376,8 @@ Fit or solve the Phase 1 Gaussian animal-model engine target for a validated
 
 The default `target = :variance_components` dispatches to
 [`fit_variance_components`](@ref), the experimental dense validation optimizer.
+`target = :sparse_reml` dispatches to [`fit_sparse_reml`](@ref), the
+experimental sparse REML validation optimizer.
 `target = :henderson_mme` requires supplied `variance_components` and returns a
 [`HendersonMMEResult`](@ref). The Henderson target solves mixed-model equations
 at supplied variance components; it does not estimate them and does not return
@@ -302,6 +395,12 @@ function fit_animal_model(
         variance_components === nothing ||
             throw(ArgumentError("variance_components is only used when target = :henderson_mme"))
         return fit_variance_components(spec; kwargs...)
+    end
+
+    if normalized_target == :sparse_reml
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is not used when target = :sparse_reml"))
+        return fit_sparse_reml(spec; kwargs...)
     end
 
     isempty(kwargs) ||
@@ -374,7 +473,7 @@ function fit_diagnostics(fit::AnimalModelFit)
     return (
         engine = :julia,
         result_type = :animal_model_fit,
-        target = :variance_components,
+        target = fit.target,
         method = fit.likelihood.method,
         family = :gaussian,
         converged = fit.converged,
@@ -383,9 +482,9 @@ function fit_diagnostics(fit::AnimalModelFit)
         loglik = fit.likelihood.loglik,
         df = fit.likelihood.nfixed + length(vc),
         nobs = fit.likelihood.nobs,
-        dense_validation_path = true,
-        sparse_mme_path = false,
-        variance_components_source = :estimated_dense_validation,
+        dense_validation_path = fit.dense_validation_path,
+        sparse_mme_path = fit.sparse_mme_path,
+        variance_components_source = fit.variance_components_source,
     )
 end
 
@@ -595,8 +694,9 @@ end
 Return a bridge-facing result payload with field names aligned to the R
 `hsquared_fit` contract.
 
-This is a dense experimental payload. It is intended to make the R-Julia result
-shape explicit before live bridge execution is wired.
+This is an experimental low-level payload. It is intended to make the R-Julia
+result shape explicit before live bridge execution is widened beyond tiny
+validation paths.
 """
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
@@ -619,7 +719,7 @@ function result_payload(fit::AnimalModelFit)
             optimizer_status = fit.optimizer_status,
             iterations = fit.iterations,
             method = fit.likelihood.method,
-            dense_validation_path = true,
+            dense_validation_path = fit.dense_validation_path,
         ),
         converged = fit.converged,
     )
@@ -651,8 +751,9 @@ end
 
 function _coerce_fit_target(target::Symbol)
     target in (:variance_components, :dense_validation) && return :variance_components
+    target in (:sparse_reml, :sparse_reml_validation) && return :sparse_reml
     target == :henderson_mme && return :henderson_mme
-    throw(ArgumentError("target must be :variance_components or :henderson_mme"))
+    throw(ArgumentError("target must be :variance_components, :sparse_reml, or :henderson_mme"))
 end
 
 function _coerce_fit_target(target::AbstractString)

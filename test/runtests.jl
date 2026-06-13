@@ -163,7 +163,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 11
+    @test length(validation) == 12
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -181,6 +181,10 @@ end
     @test occursin("Mrode9-shaped supplied-variance fixture", lik_row.evidence)
     sparse_reml_row = only(row for row in validation if row.id == "V1-SPARSE-REML")
     @test occursin("Mrode9-shaped supplied-variance fixture", sparse_reml_row.evidence)
+    sparse_reml_opt_row = only(row for row in validation if row.id == "V1-SPARSE-REML-OPT")
+    @test sparse_reml_opt_row.status == "partial"
+    @test occursin("fit_sparse_reml", sparse_reml_opt_row.evidence)
+    @test occursin("not AI-REML", sparse_reml_opt_row.claim_boundary)
     fitted_mrode_row = only(row for row in validation if row.id == "V1-MRODE-FIT")
     @test fitted_mrode_row.status == "planned"
     @test occursin("Fitted Mrode validation is not covered", fitted_mrode_row.claim_boundary)
@@ -804,6 +808,29 @@ end
 
     fit2 = fit_animal_model(spec; initial = [1.0, 1.0], iterations = 100)
     @test fit2 isa AnimalModelFit
+
+    reml_spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    sparse_start = sparse_reml_loglik(reml_spec, 1.0, 1.0)
+    sparse_fit = fit_sparse_reml(reml_spec; initial = (sigma_a2 = 0.8, sigma_e2 = 0.8), iterations = 100)
+    @test sparse_fit isa AnimalModelFit
+    @test sparse_fit.spec === reml_spec
+    @test sparse_fit.target == :sparse_reml
+    @test sparse_fit.likelihood.method == :REML
+    @test sparse_fit.likelihood.loglik >= sparse_start.loglik
+    @test sparse_fit.variance_components.sigma_a2 > 0
+    @test sparse_fit.variance_components.sigma_e2 > 0
+    @test sparse_fit.optimizer_status in ("converged", "not_converged")
+
+    target_sparse = fit_animal_model(
+        reml_spec;
+        target = :sparse_reml,
+        initial = [0.8, 0.8],
+        iterations = 100,
+    )
+    @test target_sparse isa AnimalModelFit
+    @test target_sparse.target == :sparse_reml
+    @test target_sparse.likelihood.loglik ≈ sparse_fit.likelihood.loglik
+
     target_mme = fit_animal_model(
         spec;
         target = :henderson_mme,
@@ -818,6 +845,14 @@ end
     @test_throws ArgumentError fit_variance_components(spec; initial = [1.0])
     @test_throws ArgumentError fit_variance_components(spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
     @test_throws ArgumentError fit_variance_components(spec; max_dense_cells = 17)
+    @test_throws ArgumentError fit_sparse_reml(spec)
+    @test_throws ArgumentError fit_sparse_reml(reml_spec; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_animal_model(spec; target = :sparse_reml)
+    @test_throws ArgumentError fit_animal_model(
+        reml_spec;
+        target = :sparse_reml,
+        variance_components = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
     @test_throws ArgumentError fit_animal_model(spec; max_dense_cells = 17)
     @test_throws ArgumentError fit_animal_model(
         spec;
@@ -925,6 +960,7 @@ end
     @test diagnostics.engine == :julia
     @test diagnostics.result_type == :animal_model_fit
     @test diagnostics.target == :variance_components
+    @test fit.target == :variance_components
     @test diagnostics.method == :ML
     @test diagnostics.family == :gaussian
     @test diagnostics.converged == true
@@ -936,6 +972,25 @@ end
     @test diagnostics.dense_validation_path == true
     @test diagnostics.sparse_mme_path == false
     @test diagnostics.variance_components_source == :estimated_dense_validation
+
+    sparse_fit = AnimalModelFit(
+        animal_model_spec(y, X, Z, Ainv; ids = ["a", "b", "c"], method = :REML),
+        sparse_reml_loglik(animal_model_spec(y, X, Z, Ainv; ids = ["a", "b", "c"], method = :REML), 1.0, 1.0),
+        (sigma_a2 = 1.0, sigma_e2 = 1.0),
+        true,
+        "sparse_test",
+        0,
+        :sparse_reml,
+        false,
+        true,
+        :estimated_sparse_reml_validation,
+    )
+    sparse_diagnostics = fit_diagnostics(sparse_fit)
+    @test sparse_diagnostics.target == :sparse_reml
+    @test sparse_diagnostics.method == :REML
+    @test sparse_diagnostics.dense_validation_path == false
+    @test sparse_diagnostics.sparse_mme_path == true
+    @test sparse_diagnostics.variance_components_source == :estimated_sparse_reml_validation
 
     mme_diagnostics = fit_diagnostics(mme)
     @test mme_diagnostics.engine == :julia
@@ -1010,6 +1065,22 @@ end
     @test payload_mme.spec.ids == ped.ids
     @test payload_mme.spec.method == :ML
     @test variance_components(payload_mme) == (sigma_a2 = 1.2, sigma_e2 = 0.8)
+
+    payload_sparse = fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        ids = ped.ids,
+        method = :REML,
+        target = "sparse_reml",
+        initial = [0.8, 0.8],
+        iterations = 100,
+    )
+    @test payload_sparse isa AnimalModelFit
+    @test payload_sparse.target == :sparse_reml
+    @test payload_sparse.spec.ids == ped.ids
+    @test payload_sparse.spec.method == :REML
 
     @test_throws ArgumentError fit_animal_model(y[1:2], X, Z, Ainv; ids = ped.ids)
     @test_throws ArgumentError fit_animal_model(y, X, Z, Ainv; ids = ["a"], method = :ML)

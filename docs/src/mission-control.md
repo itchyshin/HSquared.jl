@@ -201,7 +201,7 @@ status tables remain the source of truth.
       <p>Current focus: Phase 1 Gaussian animal-model engine groundwork.</p>
       <ul class="hs-list">
         <li>Implemented: pedigree normalization, sparse Ainv, low-level spec validation, sparse CSC marshalling.</li>
-        <li>Experimental: dense ML/REML validation path, sparse supplied-variance REML identity, Henderson MME solve, EBV/BLUP/fitted-value/PEV/reliability/accuracy extractors.</li>
+        <li>Experimental: dense ML/REML validation path, sparse supplied-variance REML identity, sparse REML validation optimizer, Henderson MME solve, EBV/BLUP/fitted-value/PEV/reliability/accuracy extractors.</li>
         <li>Diagnostics: <code>validation_status()</code>, <code>formula_status()</code>, <code>backend_info()</code>, <code>data_status()</code>, and <code>fit_diagnostics()</code>.</li>
       </ul>
     </article>
@@ -226,8 +226,8 @@ status tables remain the source of truth.
       <div class="hs-phase"><b>Phase 4</b><span>Factor-analytic G matrices: <code>diag()</code>, <code>lowrank(K)</code>, <code>fa(K)</code>, latent breeding values, evolvability.</span></div>
       <div class="hs-phase"><b>Phase 5</b><span>GBLUP, SNP-BLUP, single-step, APY, marker effects, QTL/GWAS/eQTL scans.</span></div>
       <div class="hs-phase"><b>Phase 6</b><span>GLLVM-style high-dimensional animal models, non-Gaussian responses, omics, ordination.</span></div>
-      <div class="hs-phase"><b>Phase 7</b><span>Non-standard inheritance systems: selfing, clonal, haplodiploid, polyploid, cytoplasmic, imprinting, epistasis.</span></div>
-      <div class="hs-phase"><b>Phase 8</b><span>Accelerator-aware and HPC scaling: CPU default, optional GPU backends, checkpointing, benchmarks.</span></div>
+      <div class="hs-phase"><b>Phase 7</b><span>Accelerator-aware computation: CPU default, optional GPU backends, backend agreement tests, and benchmark evidence.</span></div>
+      <div class="hs-phase"><b>Phase 8</b><span>HPC and production scaling: checkpointing, disk-backed data, streaming scans, distributed simulation, and national-computer benchmarks.</span></div>
     </div>
   </section>
   <section class="hs-grid two" aria-label="evidence and gates">
@@ -239,6 +239,7 @@ status tables remain the source of truth.
           <tr><td>Pedigree Ainv</td><td><span class="hs-tag done">implemented</span></td><td>hand fixtures plus R-side nadiv/Mrode9 pedigree comparator.</td></tr>
           <tr><td>Henderson MME</td><td><span class="hs-tag partial">experimental</span></td><td>supplied-variance fixtures with fixed effects, EBVs, fitted values, h2, PEV, reliability.</td></tr>
           <tr><td>Dense REML/ML</td><td><span class="hs-tag partial">experimental</span></td><td>tiny validation optimizer, guarded by <code>max_dense_cells</code>.</td></tr>
+          <tr><td>Sparse REML optimizer</td><td><span class="hs-tag partial">experimental</span></td><td>REML-only validation optimizer over the sparse objective; no AI-REML or production fitting claim.</td></tr>
           <tr><td>HSData diagnostics</td><td><span class="hs-tag done">implemented</span></td><td>component, ID, pedigree, genotype, marker, expression, annotation, and environment metadata checks.</td></tr>
           <tr><td>Backends</td><td><span class="hs-tag plan">planned</span></td><td>typed vocabulary and status diagnostics only; no runtime dispatch.</td></tr>
         </tbody>

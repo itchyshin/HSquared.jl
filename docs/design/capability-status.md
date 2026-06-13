@@ -20,6 +20,7 @@
 | Animal model spec validation | implemented | `animal_model_spec()` dimension, ID, family, and method tests |
 | Gaussian ML/REML likelihood evaluation | experimental | `gaussian_loglik()` hand-calculated tiny tests plus a Mrode9-shaped supplied-variance fixture with pinned ML/REML likelihood values; dense evaluator only, supplied variance components only |
 | Sparse REML likelihood identity | experimental | `sparse_reml_loglik()` matches dense REML on tiny fixtures and a Mrode9-shaped supplied-variance fixture using the Henderson MME determinant identity; supplied variance components only, no optimizer or AI-REML |
+| Sparse REML validation optimization | experimental | `fit_sparse_reml()` and `fit_animal_model(...; target = :sparse_reml)` optimize the sparse REML objective on tiny fixtures and improve over supplied starting variances; REML-only, no AI-REML, no fitted Mrode/comparator evidence, no production sparse fitting claim |
 | Dense variance-component optimization | experimental | `fit_variance_components()` tiny improvement and dispatch tests; dense path only |
 | Dense validation size guard | implemented | `max_dense_cells` tests for likelihood, dense optimizer, spec dispatch, and direct payload dispatch; guard only, not a sparse solver |
 | Supplied-variance Henderson MME solve | experimental | `henderson_mme()` sparse solve tested against the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and `h2`; R head `ca8bce1` also compares Julia against an independent R MME reference when available; a Mrode9-shaped supplied-variance fixture pins Ainv, fixed effects, EBVs, fitted values, PEV, reliability, derived accuracy, and `h2`; does not estimate variance components or claim production fitting |
@@ -33,7 +34,7 @@
 | R `hs_data()` data container | external implemented | `hsquared` head `644c75e`; head `36efbf3` connects `hs_data()` to the v0.1 R parser; head `f067cd9` adds genotype-status diagnostics; head `06cdf59` adds expression-status diagnostics; head `e7fbb31` adds environment-key diagnostics; head `87888d9` adds annotation-feature diagnostics; Julia mirror exists as `HSData`, but live Julia object marshalling is not implemented |
 | Opt-in R-to-Julia bridge execution | external experimental | `hsquared` head `398e019` consumes Julia `sparse_csc_matrix()` for sparse `Z`; head `00b9e33` adds an explicit opt-in `target = "henderson_mme"` path with supplied variance components and green R checks; still no variance-component estimation, AI-REML, production sparse fitting, Mrode fitted-output validation, large-data readiness, or relationship-object marshalling beyond `Z` |
 | File-backed phenotype/genotype storage | planned | no Arrow/Parquet/PLINK/VCF/HDF5/Zarr implementation yet |
-| Sparse production fitting / AI-REML | planned | sparse REML objective identity exists for supplied variances only; no sparse optimizer or AI-REML yet |
+| Sparse production fitting / AI-REML | planned | sparse REML validation optimization exists for tiny low-level fixtures only; no AI-REML, fitted Mrode/comparator validation, production sparse diagnostics, or large sparse fixture yet |
 | Production sparse reliability / PEV | planned | no implementation yet |
 | Multivariate G matrices | planned | no implementation yet |
 | Factor-analytic G matrices | planned | no implementation yet |

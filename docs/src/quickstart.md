@@ -79,8 +79,8 @@ lik.loglik
 ```
 
 The first sparse likelihood utility evaluates the same REML objective with the
-Henderson mixed-model-equation determinant identity. It still uses supplied
-variance components; it is not an optimizer.
+Henderson mixed-model-equation determinant identity at supplied variance
+components.
 
 ```@example quickstart
 sparse_lik = sparse_reml_loglik(spec, 1.0, 1.0)
@@ -111,6 +111,15 @@ payload_fit = fit_animal_model(
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
 )
 payload_fit isa AnimalModelFit
+```
+
+The sparse REML validation optimizer uses `sparse_reml_loglik()` inside the
+objective. It is REML-only. It is not AI-REML, not the default public R fitting
+path, and not production sparse fitting.
+
+```@example quickstart
+sparse_fit = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+fit_diagnostics(sparse_fit).target
 ```
 
 For supplied-variance equation solving, the same validated spec can target

@@ -238,6 +238,25 @@ where `C` is the Henderson coefficient matrix. Julia tests it against the dense
 REML evaluator on tiny fixtures. It is a validation bridge toward the sparse
 production optimizer, not variance-component estimation and not AI-REML.
 
+## Experimental Sparse REML Optimizer
+
+```julia
+fit = fit_sparse_reml(spec)
+fit = fit_animal_model(spec; target = :sparse_reml)
+```
+
+For a validated REML `AnimalModelSpec`, Julia can optimize the sparse REML
+objective over positive additive and residual variance components using the
+same log-variance parameterization and `Optim.NelderMead()` style as the dense
+validation optimizer.
+
+This path calls `sparse_reml_loglik()` inside the objective and records
+`target = :sparse_reml`, `dense_validation_path = false`, `sparse_mme_path =
+true`, and `variance_components_source = :estimated_sparse_reml_validation` in
+`fit_diagnostics()`. It is REML-only. It is not AI-REML, not the default public
+R fitting path, not a production sparse solver, and not fitted Mrode or ASReml
+parity evidence.
+
 ## Experimental Henderson MME Solver
 
 ```julia

@@ -40,6 +40,8 @@ Implemented engine utilities:
   components, with a `max_dense_cells` guard for the temporary dense path;
 - sparse REML log-likelihood evaluation at supplied variance components via
   the Henderson MME determinant identity;
+- experimental sparse REML validation optimization for low-level validated
+  specs;
 - experimental dense variance-component optimization for validated specs;
 - experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
   fitted-value, heritability, PEV, reliability, and checked accuracy extractors
