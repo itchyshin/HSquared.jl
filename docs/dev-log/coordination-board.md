@@ -55,6 +55,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `reliability(mme)` methods for supplied-variance `HendersonMMEResult`
   objects. These reuse the dense MME inverse block for tiny fixtures only and
   do not change `result_payload()`.
+- The R twin added an explicit opt-in supplied-variance Henderson MME bridge
+  target at `hsquared` head `00b9e33`: `engine_control$target =
+  "henderson_mme"` with supplied `sigma_a2` and `sigma_e2`. The path normalizes
+  fixed effects, EBVs/BLUPs, fitted values, supplied variance components,
+  simple `h2`, `nobs`, diagnostics, and convergence status into
+  `hsquared_fit`; it deliberately omits `logLik`, AIC, `df`, and optimizer
+  output.
 - The R twin consumes Julia `sparse_csc_matrix()` for sparse `Z` marshalling at
   `hsquared` head `398e019`.
 - The R twin mirrors the shared tiny out-of-order calf/sire/dam Ainv validation

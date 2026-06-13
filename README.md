@@ -77,6 +77,11 @@ Implemented now:
 - external opt-in tiny/local R bridge evidence from the `hsquared` twin over
   the current Julia payload path and `result_payload()`, with R-side
   enrichment from Julia PEV/reliability extractors for tiny validation fits;
+- external opt-in R bridge evidence for a supplied-variance
+  `target = "henderson_mme"` path; this returns fixed effects, EBVs/BLUPs,
+  fitted values, supplied variance components, simple `h2`, diagnostics, and
+  convergence status, but no log-likelihood, AIC, `df`, optimizer output, or
+  variance-component estimation;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 

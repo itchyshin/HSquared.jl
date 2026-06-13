@@ -446,6 +446,33 @@ R heads `74eef82` and `39ca990` allow the R parser shorthand
 `data = hs_data(..., pedigree = ped)`. The payload remains the same as the
 explicit `animal(1 | id, pedigree = ped)` contract.
 
+R head `00b9e33` adds an explicit opt-in supplied-variance Henderson MME bridge
+target:
+
+```r
+hsquared(
+  y ~ fixed + animal(1 | id, pedigree = ped),
+  data = dat,
+  family = gaussian(),
+  control = hs_control(
+    engine = "julia",
+    engine_control = list(
+      target = "henderson_mme",
+      variance_components = c(sigma_a2 = 1.2, sigma_e2 = 0.8)
+    )
+  )
+)
+```
+
+That R path calls Julia `normalize_pedigree()`, `pedigree_inverse()`,
+`animal_model_spec()`, and `henderson_mme()`. R normalizes fixed effects,
+EBVs/BLUPs, fitted values, supplied variance components, simple `h2`, `nobs`,
+diagnostics, and convergence status into `hsquared_fit`. It deliberately omits
+`logLik`, AIC, `df`, and optimizer output; `logLik(fit)` is expected to error
+for this target. This is supplied-variance validation-scale bridge execution,
+not variance-component estimation, AI-REML, Mrode fitted-output validation, or
+production sparse fitting.
+
 The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
 whether PEV/reliability should ever become required base payload fields, Mrode
 validation, and live Julia `HSData` object marshalling parity. The Julia tests

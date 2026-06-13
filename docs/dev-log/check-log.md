@@ -2,6 +2,32 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 R Henderson MME Bridge Target Sync
+
+- Goal: mirror the R twin's explicit opt-in supplied-variance Henderson MME
+  bridge target in Julia docs/status without changing Julia APIs or
+  `result_payload()`.
+- Active lenses: Ada, Hopper, Henderson, Fisher, Rose, Grace.
+- Spawned subagents: none.
+- R twin handoff:
+  - `hsquared` head `99d974a` adds the Henderson MME bridge target.
+  - `hsquared` head `00b9e33` records CI evidence.
+  - Reported R evidence: R-CMD-check `27462763849`, pkgdown `27462763842`,
+    and Pages `27462799025` success.
+- Julia-side action:
+  - Recorded `engine_control$target = "henderson_mme"` as external
+    supplied-variance bridge evidence.
+  - Updated capability status, validation debt, public claims, engine contract,
+    README, ROADMAP, Documenter roadmap, changelog, and coordination board.
+- Boundary:
+  - Documentation/status sync only.
+  - No Julia API change.
+  - No `result_payload()` widening.
+  - No variance-component estimation.
+  - No AI-REML.
+  - No log-likelihood/AIC/df/optimizer output claim for the R bridge target.
+  - No fitted Mrode output validation or production sparse fitting claim.
+
 ## 2026-06-13 Henderson MME Variance Component H2 Methods
 
 - Goal: add supplied-variance `variance_components()` and `heritability()`

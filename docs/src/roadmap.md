@@ -43,6 +43,10 @@ Implemented:
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
   `8235289`; R can merge those fields from exported Julia extractors for
   tiny/local validation fits while Julia keeps base `result_payload()` compact.
+- external R supplied-variance Henderson MME bridge evidence from `hsquared`
+  head `00b9e33`; R can opt into `engine_control$target = "henderson_mme"` and
+  supplied variance components, with no log-likelihood, AIC, `df`, optimizer
+  output, variance-component estimation, AI-REML, or fitted Mrode claim.
 - external R `model_spec()` preview evidence from `hsquared` head `bacef9c`;
   this previews the v0.1 formula-to-bridge payload without fitting or Julia
   execution.
