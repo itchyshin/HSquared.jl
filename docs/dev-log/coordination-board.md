@@ -48,8 +48,10 @@ support beyond the recorded evidence.
 - PR #22 (`codex/phase5-marker-plot-data`) was locally reconciled with the
   repaired PR #20 base on 2026-06-14. The only conflict was the append-only
   check log; no engine code or bridge contract changed. Local full
-  `Pkg.test()` and Documenter passed before push, with the local npm-cache
-  workaround recorded in the check log / after-task note for this slice.
+  `Pkg.test()` passed before push. Local Documenter/VitePress did not produce
+  a final clean exit because of generated-state path failures; the failures and
+  remote-Documenter follow-up requirement are recorded in the check log /
+  after-task note for this slice.
 
 ## Shared Contract
 
