@@ -2,6 +2,41 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect marker-scan LOD-equivalent scores
+
+- Goal: add a deterministic LOD-style summary to the direct Julia fixed-effect
+  marker-screening utility without claiming interval mapping, mixed-model QTL,
+  or R-facing marker-scan support.
+- Active lenses: Fisher (LOD interpretation), Curie (deterministic identity
+  tests), Grace (low-core checks), Shannon (R/Julia boundary), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `lod_scores` to `single_marker_scan()`;
+  - defined the field as the known-variance fixed-effect LOD-equivalent value
+    `chisq / (2log(10))`;
+  - added deterministic tests for the hand fixture, covariate-adjusted scan
+    consistency, and nonnegative output;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is now 42 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: fixed-effect Gaussian/Wald screening only. `lod_scores` are a
+  deterministic transformation of the returned chi-square statistics under the
+  supplied residual variance; this is not interval mapping, mixed-model LOD,
+  LOCO, calibrated mixed-model p-values, correlated-marker/genome-wide
+  calibration, R formula activation, bridge payload change, `result_payload()`
+  change, or comparator parity.
+
 ## 2026-06-14 fixed-effect marker-scan multiple-testing adjustments
 
 - Goal: add deterministic multiple-testing summaries to the direct Julia

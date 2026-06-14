@@ -229,11 +229,12 @@ R-facing `genomic()`, `markers()`, `single_step()`, `marker_scan()`, or
 `single_marker_scan()` is deliberately narrow: it centers biallelic marker
 dosages, residualizes `y` and each marker against `X`, and reports
 supplied-variance Wald summaries. It is fixed-effect Gaussian screening only,
-not a mixed-model GWAS/QTL scan, not LOCO, not LOD or calibrated /
-correlated-marker multiple-testing output, and not external comparator
-evidence. Its p-values are approximate two-sided Gaussian/Wald p-values
-implied by the supplied residual variance; `bonferroni_p_values` and
-`bh_q_values` are deterministic adjustments over the returned marker set.
+not a mixed-model GWAS/QTL scan, not LOCO, not interval-mapping or mixed-model
+LOD output, not calibrated / correlated-marker multiple-testing output, and not
+external comparator evidence. Its p-values are approximate two-sided
+Gaussian/Wald p-values implied by the supplied residual variance;
+`bonferroni_p_values` and `bh_q_values` are deterministic adjustments over the
+returned marker set, and `lod_scores` are `chisq / (2log(10))`.
 
 ## Implemented Likelihood Evaluator
 

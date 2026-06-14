@@ -363,10 +363,11 @@ fixed-effect Gaussian screening helper. It centers biallelic dosages,
 residualizes `y` and each marker against `X`, and reports marker effects,
 supplied-variance standard errors, Wald z-scores, chi-square statistics, and
 approximate two-sided Gaussian/Wald p-values plus Bonferroni and
-Benjamini-Hochberg adjustments over the returned marker set. It does not compute
-LOD scores or calibrated/correlated-marker multiple-testing workflows, account
-for relatedness or population structure, perform LOCO, or activate the R-facing
-`marker_scan()` formula term.
+Benjamini-Hochberg adjustments over the returned marker set, and
+LOD-equivalent scores `chisq / (2log(10))`. It does not compute
+interval-mapping or mixed-model LOD workflows or calibrated/correlated-marker
+multiple-testing workflows, account for relatedness or population structure,
+perform LOCO, or activate the R-facing `marker_scan()` formula term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -375,6 +376,7 @@ M = [0.0 0.0; 1.0 0.0; 2.0 1.0; 0.0 2.0; 1.0 2.0]
 scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
 scan.p_values
 scan.bh_q_values
+scan.lod_scores
 ```
 
 QTL/GWAS syntax:
@@ -876,7 +878,8 @@ Phase 5: QTL/GWAS/eQTL.
 - single-marker scans;
 - mixed-model marker scans;
 - LOCO;
-- LOD output and calibrated mixed-model p-value workflows;
+- interval-mapping / mixed-model LOD output and calibrated mixed-model p-value
+  workflows;
 - cis/trans eQTL;
 - multiple testing;
 - plots.

@@ -1787,11 +1787,13 @@ end
     @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
     @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
     @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
     @test all(0 .<= scan.p_values .<= 1)
     @test all(0 .<= scan.bonferroni_p_values .<= 1)
     @test all(0 .<= scan.bh_q_values .<= 1)
+    @test all(scan.lod_scores .>= 0)
     @test HSquared._bonferroni_adjust([0.04, 0.01, 0.20, 0.03]) ≈
           [0.16, 0.04, 0.80, 0.12] atol = 1e-12
     @test HSquared._benjamini_hochberg_adjust([0.04, 0.01, 0.20, 0.03]) ≈
@@ -1816,6 +1818,7 @@ end
     end
     @test scan2.bonferroni_p_values ≈ HSquared._bonferroni_adjust(scan2.p_values) atol = 1e-12
     @test scan2.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(scan2.p_values) atol = 1e-12
+    @test scan2.lod_scores ≈ scan2.chisq ./ (2 * log(10)) atol = 1e-12
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]

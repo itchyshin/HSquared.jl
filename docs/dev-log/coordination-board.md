@@ -215,13 +215,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   marker-screening utility. It residualizes `y` and centered marker dosages
   against `X` and returns effects, supplied-variance standard errors, z-scores,
   chi-square statistics, approximate two-sided Gaussian/Wald p-values,
-  Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, denominators,
-  marker IDs, allele frequencies, and the VanRaden scale. This is
-  engine-internal / direct-Julia only: no mixed-model GWAS/QTL/eQTL,
+  Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, fixed-effect
+  known-variance LOD-equivalent scores, denominators, marker IDs, allele
+  frequencies, and the VanRaden scale. This is engine-internal / direct-Julia
+  only: no mixed-model GWAS/QTL/eQTL,
   relatedness or population-structure correction, calibrated mixed-model
-  p-values, LOD scores, advanced/correlated-marker multiple-testing workflow,
-  R `marker_scan()` formula activation, bridge payload change, or
-  `result_payload()` change.
+  p-values, interval-mapping or mixed-model LOD workflows,
+  advanced/correlated-marker multiple-testing workflow, R `marker_scan()`
+  formula activation, bridge payload change, or `result_payload()` change.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

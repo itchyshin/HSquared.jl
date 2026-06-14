@@ -176,16 +176,19 @@ Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
 Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
 contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
-`p_values`, `bonferroni_p_values`, `bh_q_values`, `denominators`, `p`, and
-`k`. `p_values` are approximate two-sided Gaussian/Wald p-values implied by
-the supplied residual variance. `bonferroni_p_values` and `bh_q_values` are
-deterministic Bonferroni and Benjamini-Hochberg adjustments over the returned
-marker set.
+`p_values`, `bonferroni_p_values`, `bh_q_values`, `lod_scores`,
+`denominators`, `p`, and `k`. `p_values` are approximate two-sided
+Gaussian/Wald p-values implied by the supplied residual variance.
+`bonferroni_p_values` and `bh_q_values` are deterministic Bonferroni and
+Benjamini-Hochberg adjustments over the returned marker set. `lod_scores` are
+known-variance fixed-effect LOD-equivalent scores, computed as
+`chisq / (2log(10))`.
 
 This is a deterministic Phase 5 validation-scale utility. It is not a mixed
 model GWAS/QTL scan, does not account for relatedness or population structure,
-does not compute LOD scores or calibrated/correlated-marker multiple-testing
-workflows, and does not activate the R-facing `marker_scan()` formula term.
+does not compute interval-mapping or mixed-model LOD scores or calibrated /
+correlated-marker multiple-testing workflows, and does not activate the
+R-facing `marker_scan()` formula term.
 """
 function single_marker_scan(
     y::AbstractVector,
@@ -248,6 +251,7 @@ function single_marker_scan(
 
     bonferroni_p_values = _bonferroni_adjust(p_values)
     bh_q_values = _benjamini_hochberg_adjust(p_values)
+    lod_scores = chisq ./ (2 * log(10))
 
     return (
         marker_ids = marker_names,
@@ -258,6 +262,7 @@ function single_marker_scan(
         p_values = p_values,
         bonferroni_p_values = bonferroni_p_values,
         bh_q_values = bh_q_values,
+        lod_scores = lod_scores,
         denominators = denominators,
         p = cm.p,
         k = cm.k,

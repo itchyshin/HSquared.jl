@@ -42,10 +42,11 @@
   utility that residualizes `y` and centered marker dosages against `X`, then
   reports marker effects, supplied-variance standard errors, Wald z-scores, and
   chi-square statistics plus approximate two-sided Gaussian/Wald p-values,
-  Bonferroni-adjusted p-values, and Benjamini-Hochberg q-values. This is direct
-  Julia engine tooling only: no mixed-model GWAS/QTL, no LOD scores, no
-  calibrated/correlated-marker multiple-testing workflow, no R `marker_scan()`
-  syntax, no bridge payload change, and no comparator parity.
+  Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, and fixed-effect
+  known-variance LOD-equivalent scores. This is direct Julia engine tooling
+  only: no mixed-model GWAS/QTL, no interval-mapping or mixed-model LOD
+  workflow, no calibrated/correlated-marker multiple-testing workflow, no R
+  `marker_scan()` syntax, no bridge payload change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
