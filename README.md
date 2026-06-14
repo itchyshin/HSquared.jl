@@ -117,7 +117,8 @@ Implemented now:
   supplied-variance GBLUP, SNP-BLUP / marker effects, single-step `H`-inverse
   construction, genomic REML over a `Ginv` spec, and direct fixed-effect
   marker screening with approximate Wald p-values plus Bonferroni and
-  Benjamini-Hochberg adjustments and LOD-equivalent scores;
+  Benjamini-Hochberg adjustments, LOD-equivalent scores, and Manhattan
+  plot-data preparation;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured

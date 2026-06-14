@@ -219,6 +219,7 @@ Ginv = genomic_relationship_inverse(G)
 gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
 snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
 scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
+manhattan = marker_manhattan_data(scan)
 ```
 
 These are direct Julia engine utilities. They do not change the R bridge
@@ -235,6 +236,8 @@ external comparator evidence. Its p-values are approximate two-sided
 Gaussian/Wald p-values implied by the supplied residual variance;
 `bonferroni_p_values` and `bh_q_values` are deterministic adjustments over the
 returned marker set, and `lod_scores` are `chisq / (2log(10))`.
+`marker_manhattan_data()` prepares deterministic plot-ready data only; it does
+not draw figures or validate a marker map.
 
 ## Implemented Likelihood Evaluator
 

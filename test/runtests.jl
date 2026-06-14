@@ -246,9 +246,10 @@ end
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
+    @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
-    @test occursin("Fixed-effect Gaussian screening utility only", fixed_marker_row.claim_boundary)
+    @test occursin("Fixed-effect Gaussian screening utility and plot-data helper only", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
@@ -1820,6 +1821,33 @@ end
     @test scan2.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(scan2.p_values) atol = 1e-12
     @test scan2.lod_scores ≈ scan2.chisq ./ (2 * log(10)) atol = 1e-12
 
+    manhattan = marker_manhattan_data(scan)
+    @test manhattan.marker_ids == ["m1", "m2"]
+    @test manhattan.chromosomes == ["1", "1"]
+    @test manhattan.positions == [1.0, 2.0]
+    @test manhattan.plot_positions == [1.0, 2.0]
+    @test manhattan.p_values ≈ scan.p_values atol = 1e-12
+    @test manhattan.neglog10_p_values ≈ .-log10.(scan.p_values) atol = 1e-12
+    @test manhattan.order == [1, 2]
+
+    custom_scan = (
+        marker_ids = ["a", "b", "c"],
+        p_values = [0.01, 0.0, 1.0],
+    )
+    custom_manhattan = marker_manhattan_data(
+        custom_scan;
+        chromosomes = ["2", "1", "2"],
+        positions = [5, 2, 1],
+        p_floor = 1e-12,
+        chromosome_gap = 2,
+    )
+    @test custom_manhattan.order == [3, 1, 2]
+    @test custom_manhattan.chromosomes == ["2", "1", "2"]
+    @test custom_manhattan.positions == [5.0, 2.0, 1.0]
+    @test custom_manhattan.plot_positions == [5.0, 9.0, 1.0]
+    @test custom_manhattan.neglog10_p_values ≈ [2.0, 12.0, -0.0] atol = 1e-12
+    @test custom_manhattan.p_floor == 1e-12
+
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
     @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
@@ -1829,6 +1857,14 @@ end
     @test_throws ArgumentError HSquared._bonferroni_adjust([-0.01, 0.5])
     @test_throws ArgumentError HSquared._bonferroni_adjust([0.5, 1.01])
     @test_throws ArgumentError HSquared._benjamini_hochberg_adjust([0.5, NaN])
+    @test_throws ArgumentError marker_manhattan_data((p_values = [0.5],))
+    @test_throws ArgumentError marker_manhattan_data((marker_ids = ["m1"],))
+    @test_throws ArgumentError marker_manhattan_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
+    @test_throws ArgumentError marker_manhattan_data(scan; chromosomes = ["1"])
+    @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0])
+    @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0, -1.0])
+    @test_throws ArgumentError marker_manhattan_data(scan; p_floor = 0.0)
+    @test_throws ArgumentError marker_manhattan_data(scan; chromosome_gap = -1.0)
     cm_one = centered_markers(M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)

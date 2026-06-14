@@ -367,7 +367,8 @@ Benjamini-Hochberg adjustments over the returned marker set, and
 LOD-equivalent scores `chisq / (2log(10))`. It does not compute
 interval-mapping or mixed-model LOD workflows or calibrated/correlated-marker
 multiple-testing workflows, account for relatedness or population structure,
-perform LOCO, or activate the R-facing `marker_scan()` formula term.
+perform LOCO, draw figures, or activate the R-facing `marker_scan()` formula
+term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -377,6 +378,8 @@ scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
 scan.p_values
 scan.bh_q_values
 scan.lod_scores
+manhattan = marker_manhattan_data(scan)
+manhattan.neglog10_p_values
 ```
 
 QTL/GWAS syntax:

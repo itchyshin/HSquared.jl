@@ -348,11 +348,12 @@ fixed-effect single-marker screening. It residualizes `y` and centered marker
 dosages against `X` and reports effects, supplied-variance standard errors,
 Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
-marker set, plus fixed-effect known-variance LOD-equivalent scores. It is not a
-mixed-model GWAS/QTL scan, does not account for relatedness/population
-structure, does not compute interval-mapping or mixed-model LOD workflows or
-calibrated / correlated-marker multiple-testing workflows, and does not
-activate the R-facing `marker_scan()` formula term.
+marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
+Manhattan data. It is not a mixed-model GWAS/QTL scan, does not account for
+relatedness/population structure, does not compute interval-mapping or
+mixed-model LOD workflows or calibrated / correlated-marker multiple-testing
+workflows, does not draw plots, and does not activate the R-facing
+`marker_scan()` formula term.
 
 Gate: marker-map validation, estimand definition, genome-wide multiple-testing
 calibration, and comparator/simulation evidence.

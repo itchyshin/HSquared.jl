@@ -269,6 +269,101 @@ function single_marker_scan(
     )
 end
 
+"""
+    marker_manhattan_data(scan; chromosomes = nothing, positions = nothing,
+                          p_floor = floatmin(Float64), chromosome_gap = 1.0)
+
+Prepare plot-ready Manhattan data from a direct [`single_marker_scan`](@ref)
+result.
+
+The helper returns marker IDs, raw p-values, `-log10(p)` values, chromosome
+labels, marker positions, cumulative plotting positions, and a deterministic
+plot order. If chromosome or position metadata is omitted, all markers are
+placed on chromosome `"1"` with sequential positions. Zero p-values are floored
+only for `-log10` display values, and the floor is returned in the output.
+
+This is a data-preparation helper only. It does not draw a plot, does not parse
+marker maps, does not run a mixed-model marker scan, and does not activate the
+R-facing `marker_scan()` formula term.
+"""
+function marker_manhattan_data(
+    scan;
+    chromosomes = nothing,
+    positions = nothing,
+    p_floor::Real = floatmin(Float64),
+    chromosome_gap::Real = 1.0,
+)
+    hasproperty(scan, :marker_ids) ||
+        throw(ArgumentError("scan must have a marker_ids field"))
+    hasproperty(scan, :p_values) ||
+        throw(ArgumentError("scan must have a p_values field"))
+
+    marker_ids = string.(collect(getproperty(scan, :marker_ids)))
+    p_values = _checked_p_values(getproperty(scan, :p_values))
+    m = length(p_values)
+    length(marker_ids) == m ||
+        throw(ArgumentError("marker_ids and p_values must have the same length"))
+
+    p_floor_value = Float64(p_floor)
+    isfinite(p_floor_value) && 0 < p_floor_value <= 1 ||
+        throw(ArgumentError("p_floor must be finite and in (0, 1]"))
+    gap = Float64(chromosome_gap)
+    isfinite(gap) && gap >= 0 ||
+        throw(ArgumentError("chromosome_gap must be finite and non-negative"))
+
+    chromosome_values = if chromosomes === nothing
+        fill("1", m)
+    elseif chromosomes isa AbstractString || chromosomes isa Symbol
+        fill(string(chromosomes), m)
+    else
+        string.(collect(chromosomes))
+    end
+    length(chromosome_values) == m ||
+        throw(ArgumentError("chromosomes must have one entry per marker"))
+
+    position_values = if positions === nothing
+        Float64.(collect(1:m))
+    else
+        Float64.(collect(positions))
+    end
+    length(position_values) == m ||
+        throw(ArgumentError("positions must have one entry per marker"))
+    all(x -> isfinite(x) && x >= 0, position_values) ||
+        throw(ArgumentError("positions must be finite and non-negative"))
+
+    chromosome_order = String[]
+    chromosome_rank = Dict{String,Int}()
+    for chromosome in chromosome_values
+        if !haskey(chromosome_rank, chromosome)
+            push!(chromosome_order, chromosome)
+            chromosome_rank[chromosome] = length(chromosome_order)
+        end
+    end
+
+    marker_order = sortperm(collect(1:m);
+        by = i -> (chromosome_rank[chromosome_values[i]], position_values[i], i))
+    plot_positions = zeros(Float64, m)
+    offset = 0.0
+    for chromosome in chromosome_order
+        chromosome_indices = [i for i in marker_order if chromosome_values[i] == chromosome]
+        for i in chromosome_indices
+            plot_positions[i] = offset + position_values[i]
+        end
+        offset = maximum(plot_positions[chromosome_indices]) + gap
+    end
+
+    return (
+        marker_ids = marker_ids,
+        chromosomes = chromosome_values,
+        positions = position_values,
+        plot_positions = plot_positions,
+        p_values = p_values,
+        neglog10_p_values = .-log10.(max.(p_values, p_floor_value)),
+        order = marker_order,
+        p_floor = p_floor_value,
+    )
+end
+
 # Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is
 # about 7.5e-8, enough for deterministic fixed-effect scan diagnostics without
 # adding a statistics dependency.

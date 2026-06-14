@@ -63,6 +63,7 @@ HSquared.genomic_relationship_matrix
 HSquared.genomic_relationship_inverse
 HSquared.centered_markers
 HSquared.single_marker_scan
+HSquared.marker_manhattan_data
 HSquared.sparse_csc_matrix
 HSquared.AnimalModelSpec
 HSquared.animal_model_spec

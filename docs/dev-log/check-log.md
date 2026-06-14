@@ -2,6 +2,52 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect marker-scan Manhattan plot data
+
+- Goal: add deterministic plot-data preparation for the direct Julia
+  fixed-effect marker scan without adding a plotting dependency, R syntax, or
+  mixed-model GWAS/QTL claim.
+- Active lenses: Florence (plot-data ergonomics), Fisher (p-value display
+  semantics), Curie (deterministic tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_manhattan_data(scan; chromosomes, positions,
+    p_floor, chromosome_gap)`;
+  - default metadata places all markers on chromosome `"1"` with sequential
+    positions;
+  - custom metadata returns chromosome labels, positions, cumulative plotting
+    positions, stable plot order, p-values, and `-log10(p)` values;
+  - zero p-values are floor-capped only for display data, and the floor is
+    returned;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before and after the evidence-file update.
+  - First throttled `Pkg.test()` attempt failed because status-row assertions
+    still expected the pre-plot-data claim wording. The assertions and
+    validation row now mention `marker_manhattan_data` and the plot-data
+    boundary.
+  - Second throttled `Pkg.test()` attempt failed because the default p-floor
+    used non-Julia `realmin(Float64)`. The helper now uses
+    `floatmin(Float64)`.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 194 checks; Phase
+    5 fixed-effect single-marker scan testset is now 63 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies. This was rerun after the evidence-file
+    update.
+- Boundary: plot-data preparation only. This does not draw figures, parse
+  marker maps, run mixed-model marker scans, correct relatedness/population
+  structure, add LOCO, add interval-mapping/mixed-model LOD workflows, calibrate
+  correlated-marker p-values, activate R `marker_scan()` syntax, change the
+  bridge payload, change `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 fixed-effect marker-scan LOD-equivalent scores
 
 - Goal: add a deterministic LOD-style summary to the direct Julia fixed-effect
