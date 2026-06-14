@@ -175,8 +175,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
   :factor_analytic, rank = K)`. This is dense/validation-scale and
   engine-internal; `result_payload()` and the R bridge contract are unchanged.
-  R-facing covariance-structure syntax, loading interpretation conventions,
-  recovery harnesses, and external comparators remain coordinated future work.
+  Returned loading metadata is sign-canonicalized on the Julia side only.
+  R-facing covariance-structure syntax, loading rotation/interpretation
+  conventions, and external comparators remain coordinated future work.
 - Julia now also has an opt-in Phase-4B structured-covariance recovery harness:
   `sim/phase4b_structured_covariance_recovery.jl`. It runs seeded low-rank and
   factor-analytic repeated-record half-sib simulations outside CI and records

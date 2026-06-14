@@ -2254,6 +2254,13 @@ end
     Λ = reshape([1.0, -2.0], 2, 1)
     @test lowrank_covariance(Λ) ≈ Λ * transpose(Λ)
     @test factor_analytic_covariance(Λ, [0.5, 0.25]) ≈ Λ * transpose(Λ) + Diagonal([0.5, 0.25])
+    Λraw = [-2.0 0.1; 1.0 -3.0; 0.5 2.0]
+    Λcanon = HSquared._canonicalize_loadings(Λraw)
+    @test Λraw[1, 1] == -2.0
+    @test Λcanon[:, 1] == [2.0, -1.0, -0.5]
+    @test Λcanon[:, 2] == [-0.1, 3.0, -2.0]
+    @test Λcanon * transpose(Λcanon) ≈ Λraw * transpose(Λraw)
+    @test_throws ArgumentError HSquared._canonicalize_loadings(zeros(0, 1))
     @test_throws ArgumentError diagonal_covariance([1.0, 0.0])
     @test_throws ArgumentError lowrank_covariance(reshape([0.0, 1.0], 2, 1))
     @test_throws ArgumentError factor_analytic_covariance(Λ, [0.5, -0.1])
@@ -2289,6 +2296,7 @@ end
     @test low.genetic_structure == :lowrank
     @test low.genetic_rank == 1
     @test low.genetic_covariance ≈ lowrank_covariance(low.genetic_loadings) atol = 1e-8
+    @test low.genetic_loadings[argmax(abs.(low.genetic_loadings[:, 1])), 1] >= 0
     @test minimum(eigvals(Symmetric(low.genetic_covariance))) >= -1e-8
     @test low.genetic_uniqueness == zeros(2)
     @test low.loglik ≈ h(Y2, X, Z, Ainv, low.genetic_covariance, low.residual_covariance) atol = 1e-6
@@ -2303,6 +2311,7 @@ end
     @test fa.genetic_rank == 1
     @test all(fa.genetic_uniqueness .> 0)
     @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
+    @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
     @test isposdef(Symmetric(fa.genetic_covariance))
     @test fa.loglik ≈ h(Y2, X, Z, Ainv, fa.genetic_covariance, fa.residual_covariance) atol = 1e-6
     @test fa.loglik <= full.loglik + 1e-6

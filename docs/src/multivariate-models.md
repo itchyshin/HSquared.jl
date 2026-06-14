@@ -147,9 +147,11 @@ julia --project=. sim/phase4b_structured_covariance_recovery.jl
 
 The harness is not part of CI. It records low-rank and factor-analytic recovery
 on a repeated-record half-sib design with loose, version-robust thresholds. The
-structured path still has no loading sign/rotation convention, no covariance
-standard errors, no external-comparator parity, and no R-facing
-covariance-structure syntax.
+structured path returns sign-canonicalized loading columns: within each factor,
+the largest-absolute loading is non-negative. This removes arbitrary sign flips
+from metadata but does not identify rotations or make loading columns uniquely
+interpretable. Covariance standard errors, external-comparator parity, and
+R-facing covariance-structure syntax are still missing.
 
 ## Validation boundary
 
@@ -179,8 +181,8 @@ Still planned / coordinated:
 - a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
 - broader multi-seed recovery calibration, covariance standard errors, loading
-  sign/rotation conventions, and external-comparator parity (sommer / ASReml /
-  JWAS) for the REML and structured-covariance estimators;
+  rotation/identifiability conventions, and external-comparator parity (sommer /
+  ASReml / JWAS) for the REML and structured-covariance estimators;
 - a published Mrode multi-trait fixture;
 - the public R multivariate model-spec mapping — R lane.
 ```

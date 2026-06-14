@@ -2,6 +2,50 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4B loading sign convention
+
+- Goal: make returned `genetic_loadings` metadata deterministic for
+  `:lowrank` and `:factor_analytic` structured genetic covariance fits without
+  claiming rotation identification or changing the R bridge.
+- Active lenses: Kirkpatrick/Noether (factor-loading notation and
+  identifiability), Gauss/Fisher (covariance invariance), Hopper/Rose (bridge
+  and claim boundary). Spawned subagents: none.
+- Implementation (`src/multivariate.jl`):
+  - added internal `_canonicalize_loadings(loadings)`;
+  - `_structured_genetic_params_to_cov` now returns sign-canonicalized loading
+    columns for `:lowrank` and `:factor_analytic`;
+  - the covariance remains `ΛΛ'` or `ΛΛ' + Ψ`, so the sign convention changes
+    metadata only.
+- Deterministic tests:
+  - raw negative-leading columns are flipped to the expected canonical signs;
+  - canonicalization does not mutate the input matrix;
+  - `ΛΛ'` is invariant under canonicalization;
+  - empty loading matrices error with `ArgumentError`;
+  - fitted low-rank and factor-analytic results return loading columns whose
+    largest-absolute loading is non-negative;
+  - returned structured covariances still reconstruct from the returned
+    metadata.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase-4B testset "Phase 4B structured genetic covariance (diag/lowrank/fa)"
+    = 41 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed. Pre-existing
+    caveats remain: 8 unrelated docstrings are not included in the manual, local
+    deployment is skipped outside CI, logo/favicon/package.json substitutions
+    are absent, and VitePress reports 4 npm audit advisories in generated docs
+    dependencies.
+  - `git diff --check`: passed.
+- Status surfaces updated: `ROADMAP.md`, `03-engine-contract.md`,
+  `capability-status.md`, `validation-debt-register.md`,
+  `06-public-claims-register.md`, `validation_status.jl`,
+  `multivariate-models.md`, `changelog.md`, coordination board, and after-task
+  report.
+- Boundary: `V4-FA` remains partial. This covers a deterministic sign
+  convention only; loading rotation/identifiability, covariance SEs/LRTs,
+  published fixtures, multi-seed calibration, R-facing covariance syntax,
+  bridge payload changes, production sparse FA fitting, and external comparator
+  parity remain open.
+
 ## 2026-06-14 Phase 4B opt-in structured covariance recovery harness
 
 - Goal: add a reproducible, non-CI recovery harness for the Phase-4B structured

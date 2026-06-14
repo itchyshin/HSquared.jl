@@ -144,9 +144,10 @@
   :factor_analytic, rank = K)` estimates constrained genetic covariance
   structures while keeping residual `R0` unstructured. Validated by deterministic
   constructor identities, structure metadata, loglik equality to the existing
-  evaluator, PSD/PD covariance checks, and constrained loglik ≤ the unstructured
-  fit. Experimental, dense/validation-scale; no R-facing covariance-structure
-  syntax, bridge change, loading sign/rotation convention, or external
+  evaluator, PSD/PD covariance checks, constrained loglik ≤ the unstructured
+  fit, and deterministic sign-canonicalization of returned loading columns.
+  Experimental, dense/validation-scale; no R-facing covariance-structure syntax,
+  bridge change, loading rotation/identifiability convention, or external
   comparator yet.
 - Added opt-in Phase-4B recovery harness
   `sim/phase4b_structured_covariance_recovery.jl` for seeded low-rank and

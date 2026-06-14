@@ -104,6 +104,29 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
     return L * transpose(L) + Diagonal(ψ)
 end
 
+function _canonicalize_loadings(loadings::AbstractMatrix)
+    L = _check_finite_matrix(loadings, "loadings")
+    size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
+    size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
+    for j in axes(L, 2)
+        imax = firstindex(L, 1)
+        maxabs = -Inf
+        @inbounds for i in axes(L, 1)
+            a = abs(L[i, j])
+            if a > maxabs
+                maxabs = a
+                imax = i
+            end
+        end
+        if L[imax, j] < 0
+            @inbounds for i in axes(L, 1)
+                L[i, j] = -L[i, j]
+            end
+        end
+    end
+    return L
+end
+
 # A trait record is "missing" if it is `missing` or a NaN float; everything else
 # (including integers) is an observed value.
 _is_present(x) = !(ismissing(x) || (x isa AbstractFloat && isnan(x)))
@@ -308,11 +331,11 @@ function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol,
         G0 = diagonal_covariance(exp.(params))
         return G0, nothing, diag(G0)
     elseif genetic_structure == :lowrank
-        L = reshape(collect(params), t, rank)
+        L = _canonicalize_loadings(reshape(collect(params), t, rank))
         return lowrank_covariance(L), L, zeros(t)
     else
         nload = t * rank
-        L = reshape(collect(@view(params[1:nload])), t, rank)
+        L = _canonicalize_loadings(reshape(collect(@view(params[1:nload])), t, rank))
         ψ = exp.(params[(nload + 1):end])
         return factor_analytic_covariance(L, ψ), L, ψ
     end
@@ -495,6 +518,12 @@ The additive genetic covariance can be constrained with `genetic_structure`:
 For structured fits, `initial` may supply `G0`, `R0`, `loadings`
 (`traits × rank`), and `uniqueness` for `:factor_analytic`; omitted fields use
 deterministic phenotypic-scale defaults.
+
+Returned `genetic_loadings` use a deterministic sign convention: for each factor
+column, the largest-absolute loading is non-negative. This removes arbitrary
+sign flips from returned metadata but does not impose a rotation or
+lower-triangular identification constraint; for `rank > 1`, loadings remain
+rotation-nonunique and should not be interpreted as uniquely identified factors.
 
 Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
 validated by deterministic self-consistency checks (the `t = 1` reduction

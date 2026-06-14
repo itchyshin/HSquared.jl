@@ -274,6 +274,13 @@ The Phase-4B structured path constrains only the genetic covariance:
 `:diagonal` gives `diag(σ²)`, `:lowrank` gives `ΛΛ'`, and `:factor_analytic`
 gives `ΛΛ' + Ψ`; residual `R0` remains unstructured.
 
+For `:lowrank` and `:factor_analytic`, returned `genetic_loadings` are
+sign-canonicalized as engine metadata: each factor column is multiplied by `-1`
+when needed so the largest-absolute loading in that column is non-negative.
+This convention is deterministic but not a rotation or lower-triangular
+identification constraint; rank-`K > 1` loading columns remain
+rotation-nonunique.
+
 This is a direct Julia engine API only. It does not change the v0.1 R bridge
 payload, `result_payload()`, or the R formula grammar. Any future R
 multi-trait / covariance-structure syntax must be designed in the R lane and

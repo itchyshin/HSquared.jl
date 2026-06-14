@@ -119,7 +119,8 @@ unimplemented.
   builders and REML constraints for diagonal, low-rank, and factor-analytic
   `G0`, plus an opt-in seeded recovery harness outside CI. No R-facing
   multivariate model-spec, no external comparator parity, no loading
-  sign/rotation convention, and no production sparse multivariate fitting.
+  rotation/identifiability convention, and no production sparse multivariate
+  fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
@@ -287,8 +288,14 @@ while leaving residual `R0` unstructured. Deterministic tests cover constructor
 identities, metadata, loglik self-consistency, PSD/PD properties, and constrained
 loglik ordering. The opt-in script
 `sim/phase4b_structured_covariance_recovery.jl` records seeded low-rank and
-factor-analytic known-truth recovery outside CI. Rotation/sign conventions,
+factor-analytic known-truth recovery outside CI. Rotation conventions,
 covariance inference, external comparators, and R syntax remain open.
+
+The returned loading metadata now has a deterministic sign convention: each
+factor column is flipped, if needed, so its largest-absolute loading is
+non-negative. This does not solve rotation non-identifiability for `rank > 1`,
+and loadings remain uninterpreted engine metadata until extractor meanings and
+external parity are validated.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.
