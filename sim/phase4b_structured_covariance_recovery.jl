@@ -16,6 +16,11 @@ Run from the repository root:
 
     julia --project=. sim/phase4b_structured_covariance_recovery.jl
 
+On interactive machines, prefer throttling Julia/BLAS/OpenMP threads and using
+lower process priority:
+
+    env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. sim/phase4b_structured_covariance_recovery.jl
+
 Optional arguments:
 
     --case=both|factor_analytic|lowrank

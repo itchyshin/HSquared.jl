@@ -192,6 +192,10 @@
 - Added deterministic `sim/summarize_recovery_calibration.jl` tooling to parse
   committed recovery harness logs and regenerate the Markdown case summary and
   failed-seed list without rerunning stochastic simulations.
+- Documented a throttled local command form for opt-in recovery/calibration
+  harnesses (`JULIA_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`,
+  `OMP_NUM_THREADS=1`, `VECLIB_MAXIMUM_THREADS=1`, `nice -n 15`) so long
+  stochastic runs do not monopolize interactive workstations.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

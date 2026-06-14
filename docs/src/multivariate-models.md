@@ -164,6 +164,13 @@ julia --project=. sim/phase4b_structured_covariance_recovery.jl
 julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=factor_analytic --seeds=20260614
 ```
 
+On an interactive workstation, use a throttled command form for long recovery
+runs:
+
+```sh
+env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. sim/phase4_multivariate_reml_recovery.jl --seeds=20260616
+```
+
 The harnesses are not part of CI. The unstructured harness records two-trait
 known-truth recovery on a repeated-record half-sib design and accepts `--seed`
 or explicit `--seeds` lists with summaries; the structured harness records

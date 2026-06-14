@@ -49,6 +49,13 @@ A calibration run must record, before execution:
   count, records per animal, generating `G` / `R` / loading / uniqueness
   matrices;
 - any intentional parameter-grid variation.
+- the resource profile for local interactive runs. On a shared workstation,
+  prefer one-thread Julia/BLAS/OpenMP settings and lower process priority, for
+  example:
+
+```sh
+env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. ...
+```
 
 The minimum broad-calibration gate is:
 

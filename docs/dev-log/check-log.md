@@ -2,6 +2,31 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 local recovery run throttling guidance
+
+- Goal: prevent opt-in recovery/calibration harnesses from monopolizing an
+  interactive workstation.
+- Active lenses: Grace (developer workflow), Curie/Fisher (opt-in recovery
+  evidence), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - updated the multivariate recovery calibration protocol to require recording
+    the resource profile for local interactive runs;
+  - documented the one-thread + `nice` command form in both recovery harness
+    docstrings and the multivariate docs page;
+  - added changelog and after-task notes.
+- Recommended local command prefix:
+  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15`.
+- Local checks, run with the same throttled prefix:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset remains 12 checks;
+    Phase 0 remains 182 checks; Phase 4B remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: documentation / workflow guidance only. No simulation rerun, no
+  numerical result change, no R syntax, no bridge payload or `result_payload()`
+  change, and no capability-status promotion.
+
 ## 2026-06-14 recovery calibration log summarizer
 
 - Goal: make the calibration evidence reproducible from committed raw logs
