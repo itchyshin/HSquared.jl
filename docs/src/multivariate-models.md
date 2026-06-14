@@ -90,13 +90,57 @@ fitr = fit_multivariate_reml(Y, X, Z, Ainv)
 !!! warning "Experimental estimator"
     Multivariate REML is **experimental**. Its correctness is checked by
     deterministic self-consistency (the `t = 1` fit recovers the univariate REML
-    estimate; the REML log-likelihood matches the univariate one up to a
-    constant; the optimum beats a coarse grid). Known-truth recovery for `t ≥ 2`
+    estimate; the REML log-likelihood matches the univariate package scale; the
+    optimum beats a coarse grid). Known-truth recovery for `t ≥ 2`
     is exercised only by one-off simulations and has **no external-comparator
-    parity (sommer / ASReml / JWAS) or independent adversarial review yet**.
+    parity (sommer / ASReml / JWAS) yet**. The multivariate engine has had an
+    adversarial review; confirmed robustness findings were fixed and
+    regression-tested.
     Treat multi-trait variance estimates as provisional. On small fixtures the
     optimum can sit on a boundary (a genetic correlation of ±1, or a zero
     variance).
+
+## Structured genetic covariance
+
+Phase 4B adds engine utilities for constrained additive genetic covariance
+matrices:
+
+```math
+G_0 = \mathrm{diag}(\sigma^2), \qquad
+G_0 = \Lambda \Lambda^\top, \qquad
+G_0 = \Lambda \Lambda^\top + \Psi.
+```
+
+The direct matrix builders are `diagonal_covariance`, `lowrank_covariance`, and
+`factor_analytic_covariance`:
+
+```@example mv
+Λ = reshape([0.8, -0.4], 2, 1)
+(diag = diagonal_covariance([1.0, 1.5]),
+ lowrank = round.(lowrank_covariance(Λ); digits = 3),
+ fa = round.(factor_analytic_covariance(Λ, [0.2, 0.3]); digits = 3))
+```
+
+The same structures can constrain the genetic covariance in the dense REML
+estimator while leaving the residual covariance unstructured:
+
+```@example mv
+fad = fit_multivariate_reml(
+    Y, X, Z, Ainv;
+    genetic_structure = :factor_analytic,
+    rank = 1,
+    initial = (loadings = Λ, uniqueness = [0.2, 0.3], R0 = R0),
+)
+(G0 = round.(fad.genetic_covariance; digits = 3),
+ structure = fad.genetic_structure,
+ rank = fad.genetic_rank,
+ converged = fad.converged)
+```
+
+The structured covariance path is **experimental** and dense/validation-scale.
+It has deterministic self-consistency tests, but no committed loading-recovery
+harness, no covariance standard errors, no external-comparator parity, and no
+R-facing covariance-structure syntax.
 
 ## Validation boundary
 
@@ -110,9 +154,13 @@ Covered now (self-consistent, comparator-free):
   MME + marginal-GLS with per-individual residual blocks), and reduce to the
   balanced solve when nothing is missing;
 - **`fit_multivariate_reml`** is validated by the `t = 1` reduction (recovers the
-  univariate REML estimate), the REML log-likelihood matching the univariate one
-  up to a constant, the optimum beating a coarse grid, and EBV consistency with
-  the MME at the estimate.
+  univariate REML estimate), the REML log-likelihood matching the univariate
+  package scale, the optimum beating a coarse grid, and EBV consistency with the
+  MME at the estimate;
+- **structured genetic covariance** builders and REML constraints are validated
+  by deterministic constructor identities, metadata checks, returned-loglik
+  equality to the existing evaluator, PSD/PD covariance checks, and constrained
+  fits not exceeding the unstructured REML loglik.
 
 The balanced checks hold to a committed `1e-10` tolerance and the missing-data
 checks to `1e-9` (the observed agreement is machine precision).
@@ -122,8 +170,8 @@ Still planned / coordinated:
 - a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
 - a committed multivariate known-truth recovery harness, covariance standard
-  errors, and external-comparator parity (sommer / ASReml / JWAS) plus
-  independent review for the REML estimator;
+  errors, loading sign/rotation conventions, and external-comparator parity
+  (sommer / ASReml / JWAS) for the REML and structured-covariance estimators;
 - a published Mrode multi-trait fixture;
 - the public R multivariate model-spec mapping — R lane.
 ```

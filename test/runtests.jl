@@ -143,7 +143,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 27
+    @test length(validation) == 28
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -186,6 +186,11 @@ end
     @test mvreml_row.status == "partial"
     @test occursin("fit_multivariate_reml", mvreml_row.evidence)
     @test occursin("one-off", mvreml_row.claim_boundary)
+    fa_row = only(row for row in validation if row.id == "V4-FA")
+    @test fa_row.phase == "Phase 4B"
+    @test fa_row.status == "partial"
+    @test occursin("factor_analytic_covariance", fa_row.evidence)
+    @test occursin("no R-facing", fa_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -2242,4 +2247,67 @@ end
         @test_throws ArgumentError fit_multivariate_reml(Y2inf, X, Z, Ainv)
     end
     @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
+end
+
+@testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
+    @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
+    Λ = reshape([1.0, -2.0], 2, 1)
+    @test lowrank_covariance(Λ) ≈ Λ * transpose(Λ)
+    @test factor_analytic_covariance(Λ, [0.5, 0.25]) ≈ Λ * transpose(Λ) + Diagonal([0.5, 0.25])
+    @test_throws ArgumentError diagonal_covariance([1.0, 0.0])
+    @test_throws ArgumentError lowrank_covariance(reshape([0.0, 1.0], 2, 1))
+    @test_throws ArgumentError factor_analytic_covariance(Λ, [0.5, -0.1])
+    @test_throws ArgumentError factor_analytic_covariance(zeros(0, 1), Float64[])
+
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    Y2 = hcat(y1, reverse(y1))
+    X = ones(8, 1)
+    Z = Matrix(1.0I, 8, 8)
+    h = HSquared._multivariate_reml_loglik
+
+    full = fit_multivariate_reml(Y2, X, Z, Ainv)
+
+    diagfit = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal)
+    @test diagfit.converged
+    @test diagfit.genetic_structure == :diagonal
+    @test diagfit.genetic_rank === nothing
+    @test diagfit.genetic_loadings === nothing
+    @test diagfit.genetic_uniqueness ≈ diag(diagfit.genetic_covariance)
+    @test diagfit.genetic_covariance[1, 2] == 0.0
+    @test diagfit.loglik ≈ h(Y2, X, Z, Ainv, diagfit.genetic_covariance, diagfit.residual_covariance) atol = 1e-6
+    @test diagfit.loglik <= full.loglik + 1e-6
+
+    low = fit_multivariate_reml(Y2, X, Z, Ainv;
+        genetic_structure = :lowrank,
+        rank = 1,
+        initial = (loadings = reshape([0.7, -0.4], 2, 1), R0 = [1.0 0.0; 0.0 1.0]))
+    @test low.converged
+    @test low.genetic_structure == :lowrank
+    @test low.genetic_rank == 1
+    @test low.genetic_covariance ≈ lowrank_covariance(low.genetic_loadings) atol = 1e-8
+    @test minimum(eigvals(Symmetric(low.genetic_covariance))) >= -1e-8
+    @test low.genetic_uniqueness == zeros(2)
+    @test low.loglik ≈ h(Y2, X, Z, Ainv, low.genetic_covariance, low.residual_covariance) atol = 1e-6
+    @test low.loglik <= full.loglik + 1e-6
+
+    fa = fit_multivariate_reml(Y2, X, Z, Ainv;
+        genetic_structure = :factor_analytic,
+        rank = 1,
+        initial = (loadings = reshape([0.5, -0.3], 2, 1), uniqueness = [0.4, 0.4], R0 = [1.0 0.0; 0.0 1.0]))
+    @test fa.converged
+    @test fa.genetic_structure == :factor_analytic
+    @test fa.genetic_rank == 1
+    @test all(fa.genetic_uniqueness .> 0)
+    @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
+    @test isposdef(Symmetric(fa.genetic_covariance))
+    @test fa.loglik ≈ h(Y2, X, Z, Ainv, fa.genetic_covariance, fa.residual_covariance) atol = 1e-6
+    @test fa.loglik <= full.loglik + 1e-6
+
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank)
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 0)
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :unknown)
 end

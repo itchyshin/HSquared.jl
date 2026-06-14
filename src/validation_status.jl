@@ -234,6 +234,15 @@ const VALIDATION_STATUS_DATA = (
         "Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), but multi-trait known-truth recovery is one-off only and has no external-comparator parity yet; not the public default and no R-facing model-spec.",
     ),
     (
+        "V4-FA",
+        "structured multivariate genetic covariance (diag/lowrank/fa)",
+        "Phase 4B",
+        "partial",
+        "`diagonal_covariance`, `lowrank_covariance`, and `factor_analytic_covariance` build `diag(σ²)`, `ΛΛ'`, and `ΛΛ' + Ψ` trait covariance matrices with finiteness/positivity guards. `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank | :factor_analytic, rank = K)` reuses the dense multivariate REML core with constrained genetic covariance and unstructured residual covariance. Deterministic checks in `test/runtests.jl` pin constructor identities/guards, structure metadata, returned loglik equality to `_multivariate_reml_loglik`, PSD/PD covariance properties, and constrained fits not exceeding the unstructured REML loglik.",
+        "a committed known-truth low-rank / factor-analytic recovery harness, loading sign/rotation convention, covariance SEs or LRTs, published multi-trait fixtures, and sommer/ASReml/BLUPF90 comparator parity",
+        "Experimental dense/validation-scale engine API only; no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, and no external comparator evidence.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",

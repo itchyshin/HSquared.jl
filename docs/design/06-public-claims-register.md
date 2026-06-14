@@ -45,8 +45,8 @@ Use this register before changing README, docs, issue text, or examples.
 | Production R-to-Julia bridge execution works | planned | sparse `Z` marshalling exists, but no Mrode validation, production sparse fitting, production controls, or relationship-object marshalling beyond `Z` yet | planned |
 | Sparse Gaussian animal model REML/ML fitting | planned | sparse REML identity exists only for supplied variances | planned production fitting target |
 | Production sparse EBVs/BLUPs, reliability, and PEV | planned | none | planned |
-| multivariate G matrices | planned | none | roadmap |
-| factor-analytic G matrices | planned | none | roadmap |
+| multivariate Gaussian animal-model engine utilities exist | partial | `multivariate_mme()` and `fit_multivariate_reml()` tests plus `V4-MULTIVARIATE` / `V4-MV-REML` rows | experimental dense/validation-scale Julia engine API only; no R-facing multivariate model-spec, no external comparator parity, no committed recovery harness, and no production sparse multivariate fitting |
+| factor-analytic / structured multivariate G matrices exist | partial | `diagonal_covariance()`, `lowrank_covariance()`, `factor_analytic_covariance()`, and `fit_multivariate_reml(...; genetic_structure = ...)` tests plus `V4-FA` row | experimental dense/validation-scale Julia engine API only; no R-facing covariance-structure syntax, no bridge/result-payload change, no committed loading-recovery harness, no covariance SEs/LRTs, no external comparator parity |
 | genomic prediction, single-step, marker scans, and QTL/eQTL | planned | syntax names are reserved only | roadmap |
 | standard QG effects and custom relationship/precision kernels | planned | syntax names are reserved only | roadmap |
 | GLLVM-style animal models | planned | none | roadmap |

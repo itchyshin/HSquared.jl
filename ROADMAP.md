@@ -112,6 +112,13 @@ unimplemented.
   effects (`two_effect_mme`, `fit_two_effect_reml`) exist as experimental
   dense/validation-scale engine utilities at supplied or REML-estimated
   variance components. No R-facing model-spec; not the public default.
+- Experimental multivariate Gaussian animal-model utilities (Phase 4): supplied
+  covariance `multivariate_mme`, missing-trait handling, and dense
+  `fit_multivariate_reml` estimation of `G0`/`R0` exist as engine-internal,
+  validation-scale utilities. Phase 4B now has structured genetic covariance
+  builders and REML constraints for diagonal, low-rank, and factor-analytic
+  `G0`. No R-facing multivariate model-spec, no external comparator parity, no
+  committed recovery harness, and no production sparse multivariate fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
@@ -269,6 +276,16 @@ Add `diag()`, `lowrank(K)`, and `fa(K)` covariance structures:
 
 - `lowrank(K) = Lambda Lambda'`
 - `fa(K) = Lambda Lambda' + Psi`
+
+Status: initial engine utilities have landed (experimental, dense /
+validation-scale). `diagonal_covariance`, `lowrank_covariance`, and
+`factor_analytic_covariance` build the structured trait covariance matrices, and
+`fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+:factor_analytic, rank = K)` estimates constrained genetic covariance structures
+while leaving residual `R0` unstructured. Deterministic tests cover constructor
+identities, metadata, loglik self-consistency, PSD/PD properties, and constrained
+loglik ordering. Loading recovery, rotation/sign conventions, covariance
+inference, external comparators, and R syntax remain open.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

@@ -79,6 +79,9 @@ HSquared.fit_snp_blup
 HSquared.multivariate_mme
 HSquared.fit_multivariate_reml
 HSquared.genetic_correlation
+HSquared.diagonal_covariance
+HSquared.lowrank_covariance
+HSquared.factor_analytic_covariance
 HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.variance_component_covariance

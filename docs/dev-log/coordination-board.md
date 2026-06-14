@@ -169,6 +169,14 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   stays dense and `result_payload()` is unchanged (no R bridge change required);
   R can opt in via its existing PEV/reliability extractor enrichment. Posted to
   `HSquared.jl` issue #6.
+- Julia now has experimental Phase-4B structured multivariate genetic covariance
+  support: `diagonal_covariance`, `lowrank_covariance`,
+  `factor_analytic_covariance`, and
+  `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+  :factor_analytic, rank = K)`. This is dense/validation-scale and
+  engine-internal; `result_payload()` and the R bridge contract are unchanged.
+  R-facing covariance-structure syntax, loading interpretation conventions,
+  recovery harnesses, and external comparators remain coordinated future work.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix

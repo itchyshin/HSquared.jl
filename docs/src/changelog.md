@@ -137,6 +137,16 @@
   `fit_multivariate_reml`'s `loglik` is now the **full** REML log-likelihood
   including the `(N−p')·log(2π)` constant, on the same scale as the other loglik
   functions (safe for LRT/AIC). Regression-tested.
+- Added Phase-4B structured genetic covariance support for the dense multivariate
+  REML engine: `diagonal_covariance()`, `lowrank_covariance()`, and
+  `factor_analytic_covariance()` build `diag(σ²)`, `ΛΛ'`, and `ΛΛ' + Ψ`, and
+  `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+  :factor_analytic, rank = K)` estimates constrained genetic covariance
+  structures while keeping residual `R0` unstructured. Validated by deterministic
+  constructor identities, structure metadata, loglik equality to the existing
+  evaluator, PSD/PD covariance checks, and constrained loglik ≤ the unstructured
+  fit. Experimental, dense/validation-scale; no R-facing covariance-structure
+  syntax, bridge change, committed recovery harness, or external comparator yet.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

@@ -257,6 +257,28 @@ true`, and `variance_components_source = :estimated_sparse_reml_validation` in
 path, not a production sparse solver, and not fitted Mrode or ASReml parity
 evidence.
 
+## Experimental Multivariate REML
+
+```julia
+fit = fit_multivariate_reml(Y, X, Z, Ainv)
+fit = fit_multivariate_reml(Y, X, Z, Ainv;
+    genetic_structure = :factor_analytic,
+    rank = 1,
+)
+```
+
+The multivariate engine accepts a wide `Y` matrix (`records × traits`), shared
+fixed-effect and incidence designs, and a relationship inverse. The default
+estimator uses unstructured genetic and residual trait covariance matrices.
+The Phase-4B structured path constrains only the genetic covariance:
+`:diagonal` gives `diag(σ²)`, `:lowrank` gives `ΛΛ'`, and `:factor_analytic`
+gives `ΛΛ' + Ψ`; residual `R0` remains unstructured.
+
+This is a direct Julia engine API only. It does not change the v0.1 R bridge
+payload, `result_payload()`, or the R formula grammar. Any future R
+multi-trait / covariance-structure syntax must be designed in the R lane and
+then mirrored here in lockstep.
+
 ## Experimental Average-Information REML
 
 ```julia

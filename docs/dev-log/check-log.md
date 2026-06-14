@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4B structured genetic covariance (diag/lowrank/fa)
+
+- Goal: start Phase 4B with direct Julia engine support for structured
+  multivariate genetic covariance matrices: diagonal `diag(σ²)`, low-rank
+  `ΛΛ'`, and factor-analytic `ΛΛ' + Ψ`.
+- Active lenses: Ada/Shannon (lane discipline), Kirkpatrick/Noether
+  (covariance notation), Gauss/Fisher (REML parameterization), Curie
+  (deterministic validation), Rose (claim boundary). Spawned subagents: none.
+- Implementation (`src/multivariate.jl`, `src/HSquared.jl`):
+  - added exported covariance builders `diagonal_covariance`,
+    `lowrank_covariance`, and `factor_analytic_covariance` with
+    finiteness/positivity guards;
+  - extended `fit_multivariate_reml` with
+    `genetic_structure = :unstructured | :diagonal | :lowrank |
+    :factor_analytic` and `rank = K` for constrained genetic covariance
+    estimation while keeping residual `R0` unstructured;
+  - returned structure metadata (`genetic_structure`, `genetic_rank`,
+    `genetic_loadings`, `genetic_uniqueness`) without changing
+    `result_payload()` or the R bridge contract.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    New testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" =
+    34 checks: constructor identities and guards; structure metadata;
+    returned loglik equals `_multivariate_reml_loglik`; PSD/PD covariance
+    properties; constrained loglik does not exceed the unstructured REML fit;
+    invalid structure/rank guards. `validation_status()` 27 → 28 (`V4-FA`).
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: green. Existing
+    Documenter warning remains for unrelated exported Phase-3/internal
+    docstrings not listed in the manual; local deployment skipped outside CI;
+    VitePress npm audit advisories reported.
+  - `git diff --check`: passed.
+- Status surfaces (lockstep): `validation_status.jl` `V4-FA` (partial);
+  `capability-status.md`; `validation-debt-register.md`;
+  `06-public-claims-register.md`; `03-engine-contract.md`; `ROADMAP.md`;
+  `api.md`; `multivariate-models.md`; `changelog.md`; this report.
+- Boundary: experimental dense/validation-scale Julia engine API only. No
+  R-facing covariance-structure syntax, no bridge/result-payload change, no
+  committed loading-recovery harness, no covariance SEs/LRTs, no production
+  sparse FA solver, and no external comparator parity.
+
 ## 2026-06-13 Multivariate engine: adversarial-review hardening (Phase 4)
 
 - Goal: act on the confirmed findings from a 7-lens adversarial review of the
