@@ -52,6 +52,13 @@ Newest entries go at the top.
   - `git diff --check`: passed.
   - Rose boundary grep for unsupported marker/GWAS/QTL/eQTL claims: only
     explicit planned/blocked/no-claim wording matched.
+- Remote checks for pushed commit `662538b`:
+  - CI `27512222798`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222798>.
+  - Documenter `27512222795`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222795>.
+  - Both remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
 - Boundary: row-aligned table preparation over returned marker-scan fields
   only. This does not estimate marker-scan variance components, calibrate
   p-values, claim calibrated PVE/model R², correct statistics, estimate

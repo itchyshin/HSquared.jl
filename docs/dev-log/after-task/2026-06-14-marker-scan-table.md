@@ -63,6 +63,14 @@ threshold selection, or marker-scan variance-component estimation.
 - `git diff --check`: passed.
 - Rose boundary grep for unsupported marker/GWAS/QTL/eQTL claims: only explicit
   planned/blocked/no-claim wording matched.
+- Remote CI for pushed commit `662538b`:
+  <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222798>
+  passed.
+- Remote Documenter for pushed commit `662538b`:
+  <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222795>
+  passed.
+- Both remote runs emitted the known non-failing Node.js 20 deprecation
+  annotation for upstream actions forced onto Node.js 24.
 
 ## Public Claim Audit
 
