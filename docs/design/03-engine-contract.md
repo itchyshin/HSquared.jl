@@ -211,6 +211,27 @@ column slots. It is intended for R `Matrix::dgCMatrix` payloads, where the
 indices, value lengths, and strictly increasing row indices within each column.
 It is a marshalling helper only; it does not fit a model.
 
+## Experimental Genomic And Marker Utilities
+
+```julia
+G = genomic_relationship_matrix(markers)
+Ginv = genomic_relationship_inverse(G)
+gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
+snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
+scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
+```
+
+These are direct Julia engine utilities. They do not change the R bridge
+payload, do not construct formula model specs, and do not activate the
+R-facing `genomic()`, `markers()`, `single_step()`, `marker_scan()`, or
+`qtl_scan()` terms.
+
+`single_marker_scan()` is deliberately narrow: it centers biallelic marker
+dosages, residualizes `y` and each marker against `X`, and reports
+supplied-variance Wald summaries. It is fixed-effect Gaussian screening only,
+not a mixed-model GWAS/QTL scan, not LOCO, not p-value/LOD output, and not
+external comparator evidence.
+
 ## Implemented Likelihood Evaluator
 
 ```julia

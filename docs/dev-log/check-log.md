@@ -2,6 +2,40 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect single-marker scan
+
+- Goal: land the first small Phase 5 marker-screening engine utility without
+  activating the public R `marker_scan()` contract or claiming mixed-model
+  GWAS/QTL support.
+- Active lenses: Ada/Shannon (slice and twin coordination), Jason/Fisher/Curie
+  (marker-scan scope and deterministic validation), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `single_marker_scan(y, X, markers; sigma_e2, marker_ids,
+    allele_frequencies)` as a direct Julia utility;
+  - added deterministic tests for hand-computed intercept-only effects,
+    denominators, supplied-variance standard errors, chi-square consistency,
+    covariate-adjusted residualization, default/supplied marker IDs, and
+    guardrails;
+  - synced `validation_status()`, Documenter API/status pages, roadmap,
+    capability-status, validation-debt, public-claims, engine-contract,
+    changelog, mission-control/index status prose, and coordination docs.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 193 checks;
+    recovery calibration log summarizer remains 21 checks; new Phase 5
+    fixed-effect single-marker scan testset is 20 checks; Phase 4B structured
+    covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: direct fixed-effect Gaussian screening utility only, using supplied
+  residual variance. No relationship/population-structure correction, LOCO,
+  p-values, LOD scores, multiple-testing correction, mixed-model GWAS/QTL/eQTL,
+  external comparator parity, R formula activation, bridge payload change, or
+  `result_payload()` change.
+
 ## 2026-06-14 recovery calibration failure-mode triage
 
 - Goal: classify the failed predeclared calibration seeds by which committed

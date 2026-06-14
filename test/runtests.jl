@@ -167,7 +167,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 28
+    @test length(validation) == 29
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -242,6 +242,14 @@ end
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
+    fixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-FIXED")
+    @test fixed_marker_row.phase == "Phase 5"
+    @test fixed_marker_row.status == "partial"
+    @test occursin("single_marker_scan", fixed_marker_row.evidence)
+    @test occursin("17/14", fixed_marker_row.evidence)
+    @test occursin("marker_scan()", fixed_marker_row.missing)
+    @test occursin("Fixed-effect Gaussian screening utility only", fixed_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -1754,6 +1762,54 @@ end
     # guards
     @test_throws ArgumentError fit_snp_blup(y, X, M, -1.0, 1.0)    # sigma_g2 <= 0
     @test_throws ArgumentError centered_markers(fill(2.0, 4, 3))   # monomorphic (k = 0)
+end
+
+@testset "Phase 5 fixed-effect single-marker scan" begin
+    y = [1.0, 2.0, 4.0, 2.0, 3.0]
+    X = ones(5, 1)
+    M = [
+        0.0 0.0
+        1.0 0.0
+        2.0 1.0
+        0.0 2.0
+        1.0 2.0
+    ]
+    scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
+
+    @test scan.marker_ids == ["m1", "m2"]
+    @test scan.p ≈ [0.4, 0.5] atol = 1e-12
+    @test scan.k ≈ 0.98 atol = 1e-12
+    @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
+    @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
+
+    # With a nontrivial fixed-effect design, the scan equals independent
+    # residualization of y and each marker against X.
+    X2 = [ones(5) [0.0, 1.0, 0.0, 1.0, 0.0]]
+    scan2 = single_marker_scan(y, X2, M; sigma_e2 = 2.0)
+    cm = centered_markers(M)
+    XtX = Symmetric(transpose(X2) * X2)
+    y_resid = y - X2 * (XtX \ (transpose(X2) * y))
+    for j in axes(M, 2)
+        w = cm.W[:, j]
+        w_resid = w - X2 * (XtX \ (transpose(X2) * w))
+        denom = dot(w_resid, w_resid)
+        effect = dot(w_resid, y_resid) / denom
+        @test scan2.denominators[j] ≈ denom atol = 1e-12
+        @test scan2.effects[j] ≈ effect atol = 1e-12
+        @test scan2.standard_errors[j] ≈ sqrt(2.0 / denom) atol = 1e-12
+    end
+
+    default_ids = single_marker_scan(y, X, M).marker_ids
+    @test default_ids == ["marker_1", "marker_2"]
+    @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
+    @test_throws ArgumentError single_marker_scan(y, X, M; marker_ids = ["m1"])
+    cm_one = centered_markers(M[:, 1:1])
+    @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
+    @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)
+    @test_throws ArgumentError single_marker_scan([1.0, 2.0], ones(2, 1), M)
 end
 
 @testset "Phase 2 dense NRM helper" begin

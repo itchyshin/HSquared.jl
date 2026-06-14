@@ -243,13 +243,22 @@ const VALIDATION_STATUS_DATA = (
         "Experimental dense/validation-scale engine API only; copy-returning structured-metadata accessors expose existing fields locally; returned loadings are sign-canonicalized under a sign-only convention but not rotation-identified, opt-in recovery evidence is internal and seeded, the executed calibration protocol did not pass, no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, and no external comparator evidence.",
     ),
     (
+        "V5-MARKER-FIXED",
+        "fixed-effect single-marker scan",
+        "Phase 5",
+        "partial",
+        "`single_marker_scan` residualizes `y` and centered marker dosages against `X`, then returns marker effects, supplied-variance standard errors, Wald z-scores, and χ² statistics. Deterministic tests pin hand-computed intercept-only effects (`17/14`, `0.5`), denominators (`2.8`, `4.0`), standard errors, χ² equality, covariate-adjusted residualization against an independent calculation, default/supplied marker IDs, and guardrails for invalid residual variance, marker-ID length, collinear markers, rank-deficient `X`, and row-count mismatch.",
+        "mixed-model marker scans with relationship correction, LOCO, QTL/eQTL intervals, p-values/LOD scores, multiple-testing correction, external comparator parity, and R-facing `marker_scan()` syntax",
+        "Fixed-effect Gaussian screening utility only, using supplied residual variance; no mixed-model GWAS/QTL claim, no R formula term activation, no bridge payload change, and no comparator evidence.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",
         "planned",
-        "Only syntax vocabulary and roadmap docs exist.",
-        "model-spec contracts, simulations, marker-map validation, multiple-testing checks, and JWAS/sommer/BLUPF90-style comparators",
-        "No genomic prediction, marker scan, QTL, or eQTL support.",
+        "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan` utility is tracked separately in `V5-MARKER-FIXED`.",
+        "model-spec contracts, mixed-model marker scans, simulations, marker-map validation, multiple-testing checks, p-values/LOD scores, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
+        "No broad genomic/QTL/eQTL validation claim; direct fixed-effect marker screening is experimental and tracked separately.",
     ),
 )
 

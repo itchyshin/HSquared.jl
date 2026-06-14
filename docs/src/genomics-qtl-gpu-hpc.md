@@ -3,20 +3,24 @@
 This page records the long-range technical plan for `hsquared` and
 `HSquared.jl`.
 
-Status: roadmap. The current implemented Julia capability is pedigree
-normalization plus sparse `Ainv` construction. Animal-model fitting, genomics,
-QTL/eQTL, GLLVM-style models, and GPU acceleration are planned or experimental
-future work unless a capability table says otherwise.
+Status: roadmap plus experimental Julia engine utilities. The implemented
+Julia capability now includes pedigree/Ainv utilities, validation-scale animal
+models, genomic relationship / GBLUP / SNP-BLUP utilities, and a fixed-effect
+single-marker screening helper. Public R-facing genomic/QTL/eQTL syntax,
+mixed-model marker scans, GLLVM-style models, and GPU acceleration remain
+planned unless a capability table says otherwise.
 
 See [Backend And Algorithm Roadmap](backend-algorithm-roadmap.md) for the
 Julia-side execution plan behind CPU, threaded CPU, CUDA, AMDGPU, Metal,
 oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY, and backend
 claim gates.
 
-The names `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
-`qtl_scan()` are now reserved in both twins. In Julia they currently throw
-planned-not-implemented errors. They do not fit genomic models, estimate marker
-effects, or run QTL/eQTL scans yet.
+The formula names `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
+and `qtl_scan()` are now reserved in both twins. In Julia they currently throw
+planned-not-implemented errors. They do not fit genomic models or run QTL/eQTL
+scans. Direct Julia utilities such as `fit_snp_blup()` and
+`single_marker_scan()` are engine-internal and do not activate those formula
+terms.
 
 Related Phase 2+ names such as `permanent()`, `common_env()`,
 `maternal_genetic()`, `paternal_genetic()`, `dominance()`, `epistasis()`,
@@ -353,6 +357,22 @@ Levels:
 1. single-marker scan;
 2. multi-marker penalized or random-effect model;
 3. joint marker scan with pedigree/genomic random effects.
+
+Current Julia status: `single_marker_scan(y, X, markers; sigma_e2 = 1.0)` is a
+fixed-effect Gaussian screening helper. It centers biallelic dosages,
+residualizes `y` and each marker against `X`, and reports marker effects,
+supplied-variance standard errors, Wald z-scores, and chi-square statistics.
+It does not compute p-values or LOD scores, account for relatedness or
+population structure, perform LOCO, or activate the R-facing `marker_scan()`
+formula term.
+
+```julia
+y = [1.0, 2.0, 4.0, 2.0, 3.0]
+X = ones(5, 1)
+M = [0.0 0.0; 1.0 0.0; 2.0 1.0; 0.0 2.0; 1.0 2.0]
+scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
+scan.effects
+```
 
 QTL/GWAS syntax:
 

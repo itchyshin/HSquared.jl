@@ -38,6 +38,12 @@
   prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
   (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
   supplied-variance only, unweighted VanRaden method-1.
+- Added `single_marker_scan()` — a Phase-5 fixed-effect single-marker screening
+  utility that residualizes `y` and centered marker dosages against `X`, then
+  reports marker effects, supplied-variance standard errors, Wald z-scores, and
+  chi-square statistics. This is direct Julia engine tooling only: no mixed-model
+  GWAS/QTL, no p-values/LOD, no R `marker_scan()` syntax, no bridge payload
+  change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

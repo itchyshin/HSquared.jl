@@ -166,6 +166,93 @@ function fit_snp_blup(
 end
 
 """
+    single_marker_scan(y, X, markers; allele_frequencies = nothing,
+                       sigma_e2 = 1.0, marker_ids = nothing)
+
+Fixed-effect single-marker scan for biallelic marker dosages at a supplied
+residual variance.
+
+Each marker column is centered with [`centered_markers`](@ref), residualized
+against the fixed-effect design `X`, and tested one marker at a time in the
+Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
+contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
+`denominators`, `p`, and `k`.
+
+This is a deterministic Phase 5 validation-scale utility. It is not a mixed
+model GWAS/QTL scan, does not account for relatedness or population structure,
+does not compute p-values/LOD scores, and does not activate the R-facing
+`marker_scan()` formula term.
+"""
+function single_marker_scan(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    markers::AbstractMatrix;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    sigma_e2::Real = 1.0,
+    marker_ids = nothing,
+)
+    yv = Float64.(y)
+    Xmat = Matrix{Float64}(X)
+    length(yv) == size(Xmat, 1) ||
+        throw(ArgumentError("X row count must match y length"))
+    n, p = size(Xmat)
+    n > p || throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
+    all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
+    all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+
+    cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    size(cm.W, 1) == n ||
+        throw(ArgumentError("markers row count must match y length"))
+    marker_names = if marker_ids === nothing
+        ["marker_$j" for j in axes(cm.W, 2)]
+    else
+        length(marker_ids) == size(cm.W, 2) ||
+            throw(ArgumentError("marker_ids must have one entry per marker"))
+        string.(marker_ids)
+    end
+
+    XtX = Symmetric(transpose(Xmat) * Xmat)
+    isposdef(XtX) ||
+        throw(ArgumentError("X must have full column rank"))
+    Xty = transpose(Xmat) * yv
+    y_resid = yv - Xmat * (XtX \ Xty)
+
+    effects = zeros(Float64, size(cm.W, 2))
+    standard_errors = similar(effects)
+    z_scores = similar(effects)
+    chisq = similar(effects)
+    denominators = similar(effects)
+
+    for j in axes(cm.W, 2)
+        w = view(cm.W, :, j)
+        w_resid = Vector(w) - Xmat * (XtX \ (transpose(Xmat) * w))
+        denom = dot(w_resid, w_resid)
+        denom > sqrt(eps(Float64)) ||
+            throw(ArgumentError("marker $(marker_names[j]) is collinear with X after centering"))
+        alpha = dot(w_resid, y_resid) / denom
+        se = sqrt(Float64(sigma_e2) / denom)
+        z = alpha / se
+        denominators[j] = denom
+        effects[j] = alpha
+        standard_errors[j] = se
+        z_scores[j] = z
+        chisq[j] = z^2
+    end
+
+    return (
+        marker_ids = marker_names,
+        effects = effects,
+        standard_errors = standard_errors,
+        z_scores = z_scores,
+        chisq = chisq,
+        denominators = denominators,
+        p = cm.p,
+        k = cm.k,
+    )
+end
+
+"""
     _single_step_Hinv(Ainv, A, G, genotyped_rows; tau = 1.0, omega = 1.0,
                       blend_weight = 0.0, ridge = 0.0)
 

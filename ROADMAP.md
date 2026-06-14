@@ -103,9 +103,10 @@ unimplemented.
   (`genomic_relationship_inverse`), GBLUP (`fit_gblup`), SNP-BLUP with
   marker-effect output and the GBLUP/SNP-BLUP equivalence
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
-  and GBLUP REML variance-component estimation exist as experimental
-  supplied-variance / validation-scale engine utilities. No production genomic
-  fitting, marker scan, or QTL/eQTL scan; not the public default.
+  GBLUP REML variance-component estimation, and fixed-effect single-marker
+  screening (`single_marker_scan`) exist as experimental supplied-variance /
+  validation-scale engine utilities. No production genomic fitting, mixed-model
+  marker scan, or QTL/eQTL scan; not the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
   permanent-environment (`repeatability_mme`, `fit_repeatability_reml`) and a
   general two-random-effect model for common-environment / maternal-genetic
@@ -154,9 +155,10 @@ unimplemented.
   checkpointing are not implemented. AI-REML and the Takahashi selected inverse
   exist only as the experimental, validation-scale utilities above, not as
   production-scale, sparse, large-pedigree fitting.
-- Marker scans and QTL/eQTL scans are not implemented. Genomic prediction,
-  single-step `H`-inverse, and marker-effect estimation exist only as the
-  experimental engine utilities above, not as production genomic fitting.
+- Mixed-model marker scans and QTL/eQTL scans are not implemented. Genomic
+  prediction, single-step `H`-inverse, marker-effect estimation, and a
+  fixed-effect single-marker scan exist only as the experimental engine
+  utilities above, not as production genomic fitting.
 - Paternal effects, cytoplasmic inheritance, imprinting, dominance, epistasis,
   sire models, random regression, unknown-parent groups, and custom
   relationship/precision kernels are not implemented. Permanent environment,
@@ -246,8 +248,11 @@ and first marker-effect outputs.
 Status: the engine utilities have landed (experimental, validation-scale) —
 `genomic_relationship_matrix`, `genomic_relationship_inverse`, `fit_gblup`,
 `fit_snp_blup`/`centered_markers`, single-step `H`-inverse construction, and
-GBLUP REML. These are engine-internal; production genotype-ID matching at scale,
-a public genomic model-spec, and external comparator parity remain open.
+GBLUP REML. The first Phase-5 marker utility,
+`single_marker_scan`, also exists as a fixed-effect Gaussian screening helper
+with supplied residual variance. These are engine-internal; production
+genotype-ID matching at scale, mixed-model marker scans, QTL/eQTL scans, a
+public genomic model-spec, and external comparator parity remain open.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.
@@ -336,6 +341,14 @@ and extractor meanings.
 
 Add single-marker scans, mixed-model marker scans, LOCO, LOD/p-value output,
 cis/trans eQTL, multiple testing, and basic plots.
+
+Status: `single_marker_scan` provides the first direct Julia engine utility for
+fixed-effect single-marker screening. It residualizes `y` and centered marker
+dosages against `X` and reports effects, supplied-variance standard errors,
+Wald z-scores, and chi-square statistics. It is not a mixed-model GWAS/QTL
+scan, does not account for relatedness/population structure, does not compute
+p-values or LOD scores, and does not activate the R-facing `marker_scan()`
+formula term.
 
 Gate: marker-map validation, estimand definition, multiple-testing checks, and
 comparator/simulation evidence.
