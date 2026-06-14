@@ -49,6 +49,9 @@
   already-validated `HSMarkerMapSpec` / `HSData` marker metadata.
   `marker_effects()` prepares deterministic sorted marker-effect
   summaries from the same scan fields, with optional metadata alignment.
+  `marker_variance_explained()` prepares deterministic marker-level
+  variance-contribution summaries as `2p(1-p) * effect^2`, with optional
+  total-variance proportions and metadata alignment.
   `marker_qq_data()` prepares sorted observed/expected QQ plot data from the
   same direct scan output. `marker_genomic_inflation()` computes a
   genomic-control-style lambda_GC diagnostic from returned chi-square
@@ -56,8 +59,9 @@
   This is direct Julia engine tooling only: no
   mixed-model GWAS/QTL, no interval-mapping or mixed-model LOD workflow, no
   marker-file parser, no plotting backend, no p-value calibration or
-  correlated-marker multiple-testing workflow, no R `marker_scan()` syntax, no
-  bridge payload change, and no comparator parity.
+  correlated-marker multiple-testing workflow, no calibrated PVE/model R²
+  claim, no R `marker_scan()` syntax, no bridge payload change, and no
+  comparator parity.
 - Added `mixed_model_marker_scan()` — a dense, supplied-variance GLS
   marker-screening helper that forms `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`
   from supplied variance components and a supplied relationship precision, then
@@ -65,10 +69,11 @@
   `single_marker_scan()` when the random-effect design contributes zero
   covariance and agreement with an independent GLS calculation. Direct Julia
   engine tooling only: no marker-scan variance-component estimation, no LOCO,
-  no sparse production scan, no calibrated p-values, no plotting backend, no R
-  `marker_scan()` syntax, no bridge payload change, and no comparator parity.
-  The shared `marker_effects()`, Manhattan, QQ, and inflation helpers
-  work over the returned scan fields.
+  no sparse production scan, no calibrated p-values, no calibrated PVE/model
+  R² claim, no plotting backend, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity. The shared `marker_effects()`,
+  `marker_variance_explained()`, Manhattan, QQ, and inflation helpers work over
+  the returned scan fields.
 - Added `loco_relationship_precisions()` and
   `loco_mixed_model_marker_scan()` — dense validation-scale
   leave-one-group-out marker-screening helpers. The construction helper drops
@@ -78,9 +83,10 @@
   scan. Tests pin explicit LOCO precision identities and marker-wise agreement
   with separate `mixed_model_marker_scan()` calls. Direct Julia engine tooling
   only: no public LOCO defaults, no marker-scan variance-component estimation,
-  no sparse production scan, no calibrated p-values, no plotting backend, no R
-  `marker_scan()` syntax, no bridge payload change, and no comparator parity.
-  The same effect-summary and diagnostic helpers remain direct Julia-only.
+  no sparse production scan, no calibrated p-values, no calibrated PVE/model
+  R² claim, no plotting backend, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity. The same effect-summary,
+  marker-variance, and diagnostic helpers remain direct Julia-only.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

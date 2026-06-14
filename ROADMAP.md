@@ -105,7 +105,9 @@ unimplemented.
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
   GBLUP REML variance-component estimation, and fixed-effect single-marker
   screening (`single_marker_scan`) plus marker-map-backed Manhattan metadata
-  and QQ plot-data preparation. `mixed_model_marker_scan` adds a dense
+  and QQ plot-data preparation, marker-effect summaries, marker-variance
+  contribution summaries, and a genomic-inflation diagnostic.
+  `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
   correction from a supplied marginal covariance.
   `loco_relationship_precisions` constructs dense VanRaden-plus-ridge
@@ -355,8 +357,8 @@ and extractor meanings.
 ## Phase 5: QTL, GWAS, And eQTL
 
 Add single-marker scans, mixed-model marker scans, LOCO, LOD output,
-calibrated mixed-model p-values, cis/trans eQTL, multiple testing, and basic
-plots.
+calibrated mixed-model p-values, calibrated PVE/model R² summaries, cis/trans
+eQTL, multiple testing, and basic plots.
 
 Status: `single_marker_scan` provides the first direct Julia engine utility for
 fixed-effect single-marker screening. It residualizes `y` and centered marker
@@ -368,6 +370,9 @@ Manhattan data, including overloads that consume already-validated `HSData` /
 `HSMarkerMapSpec` marker metadata by exact marker ID. `marker_effects`
 prepares sorted top-marker effect summaries from the same scan fields, with
 optional chromosome/position alignment from validated marker metadata.
+`marker_variance_explained` prepares sorted marker-level variance-contribution
+summaries as `2p(1-p) * effect^2`, with optional total-variance proportions and
+the same metadata alignment; it is not a calibrated PVE/model R² claim.
 `marker_qq_data` prepares sorted observed/expected QQ plot data from the same
 direct scan output, and `marker_genomic_inflation` reports a
 genomic-control-style lambda_GC diagnostic from returned chi-square values.

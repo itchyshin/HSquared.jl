@@ -2,6 +2,59 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker-variance contribution summary helper
+
+- Goal: add a deterministic direct-Julia marker-variance contribution summary
+  helper over already-computed marker-scan effects and allele frequencies,
+  without adding calibrated PVE/model R² claims, marker-scan variance-component
+  estimation, plotting, R syntax, bridge payload changes, threshold selection,
+  or p-value calibration.
+- Active lenses: Fisher (variance-contribution-vs-calibrated-PVE boundary),
+  Pat (summary ergonomics), Curie (deterministic sorting/top-N/proportion and
+  metadata tests), Shannon (R/Julia boundary), Grace (low-core checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_variance_explained(scan; total_variance, sort_by,
+    top_n, decreasing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - computes marker-level variance contributions as
+    `2p(1-p) * effect^2` from returned scan fields;
+  - optionally reports `proportion_variance_explained` when a positive finite
+    `total_variance` is supplied;
+  - supports deterministic sorting by marker variance, optional proportion,
+    allele variance, signed effect, absolute effect, or p-value;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose marker effects and allele frequencies;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-variance-summary-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks:
+  - `/Applications/Julia-1.6.app/Contents/Resources/julia/bin/julia --project=. -e 'using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    failed before tests because the manifest was resolved with Julia 1.10 and
+    Julia 1.6 hit `AssertionError: sourcepath !== nothing` during package
+    instantiation. This was a local runtime mismatch, not a package test
+    failure.
+  - `~/.juliaup/bin/julia --version`: `julia version 1.10.0`.
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The command exercised the package test file and ended with
+    `HSquared tests passed`; the Phase 5 fixed-effect single-marker scan
+    testset is now 270 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed. Known local
+    caveats remained: 8 docstrings not included in the manual, local
+    deployment skipped, VitePress default substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated docs dependencies.
+  - `git diff --check`: passed after source/docs closeout edits.
+- Boundary: summary over returned marker-scan effects and allele frequencies
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, activate
+  R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 marker-effects summary helper
 
 - Goal: add a deterministic direct-Julia marker-effect summary helper over

@@ -368,8 +368,12 @@ LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
 already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
 chromosomes and positions by exact marker ID. `marker_effects()`
 prepares sorted top-marker effect summaries from the same scan fields, with
-optional chromosome/position alignment. `marker_qq_data()` prepares sorted
-observed/expected QQ plot data from the same direct scan result.
+optional chromosome/position alignment. `marker_variance_explained()` prepares
+sorted marker-level variance-contribution summaries as `2p(1-p) * effect^2`,
+with optional total-variance proportions and the same metadata alignment. These
+are direct marker-variance contributions, not calibrated PVE/model R² claims.
+`marker_qq_data()` prepares sorted observed/expected QQ plot data from the same
+direct scan result.
 `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
 dense supplied-variance GLS helper that accounts for a supplied relationship
 covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`.
@@ -378,8 +382,9 @@ leave-one-group-out relationship precisions from marker groups, and
 `loco_mixed_model_marker_scan()` selects a precision by marker group before
 running the same dense GLS scan. These helpers do not compute interval-mapping
 or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
-workflows, estimate marker-scan variance components, choose public LOCO
-defaults, parse marker files, draw figures, or activate the R-facing
+workflows, estimate marker-scan variance components, claim calibrated
+PVE/model R², choose public LOCO defaults, parse marker files, draw figures, or
+activate the R-facing
 `marker_scan()` formula term. `marker_genomic_inflation()` provides a
 diagnostic lambda summary over returned chi-square statistics; it does not
 calibrate p-values or correct scan statistics.
@@ -410,6 +415,7 @@ manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 2)
+variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 2)
 marker_data = HSData((id = ["example"], y = [0.0]); markers = (
     marker = ["m1", "m2"],
     chr = ["1", "2"],
@@ -417,6 +423,7 @@ marker_data = HSData((id = ["example"], y = [0.0]); markers = (
 ))
 map_manhattan = marker_manhattan_data(scan, marker_data)
 map_effects = marker_effects(scan, marker_data; top_n = 2)
+map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
 manhattan.neglog10_p_values
 qq.expected_neglog10_p_values
 ```
@@ -815,8 +822,8 @@ Animal/genomic:
 
 Genomics/QTL:
 
-- `marker_effects(fit)`;
-- `marker_variance_explained(fit)`;
+- `marker_effects(scan)`;
+- `marker_variance_explained(scan)`;
 - `qtl_table(fit)`;
 - `eqtl_table(fit)`;
 - `gwas_table(fit)`;

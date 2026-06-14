@@ -219,7 +219,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   known-variance LOD-equivalent scores, denominators, marker IDs, allele
   frequencies, and the VanRaden scale. `marker_effects()` prepares
   sorted top-marker effect summaries from those direct scan fields, with
-  optional exact marker-map metadata alignment. `marker_manhattan_data()`
+  optional exact marker-map metadata alignment. `marker_variance_explained()`
+  prepares sorted marker-level variance-contribution summaries as
+  `2p(1-p) * effect^2`, with optional total-variance proportions and exact
+  marker-map metadata alignment; it is not a calibrated PVE/model R² claim.
+  `marker_manhattan_data()`
   prepares plot-ready Manhattan data from those direct scan fields and can
   consume already-validated `HSMarkerMapSpec` / `HSData` marker metadata by
   exact marker ID. `marker_qq_data()` prepares sorted observed/expected QQ
@@ -228,8 +232,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   diagnostic from returned chi-square values.
   This is engine-internal / direct-Julia only:
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
-  calibrated mixed-model p-values, interval-mapping or mixed-model LOD
-  workflows, marker file parsing, plotting
+  calibrated mixed-model p-values, calibrated PVE/model R² claims,
+  interval-mapping or mixed-model LOD workflows, marker file parsing, plotting
   backend, advanced/correlated-marker multiple-testing workflow,
   R `marker_scan()` formula activation, bridge payload change, or
   `result_payload()` change.
@@ -239,8 +243,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   and a supplied relationship precision, then runs marker-by-marker Wald tests
   conditional on `X`. This is engine-internal / direct-Julia only: no
   marker-scan variance-component estimation, LOCO, sparse production scan,
-  calibrated p-values, interval-mapping or mixed-model LOD workflows, plotting
-  backend, R `marker_scan()` formula
+  calibrated p-values, calibrated PVE/model R² claims, interval-mapping or
+  mixed-model LOD workflows, plotting backend, R `marker_scan()` formula
   activation, bridge payload change, or `result_payload()` change.
 - Julia now has `loco_relationship_precisions` and
   `loco_mixed_model_marker_scan` as direct Phase 5 leave-one-group-out
@@ -250,8 +254,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   precision before running the dense supplied-variance GLS scan. This is
   engine-internal / direct-Julia only: no public LOCO defaults, marker-scan
   variance-component estimation, sparse production scan, calibrated p-values,
-  plotting backend, R `marker_scan()` formula activation, bridge payload
-  change, or `result_payload()` change.
+  calibrated PVE/model R² claims, plotting backend, R `marker_scan()` formula
+  activation, bridge payload change, or `result_payload()` change.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

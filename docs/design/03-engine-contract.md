@@ -228,10 +228,12 @@ manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 10)
+variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 10)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
 map_effects = marker_effects(scan, marker_data; top_n = 10)
+map_variance = marker_variance_explained(scan, marker_data; top_n = 10)
 ```
 
 These are direct Julia engine utilities. They do not change the R bridge
@@ -274,6 +276,14 @@ sorts returned marker effects and scan statistics by a requested field, can
 limit to top markers, and can align already-validated marker-map metadata by
 exact marker ID. It does not choose thresholds, calibrate p-values, draw plots,
 or change bridge payloads.
+
+`marker_variance_explained()` prepares deterministic marker-level variance
+contribution summaries only. It computes `2p(1-p) * effect^2` from returned
+scan effects and allele frequencies, can optionally divide by a supplied
+`total_variance`, and can align already-validated marker-map metadata by exact
+marker ID. It does not estimate marker-scan variance components, claim
+calibrated PVE/model R², choose thresholds, calibrate p-values, draw plots, or
+change bridge payloads.
 
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes

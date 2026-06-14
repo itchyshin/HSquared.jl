@@ -67,8 +67,9 @@ Implemented engine utilities:
   `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
   `mixed_model_marker_scan`, dense LOCO precision construction via
   `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
-  marker-effect summaries plus marker-map-backed `marker_manhattan_data` and
-  `marker_qq_data` plot-data preparation;
+  marker-effect summaries, marker-variance contribution summaries, and
+  marker-map-backed `marker_manhattan_data` and `marker_qq_data` plot-data
+  preparation;
 - experimental repeatability, two-effect, multivariate, and structured
   genetic-covariance utilities, all validation-scale and not public R formula
   defaults;
@@ -85,8 +86,9 @@ Planned, but not implemented yet:
 - production R-to-Julia fitting bridge;
 - genotype parsing, imputation, public genomic model-spec fitting,
   formula-driven mixed-model marker scans, public LOCO workflows, calibrated
-  mixed-model p-values, interval-mapping or mixed-model LOD workflows,
-  genome-wide multiple-testing calibration, and QTL/eQTL intervals;
+  mixed-model p-values, calibrated PVE/model R² claims, interval-mapping or
+  mixed-model LOD workflows, genome-wide multiple-testing calibration, and
+  QTL/eQTL intervals;
 - environmental model terms, automatic environment joins, and
   multi-environment animal-model workflows;
 - expression-feature joins and eQTL/omics fitting from expression metadata;

@@ -706,17 +706,24 @@ function marker_manhattan_data(
 end
 
 function _scan_marker_ids_and_p_values(scan)
-    hasproperty(scan, :marker_ids) ||
-        throw(ArgumentError("scan must have a marker_ids field"))
+    marker_ids = _scan_marker_ids(scan)
     hasproperty(scan, :p_values) ||
         throw(ArgumentError("scan must have a p_values field"))
 
-    marker_ids = string.(collect(getproperty(scan, :marker_ids)))
     p_values = _checked_p_values(getproperty(scan, :p_values))
     m = length(p_values)
     length(marker_ids) == m ||
         throw(ArgumentError("marker_ids and p_values must have the same length"))
     return marker_ids, p_values
+end
+
+function _scan_marker_ids(scan)
+    hasproperty(scan, :marker_ids) ||
+        throw(ArgumentError("scan must have a marker_ids field"))
+    marker_ids = string.(collect(getproperty(scan, :marker_ids)))
+    !isempty(marker_ids) ||
+        throw(ArgumentError("marker_ids must be non-empty"))
+    return marker_ids
 end
 
 function _marker_manhattan_data_from_vectors(
@@ -966,6 +973,215 @@ function marker_effects(
         top_n = top_n,
         decreasing = decreasing,
     )
+end
+
+"""
+    marker_variance_explained(scan; total_variance = nothing,
+                              sort_by = :marker_variance, top_n = nothing,
+                              decreasing = nothing)
+    marker_variance_explained(scan, marker_spec::HSMarkerMapSpec; ...)
+    marker_variance_explained(scan, data::HSData; ...)
+
+Prepare deterministic marker-level variance-contribution summaries from a
+direct marker-scan result.
+
+The helper expects scan `marker_ids`, marker `effects`, and allele frequencies
+`p` such as those returned by [`single_marker_scan`](@ref),
+[`mixed_model_marker_scan`](@ref), or [`loco_mixed_model_marker_scan`](@ref).
+For each biallelic marker it computes `2p(1-p) * effect^2`. If
+`total_variance` is supplied, it also returns
+`proportion_variance_explained = marker_variance / total_variance`. Supported
+`sort_by` values are `:marker_variance`, `:proportion_variance_explained`,
+`:allele_variance`, `:effect`, `:abs_effect`, and `:p_value`; p-value sorting
+requires a scan `p_values` field. Variance and effect-size metrics sort
+descending by default, while p-values sort ascending.
+
+When an already-validated [`HSMarkerMapSpec`](@ref) or [`HSData`](@ref) with
+marker metadata is supplied, marker IDs must match exactly and chromosome /
+position vectors are aligned to the returned summary order.
+
+This is a direct Julia summary helper only. It does not estimate marker-scan
+variance components, calibrate p-values, claim calibrated PVE/model R², choose
+thresholds, draw plots, activate R-facing `marker_scan()` syntax, or change the
+bridge payload.
+"""
+function marker_variance_explained(
+    scan;
+    total_variance = nothing,
+    sort_by::Symbol = :marker_variance,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    return _marker_variance_explained(
+        scan,
+        nothing,
+        nothing;
+        total_variance = total_variance,
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function marker_variance_explained(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    total_variance = nothing,
+    sort_by::Symbol = :marker_variance,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    marker_ids = _scan_marker_ids(scan)
+    map_order = _marker_map_order_for_scan(marker_ids, marker_spec)
+    return _marker_variance_explained(
+        scan,
+        marker_spec.chromosome[map_order],
+        marker_spec.position[map_order];
+        total_variance = total_variance,
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function marker_variance_explained(
+    scan,
+    data::HSData;
+    total_variance = nothing,
+    sort_by::Symbol = :marker_variance,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return marker_variance_explained(
+        scan,
+        data.marker_spec;
+        total_variance = total_variance,
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function _marker_variance_explained(
+    scan,
+    chromosomes,
+    positions;
+    total_variance,
+    sort_by::Symbol,
+    top_n,
+    decreasing::Union{Nothing,Bool},
+)
+    marker_ids = _scan_marker_ids(scan)
+    m = length(marker_ids)
+
+    effects = _checked_scan_float_field(scan, :effects, m)
+    allele_frequencies = _checked_scan_allele_frequencies(scan, m)
+    allele_variances = 2 .* allele_frequencies .* (1 .- allele_frequencies)
+    marker_variances = allele_variances .* effects .^ 2
+    total = _checked_marker_total_variance(total_variance)
+    proportions = total === nothing ? nothing : marker_variances ./ total
+    p_values = hasproperty(scan, :p_values) ?
+        _checked_scan_p_value_field(scan, :p_values, m) :
+        nothing
+
+    metric, canonical_sort_by, default_decreasing = _marker_variance_sort_metric(
+        sort_by,
+        effects,
+        allele_variances,
+        marker_variances,
+        proportions,
+        p_values,
+    )
+    decreasing_value = decreasing === nothing ? default_decreasing : decreasing
+    order_all = if decreasing_value
+        sortperm(collect(1:m); by = i -> (-metric[i], i))
+    else
+        sortperm(collect(1:m); by = i -> (metric[i], i))
+    end
+
+    top_count = _checked_top_n(top_n, m)
+    order = order_all[1:top_count]
+    target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
+
+    summary = (
+        marker_ids = marker_ids[order],
+        effects = effects[order],
+        abs_effects = abs.(effects[order]),
+        allele_frequencies = allele_frequencies[order],
+        allele_variances = allele_variances[order],
+        marker_variances = marker_variances[order],
+        proportion_variance_explained = proportions === nothing ? nothing : proportions[order],
+        total_variance = total,
+        scan_indices = order,
+        sort_by = canonical_sort_by,
+        decreasing = decreasing_value,
+        top_n = top_count,
+        target = target,
+    )
+    p_values === nothing || (summary = merge(summary, (p_values = p_values[order],)))
+
+    chromosomes === nothing && positions === nothing && return summary
+    chromosome_values, position_values = _checked_marker_summary_metadata(chromosomes, positions, m)
+    return merge(
+        summary,
+        (
+            chromosomes = chromosome_values[order],
+            positions = position_values[order],
+        ),
+    )
+end
+
+function _checked_scan_allele_frequencies(scan, n::Int)
+    hasproperty(scan, :p) ||
+        throw(ArgumentError("scan must have a p field"))
+    return _checked_allele_frequencies(getproperty(scan, :p), n)
+end
+
+function _checked_allele_frequencies(values, n::Int)
+    allele_frequencies = Float64.(collect(values))
+    length(allele_frequencies) == n ||
+        throw(ArgumentError("p must have one entry per marker"))
+    all(p -> isfinite(p) && 0 <= p <= 1, allele_frequencies) ||
+        throw(ArgumentError("p values must be finite allele frequencies in [0, 1]"))
+    return allele_frequencies
+end
+
+function _checked_marker_total_variance(total_variance)
+    total_variance === nothing && return nothing
+    total = Float64(total_variance)
+    isfinite(total) && total > 0 ||
+        throw(ArgumentError("total_variance must be positive and finite"))
+    return total
+end
+
+function _marker_variance_sort_metric(
+    sort_by::Symbol,
+    effects::Vector{Float64},
+    allele_variances::Vector{Float64},
+    marker_variances::Vector{Float64},
+    proportions,
+    p_values,
+)
+    if sort_by in (:marker_variance, :marker_variances, :variance, :variance_explained)
+        return marker_variances, :marker_variance, true
+    elseif sort_by in (:proportion_variance_explained, :proportion, :pve)
+        proportions !== nothing ||
+            throw(ArgumentError("total_variance is required when sort_by is $(sort_by)"))
+        return proportions, :proportion_variance_explained, true
+    elseif sort_by in (:allele_variance, :allele_variances)
+        return allele_variances, :allele_variance, true
+    elseif sort_by == :effect
+        return effects, :effect, true
+    elseif sort_by in (:abs_effect, :abs_effects, :absolute_effect)
+        return abs.(effects), :abs_effect, true
+    elseif sort_by in (:p_value, :p_values, :p)
+        p_values !== nothing ||
+            throw(ArgumentError("scan must have a p_values field when sort_by is $(sort_by)"))
+        return p_values, :p_value, false
+    end
+    throw(ArgumentError("unsupported sort_by value: $(sort_by)"))
 end
 
 function _marker_effects(

@@ -119,9 +119,9 @@ Not implemented:
 - production R-to-Julia fitting bridge;
 - public R-facing genomic/marker model-spec fitting, production genomic
   prediction, APY/sparse genomic scaling, formula-driven mixed-model marker
-  scans, public LOCO workflows, calibrated mixed-model p-values,
-  interval-mapping or mixed-model LOD workflows, genome-wide calibration, and
-  QTL/eQTL intervals;
+  scans, public LOCO workflows, calibrated mixed-model p-values, calibrated
+  PVE/model R² claims, interval-mapping or mixed-model LOD workflows,
+  genome-wide calibration, and QTL/eQTL intervals;
 - public R-facing permanent environment, common environment,
   maternal/paternal effects,
   cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
@@ -157,15 +157,16 @@ Next engine targets:
   parity remain future work.
 - Phase 5: direct fixed-effect marker screening has started with Wald p-values,
   Bonferroni/BH adjustments, LOD-equivalent scores, marker-effect summaries,
-  and marker-map-backed Manhattan, QQ, and lambda_GC diagnostic data. A
+  marker-variance contribution summaries, and marker-map-backed Manhattan, QQ,
+  and lambda_GC diagnostic data. A
   supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
   screening, `loco_relationship_precisions` constructs dense
   VanRaden-plus-ridge leave-one-group-out precision matrices, and
   `loco_mixed_model_marker_scan` can select among supplied LOCO precision
   matrices. Formula-driven QTL/GWAS/eQTL scans, public LOCO workflow defaults,
-  genome-wide calibration, calibrated p-values, and actual plotting
-  backends remain future work.
+  genome-wide calibration, calibrated p-values, calibrated PVE/model R² claims,
+  and actual plotting backends remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,
