@@ -844,6 +844,58 @@ function marker_qq_data(scan; p_floor::Real = floatmin(Float64))
     )
 end
 
+const _CHISQ1_MEDIAN = 0.454936423119572
+
+"""
+    marker_genomic_inflation(scan; expected_median = 0.454936423119572)
+
+Compute a genomic-control-style inflation diagnostic from a direct marker-scan
+result.
+
+The helper expects a `chisq` field such as the one returned by
+[`single_marker_scan`](@ref), [`mixed_model_marker_scan`](@ref), or
+[`loco_mixed_model_marker_scan`](@ref). It returns a compact `NamedTuple` with
+`lambda_gc = median(chisq) / expected_median`, the observed median chi-square,
+the expected median, the number of markers, and the scan target when available.
+The default expected median is the 0.5 quantile of a one-degree-of-freedom
+chi-square distribution.
+
+This is a diagnostic summary only. It does not calibrate p-values, correct the
+scan statistics, choose genome-wide thresholds, or activate R-facing
+`marker_scan()` syntax.
+"""
+function marker_genomic_inflation(scan; expected_median::Real = _CHISQ1_MEDIAN)
+    hasproperty(scan, :chisq) ||
+        throw(ArgumentError("scan must have a chisq field"))
+    values = Float64.(collect(getproperty(scan, :chisq)))
+    !isempty(values) ||
+        throw(ArgumentError("chisq values must be non-empty"))
+    all(x -> isfinite(x) && x >= 0, values) ||
+        throw(ArgumentError("chisq values must be finite and non-negative"))
+
+    expected = Float64(expected_median)
+    isfinite(expected) && expected > 0 ||
+        throw(ArgumentError("expected_median must be positive and finite"))
+
+    median_chisq = _median_float(values)
+    target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
+    return (
+        lambda_gc = median_chisq / expected,
+        median_chisq = median_chisq,
+        expected_median = expected,
+        n_markers = length(values),
+        target = target,
+    )
+end
+
+function _median_float(values::Vector{Float64})
+    sorted_values = sort(values)
+    n = length(sorted_values)
+    middle = n ÷ 2
+    return isodd(n) ? sorted_values[middle + 1] :
+           (sorted_values[middle] + sorted_values[middle + 1]) / 2
+end
+
 # Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is
 # about 7.5e-8, enough for deterministic fixed-effect scan diagnostics without
 # adding a statistics dependency.

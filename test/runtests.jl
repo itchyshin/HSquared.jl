@@ -248,11 +248,12 @@ end
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
     @test occursin("marker_qq_data", fixed_marker_row.evidence)
+    @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
     @test occursin("Fixed-effect Gaussian screening utility with marker-map-backed Manhattan and QQ plot-data helpers only", fixed_marker_row.claim_boundary)
-    @test occursin("no genomic-inflation or calibration claim", fixed_marker_row.claim_boundary)
+    @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     mixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-MIXED")
     @test mixed_marker_row.phase == "Phase 5"
@@ -1812,6 +1813,12 @@ end
     @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
     @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
+    inflation = marker_genomic_inflation(scan)
+    @test inflation.target == :direct_marker_scan
+    @test inflation.n_markers == 2
+    @test inflation.median_chisq ≈ sum(scan.chisq) / 2 atol = 1e-12
+    @test inflation.expected_median ≈ HSquared._CHISQ1_MEDIAN atol = 1e-15
+    @test inflation.lambda_gc ≈ inflation.median_chisq / HSquared._CHISQ1_MEDIAN atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
     @test all(0 .<= scan.p_values .<= 1)
@@ -1907,6 +1914,9 @@ end
     @test mixed.lod_scores ≈ mixed.chisq ./ (2 * log(10)) atol = 1e-12
     @test marker_manhattan_data(mixed).marker_ids == mixed.marker_ids
     @test marker_qq_data(mixed).marker_ids == mixed.marker_ids
+    mixed_inflation = marker_genomic_inflation(mixed)
+    @test mixed_inflation.target == :mixed_model_marker_scan
+    @test mixed_inflation.median_chisq ≈ sum(mixed.chisq) / 2 atol = 1e-12
 
     Ainv_loco1 = Matrix(Ainv_mixed)
     Ainv_loco2 = 1.4 .* Matrix(Ainv_mixed)
@@ -1955,6 +1965,9 @@ end
     @test loco.lod_scores ≈ loco.chisq ./ (2 * log(10)) atol = 1e-12
     @test marker_manhattan_data(loco).marker_ids == loco.marker_ids
     @test marker_qq_data(loco).marker_ids == loco.marker_ids
+    loco_inflation = marker_genomic_inflation(loco)
+    @test loco_inflation.target == :loco_mixed_model_marker_scan
+    @test loco_inflation.median_chisq ≈ sum(loco.chisq) / 2 atol = 1e-12
 
     loco_precisions = loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = 0.2)
     @test sort(collect(keys(loco_precisions))) == ["chr1", "chr2"]
@@ -2073,6 +2086,11 @@ end
     @test custom_qq.observed_neglog10_p_values ≈ [12.0, 2.0, -0.0] atol = 1e-12
     @test custom_qq.expected_neglog10_p_values ≈ .-log10.([0.25, 0.5, 0.75]) atol = 1e-12
     @test custom_qq.p_floor == 1e-12
+    custom_inflation = marker_genomic_inflation((chisq = [9.0, 1.0, 4.0], target = :custom); expected_median = 1.0)
+    @test custom_inflation.target == :custom
+    @test custom_inflation.n_markers == 3
+    @test custom_inflation.median_chisq == 4.0
+    @test custom_inflation.lambda_gc == 4.0
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
@@ -2095,6 +2113,11 @@ end
     @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"],))
     @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
     @test_throws ArgumentError marker_qq_data(scan; p_floor = 0.0)
+    @test_throws ArgumentError marker_genomic_inflation((p_values = [0.5],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = Float64[],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, -0.1],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, NaN],))
+    @test_throws ArgumentError marker_genomic_inflation(scan; expected_median = 0.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)

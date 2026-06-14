@@ -226,6 +226,7 @@ loco_scan = loco_mixed_model_marker_scan(
 )
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
+inflation = marker_genomic_inflation(scan)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
@@ -251,7 +252,7 @@ validation-scale marginal covariance from supplied variance components and a
 supplied relationship precision, then runs marker-by-marker GLS Wald tests
 conditional on `X`. It is relationship-corrected only through that supplied
 covariance. It does not estimate marker-scan variance components, implement
-LOCO, calibrate genome-wide p-values, estimate genomic inflation, draw plots, or
+LOCO, calibrate genome-wide p-values, draw plots, or
 change bridge payloads.
 
 `loco_relationship_precisions()` constructs dense leave-one-group-out VanRaden
@@ -260,6 +261,11 @@ ridge-regularized inverse. `loco_mixed_model_marker_scan()` then selects one
 relationship precision for each marker group and runs the same GLS test. These
 helpers do not choose public LOCO defaults, estimate marker-scan variance
 components, calibrate p-values, draw plots, or change bridge payloads.
+
+`marker_genomic_inflation()` computes a genomic-control-style lambda_GC
+diagnostic from the returned chi-square statistics of direct marker scans. It
+is a summary diagnostic only and does not correct or calibrate scan statistics,
+choose thresholds, or change bridge payloads.
 
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes

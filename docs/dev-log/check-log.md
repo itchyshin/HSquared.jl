@@ -2,6 +2,49 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker genomic-inflation diagnostic
+
+- Goal: add a deterministic diagnostic summary for marker-scan chi-square
+  inflation over direct Julia scan results, without calibrating p-values,
+  correcting test statistics, choosing genome-wide thresholds, changing R
+  syntax, or changing the bridge payload.
+- Active lenses: Jason (genomic-control scout), Fisher (diagnostic-vs-calibration boundary), Curie
+  (deterministic median-chi-square tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_genomic_inflation(scan; expected_median)`;
+  - the helper reads the scan `chisq` field, computes the median chi-square,
+    and reports `lambda_gc = median(chisq) / expected_median`, using the
+    committed chi-square(1) median constant `0.454936423119572` by default;
+  - the helper works with direct fixed-effect, supplied-variance mixed, and
+    supplied LOCO scan results because all expose `chisq` and `target`;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-genomic-inflation-scout.md`
+    pointing to Devlin and Roeder's genomic-control paper and keeping the
+    diagnostic separate from calibration/correction;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Preliminary `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 216 checks; Phase
+    5 fixed-effect single-marker scan testset is now 175 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 216 checks; Phase
+    5 fixed-effect single-marker scan testset is now 175 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct diagnostic summary only. This does not calibrate p-values,
+  correct test statistics, estimate effective marker counts, choose
+  genome-wide thresholds, draw plots, activate R `marker_scan()` syntax, change
+  the bridge payload, change `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 LOCO relationship precision construction
 
 - Goal: add a direct Julia helper that constructs dense leave-one-group-out

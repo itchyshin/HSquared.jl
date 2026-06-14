@@ -376,9 +376,11 @@ leave-one-group-out relationship precisions from marker groups, and
 `loco_mixed_model_marker_scan()` selects a precision by marker group before
 running the same dense GLS scan. These helpers do not compute interval-mapping
 or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
-workflows, estimate marker-scan variance components, estimate genomic
-inflation, choose public LOCO defaults, parse marker files, draw figures, or
-activate the R-facing `marker_scan()` formula term.
+workflows, estimate marker-scan variance components, choose public LOCO
+defaults, parse marker files, draw figures, or activate the R-facing
+`marker_scan()` formula term. `marker_genomic_inflation()` provides a
+diagnostic lambda summary over returned chi-square statistics; it does not
+calibrate p-values or correct scan statistics.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -404,6 +406,7 @@ loco_scan = loco_mixed_model_marker_scan(
 )
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
+inflation = marker_genomic_inflation(scan)
 marker_data = HSData((id = ["example"], y = [0.0]); markers = (
     marker = ["m1", "m2"],
     chr = ["1", "2"],

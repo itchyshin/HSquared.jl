@@ -66,6 +66,7 @@ HSquared.single_marker_scan
 HSquared.mixed_model_marker_scan
 HSquared.loco_relationship_precisions
 HSquared.loco_mixed_model_marker_scan
+HSquared.marker_genomic_inflation
 HSquared.marker_manhattan_data
 HSquared.marker_qq_data
 HSquared.sparse_csc_matrix

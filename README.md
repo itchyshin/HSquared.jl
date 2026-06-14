@@ -120,7 +120,7 @@ Implemented now:
   relationship precision construction and supplied leave-one-group-out marker
   screening, approximate Wald p-values plus
   Bonferroni and Benjamini-Hochberg adjustments, LOD-equivalent scores, and
-  marker-map-backed Manhattan and QQ plot-data preparation;
+  marker-map-backed Manhattan, QQ, and lambda_GC diagnostic preparation;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured

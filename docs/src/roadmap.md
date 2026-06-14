@@ -157,13 +157,13 @@ Next engine targets:
   parity remain future work.
 - Phase 5: direct fixed-effect marker screening has started with Wald p-values,
   Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
-  Manhattan and QQ plot data. A supplied-variance dense GLS
+  Manhattan, QQ, and lambda_GC diagnostic data. A supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
   screening, `loco_relationship_precisions` constructs dense
   VanRaden-plus-ridge leave-one-group-out precision matrices, and
   `loco_mixed_model_marker_scan` can select among supplied LOCO precision
   matrices. Formula-driven QTL/GWAS/eQTL scans, public LOCO workflow defaults,
-  genome-wide calibration, genomic-inflation diagnostics, and actual plotting
+  genome-wide calibration, calibrated p-values, and actual plotting
   backends remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
