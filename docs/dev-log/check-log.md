@@ -22,17 +22,20 @@ Newest entries go at the top.
     passed. Full package suite passed, including Phase 5 fixed-effect
     single-marker scan (`39` checks) and Phase 4B structured genetic
     covariance (`61` checks), on the reconciled PR #19 branch state.
-  - First docs attempt with the same low-core `include("docs/make.jl")`
-    command failed in local npm/VitePress setup after generated
-    `docs/node_modules` artifacts went stale (`spawn sh ENOENT`, missing
-    `docs/package-lock.json` during cleanup).
-  - After removing generated `docs/build`, `docs/node_modules`,
-    `docs/package-lock.json`, and ignored `docs/Manifest.toml`, rerunning
+  - Initial docs attempts with the same low-core `include("docs/make.jl")`
+    command failed in local generated npm/VitePress state: first on stale
+    `docs/node_modules` cleanup, then on a regenerated docs manifest /
+    temporary `docs/package.json` mismatch.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, and recreating the
+    temporary `docs/package.json` from the DocumenterVitepress template,
+    rerunning
     `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
-    passed. Known caveats remained: 8 unrelated docstrings not included in the
-    manual, local deployment skipped, VitePress default substitutions, missing
-    local logo/favicon/package.json substitutions, and 4 npm audit advisories
-    in generated docs dependencies.
+    passed. Generated docs/npm files were removed again before commit. Known
+    caveats remained: 8 unrelated docstrings not included in the manual, local
+    deployment skipped, VitePress default substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated docs dependencies.
 - Boundary: stack reconciliation only. No engine code, tests, validation-status
   row, capability-status row, validation-debt row, R bridge payload,
   `result_payload()`, or public claim changed.
