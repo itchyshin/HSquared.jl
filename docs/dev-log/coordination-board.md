@@ -23,6 +23,13 @@ README links both twin documentation surfaces so readers can move between the
 Julia engine status and the R user-facing package without inferring bridge
 support beyond the recorded evidence.
 
+## Stack Readiness
+
+- PR #17 (`phase4b-factor-analytic-g`) was locally reconciled with current
+  `main` on 2026-06-14. The only conflict was the append-only check log; both
+  the `main` landing-page entry and the Phase 4B branch evidence are preserved.
+  Local full `Pkg.test()` and Documenter build passed before push.
+
 ## Shared Contract
 
 - `hsquared` is the R public identity.

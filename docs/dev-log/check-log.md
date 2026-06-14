@@ -2,6 +2,61 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4B PR17 main reconcile
+
+- Goal: resolve the draft PR #17 `phase4b-factor-analytic-g` conflict against
+  current `main` so the structured-covariance base can become mergeable before
+  more stacked Phase 5 marker work lands.
+- Active lenses: Ada/Shannon (stack order and lane discipline),
+  Gauss/Karpinski/Kirkpatrick (structured-covariance preservation), Grace
+  (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/main` into `phase4b-factor-analytic-g`;
+  - resolved the only conflict in `docs/dev-log/check-log.md`;
+  - restored the current-main GitHub landing-page docs-link entry to this
+    append-only log while preserving the Phase 4B / recovery-calibration branch
+    entries.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 4B structured genetic
+    covariance (`61` checks) and Phase 5 fixed-effect single-marker scan (`20`
+    checks) on this reconciled branch state.
+  - `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local Documenter/VitePress caveats.
+- Boundary: merge-readiness and docs-log reconciliation only. No engine code,
+  R bridge payload, `result_payload()`, capability-status, validation-debt, or
+  public-claim change.
+
+## 2026-06-14 GitHub landing-page docs link
+
+- Goal: make the live Julia Documenter site visible from the GitHub repository
+  landing page without waiting behind the Phase 5 draft stack.
+- Active lenses: Grace, Shannon, Rose.
+- Spawned subagents: none.
+- Live URL checks:
+  - `https://itchyshin.github.io/HSquared.jl/` returned HTTP 200 and redirects
+    to `./dev/`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/` returned HTTP 200.
+  - GitHub API repository metadata reports homepage
+    `https://itchyshin.github.io/HSquared.jl/` and Pages enabled.
+- Files changed:
+  - `README.md`: added immediate Documenter, R pkgdown, and R repository links
+    under the title.
+  - `docs/dev-log/coordination-board.md`: recorded the public landing pages.
+  - `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`.
+- Local checks:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats: 8 docstrings not included in the manual,
+    local deployment skipped, default VitePress substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated dependencies.
+- Boundary: docs discoverability only. No engine code, R bridge contract,
+  validation status, production fitting, comparator, genomic, QTL, GPU, or
+  performance claim changed.
+
 ## 2026-06-14 fixed-effect single-marker scan
 
 - Goal: land the first small Phase 5 marker-screening engine utility without
