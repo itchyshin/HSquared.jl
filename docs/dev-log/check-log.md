@@ -31,23 +31,23 @@ Newest entries go at the top.
   - synced `validation_status()`, API docs, capability-status,
     validation-debt, public-claims, roadmap, README, Documenter pages,
     changelog, engine contract, and coordination-board wording.
-- Local checks:
-  - `/Applications/Julia-1.6.app/Contents/Resources/julia/bin/julia --project=. -e 'using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
-    failed before tests because the manifest was resolved with Julia 1.10 and
-    Julia 1.6 hit `AssertionError: sourcepath !== nothing` during package
-    instantiation. This was a local runtime mismatch, not a package test
-    failure.
-  - `~/.juliaup/bin/julia --version`: `julia version 1.10.0`.
-  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
-    passed. The command exercised the package test file and ended with
-    `HSquared tests passed`; the Phase 5 fixed-effect single-marker scan
-    testset is now 270 checks.
-  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed. Known local
-    caveats remained: 8 docstrings not included in the manual, local
-    deployment skipped, VitePress default substitutions, missing local
-    logo/favicon/package.json substitutions, and 4 npm audit advisories in
-    generated docs dependencies.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 225 checks; Phase
+    5 fixed-effect single-marker scan testset is now 270 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
   - `git diff --check`: passed after source/docs closeout edits.
+- Remote checks for pushed commit `67cb758`:
+  - CI `27511455907`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27511455907>.
+  - Documenter `27511455912`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27511455912>.
 - Boundary: summary over returned marker-scan effects and allele frequencies
   only. This does not estimate marker-scan variance components, calibrate
   p-values, claim calibrated PVE/model R², correct statistics, estimate
