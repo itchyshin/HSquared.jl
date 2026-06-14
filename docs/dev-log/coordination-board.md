@@ -200,9 +200,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   promotion until a comparator run records a tolerance and evidence chain.
 - Julia now has opt-in unstructured multivariate REML recovery evidence at
   `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
-  a repeated-record half-sib design outside CI. This retires the "no committed
-  recovery harness" gap for `V4-MV-REML`, but does not provide multi-seed
-  calibration or external comparator parity.
+  a repeated-record half-sib design outside CI, and the harness now accepts
+  `--seed` or explicit `--seeds` lists with summaries. This retires the "no
+  committed recovery harness" gap for `V4-MV-REML`, but does not provide broad
+  multi-seed calibration or external comparator parity.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

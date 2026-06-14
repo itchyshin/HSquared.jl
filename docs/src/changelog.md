@@ -127,9 +127,9 @@
   heritabilities, and breeding values at the estimate. Validated by the `t = 1`
   reduction to the univariate REML (the loglik equals `sparse_reml_loglik`
   exactly), grid-beating, and EBV consistency with `multivariate_mme`.
-  Experimental, dense/validation-scale; opt-in seeded recovery exists outside
-  CI, but is not multi-seed calibrated and has no external-comparator parity
-  yet.
+  Experimental, dense/validation-scale; the opt-in recovery harness accepts
+  `--seed` or explicit `--seeds` lists and prints summaries outside CI, but is
+  not broadly multi-seed calibrated and has no external-comparator parity yet.
 - Added copy-returning Julia-side multivariate result accessors:
   `variance_components`, `fixed_effects`, `breeding_values`/`EBV`/`BLUP`, and
   REML-only `heritability`. These wrap existing `multivariate_mme` /

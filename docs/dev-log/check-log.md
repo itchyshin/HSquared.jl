@@ -2,6 +2,43 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4 multivariate recovery seed-list reporting
+
+- Goal: give the opt-in unstructured multivariate REML recovery harness the
+  same explicit seed-list reporting surface as the Phase 4B structured harness,
+  while keeping stochastic recovery outside CI and not claiming broad
+  calibration.
+- Active lenses: Curie/Fisher (simulation target and interpretation), Gauss
+  (multivariate REML recovery), Grace (checks), Rose (claim boundary).
+  Spawned subagents: none.
+- Change:
+  - added `--seeds=N[,N...]` to
+    `sim/phase4_multivariate_reml_recovery.jl`;
+  - preserved the existing `--seed=N` single-seed interface and the default
+    seed `20260616`;
+  - made `--seed` and `--seeds` mutually exclusive;
+  - prints each result as it finishes and then prints an aggregate summary;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
+- Opt-in harness checks:
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seeds=20260616`:
+    passed; converged in 244 iterations; relative error `G = 0.174500`,
+    `R = 0.131056`, thresholds `0.25` / `0.20`.
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seed=20260616 --seeds=20260616`:
+    failed as intended with `ArgumentError: use either --seed or --seeds, not both`.
+- Local checks:
+  - First `Pkg.test()` after the edit failed because one validation-status test
+    still expected the old `not multi-seed calibrated` phrase. The assertion
+    was updated to the new `not broadly multi-seed calibrated` boundary.
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 174 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: opt-in recovery tooling only. No CI RNG, no R-facing multivariate
+  syntax, no bridge payload or `result_payload()` change, no broad multi-seed
+  calibration, no comparator parity, and no capability-status promotion.
+
 ## 2026-06-14 Phase 4B structured recovery seed-list reporting
 
 - Goal: make the opt-in Phase 4B structured-covariance recovery harness accept

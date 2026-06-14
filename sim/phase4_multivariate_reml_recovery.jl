@@ -19,9 +19,13 @@ Run from the repository root:
 Optional arguments:
 
     --seed=N
+    --seeds=N[,N...]
     --iterations=N
     --threshold-g=X
     --threshold-r=X
+
+Use `--seed` for a single historical-style run and `--seeds` for an explicit
+seed list. The options are mutually exclusive.
 """
 
 struct MultivariateRecoveryConfig
@@ -44,14 +48,29 @@ function _parse_args(args)
         opts[keyval[1]] = keyval[2]
     end
 
-    seed = parse(Int, get(opts, "seed", "20260616"))
+    haskey(opts, "seed") && haskey(opts, "seeds") &&
+        throw(ArgumentError("use either --seed or --seeds, not both"))
+    seeds = if haskey(opts, "seeds")
+        parsed = Int[]
+        for raw_seed in split(opts["seeds"], ",")
+            seed_text = strip(raw_seed)
+            isempty(seed_text) && throw(ArgumentError("--seeds must not contain empty entries"))
+            push!(parsed, parse(Int, seed_text))
+        end
+        isempty(parsed) && throw(ArgumentError("--seeds must include at least one seed"))
+        length(unique(parsed)) == length(parsed) ||
+            throw(ArgumentError("--seeds must not contain duplicate entries"))
+        parsed
+    else
+        [parse(Int, get(opts, "seed", "20260616"))]
+    end
     iterations = parse(Int, get(opts, "iterations", "5000"))
     iterations > 0 || throw(ArgumentError("--iterations must be positive"))
     threshold_g = parse(Float64, get(opts, "threshold-g", "0.25"))
     threshold_r = parse(Float64, get(opts, "threshold-r", "0.20"))
     threshold_g > 0 || throw(ArgumentError("--threshold-g must be positive"))
     threshold_r > 0 || throw(ArgumentError("--threshold-r must be positive"))
-    return MultivariateRecoveryConfig(seed, 8, 16, 56, 3, iterations, threshold_g, threshold_r)
+    return seeds, iterations, threshold_g, threshold_r
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -147,10 +166,25 @@ function _print_result(result)
     println("\n")
 end
 
+function _print_summary(results)
+    pass_count = count(result -> result.pass, results)
+    max_rel_g = maximum(result.rel_g for result in results)
+    max_rel_r = maximum(result.rel_r for result in results)
+    @printf("SUMMARY seeds=%d passed=%d max_relative_error_G=%.6f max_relative_error_R=%.6f\n",
+        length(results), pass_count, max_rel_g, max_rel_r)
+end
+
 function main(args = ARGS)
-    result = _run(_parse_args(args))
-    _print_result(result)
-    result.pass || exit(1)
+    seeds, iterations, threshold_g, threshold_r = _parse_args(args)
+    results = Any[]
+    for seed in seeds
+        result = _run(MultivariateRecoveryConfig(seed, 8, 16, 56, 3, iterations, threshold_g, threshold_r))
+        _print_result(result)
+        push!(results, result)
+        flush(stdout)
+    end
+    _print_summary(results)
+    all(result.pass for result in results) || exit(1)
     return nothing
 end
 

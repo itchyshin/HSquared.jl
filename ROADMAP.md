@@ -312,9 +312,12 @@ Julia REML target for R-lane sommer/ASReml/BLUPF90 parity work. It is an input
 and target bundle, not external comparator evidence.
 
 `sim/phase4_multivariate_reml_recovery.jl` records opt-in seeded unstructured
-two-trait REML recovery outside CI. The default seed `20260616` passes with
-relative errors `G = 0.174500` and `R = 0.131056` against thresholds `0.25` and
-`0.20`.
+two-trait REML recovery outside CI. It accepts `--seed` for the historical
+single-seed run or explicit `--seeds` lists with summaries. The default seed
+`20260616` passes with relative errors `G = 0.174500` and `R = 0.131056`
+against thresholds `0.25` and `0.20`. This is internal recovery evidence only;
+it is not broad multi-seed calibration, external comparator parity, or an R
+bridge change.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

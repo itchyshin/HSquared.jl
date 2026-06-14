@@ -214,10 +214,11 @@ end
     @test occursin("fit_multivariate_reml", mvreml_row.evidence)
     @test occursin("heritability", mvreml_row.evidence)
     @test occursin("comparator protocol", mvreml_row.evidence)
+    @test occursin("explicit `--seeds`", mvreml_row.evidence)
     @test occursin("result_payload", mvreml_row.claim_boundary)
     @test occursin("comparator protocol", mvreml_row.claim_boundary)
+    @test occursin("not broadly multi-seed calibrated", mvreml_row.claim_boundary)
     @test occursin("opt-in seeded recovery harness", mvreml_row.claim_boundary)
-    @test occursin("not multi-seed calibrated", mvreml_row.claim_boundary)
     fa_row = only(row for row in validation if row.id == "V4-FA")
     @test fa_row.phase == "Phase 4B"
     @test fa_row.status == "partial"
