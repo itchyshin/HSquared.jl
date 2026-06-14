@@ -60,6 +60,8 @@ slice.
   included in the manual, local deployment skipped, VitePress default
   substitutions, missing local logo/favicon substitutions, and 4 npm audit
   advisories in generated docs dependencies.
+- Remote workflow-dispatch checks for pushed commit `0c4244c` passed:
+  CI `27515882117` and Documenter `27515882111`.
 
 ## Public Claim Audit
 
@@ -78,12 +80,10 @@ No R issue action is required because no bridge or public R contract changed.
 
 ## Known Limitations
 
-- Remote CI/Documenter need to run after push.
 - PR #20 remains draft and should not be merged until the stack base decision
   is made by the maintainer.
 - Downstream PRs #22 and above should be rechecked after PR #20 is pushed.
 
 ## Next Actions
 
-- Push `codex/phase5-marker-lod`.
-- Watch PR #20 CI/Documenter and re-check downstream stack mergeability.
+- Re-check downstream stack mergeability.

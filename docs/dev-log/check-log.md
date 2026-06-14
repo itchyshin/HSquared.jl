@@ -38,6 +38,8 @@ Newest entries go at the top.
     included in the manual, local deployment skipped, VitePress default
     substitutions, missing local logo/favicon substitutions, and 4 npm audit
     advisories in generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed commit `0c4244c` passed:
+    CI `27515882117` and Documenter `27515882111`.
 - Boundary: stack reconciliation only. No engine code, tests,
   validation-status row, capability-status row, validation-debt row, R bridge
   payload, `result_payload()`, R repository file, or public claim changed.
