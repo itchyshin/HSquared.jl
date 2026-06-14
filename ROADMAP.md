@@ -368,7 +368,10 @@ Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
 marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
 Manhattan data, including overloads that consume already-validated `HSData` /
-`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_scan_table`
+`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_region_data`
+prepares one-chromosome or coordinate-window slices from the same row-aligned
+scan fields for future regional plot/fine-mapping front ends, but does not
+activate them. `marker_scan_table`
 prepares row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, and the
 same metadata alignment, but does not activate `gwas_table()`, `qtl_table()`,

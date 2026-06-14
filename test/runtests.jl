@@ -250,6 +250,7 @@ end
     @test occursin("marker_effects", fixed_marker_row.evidence)
     @test occursin("marker_variance_explained", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
+    @test occursin("marker_region_data", fixed_marker_row.evidence)
     @test occursin("marker_qq_data", fixed_marker_row.evidence)
     @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
@@ -259,6 +260,7 @@ end
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
     @test occursin("Fixed-effect Gaussian screening utility with row-aligned scan-table", fixed_marker_row.claim_boundary)
+    @test occursin("regional marker-window data", fixed_marker_row.claim_boundary)
     @test occursin("no `gwas_table`/`qtl_table`/`eqtl_table` activation", fixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", fixed_marker_row.claim_boundary)
@@ -2192,7 +2194,34 @@ end
     @test map_table.chromosomes == ["2", "1"]
     @test map_table.positions == [5.0, 1.0]
     @test map_table.scan_indices == [1, 2]
-
+    map_region = marker_region_data(
+        scan,
+        marker_map_data;
+        chromosome = "2",
+        start = 4,
+        stop = 4,
+        flank = 1,
+        total_variance = 2.0,
+    )
+    @test map_region.marker_ids == ["m1"]
+    @test map_region.chromosomes == ["2"]
+    @test map_region.positions == [5.0]
+    @test map_region.plot_positions == [5.0]
+    @test map_region.scan_indices == [1]
+    @test map_region.effects ≈ [scan.effects[1]] atol = 1e-12
+    @test map_region.p_values ≈ [scan.p_values[1]] atol = 1e-12
+    @test map_region.marker_variances ≈ [map_table.marker_variances[1]] atol = 1e-12
+    @test map_region.proportion_variance_explained ≈ [map_table.marker_variances[1] / 2] atol = 1e-12
+    @test map_region.total_variance == 2.0
+    @test map_region.chromosome == "2"
+    @test map_region.requested_start == 4.0
+    @test map_region.requested_stop == 4.0
+    @test map_region.flank == 1.0
+    @test map_region.window_start == 3.0
+    @test map_region.window_stop == 5.0
+    @test map_region.neglog10_p_values ≈ .-log10.([scan.p_values[1]]) atol = 1e-12
+    @test map_region.target == :direct_marker_scan
+    @test marker_region_data(scan, marker_map_data.marker_spec; chromosome = :1).marker_ids == ["m2"]
     qq = marker_qq_data(scan)
     @test qq.marker_ids == ["m1", "m2"]
     @test qq.p_values ≈ scan.p_values atol = 1e-12
@@ -2250,7 +2279,7 @@ end
     @test custom_variance_summary.marker_ids == ["a", "b"]
     @test custom_variance_summary.marker_variances ≈ [4.5, 1.5] atol = 1e-12
     @test custom_variance_summary.proportion_variance_explained ≈ [0.45, 0.15] atol = 1e-12
-    custom_table = marker_scan_table((
+    custom_full_scan = (
         marker_ids = ["a", "b", "c"],
         effects = [-3.0, 2.0, 0.5],
         standard_errors = [1.0, 1.0, 0.5],
@@ -2263,11 +2292,27 @@ end
         denominators = [2.0, 3.0, 4.0],
         p = [0.5, 0.25, 0.0],
         target = :custom,
-    ); total_variance = 10.0)
+    )
+    custom_table = marker_scan_table(custom_full_scan; total_variance = 10.0)
     @test custom_table.marker_ids == ["a", "b", "c"]
     @test custom_table.scan_indices == [1, 2, 3]
     @test custom_table.marker_variances ≈ [4.5, 1.5, 0.0] atol = 1e-12
     @test custom_table.proportion_variance_explained ≈ [0.45, 0.15, 0.0] atol = 1e-12
+    custom_region = marker_region_data(
+        custom_full_scan;
+        chromosomes = ["2", "1", "2"],
+        positions = [5, 2, 1],
+        chromosome = "2",
+        start = 0.5,
+        stop = 5,
+        p_floor = 1e-12,
+    )
+    @test custom_region.marker_ids == ["c", "a"]
+    @test custom_region.positions == [1.0, 5.0]
+    @test custom_region.scan_indices == [3, 1]
+    @test custom_region.neglog10_p_values ≈ .-log10.([0.5, 0.01]) atol = 1e-12
+    @test custom_region.window_start == 0.5
+    @test custom_region.window_stop == 5.0
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
@@ -2332,6 +2377,18 @@ end
     @test_throws ArgumentError marker_scan_table(scan; total_variance = 0.0)
     @test_throws ArgumentError marker_scan_table(scan; total_variance = "not numeric")
     @test_throws ArgumentError marker_scan_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_region_data(scan; chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1"], positions = [1.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", ""], positions = [1.0, 2.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, -2.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", start = -1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", start = 2.0, stop = 1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", flank = -1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", p_floor = 0.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "2")
+    @test_throws ArgumentError marker_region_data(scan, HSData((id = ["a"], y = [1.0])); chromosome = "1")
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)

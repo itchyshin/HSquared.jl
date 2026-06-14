@@ -233,6 +233,7 @@ table = marker_scan_table(scan; total_variance = 2.0)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
+region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop = 25)
 map_effects = marker_effects(scan, marker_data; top_n = 10)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 10)
 map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
@@ -301,6 +302,13 @@ already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes
 and positions to scan marker IDs exactly and uses the marker-map order for
 chromosome display. It does not draw figures, parse marker files, run scans, or
 change bridge payloads.
+
+`marker_region_data()` prepares deterministic one-chromosome or
+chromosome-window data only. It reuses the row-aligned scan table fields,
+preserves original scan indices, accepts optional `start`/`stop`/`flank`
+bounds, and aligns already-validated marker metadata by exact marker ID. It
+does not draw regional plots, run fine mapping, choose thresholds, calibrate
+p-values, or change bridge payloads.
 
 `marker_qq_data()` prepares deterministic QQ plot data only. It sorts observed
 p-values from the direct scan, pairs them with expected uniform order-statistic

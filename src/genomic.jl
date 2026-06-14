@@ -794,6 +794,204 @@ function _marker_manhattan_data_from_vectors(
     )
 end
 
+"""
+    marker_region_data(scan; chromosomes, positions, chromosome, start = nothing,
+                       stop = nothing, flank = 0, total_variance = nothing,
+                       p_floor = floatmin(Float64))
+    marker_region_data(scan, marker_spec::HSMarkerMapSpec; ...)
+    marker_region_data(scan, data::HSData; ...)
+
+Prepare scan data for one chromosome or chromosome-window region.
+
+The helper reuses [`marker_scan_table`](@ref) validation, then subsets the
+row-aligned marker-scan table by chromosome and optional coordinate bounds.
+When `start` and/or `stop` are supplied, a non-negative `flank` expands that
+window before filtering. Returned rows are ordered by position within the
+region, with original scan indices preserved.
+
+This is a direct Julia data-preparation helper only. It does not draw a plot,
+choose thresholds, calibrate p-values, run interval mapping, activate
+`gwas_table()` / `qtl_table()` / `eqtl_table()`, activate R-facing
+`marker_scan()` syntax, or change the bridge payload.
+"""
+function marker_region_data(
+    scan;
+    chromosomes = nothing,
+    positions = nothing,
+    chromosome,
+    start = nothing,
+    stop = nothing,
+    flank::Real = 0,
+    total_variance = nothing,
+    p_floor::Real = floatmin(Float64),
+)
+    (chromosomes !== nothing && positions !== nothing) ||
+        throw(ArgumentError("chromosomes and positions are required for marker_region_data"))
+    return _marker_region_data(
+        scan,
+        chromosomes,
+        positions;
+        chromosome = chromosome,
+        start = start,
+        stop = stop,
+        flank = flank,
+        total_variance = total_variance,
+        p_floor = p_floor,
+    )
+end
+
+function marker_region_data(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    chromosome,
+    start = nothing,
+    stop = nothing,
+    flank::Real = 0,
+    total_variance = nothing,
+    p_floor::Real = floatmin(Float64),
+)
+    marker_ids = _scan_marker_ids(scan)
+    map_order = _marker_map_order_for_scan(marker_ids, marker_spec)
+    return _marker_region_data(
+        scan,
+        marker_spec.chromosome[map_order],
+        marker_spec.position[map_order];
+        chromosome = chromosome,
+        start = start,
+        stop = stop,
+        flank = flank,
+        total_variance = total_variance,
+        p_floor = p_floor,
+    )
+end
+
+function marker_region_data(
+    scan,
+    data::HSData;
+    chromosome,
+    start = nothing,
+    stop = nothing,
+    flank::Real = 0,
+    total_variance = nothing,
+    p_floor::Real = floatmin(Float64),
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return marker_region_data(
+        scan,
+        data.marker_spec;
+        chromosome = chromosome,
+        start = start,
+        stop = stop,
+        flank = flank,
+        total_variance = total_variance,
+        p_floor = p_floor,
+    )
+end
+
+function _marker_region_data(
+    scan,
+    chromosomes,
+    positions;
+    chromosome,
+    start,
+    stop,
+    flank::Real,
+    total_variance,
+    p_floor::Real,
+)
+    table = _marker_scan_table(scan, chromosomes, positions; total_variance = total_variance)
+    m = length(table.marker_ids)
+
+    chromosome_value = string(chromosome)
+    !isempty(chromosome_value) ||
+        throw(ArgumentError("chromosome must be a non-empty value"))
+    start_value = _checked_optional_region_bound(start, :start)
+    stop_value = _checked_optional_region_bound(stop, :stop)
+    if start_value !== nothing && stop_value !== nothing
+        stop_value >= start_value ||
+            throw(ArgumentError("stop must be greater than or equal to start"))
+    end
+    flank_value = _checked_region_flank(flank)
+    p_floor_value = Float64(p_floor)
+    isfinite(p_floor_value) && 0 < p_floor_value <= 1 ||
+        throw(ArgumentError("p_floor must be finite and in (0, 1]"))
+
+    window_start = start_value === nothing ? nothing : max(0.0, start_value - flank_value)
+    window_stop = stop_value === nothing ? nothing : stop_value + flank_value
+    lower = window_start === nothing ? -Inf : window_start
+    upper = window_stop === nothing ? Inf : window_stop
+
+    selected = [
+        i for i in 1:m if table.chromosomes[i] == chromosome_value &&
+            lower <= table.positions[i] <= upper
+    ]
+    !isempty(selected) ||
+        throw(ArgumentError("marker region contains no markers"))
+
+    order = selected[sortperm(selected; by = i -> (table.positions[i], table.scan_indices[i]))]
+    region = (
+        marker_ids = table.marker_ids[order],
+        chromosomes = table.chromosomes[order],
+        positions = table.positions[order],
+        plot_positions = table.positions[order],
+        scan_indices = table.scan_indices[order],
+        effects = table.effects[order],
+        abs_effects = table.abs_effects[order],
+        standard_errors = table.standard_errors[order],
+        z_scores = table.z_scores[order],
+        chisq = table.chisq[order],
+        p_values = table.p_values[order],
+        bonferroni_p_values = table.bonferroni_p_values[order],
+        bh_q_values = table.bh_q_values[order],
+        lod_scores = table.lod_scores[order],
+        denominators = table.denominators[order],
+        allele_frequencies = table.allele_frequencies[order],
+        allele_variances = table.allele_variances[order],
+        marker_variances = table.marker_variances[order],
+        proportion_variance_explained = table.proportion_variance_explained === nothing ?
+            nothing :
+            table.proportion_variance_explained[order],
+        total_variance = table.total_variance,
+        chromosome = chromosome_value,
+        requested_start = start_value,
+        requested_stop = stop_value,
+        flank = flank_value,
+        window_start = window_start,
+        window_stop = window_stop,
+        neglog10_p_values = .-log10.(max.(table.p_values[order], p_floor_value)),
+        p_floor = p_floor_value,
+        target = table.target,
+    )
+
+    if hasproperty(table, :vanraden_scale)
+        region = merge(region, (vanraden_scale = table.vanraden_scale,))
+    end
+    if hasproperty(table, :variance_components)
+        region = merge(region, (variance_components = table.variance_components,))
+    end
+    if hasproperty(table, :marker_groups)
+        region = merge(region, (marker_groups = table.marker_groups[order],))
+    end
+
+    return region
+end
+
+function _checked_optional_region_bound(value, field::Symbol)
+    value === nothing && return nothing
+    bound = _checked_real_scalar(value, field)
+    isfinite(bound) && bound >= 0 ||
+        throw(ArgumentError("$(field) must be finite and non-negative"))
+    return bound
+end
+
+function _checked_region_flank(flank::Real)
+    flank_value = Float64(flank)
+    isfinite(flank_value) && flank_value >= 0 ||
+        throw(ArgumentError("flank must be finite and non-negative"))
+    return flank_value
+end
+
 function _marker_map_order_for_scan(marker_ids::Vector{String}, marker_spec::HSMarkerMapSpec)
     duplicate_scan_ids = _duplicate_string_ids(marker_ids)
     isempty(duplicate_scan_ids) ||

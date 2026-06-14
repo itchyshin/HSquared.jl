@@ -71,6 +71,7 @@ HSquared.marker_variance_explained
 HSquared.marker_scan_table
 HSquared.marker_genomic_inflation
 HSquared.marker_manhattan_data
+HSquared.marker_region_data
 HSquared.marker_qq_data
 HSquared.sparse_csc_matrix
 HSquared.AnimalModelSpec

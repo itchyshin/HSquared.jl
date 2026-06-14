@@ -47,6 +47,10 @@
   plot-ready marker IDs, chromosome/position metadata, cumulative plot
   positions, raw p-values, and `-log10(p)` values, including overloads for
   already-validated `HSMarkerMapSpec` / `HSData` marker metadata.
+  `marker_region_data()` prepares one-chromosome or coordinate-window data
+  slices from the same row-aligned scan fields, preserving scan indices and
+  optional marker-variance proportions for future regional plot/fine-mapping
+  front ends without activating them.
   `marker_effects()` prepares deterministic sorted marker-effect
   summaries from the same scan fields, with optional metadata alignment.
   `marker_scan_table()` prepares row-aligned scan tables from the same direct
@@ -63,10 +67,10 @@
   statistics.
   This is direct Julia engine tooling only: no
   mixed-model GWAS/QTL, no interval-mapping or mixed-model LOD workflow, no
-  marker-file parser, no plotting backend, no p-value calibration or
-  correlated-marker multiple-testing workflow, no calibrated PVE/model R²
-  claim, no R `marker_scan()` syntax, no bridge payload change, and no
-  comparator parity.
+  marker-file parser, no plotting backend, no `regional_plot()` or fine-mapping
+  activation, no p-value calibration or correlated-marker multiple-testing
+  workflow, no calibrated PVE/model R² claim, no R `marker_scan()` syntax, no
+  bridge payload change, and no comparator parity.
 - Added `mixed_model_marker_scan()` — a dense, supplied-variance GLS
   marker-screening helper that forms `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`
   from supplied variance components and a supplied relationship precision, then

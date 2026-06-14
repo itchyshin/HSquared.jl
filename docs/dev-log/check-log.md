@@ -2,6 +2,55 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker regional data helper
+
+- Goal: add a deterministic direct-Julia regional marker-scan data helper over
+  already-computed marker-scan fields and marker metadata, without activating
+  R `marker_scan()` syntax, `gwas_table()` / `qtl_table()` / `eqtl_table()`,
+  `regional_plot()`, fine mapping, calibrated p-values, calibrated PVE/model
+  R² claims, bridge payload changes, plotting, threshold selection, or
+  marker-scan variance-component estimation.
+- Active lenses: Fisher (regional-data-vs-GWAS/QTL/fine-mapping boundary),
+  Pat (window ergonomics), Curie (window/order/flank/p-floor tests), Shannon
+  (R/Julia boundary), Grace (low-core checks), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `marker_region_data(scan; chromosomes, positions,
+    chromosome, start, stop, flank, total_variance, p_floor)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - reuses `marker_scan_table()` validation, filters one chromosome or
+    chromosome-window region, orders rows by position, preserves original
+    `scan_indices`, and carries optional marker-variance proportions,
+    variance components, VanRaden scale, and LOCO marker groups when present;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Initial focused `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    failed once because the new custom regional test expected `-log10(1.0)`
+    while the fixture p-value was `0.5`; the assertion was corrected.
+  - Rerun of the same focused command: passed. The test runner executed the
+    suite; Phase 5 fixed-effect single-marker scan testset was 353 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 230 checks; Phase
+    5 fixed-effect single-marker scan testset is now 353 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - `git diff --check`: passed.
+- Boundary: regional marker data preparation over returned marker-scan fields
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, run fine
+  mapping, activate `regional_plot()`, activate R `marker_scan()` syntax,
+  activate `gwas_table()` / `qtl_table()` / `eqtl_table()`, change the bridge
+  payload, change `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 marker scan table helper
 
 - Goal: add a deterministic direct-Julia row-aligned marker-scan table helper

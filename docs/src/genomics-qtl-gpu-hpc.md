@@ -366,7 +366,11 @@ approximate two-sided Gaussian/Wald p-values plus Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set, and
 LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
 already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
-chromosomes and positions by exact marker ID. `marker_scan_table()` prepares
+chromosomes and positions by exact marker ID. `marker_region_data()` prepares
+one-chromosome or coordinate-window slices from the same row-aligned scan
+fields, preserving original scan indices and optional marker-variance
+proportions; it is data preparation for future regional plot/fine-mapping
+front ends, not activation of those workflows. `marker_scan_table()` prepares
 row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, optional
 mixed/LOCO fields when present, and the same exact marker-map alignment; it is
@@ -428,6 +432,7 @@ marker_data = HSData((id = ["example"], y = [0.0]); markers = (
     pos = [10, 20],
 ))
 map_manhattan = marker_manhattan_data(scan, marker_data)
+map_region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop = 25)
 map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
 map_effects = marker_effects(scan, marker_data; top_n = 2)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
@@ -833,6 +838,7 @@ Genomics/QTL:
 - `marker_effects(scan)`;
 - `marker_variance_explained(scan)`;
 - `marker_scan_table(scan)`;
+- `marker_region_data(scan)`;
 - `qtl_table(fit)`;
 - `eqtl_table(fit)`;
 - `gwas_table(fit)`;

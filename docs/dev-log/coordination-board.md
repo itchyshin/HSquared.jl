@@ -232,15 +232,19 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `marker_manhattan_data()`
   prepares plot-ready Manhattan data from those direct scan fields and can
   consume already-validated `HSMarkerMapSpec` / `HSData` marker metadata by
-  exact marker ID. `marker_qq_data()` prepares sorted observed/expected QQ
-  plot data from the same direct scan output, and
+  exact marker ID. `marker_region_data()` prepares one-chromosome or
+  coordinate-window regional data from those row-aligned scan fields,
+  preserving original scan indices and optional marker-variance proportions for
+  future regional display code. `marker_qq_data()` prepares sorted
+  observed/expected QQ plot data from the same direct scan output, and
   `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
   diagnostic from returned chi-square values.
   This is engine-internal / direct-Julia only:
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
   calibrated mixed-model p-values, calibrated PVE/model R² claims,
   interval-mapping or mixed-model LOD workflows, marker file parsing, plotting
-  backend, advanced/correlated-marker multiple-testing workflow,
+  backend, `regional_plot()` / fine-mapping activation,
+  advanced/correlated-marker multiple-testing workflow,
   `gwas_table()` / `qtl_table()` / `eqtl_table()` activation,
   R `marker_scan()` formula activation, bridge payload change, or
   `result_payload()` change.
