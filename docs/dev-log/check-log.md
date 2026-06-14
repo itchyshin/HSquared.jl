@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 PR22 base reconcile
+
+- Goal: resolve draft PR #22 (`codex/phase5-marker-plot-data`) against the
+  repaired PR #20 base branch (`codex/phase5-marker-lod`) without widening the
+  marker-scan, plotting, model-fitting, or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Florence (plot-data boundary),
+  Fisher (marker-scan interpretation), Grace (low-core checks), Rose (claim
+  boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-marker-lod` into
+    `codex/phase5-marker-plot-data`;
+  - resolved the only conflict in `docs/dev-log/check-log.md`;
+  - preserved the PR #22 Manhattan plot-data entry plus the PR #20, PR #19,
+    PR #18, PR #17, and landing-page evidence from the repaired base.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 0 scaffold /
+    validation-status (`194` checks), Phase 5 fixed-effect single-marker scan
+    (`63` checks), and Phase 4B structured genetic covariance (`61` checks),
+    on the reconciled PR #22 branch state.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, recreating a
+    temporary `docs/package.json` from the DocumenterVitepress template, and
+    using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr22`,
+    rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr22 npm_config_cache=/private/tmp/hsquared-npm-cache-pr22 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files and the temporary npm cache were removed
+    again before commit. Known caveats remained: 8 unrelated docstrings not
+    included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+- Boundary: stack reconciliation only. No engine code, tests,
+  validation-status row, capability-status row, validation-debt row, R bridge
+  payload, `result_payload()`, R repository file, plotting implementation, or
+  public claim changed.
+
 ## 2026-06-14 fixed-effect marker-scan Manhattan plot data
 
 - Goal: add deterministic plot-data preparation for the direct Julia

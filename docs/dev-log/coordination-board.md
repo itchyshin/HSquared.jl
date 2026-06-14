@@ -45,6 +45,11 @@ support beyond the recorded evidence.
   Documenter passed before push, and remote workflow-dispatch CI / Documenter
   checks passed for the pushed evidence commit. The local npm-cache workaround
   is recorded in the check log / after-task note for this slice.
+- PR #22 (`codex/phase5-marker-plot-data`) was locally reconciled with the
+  repaired PR #20 base on 2026-06-14. The only conflict was the append-only
+  check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` and Documenter passed before push, with the local npm-cache
+  workaround recorded in the check log / after-task note for this slice.
 
 ## Shared Contract
 
