@@ -127,13 +127,19 @@
   heritabilities, and breeding values at the estimate. Validated by the `t = 1`
   reduction to the univariate REML (the loglik equals `sparse_reml_loglik`
   exactly), grid-beating, and EBV consistency with `multivariate_mme`.
-  Experimental, dense/validation-scale; multi-trait known-truth recovery is
-  one-off only, with no external-comparator parity yet.
+  Experimental, dense/validation-scale; opt-in seeded recovery exists outside
+  CI, but is not multi-seed calibrated and has no external-comparator parity
+  yet.
 - Added `test/fixtures/phase4_multitrait_parity/`, a deterministic two-trait
   CSV fixture for R-lane sommer/ASReml/BLUPF90 parity work. It records a Julia
   REML target (`G0`, `R0`, beta, EBVs, h², and loglik) and CI checks fast
   self-consistency at the stored target covariances. It is not external
   comparator evidence.
+- Added opt-in `sim/phase4_multivariate_reml_recovery.jl` for seeded two-trait
+  known-truth recovery of the unstructured multivariate REML estimator outside
+  CI. Default seed `20260616` passed with relative errors `G = 0.174500` and
+  `R = 0.131056` against thresholds `0.25` and `0.20`. This is internal
+  recovery evidence, not multi-seed calibration or external comparator parity.
 - Hardened the multivariate engine after a 7-lens adversarial review (each finding
   verified by running Julia): `multivariate_mme` / `fit_multivariate_reml` now
   reject non-finite observed phenotypes (`Inf` — only `missing`/`NaN` mark an

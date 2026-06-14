@@ -91,11 +91,11 @@ fitr = fit_multivariate_reml(Y, X, Z, Ainv)
     Multivariate REML is **experimental**. Its correctness is checked by
     deterministic self-consistency (the `t = 1` fit recovers the univariate REML
     estimate; the REML log-likelihood matches the univariate package scale; the
-    optimum beats a coarse grid). Known-truth recovery for `t ≥ 2`
-    is exercised only by one-off simulations and has **no external-comparator
-    parity (sommer / ASReml / JWAS) yet**. The multivariate engine has had an
-    adversarial review; confirmed robustness findings were fixed and
-    regression-tested.
+    optimum beats a coarse grid) plus an opt-in seeded recovery harness outside
+    CI. The recovery harness is not multi-seed calibrated and there is **no
+    external-comparator parity (sommer / ASReml / JWAS) yet**. The multivariate
+    engine has had an adversarial review; confirmed robustness findings were
+    fixed and regression-tested.
     Treat multi-trait variance estimates as provisional. On small fixtures the
     optimum can sit on a boundary (a genetic correlation of ±1, or a zero
     variance).
@@ -142,16 +142,19 @@ It has deterministic self-consistency tests and an opt-in seeded recovery
 harness:
 
 ```sh
+julia --project=. sim/phase4_multivariate_reml_recovery.jl
 julia --project=. sim/phase4b_structured_covariance_recovery.jl
 ```
 
-The harness is not part of CI. It records low-rank and factor-analytic recovery
-on a repeated-record half-sib design with loose, version-robust thresholds. The
-structured path returns sign-canonicalized loading columns: within each factor,
-the largest-absolute loading is non-negative. This removes arbitrary sign flips
-from metadata but does not identify rotations or make loading columns uniquely
-interpretable. Covariance standard errors, external-comparator parity, and
-R-facing covariance-structure syntax are still missing.
+The harnesses are not part of CI. The unstructured harness records two-trait
+known-truth recovery on a repeated-record half-sib design; the structured
+harness records low-rank and factor-analytic recovery on a similar design. Both
+use loose, version-robust thresholds. The structured path returns
+sign-canonicalized loading columns: within each factor, the largest-absolute
+loading is non-negative. This removes arbitrary sign flips from metadata but
+does not identify rotations or make loading columns uniquely interpretable.
+Covariance standard errors, external-comparator parity, and R-facing
+covariance-structure syntax are still missing.
 
 ## Validation boundary
 
@@ -168,6 +171,9 @@ Covered now (self-consistent, comparator-free):
   univariate REML estimate), the REML log-likelihood matching the univariate
   package scale, the optimum beating a coarse grid, and EBV consistency with the
   MME at the estimate;
+- opt-in `sim/phase4_multivariate_reml_recovery.jl` records seeded two-trait
+  known-truth recovery outside CI (`G` relative error `0.174500`, `R` relative
+  error `0.131056`, thresholds `0.25` / `0.20`);
 - a shared deterministic two-trait CSV fixture in
   `test/fixtures/phase4_multitrait_parity/` records a Julia REML target for
   R-lane comparator work; CI checks fast self-consistency at the stored target
@@ -185,7 +191,7 @@ Still planned / coordinated:
 
 - a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
-- broader multi-seed recovery calibration, covariance standard errors, loading
+- multi-seed recovery calibration, covariance standard errors, loading
   rotation/identifiability conventions, and external-comparator parity (sommer /
   ASReml / JWAS) for the REML and structured-covariance estimators;
 - a published Mrode multi-trait fixture;

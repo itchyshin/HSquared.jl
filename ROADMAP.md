@@ -115,10 +115,11 @@ unimplemented.
 - Experimental multivariate Gaussian animal-model utilities (Phase 4): supplied
   covariance `multivariate_mme`, missing-trait handling, and dense
   `fit_multivariate_reml` estimation of `G0`/`R0` exist as engine-internal,
-  validation-scale utilities. Phase 4B now has structured genetic covariance
-  builders and REML constraints for diagonal, low-rank, and factor-analytic
-  `G0`, plus an opt-in seeded recovery harness outside CI and a serialized
-  two-trait Julia target fixture for R-lane comparator work. No R-facing
+  validation-scale utilities. The multivariate REML path now has an opt-in
+  seeded recovery harness outside CI and a serialized two-trait Julia target
+  fixture for R-lane comparator work. Phase 4B now has structured genetic
+  covariance builders and REML constraints for diagonal, low-rank, and
+  factor-analytic `G0`, plus its own opt-in seeded recovery harness. No R-facing
   multivariate model-spec, no external comparator parity, no loading
   rotation/identifiability convention, and no production sparse multivariate
   fitting.
@@ -301,6 +302,11 @@ external parity are validated.
 `test/fixtures/phase4_multitrait_parity/` serializes a deterministic two-trait
 Julia REML target for R-lane sommer/ASReml/BLUPF90 parity work. It is an input
 and target bundle, not external comparator evidence.
+
+`sim/phase4_multivariate_reml_recovery.jl` records opt-in seeded unstructured
+two-trait REML recovery outside CI. The default seed `20260616` passes with
+relative errors `G = 0.174500` and `R = 0.131056` against thresholds `0.25` and
+`0.20`.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

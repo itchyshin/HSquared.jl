@@ -2,6 +2,35 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4 opt-in multivariate REML recovery harness
+
+- Goal: replace the uncommitted one-off multi-trait recovery note with a
+  reproducible opt-in script while keeping CI RNG-free.
+- Active lenses: Curie/Fisher (recovery target and thresholds), Gauss
+  (convergence), Rose (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added `sim/phase4_multivariate_reml_recovery.jl`;
+  - script simulates a repeated-record half-sib design with 80 animals, 240
+    records, and 2 traits;
+  - default seed is `20260616`;
+  - script exits nonzero unless the fit converges and relative Frobenius errors
+    satisfy `G <= 0.25` and `R <= 0.20`.
+- Opt-in run:
+  - command: `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl`;
+  - converged, 244 iterations;
+  - relative error `G = 0.174500`, `R = 0.131056`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+  - Current docs/source scan found no stale "no committed recovery harness" or
+    "known-truth recovery is one-off" wording for `V4-MV-REML`.
+- Boundary: this is seeded internal recovery evidence outside CI. It is not
+  multi-seed calibration, not covariance SE/LRT evidence, not a published
+  Mrode multi-trait fixture, and not sommer/ASReml/JWAS comparator parity.
+  `V4-MV-REML` remains partial.
+
 ## 2026-06-14 Phase 4 shared multi-trait parity fixture
 
 - Goal: serialize a deterministic multi-trait animal-model fixture that the R

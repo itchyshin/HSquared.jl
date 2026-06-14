@@ -190,6 +190,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   target values (`G0`, `R0`, beta, EBVs, h², loglik). This is a target fixture
   for future R-lane parity, not external comparator evidence and not a bridge
   payload change.
+- Julia now has opt-in unstructured multivariate REML recovery evidence at
+  `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
+  a repeated-record half-sib design outside CI. This retires the "no committed
+  recovery harness" gap for `V4-MV-REML`, but does not provide multi-seed
+  calibration or external comparator parity.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix
