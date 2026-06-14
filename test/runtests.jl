@@ -2095,6 +2095,14 @@ end
     @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0[1:1, 1:1], R0)        # wrong t
     @test_throws ArgumentError multivariate_mme(Y, X, Z[:, 1:3], Ainv, G0, R0)          # Z/Ainv mismatch
     @test_throws ArgumentError multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = [1, 2, 3]) # ids length
+    # fail-loud on non-finite data (Inf is not the missing marker) and empty traits
+    let Yinf = [10.0 50.0; 12.0 Inf; 9.0 53.0; 11.0 49.0]
+        @test_throws ArgumentError multivariate_mme(Yinf, X, Z, Ainv, G0, R0)            # Inf phenotype
+    end
+    let Zinf = copy(Z); Zinf[1, 1] = Inf
+        @test_throws ArgumentError multivariate_mme(Y, X, Zinf, Ainv, G0, R0)            # Inf in Z
+    end
+    @test_throws ArgumentError multivariate_mme([10.0 NaN; 12.0 NaN; 9.0 NaN; 11.0 NaN], X, Z, Ainv, G0, R0)  # empty trait 2
 end
 
 @testset "Phase 4 multivariate missing-trait records (unbalanced)" begin
@@ -2183,12 +2191,14 @@ end
     @test 0 < mv1.heritability[1] < 1
     @test mv1.genetic_correlation == reshape([1.0], 1, 1)
 
-    # (2) the multivariate REML loglik matches the univariate one up to a constant
+    # (2) the multivariate REML loglik is the FULL REML loglik (incl. the 2π
+    # constant), so at t=1 it equals the univariate sparse_reml_loglik exactly —
+    # not merely up to a constant. This pins the package-wide loglik scale.
     h = HSquared._multivariate_reml_loglik
-    d_mv = h(reshape(y1, 8, 1), X, Z, Ainv, reshape([1.0], 1, 1), reshape([2.0], 1, 1)) -
-           h(reshape(y1, 8, 1), X, Z, Ainv, reshape([0.5], 1, 1), reshape([3.0], 1, 1))
-    d_uni = sparse_reml_loglik(spec, 1.0, 2.0).loglik - sparse_reml_loglik(spec, 0.5, 3.0).loglik
-    @test d_mv ≈ d_uni atol = 1e-8
+    @test h(reshape(y1, 8, 1), X, Z, Ainv, reshape([1.0], 1, 1), reshape([2.0], 1, 1)) ≈
+          sparse_reml_loglik(spec, 1.0, 2.0).loglik atol = 1e-7
+    @test h(reshape(y1, 8, 1), X, Z, Ainv, reshape([0.5], 1, 1), reshape([3.0], 1, 1)) ≈
+          sparse_reml_loglik(spec, 0.5, 3.0).loglik atol = 1e-7
 
     # (3) two-trait fit (non-collinear traits → interior PD estimate): optimum
     # beats a coarse (G0, R0) grid, and EBVs match the independent MME at the
@@ -2224,7 +2234,12 @@ end
         initial = (G0 = [1.0 0.2; 0.2 1.0], R0 = [1.0 0.0; 0.0 1.0]))
     @test mv_init.converged
 
-    # guards
+    # guards — including fail-loud on non-finite data and an empty trait, so a
+    # boundary/garbage input never returns plausible-looking covariances
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z[:, 1:3], Ainv)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X[1:4, :], Z, Ainv)
+    let Y2inf = copy(Y2); Y2inf[3, 1] = Inf
+        @test_throws ArgumentError fit_multivariate_reml(Y2inf, X, Z, Ainv)
+    end
+    @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
 end

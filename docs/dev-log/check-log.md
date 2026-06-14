@@ -2,6 +2,40 @@
 
 Newest entries go at the top.
 
+## 2026-06-13 Multivariate engine: adversarial-review hardening (Phase 4)
+
+- Goal: act on the confirmed findings from a 7-lens adversarial review of the
+  Phase-4 multivariate engine (review ran 18 agents, each blocker/major finding
+  verified by running Julia).
+- Active lenses: Gauss, Karpinski, Fisher, Kirkpatrick, Henderson, Curie, Rose
+  (review); fixes by the main loop.
+- Findings (all CONFIRMED, all robustness/consistency — no correctness bug on
+  valid inputs):
+  1. non-finite (`Inf`) observed phenotypes were silently treated as observed →
+     all-NaN result with no error (`multivariate_mme`), and `fit_multivariate_reml`
+     returned finite-looking `G0`/`R0`/`h²` with `converged=false`;
+  2. a fully-empty trait column → opaque `SingularException`/`PosDefException`;
+  3. `fit_multivariate_reml.loglik` omitted the `(N−p')·log(2π)` REML constant, so
+     it sat on a different scale than `gaussian_loglik`/`sparse_reml_loglik`
+     (cross-function LRT/AIC hazard).
+- Fixes (`src/multivariate.jl`):
+  - new `_mv_validate_inputs` (shared by `multivariate_mme` and `_mv_observed`):
+    rejects non-finite observed `Y` (names `Y[i,k]`/trait), non-finite `X`/`Z`,
+    and empty-trait columns (names the trait); `Ainv` finiteness checked in both
+    entry points;
+  - `_mv_reml_loglik_core` now adds the `(N−p')·log(2π)` constant → the loglik is
+    the full REML loglik and equals the univariate `sparse_reml_loglik` at `t=1`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` passed. Phase-4
+    supplied-covariance testset 23 → 26 (Inf-`Y`, Inf-`Z`, empty-trait guards);
+    REML testset 21 → 24 (loglik now asserted EQUAL to the univariate at `t=1`
+    on two points + Inf/empty-trait guards).
+  - `julia --project=docs docs/make.jl`: green.
+- Boundary: still experimental dense/validation-scale; the fixes are
+  robustness/consistency only — no change to results on valid inputs. The REML
+  estimator now has adversarial-review coverage; external-comparator parity and a
+  committed recovery harness still pending.
+
 ## 2026-06-13 Multivariate REML (Phase 4, estimate G0/R0)
 
 - Goal: estimate the multi-trait genetic/residual covariances by REML — the

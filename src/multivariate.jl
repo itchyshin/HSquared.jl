@@ -91,7 +91,9 @@ data:
 are dropped from the data and individual `i`'s residual precision uses only the
 observed-trait submatrix `inv(R0[S_i, S_i])` (where `S_i` is its observed-trait
 set). With every trait observed this reduces to the balanced model with residual
-precision `I_n ⊗ R0⁻¹`.
+precision `I_n ⊗ R0⁻¹`. A non-finite *observed* phenotype (`Inf` — only `missing`
+/ `NaN` mark an unobserved trait), a non-finite `X`/`Z`/`Ainv`, or a trait with no
+observed records is rejected with a clear `ArgumentError`.
 
 This is the Phase-4 (multivariate Gaussian) supplied-variance engine slice: an
 MME solve that does **not** estimate `G0` / `R0` (covariance-matrix estimation is
@@ -142,6 +144,8 @@ function multivariate_mme(
         present[i, k] = _is_present(Ym[i, k])
     end
     any(present) || throw(ArgumentError("Y has no observed (non-missing) entries"))
+    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
+    _mv_validate_inputs(present, Ym, X, Z, tlabels)
     Yfull = zeros(Float64, n, t)
     @inbounds for i in 1:n, k in 1:t
         present[i, k] && (Yfull[i, k] = Float64(Ym[i, k]))
@@ -226,6 +230,28 @@ function _cov_to_chol_params(M::AbstractMatrix, t)
     return v
 end
 
+# Validate the observed data. `present` is the n×t observed mask. Throws a clear
+# ArgumentError on a non-finite observed phenotype (e.g. Inf — only missing/NaN
+# mark an unobserved trait), a non-finite entry of `X`/`Z`, or a trait with no
+# observed records (which would otherwise surface as an opaque SingularException /
+# PosDefException downstream). `tlabels` is used only for the message.
+function _mv_validate_inputs(present, Ym, X, Z, tlabels)
+    n, t = size(present)
+    @inbounds for i in 1:n, k in 1:t
+        if present[i, k] && !isfinite(Float64(Ym[i, k]))
+            throw(ArgumentError(
+                "Y[$i, $k] (trait $(tlabels[k])) is not finite; mark unobserved traits with `missing` or `NaN`, not Inf"))
+        end
+    end
+    all(isfinite, Float64.(Matrix(X))) || throw(ArgumentError("X must not contain Inf or NaN"))
+    all(isfinite, Float64.(Matrix(Z))) || throw(ArgumentError("Z must not contain Inf or NaN"))
+    for k in 1:t
+        any(@view present[:, k]) ||
+            throw(ArgumentError("trait $(tlabels[k]) has no observed records; drop it before fitting"))
+    end
+    return nothing
+end
+
 # Build the observed-data design for the multivariate model in trait-fastest
 # order, dropping `missing`/`NaN` records. Returns the observed response `yvec`,
 # the dense expanded `Xfull` (N×p·t) and `Zfull` (N×q·t), the per-individual
@@ -237,9 +263,10 @@ function _mv_observed(Y, X, Z, n, t, q, p)
     @inbounds for i in 1:n, k in 1:t
         present[i, k] = _is_present(Ym[i, k])
     end
+    any(present) || throw(ArgumentError("Y has no observed (non-missing) entries"))
+    _mv_validate_inputs(present, Ym, X, Z, 1:t)
     rows = [(i, k) for i in 1:n for k in 1:t if present[i, k]]
     N = length(rows)
-    N > 0 || throw(ArgumentError("Y has no observed (non-missing) entries"))
     Xfull = zeros(N, p * t)
     Zfull = zeros(N, q * t)
     yvec = zeros(N)
@@ -277,14 +304,17 @@ function _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
     return cholesky(Symmetric(Vg .+ R))
 end
 
-# REML log-likelihood (up to an additive constant) at supplied `G0`, `R0`.
+# Full REML log-likelihood at supplied `G0`, `R0`, INCLUDING the `(N − p')·log(2π)`
+# constant (`p' = ncol(Xfull)`), so it is on the same scale as `gaussian_loglik`
+# and `sparse_reml_loglik` and is safe to compare across the package (LRT/AIC).
 function _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
     Vf = _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
     ViX = Vf \ Xfull
     XtViX = cholesky(Symmetric(transpose(Xfull) * ViX))
     beta = XtViX \ (transpose(Xfull) * (Vf \ yvec))
     r = yvec .- Xfull * beta
-    return -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
+    nfix = size(Xfull, 2)
+    return -0.5 * ((N - nfix) * log(2π) + logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
 end
 
 # GLS fixed effects and BLUP breeding values at supplied `G0`, `R0`. Uses the
@@ -342,7 +372,14 @@ Returns a `NamedTuple`:
   - `genetic_correlation`, `residual_correlation` — derived `t×t` correlations;
   - `heritability` — per-trait `h² = diag(G0)/(diag(G0)+diag(R0))`;
   - `beta`, `breeding_values` — fixed effects and EBVs at the estimate;
-  - `loglik`, `converged`, `iterations`, `traits`.
+  - `loglik` — the full REML log-likelihood at the estimate, including the
+    `(N − p')·log(2π)` constant, so it is on the same scale as
+    [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref) (safe for LRT/AIC);
+  - `converged`, `iterations`, `traits`.
+
+Non-finite or empty-trait inputs are rejected up front (see
+[`multivariate_mme`](@ref)), so the optimizer never returns plausible-looking
+covariances from `Inf`/`NaN` data; check `converged` for genuine boundary cases.
 """
 function fit_multivariate_reml(
     Y::AbstractMatrix,
@@ -364,6 +401,7 @@ function fit_multivariate_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
 
     p = size(X, 2)
+    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
     A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
 
