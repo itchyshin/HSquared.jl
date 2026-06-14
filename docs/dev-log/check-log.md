@@ -2,6 +2,46 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 PR20 base reconcile
+
+- Goal: resolve draft PR #20 (`codex/phase5-marker-lod`) against the repaired
+  PR #19 base branch (`codex/phase5-marker-adjustments`) without widening the
+  marker-scan, model-fitting, or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Fisher (LOD boundary), Curie
+  (deterministic checks), Grace (low-core checks), Rose (claim boundary).
+  Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-marker-adjustments` into
+    `codex/phase5-marker-lod`;
+  - resolved the only conflict in `docs/dev-log/check-log.md`;
+  - preserved the PR #20 LOD-equivalent score entry plus the PR #19, PR #18,
+    PR #17, and landing-page evidence from the repaired base.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 5 fixed-effect
+    single-marker scan (`42` checks) and Phase 4B structured genetic
+    covariance (`61` checks), on the reconciled PR #20 branch state.
+  - Initial docs attempts with the same low-core `include("docs/make.jl")`
+    command failed in local generated npm/VitePress state: first on stale
+    `docs/node_modules` cleanup (`ENOTEMPTY` under `@mathjax`), then on a
+    partial `esbuild` install after regenerating npm files.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, recreating a
+    temporary `docs/package.json` from the DocumenterVitepress template, and
+    using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr20`,
+    rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr20 npm_config_cache=/private/tmp/hsquared-npm-cache-pr20 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files and the temporary npm cache were removed
+    again before commit. Known caveats remained: 8 unrelated docstrings not
+    included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+- Boundary: stack reconciliation only. No engine code, tests,
+  validation-status row, capability-status row, validation-debt row, R bridge
+  payload, `result_payload()`, R repository file, or public claim changed.
+
 ## 2026-06-14 fixed-effect marker-scan LOD-equivalent scores
 
 - Goal: add a deterministic LOD-style summary to the direct Julia fixed-effect

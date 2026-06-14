@@ -39,6 +39,11 @@ support beyond the recorded evidence.
   append-only check log; no engine code or bridge contract changed. Local full
   `Pkg.test()` passed before push, with docs build evidence recorded in the
   check log / after-task note for this slice.
+- PR #20 (`codex/phase5-marker-lod`) was locally reconciled with the repaired
+  PR #19 base on 2026-06-14. The only conflict was the append-only check log;
+  no engine code or bridge contract changed. Local full `Pkg.test()` and
+  Documenter passed before push, with the local npm-cache workaround recorded
+  in the check log / after-task note for this slice.
 
 ## Shared Contract
 
