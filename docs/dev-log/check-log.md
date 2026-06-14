@@ -24,17 +24,19 @@ Newest entries go at the top.
     validation-status (`194` checks), Phase 5 fixed-effect single-marker scan
     (`63` checks), and Phase 4B structured genetic covariance (`61` checks),
     on the reconciled PR #22 branch state.
-  - Local docs did not produce a final clean exit because of generated
-    DocumenterVitepress/npm state, not source-document errors. From the repo
-    root, a clean generated-state run rendered pages and VitePress bundles but
-    failed in local `deploydocs()` on missing `docs/build/bases.txt`. A rerun
-    then failed because examples tried to `cd("build/")` after the generated
-    build directory had been removed by the local pipeline. Running from
-    `docs/` avoided that example-cwd failure and reached VitePress, but failed
-    on a generated path lookup for `build/.documenter/api.md`. Generated
-    `docs/build`, `docs/node_modules`, `docs/package-lock.json`,
-    `docs/Manifest.toml`, and `docs/package.json` were removed before commit.
-    Remote Documenter must provide the latest-head docs verdict after push.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, recreating a
+    temporary `docs/package.json` from the DocumenterVitepress template, and
+    using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr22`,
+    rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr22 npm_config_cache=/private/tmp/hsquared-npm-cache-pr22 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files and the temporary npm cache were removed
+    again before commit. Known caveats remained: 8 unrelated docstrings not
+    included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed commit `3464e62` passed:
+    CI `27516065449` and Documenter `27516065447`.
 - Boundary: stack reconciliation only. No engine code, tests,
   validation-status row, capability-status row, validation-debt row, R bridge
   payload, `result_payload()`, R repository file, plotting implementation, or
