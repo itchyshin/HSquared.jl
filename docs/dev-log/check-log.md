@@ -48,6 +48,48 @@ Newest entries go at the top.
   correlated-marker p-values, activate R `marker_scan()` syntax, change the
   bridge payload, change `result_payload()`, or add comparator parity.
 
+## 2026-06-14 PR20 base reconcile
+
+- Goal: resolve draft PR #20 (`codex/phase5-marker-lod`) against the repaired
+  PR #19 base branch (`codex/phase5-marker-adjustments`) without widening the
+  marker-scan, model-fitting, or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Fisher (LOD boundary), Curie
+  (deterministic checks), Grace (low-core checks), Rose (claim boundary).
+  Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-marker-adjustments` into
+    `codex/phase5-marker-lod`;
+  - resolved the only conflict in `docs/dev-log/check-log.md`;
+  - preserved the PR #20 LOD-equivalent score entry plus the PR #19, PR #18,
+    PR #17, and landing-page evidence from the repaired base.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 5 fixed-effect
+    single-marker scan (`42` checks) and Phase 4B structured genetic
+    covariance (`61` checks), on the reconciled PR #20 branch state.
+  - Initial docs attempts with the same low-core `include("docs/make.jl")`
+    command failed in local generated npm/VitePress state: first on stale
+    `docs/node_modules` cleanup (`ENOTEMPTY` under `@mathjax`), then on a
+    partial `esbuild` install after regenerating npm files.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, recreating a
+    temporary `docs/package.json` from the DocumenterVitepress template, and
+    using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr20`,
+    rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr20 npm_config_cache=/private/tmp/hsquared-npm-cache-pr20 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files and the temporary npm cache were removed
+    again before commit. Known caveats remained: 8 unrelated docstrings not
+    included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed commit `0c4244c` passed:
+    CI `27515882117` and Documenter `27515882111`.
+- Boundary: stack reconciliation only. No engine code, tests,
+  validation-status row, capability-status row, validation-debt row, R bridge
+  payload, `result_payload()`, R repository file, or public claim changed.
+
 ## 2026-06-14 fixed-effect marker-scan LOD-equivalent scores
 
 - Goal: add a deterministic LOD-style summary to the direct Julia fixed-effect
@@ -82,6 +124,46 @@ Newest entries go at the top.
   LOCO, calibrated mixed-model p-values, correlated-marker/genome-wide
   calibration, R formula activation, bridge payload change, `result_payload()`
   change, or comparator parity.
+
+## 2026-06-14 PR19 base reconcile
+
+- Goal: resolve draft PR #19 (`codex/phase5-marker-adjustments`) against the
+  repaired PR #18 base branch (`codex/phase5-marker-pvalues`) without widening
+  the marker-scan or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Fisher/Curie (adjustment scope),
+  Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-marker-pvalues` into
+    `codex/phase5-marker-adjustments`;
+  - resolved the only textual conflict in `docs/dev-log/check-log.md`;
+  - preserved the PR #19 multiple-testing entry plus PR #18, PR #17, and
+    landing-page evidence from the repaired base.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 5 fixed-effect
+    single-marker scan (`39` checks) and Phase 4B structured genetic
+    covariance (`61` checks), on the reconciled PR #19 branch state.
+  - Initial docs attempts with the same low-core `include("docs/make.jl")`
+    command failed in local generated npm/VitePress state: first on stale
+    `docs/node_modules` cleanup, then on a regenerated docs manifest /
+    temporary `docs/package.json` mismatch.
+  - After clearing generated `docs/build`, `docs/node_modules`,
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, and recreating the
+    temporary `docs/package.json` from the DocumenterVitepress template,
+    rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files were removed again before commit. Known
+    caveats remained: 8 unrelated docstrings not included in the manual, local
+    deployment skipped, VitePress default substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed commit `e9853ff` passed:
+    CI `27515455662` and Documenter `27515455643`.
+- Boundary: stack reconciliation only. No engine code, tests, validation-status
+  row, capability-status row, validation-debt row, R bridge payload,
+  `result_payload()`, or public claim changed.
 
 ## 2026-06-14 fixed-effect marker-scan multiple-testing adjustments
 
@@ -118,29 +200,93 @@ Newest entries go at the top.
   correlated-marker/genome-wide calibration, R formula activation, bridge
   payload change, `result_payload()` change, or comparator parity.
 
+## 2026-06-14 PR18 base reconcile
+
+- Goal: resolve draft PR #18 (`codex/phase5-marker-pvalues`) against the
+  repaired PR #17 base branch (`phase4b-factor-analytic-g`) without widening
+  the marker-scan or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Fisher/Curie (p-value scope),
+  Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/phase4b-factor-analytic-g` into
+    `codex/phase5-marker-pvalues`;
+  - resolved conflicts in `README.md`,
+    `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`, and
+    `docs/dev-log/check-log.md`;
+  - preserved the PR #17 reconcile evidence, current landing-page audit, and
+    PR #18 fixed-effect marker-scan p-value evidence.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 5 fixed-effect
+    single-marker scan (`27` checks) and Phase 4B structured genetic
+    covariance (`61` checks), on the reconciled PR #18 branch state.
+  - `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    first attempt rendered the VitePress pages but failed in
+    `DocumenterVitepress.deploydocs` because `docs/build/bases.txt` was not
+    yet visible at deploy time.
+  - Re-run without deleting `docs/build`:
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed with the known local Documenter/VitePress caveats.
+- Boundary: stack reconciliation only. No engine code, tests, validation-status
+  row, capability-status row, validation-debt row, R bridge payload,
+  `result_payload()`, or public claim changed.
+
+## 2026-06-14 Phase 4B PR17 main reconcile
+
+- Goal: resolve the draft PR #17 `phase4b-factor-analytic-g` conflict against
+  current `main` so the structured-covariance base can become mergeable before
+  more stacked Phase 5 marker work lands.
+- Active lenses: Ada/Shannon (stack order and lane discipline),
+  Gauss/Karpinski/Kirkpatrick (structured-covariance preservation), Grace
+  (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/main` into `phase4b-factor-analytic-g`;
+  - resolved the only conflict in `docs/dev-log/check-log.md`;
+  - restored the current-main GitHub landing-page docs-link entry to this
+    append-only log while preserving the Phase 4B / recovery-calibration branch
+    entries.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 4B structured genetic
+    covariance (`61` checks) and Phase 5 fixed-effect single-marker scan (`20`
+    checks) on this reconciled branch state.
+  - `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local Documenter/VitePress caveats.
+- Boundary: merge-readiness and docs-log reconciliation only. No engine code,
+  R bridge payload, `result_payload()`, capability-status, validation-debt, or
+  public-claim change.
+
 ## 2026-06-14 GitHub landing-page docs link
 
-- Goal: make the Julia Documenter site visible from the GitHub repository
-  landing page, matching the R twin's pkgdown discoverability.
-- Active lenses: Grace (GitHub/Pages), Shannon (twin coordination), Rose
-  (public status wording). Spawned subagents: none.
-- Change:
-  - set the `itchyshin/HSquared.jl` repository homepage field to
-    `https://itchyshin.github.io/HSquared.jl/` via the GitHub API;
-  - added top-of-README links to the Julia Documenter site, the R twin pkgdown
-    site, and the R twin repository;
-  - refreshed README status wording so the landing page separates experimental
-    engine utilities from production/public R formula support.
-- Checks:
-  - `curl -L https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
-  - `curl -L https://itchyshin.github.io/HSquared.jl/dev/mission-control.html`:
-    HTTP 200.
-  - `curl -L https://itchyshin.github.io/hsquared/`: HTTP 200.
-  - GitHub API repo metadata reports homepage
-    `https://itchyshin.github.io/HSquared.jl/`.
+- Goal: make the live Julia Documenter site visible from the GitHub repository
+  landing page without waiting behind the Phase 5 draft stack.
+- Active lenses: Grace, Shannon, Rose.
+- Spawned subagents: none.
+- Live URL checks:
+  - `https://itchyshin.github.io/HSquared.jl/` returned HTTP 200 and redirects
+    to `./dev/`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/` returned HTTP 200.
+  - GitHub API repository metadata reports homepage
+    `https://itchyshin.github.io/HSquared.jl/` and Pages enabled.
+- Files changed:
+  - `README.md`: added immediate Documenter, R pkgdown, and R repository links
+    under the title.
+  - `docs/dev-log/coordination-board.md`: recorded the public landing pages.
+  - `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`.
+- Local checks:
   - `git diff --check`: passed.
-- Boundary: metadata/README discoverability only. No engine behavior, R bridge,
-  validation status, or public capability promotion.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats: 8 docstrings not included in the manual,
+    local deployment skipped, default VitePress substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated dependencies.
+- Boundary: docs discoverability only. No engine code, R bridge contract,
+  validation status, production fitting, comparator, genomic, QTL, GPU, or
+  performance claim changed.
 
 ## 2026-06-14 fixed-effect marker-scan p-values
 
