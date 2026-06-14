@@ -2,6 +2,47 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker-effects summary helper
+
+- Goal: add a deterministic direct-Julia marker-effect summary helper over
+  already-computed marker-scan fields, without adding a new statistical
+  procedure, plotting backend, R syntax, bridge payload change, threshold
+  selection, or p-value calibration.
+- Active lenses: Fisher (effect-summary-vs-calibration boundary), Pat (summary
+  ergonomics), Curie (deterministic sorting/top-N/metadata tests), Shannon
+  (R/Julia boundary), Grace (low-core checks), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `marker_effects(scan; sort_by, top_n, decreasing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData` marker
+    metadata, aligning chromosome/position values by exact marker ID;
+  - supports deterministic sorting by p-value, Bonferroni p-value,
+    Benjamini-Hochberg q-value, chi-square, LOD score, signed effect, or
+    absolute effect;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose the same scan fields;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-effects-summary-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 220 checks; Phase
+    5 fixed-effect single-marker scan testset is now 223 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: summary over returned marker-scan fields only. This does not
+  calibrate p-values, correct statistics, estimate effective marker counts,
+  choose genome-wide thresholds, draw plots, activate R `marker_scan()` syntax,
+  change the bridge payload, change `result_payload()`, or add comparator
+  parity.
+
 ## 2026-06-14 marker genomic-inflation diagnostic
 
 - Goal: add a deterministic diagnostic summary for marker-scan chi-square

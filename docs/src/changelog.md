@@ -47,6 +47,8 @@
   plot-ready marker IDs, chromosome/position metadata, cumulative plot
   positions, raw p-values, and `-log10(p)` values, including overloads for
   already-validated `HSMarkerMapSpec` / `HSData` marker metadata.
+  `marker_effects()` prepares deterministic sorted marker-effect
+  summaries from the same scan fields, with optional metadata alignment.
   `marker_qq_data()` prepares sorted observed/expected QQ plot data from the
   same direct scan output. `marker_genomic_inflation()` computes a
   genomic-control-style lambda_GC diagnostic from returned chi-square
@@ -65,6 +67,8 @@
   engine tooling only: no marker-scan variance-component estimation, no LOCO,
   no sparse production scan, no calibrated p-values, no plotting backend, no R
   `marker_scan()` syntax, no bridge payload change, and no comparator parity.
+  The shared `marker_effects()`, Manhattan, QQ, and inflation helpers
+  work over the returned scan fields.
 - Added `loco_relationship_precisions()` and
   `loco_mixed_model_marker_scan()` — dense validation-scale
   leave-one-group-out marker-screening helpers. The construction helper drops
@@ -76,6 +80,7 @@
   only: no public LOCO defaults, no marker-scan variance-component estimation,
   no sparse production scan, no calibrated p-values, no plotting backend, no R
   `marker_scan()` syntax, no bridge payload change, and no comparator parity.
+  The same effect-summary and diagnostic helpers remain direct Julia-only.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

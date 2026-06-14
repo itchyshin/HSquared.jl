@@ -366,8 +366,10 @@ approximate two-sided Gaussian/Wald p-values plus Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set, and
 LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
 already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
-chromosomes and positions by exact marker ID. `marker_qq_data()` prepares
-sorted observed/expected QQ plot data from the same direct scan result.
+chromosomes and positions by exact marker ID. `marker_effects()`
+prepares sorted top-marker effect summaries from the same scan fields, with
+optional chromosome/position alignment. `marker_qq_data()` prepares sorted
+observed/expected QQ plot data from the same direct scan result.
 `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
 dense supplied-variance GLS helper that accounts for a supplied relationship
 covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`.
@@ -407,12 +409,14 @@ loco_scan = loco_mixed_model_marker_scan(
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
+effects = marker_effects(scan; sort_by = :p_value, top_n = 2)
 marker_data = HSData((id = ["example"], y = [0.0]); markers = (
     marker = ["m1", "m2"],
     chr = ["1", "2"],
     pos = [10, 20],
 ))
 map_manhattan = marker_manhattan_data(scan, marker_data)
+map_effects = marker_effects(scan, marker_data; top_n = 2)
 manhattan.neglog10_p_values
 qq.expected_neglog10_p_values
 ```

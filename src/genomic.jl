@@ -888,6 +888,235 @@ function marker_genomic_inflation(scan; expected_median::Real = _CHISQ1_MEDIAN)
     )
 end
 
+"""
+    marker_effects(scan; sort_by = :p_value, top_n = nothing,
+                           decreasing = nothing)
+    marker_effects(scan, marker_spec::HSMarkerMapSpec; ...)
+    marker_effects(scan, data::HSData; ...)
+
+Prepare a deterministic marker-effect summary from a direct marker-scan result.
+
+The helper expects the scan fields returned by [`single_marker_scan`](@ref),
+[`mixed_model_marker_scan`](@ref), or [`loco_mixed_model_marker_scan`](@ref):
+marker effects, standard errors, Wald statistics, chi-square values, p-values,
+Bonferroni p-values, Benjamini-Hochberg q-values, LOD-equivalent scores, and
+denominators. It returns those fields sorted into a compact `NamedTuple` with
+`scan_indices`, `sort_by`, `decreasing`, `top_n`, and the scan target when
+available. Supported `sort_by` values are `:p_value`, `:bonferroni_p_value`,
+`:bh_q_value`, `:chisq`, `:lod_score`, `:effect`, and `:abs_effect`; p-value
+metrics sort ascending by default, while effect-size/statistic metrics sort
+descending by default.
+
+When an already-validated [`HSMarkerMapSpec`](@ref) or [`HSData`](@ref) with
+marker metadata is supplied, marker IDs must match exactly and chromosome /
+position vectors are aligned to the returned summary order.
+
+This is a direct Julia summary helper only. It does not calibrate p-values,
+choose thresholds, draw plots, activate R-facing `marker_scan()` syntax, or
+change the bridge payload.
+"""
+function marker_effects(
+    scan;
+    sort_by::Symbol = :p_value,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    return _marker_effects(
+        scan,
+        nothing,
+        nothing;
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function marker_effects(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    sort_by::Symbol = :p_value,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    marker_ids, _ = _scan_marker_ids_and_p_values(scan)
+    map_order = _marker_map_order_for_scan(marker_ids, marker_spec)
+    return _marker_effects(
+        scan,
+        marker_spec.chromosome[map_order],
+        marker_spec.position[map_order];
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function marker_effects(
+    scan,
+    data::HSData;
+    sort_by::Symbol = :p_value,
+    top_n = nothing,
+    decreasing::Union{Nothing,Bool} = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return marker_effects(
+        scan,
+        data.marker_spec;
+        sort_by = sort_by,
+        top_n = top_n,
+        decreasing = decreasing,
+    )
+end
+
+function _marker_effects(
+    scan,
+    chromosomes,
+    positions;
+    sort_by::Symbol,
+    top_n,
+    decreasing::Union{Nothing,Bool},
+)
+    marker_ids, p_values = _scan_marker_ids_and_p_values(scan)
+    m = length(marker_ids)
+
+    effects = _checked_scan_float_field(scan, :effects, m)
+    standard_errors = _checked_scan_float_field(scan, :standard_errors, m; positive = true)
+    z_scores = _checked_scan_float_field(scan, :z_scores, m)
+    chisq = _checked_scan_float_field(scan, :chisq, m; nonnegative = true)
+    bonferroni_p_values = _checked_scan_p_value_field(scan, :bonferroni_p_values, m)
+    bh_q_values = _checked_scan_p_value_field(scan, :bh_q_values, m)
+    lod_scores = _checked_scan_float_field(scan, :lod_scores, m; nonnegative = true)
+    denominators = _checked_scan_float_field(scan, :denominators, m; positive = true)
+
+    metric, canonical_sort_by, default_decreasing = _marker_summary_sort_metric(
+        sort_by,
+        effects,
+        chisq,
+        p_values,
+        bonferroni_p_values,
+        bh_q_values,
+        lod_scores,
+    )
+    decreasing_value = decreasing === nothing ? default_decreasing : decreasing
+    order_all = if decreasing_value
+        sortperm(collect(1:m); by = i -> (-metric[i], i))
+    else
+        sortperm(collect(1:m); by = i -> (metric[i], i))
+    end
+
+    top_count = _checked_top_n(top_n, m)
+    order = order_all[1:top_count]
+    target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
+
+    summary = (
+        marker_ids = marker_ids[order],
+        effects = effects[order],
+        abs_effects = abs.(effects[order]),
+        standard_errors = standard_errors[order],
+        z_scores = z_scores[order],
+        chisq = chisq[order],
+        p_values = p_values[order],
+        bonferroni_p_values = bonferroni_p_values[order],
+        bh_q_values = bh_q_values[order],
+        lod_scores = lod_scores[order],
+        denominators = denominators[order],
+        scan_indices = order,
+        sort_by = canonical_sort_by,
+        decreasing = decreasing_value,
+        top_n = top_count,
+        target = target,
+    )
+
+    chromosomes === nothing && positions === nothing && return summary
+    chromosome_values, position_values = _checked_marker_summary_metadata(chromosomes, positions, m)
+    return merge(
+        summary,
+        (
+            chromosomes = chromosome_values[order],
+            positions = position_values[order],
+        ),
+    )
+end
+
+function _checked_scan_float_field(scan, field::Symbol, n::Int; nonnegative::Bool = false, positive::Bool = false)
+    hasproperty(scan, field) ||
+        throw(ArgumentError("scan must have a $(field) field"))
+    values = Float64.(collect(getproperty(scan, field)))
+    length(values) == n ||
+        throw(ArgumentError("$(field) must have one entry per marker"))
+    all(isfinite, values) ||
+        throw(ArgumentError("$(field) values must be finite"))
+    if positive
+        all(>(0), values) ||
+            throw(ArgumentError("$(field) values must be positive"))
+    elseif nonnegative
+        all(>=(0), values) ||
+            throw(ArgumentError("$(field) values must be non-negative"))
+    end
+    return values
+end
+
+function _checked_scan_p_value_field(scan, field::Symbol, n::Int)
+    hasproperty(scan, field) ||
+        throw(ArgumentError("scan must have a $(field) field"))
+    values = _checked_p_values(getproperty(scan, field))
+    length(values) == n ||
+        throw(ArgumentError("$(field) must have one entry per marker"))
+    return values
+end
+
+function _marker_summary_sort_metric(
+    sort_by::Symbol,
+    effects::Vector{Float64},
+    chisq::Vector{Float64},
+    p_values::Vector{Float64},
+    bonferroni_p_values::Vector{Float64},
+    bh_q_values::Vector{Float64},
+    lod_scores::Vector{Float64},
+)
+    if sort_by in (:p_value, :p_values, :p)
+        return p_values, :p_value, false
+    elseif sort_by in (:bonferroni_p_value, :bonferroni_p_values, :bonferroni)
+        return bonferroni_p_values, :bonferroni_p_value, false
+    elseif sort_by in (:bh_q_value, :bh_q_values, :q_value, :q_values)
+        return bh_q_values, :bh_q_value, false
+    elseif sort_by in (:chisq, :chi_square, :chi_square_statistic)
+        return chisq, :chisq, true
+    elseif sort_by in (:lod_score, :lod_scores, :lod)
+        return lod_scores, :lod_score, true
+    elseif sort_by == :effect
+        return effects, :effect, true
+    elseif sort_by in (:abs_effect, :abs_effects, :absolute_effect)
+        return abs.(effects), :abs_effect, true
+    end
+    throw(ArgumentError("unsupported sort_by value: $(sort_by)"))
+end
+
+function _checked_top_n(top_n, n::Int)
+    top_n === nothing && return n
+    top_n isa Integer ||
+        throw(ArgumentError("top_n must be an integer or nothing"))
+    1 <= top_n <= n ||
+        throw(ArgumentError("top_n must be between 1 and the number of markers"))
+    return Int(top_n)
+end
+
+function _checked_marker_summary_metadata(chromosomes, positions, n::Int)
+    (chromosomes !== nothing && positions !== nothing) ||
+        throw(ArgumentError("chromosomes and positions must be supplied together"))
+    chromosome_values = string.(collect(chromosomes))
+    length(chromosome_values) == n ||
+        throw(ArgumentError("chromosomes must have one entry per marker"))
+    all(!isempty, chromosome_values) ||
+        throw(ArgumentError("chromosomes cannot contain empty labels"))
+    position_values = Float64.(collect(positions))
+    length(position_values) == n ||
+        throw(ArgumentError("positions must have one entry per marker"))
+    all(x -> isfinite(x) && x >= 0, position_values) ||
+        throw(ArgumentError("positions must be finite and non-negative"))
+    return chromosome_values, position_values
+end
+
 function _median_float(values::Vector{Float64})
     sorted_values = sort(values)
     n = length(sorted_values)

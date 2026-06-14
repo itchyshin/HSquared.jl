@@ -67,8 +67,8 @@ Implemented engine utilities:
   `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
   `mixed_model_marker_scan`, dense LOCO precision construction via
   `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
-  marker-map-backed `marker_manhattan_data` plus `marker_qq_data` plot-data
-  preparation;
+  marker-effect summaries plus marker-map-backed `marker_manhattan_data` and
+  `marker_qq_data` plot-data preparation;
 - experimental repeatability, two-effect, multivariate, and structured
   genetic-covariance utilities, all validation-scale and not public R formula
   defaults;

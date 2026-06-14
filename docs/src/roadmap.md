@@ -156,8 +156,9 @@ Next engine targets:
   `fa(K)` are experimental engine utilities; R-facing syntax and comparator
   parity remain future work.
 - Phase 5: direct fixed-effect marker screening has started with Wald p-values,
-  Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
-  Manhattan, QQ, and lambda_GC diagnostic data. A supplied-variance dense GLS
+  Bonferroni/BH adjustments, LOD-equivalent scores, marker-effect summaries,
+  and marker-map-backed Manhattan, QQ, and lambda_GC diagnostic data. A
+  supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
   screening, `loco_relationship_precisions` constructs dense
   VanRaden-plus-ridge leave-one-group-out precision matrices, and

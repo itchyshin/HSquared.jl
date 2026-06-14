@@ -227,9 +227,11 @@ loco_scan = loco_mixed_model_marker_scan(
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
+effects = marker_effects(scan; sort_by = :p_value, top_n = 10)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
+map_effects = marker_effects(scan, marker_data; top_n = 10)
 ```
 
 These are direct Julia engine utilities. They do not change the R bridge
@@ -266,6 +268,12 @@ components, calibrate p-values, draw plots, or change bridge payloads.
 diagnostic from the returned chi-square statistics of direct marker scans. It
 is a summary diagnostic only and does not correct or calibrate scan statistics,
 choose thresholds, or change bridge payloads.
+
+`marker_effects()` prepares deterministic effect-summary data only. It
+sorts returned marker effects and scan statistics by a requested field, can
+limit to top markers, and can align already-validated marker-map metadata by
+exact marker ID. It does not choose thresholds, calibrate p-values, draw plots,
+or change bridge payloads.
 
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes

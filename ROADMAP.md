@@ -365,10 +365,12 @@ Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
 marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
 Manhattan data, including overloads that consume already-validated `HSData` /
-`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_qq_data` prepares
-sorted observed/expected QQ plot data from the same direct scan output, and
-`marker_genomic_inflation` reports a genomic-control-style lambda_GC diagnostic
-from returned chi-square values.
+`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_effects`
+prepares sorted top-marker effect summaries from the same scan fields, with
+optional chromosome/position alignment from validated marker metadata.
+`marker_qq_data` prepares sorted observed/expected QQ plot data from the same
+direct scan output, and `marker_genomic_inflation` reports a
+genomic-control-style lambda_GC diagnostic from returned chi-square values.
 `mixed_model_marker_scan` forms a supplied dense marginal covariance from
 `Z`, `Ainv`, `sigma_a2`, and `sigma_e2`, then runs marker-by-marker GLS Wald
 tests. `loco_mixed_model_marker_scan` selects a supplied relationship precision

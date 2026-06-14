@@ -217,12 +217,15 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   chi-square statistics, approximate two-sided Gaussian/Wald p-values,
   Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, fixed-effect
   known-variance LOD-equivalent scores, denominators, marker IDs, allele
-  frequencies, and the VanRaden scale. `marker_manhattan_data()` prepares
-  plot-ready Manhattan data from those direct scan fields and can consume
-  already-validated `HSMarkerMapSpec` / `HSData` marker metadata by exact
-  marker ID. `marker_qq_data()` prepares sorted observed/expected QQ plot data
-  from the same direct scan output, and `marker_genomic_inflation()` computes a
-  genomic-control-style lambda_GC diagnostic from returned chi-square values.
+  frequencies, and the VanRaden scale. `marker_effects()` prepares
+  sorted top-marker effect summaries from those direct scan fields, with
+  optional exact marker-map metadata alignment. `marker_manhattan_data()`
+  prepares plot-ready Manhattan data from those direct scan fields and can
+  consume already-validated `HSMarkerMapSpec` / `HSData` marker metadata by
+  exact marker ID. `marker_qq_data()` prepares sorted observed/expected QQ
+  plot data from the same direct scan output, and
+  `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
+  diagnostic from returned chi-square values.
   This is engine-internal / direct-Julia only:
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
   calibrated mixed-model p-values, interval-mapping or mixed-model LOD

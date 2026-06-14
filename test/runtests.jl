@@ -246,13 +246,15 @@ end
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
+    @test occursin("marker_effects", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
     @test occursin("marker_qq_data", fixed_marker_row.evidence)
     @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
+    @test occursin("marker-effect summary", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
-    @test occursin("Fixed-effect Gaussian screening utility with marker-map-backed Manhattan and QQ plot-data helpers only", fixed_marker_row.claim_boundary)
+    @test occursin("Fixed-effect Gaussian screening utility with marker-effect summary, marker-map-backed Manhattan, QQ, and inflation diagnostic helpers only", fixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     mixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-MIXED")
@@ -260,6 +262,7 @@ end
     @test mixed_marker_row.status == "partial"
     @test occursin("mixed_model_marker_scan", mixed_marker_row.evidence)
     @test occursin("independent GLS", mixed_marker_row.evidence)
+    @test occursin("marker-effect summary", mixed_marker_row.evidence)
     @test occursin("single_marker_scan", mixed_marker_row.evidence)
     @test occursin("LOCO", mixed_marker_row.missing)
     @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
@@ -272,6 +275,7 @@ end
     @test occursin("leave-one-group-out VanRaden", loco_marker_row.evidence)
     @test occursin("loco_mixed_model_marker_scan", loco_marker_row.evidence)
     @test occursin("separate `mixed_model_marker_scan` calls", loco_marker_row.evidence)
+    @test occursin("marker-effect summary", loco_marker_row.evidence)
     @test occursin("LOCO defaults", loco_marker_row.missing)
     @test occursin("Dense validation-scale LOCO construction and supplied-matrix selection helpers only", loco_marker_row.claim_boundary)
     @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
@@ -1819,6 +1823,28 @@ end
     @test inflation.median_chisq ≈ sum(scan.chisq) / 2 atol = 1e-12
     @test inflation.expected_median ≈ HSquared._CHISQ1_MEDIAN atol = 1e-15
     @test inflation.lambda_gc ≈ inflation.median_chisq / HSquared._CHISQ1_MEDIAN atol = 1e-12
+    summary = marker_effects(scan)
+    @test summary.target == :direct_marker_scan
+    @test summary.sort_by == :p_value
+    @test summary.decreasing == false
+    @test summary.top_n == 2
+    @test summary.scan_indices == [1, 2]
+    @test summary.marker_ids == scan.marker_ids
+    @test summary.effects ≈ scan.effects atol = 1e-12
+    @test summary.abs_effects ≈ abs.(scan.effects) atol = 1e-12
+    @test summary.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test summary.chisq ≈ scan.chisq atol = 1e-12
+    @test summary.p_values ≈ scan.p_values atol = 1e-12
+    @test summary.bonferroni_p_values ≈ scan.bonferroni_p_values atol = 1e-12
+    @test summary.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test summary.lod_scores ≈ scan.lod_scores atol = 1e-12
+    @test summary.denominators ≈ scan.denominators atol = 1e-12
+    top_chisq = marker_effects(scan; sort_by = :chisq, top_n = 1)
+    @test top_chisq.sort_by == :chisq
+    @test top_chisq.decreasing == true
+    @test top_chisq.top_n == 1
+    @test top_chisq.marker_ids == ["m1"]
+    @test top_chisq.scan_indices == [1]
     @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
     @test all(0 .<= scan.p_values .<= 1)
@@ -1917,6 +1943,11 @@ end
     mixed_inflation = marker_genomic_inflation(mixed)
     @test mixed_inflation.target == :mixed_model_marker_scan
     @test mixed_inflation.median_chisq ≈ sum(mixed.chisq) / 2 atol = 1e-12
+    mixed_summary = marker_effects(mixed; sort_by = :lod_score)
+    @test mixed_summary.target == :mixed_model_marker_scan
+    @test mixed_summary.sort_by == :lod_score
+    @test mixed_summary.decreasing == true
+    @test mixed_summary.marker_ids == mixed.marker_ids[sortperm(collect(1:2); by = i -> (-mixed.lod_scores[i], i))]
 
     Ainv_loco1 = Matrix(Ainv_mixed)
     Ainv_loco2 = 1.4 .* Matrix(Ainv_mixed)
@@ -1968,6 +1999,9 @@ end
     loco_inflation = marker_genomic_inflation(loco)
     @test loco_inflation.target == :loco_mixed_model_marker_scan
     @test loco_inflation.median_chisq ≈ sum(loco.chisq) / 2 atol = 1e-12
+    loco_summary = marker_effects(loco; top_n = 1)
+    @test loco_summary.target == :loco_mixed_model_marker_scan
+    @test length(loco_summary.marker_ids) == 1
 
     loco_precisions = loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = 0.2)
     @test sort(collect(keys(loco_precisions))) == ["chr1", "chr2"]
@@ -2067,6 +2101,11 @@ end
     @test map_manhattan.plot_positions == [7.0, 1.0]
     @test map_manhattan.order == [2, 1]
     @test marker_manhattan_data(scan, marker_map_data).plot_positions == map_manhattan.plot_positions
+    map_summary = marker_effects(scan, marker_map_data)
+    @test map_summary.marker_ids == ["m1", "m2"]
+    @test map_summary.chromosomes == ["2", "1"]
+    @test map_summary.positions == [5.0, 1.0]
+    @test map_summary.scan_indices == [1, 2]
 
     qq = marker_qq_data(scan)
     @test qq.marker_ids == ["m1", "m2"]
@@ -2091,6 +2130,28 @@ end
     @test custom_inflation.n_markers == 3
     @test custom_inflation.median_chisq == 4.0
     @test custom_inflation.lambda_gc == 4.0
+    custom_effects_summary = marker_effects((
+        marker_ids = ["a", "b", "c"],
+        effects = [-3.0, 2.0, 0.5],
+        standard_errors = [1.0, 1.0, 0.5],
+        z_scores = [-3.0, 2.0, 1.0],
+        chisq = [9.0, 4.0, 1.0],
+        p_values = [0.01, 0.02, 0.5],
+        bonferroni_p_values = [0.03, 0.06, 1.0],
+        bh_q_values = [0.03, 0.03, 0.5],
+        lod_scores = [9.0, 4.0, 1.0] ./ (2 * log(10)),
+        denominators = [2.0, 3.0, 4.0],
+        target = :custom,
+    ); sort_by = :abs_effect, top_n = 2)
+    @test custom_effects_summary.target == :custom
+    @test custom_effects_summary.sort_by == :abs_effect
+    @test custom_effects_summary.marker_ids == ["a", "b"]
+    @test custom_effects_summary.abs_effects == [3.0, 2.0]
+    @test custom_effects_summary.scan_indices == [1, 2]
+    bh_summary = marker_effects(custom_effects_summary; sort_by = :bh_q_value, decreasing = true)
+    @test bh_summary.sort_by == :bh_q_value
+    @test bh_summary.decreasing == true
+    @test bh_summary.marker_ids == ["a", "b"]
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
@@ -2118,6 +2179,16 @@ end
     @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, -0.1],))
     @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, NaN],))
     @test_throws ArgumentError marker_genomic_inflation(scan; expected_median = 0.0)
+    @test_throws ArgumentError marker_effects((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_effects(merge(scan, (effects = [1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (effects = [NaN, 1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (standard_errors = [0.0, 1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_effects(scan; sort_by = :unsupported)
+    @test_throws ArgumentError marker_effects(scan; top_n = 0)
+    @test_throws ArgumentError marker_effects(scan; top_n = 3)
+    @test_throws ArgumentError marker_effects(scan; top_n = 1.5)
+    @test_throws ArgumentError marker_effects(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)
