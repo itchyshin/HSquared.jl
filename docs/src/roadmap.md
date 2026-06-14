@@ -152,9 +152,9 @@ Next engine targets:
   `fa(K)` are experimental engine utilities; R-facing syntax and comparator
   parity remain future work.
 - Phase 5: direct fixed-effect marker screening has started with Wald p-values,
-  Bonferroni/BH adjustments, LOD-equivalent scores, and Manhattan plot data;
-  mixed-model QTL/GWAS/eQTL scans, LOCO option, genome-wide calibration, and
-  actual plotting backends remain future work.
+  Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
+  Manhattan plot data; mixed-model QTL/GWAS/eQTL scans, LOCO option,
+  genome-wide calibration, and actual plotting backends remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

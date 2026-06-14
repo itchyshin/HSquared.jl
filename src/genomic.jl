@@ -272,6 +272,8 @@ end
 """
     marker_manhattan_data(scan; chromosomes = nothing, positions = nothing,
                           p_floor = floatmin(Float64), chromosome_gap = 1.0)
+    marker_manhattan_data(scan, marker_spec::HSMarkerMapSpec; ...)
+    marker_manhattan_data(scan, data::HSData; ...)
 
 Prepare plot-ready Manhattan data from a direct [`single_marker_scan`](@ref)
 result.
@@ -281,6 +283,10 @@ labels, marker positions, cumulative plotting positions, and a deterministic
 plot order. If chromosome or position metadata is omitted, all markers are
 placed on chromosome `"1"` with sequential positions. Zero p-values are floored
 only for `-log10` display values, and the floor is returned in the output.
+When a validated [`HSMarkerMapSpec`](@ref) or [`HSData`](@ref) with marker
+metadata is supplied, marker IDs must match the scan exactly; chromosome and
+position metadata are then aligned to the scan marker order, while chromosome
+display order follows the marker-map order.
 
 This is a data-preparation helper only. It does not draw a plot, does not parse
 marker maps, does not run a mixed-model marker scan, and does not activate the
@@ -293,6 +299,68 @@ function marker_manhattan_data(
     p_floor::Real = floatmin(Float64),
     chromosome_gap::Real = 1.0,
 )
+    marker_ids, p_values = _scan_marker_ids_and_p_values(scan)
+
+    m = length(p_values)
+    chromosome_values = if chromosomes === nothing
+        fill("1", m)
+    elseif chromosomes isa AbstractString || chromosomes isa Symbol
+        fill(string(chromosomes), m)
+    else
+        string.(collect(chromosomes))
+    end
+    position_values = if positions === nothing
+        Float64.(collect(1:m))
+    else
+        Float64.(collect(positions))
+    end
+
+    return _marker_manhattan_data_from_vectors(
+        marker_ids,
+        p_values,
+        chromosome_values,
+        position_values,
+        p_floor,
+        chromosome_gap,
+    )
+end
+
+function marker_manhattan_data(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    p_floor::Real = floatmin(Float64),
+    chromosome_gap::Real = 1.0,
+)
+    marker_ids, p_values = _scan_marker_ids_and_p_values(scan)
+    map_order = _marker_map_order_for_scan(marker_ids, marker_spec)
+    return _marker_manhattan_data_from_vectors(
+        marker_ids,
+        p_values,
+        marker_spec.chromosome[map_order],
+        marker_spec.position[map_order],
+        p_floor,
+        chromosome_gap;
+        chromosome_order = _unique_strings(marker_spec.chromosome),
+    )
+end
+
+function marker_manhattan_data(
+    scan,
+    data::HSData;
+    p_floor::Real = floatmin(Float64),
+    chromosome_gap::Real = 1.0,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return marker_manhattan_data(
+        scan,
+        data.marker_spec;
+        p_floor = p_floor,
+        chromosome_gap = chromosome_gap,
+    )
+end
+
+function _scan_marker_ids_and_p_values(scan)
     hasproperty(scan, :marker_ids) ||
         throw(ArgumentError("scan must have a marker_ids field"))
     hasproperty(scan, :p_values) ||
@@ -303,6 +371,19 @@ function marker_manhattan_data(
     m = length(p_values)
     length(marker_ids) == m ||
         throw(ArgumentError("marker_ids and p_values must have the same length"))
+    return marker_ids, p_values
+end
+
+function _marker_manhattan_data_from_vectors(
+    marker_ids::Vector{String},
+    p_values::Vector{Float64},
+    chromosome_values::AbstractVector,
+    position_values::AbstractVector,
+    p_floor::Real,
+    chromosome_gap::Real;
+    chromosome_order = nothing,
+)
+    m = length(p_values)
 
     p_floor_value = Float64(p_floor)
     isfinite(p_floor_value) && 0 < p_floor_value <= 1 ||
@@ -311,57 +392,72 @@ function marker_manhattan_data(
     isfinite(gap) && gap >= 0 ||
         throw(ArgumentError("chromosome_gap must be finite and non-negative"))
 
-    chromosome_values = if chromosomes === nothing
-        fill("1", m)
-    elseif chromosomes isa AbstractString || chromosomes isa Symbol
-        fill(string(chromosomes), m)
-    else
-        string.(collect(chromosomes))
-    end
-    length(chromosome_values) == m ||
+    chromosome_labels = string.(collect(chromosome_values))
+    length(chromosome_labels) == m ||
         throw(ArgumentError("chromosomes must have one entry per marker"))
 
-    position_values = if positions === nothing
-        Float64.(collect(1:m))
-    else
-        Float64.(collect(positions))
-    end
-    length(position_values) == m ||
+    positions_float = Float64.(collect(position_values))
+    length(positions_float) == m ||
         throw(ArgumentError("positions must have one entry per marker"))
-    all(x -> isfinite(x) && x >= 0, position_values) ||
+    all(x -> isfinite(x) && x >= 0, positions_float) ||
         throw(ArgumentError("positions must be finite and non-negative"))
 
-    chromosome_order = String[]
+    chromosome_order_values = chromosome_order === nothing ?
+        _unique_strings(chromosome_labels) :
+        string.(collect(chromosome_order))
+    duplicates = _duplicate_string_ids(chromosome_order_values)
+    isempty(duplicates) ||
+        throw(ArgumentError("chromosome order cannot contain duplicate values: $(join(duplicates, ", "))"))
+    missing_chromosomes = _ordered_setdiff(_unique_strings(chromosome_labels), chromosome_order_values)
+    isempty(missing_chromosomes) ||
+        throw(ArgumentError("chromosome order is missing chromosomes: $(join(missing_chromosomes, ", "))"))
+
     chromosome_rank = Dict{String,Int}()
-    for chromosome in chromosome_values
-        if !haskey(chromosome_rank, chromosome)
-            push!(chromosome_order, chromosome)
-            chromosome_rank[chromosome] = length(chromosome_order)
-        end
+    for (rank, chromosome) in pairs(chromosome_order_values)
+        chromosome_rank[chromosome] = rank
     end
 
     marker_order = sortperm(collect(1:m);
-        by = i -> (chromosome_rank[chromosome_values[i]], position_values[i], i))
+        by = i -> (chromosome_rank[chromosome_labels[i]], positions_float[i], i))
     plot_positions = zeros(Float64, m)
     offset = 0.0
-    for chromosome in chromosome_order
-        chromosome_indices = [i for i in marker_order if chromosome_values[i] == chromosome]
+    for chromosome in chromosome_order_values
+        chromosome_indices = [i for i in marker_order if chromosome_labels[i] == chromosome]
+        isempty(chromosome_indices) && continue
         for i in chromosome_indices
-            plot_positions[i] = offset + position_values[i]
+            plot_positions[i] = offset + positions_float[i]
         end
         offset = maximum(plot_positions[chromosome_indices]) + gap
     end
 
     return (
         marker_ids = marker_ids,
-        chromosomes = chromosome_values,
-        positions = position_values,
+        chromosomes = chromosome_labels,
+        positions = positions_float,
         plot_positions = plot_positions,
         p_values = p_values,
         neglog10_p_values = .-log10.(max.(p_values, p_floor_value)),
         order = marker_order,
         p_floor = p_floor_value,
     )
+end
+
+function _marker_map_order_for_scan(marker_ids::Vector{String}, marker_spec::HSMarkerMapSpec)
+    duplicate_scan_ids = _duplicate_string_ids(marker_ids)
+    isempty(duplicate_scan_ids) ||
+        throw(ArgumentError("scan marker_ids must be unique when matching a marker map: $(join(duplicate_scan_ids, ", "))"))
+
+    missing_from_map = _ordered_setdiff(marker_ids, marker_spec.marker_ids)
+    missing_from_scan = _ordered_setdiff(marker_spec.marker_ids, marker_ids)
+    if !isempty(missing_from_map) || !isempty(missing_from_scan)
+        details = String[]
+        isempty(missing_from_map) || push!(details, "missing from marker map: $(join(missing_from_map, ", "))")
+        isempty(missing_from_scan) || push!(details, "missing from scan: $(join(missing_from_scan, ", "))")
+        throw(ArgumentError("scan marker_ids must match marker map IDs exactly; $(join(details, "; "))"))
+    end
+
+    marker_index = Dict(id => i for (i, id) in pairs(marker_spec.marker_ids))
+    return [marker_index[id] for id in marker_ids]
 end
 
 # Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is

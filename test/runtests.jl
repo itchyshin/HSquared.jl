@@ -247,9 +247,10 @@ end
     @test fixed_marker_row.status == "partial"
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
+    @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
-    @test occursin("Fixed-effect Gaussian screening utility and plot-data helper only", fixed_marker_row.claim_boundary)
+    @test occursin("Fixed-effect Gaussian screening utility and marker-map-backed plot-data helper only", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
@@ -1848,6 +1849,18 @@ end
     @test custom_manhattan.neglog10_p_values ≈ [2.0, 12.0, -0.0] atol = 1e-12
     @test custom_manhattan.p_floor == 1e-12
 
+    marker_map_data = HSData(
+        (id = ["a"], y = [1.0]);
+        markers = (marker = ["m2", "m1"], chr = ["1", "2"], pos = [1, 5]),
+    )
+    map_manhattan = marker_manhattan_data(scan, marker_map_data.marker_spec)
+    @test map_manhattan.marker_ids == ["m1", "m2"]
+    @test map_manhattan.chromosomes == ["2", "1"]
+    @test map_manhattan.positions == [5.0, 1.0]
+    @test map_manhattan.plot_positions == [7.0, 1.0]
+    @test map_manhattan.order == [2, 1]
+    @test marker_manhattan_data(scan, marker_map_data).plot_positions == map_manhattan.plot_positions
+
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
     @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
@@ -1865,6 +1878,15 @@ end
     @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0, -1.0])
     @test_throws ArgumentError marker_manhattan_data(scan; p_floor = 0.0)
     @test_throws ArgumentError marker_manhattan_data(scan; chromosome_gap = -1.0)
+    @test_throws ArgumentError marker_manhattan_data(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_manhattan_data(
+        (marker_ids = ["m1", "m1"], p_values = [0.1, 0.2]),
+        marker_map_data.marker_spec,
+    )
+    @test_throws ArgumentError marker_manhattan_data(
+        scan,
+        HSData((id = ["a"], y = [1.0]); markers = (marker = ["m1"], chr = ["1"], pos = [1])).marker_spec,
+    )
     cm_one = centered_markers(M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)

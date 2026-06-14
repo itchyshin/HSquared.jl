@@ -45,11 +45,12 @@
   Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, and fixed-effect
   known-variance LOD-equivalent scores. `marker_manhattan_data()` prepares
   plot-ready marker IDs, chromosome/position metadata, cumulative plot
-  positions, raw p-values, and `-log10(p)` values. This is direct Julia engine
-  tooling only: no mixed-model GWAS/QTL, no interval-mapping or mixed-model LOD
-  workflow, no plotting backend, no calibrated/correlated-marker
-  multiple-testing workflow, no R `marker_scan()` syntax, no bridge payload
-  change, and no comparator parity.
+  positions, raw p-values, and `-log10(p)` values, including overloads for
+  already-validated `HSMarkerMapSpec` / `HSData` marker metadata. This is direct
+  Julia engine tooling only: no mixed-model GWAS/QTL, no interval-mapping or
+  mixed-model LOD workflow, no marker-file parser, no plotting backend, no
+  calibrated/correlated-marker multiple-testing workflow, no R `marker_scan()`
+  syntax, no bridge payload change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

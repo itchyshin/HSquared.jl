@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker-map-backed Manhattan plot data
+
+- Goal: connect direct fixed-effect marker-scan plot data to already-validated
+  Julia marker-map metadata without adding R syntax, marker-file parsing,
+  plotting, or mixed-model GWAS/QTL claims.
+- Active lenses: Florence (plot-data ergonomics), Shannon (R/Julia boundary),
+  Rose (claim boundary), Curie (deterministic tests), Grace (low-core checks).
+  Spawned subagents: none.
+- Change:
+  - added `marker_manhattan_data(scan, marker_spec::HSMarkerMapSpec)` and
+    `marker_manhattan_data(scan, data::HSData)` overloads;
+  - scan marker IDs must match marker-map IDs exactly and be unique;
+  - chromosome and position values are aligned to the scan marker order, while
+    chromosome display order follows the marker-map order;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, coordination board, and this report.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before final checks.
+  - Initial `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed after implementation and before final ledger/docs edits. Phase 5
+    fixed-effect single-marker scan testset is now 72 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed after ledger/docs sync. Phase 0 scaffold/validation-status block is
+    now 195 checks; Phase 5 fixed-effect single-marker scan testset is now 72
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: marker-map-backed plot-data preparation only. This does not parse
+  marker files, draw figures, run mixed-model marker scans, correct
+  relatedness/population structure, add LOCO, add interval-mapping/mixed-model
+  LOD workflows, calibrate correlated-marker p-values, activate R
+  `marker_scan()` syntax, change the bridge payload, change `result_payload()`,
+  or add comparator parity.
+
 ## 2026-06-14 fixed-effect marker-scan Manhattan plot data
 
 - Goal: add deterministic plot-data preparation for the direct Julia

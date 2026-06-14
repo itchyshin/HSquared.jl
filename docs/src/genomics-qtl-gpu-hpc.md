@@ -364,11 +364,13 @@ residualizes `y` and each marker against `X`, and reports marker effects,
 supplied-variance standard errors, Wald z-scores, chi-square statistics, and
 approximate two-sided Gaussian/Wald p-values plus Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set, and
-LOD-equivalent scores `chisq / (2log(10))`. It does not compute
+LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
+already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
+chromosomes and positions by exact marker ID. These helpers do not compute
 interval-mapping or mixed-model LOD workflows or calibrated/correlated-marker
 multiple-testing workflows, account for relatedness or population structure,
-perform LOCO, draw figures, or activate the R-facing `marker_scan()` formula
-term.
+perform LOCO, parse marker files, draw figures, or activate the R-facing
+`marker_scan()` formula term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -379,6 +381,12 @@ scan.p_values
 scan.bh_q_values
 scan.lod_scores
 manhattan = marker_manhattan_data(scan)
+marker_data = HSData((id = ["example"], y = [0.0]); markers = (
+    marker = ["m1", "m2"],
+    chr = ["1", "2"],
+    pos = [10, 20],
+))
+map_manhattan = marker_manhattan_data(scan, marker_data)
 manhattan.neglog10_p_values
 ```
 

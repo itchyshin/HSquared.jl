@@ -104,9 +104,10 @@ unimplemented.
   marker-effect output and the GBLUP/SNP-BLUP equivalence
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
   GBLUP REML variance-component estimation, and fixed-effect single-marker
-  screening (`single_marker_scan`) exist as experimental supplied-variance /
-  validation-scale engine utilities. No production genomic fitting, mixed-model
-  marker scan, or QTL/eQTL scan; not the public default.
+  screening (`single_marker_scan`) plus marker-map-backed Manhattan metadata
+  exist as experimental supplied-variance / validation-scale engine utilities.
+  No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
+  the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
   permanent-environment (`repeatability_mme`, `fit_repeatability_reml`) and a
   general two-random-effect model for common-environment / maternal-genetic
@@ -349,11 +350,12 @@ dosages against `X` and reports effects, supplied-variance standard errors,
 Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
 marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
-Manhattan data. It is not a mixed-model GWAS/QTL scan, does not account for
-relatedness/population structure, does not compute interval-mapping or
-mixed-model LOD workflows or calibrated / correlated-marker multiple-testing
-workflows, does not draw plots, and does not activate the R-facing
-`marker_scan()` formula term.
+Manhattan data, including overloads that consume already-validated `HSData` /
+`HSMarkerMapSpec` marker metadata by exact marker ID. It is not a mixed-model
+GWAS/QTL scan, does not account for relatedness/population structure, does not
+compute interval-mapping or mixed-model LOD workflows or calibrated /
+correlated-marker multiple-testing workflows, does not draw plots, and does not
+activate the R-facing `marker_scan()` formula term.
 
 Gate: marker-map validation, estimand definition, genome-wide multiple-testing
 calibration, and comparator/simulation evidence.

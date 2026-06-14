@@ -218,12 +218,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, fixed-effect
   known-variance LOD-equivalent scores, denominators, marker IDs, allele
   frequencies, and the VanRaden scale. `marker_manhattan_data()` prepares
-  plot-ready Manhattan data from those direct scan fields without drawing
-  figures. This is engine-internal / direct-Julia only: no mixed-model GWAS/QTL/eQTL,
-  relatedness or population-structure correction, calibrated mixed-model
-  p-values, interval-mapping or mixed-model LOD workflows,
-  plotting backend, advanced/correlated-marker multiple-testing workflow,
-  R `marker_scan()` formula activation, bridge payload change, or
+  plot-ready Manhattan data from those direct scan fields and can consume
+  already-validated `HSMarkerMapSpec` / `HSData` marker metadata by exact
+  marker ID. This is engine-internal / direct-Julia only: no mixed-model
+  GWAS/QTL/eQTL, relatedness or population-structure correction, calibrated
+  mixed-model p-values, interval-mapping or mixed-model LOD workflows, marker
+  file parsing, plotting backend, advanced/correlated-marker multiple-testing
+  workflow, R `marker_scan()` formula activation, bridge payload change, or
   `result_payload()` change.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
