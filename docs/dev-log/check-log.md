@@ -2,6 +2,40 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 multivariate result extractors
+
+- Goal: mirror the R twin's multivariate extractor vocabulary locally in Julia
+  for existing Phase 4 result objects, without changing `result_payload()` or
+  the R bridge contract.
+- Active lenses: Ada/Shannon (lane and twin boundary), Hopper (result shape),
+  Gauss/Karpinski (copy-return behavior and dispatch), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added guarded `NamedTuple` methods for multivariate results:
+    `variance_components`, `fixed_effects`, `breeding_values`, and
+    REML-only `heritability`;
+  - `EBV()` and `BLUP()` work through the existing `breeding_values()` alias
+    path;
+  - matrix/vector accessors return copies, and unrelated `NamedTuple`s fail
+    with `ArgumentError`.
+- Tests:
+  - Phase 4 supplied-covariance testset now checks covariance, fixed-effect,
+    EBV/BLUP, copy-return, invalid-result, and no-heritability guards
+    (37 checks);
+  - Phase 4 REML testset now checks covariance, fixed-effect, heritability,
+    EBV/BLUP, and copy-return accessors (34 checks).
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Claim scan over touched multivariate/source/status docs found only
+    explicit bridge/comparator/production boundary wording.
+- Boundary: accessor ergonomics only. No new fitted capability, no
+  `result_payload()` widening, no R syntax change, no external-comparator
+  parity, and no promotion of `V4-MULTIVARIATE` or `V4-MV-REML` beyond
+  partial.
+
 ## 2026-06-14 validation-status docs sync
 
 - Goal: bring `docs/src/validation-status.md` back into alignment with

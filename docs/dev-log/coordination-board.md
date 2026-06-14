@@ -195,6 +195,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   a repeated-record half-sib design outside CI. This retires the "no committed
   recovery harness" gap for `V4-MV-REML`, but does not provide multi-seed
   calibration or external comparator parity.
+- R head `21161a5` documents multivariate extractor examples, with CI recorded
+  by `6b5758b`. Julia mirrors the extractor vocabulary locally for
+  multivariate result `NamedTuple`s:
+  `variance_components`, `fixed_effects`, `heritability` (REML results only),
+  and `breeding_values`/`EBV`/`BLUP`. These are copy-returning wrappers over
+  existing result fields and do not change `result_payload()` or the R bridge
+  contract.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix

@@ -281,6 +281,21 @@ This convention is deterministic but not a rotation or lower-triangular
 identification constraint; rank-`K > 1` loading columns remain
 rotation-nonunique.
 
+The multivariate result accessors are Julia-side wrappers over existing
+`NamedTuple` fields:
+
+```julia
+variance_components(fit)
+fixed_effects(fit)
+breeding_values(fit)
+EBV(fit)
+BLUP(fit)
+heritability(fit)   # REML results only
+```
+
+They return copies of matrix/vector fields and are guarded so unrelated
+`NamedTuple`s fail loudly. They do not add new result fields.
+
 This is a direct Julia engine API only. It does not change the v0.1 R bridge
 payload, `result_payload()`, or the R formula grammar. Any future R
 multi-trait / covariance-structure syntax must be designed in the R lane and
@@ -448,6 +463,11 @@ reliability.
 R head `afa25f1` adds R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
 ergonomics. Julia mirrors the vocabulary locally as aliases and derived output
 only; there is no new bridge payload requirement.
+
+R head `21161a5` documents R-side multivariate extractor examples. Julia mirrors
+the same local vocabulary for multivariate engine results (`NamedTuple`s) with
+copy-returning accessors over existing fields. This is accessor ergonomics only:
+`result_payload()` remains compact and no R bridge payload field is required.
 
 R head `060988d` adds R-side `fit_diagnostics()` over existing result-payload
 metadata. Julia mirrors this as:

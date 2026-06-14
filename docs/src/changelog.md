@@ -130,6 +130,11 @@
   Experimental, dense/validation-scale; opt-in seeded recovery exists outside
   CI, but is not multi-seed calibrated and has no external-comparator parity
   yet.
+- Added copy-returning Julia-side multivariate result accessors:
+  `variance_components`, `fixed_effects`, `breeding_values`/`EBV`/`BLUP`, and
+  REML-only `heritability`. These wrap existing `multivariate_mme` /
+  `fit_multivariate_reml` fields and do not change `result_payload()` or the R
+  bridge contract.
 - Added `test/fixtures/phase4_multitrait_parity/`, a deterministic two-trait
   CSV fixture for R-lane sommer/ASReml/BLUPF90 parity work. It records a Julia
   REML target (`G0`, `R0`, beta, EBVs, h², and loglik) and CI checks fast

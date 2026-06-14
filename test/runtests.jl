@@ -2055,6 +2055,23 @@ end
     @test size(res.beta) == (1, t)
     @test size(res.breeding_values.values) == (q, t)
     @test res.breeding_values.ids == collect(1:q)
+    res_vc = variance_components(res)
+    @test res_vc.genetic_covariance ≈ res.genetic_covariance
+    @test res_vc.residual_covariance ≈ res.residual_covariance
+    @test fixed_effects(res) ≈ res.beta
+    @test breeding_values(res).values ≈ res.breeding_values.values
+    @test EBV(res).values ≈ res.breeding_values.values
+    @test BLUP(res).values ≈ res.breeding_values.values
+    res_vc.genetic_covariance[1, 1] = -999.0
+    @test res.genetic_covariance[1, 1] == G0[1, 1]
+    res_beta = fixed_effects(res)
+    res_beta[1, 1] = -999.0
+    @test res.beta[1, 1] != -999.0
+    res_ebv = breeding_values(res)
+    res_ebv.values[1, 1] = -999.0
+    @test res.breeding_values.values[1, 1] != -999.0
+    @test_throws ArgumentError heritability(res)
+    @test_throws ArgumentError variance_components((foo = 1,))
 
     # Reference 1: loop-built multivariate MME (independent assembly, trait-fastest)
     invR0 = inv(R0); invG0 = inv(G0); p = size(X, 2)
@@ -2249,6 +2266,19 @@ end
     @test chk.breeding_values.values ≈ mv2.breeding_values.values atol = 1e-6   # GLS vs MME solve
     @test -1 <= mv2.genetic_correlation[1, 2] <= 1
     @test all(0 .<= mv2.heritability .<= 1)
+    mv2_vc = variance_components(mv2)
+    @test mv2_vc.genetic_covariance ≈ mv2.genetic_covariance
+    @test mv2_vc.residual_covariance ≈ mv2.residual_covariance
+    @test fixed_effects(mv2) ≈ mv2.beta
+    @test heritability(mv2) ≈ mv2.heritability
+    @test breeding_values(mv2).ids == mv2.breeding_values.ids
+    @test breeding_values(mv2).traits == mv2.breeding_values.traits
+    @test breeding_values(mv2).values ≈ mv2.breeding_values.values
+    @test EBV(mv2).values ≈ mv2.breeding_values.values
+    @test BLUP(mv2).values ≈ mv2.breeding_values.values
+    mv2_h2 = heritability(mv2)
+    mv2_h2[1] = -999.0
+    @test mv2.heritability[1] != -999.0
 
     # (4) missing records are handled by the estimator too (a boundary estimate
     # is still valid — the EBV solve is robust to a singular G0)

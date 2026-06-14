@@ -35,6 +35,69 @@ end
 
 genetic_correlation(result::NamedTuple) = result.genetic_correlation
 
+function _require_multivariate_result(result::NamedTuple)
+    ok = hasproperty(result, :genetic_covariance) &&
+         hasproperty(result, :residual_covariance) &&
+         hasproperty(result, :beta) &&
+         hasproperty(result, :breeding_values)
+    ok ||
+        throw(ArgumentError("result is not a multivariate HSquared result"))
+    return result
+end
+
+"""
+    variance_components(result::NamedTuple)
+
+Return the genetic and residual covariance matrices from a multivariate
+`HSquared` result as `(genetic_covariance, residual_covariance)`.
+"""
+function variance_components(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    return (
+        genetic_covariance = copy(r.genetic_covariance),
+        residual_covariance = copy(r.residual_covariance),
+    )
+end
+
+"""
+    fixed_effects(result::NamedTuple)
+
+Return the fixed-effect matrix from a multivariate `HSquared` result.
+"""
+function fixed_effects(result::NamedTuple)
+    return copy(_require_multivariate_result(result).beta)
+end
+
+"""
+    breeding_values(result::NamedTuple)
+
+Return the multivariate breeding-value metadata from a multivariate `HSquared`
+result as `(ids, traits, values)`.
+"""
+function breeding_values(result::NamedTuple)
+    bv = _require_multivariate_result(result).breeding_values
+    ok = hasproperty(bv, :ids) && hasproperty(bv, :traits) && hasproperty(bv, :values)
+    ok ||
+        throw(ArgumentError("multivariate breeding_values metadata must contain ids, traits, and values"))
+    return (
+        ids = collect(bv.ids),
+        traits = collect(bv.traits),
+        values = copy(bv.values),
+    )
+end
+
+"""
+    heritability(result::NamedTuple)
+
+Return the per-trait heritability vector from a multivariate REML result.
+"""
+function heritability(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    hasproperty(r, :heritability) ||
+        throw(ArgumentError("multivariate result does not contain heritability"))
+    return copy(collect(r.heritability))
+end
+
 function _check_finite_matrix(M, name)
     Mf = Float64.(Matrix(M))
     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))

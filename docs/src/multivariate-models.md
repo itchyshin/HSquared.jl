@@ -44,6 +44,12 @@ animal). The supplied covariances are echoed back, and the corresponding
 correlation matrices are derived:
 
 ```@example mv
+(variance_components = variance_components(fit),
+ beta = round.(fixed_effects(fit); digits = 4),
+ ebv = round.(EBV(fit).values; digits = 4))
+```
+
+```@example mv
 (genetic_correlation = round.(fit.genetic_correlation; digits = 4),
  residual_correlation = round.(fit.residual_correlation; digits = 4))
 ```
@@ -81,11 +87,17 @@ estimate:
 
 ```@example mv
 fitr = fit_multivariate_reml(Y, X, Z, Ainv)
-(genetic_covariance = round.(fitr.genetic_covariance; digits = 3),
- residual_covariance = round.(fitr.residual_covariance; digits = 3),
- heritability = round.(fitr.heritability; digits = 3),
+(covariances = variance_components(fitr),
+ heritability = round.(heritability(fitr); digits = 3),
+ ebv = round.(breeding_values(fitr).values; digits = 3),
  converged = fitr.converged)
 ```
+
+The multivariate accessors return copies of matrix and vector fields. They are
+Julia-side convenience wrappers over the existing result metadata:
+`variance_components`, `fixed_effects`, `breeding_values`, `EBV`, `BLUP`, and
+`heritability` for REML results. They do not widen `result_payload()` or change
+the R bridge contract.
 
 !!! warning "Experimental estimator"
     Multivariate REML is **experimental**. Its correctness is checked by
@@ -196,4 +208,3 @@ Still planned / coordinated:
   ASReml / JWAS) for the REML and structured-covariance estimators;
 - a published Mrode multi-trait fixture;
 - the public R multivariate model-spec mapping — R lane.
-```

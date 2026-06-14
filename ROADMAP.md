@@ -117,7 +117,11 @@ unimplemented.
   `fit_multivariate_reml` estimation of `G0`/`R0` exist as engine-internal,
   validation-scale utilities. The multivariate REML path now has an opt-in
   seeded recovery harness outside CI and a serialized two-trait Julia target
-  fixture for R-lane comparator work. Phase 4B now has structured genetic
+  fixture for R-lane comparator work. Julia-side extractors
+  (`variance_components`, `fixed_effects`, `heritability`, and
+  `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
+  without changing `result_payload()` or the R bridge. Phase 4B now has
+  structured genetic
   covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, plus its own opt-in seeded recovery harness. No R-facing
   multivariate model-spec, no external comparator parity, no loading
