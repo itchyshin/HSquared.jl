@@ -89,6 +89,71 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
 end
 
 """
+    loco_relationship_precisions(markers, marker_groups; allele_frequencies = nothing,
+                                 ridge = 0.01)
+
+Construct dense leave-one-group-out genomic relationship precisions from marker
+dosages.
+
+`marker_groups` must provide one group label per marker column, for example a
+chromosome label. For each group, the helper drops that group's markers, builds a
+VanRaden genomic relationship matrix from the remaining markers using
+[`genomic_relationship_matrix`](@ref), and returns its regularized dense inverse
+from [`genomic_relationship_inverse`](@ref). The return value is a
+`Dict{String, Matrix{Float64}}` keyed by group label, ready to pass as the
+`relationship_precisions` argument to [`loco_mixed_model_marker_scan`](@ref).
+
+This is a validation-scale construction helper. It does not choose public LOCO
+defaults, estimate variance components, calibrate marker-scan p-values, parse
+marker files, or activate R-facing `marker_scan()` syntax.
+"""
+function loco_relationship_precisions(
+    markers::AbstractMatrix,
+    marker_groups;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    ridge::Real = 0.01,
+)
+    M = Float64.(markers)
+    n, m = size(M)
+    (n >= 1 && m >= 1) || throw(ArgumentError("markers must be non-empty"))
+
+    groups = string.(collect(marker_groups))
+    length(groups) == m ||
+        throw(ArgumentError("marker_groups must have one entry per marker"))
+    all(!isempty, groups) ||
+        throw(ArgumentError("marker_groups cannot contain empty labels"))
+    group_order = _unique_strings(groups)
+    length(group_order) >= 2 ||
+        throw(ArgumentError("LOCO relationship construction requires at least two marker groups"))
+
+    ridge_value = Float64(ridge)
+    isfinite(ridge_value) && ridge_value >= 0 ||
+        throw(ArgumentError("ridge must be non-negative and finite"))
+
+    p = if allele_frequencies === nothing
+        nothing
+    else
+        length(allele_frequencies) == m ||
+            throw(ArgumentError("allele_frequencies must have one entry per marker"))
+        p_values = Float64.(allele_frequencies)
+        all(f -> 0 <= f <= 1, p_values) ||
+            throw(ArgumentError("allele frequencies must lie in [0, 1]"))
+        p_values
+    end
+
+    precisions = Dict{String,Matrix{Float64}}()
+    for group in group_order
+        keep = groups .!= group
+        any(keep) ||
+            throw(ArgumentError("LOCO group $(group) leaves no markers for relationship construction"))
+        group_p = p === nothing ? nothing : p[keep]
+        G = genomic_relationship_matrix(M[:, keep]; allele_frequencies = group_p)
+        precisions[group] = genomic_relationship_inverse(G; ridge = ridge_value)
+    end
+    return precisions
+end
+
+"""
     fit_gblup(y, X, Z, Ginv, sigma_a2, sigma_e2; ids = nothing, method = :REML)
 
 Genomic BLUP (GBLUP) at supplied variance components: solve the Gaussian animal
@@ -327,12 +392,12 @@ group label (for example a chromosome) to the relationship precision that should
 be used when testing markers in that group. The helper selects the matching
 precision for each marker, forms the dense validation-scale GLS covariance, and
 runs the same marker-by-marker Wald scan as [`mixed_model_marker_scan`](@ref).
+Callers can build the dictionary with [`loco_relationship_precisions`](@ref), or
+provide their own externally constructed matrices.
 
-The caller is responsible for constructing each leave-one-group-out precision.
-This helper only selects among supplied matrices; it does not build genomic
-relationships from markers, estimate variance components, calibrate p-values,
-run LOCO defaults for a public workflow, or activate the R-facing
-`marker_scan()` formula term.
+This helper only selects among supplied matrices; it does not choose public LOCO
+defaults, estimate variance components, calibrate p-values, run sparse
+production scans, or activate the R-facing `marker_scan()` formula term.
 """
 function loco_mixed_model_marker_scan(
     y::AbstractVector,

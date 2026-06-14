@@ -267,10 +267,12 @@ end
     loco_marker_row = only(row for row in validation if row.id == "V5-MARKER-LOCO")
     @test loco_marker_row.phase == "Phase 5"
     @test loco_marker_row.status == "partial"
+    @test occursin("loco_relationship_precisions", loco_marker_row.evidence)
+    @test occursin("leave-one-group-out VanRaden", loco_marker_row.evidence)
     @test occursin("loco_mixed_model_marker_scan", loco_marker_row.evidence)
     @test occursin("separate `mixed_model_marker_scan` calls", loco_marker_row.evidence)
-    @test occursin("automatic LOCO relationship construction", loco_marker_row.missing)
-    @test occursin("Dense validation-scale supplied-matrix selection helper only", loco_marker_row.claim_boundary)
+    @test occursin("LOCO defaults", loco_marker_row.missing)
+    @test occursin("Dense validation-scale LOCO construction and supplied-matrix selection helpers only", loco_marker_row.claim_boundary)
     @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
@@ -1954,6 +1956,66 @@ end
     @test marker_manhattan_data(loco).marker_ids == loco.marker_ids
     @test marker_qq_data(loco).marker_ids == loco.marker_ids
 
+    loco_precisions = loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = 0.2)
+    @test sort(collect(keys(loco_precisions))) == ["chr1", "chr2"]
+    @test loco_precisions["chr1"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 2:2]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    @test loco_precisions["chr2"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 1:1]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    loco_precisions_p = loco_relationship_precisions(
+        M,
+        ["chr1", "chr2"];
+        allele_frequencies = [0.25, 0.45],
+        ridge = 0.2,
+    )
+    @test loco_precisions_p["chr1"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 2:2]; allele_frequencies = [0.45]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    @test loco_precisions_p["chr2"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 1:1]; allele_frequencies = [0.25]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    loco_constructed = loco_mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions,
+        ["chr1", "chr2"],
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    ref_constructed_chr1 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions["chr1"],
+        M[:, 1:1],
+        0.7,
+        1.2;
+        marker_ids = ["m1"],
+    )
+    ref_constructed_chr2 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions["chr2"],
+        M[:, 2:2],
+        0.7,
+        1.2;
+        marker_ids = ["m2"],
+    )
+    @test loco_constructed.effects ≈ [only(ref_constructed_chr1.effects), only(ref_constructed_chr2.effects)] atol = 1e-12
+    @test loco_constructed.standard_errors ≈
+          [only(ref_constructed_chr1.standard_errors), only(ref_constructed_chr2.standard_errors)] atol = 1e-12
+    @test loco_constructed.p_values ≈ [only(ref_constructed_chr1.p_values), only(ref_constructed_chr2.p_values)] atol = 1e-12
+
     manhattan = marker_manhattan_data(scan)
     @test manhattan.marker_ids == ["m1", "m2"]
     @test manhattan.chromosomes == ["1", "1"]
@@ -2108,6 +2170,13 @@ end
         1.0,
         1.0,
     )
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1"])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", ""])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr1"])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = -0.1)
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = Inf)
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; allele_frequencies = [0.4])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; allele_frequencies = [0.4, 1.2])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)
     @test_throws ArgumentError single_marker_scan([1.0, 2.0], ones(2, 1), M)
 end

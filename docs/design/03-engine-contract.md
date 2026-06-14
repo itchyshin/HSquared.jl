@@ -220,8 +220,9 @@ gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
 snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
 scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
 mixed_scan = mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)
+loco_precisions = loco_relationship_precisions(markers, marker_groups; ridge = 0.01)
 loco_scan = loco_mixed_model_marker_scan(
-    y, X, Z, relationship_precisions, marker_groups, markers, sigma_a2, sigma_e2
+    y, X, Z, loco_precisions, marker_groups, markers, sigma_a2, sigma_e2
 )
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
@@ -253,11 +254,12 @@ covariance. It does not estimate marker-scan variance components, implement
 LOCO, calibrate genome-wide p-values, estimate genomic inflation, draw plots, or
 change bridge payloads.
 
-`loco_mixed_model_marker_scan()` is narrower still: it selects one
-caller-supplied relationship precision for each marker group and runs the same
-GLS test. It does not build leave-one-chromosome relationship matrices from
-markers, choose LOCO defaults, estimate marker-scan variance components,
-calibrate p-values, draw plots, or change bridge payloads.
+`loco_relationship_precisions()` constructs dense leave-one-group-out VanRaden
+relationship precisions by dropping each marker group and applying the existing
+ridge-regularized inverse. `loco_mixed_model_marker_scan()` then selects one
+relationship precision for each marker group and runs the same GLS test. These
+helpers do not choose public LOCO defaults, estimate marker-scan variance
+components, calibrate p-values, draw plots, or change bridge payloads.
 
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes

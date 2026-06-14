@@ -237,15 +237,16 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   calibrated p-values, genomic-inflation diagnostics, interval-mapping or
   mixed-model LOD workflows, plotting backend, R `marker_scan()` formula
   activation, bridge payload change, or `result_payload()` change.
-- Julia now has `loco_mixed_model_marker_scan` as a direct Phase 5
-  supplied-matrix leave-one-group-out marker-screening utility. The caller
-  supplies one relationship precision per marker group, and Julia selects the
-  matching precision before running the dense GLS scan. This is
-  engine-internal / direct-Julia only: no automatic LOCO relationship
-  construction from markers, marker-scan variance-component estimation, sparse
-  production scan, calibrated p-values, genomic-inflation diagnostics, plotting
-  backend, R `marker_scan()` formula activation, bridge payload change, or
-  `result_payload()` change.
+- Julia now has `loco_relationship_precisions` and
+  `loco_mixed_model_marker_scan` as direct Phase 5 leave-one-group-out
+  marker-screening utilities. The construction helper drops each marker group,
+  builds a dense VanRaden relationship from the remaining markers, and applies
+  the existing ridge-regularized inverse; the scan helper selects the matching
+  precision before running the dense supplied-variance GLS scan. This is
+  engine-internal / direct-Julia only: no public LOCO defaults, marker-scan
+  variance-component estimation, sparse production scan, calibrated p-values,
+  genomic-inflation diagnostics, plotting backend, R `marker_scan()` formula
+  activation, bridge payload change, or `result_payload()` change.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

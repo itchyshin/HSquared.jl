@@ -102,7 +102,8 @@ Implemented:
   `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
   `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
   `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
-  `mixed_model_marker_scan`, supplied `loco_mixed_model_marker_scan`, and
+  `mixed_model_marker_scan`, dense LOCO precision construction via
+  `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
   Manhattan/QQ plot-data helpers.
 - experimental repeatability / two-effect REML utilities.
 - experimental multivariate animal-model utilities, including
@@ -117,9 +118,10 @@ Not implemented:
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - production R-to-Julia fitting bridge;
 - public R-facing genomic/marker model-spec fitting, production genomic
-  prediction, APY/sparse genomic scaling, mixed-model marker scans, LOCO,
-  calibrated mixed-model p-values, interval-mapping or mixed-model LOD
-  workflows, genome-wide calibration, and QTL/eQTL intervals;
+  prediction, APY/sparse genomic scaling, formula-driven mixed-model marker
+  scans, public LOCO workflows, calibrated mixed-model p-values,
+  interval-mapping or mixed-model LOD workflows, genome-wide calibration, and
+  QTL/eQTL intervals;
 - public R-facing permanent environment, common environment,
   maternal/paternal effects,
   cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
@@ -157,11 +159,12 @@ Next engine targets:
   Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
   Manhattan and QQ plot data. A supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
-  screening, and `loco_mixed_model_marker_scan` can select among supplied
-  leave-one-group-out precision matrices. Formula-driven QTL/GWAS/eQTL scans,
-  automatic LOCO relationship construction, genome-wide calibration,
-  genomic-inflation diagnostics, and actual plotting backends remain future
-  work.
+  screening, `loco_relationship_precisions` constructs dense
+  VanRaden-plus-ridge leave-one-group-out precision matrices, and
+  `loco_mixed_model_marker_scan` can select among supplied LOCO precision
+  matrices. Formula-driven QTL/GWAS/eQTL scans, public LOCO workflow defaults,
+  genome-wide calibration, genomic-inflation diagnostics, and actual plotting
+  backends remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

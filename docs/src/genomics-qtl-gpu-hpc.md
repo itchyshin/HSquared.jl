@@ -371,13 +371,14 @@ sorted observed/expected QQ plot data from the same direct scan result.
 `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
 dense supplied-variance GLS helper that accounts for a supplied relationship
 covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`.
-`loco_mixed_model_marker_scan()` selects among caller-supplied relationship
-precisions by marker group before running the same dense GLS scan. These helpers
-do not compute interval-mapping or mixed-model LOD workflows or
-calibrated/correlated-marker multiple-testing workflows, estimate marker-scan
-variance components, estimate genomic inflation, construct leave-one-chromosome
-relationship matrices, parse marker files, draw figures, or activate the
-R-facing `marker_scan()` formula term.
+`loco_relationship_precisions()` constructs dense VanRaden-plus-ridge
+leave-one-group-out relationship precisions from marker groups, and
+`loco_mixed_model_marker_scan()` selects a precision by marker group before
+running the same dense GLS scan. These helpers do not compute interval-mapping
+or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
+workflows, estimate marker-scan variance components, estimate genomic
+inflation, choose public LOCO defaults, parse marker files, draw figures, or
+activate the R-facing `marker_scan()` formula term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -390,11 +391,12 @@ scan.lod_scores
 Z = zeros(5, 1)
 mixed_scan = mixed_model_marker_scan(y, X, Z, Matrix(1.0I, 1, 1), M, 2.0, 1.0)
 mixed_scan.p_values
+loco_precisions = loco_relationship_precisions(M, ["1", "2"]; ridge = 0.01)
 loco_scan = loco_mixed_model_marker_scan(
     y,
     X,
-    Z,
-    Dict("1" => Matrix(1.0I, 1, 1), "2" => Matrix(1.0I, 1, 1)),
+    Matrix{Float64}(I, 5, 5),
+    loco_precisions,
     ["1", "2"],
     M,
     2.0,

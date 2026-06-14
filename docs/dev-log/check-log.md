@@ -2,6 +2,55 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 LOCO relationship precision construction
+
+- Goal: add a direct Julia helper that constructs dense leave-one-group-out
+  relationship precision matrices from marker data and marker groups, so the
+  existing supplied LOCO marker-scan helper no longer requires callers to build
+  every precision matrix by hand. Keep the slice Julia-only, validation-scale,
+  and outside the R bridge contract.
+- Active lenses: Gauss (VanRaden construction and regularized inverse reuse),
+  Fisher (marker-scan estimand and no calibration overclaim), Curie
+  (deterministic reduction/identity tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `loco_relationship_precisions(markers, marker_groups;
+    allele_frequencies, ridge)`;
+  - the helper drops each marker group, builds a dense VanRaden relationship
+    matrix from the remaining markers, and applies the existing
+    `genomic_relationship_inverse` ridge-regularized inverse;
+  - `loco_mixed_model_marker_scan` documentation now points callers to the
+    construction helper while still accepting externally supplied precision
+    matrices;
+  - tests pin explicit leave-one-group-out VanRaden-plus-ridge precision
+    identities, feed the constructed matrices into
+    `loco_mixed_model_marker_scan`, and compare marker-wise results to
+    separate `mixed_model_marker_scan` calls;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Preliminary `Pkg.test()` after implementation/status edits and before final
+    ledger/docs edits passed. Phase 0 scaffold/validation-status block is now
+    215 checks; Phase 5 fixed-effect single-marker scan testset is now 154
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 215 checks; Phase
+    5 fixed-effect single-marker scan testset is now 157 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense validation-scale LOCO precision construction and
+  supplied-matrix selection only. This does not choose public LOCO defaults,
+  estimate marker-scan variance components, run a sparse production scan,
+  calibrate p-values, estimate genomic inflation, draw plots, activate R
+  `marker_scan()` syntax, change the bridge payload, change `result_payload()`,
+  or add comparator parity.
+
 ## 2026-06-14 supplied LOCO marker scan selection
 
 - Goal: add a direct Julia helper that selects among caller-supplied
