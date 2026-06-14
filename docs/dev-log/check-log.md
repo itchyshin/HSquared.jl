@@ -2,6 +2,34 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4 status guardrails
+
+- Goal: tighten Phase 4/4B status guardrails after the accessor and
+  structured-`G0` slices, so stale "planned only" wording and missing
+  validation-status assertions are easier to catch.
+- Active lenses: Ada/Shannon (lane and twin boundary), Rose (claim-vs-evidence
+  wording), Grace (checks), Karpinski (narrow regression-test change).
+  Spawned subagents: none.
+- Change:
+  - updated the backend algorithm roadmap row for factor-analytic G matrices
+    to say the dense CPU validation-scale engine path exists while GPU and
+    performance work remain planned;
+  - strengthened `validation_status()` tests for the Phase 4 rows, including
+    multivariate extractors, bridge-payload boundaries, REML `result_payload()`
+    boundaries, seeded recovery wording, and Phase 4B sign-vs-rotation wording;
+  - recorded the no-bridge-change status wording on the coordination board.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Stale wording scan found no remaining source-doc occurrences of the old
+    "Factor-analytic G matrices | GPU-friendly later | ... | planned" row or
+    the old "Multivariate G matrices | planned | no implementation yet" row.
+- Boundary: status/test/docs guardrails only. No engine behavior, R syntax,
+  bridge payload, `result_payload()`, comparator evidence, GPU execution, or
+  capability status promotion changed.
+
 ## 2026-06-14 multivariate capability-status wording cleanup
 
 - Goal: remove a stale capability-status row that still said "Multivariate G

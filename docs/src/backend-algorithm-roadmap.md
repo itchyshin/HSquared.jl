@@ -60,7 +60,7 @@ Until those gates exist, backend names are roadmap vocabulary only.
 | Sparse MME solves | CPU first, hybrid later | sparse direct/iterative solvers need robust preconditioners | supplied-variance solve only |
 | Dense genomic matrix operations | GPU-friendly | large dense matrix products and reductions | planned |
 | Marker matrix multiplication | GPU-friendly | high arithmetic intensity and batch structure | planned |
-| Factor-analytic G matrices | GPU-friendly later | repeated low-rank dense updates | planned |
+| Factor-analytic G matrices | CPU now, GPU-friendly later | repeated low-rank dense updates | experimental dense validation-scale engine path exists; GPU/performance path planned |
 | GLLVM likelihood blocks | GPU-friendly later | large response matrices and low-rank factors | planned |
 | Simulation, bootstrap, cross-validation | GPU-friendly later | independent batches | planned |
 | Single-step with sparse `A` and dense `G` | hybrid | sparse pedigree plus dense genomic block | planned |

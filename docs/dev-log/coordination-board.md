@@ -202,6 +202,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   and `breeding_values`/`EBV`/`BLUP`. These are copy-returning wrappers over
   existing result fields and do not change `result_payload()` or the R bridge
   contract.
+- The Julia backend algorithm roadmap now distinguishes the implemented
+  Phase-4B dense CPU validation-scale structured-`G0` path from the still
+  planned GPU/performance path. This is status wording only: no backend
+  dispatch, R-facing covariance syntax, bridge payload, or `result_payload()`
+  change.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix

@@ -204,18 +204,25 @@ end
     @test mv_row.status == "partial"
     @test occursin("multivariate_mme", mv_row.evidence)
     @test occursin("missing-trait records", mv_row.evidence)
+    @test occursin("variance_components", mv_row.evidence)
+    @test occursin("breeding_values", mv_row.evidence)
     @test occursin("does not estimate G0/R0", mv_row.claim_boundary)
+    @test occursin("bridge payload change", mv_row.claim_boundary)
     mvreml_row = only(row for row in validation if row.id == "V4-MV-REML")
     @test mvreml_row.phase == "Phase 4"
     @test mvreml_row.status == "partial"
     @test occursin("fit_multivariate_reml", mvreml_row.evidence)
+    @test occursin("heritability", mvreml_row.evidence)
+    @test occursin("result_payload", mvreml_row.claim_boundary)
     @test occursin("opt-in seeded recovery harness", mvreml_row.claim_boundary)
     @test occursin("not multi-seed calibrated", mvreml_row.claim_boundary)
     fa_row = only(row for row in validation if row.id == "V4-FA")
     @test fa_row.phase == "Phase 4B"
     @test fa_row.status == "partial"
     @test occursin("factor_analytic_covariance", fa_row.evidence)
+    @test occursin("sign-canonicalization", fa_row.evidence)
     @test occursin("no R-facing", fa_row.claim_boundary)
+    @test occursin("not rotation-identified", fa_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
