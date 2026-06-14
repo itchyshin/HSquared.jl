@@ -2,6 +2,42 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect marker-scan p-values
+
+- Goal: add deterministic p-value output to the direct Julia fixed-effect
+  marker-screening utility without adding a dependency or widening the R bridge
+  contract.
+- Active lenses: Fisher (Wald interpretation), Curie (deterministic tests),
+  Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added `p_values` to `single_marker_scan()` as approximate two-sided
+    Gaussian/Wald p-values implied by the supplied residual variance;
+  - added a self-contained Abramowitz-Stegun normal-CDF approximation with an
+    exact `z = 0` symmetry case;
+  - added deterministic tests for hand-fixture p-values, known z-values,
+    covariate-adjusted p-value consistency, and non-finite guardrails;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, Documenter pages, changelog, and coordination
+    board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - First throttled `Pkg.test()` attempt failed because the approximation
+    returned `0.9999999989503827` rather than exactly `1.0` for the `z = 0`
+    p-value test. The helper now returns the exact symmetry value at zero.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block remains 193 checks;
+    recovery calibration log summarizer remains 21 checks; Phase 5
+    fixed-effect single-marker scan testset is now 27 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: fixed-effect Gaussian/Wald p-values only, using supplied residual
+  variance and a documented approximation. No calibrated mixed-model p-values,
+  LOD scores, LOCO, multiple-testing correction, relationship/population-
+  structure correction, R formula activation, bridge payload change,
+  `result_payload()` change, or comparator parity.
+
 ## 2026-06-14 fixed-effect single-marker scan
 
 - Goal: land the first small Phase 5 marker-screening engine utility without

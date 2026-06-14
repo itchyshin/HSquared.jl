@@ -361,17 +361,17 @@ Levels:
 Current Julia status: `single_marker_scan(y, X, markers; sigma_e2 = 1.0)` is a
 fixed-effect Gaussian screening helper. It centers biallelic dosages,
 residualizes `y` and each marker against `X`, and reports marker effects,
-supplied-variance standard errors, Wald z-scores, and chi-square statistics.
-It does not compute p-values or LOD scores, account for relatedness or
-population structure, perform LOCO, or activate the R-facing `marker_scan()`
-formula term.
+supplied-variance standard errors, Wald z-scores, chi-square statistics, and
+approximate two-sided Gaussian/Wald p-values. It does not compute LOD scores or
+multiple-testing corrections, account for relatedness or population structure,
+perform LOCO, or activate the R-facing `marker_scan()` formula term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
 X = ones(5, 1)
 M = [0.0 0.0; 1.0 0.0; 2.0 1.0; 0.0 2.0; 1.0 2.0]
 scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
-scan.effects
+scan.p_values
 ```
 
 QTL/GWAS syntax:
@@ -873,7 +873,7 @@ Phase 5: QTL/GWAS/eQTL.
 - single-marker scans;
 - mixed-model marker scans;
 - LOCO;
-- LOD/p-value output;
+- LOD output and calibrated mixed-model p-value workflows;
 - cis/trans eQTL;
 - multiple testing;
 - plots.

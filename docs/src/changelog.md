@@ -41,9 +41,10 @@
 - Added `single_marker_scan()` — a Phase-5 fixed-effect single-marker screening
   utility that residualizes `y` and centered marker dosages against `X`, then
   reports marker effects, supplied-variance standard errors, Wald z-scores, and
-  chi-square statistics. This is direct Julia engine tooling only: no mixed-model
-  GWAS/QTL, no p-values/LOD, no R `marker_scan()` syntax, no bridge payload
-  change, and no comparator parity.
+  chi-square statistics plus approximate two-sided Gaussian/Wald p-values. This
+  is direct Julia engine tooling only: no mixed-model GWAS/QTL, no LOD scores,
+  no multiple-testing correction, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

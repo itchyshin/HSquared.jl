@@ -1784,6 +1784,10 @@ end
     @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
     @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
+    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
+    @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
+    @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
+    @test all(0 .<= scan.p_values .<= 1)
 
     # With a nontrivial fixed-effect design, the scan equals independent
     # residualization of y and each marker against X.
@@ -1800,12 +1804,14 @@ end
         @test scan2.denominators[j] ≈ denom atol = 1e-12
         @test scan2.effects[j] ≈ effect atol = 1e-12
         @test scan2.standard_errors[j] ≈ sqrt(2.0 / denom) atol = 1e-12
+        @test scan2.p_values[j] ≈ HSquared._standard_normal_two_sided_pvalue(scan2.z_scores[j]) atol = 1e-12
     end
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
     @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
     @test_throws ArgumentError single_marker_scan(y, X, M; marker_ids = ["m1"])
+    @test_throws ArgumentError HSquared._standard_normal_two_sided_pvalue(NaN)
     cm_one = centered_markers(M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)

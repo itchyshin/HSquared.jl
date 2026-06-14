@@ -80,8 +80,8 @@ Planned, but not implemented yet:
   heritability extraction;
 - production R-to-Julia fitting bridge;
 - genotype parsing, imputation, automatic relationship construction, public
-  genomic model-spec fitting, mixed-model marker scans, LOCO, p-values/LOD
-  scores, multiple testing, and QTL/eQTL intervals;
+  genomic model-spec fitting, mixed-model marker scans, LOCO, calibrated
+  mixed-model p-values, LOD scores, multiple testing, and QTL/eQTL intervals;
 - environmental model terms, automatic environment joins, and
   multi-environment animal-model workflows;
 - expression-feature joins and eQTL/omics fitting from expression metadata;

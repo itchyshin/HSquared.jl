@@ -116,7 +116,8 @@ Not implemented:
 - production R-to-Julia fitting bridge;
 - public R-facing genomic/marker model-spec fitting, production genomic
   prediction, APY/sparse genomic scaling, mixed-model marker scans, LOCO,
-  p-values/LOD scores, multiple testing, and QTL/eQTL intervals;
+  calibrated mixed-model p-values, LOD scores, multiple testing, and QTL/eQTL
+  intervals;
 - public R-facing permanent environment, common environment,
   maternal/paternal effects,
   cytoplasmic inheritance, imprinting, dominance, epistasis, and custom

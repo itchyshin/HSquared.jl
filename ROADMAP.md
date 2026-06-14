@@ -339,16 +339,18 @@ and extractor meanings.
 
 ## Phase 5: QTL, GWAS, And eQTL
 
-Add single-marker scans, mixed-model marker scans, LOCO, LOD/p-value output,
-cis/trans eQTL, multiple testing, and basic plots.
+Add single-marker scans, mixed-model marker scans, LOCO, LOD output,
+calibrated mixed-model p-values, cis/trans eQTL, multiple testing, and basic
+plots.
 
 Status: `single_marker_scan` provides the first direct Julia engine utility for
 fixed-effect single-marker screening. It residualizes `y` and centered marker
 dosages against `X` and reports effects, supplied-variance standard errors,
-Wald z-scores, and chi-square statistics. It is not a mixed-model GWAS/QTL
-scan, does not account for relatedness/population structure, does not compute
-p-values or LOD scores, and does not activate the R-facing `marker_scan()`
-formula term.
+Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
+p-values. It is not a mixed-model GWAS/QTL scan, does not account for
+relatedness/population structure, does not compute LOD scores or
+multiple-testing corrections, and does not activate the R-facing
+`marker_scan()` formula term.
 
 Gate: marker-map validation, estimand definition, multiple-testing checks, and
 comparator/simulation evidence.

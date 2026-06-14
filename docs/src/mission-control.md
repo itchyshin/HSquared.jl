@@ -254,7 +254,7 @@ status tables remain the source of truth.
         <li>No production sparse REML/ML/AI-REML fitting claim.</li>
         <li>No production sparse PEV/reliability claim.</li>
         <li>No public R-facing genomic model-spec, mixed-model marker scan, QTL/eQTL, or GLLVM fitting claim.</li>
-        <li>No p-values, LOD scores, LOCO, multiple-testing, or comparator-parity claim for marker scans.</li>
+        <li>No calibrated mixed-model p-values, LOD scores, LOCO, multiple-testing, or comparator-parity claim for marker scans.</li>
         <li>No GPU execution, backend benchmarking, or CPU/GPU agreement claim.</li>
         <li>No ASReml, BLUPF90, DMU, WOMBAT, sommer, JWAS, or GLLVM superiority claim.</li>
       </ul>

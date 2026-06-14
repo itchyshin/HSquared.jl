@@ -176,12 +176,13 @@ Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
 Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
 contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
-`denominators`, `p`, and `k`.
+`p_values`, `denominators`, `p`, and `k`. `p_values` are approximate
+two-sided Gaussian/Wald p-values implied by the supplied residual variance.
 
 This is a deterministic Phase 5 validation-scale utility. It is not a mixed
 model GWAS/QTL scan, does not account for relatedness or population structure,
-does not compute p-values/LOD scores, and does not activate the R-facing
-`marker_scan()` formula term.
+does not compute LOD scores or multiple-testing corrections, and does not
+activate the R-facing `marker_scan()` formula term.
 """
 function single_marker_scan(
     y::AbstractVector,
@@ -222,6 +223,7 @@ function single_marker_scan(
     standard_errors = similar(effects)
     z_scores = similar(effects)
     chisq = similar(effects)
+    p_values = similar(effects)
     denominators = similar(effects)
 
     for j in axes(cm.W, 2)
@@ -238,6 +240,7 @@ function single_marker_scan(
         standard_errors[j] = se
         z_scores[j] = z
         chisq[j] = z^2
+        p_values[j] = _standard_normal_two_sided_pvalue(z)
     end
 
     return (
@@ -246,10 +249,31 @@ function single_marker_scan(
         standard_errors = standard_errors,
         z_scores = z_scores,
         chisq = chisq,
+        p_values = p_values,
         denominators = denominators,
         p = cm.p,
         k = cm.k,
     )
+end
+
+# Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is
+# about 7.5e-8, enough for deterministic fixed-effect scan diagnostics without
+# adding a statistics dependency.
+function _standard_normal_cdf_approx(z::Real)
+    x = Float64(z)
+    isfinite(x) || throw(ArgumentError("z must be finite"))
+    x == 0 && return 0.5
+    t = 1 / (1 + 0.2316419 * abs(x))
+    poly = (((((1.330274429 * t - 1.821255978) * t + 1.781477937) * t -
+              0.356563782) * t + 0.319381530) * t)
+    upper = exp(-0.5 * x^2) * inv(sqrt(2 * pi)) * poly
+    cdf = x >= 0 ? 1 - upper : upper
+    return clamp(cdf, 0.0, 1.0)
+end
+
+function _standard_normal_two_sided_pvalue(z::Real)
+    cdf = _standard_normal_cdf_approx(z)
+    return clamp(2 * min(cdf, 1 - cdf), 0.0, 1.0)
 end
 
 """
