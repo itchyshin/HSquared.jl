@@ -138,9 +138,18 @@ fad = fit_multivariate_reml(
 ```
 
 The structured covariance path is **experimental** and dense/validation-scale.
-It has deterministic self-consistency tests, but no committed loading-recovery
-harness, no covariance standard errors, no external-comparator parity, and no
-R-facing covariance-structure syntax.
+It has deterministic self-consistency tests and an opt-in seeded recovery
+harness:
+
+```sh
+julia --project=. sim/phase4b_structured_covariance_recovery.jl
+```
+
+The harness is not part of CI. It records low-rank and factor-analytic recovery
+on a repeated-record half-sib design with loose, version-robust thresholds. The
+structured path still has no loading sign/rotation convention, no covariance
+standard errors, no external-comparator parity, and no R-facing
+covariance-structure syntax.
 
 ## Validation boundary
 
@@ -169,9 +178,9 @@ Still planned / coordinated:
 
 - a long-format interface for the missing-record case;
 - per-trait fixed-effect and incidence designs;
-- a committed multivariate known-truth recovery harness, covariance standard
-  errors, loading sign/rotation conventions, and external-comparator parity
-  (sommer / ASReml / JWAS) for the REML and structured-covariance estimators;
+- broader multi-seed recovery calibration, covariance standard errors, loading
+  sign/rotation conventions, and external-comparator parity (sommer / ASReml /
+  JWAS) for the REML and structured-covariance estimators;
 - a published Mrode multi-trait fixture;
 - the public R multivariate model-spec mapping — R lane.
 ```

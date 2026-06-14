@@ -146,7 +146,13 @@
   constructor identities, structure metadata, loglik equality to the existing
   evaluator, PSD/PD covariance checks, and constrained loglik ≤ the unstructured
   fit. Experimental, dense/validation-scale; no R-facing covariance-structure
-  syntax, bridge change, committed recovery harness, or external comparator yet.
+  syntax, bridge change, loading sign/rotation convention, or external
+  comparator yet.
+- Added opt-in Phase-4B recovery harness
+  `sim/phase4b_structured_covariance_recovery.jl` for seeded low-rank and
+  factor-analytic covariance recovery outside CI. This strengthens internal
+  recovery evidence but does not add R-facing syntax, bridge payload fields, or
+  external comparator parity.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

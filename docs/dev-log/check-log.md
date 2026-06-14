@@ -2,6 +2,37 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4B opt-in structured covariance recovery harness
+
+- Goal: add a reproducible, non-CI recovery harness for the Phase-4B structured
+  multivariate covariance estimator while keeping the regular test suite
+  RNG-free.
+- Active lenses: Curie/Fisher (simulation target and recovery thresholds),
+  Gauss (REML convergence), Kirkpatrick/Noether (structured covariance
+  parameterization), Rose (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added `sim/phase4b_structured_covariance_recovery.jl`;
+  - script simulates a repeated-record half-sib design with 60 animals, 180
+    records, and 3 traits;
+  - default run covers `:factor_analytic` with seed `20260614` and `:lowrank`
+    with seed `20260615`;
+  - script exits nonzero unless the fit converges and relative Frobenius errors
+    satisfy `G <= 0.45` and `R <= 0.25`.
+- Opt-in run:
+  - command: `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl`;
+  - factor-analytic: converged, 2362 iterations, relative error
+    `G = 0.200897`, `R = 0.167222`;
+  - low-rank: converged, 423 iterations, relative error `G = 0.376322`,
+    `R = 0.133646`.
+- Status surfaces updated: `validation_status.jl`, `capability-status.md`,
+  `validation-debt-register.md`, `06-public-claims-register.md`, `ROADMAP.md`,
+  `multivariate-models.md`, `changelog.md`, this report, and after-task report.
+- Boundary: this is seeded internal recovery evidence, not a CI test and not an
+  external comparator. `V4-FA` remains partial. Loading sign/rotation
+  convention, covariance SEs/LRTs, multi-seed calibration, published fixtures,
+  R-facing covariance syntax, bridge payload changes, and sommer/ASReml/BLUPF90
+  parity remain open.
+
 ## 2026-06-14 Phase 4B structured genetic covariance (diag/lowrank/fa)
 
 - Goal: start Phase 4B with direct Julia engine support for structured
