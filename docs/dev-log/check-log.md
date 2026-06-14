@@ -43,6 +43,15 @@ Newest entries go at the top.
     missing local logo/favicon/package.json substitutions, and 4 npm audit
     advisories in generated docs dependencies.
   - `git diff --check`: passed.
+- Remote checks for pushed commit `6c92ae6`:
+  - CI `27513014295`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27513014295>.
+  - Documenter `27513014305`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27513014305>.
+  - Earlier Documenter run `27512999115` was cancelled by the workflow
+    concurrency group and superseded by successful run `27513014305`.
+  - Remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
 - Boundary: regional marker data preparation over returned marker-scan fields
   only. This does not estimate marker-scan variance components, calibrate
   p-values, claim calibrated PVE/model R², correct statistics, estimate

@@ -72,6 +72,14 @@ and marker metadata.
   local logo/favicon/package.json substitutions, and 4 npm audit advisories in
   generated docs dependencies.
 - `git diff --check`: passed.
+- Remote CI passed for pushed commit `6c92ae6`: CI run `27513014295`
+  (<https://github.com/itchyshin/HSquared.jl/actions/runs/27513014295>) and
+  Documenter run `27513014305`
+  (<https://github.com/itchyshin/HSquared.jl/actions/runs/27513014305>).
+  Earlier Documenter run `27512999115` was cancelled by workflow concurrency
+  and superseded by the successful Documenter run. Remote runs emitted the
+  known non-failing Node.js 20 deprecation annotation for upstream actions
+  forced onto Node.js 24.
 
 ## Tests Of The Tests
 
