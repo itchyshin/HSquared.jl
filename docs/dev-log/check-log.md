@@ -37,6 +37,15 @@ Newest entries go at the top.
     manual, local deployment skipped, VitePress default substitutions, missing
     local logo/favicon/package.json substitutions, and 4 npm audit advisories
     in generated docs dependencies.
+- Remote follow-up:
+  - Draft PR opened: `https://github.com/itchyshin/HSquared.jl/pull/29`,
+    stacked on `codex/phase5-marker-inflation-diagnostic`.
+  - `/opt/homebrew/bin/gh run watch 27510845063 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. CI succeeded on Julia stable and Julia 1.10. GitHub emitted the
+    known non-failing Node.js 20 deprecation annotation for upstream actions.
+  - `/opt/homebrew/bin/gh run watch 27510845661 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. Documenter succeeded. The earlier Documenter run `27510816279` was
+    cancelled after the superseding successful run was triggered.
 - Boundary: summary over returned marker-scan fields only. This does not
   calibrate p-values, correct statistics, estimate effective marker counts,
   choose genome-wide thresholds, draw plots, activate R `marker_scan()` syntax,

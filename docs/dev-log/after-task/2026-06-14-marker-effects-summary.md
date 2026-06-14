@@ -52,6 +52,14 @@ p-value calibration.
   local deployment skipped, VitePress default substitutions, missing local
   logo/favicon/package.json substitutions, and 4 npm audit advisories in
   generated docs dependencies.
+- Draft PR: `https://github.com/itchyshin/HSquared.jl/pull/29`, stacked on
+  `codex/phase5-marker-inflation-diagnostic`.
+- Remote CI: `/opt/homebrew/bin/gh run watch 27510845063 --repo itchyshin/HSquared.jl --exit-status`
+  passed on Julia stable and Julia 1.10. GitHub emitted the known non-failing
+  Node.js 20 deprecation annotation for upstream actions.
+- Remote Documenter: `/opt/homebrew/bin/gh run watch 27510845661 --repo itchyshin/HSquared.jl --exit-status`
+  passed. The earlier Documenter run `27510816279` was cancelled after the
+  superseding successful run was triggered.
 
 ## Public Claim Audit
 
