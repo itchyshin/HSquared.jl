@@ -1,29 +1,35 @@
-# Marker Significance Summary Helper
+# After-Task Report: Marker Significance Summary Helper
 
 ## Task Goal
 
-Add a direct Julia helper that summarizes nominal marker hits from already
-computed marker-scan fields without claiming calibrated GWAS/QTL/eQTL
-thresholds.
+Add a deterministic direct-Julia marker significance summary helper over
+already-computed marker-scan fields, without adding calibrated GWAS/QTL/eQTL
+threshold claims, p-value calibration, effective marker-count estimation,
+plotting, R syntax, bridge payload changes, calibrated PVE/model R2 claims, or
+comparator evidence.
 
-## Active Lenses And Spawned Agents
+## Active Lenses And Agents
 
-- Ada/Shannon: lane discipline and branch stacking.
-- Jason: sister-package diagnostic-threshold patterns.
-- Fisher: significance wording and threshold boundary.
-- Curie: deterministic flag/count/top-marker tests and malformed-input guards.
-- Rose: public claim audit.
-- Grace: local checks and CI readiness.
-- Spawned agents: none.
+- Fisher: nominal-significance-vs-calibrated-threshold boundary.
+- Pat: summary ergonomics.
+- Curie: flags, counts, top-marker provenance, and guard tests.
+- Shannon: R/Julia boundary.
+- Grace: low-core local checks and Documenter build.
+- Rose: claim-vs-evidence gate.
+- Spawned subagents: none.
 
 ## Files Changed
 
 - `src/HSquared.jl`
 - `src/genomic.jl`
-- `test/runtests.jl`
 - `src/validation_status.jl`
+- `test/runtests.jl`
 - `README.md`
 - `ROADMAP.md`
+- `docs/design/03-engine-contract.md`
+- `docs/design/06-public-claims-register.md`
+- `docs/design/capability-status.md`
+- `docs/design/validation-debt-register.md`
 - `docs/src/api.md`
 - `docs/src/changelog.md`
 - `docs/src/genomics-qtl-gpu-hpc.md`
@@ -31,100 +37,87 @@ thresholds.
 - `docs/src/mission-control.md`
 - `docs/src/roadmap.md`
 - `docs/src/validation-status.md`
-- `docs/design/03-engine-contract.md`
-- `docs/design/06-public-claims-register.md`
-- `docs/design/capability-status.md`
-- `docs/design/validation-debt-register.md`
-- `docs/dev-log/coordination-board.md`
 - `docs/dev-log/check-log.md`
+- `docs/dev-log/coordination-board.md`
+- `docs/dev-log/after-task/2026-06-14-marker-significance-summary.md`
 - `docs/dev-log/scout/2026-06-14-marker-significance-summary-scout.md`
-- this report
 
-## What Landed
+## Checks Run
 
-- Exported `marker_significance_summary`.
-- Added `marker_significance_summary(scan; alpha = 0.05)`.
-- The helper validates marker IDs, raw p-values, Bonferroni-adjusted p-values,
-  BH q-values, chi-square values, LOD scores, and `alpha`.
-- It returns raw, Bonferroni, and BH flags/counts, marker IDs, scan indices,
-  thresholds, min p/q summaries, max statistic summaries, top-marker
-  provenance, and scan target metadata.
-- The helper works over direct fixed, supplied-variance mixed, LOCO, and custom
-  scan-like named tuples that carry the expected fields.
-
-## Checks
-
-- `git diff --check` - passed.
-- Focused marker command:
-  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`
-  - passed. The runner executed the suite; Phase 5 fixed-effect
-  single-marker scan testset is now 415 checks.
-- Full suite:
-  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`
-  - passed.
-- Root-level docs command failed locally:
-  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
-  failed with `IOError: cd("build/"): no such file or directory`.
-- Rerun from `docs/` passed:
-  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("make.jl")'`.
-  Known local caveats remained: 8 unrelated docstrings not included in the
-  manual, local deployment skipped, VitePress default substitutions, missing
-  local logo/favicon/package.json substitutions, and 4 npm audit advisories in
-  generated docs dependencies.
-
-## Tests Of The Tests
-
-- Deterministic tests cover raw, Bonferroni, and BH flags/counts, marker IDs,
-  scan indices, thresholds, min p/q summaries, max statistics, top-marker
-  provenance, and target propagation for fixed, mixed, LOCO, and custom scans.
-- Guard tests cover missing marker IDs, missing p-values, malformed adjusted
-  p-values, malformed BH q-values, malformed chi-square and LOD fields, and
-  invalid `alpha`.
-- Validation-status tests require the new helper and its claim-boundary text
-  to appear in the `V5-MARKER-FIXED` row.
+- Focused `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+  passed. The test runner executed the suite; Phase 5 fixed-effect
+  single-marker scan testset was 415 checks.
+- Full `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+  passed. Phase 5 fixed-effect single-marker scan testset was 415 checks and
+  Phase 4B structured covariance remained 61 checks.
+- `git diff --check`: passed after source/docs closeout edits.
+- Documenter was rebuilt with one-thread settings after clearing stale local
+  generated output. Known local caveats remained: 8 unrelated docstrings not
+  included in the manual, local deployment skipped, VitePress default
+  substitutions, missing local logo/favicon/package.json substitutions, and
+  4 npm audit advisories in generated docs dependencies.
 
 ## Public Claim Audit
 
-Allowed:
+Allowed claim: `marker_significance_summary()` prepares deterministic nominal
+raw-p, Bonferroni, and BH flags/counts over the markers already present in a
+direct Julia marker-scan result. It returns thresholds, marker IDs, original
+scan indices, min/max diagnostics, and top-marker provenance by raw p-value.
 
-- `marker_significance_summary()` prepares nominal raw-p, Bonferroni, and BH
-  flags/counts over the markers already returned by a direct Julia scan.
+Disallowed claims remain explicit: this does not define calibrated
+correlated-marker genome-wide thresholds, estimate effective marker counts,
+calibrate p-values, correct scan statistics, choose public GWAS/QTL/eQTL
+thresholds, draw plots, activate R `marker_scan()` syntax, activate
+`gwas_table()` / `qtl_table()` / `eqtl_table()`, activate `regional_plot()`,
+change the bridge payload, change `result_payload()`, or add comparator
+evidence.
 
-Blocked:
+## Tests Of The Tests
 
-- calibrated p-values;
-- effective marker counts;
-- calibrated/correlated-marker genome-wide thresholds;
-- significant QTL/eQTL claims;
-- `gwas_table()` / `qtl_table()` / `eqtl_table()` activation;
-- plotting or fine mapping;
-- R `marker_scan()` syntax;
-- bridge payload or `result_payload()` changes;
-- comparator parity.
+The deterministic tests pin:
+
+- nominal raw-p, Bonferroni, and BH thresholds;
+- per-marker flags and counts;
+- marker ID and scan-index provenance for each summary class;
+- min raw p-value, minimum adjusted p-values, max chi-square, and max LOD;
+- top-marker ID, index, p-value, adjusted p-values, chi-square, and LOD;
+- target propagation for fixed, supplied-variance mixed, supplied LOCO, and
+  compatible scan-like inputs;
+- guards for missing marker IDs, missing p-values, malformed Bonferroni/BH
+  fields, malformed chi-square/LOD fields, and invalid `alpha`.
+
+The validation-status tests assert that the `V5-MARKER-FIXED` row names
+marker-significance summary evidence while keeping calibrated/correlated-marker
+genome-wide thresholds, p-value calibration, bridge changes, and comparator
+claims outside the covered boundary.
 
 ## Coordination Notes
 
-No R repository files were edited. This is Julia-lane groundwork on top of the
-stacked Phase 5 marker-scan helper branches.
+No R repo files were edited. This helper remains direct-Julia only. Any
+R-facing exposure through `marker_scan()`, `gwas_table()`, `qtl_table()`, or
+`eqtl_table()` must be coordinated through GitHub issues before changing the
+bridge contract or public formula language.
 
 ## What Did Not Go Smoothly
 
-The root-level docs invocation failed on the existing local DocumenterVitepress
-`build/` cwd assumption. Running the same docs build from the `docs/`
-directory passed.
+The first docs build hit stale local `docs/build` generated output instead of a
+source failure. Removing `docs/build` and rebuilding passed. The shell's
+default PATH still has no `julia`; validation used `~/.juliaup/bin/julia` with
+one-thread settings.
 
 ## Known Limitations
 
-- Requires already-computed scan fields.
-- Does not adjust p-values beyond consuming the scan's existing Bonferroni and
-  BH fields.
-- Does not calibrate thresholds under LD/correlated markers.
-- Does not promote QTL/GWAS/eQTL support.
+- Summary helper only.
+- Thresholds are nominal over the returned marker set.
+- No calibrated/correlated-marker genome-wide thresholds, effective marker-count
+  estimation, p-value calibration, statistic correction, calibrated PVE/model R2
+  claim, plotting backend, external comparator parity, R syntax, bridge
+  activation, or GWAS/QTL/eQTL table activation.
 
 ## Next Actions
 
-1. Push as a draft PR stacked on the marker-region helper.
-2. Watch CI and Documenter.
-3. Continue Phase 5 with either a direct Julia regional/threshold display
-   refinement, R bridge planning, or comparator evidence once the branch stack
-   lands.
+- Coordinate any R-facing marker-significance exposure through GitHub issues
+  before changing the bridge contract.
+- Add calibrated threshold workflows only as separate gated slices with explicit
+  statistical assumptions, comparator/simulation evidence, and public claim
+  wording.

@@ -40,18 +40,14 @@ Newest entries go at the top.
     `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
     passed. Phase 5 fixed-effect single-marker scan testset is 415 checks;
     Phase 4B structured covariance remains 61 checks.
-  - Root-level docs command
+  - Initial root-level docs command
     `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
-    failed locally with `IOError: cd("build/"): no such file or directory`
-    during Documenter examples / VitePress rendering. This appears to be the
-    existing local cwd assumption for DocumenterVitepress, not the new marker
-    helper.
-  - Docs-directory command
-    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("make.jl")'`
-    from `docs/`: passed. Known local caveats remained: 8 unrelated docstrings
-    not included in the manual, local deployment skipped, VitePress default
-    substitutions, missing local logo/favicon/package.json substitutions, and
-    4 npm audit advisories in generated docs dependencies.
+    failed once on stale local generated output under `docs/build`.
+  - After `rm -rf docs/build`, rerunning the same root-level docs command
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
   - Rose grep for high-risk wording found only blocked/negative wording and
     the new scout note's explicitly blocked examples.
 - Boundary: nominal returned-marker-set summary only. This does not calibrate
