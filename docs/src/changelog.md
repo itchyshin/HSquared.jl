@@ -163,9 +163,11 @@
   `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
   :factor_analytic, rank = K)` estimates constrained genetic covariance
   structures while keeping residual `R0` unstructured. Validated by deterministic
-  constructor identities, structure metadata, loglik equality to the existing
-  evaluator, PSD/PD covariance checks, constrained loglik ≤ the unstructured
-  fit, and deterministic sign-canonicalization of returned loading columns.
+  constructor identities, structure metadata, copy-returning
+  `genetic_structure()`/`genetic_loadings()`/`genetic_uniqueness()` accessors,
+  loglik equality to the existing evaluator, PSD/PD covariance checks,
+  constrained loglik ≤ the unstructured fit, and deterministic
+  sign-canonicalization of returned loading columns.
   Experimental, dense/validation-scale; no R-facing covariance-structure syntax,
   bridge change, loading rotation/identifiability convention, or external
   comparator yet.

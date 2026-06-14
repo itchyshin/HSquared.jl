@@ -98,6 +98,52 @@ function heritability(result::NamedTuple)
     return copy(collect(r.heritability))
 end
 
+function _require_structured_genetic_metadata(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    ok = hasproperty(r, :genetic_structure) &&
+         hasproperty(r, :genetic_rank) &&
+         hasproperty(r, :genetic_loadings) &&
+         hasproperty(r, :genetic_uniqueness)
+    ok ||
+        throw(ArgumentError("multivariate result does not contain structured genetic metadata"))
+    return r
+end
+
+"""
+    genetic_structure(result::NamedTuple)
+
+Return structured genetic covariance metadata from a multivariate REML result as
+`(structure, rank)`.
+"""
+function genetic_structure(result::NamedTuple)
+    r = _require_structured_genetic_metadata(result)
+    return (structure = r.genetic_structure, rank = r.genetic_rank)
+end
+
+"""
+    genetic_loadings(result::NamedTuple)
+
+Return a copy of the structured genetic loading matrix from a low-rank or
+factor-analytic multivariate REML result. Returns `nothing` when the fitted
+structure has no loading matrix.
+"""
+function genetic_loadings(result::NamedTuple)
+    L = _require_structured_genetic_metadata(result).genetic_loadings
+    return isnothing(L) ? nothing : copy(L)
+end
+
+"""
+    genetic_uniqueness(result::NamedTuple)
+
+Return a copy of the structured genetic uniqueness vector from a multivariate
+REML result. Returns `nothing` when the fitted structure has no uniqueness
+metadata.
+"""
+function genetic_uniqueness(result::NamedTuple)
+    ψ = _require_structured_genetic_metadata(result).genetic_uniqueness
+    return isnothing(ψ) ? nothing : copy(collect(ψ))
+end
+
 function _check_finite_matrix(M, name)
     Mf = Float64.(Matrix(M))
     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))

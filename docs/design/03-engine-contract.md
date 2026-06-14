@@ -291,10 +291,15 @@ breeding_values(fit)
 EBV(fit)
 BLUP(fit)
 heritability(fit)   # REML results only
+genetic_structure(fit)
+genetic_loadings(fit)
+genetic_uniqueness(fit)
 ```
 
 They return copies of matrix/vector fields and are guarded so unrelated
-`NamedTuple`s fail loudly. They do not add new result fields.
+`NamedTuple`s fail loudly. Structured metadata accessors return `nothing` when
+the fitted structure has no loading or uniqueness metadata. They do not add new
+result fields.
 
 This is a direct Julia engine API only. It does not change the v0.1 R bridge
 payload, `result_payload()`, or the R formula grammar. Any future R

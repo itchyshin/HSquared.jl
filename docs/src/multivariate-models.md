@@ -144,10 +144,14 @@ fad = fit_multivariate_reml(
     initial = (loadings = Λ, uniqueness = [0.2, 0.3], R0 = R0),
 )
 (G0 = round.(fad.genetic_covariance; digits = 3),
- structure = fad.genetic_structure,
- rank = fad.genetic_rank,
+ structure = genetic_structure(fad),
+ loadings = round.(genetic_loadings(fad); digits = 3),
+ uniqueness = round.(genetic_uniqueness(fad); digits = 3),
  converged = fad.converged)
 ```
+
+The structured metadata accessors copy existing Julia result fields. They do not
+change `result_payload()` or the R bridge contract.
 
 The structured covariance path is **experimental** and dense/validation-scale.
 It has deterministic self-consistency tests and an opt-in seeded recovery

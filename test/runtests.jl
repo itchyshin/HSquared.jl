@@ -223,6 +223,8 @@ end
     @test fa_row.status == "partial"
     @test occursin("factor_analytic_covariance", fa_row.evidence)
     @test occursin("sign-canonicalization", fa_row.evidence)
+    @test occursin("genetic_loadings", fa_row.evidence)
+    @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
@@ -2386,6 +2388,9 @@ end
     h = HSquared._multivariate_reml_loglik
 
     full = fit_multivariate_reml(Y2, X, Z, Ainv)
+    @test genetic_structure(full) == (structure = :unstructured, rank = nothing)
+    @test genetic_loadings(full) === nothing
+    @test genetic_uniqueness(full) === nothing
 
     diagfit = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal)
     @test diagfit.converged
@@ -2393,6 +2398,12 @@ end
     @test diagfit.genetic_rank === nothing
     @test diagfit.genetic_loadings === nothing
     @test diagfit.genetic_uniqueness ≈ diag(diagfit.genetic_covariance)
+    @test genetic_structure(diagfit) == (structure = :diagonal, rank = nothing)
+    @test genetic_loadings(diagfit) === nothing
+    diag_uniq = genetic_uniqueness(diagfit)
+    @test diag_uniq ≈ diagfit.genetic_uniqueness
+    diag_uniq[1] = -1.0
+    @test diagfit.genetic_uniqueness[1] > 0
     @test diagfit.genetic_covariance[1, 2] == 0.0
     @test diagfit.loglik ≈ h(Y2, X, Z, Ainv, diagfit.genetic_covariance, diagfit.residual_covariance) atol = 1e-6
     @test diagfit.loglik <= full.loglik + 1e-6
@@ -2404,10 +2415,19 @@ end
     @test low.converged
     @test low.genetic_structure == :lowrank
     @test low.genetic_rank == 1
+    @test genetic_structure(low) == (structure = :lowrank, rank = 1)
     @test low.genetic_covariance ≈ lowrank_covariance(low.genetic_loadings) atol = 1e-8
     @test low.genetic_loadings[argmax(abs.(low.genetic_loadings[:, 1])), 1] >= 0
     @test minimum(eigvals(Symmetric(low.genetic_covariance))) >= -1e-8
     @test low.genetic_uniqueness == zeros(2)
+    low_loadings = genetic_loadings(low)
+    @test low_loadings ≈ low.genetic_loadings
+    low_loadings[1, 1] = -99.0
+    @test low.genetic_loadings[1, 1] != -99.0
+    low_uniq = genetic_uniqueness(low)
+    @test low_uniq == zeros(2)
+    low_uniq[1] = 99.0
+    @test low.genetic_uniqueness[1] == 0.0
     @test low.loglik ≈ h(Y2, X, Z, Ainv, low.genetic_covariance, low.residual_covariance) atol = 1e-6
     @test low.loglik <= full.loglik + 1e-6
 
@@ -2418,13 +2438,25 @@ end
     @test fa.converged
     @test fa.genetic_structure == :factor_analytic
     @test fa.genetic_rank == 1
+    @test genetic_structure(fa) == (structure = :factor_analytic, rank = 1)
     @test all(fa.genetic_uniqueness .> 0)
     @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
     @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
+    fa_loadings = genetic_loadings(fa)
+    @test fa_loadings ≈ fa.genetic_loadings
+    fa_loadings[1, 1] = -99.0
+    @test fa.genetic_loadings[1, 1] != -99.0
+    fa_uniq = genetic_uniqueness(fa)
+    @test fa_uniq ≈ fa.genetic_uniqueness
+    fa_uniq[1] = -99.0
+    @test fa.genetic_uniqueness[1] > 0
     @test isposdef(Symmetric(fa.genetic_covariance))
     @test fa.loglik ≈ h(Y2, X, Z, Ainv, fa.genetic_covariance, fa.residual_covariance) atol = 1e-6
     @test fa.loglik <= full.loglik + 1e-6
 
+    @test_throws ArgumentError genetic_structure((foo = 1,))
+    @test_throws ArgumentError genetic_loadings((foo = 1,))
+    @test_throws ArgumentError genetic_uniqueness((foo = 1,))
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 0)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :unknown)

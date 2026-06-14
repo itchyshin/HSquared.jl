@@ -123,10 +123,10 @@ unimplemented.
   without changing `result_payload()` or the R bridge. Phase 4B now has
   structured genetic
   covariance builders and REML constraints for diagonal, low-rank, and
-  factor-analytic `G0`, plus its own opt-in seeded recovery harness. No R-facing
-  multivariate model-spec, no external comparator parity, no loading
-  rotation/identifiability convention, and no production sparse multivariate
-  fitting.
+  factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
+  own opt-in seeded recovery harness. No R-facing multivariate model-spec, no
+  external comparator parity, no loading rotation/identifiability convention,
+  and no production sparse multivariate fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation

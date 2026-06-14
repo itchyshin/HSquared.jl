@@ -2,6 +2,34 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 structured covariance metadata accessors
+
+- Goal: add Julia-local, copy-returning accessors for Phase 4B structured
+  covariance metadata so callers do not need to reach into raw result fields.
+- Active lenses: Hopper/Rose (result-shape and bridge boundary), Gauss
+  (structured covariance metadata), Karpinski (copy-return behavior), Grace
+  (checks). Spawned subagents: none.
+- Implementation:
+  - exported `genetic_structure(result)`, `genetic_loadings(result)`, and
+    `genetic_uniqueness(result)` for multivariate REML `NamedTuple` results;
+  - accessors return existing metadata only, with copies for arrays/vectors and
+    `nothing` where a structure has no loadings or uniqueness metadata;
+  - unrelated `NamedTuple`s fail with `ArgumentError`;
+  - API docs, multivariate examples, engine contract, status rows, changelog,
+    and validation tests were synced.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 171 checks; Phase 4B
+    structured covariance testset is now 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Claim-boundary scan found the new accessor wording paired with explicit
+    no-bridge/no-R-facing/no-rotation-identifiability boundaries.
+- Boundary: local Julia accessor ergonomics only. No engine estimator behavior,
+  `result_payload()` field, bridge payload, R syntax, loading rotation
+  convention, comparator evidence, or production sparse/GPU claim changed.
+
 ## 2026-06-14 multi-trait comparator protocol handoff
 
 - Goal: make the shared Phase 4 multi-trait fixture directly consumable by the
