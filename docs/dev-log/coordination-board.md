@@ -245,7 +245,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   diagnostic from returned chi-square values. The opt-in
   `sim/phase5_marker_scan_recovery.jl` harness records default-seed marker
   recovery smoke for fixed, supplied-variance mixed, and supplied LOCO direct
-  scans outside CI.
+  scans outside CI; draft PR #34 is open on
+  `codex/phase5-marker-recovery-harness` with CI and Documenter green for
+  commit `03eaae2`.
   This is engine-internal / direct-Julia only:
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
   calibrated mixed-model p-values, calibrated PVE/model R² claims,

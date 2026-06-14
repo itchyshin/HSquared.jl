@@ -54,6 +54,13 @@ keeping RNG out of the package test suite and keeping public claims partial.
   generated docs dependencies.
 - Narrow Rose grep for high-risk marker/GWAS/QTL/eQTL wording found only
   planned, negative, or explicitly blocked examples.
+- Remote CI for pushed commit `03eaae2` on draft PR #34:
+  - CI `27514543334`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543334>.
+  - Documenter `27514543328`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543328>.
+  - Known non-failing Node.js 20 deprecation annotations were emitted by
+    upstream actions forced onto Node.js 24.
 
 ## Public Claim Audit
 
@@ -100,7 +107,7 @@ comments after the Julia PR exists.
 
 ## Next Actions
 
-- Push a stacked Julia PR on top of `codex/phase5-marker-significance-summary`.
-- Let CI and Documenter run on the PR branch.
-- Comment on Julia/R coordination issues that this is Julia-only recovery
-  smoke and not public R marker-scan activation.
+- Review draft PR #34 and merge only after the stacked Phase 5 PR chain is
+  ready.
+- Comment on Julia/R coordination issues if R-lane marker work starts: this is
+  Julia-only recovery smoke and not public R marker-scan activation.

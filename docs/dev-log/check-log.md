@@ -55,6 +55,13 @@ Newest entries go at the top.
   - Narrow Rose grep for high-risk marker/GWAS/QTL/eQTL wording found only
     planned, negative, or explicitly blocked examples. An initial broader grep
     was stopped after it entered generated `docs/build` output.
+- Remote checks for pushed commit `03eaae2` on draft PR #34:
+  - CI `27514543334`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543334>.
+  - Documenter `27514543328`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543328>.
+  - Remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
 - Boundary: internal recovery smoke for existing direct Julia helpers only.
   This does not add RNG to CI, calibrate p-values, estimate effective marker
   counts, choose calibrated genome-wide thresholds, validate QTL/eQTL, add a
