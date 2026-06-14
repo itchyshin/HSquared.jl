@@ -25,10 +25,27 @@ length(status)
 | `V1-AINV-MRODE9` | Mrode9 pedigree inverse comparator | Phase 1 | covered_external | Pedigree inverse agreement only; not fitted Mrode output validation. |
 | `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
 | `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
+| `V1-SPARSE-REML-OPT` | sparse REML validation optimizer | Phase 1 | partial | Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting. |
 | `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components only; no variance-component estimation or fitted Mrode claim. |
-| `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability and range-checked. |
-| `V1-MRODE-FIT` | fitted Mrode animal-model outputs | Phase 1 | planned | Fitted Mrode validation is not covered. |
-| `V1-COMPARATORS` | external fitted-model comparators | Phase 1 | planned | No fitted comparator parity claim. |
+| `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability. |
+| `V1-SELINV-PEV` | sparse selected-inversion PEV/reliability | Phase 1 | partial | Experimental sparse PEV path; exact at the L+L^T pattern (diagonal/PEV exact); the default extractor path remains dense. |
+| `V1-AI-REML` | average-information REML estimator | Phase 1 | covered | Experimental Gaussian-only REML estimator; the AI form is exact for the Gaussian linear mixed model but not for non-Gaussian/Laplace models (which need observed-information Newton); known-truth recovery and the published-anchor match are validated in the R lane via the bridge. |
+| `V1-MRODE-FIT` | fitted animal-model outputs vs a published estimate | Phase 1 | covered_external | Fitted animal-model recovery against a published external estimate; validated via the R-lane bridge, not a Julia-native bundled fixture. |
+| `V1-COMPARATORS` | external fitted-model comparators | Phase 1 | covered_external | REML variance-component / h2 agreement against one CRAN comparator (sommer) on one anchor; not multi-package or multi-trait parity. |
+| `V1-HERIT-CI` | variance-component covariance and heritability interval | Phase 1 | partial | Asymptotic, REML-only; unreliable at small n (wide interval, ill-conditioned AI matrix); not a coverage-calibrated interval. |
+| `V2-GRM` | genomic relationship matrix (VanRaden G) | Phase 2 | partial | Experimental construction utility only; no genomic prediction, fitting, single-step, or marker-effect claim. |
+| `V2-GINV` | regularized genomic inverse (Ginv) | Phase 2 | partial | Construction utility only; not wired into model fitting, and no single-step or genomic-prediction claim. |
+| `V2-GBLUP` | genomic BLUP supplied-variance solve | Phase 2 | partial | Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity. |
+| `V2-SNPBLUP` | SNP-BLUP / GBLUP equivalence | Phase 2 | partial | Supplied-variance VanRaden method-1 marker model only; no variance-component estimation, no external comparator, no weighted/Bayesian marker priors. |
+| `V2-SSHINV` | single-step H-inverse construction | Phase 2 | partial | Dense construction utility only; not exported, not wired into fitting, blending/tau/omega defaults not comparator-validated, no single-step prediction claim. |
+| `V2-GREML` | genomic REML variance-component estimation | Phase 2 | partial | Reuses the Phase-1 REML optimizers on a genomic spec; no external comparator parity and no production sparse-G scaling. |
+| `V3-REPEAT` | repeatability / permanent-environment supplied-variance solve | Phase 3 | partial | Supplied-variance two-random-effect solve only; no R-facing model-spec, engine-internal. |
+| `V3-REPEAT-REML` | repeatability REML variance-component estimation | Phase 3 | partial | Dense validation-scale REML over three variance components; no committed recovery test, no uncertainty intervals, no external comparator, no R-facing model-spec. |
+| `V3-TWOEFFECT` | general two-random-effect MME (common environment, maternal) | Phase 3 | partial | Supplied-variance, two INDEPENDENT random effects only; no correlated maternal genetic, no R-facing model-spec. |
+| `V3-TWOEFFECT-REML` | two-effect REML (common-environment / maternal estimation) | Phase 3 | partial | Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec. |
+| `V4-MULTIVARIATE` | multivariate (multi-trait) animal model (supplied covariance) | Phase 4 | partial | Supplied-covariance with a design shared across traits; handles missing-trait records, but does not estimate G0/R0 and has no R-facing multivariate model-spec. |
+| `V4-MV-REML` | multivariate REML (genetic/residual covariance estimation) | Phase 4 | partial | Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), an opt-in seeded recovery harness exists outside CI, and a serialized Julia target fixture exists for R-lane parity work, but recovery is not multi-seed calibrated and has no external-comparator parity yet; not the public default and no R-facing model-spec. |
+| `V4-FA` | structured multivariate genetic covariance (diag/lowrank/fa) | Phase 4B | partial | Experimental dense/validation-scale engine API only; returned loadings are sign-canonicalized but not rotation-identified, opt-in recovery evidence is internal and seeded, no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, and no external comparator evidence. |
 | `V5-GENOMIC-QTL` | genomic, marker, QTL, and eQTL validation | Phase 5 | planned | No genomic prediction, marker scan, QTL, or eQTL support. |
 
 ## Boundary
@@ -56,3 +73,11 @@ fixed effects, EBVs, fitted values, PEV, reliability, derived accuracy, and
 equation and extractor checks, but it is still not fitted Mrode output
 validation, variance-component estimation, AI-REML, or external fitted-model
 parity.
+
+The Phase 4 multivariate rows are Julia-engine rows only. The unstructured REML
+row now has an opt-in seeded recovery harness and a serialized two-trait target
+fixture for R-lane comparator work, but no sommer, ASReml, JWAS, or BLUPF90
+multi-trait parity is claimed. The structured covariance row covers
+diag/low-rank/factor-analytic engine metadata and recovery checks, but loadings
+are only sign-canonicalized; rotations and interpretation remain validation
+debt.

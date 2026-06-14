@@ -140,6 +140,9 @@
   CI. Default seed `20260616` passed with relative errors `G = 0.174500` and
   `R = 0.131056` against thresholds `0.25` and `0.20`. This is internal
   recovery evidence, not multi-seed calibration or external comparator parity.
+- Updated the validation-status documentation table to include the current
+  Phase 2, Phase 3, Phase 4, and Phase 4B validation rows and their claim
+  boundaries.
 - Hardened the multivariate engine after a 7-lens adversarial review (each finding
   verified by running Julia): `multivariate_mme` / `fit_multivariate_reml` now
   reject non-finite observed phenotypes (`Inf` — only `missing`/`NaN` mark an

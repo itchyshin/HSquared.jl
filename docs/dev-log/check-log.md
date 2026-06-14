@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 validation-status docs sync
+
+- Goal: bring `docs/src/validation-status.md` back into alignment with
+  `validation_status()` after the Phase 2-4 evidence ladder expanded.
+- Active lenses: Grace/Rose (docs evidence sync and claim boundary). Spawned
+  subagents: none.
+- Change:
+  - updated the static "Current Rows" table with the current Phase 2, Phase 3,
+    Phase 4, and Phase 4B rows;
+  - added a Phase 4 boundary paragraph noting that multivariate REML has opt-in
+    recovery and target-fixture evidence, but no external multi-trait comparator
+    parity, and that structured covariance loadings remain rotation-unidentified.
+- Boundary: documentation sync only; no code capability, bridge payload, R
+  syntax, or comparator claim changed.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+
 ## 2026-06-14 Phase 4 opt-in multivariate REML recovery harness
 
 - Goal: replace the uncommitted one-off multi-trait recovery note with a
