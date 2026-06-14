@@ -2,6 +2,34 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 GitHub landing-page docs link
+
+- Goal: make the live Julia Documenter site visible from the GitHub repository
+  landing page without waiting behind the Phase 5 draft stack.
+- Active lenses: Grace, Shannon, Rose.
+- Spawned subagents: none.
+- Live URL checks:
+  - `https://itchyshin.github.io/HSquared.jl/` returned HTTP 200 and redirects
+    to `./dev/`.
+  - `https://itchyshin.github.io/HSquared.jl/dev/` returned HTTP 200.
+  - GitHub API repository metadata reports homepage
+    `https://itchyshin.github.io/HSquared.jl/` and Pages enabled.
+- Files changed:
+  - `README.md`: added immediate Documenter, R pkgdown, and R repository links
+    under the title.
+  - `docs/dev-log/coordination-board.md`: recorded the public landing pages.
+  - `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`.
+- Local checks:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats: 8 docstrings not included in the manual,
+    local deployment skipped, default VitePress substitutions, missing local
+    logo/favicon/package.json substitutions, and 4 npm audit advisories in
+    generated dependencies.
+- Boundary: docs discoverability only. No engine code, R bridge contract,
+  validation status, production fitting, comparator, genomic, QTL, GPU, or
+  performance claim changed.
+
 ## 2026-06-13 Multivariate engine: adversarial-review hardening (Phase 4)
 
 - Goal: act on the confirmed findings from a 7-lens adversarial review of the

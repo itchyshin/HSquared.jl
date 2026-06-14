@@ -1,5 +1,9 @@
 # HSquared.jl
 
+Documentation: [HSquared.jl engine docs](https://itchyshin.github.io/HSquared.jl/) |
+R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
+[hsquared repository](https://github.com/itchyshin/hsquared)
+
 `HSquared.jl` is the planned Julia engine underneath the R package
 `hsquared`.
 
