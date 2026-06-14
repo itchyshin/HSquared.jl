@@ -295,9 +295,11 @@ identities, metadata, loglik self-consistency, PSD/PD properties, and constraine
 loglik ordering. The opt-in script
 `sim/phase4b_structured_covariance_recovery.jl` records seeded low-rank and
 factor-analytic known-truth recovery outside CI and now accepts explicit
-`--seeds` lists with per-case summaries. Broader multi-seed calibration,
-rotation conventions, covariance inference, external comparators, and R syntax
-remain open.
+`--seeds` lists with per-case summaries. The shared calibration protocol in
+`docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
+defines the seed-count, run-plan, and reporting gate required before any broad
+multi-seed calibration claim; it has not been executed. Rotation conventions,
+covariance inference, external comparators, and R syntax remain open.
 
 The returned loading metadata now has a deterministic sign convention: each
 factor column is flipped, if needed, so its largest-absolute loading is
@@ -316,8 +318,8 @@ two-trait REML recovery outside CI. It accepts `--seed` for the historical
 single-seed run or explicit `--seeds` lists with summaries. The default seed
 `20260616` passes with relative errors `G = 0.174500` and `R = 0.131056`
 against thresholds `0.25` and `0.20`. This is internal recovery evidence only;
-it is not broad multi-seed calibration, external comparator parity, or an R
-bridge change.
+it is not execution of the shared calibration protocol, broad multi-seed
+calibration, external comparator parity, or an R bridge change.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

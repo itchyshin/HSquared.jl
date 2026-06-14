@@ -169,15 +169,19 @@ known-truth recovery on a repeated-record half-sib design and accepts `--seed`
 or explicit `--seeds` lists with summaries; the structured harness records
 low-rank and factor-analytic recovery on a similar design and can run explicit
 seed lists with per-case summaries. Both use loose, version-robust thresholds.
+The shared calibration protocol in
+`docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
+defines the seed-count, run-plan, and reporting gate required before any broad
+multi-seed calibration claim; it has not been executed.
 The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but
 does not identify rotations or make loading columns uniquely interpretable. The
 current policy is recorded in
 `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`.
-Broader multi-seed calibration, covariance standard errors, external-comparator
-parity, and R-facing multivariate / covariance-structure syntax are still
-missing.
+Execution of the calibration protocol, covariance standard errors,
+external-comparator parity, and R-facing multivariate / covariance-structure
+syntax are still missing.
 
 ## Validation boundary
 

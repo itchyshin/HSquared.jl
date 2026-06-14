@@ -204,6 +204,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `--seed` or explicit `--seeds` lists with summaries. This retires the "no
   committed recovery harness" gap for `V4-MV-REML`, but does not provide broad
   multi-seed calibration or external comparator parity.
+- Julia now records the shared multivariate recovery calibration protocol at
+  `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`.
+  It defines the seed-count, run-plan, and reporting gate required before any
+  broad multi-seed calibration claim for `V4-MV-REML` or `V4-FA`. The protocol
+  has not been executed and does not change R syntax, bridge payloads, or
+  comparator status.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

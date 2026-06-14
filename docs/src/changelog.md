@@ -179,6 +179,12 @@
   `--seeds` lists and prints per-case summaries. This strengthens internal
   recovery tooling but does not add R-facing syntax, bridge payload fields,
   broad multi-seed calibration, or external comparator parity.
+- Added
+  `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`,
+  a shared protocol for the unstructured and structured multivariate recovery
+  harnesses. It defines the minimum seed counts, run-plan fields, summaries,
+  and claim gate required before any broad multi-seed calibration claim; it has
+  not been executed.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

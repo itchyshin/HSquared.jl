@@ -2,6 +2,40 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 multivariate recovery calibration protocol
+
+- Goal: define the minimum run-plan and reporting gate required before the
+  Phase 4 unstructured or Phase 4B structured recovery harnesses can be called
+  broadly multi-seed calibrated.
+- Active lenses: Curie/Fisher (simulation target and calibration summary),
+  Gauss (multivariate REML recovery), Kirkpatrick (structured covariance
+  semantics), Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`;
+  - defined pre-run requirements: commit SHA, Julia/platform, exact commands,
+    seeds, cases, iteration cap, thresholds, DGP parameters, and intentional
+    parameter-grid variation;
+  - defined minimum broad-calibration gates: at least 10 seeds for the
+    unstructured harness and at least 10 seeds for each requested structured
+    case, with no post-hoc seed cherry-picking;
+  - defined required summaries: pass/converged counts, mean/median/max relative
+    `G` and `R` errors, seed-level table, pass-proportion interval, and all
+    failed seeds/raw output;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
+- Local checks:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 176 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: protocol/documentation/status gate only. No recovery calibration was
+  executed in this slice, no CI RNG was added, no R-facing syntax changed, no
+  bridge payload or `result_payload()` changed, no covariance SE/LRT evidence
+  was added, and no comparator parity or status promotion is claimed.
+
 ## 2026-06-14 Phase 4 multivariate recovery seed-list reporting
 
 - Goal: give the opt-in unstructured multivariate REML recovery harness the
