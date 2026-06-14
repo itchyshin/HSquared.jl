@@ -1785,9 +1785,17 @@ end
     @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
     @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
     @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
     @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
     @test all(0 .<= scan.p_values .<= 1)
+    @test all(0 .<= scan.bonferroni_p_values .<= 1)
+    @test all(0 .<= scan.bh_q_values .<= 1)
+    @test HSquared._bonferroni_adjust([0.04, 0.01, 0.20, 0.03]) ≈
+          [0.16, 0.04, 0.80, 0.12] atol = 1e-12
+    @test HSquared._benjamini_hochberg_adjust([0.04, 0.01, 0.20, 0.03]) ≈
+          [0.05333333333333334, 0.04, 0.20, 0.05333333333333334] atol = 1e-12
 
     # With a nontrivial fixed-effect design, the scan equals independent
     # residualization of y and each marker against X.
@@ -1806,12 +1814,18 @@ end
         @test scan2.standard_errors[j] ≈ sqrt(2.0 / denom) atol = 1e-12
         @test scan2.p_values[j] ≈ HSquared._standard_normal_two_sided_pvalue(scan2.z_scores[j]) atol = 1e-12
     end
+    @test scan2.bonferroni_p_values ≈ HSquared._bonferroni_adjust(scan2.p_values) atol = 1e-12
+    @test scan2.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(scan2.p_values) atol = 1e-12
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
     @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
     @test_throws ArgumentError single_marker_scan(y, X, M; marker_ids = ["m1"])
     @test_throws ArgumentError HSquared._standard_normal_two_sided_pvalue(NaN)
+    @test_throws ArgumentError HSquared._bonferroni_adjust(Float64[])
+    @test_throws ArgumentError HSquared._bonferroni_adjust([-0.01, 0.5])
+    @test_throws ArgumentError HSquared._bonferroni_adjust([0.5, 1.01])
+    @test_throws ArgumentError HSquared._benjamini_hochberg_adjust([0.5, NaN])
     cm_one = centered_markers(M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)

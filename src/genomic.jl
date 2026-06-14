@@ -176,13 +176,16 @@ Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
 Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
 contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
-`p_values`, `denominators`, `p`, and `k`. `p_values` are approximate
-two-sided Gaussian/Wald p-values implied by the supplied residual variance.
+`p_values`, `bonferroni_p_values`, `bh_q_values`, `denominators`, `p`, and
+`k`. `p_values` are approximate two-sided Gaussian/Wald p-values implied by
+the supplied residual variance. `bonferroni_p_values` and `bh_q_values` are
+deterministic Bonferroni and Benjamini-Hochberg adjustments over the returned
+marker set.
 
 This is a deterministic Phase 5 validation-scale utility. It is not a mixed
 model GWAS/QTL scan, does not account for relatedness or population structure,
-does not compute LOD scores or multiple-testing corrections, and does not
-activate the R-facing `marker_scan()` formula term.
+does not compute LOD scores or calibrated/correlated-marker multiple-testing
+workflows, and does not activate the R-facing `marker_scan()` formula term.
 """
 function single_marker_scan(
     y::AbstractVector,
@@ -243,6 +246,9 @@ function single_marker_scan(
         p_values[j] = _standard_normal_two_sided_pvalue(z)
     end
 
+    bonferroni_p_values = _bonferroni_adjust(p_values)
+    bh_q_values = _benjamini_hochberg_adjust(p_values)
+
     return (
         marker_ids = marker_names,
         effects = effects,
@@ -250,6 +256,8 @@ function single_marker_scan(
         z_scores = z_scores,
         chisq = chisq,
         p_values = p_values,
+        bonferroni_p_values = bonferroni_p_values,
+        bh_q_values = bh_q_values,
         denominators = denominators,
         p = cm.p,
         k = cm.k,
@@ -274,6 +282,36 @@ end
 function _standard_normal_two_sided_pvalue(z::Real)
     cdf = _standard_normal_cdf_approx(z)
     return clamp(2 * min(cdf, 1 - cdf), 0.0, 1.0)
+end
+
+function _checked_p_values(p_values)
+    values = Float64.(p_values)
+    !isempty(values) || throw(ArgumentError("p_values must be non-empty"))
+    all(p -> isfinite(p) && 0 <= p <= 1, values) ||
+        throw(ArgumentError("p_values must be finite values in [0, 1]"))
+    return values
+end
+
+function _bonferroni_adjust(p_values)
+    values = _checked_p_values(p_values)
+    m = length(values)
+    return clamp.(m .* values, 0.0, 1.0)
+end
+
+function _benjamini_hochberg_adjust(p_values)
+    values = _checked_p_values(p_values)
+    m = length(values)
+    order = sortperm(values)
+    sorted_values = values[order]
+    sorted_adjusted = similar(sorted_values)
+    running_min = 1.0
+    for i in m:-1:1
+        running_min = min(running_min, sorted_values[i] * m / i)
+        sorted_adjusted[i] = clamp(running_min, 0.0, 1.0)
+    end
+    adjusted = similar(values)
+    adjusted[order] = sorted_adjusted
+    return adjusted
 end
 
 """

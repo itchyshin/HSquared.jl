@@ -116,8 +116,8 @@ Not implemented:
 - production R-to-Julia fitting bridge;
 - public R-facing genomic/marker model-spec fitting, production genomic
   prediction, APY/sparse genomic scaling, mixed-model marker scans, LOCO,
-  calibrated mixed-model p-values, LOD scores, multiple testing, and QTL/eQTL
-  intervals;
+  calibrated mixed-model p-values, LOD scores, genome-wide calibration, and
+  QTL/eQTL intervals;
 - public R-facing permanent environment, common environment,
   maternal/paternal effects,
   cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
@@ -151,9 +151,9 @@ Next engine targets:
 - Phase 4: multivariate G matrices with `us()`, `diag()`, `lowrank(K)`, and
   `fa(K)` are experimental engine utilities; R-facing syntax and comparator
   parity remain future work.
-- Phase 5: direct fixed-effect marker screening has started; mixed-model
-  QTL/GWAS/eQTL scans, LOCO option, multiple testing, and basic plots remain
-  future work.
+- Phase 5: direct fixed-effect marker screening has started with Wald p-values
+  plus Bonferroni/BH adjustments; mixed-model QTL/GWAS/eQTL scans, LOCO option,
+  genome-wide calibration, and basic plots remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

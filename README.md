@@ -116,7 +116,8 @@ Implemented now:
 - experimental genomic utilities: VanRaden `G`, regularized `Ginv`,
   supplied-variance GBLUP, SNP-BLUP / marker effects, single-step `H`-inverse
   construction, genomic REML over a `Ginv` spec, and direct fixed-effect
-  marker screening with approximate Wald p-values;
+  marker screening with approximate Wald p-values plus Bonferroni and
+  Benjamini-Hochberg adjustments;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured
@@ -137,7 +138,8 @@ Planned, but not implemented yet:
 - R-facing multivariate model-spec syntax and external comparator parity;
 - public R-facing genomic model-spec fitting, production genomic prediction,
   APY/sparse genomic scaling, mixed-model marker scans, LOCO, LOD scores,
-  multiple testing, QTL/eQTL intervals, and non-standard inheritance models;
+  genome-wide multiple-testing calibration, QTL/eQTL intervals, and
+  non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 
 ## Julia Surface

@@ -247,9 +247,9 @@ const VALIDATION_STATUS_DATA = (
         "fixed-effect single-marker scan",
         "Phase 5",
         "partial",
-        "`single_marker_scan` residualizes `y` and centered marker dosages against `X`, then returns marker effects, supplied-variance standard errors, Wald z-scores, χ² statistics, and approximate two-sided Gaussian/Wald p-values. Deterministic tests pin hand-computed intercept-only effects (`17/14`, `0.5`), denominators (`2.8`, `4.0`), standard errors, χ² equality, p-values for the hand fixture, covariate-adjusted residualization against an independent calculation, default/supplied marker IDs, and guardrails for invalid residual variance, marker-ID length, collinear markers, rank-deficient `X`, and row-count mismatch.",
-        "mixed-model marker scans with relationship correction, LOCO, QTL/eQTL intervals, calibrated mixed-model p-values, LOD scores, multiple-testing correction, external comparator parity, and R-facing `marker_scan()` syntax",
-        "Fixed-effect Gaussian screening utility only, using supplied residual variance and approximate Wald p-values; no mixed-model GWAS/QTL claim, no R formula term activation, no bridge payload change, and no comparator evidence.",
+        "`single_marker_scan` residualizes `y` and centered marker dosages against `X`, then returns marker effects, supplied-variance standard errors, Wald z-scores, χ² statistics, approximate two-sided Gaussian/Wald p-values, Bonferroni-adjusted p-values, and Benjamini-Hochberg q-values. Deterministic tests pin hand-computed intercept-only effects (`17/14`, `0.5`), denominators (`2.8`, `4.0`), standard errors, χ² equality, p-values plus Bonferroni/BH adjustments for the hand fixture, covariate-adjusted residualization against an independent calculation, default/supplied marker IDs, and guardrails for invalid residual variance, marker-ID length, invalid p-value adjustment inputs, collinear markers, rank-deficient `X`, and row-count mismatch.",
+        "mixed-model marker scans with relationship correction, LOCO, QTL/eQTL intervals, calibrated mixed-model p-values, LOD scores, advanced/correlated-marker multiple-testing workflows, external comparator parity, and R-facing `marker_scan()` syntax",
+        "Fixed-effect Gaussian screening utility only, using supplied residual variance plus approximate Wald p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned marker set; no mixed-model GWAS/QTL claim, no R formula term activation, no bridge payload change, and no comparator evidence.",
     ),
     (
         "V5-GENOMIC-QTL",
@@ -257,7 +257,7 @@ const VALIDATION_STATUS_DATA = (
         "Phase 5",
         "planned",
         "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan` utility is tracked separately in `V5-MARKER-FIXED`.",
-        "model-spec contracts, mixed-model marker scans, simulations, marker-map validation, multiple-testing checks, calibrated mixed-model p-values, LOD scores, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
+        "model-spec contracts, mixed-model marker scans, simulations, marker-map validation, genome-wide multiple-testing calibration, calibrated mixed-model p-values, LOD scores, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
         "No broad genomic/QTL/eQTL validation claim; direct fixed-effect marker screening is experimental and tracked separately.",
     ),
 )

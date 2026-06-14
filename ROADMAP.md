@@ -347,13 +347,14 @@ Status: `single_marker_scan` provides the first direct Julia engine utility for
 fixed-effect single-marker screening. It residualizes `y` and centered marker
 dosages against `X` and reports effects, supplied-variance standard errors,
 Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
-p-values. It is not a mixed-model GWAS/QTL scan, does not account for
-relatedness/population structure, does not compute LOD scores or
-multiple-testing corrections, and does not activate the R-facing
-`marker_scan()` formula term.
+p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
+marker set. It is not a mixed-model GWAS/QTL scan, does not account for
+relatedness/population structure, does not compute LOD scores or calibrated /
+correlated-marker multiple-testing workflows, and does not activate the
+R-facing `marker_scan()` formula term.
 
-Gate: marker-map validation, estimand definition, multiple-testing checks, and
-comparator/simulation evidence.
+Gate: marker-map validation, estimand definition, genome-wide multiple-testing
+calibration, and comparator/simulation evidence.
 
 ## Phase 6: Non-Gaussian And GLLVM-Style Animal Models
 

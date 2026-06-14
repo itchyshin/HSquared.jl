@@ -2,6 +2,41 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect marker-scan multiple-testing adjustments
+
+- Goal: add deterministic multiple-testing summaries to the direct Julia
+  fixed-effect marker-screening utility without claiming mixed-model,
+  calibrated, or R-facing marker-scan support.
+- Active lenses: Fisher (adjustment interpretation), Curie (deterministic
+  tests), Grace (low-core checks), Shannon (R/Julia boundary), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `bonferroni_p_values` and `bh_q_values` to `single_marker_scan()`;
+  - added private checked helpers for finite `[0, 1]` p-values,
+    Bonferroni adjustment, and Benjamini-Hochberg adjustment;
+  - added deterministic tests for hand-fixture adjusted values, a separate
+    unordered p-value vector, covariate-adjusted scan consistency, output
+    ranges, empty p-value input, out-of-range p-values, and non-finite p-values;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is now 39 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: fixed-effect Gaussian/Wald screening only. Bonferroni and
+  Benjamini-Hochberg values are deterministic adjustments over the returned
+  marker set; they are not calibrated mixed-model p-values, LOCO, LOD,
+  correlated-marker/genome-wide calibration, R formula activation, bridge
+  payload change, `result_payload()` change, or comparator parity.
+
 ## 2026-06-14 GitHub landing-page docs link
 
 - Goal: make the Julia Documenter site visible from the GitHub repository
