@@ -182,10 +182,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   conventions, and external comparators remain coordinated future work.
 - Julia now also has an opt-in Phase-4B structured-covariance recovery harness:
   `sim/phase4b_structured_covariance_recovery.jl`. It runs seeded low-rank and
-  factor-analytic repeated-record half-sib simulations outside CI and records
-  loose covariance-recovery thresholds. This strengthens Julia-internal recovery
-  evidence only; it does not open R-facing covariance syntax, bridge payload
-  changes, or comparator claims.
+  factor-analytic repeated-record half-sib simulations outside CI, accepts
+  explicit `--seeds` lists, and records loose covariance-recovery thresholds
+  with per-case summaries. This strengthens Julia-internal recovery tooling
+  only; it does not open R-facing covariance syntax, bridge payload changes,
+  broad multi-seed calibration, or comparator claims.
 - Julia now has a shared deterministic two-trait CSV fixture at
   `test/fixtures/phase4_multitrait_parity/` for R-lane sommer/ASReml/BLUPF90
   comparator work. It serializes the pedigree, phenotypes, and Julia REML

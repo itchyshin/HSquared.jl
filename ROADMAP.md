@@ -294,8 +294,10 @@ while leaving residual `R0` unstructured. Deterministic tests cover constructor
 identities, metadata, loglik self-consistency, PSD/PD properties, and constrained
 loglik ordering. The opt-in script
 `sim/phase4b_structured_covariance_recovery.jl` records seeded low-rank and
-factor-analytic known-truth recovery outside CI. Rotation conventions,
-covariance inference, external comparators, and R syntax remain open.
+factor-analytic known-truth recovery outside CI and now accepts explicit
+`--seeds` lists with per-case summaries. Broader multi-seed calibration,
+rotation conventions, covariance inference, external comparators, and R syntax
+remain open.
 
 The returned loading metadata now has a deterministic sign convention: each
 factor column is flipped, if needed, so its largest-absolute loading is

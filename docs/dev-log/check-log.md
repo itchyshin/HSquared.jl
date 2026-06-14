@@ -2,6 +2,44 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4B structured recovery seed-list reporting
+
+- Goal: make the opt-in Phase 4B structured-covariance recovery harness accept
+  explicit seed lists and print per-case summaries, while keeping CI RNG-free
+  and not promoting the row to calibrated multi-seed recovery.
+- Active lenses: Curie/Fisher (simulation target and interpretation),
+  Kirkpatrick/Gauss (structured covariance recovery), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `--seeds=N[,N...]` to
+    `sim/phase4b_structured_covariance_recovery.jl`;
+  - preserved the historical single default seed for each requested case when
+    `--seeds` is omitted;
+  - runs every requested case for every listed seed when `--seeds` is supplied;
+  - prints each result as it finishes and then prints per-case pass/fail
+    summaries;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
+- Opt-in harness checks:
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=factor_analytic --seeds=20260614`:
+    passed; converged in 2362 iterations; relative error `G = 0.200897`,
+    `R = 0.167222`, thresholds `0.45` / `0.25`.
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=lowrank --seeds=20260615`:
+    passed; converged in 423 iterations; relative error `G = 0.376322`,
+    `R = 0.133646`, thresholds `0.45` / `0.25`.
+  - Negative smoke: factor-analytic `--seeds=20260614,20260615 --iterations=1500`
+    failed because neither fit converged by the reduced iteration cap. This is
+    not cited as recovery evidence.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 173 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: opt-in recovery tooling only. No CI RNG, no R-facing covariance
+  syntax, no bridge payload or `result_payload()` change, no broad multi-seed
+  calibration, no comparator parity, and no capability-status promotion.
+
 ## 2026-06-14 loading rotation identifiability decision
 
 - Goal: record the Phase 4B loading metadata identifiability policy so the

@@ -175,9 +175,10 @@
   comparator yet.
 - Added opt-in Phase-4B recovery harness
   `sim/phase4b_structured_covariance_recovery.jl` for seeded low-rank and
-  factor-analytic covariance recovery outside CI. This strengthens internal
-  recovery evidence but does not add R-facing syntax, bridge payload fields, or
-  external comparator parity.
+  factor-analytic covariance recovery outside CI. It now accepts explicit
+  `--seeds` lists and prints per-case summaries. This strengthens internal
+  recovery tooling but does not add R-facing syntax, bridge payload fields,
+  broad multi-seed calibration, or external comparator parity.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

@@ -45,7 +45,7 @@ length(status)
 | `V3-TWOEFFECT-REML` | two-effect REML (common-environment / maternal estimation) | Phase 3 | partial | Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec. |
 | `V4-MULTIVARIATE` | multivariate (multi-trait) animal model (supplied covariance) | Phase 4 | partial | Supplied-covariance with a design shared across traits; handles missing-trait records and copy-returning Julia-side accessors over existing fields, but does not estimate G0/R0 and has no R-facing multivariate model-spec or bridge payload change. |
 | `V4-MV-REML` | multivariate REML (genetic/residual covariance estimation) | Phase 4 | partial | Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), copy-returning Julia accessors wrap existing fields without widening `result_payload()`, an opt-in seeded recovery harness exists outside CI, and a serialized Julia target fixture plus comparator protocol exists for R-lane parity work, but recovery is not multi-seed calibrated and has no external-comparator parity yet; not the public default and no R-facing model-spec. |
-| `V4-FA` | structured multivariate genetic covariance (diag/lowrank/fa) | Phase 4B | partial | Experimental dense/validation-scale engine API only; copy-returning structured-metadata accessors expose existing fields locally; returned loadings are sign-canonicalized under a sign-only convention but not rotation-identified, opt-in recovery evidence is internal and seeded, no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, and no external comparator evidence. |
+| `V4-FA` | structured multivariate genetic covariance (diag/lowrank/fa) | Phase 4B | partial | Experimental dense/validation-scale engine API only; copy-returning structured-metadata accessors expose existing fields locally; returned loadings are sign-canonicalized under a sign-only convention but not rotation-identified; the opt-in recovery harness accepts explicit seed lists and remains outside CI; no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, no broad multi-seed calibration, and no external comparator evidence. |
 | `V5-GENOMIC-QTL` | genomic, marker, QTL, and eQTL validation | Phase 5 | planned | No genomic prediction, marker scan, QTL, or eQTL support. |
 
 ## Boundary
@@ -80,6 +80,7 @@ unstructured REML row now has an opt-in seeded recovery harness and a serialized
 two-trait target fixture plus comparator protocol for R-lane comparator work,
 but no sommer, ASReml, JWAS, or BLUPF90 multi-trait parity is claimed. The
 structured covariance row covers diag/low-rank/factor-analytic engine metadata,
-local copy-returning metadata accessors, and recovery checks. The
-rotation-identifiability decision note records sign-only metadata as the current
-convention; full rotation and interpretation remain validation debt.
+local copy-returning metadata accessors, and opt-in recovery checks with
+explicit seed-list reporting. The rotation-identifiability decision note records
+sign-only metadata as the current convention; broad multi-seed calibration, full
+rotation, and interpretation remain validation debt.

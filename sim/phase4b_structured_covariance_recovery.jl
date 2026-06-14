@@ -19,9 +19,14 @@ Run from the repository root:
 Optional arguments:
 
     --case=both|factor_analytic|lowrank
+    --seeds=N[,N...]
     --iterations=N
     --threshold-g=X
     --threshold-r=X
+
+When `--seeds` is omitted, the script runs the historical single default seed
+for each requested case. When `--seeds` is provided, every requested case is run
+for every listed seed and the script prints per-case pass/fail summaries.
 """
 
 struct RecoveryConfig
@@ -48,13 +53,27 @@ function _parse_args(args)
     case = Symbol(get(opts, "case", "both"))
     case in (:both, :factor_analytic, :lowrank) ||
         throw(ArgumentError("--case must be one of both, factor_analytic, or lowrank"))
+    seeds = if haskey(opts, "seeds")
+        parsed = Int[]
+        for raw_seed in split(opts["seeds"], ",")
+            seed_text = strip(raw_seed)
+            isempty(seed_text) && throw(ArgumentError("--seeds must not contain empty entries"))
+            push!(parsed, parse(Int, seed_text))
+        end
+        isempty(parsed) && throw(ArgumentError("--seeds must include at least one seed"))
+        length(unique(parsed)) == length(parsed) ||
+            throw(ArgumentError("--seeds must not contain duplicate entries"))
+        parsed
+    else
+        nothing
+    end
     iterations = parse(Int, get(opts, "iterations", "5000"))
     iterations > 0 || throw(ArgumentError("--iterations must be positive"))
     threshold_g = parse(Float64, get(opts, "threshold-g", "0.45"))
     threshold_r = parse(Float64, get(opts, "threshold-r", "0.25"))
     threshold_g > 0 || throw(ArgumentError("--threshold-g must be positive"))
     threshold_r > 0 || throw(ArgumentError("--threshold-r must be positive"))
-    return case, iterations, threshold_g, threshold_r
+    return case, seeds, iterations, threshold_g, threshold_r
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -166,14 +185,33 @@ function _print_result(result)
     println("\n")
 end
 
-function main(args = ARGS)
-    case, iterations, threshold_g, threshold_r = _parse_args(args)
-    cases = case == :both ? (:factor_analytic, :lowrank) : (case,)
-    seeds = Dict(:factor_analytic => 20260614, :lowrank => 20260615)
-    results = map(cases) do c
-        _run_case(RecoveryConfig(c, seeds[c], 6, 12, 42, 3, iterations, threshold_g, threshold_r))
+function _print_summary(results)
+    println("SUMMARY")
+    for case in unique(result.case for result in results)
+        case_results = filter(result -> result.case == case, results)
+        pass_count = count(result -> result.pass, case_results)
+        max_rel_g = maximum(result.rel_g for result in case_results)
+        max_rel_r = maximum(result.rel_r for result in case_results)
+        @printf("  %s seeds=%d passed=%d max_relative_error_G=%.6f max_relative_error_R=%.6f\n",
+            case, length(case_results), pass_count, max_rel_g, max_rel_r)
     end
-    foreach(_print_result, results)
+end
+
+function main(args = ARGS)
+    case, seeds, iterations, threshold_g, threshold_r = _parse_args(args)
+    cases = case == :both ? (:factor_analytic, :lowrank) : (case,)
+    default_seeds = Dict(:factor_analytic => [20260614], :lowrank => [20260615])
+    results = Any[]
+    for c in cases
+        case_seeds = seeds === nothing ? default_seeds[c] : seeds
+        for seed in case_seeds
+            result = _run_case(RecoveryConfig(c, seed, 6, 12, 42, 3, iterations, threshold_g, threshold_r))
+            _print_result(result)
+            push!(results, result)
+            flush(stdout)
+        end
+    end
+    _print_summary(results)
     all(result.pass for result in results) || exit(1)
     return nothing
 end

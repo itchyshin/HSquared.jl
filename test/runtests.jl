@@ -225,6 +225,7 @@ end
     @test occursin("sign-canonicalization", fa_row.evidence)
     @test occursin("genetic_loadings", fa_row.evidence)
     @test occursin("rotation-identifiability decision", fa_row.evidence)
+    @test occursin("explicit `--seeds`", fa_row.evidence)
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
