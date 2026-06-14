@@ -1,7 +1,10 @@
 # HSquared.jl
 
-`HSquared.jl` is the planned Julia engine underneath the R package
-`hsquared`.
+Documentation: [HSquared.jl engine docs](https://itchyshin.github.io/HSquared.jl/) |
+R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
+[hsquared repository](https://github.com/itchyshin/hsquared)
+
+`HSquared.jl` is the Julia engine underneath the R package `hsquared`.
 
 The long-term goal is open, sparse, inheritance-aware quantitative genetics:
 sparse animal models, pedigree and genomic relationship structures, REML/ML
@@ -16,9 +19,12 @@ benchmarks to learn from and test against, not claims of current superiority.
 
 ## Current Status
 
-This repository has completed Phase 0 and has started Phase 1. It has an
-experimental dense fitting path for validated low-level Julia specs, but it is
-not yet a production animal-model engine.
+This repository has moved beyond the scaffold. It has experimental
+validation-scale engine utilities for univariate animal models, REML/AI-REML
+estimation, genomic relationship models, repeatability / two-effect models,
+multivariate REML, structured multivariate genetic covariance, and fixed-effect
+marker screening. It is still not a production sparse animal-model engine and
+does not provide the public R formula default for most of those surfaces.
 
 The Documenter site includes a [mission-control dashboard](https://itchyshin.github.io/HSquared.jl/dev/mission-control.html)
 for the current twin-lane status, evidence gates, and blocked claims.
@@ -57,6 +63,8 @@ Implemented now:
   the Henderson MME determinant identity;
 - experimental sparse REML validation optimization for low-level validated
   animal-model specs;
+- experimental average-information REML for two-component Gaussian animal
+  models, with R-lane known-truth and published-anchor evidence;
 - experimental dense variance-component optimization for low-level validated
   animal-model specs;
 - experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
@@ -105,6 +113,16 @@ Implemented now:
 - external R `fit_diagnostics()` evidence from the `hsquared` twin; Julia now
   mirrors the same idea as metadata-only extraction without widening
   `result_payload()`;
+- experimental genomic utilities: VanRaden `G`, regularized `Ginv`,
+  supplied-variance GBLUP, SNP-BLUP / marker effects, single-step `H`-inverse
+  construction, genomic REML over a `Ginv` spec, and direct fixed-effect
+  marker screening with approximate Wald p-values;
+- experimental repeatability and two-effect model utilities;
+- experimental multivariate animal-model utilities, including supplied-
+  covariance MME, missing-trait records, dense multivariate REML, structured
+  genetic covariance (`diag`, `lowrank`, `fa`), local extractors, opt-in
+  recovery harnesses, and a serialized target fixture for future R-lane
+  comparator work;
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 
@@ -112,13 +130,14 @@ Planned, but not implemented yet:
 
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests;
-- production sparse optimization or AI-REML fitting;
+- production sparse optimization / AI-REML fitting;
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
-- multivariate animal models and G matrices;
-- genomic prediction, single-step fitting, marker-effect estimation,
-  marker scans, QTL/eQTL scans, and non-standard inheritance models;
+- R-facing multivariate model-spec syntax and external comparator parity;
+- public R-facing genomic model-spec fitting, production genomic prediction,
+  APY/sparse genomic scaling, mixed-model marker scans, LOCO, LOD scores,
+  multiple testing, QTL/eQTL intervals, and non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 
 ## Julia Surface

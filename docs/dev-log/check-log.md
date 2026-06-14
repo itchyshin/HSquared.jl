@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 GitHub landing-page docs link
+
+- Goal: make the Julia Documenter site visible from the GitHub repository
+  landing page, matching the R twin's pkgdown discoverability.
+- Active lenses: Grace (GitHub/Pages), Shannon (twin coordination), Rose
+  (public status wording). Spawned subagents: none.
+- Change:
+  - set the `itchyshin/HSquared.jl` repository homepage field to
+    `https://itchyshin.github.io/HSquared.jl/` via the GitHub API;
+  - added top-of-README links to the Julia Documenter site, the R twin pkgdown
+    site, and the R twin repository;
+  - refreshed README status wording so the landing page separates experimental
+    engine utilities from production/public R formula support.
+- Checks:
+  - `curl -L https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+  - `curl -L https://itchyshin.github.io/HSquared.jl/dev/mission-control.html`:
+    HTTP 200.
+  - `curl -L https://itchyshin.github.io/hsquared/`: HTTP 200.
+  - GitHub API repo metadata reports homepage
+    `https://itchyshin.github.io/HSquared.jl/`.
+  - `git diff --check`: passed.
+- Boundary: metadata/README discoverability only. No engine behavior, R bridge,
+  validation status, or public capability promotion.
+
 ## 2026-06-14 fixed-effect marker-scan p-values
 
 - Goal: add deterministic p-value output to the direct Julia fixed-effect
