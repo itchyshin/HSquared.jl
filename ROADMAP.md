@@ -323,6 +323,8 @@ against thresholds `0.25` and `0.20`. This is internal recovery evidence only;
 the shared calibration protocol was later executed on a predeclared 10-seed
 unstructured set and did not pass (6/10 passed, all fits converged). It is not
 broad multi-seed calibration, external comparator parity, or an R bridge change.
+The calibration failure response decision note requires any future rerun,
+threshold revision, or narrower claim to be declared before execution.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

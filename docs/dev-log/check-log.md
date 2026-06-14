@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 calibration failure response policy
+
+- Goal: record how to respond to the failed predeclared calibration run without
+  weakening the evidence gate.
+- Active lenses: Curie/Fisher (simulation interpretation), Rose (claim
+  boundary), Grace (audit trail). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-calibration-failure-response.md`;
+  - updated roadmap, multivariate docs, and changelog to point to the decision.
+- Policy: failed seeds cannot be dropped, thresholds cannot be relaxed after
+  seeing results, and new seed lists / DGP changes / narrower claims must be
+  declared before execution.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and `nice -n 15`:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset remains 12 checks;
+    Phase 0 remains 182 checks; Phase 4B remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: docs/policy only. No new run, no result change, no R syntax, no
+  bridge payload or `result_payload()` change, and no status promotion.
+
 ## 2026-06-14 local recovery run throttling guidance
 
 - Goal: prevent opt-in recovery/calibration harnesses from monopolizing an

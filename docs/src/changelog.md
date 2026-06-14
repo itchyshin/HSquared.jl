@@ -196,6 +196,11 @@
   harnesses (`JULIA_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`,
   `OMP_NUM_THREADS=1`, `VECLIB_MAXIMUM_THREADS=1`, `nice -n 15`) so long
   stochastic runs do not monopolize interactive workstations.
+- Added
+  `docs/dev-log/decisions/2026-06-14-calibration-failure-response.md`, which
+  records that the failed predeclared calibration run cannot be rescued by
+  silently relaxing thresholds, dropping failed seeds, or rerunning until the
+  pass count improves.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

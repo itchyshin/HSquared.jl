@@ -186,6 +186,10 @@ low-rank passed 9/10, with all fits converged. The raw logs and summary live in
 The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
 the Markdown case summary and failed-seed list from those raw logs without
 rerunning any simulations.
+The follow-up decision note
+`docs/dev-log/decisions/2026-06-14-calibration-failure-response.md` records that
+failed seeds cannot be dropped and thresholds cannot be relaxed after seeing
+the results.
 The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but
