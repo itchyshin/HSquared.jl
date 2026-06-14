@@ -190,6 +190,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   target values (`G0`, `R0`, beta, EBVs, h², loglik). This is a target fixture
   for future R-lane parity, not external comparator evidence and not a bridge
   payload change.
+- The fixture README and
+  `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md` now
+  define the R-lane comparator protocol: same bivariate Gaussian animal model,
+  REML target, likelihood-scale caveat, version/control reporting, and no row
+  promotion until a comparator run records a tolerance and evidence chain.
 - Julia now has opt-in unstructured multivariate REML recovery evidence at
   `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
   a repeated-record half-sib design outside CI. This retires the "no committed

@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 multi-trait comparator protocol handoff
+
+- Goal: make the shared Phase 4 multi-trait fixture directly consumable by the
+  R lane for future sommer/ASReml/BLUPF90/JWAS parity work, without editing the
+  R repository or claiming comparator evidence.
+- Active lenses: Shannon (twin coordination), Curie/Fisher/Mrode
+  (comparator-target fidelity), Rose (claim boundary), Grace (checks).
+  Spawned subagents: none.
+- Change:
+  - extended `test/fixtures/phase4_multitrait_parity/README.md` with the
+    bivariate animal-model target, REML covariance structure, likelihood-scale
+    caveat, comparator-reporting checklist, and no-promotion rule;
+  - added
+    `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md`;
+  - synced `validation_status()`, its tests, validation-status docs, roadmap,
+    capability/debt/public-claims rows, changelog, multivariate docs, and the
+    coordination board around the phrase "comparator protocol".
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 169 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Protocol/boundary scan found the intended "comparator protocol" wording
+    alongside explicit "no external comparator parity" boundaries.
+- Boundary: protocol/handoff documentation only. No comparator package was run,
+  no tolerance was committed, no validation row was promoted, and no R syntax,
+  bridge payload, `result_payload()`, engine behavior, or production claim
+  changed.
+
 ## 2026-06-14 Phase 4 status guardrails
 
 - Goal: tighten Phase 4/4B status guardrails after the accessor and

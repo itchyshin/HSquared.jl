@@ -138,8 +138,9 @@
 - Added `test/fixtures/phase4_multitrait_parity/`, a deterministic two-trait
   CSV fixture for R-lane sommer/ASReml/BLUPF90 parity work. It records a Julia
   REML target (`G0`, `R0`, beta, EBVs, h², and loglik) and CI checks fast
-  self-consistency at the stored target covariances. It is not external
-  comparator evidence.
+  self-consistency at the stored target covariances. Its README and
+  `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md` define
+  the comparator protocol; it is not external comparator evidence.
 - Added opt-in `sim/phase4_multivariate_reml_recovery.jl` for seeded two-trait
   known-truth recovery of the unstructured multivariate REML estimator outside
   CI. Default seed `20260616` passed with relative errors `G = 0.174500` and

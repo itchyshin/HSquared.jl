@@ -44,7 +44,7 @@ length(status)
 | `V3-TWOEFFECT` | general two-random-effect MME (common environment, maternal) | Phase 3 | partial | Supplied-variance, two INDEPENDENT random effects only; no correlated maternal genetic, no R-facing model-spec. |
 | `V3-TWOEFFECT-REML` | two-effect REML (common-environment / maternal estimation) | Phase 3 | partial | Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec. |
 | `V4-MULTIVARIATE` | multivariate (multi-trait) animal model (supplied covariance) | Phase 4 | partial | Supplied-covariance with a design shared across traits; handles missing-trait records and copy-returning Julia-side accessors over existing fields, but does not estimate G0/R0 and has no R-facing multivariate model-spec or bridge payload change. |
-| `V4-MV-REML` | multivariate REML (genetic/residual covariance estimation) | Phase 4 | partial | Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), copy-returning Julia accessors wrap existing fields without widening `result_payload()`, an opt-in seeded recovery harness exists outside CI, and a serialized Julia target fixture exists for R-lane parity work, but recovery is not multi-seed calibrated and has no external-comparator parity yet; not the public default and no R-facing model-spec. |
+| `V4-MV-REML` | multivariate REML (genetic/residual covariance estimation) | Phase 4 | partial | Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), copy-returning Julia accessors wrap existing fields without widening `result_payload()`, an opt-in seeded recovery harness exists outside CI, and a serialized Julia target fixture plus comparator protocol exists for R-lane parity work, but recovery is not multi-seed calibrated and has no external-comparator parity yet; not the public default and no R-facing model-spec. |
 | `V4-FA` | structured multivariate genetic covariance (diag/lowrank/fa) | Phase 4B | partial | Experimental dense/validation-scale engine API only; returned loadings are sign-canonicalized but not rotation-identified, opt-in recovery evidence is internal and seeded, no R-facing covariance-structure syntax, no bridge/result-payload change, no production sparse FA solver, and no external comparator evidence. |
 | `V5-GENOMIC-QTL` | genomic, marker, QTL, and eQTL validation | Phase 5 | planned | No genomic prediction, marker scan, QTL, or eQTL support. |
 
@@ -77,8 +77,8 @@ parity.
 The Phase 4 multivariate rows are Julia-engine rows only. The accessor helpers
 wrap existing result fields locally and do not change the R bridge payload. The
 unstructured REML row now has an opt-in seeded recovery harness and a serialized
-two-trait target fixture for R-lane comparator work, but no sommer, ASReml,
-JWAS, or BLUPF90 multi-trait parity is claimed. The structured covariance row covers
-diag/low-rank/factor-analytic engine metadata and recovery checks, but loadings
-are only sign-canonicalized; rotations and interpretation remain validation
-debt.
+two-trait target fixture plus comparator protocol for R-lane comparator work,
+but no sommer, ASReml, JWAS, or BLUPF90 multi-trait parity is claimed. The
+structured covariance row covers diag/low-rank/factor-analytic engine metadata
+and recovery checks, but loadings are only sign-canonicalized; rotations and
+interpretation remain validation debt.
