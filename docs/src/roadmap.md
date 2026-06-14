@@ -102,7 +102,8 @@ Implemented:
   `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
   `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
   `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
-  `mixed_model_marker_scan`, and Manhattan/QQ plot-data helpers.
+  `mixed_model_marker_scan`, supplied `loco_mixed_model_marker_scan`, and
+  Manhattan/QQ plot-data helpers.
 - experimental repeatability / two-effect REML utilities.
 - experimental multivariate animal-model utilities, including
   supplied-covariance MME, missing-trait records, dense multivariate REML,
@@ -156,9 +157,11 @@ Next engine targets:
   Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
   Manhattan and QQ plot data. A supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
-  screening; formula-driven QTL/GWAS/eQTL scans, LOCO option, genome-wide
-  calibration, genomic-inflation diagnostics, and actual plotting backends
-  remain future work.
+  screening, and `loco_mixed_model_marker_scan` can select among supplied
+  leave-one-group-out precision matrices. Formula-driven QTL/GWAS/eQTL scans,
+  automatic LOCO relationship construction, genome-wide calibration,
+  genomic-inflation diagnostics, and actual plotting backends remain future
+  work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

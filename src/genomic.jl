@@ -301,25 +301,111 @@ function mixed_model_marker_scan(
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     marker_ids = nothing,
 )
+    common = _mixed_marker_scan_common(
+        y,
+        X,
+        Z,
+        markers,
+        sigma_a2,
+        sigma_e2;
+        allele_frequencies = allele_frequencies,
+        marker_ids = marker_ids,
+    )
+    cache = _mixed_marker_scan_cache(common.y, common.X, common.Z, Ainv, common.sigma_a2, common.sigma_e2)
+    stats = _mixed_marker_scan_stats(common.cm.W, common.marker_ids, _ -> cache)
+    return _mixed_marker_scan_result(common, stats, :mixed_model_marker_scan)
+end
+
+"""
+    loco_mixed_model_marker_scan(y, X, Z, relationship_precisions, marker_groups,
+                                 markers, sigma_a2, sigma_e2; ...)
+
+Leave-one-group-out supplied-variance mixed-model marker scan.
+
+`relationship_precisions` is a dictionary or named tuple mapping each marker
+group label (for example a chromosome) to the relationship precision that should
+be used when testing markers in that group. The helper selects the matching
+precision for each marker, forms the dense validation-scale GLS covariance, and
+runs the same marker-by-marker Wald scan as [`mixed_model_marker_scan`](@ref).
+
+The caller is responsible for constructing each leave-one-group-out precision.
+This helper only selects among supplied matrices; it does not build genomic
+relationships from markers, estimate variance components, calibrate p-values,
+run LOCO defaults for a public workflow, or activate the R-facing
+`marker_scan()` formula term.
+"""
+function loco_mixed_model_marker_scan(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    relationship_precisions,
+    marker_groups,
+    markers::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_e2::Real;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    marker_ids = nothing,
+)
+    common = _mixed_marker_scan_common(
+        y,
+        X,
+        Z,
+        markers,
+        sigma_a2,
+        sigma_e2;
+        allele_frequencies = allele_frequencies,
+        marker_ids = marker_ids,
+    )
+    groups = string.(collect(marker_groups))
+    length(groups) == size(common.cm.W, 2) ||
+        throw(ArgumentError("marker_groups must have one entry per marker"))
+    all(!isempty, groups) ||
+        throw(ArgumentError("marker_groups cannot contain empty labels"))
+
+    precision_lookup = _relationship_precision_lookup(relationship_precisions)
+    group_order = _unique_strings(groups)
+    missing_groups = _ordered_setdiff(group_order, collect(keys(precision_lookup)))
+    isempty(missing_groups) ||
+        throw(ArgumentError("relationship_precisions missing marker groups: $(join(missing_groups, ", "))"))
+
+    cache_by_group = Dict(
+        group => _mixed_marker_scan_cache(
+            common.y,
+            common.X,
+            common.Z,
+            precision_lookup[group],
+            common.sigma_a2,
+            common.sigma_e2,
+        ) for group in group_order
+    )
+    stats = _mixed_marker_scan_stats(common.cm.W, common.marker_ids, j -> cache_by_group[groups[j]])
+    result = _mixed_marker_scan_result(common, stats, :loco_mixed_model_marker_scan)
+    return merge(result, (marker_groups = groups, relationship_groups = group_order))
+end
+
+function _mixed_marker_scan_common(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    markers::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_e2::Real;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    marker_ids = nothing,
+)
     yv = Float64.(y)
     Xmat = Matrix{Float64}(X)
     Zmat = Matrix{Float64}(Z)
-    Ainvmat = Matrix{Float64}(Ainv)
     n = length(yv)
     size(Xmat, 1) == n ||
         throw(ArgumentError("X row count must match y length"))
     size(Zmat, 1) == n ||
         throw(ArgumentError("Z row count must match y length"))
-    size(Ainvmat, 1) == size(Ainvmat, 2) ||
-        throw(ArgumentError("Ainv must be square"))
-    size(Zmat, 2) == size(Ainvmat, 1) ||
-        throw(ArgumentError("Z columns must match Ainv dimensions"))
     n > size(Xmat, 2) ||
         throw(ArgumentError("mixed-model marker scan requires more observations than fixed effects"))
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
     all(isfinite, Zmat) || throw(ArgumentError("Z must contain only finite values"))
-    all(isfinite, Ainvmat) || throw(ArgumentError("Ainv must contain only finite values"))
     rank(Xmat) == size(Xmat, 2) ||
         throw(ArgumentError("X must have full column rank"))
     sa2 = Float64(sigma_a2)
@@ -328,15 +414,6 @@ function mixed_model_marker_scan(
         throw(ArgumentError("sigma_a2 must be positive and finite"))
     isfinite(se2) && se2 > 0 ||
         throw(ArgumentError("sigma_e2 must be positive and finite"))
-
-    Ainv_sym = Symmetric(Ainvmat)
-    isposdef(Ainv_sym) ||
-        throw(ArgumentError("Ainv must be positive definite"))
-    A = inv(Ainv_sym)
-    V = Symmetric(sa2 * Zmat * A * transpose(Zmat) + se2 * Matrix{Float64}(I, n, n))
-    isposdef(V) ||
-        throw(ArgumentError("supplied covariance must be positive definite"))
-    cholV = cholesky(V)
 
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
     size(cm.W, 1) == n ||
@@ -348,6 +425,33 @@ function mixed_model_marker_scan(
             throw(ArgumentError("marker_ids must have one entry per marker"))
         string.(marker_ids)
     end
+    return (y = yv, X = Xmat, Z = Zmat, cm = cm, marker_ids = marker_names, sigma_a2 = sa2, sigma_e2 = se2)
+end
+
+function _mixed_marker_scan_cache(
+    yv::Vector{Float64},
+    Xmat::Matrix{Float64},
+    Zmat::Matrix{Float64},
+    Ainv::AbstractMatrix,
+    sigma_a2::Float64,
+    sigma_e2::Float64,
+)
+    n = length(yv)
+    Ainvmat = Matrix{Float64}(Ainv)
+    size(Ainvmat, 1) == size(Ainvmat, 2) ||
+        throw(ArgumentError("Ainv must be square"))
+    size(Zmat, 2) == size(Ainvmat, 1) ||
+        throw(ArgumentError("Z columns must match Ainv dimensions"))
+    all(isfinite, Ainvmat) || throw(ArgumentError("Ainv must contain only finite values"))
+
+    Ainv_sym = Symmetric(Ainvmat)
+    isposdef(Ainv_sym) ||
+        throw(ArgumentError("Ainv must be positive definite"))
+    A = inv(Ainv_sym)
+    V = Symmetric(sigma_a2 * Zmat * A * transpose(Zmat) + sigma_e2 * Matrix{Float64}(I, n, n))
+    isposdef(V) ||
+        throw(ArgumentError("supplied covariance must be positive definite"))
+    cholV = cholesky(V)
 
     Vinv_X = cholV \ Xmat
     Vinv_y = cholV \ yv
@@ -356,22 +460,26 @@ function mixed_model_marker_scan(
         throw(ArgumentError("X must have full column rank under the supplied covariance"))
     cholXtVinvX = cholesky(XtVinvX)
     Py = Vinv_y - Vinv_X * (cholXtVinvX \ (transpose(Xmat) * Vinv_y))
+    return (cholV = cholV, Vinv_X = Vinv_X, cholXtVinvX = cholXtVinvX, Py = Py)
+end
 
-    effects = zeros(Float64, size(cm.W, 2))
+function _mixed_marker_scan_stats(W::AbstractMatrix, marker_names::Vector{String}, cache_for_marker)
+    effects = zeros(Float64, size(W, 2))
     standard_errors = similar(effects)
     z_scores = similar(effects)
     chisq = similar(effects)
     p_values = similar(effects)
     denominators = similar(effects)
 
-    for j in axes(cm.W, 2)
-        w = Vector(@view(cm.W[:, j]))
-        Vinv_w = cholV \ w
-        Pw = Vinv_w - Vinv_X * (cholXtVinvX \ (transpose(Xmat) * Vinv_w))
+    for j in axes(W, 2)
+        cache = cache_for_marker(j)
+        w = Vector(@view(W[:, j]))
+        Vinv_w = cache.cholV \ w
+        Pw = Vinv_w - cache.Vinv_X * (cache.cholXtVinvX \ (transpose(cache.Vinv_X) * w))
         denom = dot(w, Pw)
         denom > sqrt(eps(Float64)) ||
             throw(ArgumentError("marker $(marker_names[j]) is collinear with X under the supplied covariance"))
-        alpha = dot(w, Py) / denom
+        alpha = dot(w, cache.Py) / denom
         se = sqrt(inv(denom))
         z = alpha / se
         denominators[j] = denom
@@ -385,9 +493,7 @@ function mixed_model_marker_scan(
     bonferroni_p_values = _bonferroni_adjust(p_values)
     bh_q_values = _benjamini_hochberg_adjust(p_values)
     lod_scores = chisq ./ (2 * log(10))
-
     return (
-        marker_ids = marker_names,
         effects = effects,
         standard_errors = standard_errors,
         z_scores = z_scores,
@@ -397,11 +503,50 @@ function mixed_model_marker_scan(
         bh_q_values = bh_q_values,
         lod_scores = lod_scores,
         denominators = denominators,
-        p = cm.p,
-        k = cm.k,
-        variance_components = (sigma_a2 = sa2, sigma_e2 = se2),
-        target = :mixed_model_marker_scan,
     )
+end
+
+function _mixed_marker_scan_result(common, stats, target::Symbol)
+    return (
+        marker_ids = common.marker_ids,
+        effects = stats.effects,
+        standard_errors = stats.standard_errors,
+        z_scores = stats.z_scores,
+        chisq = stats.chisq,
+        p_values = stats.p_values,
+        bonferroni_p_values = stats.bonferroni_p_values,
+        bh_q_values = stats.bh_q_values,
+        lod_scores = stats.lod_scores,
+        denominators = stats.denominators,
+        p = common.cm.p,
+        k = common.cm.k,
+        variance_components = (sigma_a2 = common.sigma_a2, sigma_e2 = common.sigma_e2),
+        target = target,
+    )
+end
+
+function _relationship_precision_lookup(relationship_precisions::AbstractDict)
+    lookup = Dict{String,Any}()
+    for (key, value) in relationship_precisions
+        lookup[string(key)] = value
+    end
+    isempty(lookup) ||
+        return lookup
+    throw(ArgumentError("relationship_precisions cannot be empty"))
+end
+
+function _relationship_precision_lookup(relationship_precisions::NamedTuple)
+    lookup = Dict{String,Any}()
+    for key in keys(relationship_precisions)
+        lookup[string(key)] = getproperty(relationship_precisions, key)
+    end
+    isempty(lookup) ||
+        return lookup
+    throw(ArgumentError("relationship_precisions cannot be empty"))
+end
+
+function _relationship_precision_lookup(relationship_precisions)
+    throw(ArgumentError("relationship_precisions must be a dictionary or named tuple"))
 end
 
 """

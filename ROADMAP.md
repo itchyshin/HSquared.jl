@@ -107,8 +107,10 @@ unimplemented.
   screening (`single_marker_scan`) plus marker-map-backed Manhattan metadata
   and QQ plot-data preparation. `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
-  correction from a supplied marginal covariance. These remain experimental
-  supplied-variance / validation-scale engine utilities.
+  correction from a supplied marginal covariance. `loco_mixed_model_marker_scan`
+  selects supplied relationship precisions by marker group for a direct
+  leave-one-group-out scan. These remain experimental supplied-variance /
+  validation-scale engine utilities.
   No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
   the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
@@ -256,8 +258,10 @@ GBLUP REML. The first Phase-5 marker utility,
 `single_marker_scan`, also exists as a fixed-effect Gaussian screening helper
 with supplied residual variance, marker-map-backed Manhattan plot data, and QQ
 plot data. `mixed_model_marker_scan` adds a supplied-variance dense GLS marker
-scan using a supplied relationship precision and random-effect design. These
-are engine-internal; production genotype-ID matching at scale, formula-driven
+scan using a supplied relationship precision and random-effect design.
+`loco_mixed_model_marker_scan` selects among caller-supplied relationship
+precisions by marker group for a direct leave-one-group-out scan. These are
+engine-internal; production genotype-ID matching at scale, formula-driven
 mixed-model marker scans, QTL/eQTL scans, a public genomic model-spec, and
 external comparator parity remain open.
 
@@ -361,8 +365,10 @@ Manhattan data, including overloads that consume already-validated `HSData` /
 sorted observed/expected QQ plot data from the same direct scan output.
 `mixed_model_marker_scan` forms a supplied dense marginal covariance from
 `Z`, `Ainv`, `sigma_a2`, and `sigma_e2`, then runs marker-by-marker GLS Wald
-tests. These helpers are not formula-driven mixed-model GWAS/QTL workflows, do
-not estimate marker-scan variance components, do not implement LOCO, do not
+tests. `loco_mixed_model_marker_scan` selects a supplied relationship precision
+by marker group before running the same GLS test. These helpers are not
+formula-driven mixed-model GWAS/QTL workflows, do not estimate marker-scan
+variance components, do not construct LOCO relationship matrices, do not
 compute interval-mapping or mixed-model LOD workflows or calibrated /
 correlated-marker multiple-testing workflows, do not draw plots or estimate
 genomic inflation, and do not activate the R-facing `marker_scan()` formula

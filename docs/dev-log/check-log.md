@@ -2,6 +2,57 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 supplied LOCO marker scan selection
+
+- Goal: add a direct Julia helper that selects among caller-supplied
+  leave-one-group-out relationship precision matrices for marker screening,
+  without constructing LOCO matrices automatically, estimating variance
+  components, changing R syntax, changing the bridge payload, or making a broad
+  GWAS/QTL claim.
+- Active lenses: Gauss (GLS covariance reuse and relationship-matrix
+  selection), Fisher (Wald estimand and no calibration overclaim), Curie
+  (deterministic tests and reduction checks), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `loco_mixed_model_marker_scan(y, X, Z,
+    relationship_precisions, marker_groups, markers, sigma_a2, sigma_e2;
+    allele_frequencies, marker_ids)`;
+  - the helper accepts a `Dict`/`AbstractDict` or `NamedTuple` of supplied
+    relationship precision matrices keyed by marker group, builds one GLS cache
+    per used group, and applies the corresponding covariance to each marker;
+  - returns the same mixed-marker scan fields as `mixed_model_marker_scan()`,
+    plus `marker_groups`, `relationship_groups`, and
+    `target = :loco_mixed_model_marker_scan`;
+  - refactored the supplied-variance mixed-marker scan internals so the direct
+    and LOCO helpers share the same GLS statistic path;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - First low-core `Pkg.test()` attempt after implementation and before final
+    status/docs edits passed. Phase 5 fixed-effect single-marker scan testset
+    was 142 checks.
+  - Later low-core `Pkg.test()` attempt after status/docs edits failed because
+    the `V5-MARKER-LOCO` validation-status row did not include the exact
+    asserted phrase `automatic LOCO relationship construction`. The row now
+    names that missing capability explicitly.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 213 checks; Phase
+    5 fixed-effect single-marker scan testset is now 142 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense supplied-matrix-selection utility only. This does not
+  construct leave-one-group-out relationship matrices from marker data, choose
+  LOCO defaults, estimate marker-scan variance components, run a sparse
+  production scan, calibrate p-values, estimate genomic inflation, draw plots,
+  activate R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 supplied-variance mixed-model marker scan
 
 - Goal: add a direct Julia relationship-corrected marker-screening helper that

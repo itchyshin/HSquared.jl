@@ -63,6 +63,15 @@
   no sparse production scan, no calibrated p-values or genomic-inflation
   diagnostics, no plotting backend, no R `marker_scan()` syntax, no bridge
   payload change, and no comparator parity.
+- Added `loco_mixed_model_marker_scan()` — a supplied-matrix
+  leave-one-group-out marker-screening helper. The caller supplies one
+  relationship precision per marker group, and the helper selects the matching
+  precision before running the dense GLS scan. Tests pin marker-wise agreement
+  with separate `mixed_model_marker_scan()` calls. Direct Julia engine tooling
+  only: no automatic LOCO relationship construction, no marker-scan
+  variance-component estimation, no sparse production scan, no calibrated
+  p-values or genomic-inflation diagnostics, no plotting backend, no R
+  `marker_scan()` syntax, no bridge payload change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

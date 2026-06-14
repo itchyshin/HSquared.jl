@@ -167,7 +167,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 30
+    @test length(validation) == 31
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -264,6 +264,14 @@ end
     @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration", mixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", mixed_marker_row.claim_boundary)
+    loco_marker_row = only(row for row in validation if row.id == "V5-MARKER-LOCO")
+    @test loco_marker_row.phase == "Phase 5"
+    @test loco_marker_row.status == "partial"
+    @test occursin("loco_mixed_model_marker_scan", loco_marker_row.evidence)
+    @test occursin("separate `mixed_model_marker_scan` calls", loco_marker_row.evidence)
+    @test occursin("automatic LOCO relationship construction", loco_marker_row.missing)
+    @test occursin("Dense validation-scale supplied-matrix selection helper only", loco_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -1898,6 +1906,54 @@ end
     @test marker_manhattan_data(mixed).marker_ids == mixed.marker_ids
     @test marker_qq_data(mixed).marker_ids == mixed.marker_ids
 
+    Ainv_loco1 = Matrix(Ainv_mixed)
+    Ainv_loco2 = 1.4 .* Matrix(Ainv_mixed)
+    loco = loco_mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Ainv_loco2),
+        ["chr1", "chr2"],
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    @test loco.target == :loco_mixed_model_marker_scan
+    @test loco.marker_ids == ["m1", "m2"]
+    @test loco.marker_groups == ["chr1", "chr2"]
+    @test loco.relationship_groups == ["chr1", "chr2"]
+    @test loco.variance_components == (sigma_a2 = 0.7, sigma_e2 = 1.2)
+    ref_chr1 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_loco1,
+        M[:, 1:1],
+        0.7,
+        1.2;
+        marker_ids = ["m1"],
+    )
+    ref_chr2 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_loco2,
+        M[:, 2:2],
+        0.7,
+        1.2;
+        marker_ids = ["m2"],
+    )
+    @test loco.effects ≈ [only(ref_chr1.effects), only(ref_chr2.effects)] atol = 1e-12
+    @test loco.standard_errors ≈ [only(ref_chr1.standard_errors), only(ref_chr2.standard_errors)] atol = 1e-12
+    @test loco.denominators ≈ [only(ref_chr1.denominators), only(ref_chr2.denominators)] atol = 1e-12
+    @test loco.p_values ≈ [only(ref_chr1.p_values), only(ref_chr2.p_values)] atol = 1e-12
+    @test loco.bonferroni_p_values ≈ HSquared._bonferroni_adjust(loco.p_values) atol = 1e-12
+    @test loco.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(loco.p_values) atol = 1e-12
+    @test loco.lod_scores ≈ loco.chisq ./ (2 * log(10)) atol = 1e-12
+    @test marker_manhattan_data(loco).marker_ids == loco.marker_ids
+    @test marker_qq_data(loco).marker_ids == loco.marker_ids
+
     manhattan = marker_manhattan_data(scan)
     @test manhattan.marker_ids == ["m1", "m2"]
     @test manhattan.chromosomes == ["1", "1"]
@@ -1982,6 +2038,46 @@ end
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Matrix{Float64}(I, 4, 4), M, 1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, [ones(5) ones(5)], Z_mixed, Ainv_mixed, M, 1.0, 1.0)
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Ainv_loco2),
+        ["chr1"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Matrix{Float64}(I, 4, 4)),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict{String,Matrix{Float64}}(),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
     @test_throws ArgumentError marker_manhattan_data(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError marker_manhattan_data(
         (marker_ids = ["m1", "m1"], p_values = [0.1, 0.2]),
@@ -1998,6 +2094,16 @@ end
         [ones(5) cm_one.W],
         Z_mixed,
         Ainv_mixed,
+        M[:, 1:1],
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        [ones(5) cm_one.W],
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1),
+        ["chr1"],
         M[:, 1:1],
         1.0,
         1.0,

@@ -261,12 +261,21 @@ const VALIDATION_STATUS_DATA = (
         "Dense validation-scale supplied-variance Julia utility only; relationship correction is by the supplied marginal covariance and tested by GLS identities, but there is no variance-component estimation, no LOCO, no p-value calibration/genomic-inflation claim, no R formula activation, no bridge payload change, and no comparator evidence.",
     ),
     (
+        "V5-MARKER-LOCO",
+        "leave-one-group-out marker scan selection",
+        "Phase 5",
+        "partial",
+        "`loco_mixed_model_marker_scan` selects a supplied relationship precision by marker group, forms the same dense validation-scale GLS covariance as `mixed_model_marker_scan`, and runs marker-by-marker Wald tests with group-specific relationship correction. Deterministic tests pin marker-wise agreement with separate `mixed_model_marker_scan` calls using the corresponding supplied precision, preserve Manhattan/QQ plot-data helper compatibility, and guard missing groups, marker-group length mismatches, empty precision maps, invalid precision dimensions, and marker collinearity under the selected covariance.",
+        "automatic LOCO relationship construction from markers, LOCO defaults, marker-scan variance-component estimation, sparse production scans, calibrated mixed-model p-values, genomic-inflation diagnostics, interval-mapping or mixed-model LOD workflows, plotting backends, external comparator parity, and R-facing `marker_scan()` syntax",
+        "Dense validation-scale supplied-matrix selection helper only; the caller supplies each leave-one-group-out precision matrix, and there is no automatic LOCO relationship construction, no variance-component estimation, no p-value calibration/genomic-inflation claim, no R formula activation, no bridge payload change, and no comparator evidence.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",
         "planned",
-        "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan` utility is tracked separately in `V5-MARKER-FIXED`, and the direct supplied-variance GLS `mixed_model_marker_scan` utility is tracked separately in `V5-MARKER-MIXED`.",
-        "model-spec contracts, formula-driven mixed-model marker scans, simulations, marker-map validation, LOCO, genome-wide multiple-testing calibration, calibrated mixed-model p-values, genomic-inflation diagnostics, interval-mapping or mixed-model LOD workflows, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
+        "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan`, supplied-variance GLS `mixed_model_marker_scan`, and supplied-matrix-selection `loco_mixed_model_marker_scan` utilities are tracked separately.",
+        "model-spec contracts, formula-driven mixed-model marker scans, simulations, marker-map validation, automatic LOCO relationship construction, genome-wide multiple-testing calibration, calibrated mixed-model p-values, genomic-inflation diagnostics, interval-mapping or mixed-model LOD workflows, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
         "No broad genomic/QTL/eQTL validation claim; direct Julia marker-screening utilities are experimental and tracked separately.",
     ),
 )
