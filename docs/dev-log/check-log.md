@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 multivariate capability-status wording cleanup
+
+- Goal: remove a stale capability-status row that still said "Multivariate G
+  matrices" were planned with no implementation, contradicting the Phase 4 /
+  Phase 4B engine rows on this branch.
+- Active lenses: Rose/Shannon (claim-vs-evidence consistency and lane
+  boundary). Spawned subagents: none.
+- Change:
+  - replaced the stale row with "Public multivariate G-matrix model-spec /
+    syntax", marked planned;
+  - kept the implemented evidence in the existing experimental engine rows for
+    `multivariate_mme`, `fit_multivariate_reml`, and structured `G0` builders;
+  - explicitly left public R-facing syntax, long-format interface, and
+    comparator-backed claims as planned.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+- Boundary: documentation/status wording only; no code, no tests, no bridge
+  payload change, and no capability promotion.
+
 ## 2026-06-14 multivariate result extractors
 
 - Goal: mirror the R twin's multivariate extractor vocabulary locally in Julia
