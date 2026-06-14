@@ -34,6 +34,11 @@ support beyond the recorded evidence.
   docs/dev-log evidence files; no engine code or bridge contract changed.
   Local full `Pkg.test()` passed before push, with docs build evidence recorded
   in the check log / after-task note for this slice.
+- PR #19 (`codex/phase5-marker-adjustments`) was locally reconciled with the
+  repaired PR #18 base on 2026-06-14. The only textual conflict was the
+  append-only check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` passed before push, with docs build evidence recorded in the
+  check log / after-task note for this slice.
 
 ## Shared Contract
 
