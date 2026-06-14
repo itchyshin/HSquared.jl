@@ -12,6 +12,24 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Public Landing Pages
+
+- Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
+- R twin pkgdown site: <https://itchyshin.github.io/hsquared/>
+- R twin repository: <https://github.com/itchyshin/hsquared>
+
+The Julia repository homepage field points at the Julia engine docs. The
+README links both twin documentation surfaces so readers can move between the
+Julia engine status and the R user-facing package without inferring bridge
+support beyond the recorded evidence.
+
+## Stack Readiness
+
+- PR #17 (`phase4b-factor-analytic-g`) was locally reconciled with current
+  `main` on 2026-06-14. The only conflict was the append-only check log; both
+  the `main` landing-page entry and the Phase 4B branch evidence are preserved.
+  Local full `Pkg.test()` and Documenter build passed before push.
+
 ## Shared Contract
 
 - `hsquared` is the R public identity.
