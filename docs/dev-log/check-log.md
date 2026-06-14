@@ -2,6 +2,35 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 recovery calibration failure-mode triage
+
+- Goal: classify the failed predeclared calibration seeds by which committed
+  threshold failed, without rerunning any stochastic harness.
+- Active lenses: Curie/Fisher (negative simulation evidence), Rose (claim
+  boundary), Grace (reproducible tooling). Spawned subagents: none.
+- Change:
+  - extended `sim/summarize_recovery_calibration.jl` with deterministic
+    failure-mode classification (`G`, `R`, `G+R`, or parser inconsistency);
+  - added tests over the committed raw logs that pin the failure-mode counts;
+  - added
+    `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-failure-modes.md`;
+  - synced `validation_status()`, docs/status, capability/debt/public-claims
+    rows, roadmap, multivariate docs, changelog, and the failure-response
+    decision note.
+- Result: unstructured failures are 3 G-only plus 1 G+R; factor-analytic
+  failures are 1 G-only plus 1 G+R; low-rank has 1 R-only failure.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and `nice -n 15`:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset is now 21 checks;
+    Phase 0 scaffold/validation-status block is now 186 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: deterministic triage of negative evidence only. No simulation
+  rerun, no threshold change, no status promotion, no R syntax, no bridge
+  payload or `result_payload()` change, and no comparator parity claim.
+
 ## 2026-06-14 calibration failure response policy
 
 - Goal: record how to respond to the failed predeclared calibration run without

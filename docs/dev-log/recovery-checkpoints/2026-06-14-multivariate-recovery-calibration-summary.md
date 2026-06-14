@@ -59,6 +59,18 @@ multi-seed calibration claim is allowed.
   `20260619` (`G = 0.577749`, `R = 0.252226`).
 - lowrank: `20260619` (`G = 0.422179`, `R = 0.262608`).
 
+## Failure-Mode Triage
+
+Deterministic threshold triage is recorded in
+`docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-failure-modes.md`.
+It classifies the failed seeds as:
+
+- unstructured: 3 G-only failures and 1 G+R failure;
+- factor_analytic: 1 G-only failure and 1 G+R failure;
+- lowrank: 1 R-only failure.
+
+This is triage of negative evidence only, not a calibration pass.
+
 ## Raw Output
 
 - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-unstructured.log`

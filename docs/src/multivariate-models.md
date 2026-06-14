@@ -184,8 +184,10 @@ did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
 low-rank passed 9/10, with all fits converged. The raw logs and summary live in
 `docs/dev-log/recovery-checkpoints/`.
 The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
-the Markdown case summary and failed-seed list from those raw logs without
-rerunning any simulations.
+the Markdown case summary, failure-mode table, and failed-seed list from those
+raw logs without rerunning any simulations. The current failure-mode triage is:
+unstructured has 3 G-only failures plus 1 G+R failure, factor-analytic has 1
+G-only failure plus 1 G+R failure, and low-rank has 1 R-only failure.
 The follow-up decision note
 `docs/dev-log/decisions/2026-06-14-calibration-failure-response.md` records that
 failed seeds cannot be dropped and thresholds cannot be relaxed after seeing

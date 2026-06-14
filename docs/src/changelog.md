@@ -190,8 +190,14 @@
   factor-analytic passed 8/10, and low-rank passed 9/10, with all fits
   converged. No broad multi-seed calibration claim is made.
 - Added deterministic `sim/summarize_recovery_calibration.jl` tooling to parse
-  committed recovery harness logs and regenerate the Markdown case summary and
-  failed-seed list without rerunning stochastic simulations.
+  committed recovery harness logs and regenerate the Markdown case summary,
+  failure-mode table, and failed-seed list without rerunning stochastic
+  simulations.
+- Added
+  `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-failure-modes.md`,
+  which records that unstructured failures were 3 G-only plus 1 G+R,
+  factor-analytic failures were 1 G-only plus 1 G+R, and low-rank had 1 R-only
+  failure.
 - Documented a throttled local command form for opt-in recovery/calibration
   harnesses (`JULIA_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`,
   `OMP_NUM_THREADS=1`, `VECLIB_MAXIMUM_THREADS=1`, `nice -n 15`) so long

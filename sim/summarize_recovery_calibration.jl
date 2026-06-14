@@ -1,7 +1,7 @@
 module RecoveryCalibrationSummary
 
 export RecoveryLogRow, case_summaries, markdown_summary, parse_recovery_log,
-    parse_recovery_logs
+    parse_recovery_logs, failure_mode, failure_mode_counts
 
 struct RecoveryLogRow
     case::String
@@ -163,6 +163,32 @@ function case_summaries(rows)
     return summaries
 end
 
+function failure_mode(row::RecoveryLogRow)
+    row.pass && return "pass"
+    g_failed = row.rel_g > row.threshold_g
+    r_failed = row.rel_r > row.threshold_r
+    g_failed && r_failed && return "G+R"
+    g_failed && return "G"
+    r_failed && return "R"
+    return "reported-fail"
+end
+
+function failure_mode_counts(rows)
+    cases = unique(row.case for row in rows)
+    counts = Dict{String,NamedTuple}()
+    for case in cases
+        failed = filter(row -> row.case == case && !row.pass, rows)
+        counts[case] = (
+            total = length(failed),
+            g_only = count(row -> failure_mode(row) == "G", failed),
+            r_only = count(row -> failure_mode(row) == "R", failed),
+            both = count(row -> failure_mode(row) == "G+R", failed),
+            reported_fail = count(row -> failure_mode(row) == "reported-fail", failed),
+        )
+    end
+    return counts
+end
+
 function _fmt(x::Real)
     rounded = floor(Float64(x) * 1_000_000 + 0.5) / 1_000_000
     text = string(rounded)
@@ -185,12 +211,25 @@ function markdown_summary(rows)
         push!(lines, "| $case | $(row.seeds) | $(row.converged) | $(row.passed) | $(_fmt(row.pass_proportion)) | $(_fmt(row.wilson_low))-$(_fmt(row.wilson_high)) | $(_fmt(row.mean_g)) | $(_fmt(row.median_g)) | $(_fmt(row.max_g)) | $(_fmt(row.mean_r)) | $(_fmt(row.median_r)) | $(_fmt(row.max_r)) |")
     end
     push!(lines, "")
+    push!(lines, "## Failure Modes")
+    push!(lines, "")
+    push!(lines, "| case | failed seeds | G only | R only | G+R | reported fail |")
+    push!(lines, "| --- | ---: | ---: | ---: | ---: | ---: |")
+    counts = failure_mode_counts(rows)
+    for case in sort(collect(keys(counts)))
+        row = counts[case]
+        push!(lines, "| $case | $(row.total) | $(row.g_only) | $(row.r_only) | $(row.both) | $(row.reported_fail) |")
+    end
+    push!(lines, "")
     push!(lines, "## Failed Seeds")
     push!(lines, "")
     for case in sort(unique(row.case for row in rows))
         failed = filter(row -> row.case == case && !row.pass, rows)
         value = isempty(failed) ? "none" :
-            join(["$(row.seed) (G=$(_fmt(row.rel_g)), R=$(_fmt(row.rel_r)))" for row in failed], "; ")
+            join([
+                "$(row.seed) ($(failure_mode(row)); G=$(_fmt(row.rel_g)), R=$(_fmt(row.rel_r)))"
+                for row in failed
+            ], "; ")
         push!(lines, "- $case: $value")
     end
     return join(lines, "\n")

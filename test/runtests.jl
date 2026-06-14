@@ -218,6 +218,8 @@ end
     @test occursin("calibration protocol", mvreml_row.evidence)
     @test occursin("did not pass", mvreml_row.evidence)
     @test occursin("6/10 passed", mvreml_row.evidence)
+    @test occursin("failure-mode triage", mvreml_row.evidence)
+    @test occursin("3 G-only failures", mvreml_row.evidence)
     @test occursin("result_payload", mvreml_row.claim_boundary)
     @test occursin("comparator protocol", mvreml_row.claim_boundary)
     @test occursin("not broadly multi-seed calibrated", mvreml_row.claim_boundary)
@@ -235,6 +237,8 @@ end
     @test occursin("did not pass", fa_row.evidence)
     @test occursin("8/10", fa_row.evidence)
     @test occursin("9/10", fa_row.evidence)
+    @test occursin("failure-mode triage", fa_row.evidence)
+    @test occursin("R-only failure", fa_row.evidence)
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
@@ -287,6 +291,7 @@ include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
     ]
     rows = RecoveryCalibrationSummary.parse_recovery_logs(log_paths)
     summaries = RecoveryCalibrationSummary.case_summaries(rows)
+    failure_counts = RecoveryCalibrationSummary.failure_mode_counts(rows)
 
     @test length(rows) == 30
     @test summaries["unstructured"].seeds == 10
@@ -297,11 +302,20 @@ include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
     @test summaries["unstructured"].max_g ≈ 0.478375
     @test summaries["factor_analytic"].max_r ≈ 0.252226
     @test summaries["lowrank"].max_r ≈ 0.262608
+    @test failure_counts["unstructured"].g_only == 3
+    @test failure_counts["unstructured"].r_only == 0
+    @test failure_counts["unstructured"].both == 1
+    @test failure_counts["factor_analytic"].g_only == 1
+    @test failure_counts["factor_analytic"].both == 1
+    @test failure_counts["lowrank"].r_only == 1
+    @test all(row.reported_fail == 0 for row in values(failure_counts))
 
     summary = RecoveryCalibrationSummary.markdown_summary(rows)
     @test occursin("| unstructured | 10 | 10 | 6 | 0.600000 |", summary)
-    @test occursin("20260625 (G=0.478375, R=0.105180)", summary)
-    @test occursin("20260619 (G=0.422179, R=0.262608)", summary)
+    @test occursin("| unstructured | 4 | 3 | 0 | 1 | 0 |", summary)
+    @test occursin("| lowrank | 1 | 0 | 1 | 0 | 0 |", summary)
+    @test occursin("20260625 (G; G=0.478375, R=0.105180)", summary)
+    @test occursin("20260619 (R; G=0.422179, R=0.262608)", summary)
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin

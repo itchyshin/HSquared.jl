@@ -22,6 +22,15 @@ for every seed:
 Raw logs and the deterministic summary are recorded in
 `docs/dev-log/recovery-checkpoints/`.
 
+Deterministic failure-mode triage of the same logs records:
+
+- unstructured: 3 G-only failures and 1 G+R failure;
+- factor-analytic: 1 G-only failure and 1 G+R failure;
+- low-rank: 1 R-only failure.
+
+These labels describe which predeclared threshold failed. They do not rescue the
+calibration run or justify threshold changes after the fact.
+
 ## Allowed Next Responses
 
 Allowed future responses must be declared before running:

@@ -324,7 +324,10 @@ the shared calibration protocol was later executed on a predeclared 10-seed
 unstructured set and did not pass (6/10 passed, all fits converged). It is not
 broad multi-seed calibration, external comparator parity, or an R bridge change.
 The calibration failure response decision note requires any future rerun,
-threshold revision, or narrower claim to be declared before execution.
+threshold revision, or narrower claim to be declared before execution. The
+deterministic failure-mode triage records that the unstructured failures were
+mostly G-threshold failures, factor-analytic had both G-only and G+R failures,
+and low-rank had one R-only failure.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.
