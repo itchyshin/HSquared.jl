@@ -460,6 +460,45 @@ function _marker_map_order_for_scan(marker_ids::Vector{String}, marker_spec::HSM
     return [marker_index[id] for id in marker_ids]
 end
 
+"""
+    marker_qq_data(scan; p_floor = floatmin(Float64))
+
+Prepare plot-ready QQ data from a direct [`single_marker_scan`](@ref) result.
+
+The helper sorts observed p-values from smallest to largest and returns the
+paired expected uniform order-statistic p-values, raw and sorted p-values,
+marker IDs, sorted marker IDs, `-log10` observed and expected values, the sort
+order, and the display p-value floor. Zero p-values are floored only for
+display values; raw p-values are preserved.
+
+This is a data-preparation helper only. It does not draw a plot, estimate
+genomic inflation, calibrate p-values, run a mixed-model marker scan, or
+activate the R-facing `marker_scan()` formula term.
+"""
+function marker_qq_data(scan; p_floor::Real = floatmin(Float64))
+    marker_ids, p_values = _scan_marker_ids_and_p_values(scan)
+    p_floor_value = Float64(p_floor)
+    isfinite(p_floor_value) && 0 < p_floor_value <= 1 ||
+        throw(ArgumentError("p_floor must be finite and in (0, 1]"))
+
+    order = sortperm(collect(eachindex(p_values)); by = i -> (p_values[i], i))
+    sorted_p_values = p_values[order]
+    m = length(sorted_p_values)
+    expected_p_values = collect(1:m) ./ (m + 1)
+
+    return (
+        marker_ids = marker_ids,
+        p_values = p_values,
+        sorted_marker_ids = marker_ids[order],
+        sorted_p_values = sorted_p_values,
+        expected_p_values = expected_p_values,
+        observed_neglog10_p_values = .-log10.(max.(sorted_p_values, p_floor_value)),
+        expected_neglog10_p_values = .-log10.(expected_p_values),
+        order = order,
+        p_floor = p_floor_value,
+    )
+end
+
 # Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is
 # about 7.5e-8, enough for deterministic fixed-effect scan diagnostics without
 # adding a statistics dependency.

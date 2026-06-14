@@ -105,7 +105,8 @@ unimplemented.
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
   GBLUP REML variance-component estimation, and fixed-effect single-marker
   screening (`single_marker_scan`) plus marker-map-backed Manhattan metadata
-  exist as experimental supplied-variance / validation-scale engine utilities.
+  and QQ plot-data preparation exist as experimental supplied-variance /
+  validation-scale engine utilities.
   No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
   the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
@@ -251,9 +252,10 @@ Status: the engine utilities have landed (experimental, validation-scale) —
 `fit_snp_blup`/`centered_markers`, single-step `H`-inverse construction, and
 GBLUP REML. The first Phase-5 marker utility,
 `single_marker_scan`, also exists as a fixed-effect Gaussian screening helper
-with supplied residual variance. These are engine-internal; production
-genotype-ID matching at scale, mixed-model marker scans, QTL/eQTL scans, a
-public genomic model-spec, and external comparator parity remain open.
+with supplied residual variance, marker-map-backed Manhattan plot data, and QQ
+plot data. These are engine-internal; production genotype-ID matching at scale,
+mixed-model marker scans, QTL/eQTL scans, a public genomic model-spec, and
+external comparator parity remain open.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.
@@ -351,11 +353,13 @@ Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
 marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
 Manhattan data, including overloads that consume already-validated `HSData` /
-`HSMarkerMapSpec` marker metadata by exact marker ID. It is not a mixed-model
-GWAS/QTL scan, does not account for relatedness/population structure, does not
-compute interval-mapping or mixed-model LOD workflows or calibrated /
-correlated-marker multiple-testing workflows, does not draw plots, and does not
-activate the R-facing `marker_scan()` formula term.
+`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_qq_data` prepares
+sorted observed/expected QQ plot data from the same direct scan output. These
+helpers are not mixed-model GWAS/QTL scans, do not account for
+relatedness/population structure, do not compute interval-mapping or
+mixed-model LOD workflows or calibrated / correlated-marker multiple-testing
+workflows, do not draw plots or estimate genomic inflation, and do not activate
+the R-facing `marker_scan()` formula term.
 
 Gate: marker-map validation, estimand definition, genome-wide multiple-testing
 calibration, and comparator/simulation evidence.

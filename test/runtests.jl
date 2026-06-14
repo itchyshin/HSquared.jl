@@ -247,10 +247,12 @@ end
     @test fixed_marker_row.status == "partial"
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
+    @test occursin("marker_qq_data", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
-    @test occursin("Fixed-effect Gaussian screening utility and marker-map-backed plot-data helper only", fixed_marker_row.claim_boundary)
+    @test occursin("Fixed-effect Gaussian screening utility with marker-map-backed Manhattan and QQ plot-data helpers only", fixed_marker_row.claim_boundary)
+    @test occursin("no genomic-inflation or calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
@@ -1861,6 +1863,25 @@ end
     @test map_manhattan.order == [2, 1]
     @test marker_manhattan_data(scan, marker_map_data).plot_positions == map_manhattan.plot_positions
 
+    qq = marker_qq_data(scan)
+    @test qq.marker_ids == ["m1", "m2"]
+    @test qq.p_values ≈ scan.p_values atol = 1e-12
+    @test qq.order == [1, 2]
+    @test qq.sorted_marker_ids == ["m1", "m2"]
+    @test qq.sorted_p_values ≈ scan.p_values atol = 1e-12
+    @test qq.expected_p_values ≈ [1 / 3, 2 / 3] atol = 1e-12
+    @test qq.observed_neglog10_p_values ≈ .-log10.(scan.p_values) atol = 1e-12
+    @test qq.expected_neglog10_p_values ≈ .-log10.([1 / 3, 2 / 3]) atol = 1e-12
+
+    custom_qq = marker_qq_data(custom_scan; p_floor = 1e-12)
+    @test custom_qq.order == [2, 1, 3]
+    @test custom_qq.sorted_marker_ids == ["b", "a", "c"]
+    @test custom_qq.sorted_p_values == [0.0, 0.01, 1.0]
+    @test custom_qq.expected_p_values ≈ [0.25, 0.5, 0.75] atol = 1e-12
+    @test custom_qq.observed_neglog10_p_values ≈ [12.0, 2.0, -0.0] atol = 1e-12
+    @test custom_qq.expected_neglog10_p_values ≈ .-log10.([0.25, 0.5, 0.75]) atol = 1e-12
+    @test custom_qq.p_floor == 1e-12
+
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
     @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
@@ -1878,6 +1899,10 @@ end
     @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0, -1.0])
     @test_throws ArgumentError marker_manhattan_data(scan; p_floor = 0.0)
     @test_throws ArgumentError marker_manhattan_data(scan; chromosome_gap = -1.0)
+    @test_throws ArgumentError marker_qq_data((p_values = [0.5],))
+    @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"],))
+    @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
+    @test_throws ArgumentError marker_qq_data(scan; p_floor = 0.0)
     @test_throws ArgumentError marker_manhattan_data(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError marker_manhattan_data(
         (marker_ids = ["m1", "m1"], p_values = [0.1, 0.2]),

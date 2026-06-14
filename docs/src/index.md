@@ -65,7 +65,8 @@ Implemented engine utilities:
   `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
   `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
   `Ginv` spec, direct fixed-effect `single_marker_scan`, and
-  marker-map-backed `marker_manhattan_data` plot-data preparation;
+  marker-map-backed `marker_manhattan_data` plus `marker_qq_data` plot-data
+  preparation;
 - experimental repeatability, two-effect, multivariate, and structured
   genetic-covariance utilities, all validation-scale and not public R formula
   defaults;

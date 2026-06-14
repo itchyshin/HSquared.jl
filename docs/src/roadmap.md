@@ -101,7 +101,8 @@ Implemented:
 - experimental genomic utilities: VanRaden `G`,
   `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
   `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
-  `Ginv` spec, and direct fixed-effect `single_marker_scan`.
+  `Ginv` spec, direct fixed-effect `single_marker_scan`, and Manhattan/QQ
+  plot-data helpers.
 - experimental repeatability / two-effect REML utilities.
 - experimental multivariate animal-model utilities, including
   supplied-covariance MME, missing-trait records, dense multivariate REML,
@@ -153,8 +154,9 @@ Next engine targets:
   parity remain future work.
 - Phase 5: direct fixed-effect marker screening has started with Wald p-values,
   Bonferroni/BH adjustments, LOD-equivalent scores, and marker-map-backed
-  Manhattan plot data; mixed-model QTL/GWAS/eQTL scans, LOCO option,
-  genome-wide calibration, and actual plotting backends remain future work.
+  Manhattan and QQ plot data; mixed-model QTL/GWAS/eQTL scans, LOCO option,
+  genome-wide calibration, genomic-inflation diagnostics, and actual plotting
+  backends remain future work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

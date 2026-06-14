@@ -2,6 +2,45 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 fixed-effect marker-scan QQ plot data
+
+- Goal: add deterministic QQ plot-data preparation for the direct Julia
+  fixed-effect marker scan without adding a plotting dependency, genomic
+  inflation/calibration claim, R syntax, bridge payload change, or mixed-model
+  GWAS/QTL claim.
+- Active lenses: Florence (plot-data ergonomics), Fisher (p-value display
+  semantics), Curie (deterministic tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_qq_data(scan; p_floor)` for direct
+    `single_marker_scan()` results;
+  - the helper returns raw p-values, sorted observed p-values, sorted marker
+    IDs, expected uniform order-statistic p-values, observed and expected
+    `-log10` display values, the sort order, and the display p-value floor;
+  - zero p-values are floor-capped only for display values; raw p-values are
+    preserved;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before and after the final ledger update.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 197 checks; Phase
+    5 fixed-effect single-marker scan testset is now 91 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: QQ plot-data preparation only. This does not draw figures, estimate
+  genomic inflation, calibrate p-values, parse marker files, run mixed-model
+  marker scans, correct relatedness/population structure, add LOCO, add
+  interval-mapping/mixed-model LOD workflows, activate R `marker_scan()` syntax,
+  change the bridge payload, change `result_payload()`, or add comparator
+  parity.
+
 ## 2026-06-14 marker-map-backed Manhattan plot data
 
 - Goal: connect direct fixed-effect marker-scan plot data to already-validated

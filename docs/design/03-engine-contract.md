@@ -220,6 +220,7 @@ gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
 snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
 scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
 manhattan = marker_manhattan_data(scan)
+qq = marker_qq_data(scan)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
@@ -244,6 +245,12 @@ already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes
 and positions to scan marker IDs exactly and uses the marker-map order for
 chromosome display. It does not draw figures, parse marker files, run scans, or
 change bridge payloads.
+
+`marker_qq_data()` prepares deterministic QQ plot data only. It sorts observed
+p-values from the direct scan, pairs them with expected uniform order-statistic
+p-values, and returns raw and `-log10` display values. It does not draw figures,
+estimate genomic inflation, calibrate p-values, run scans, or change bridge
+payloads.
 
 ## Implemented Likelihood Evaluator
 
