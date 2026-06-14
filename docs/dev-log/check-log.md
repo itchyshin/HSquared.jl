@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 recovery calibration log summarizer
+
+- Goal: make the calibration evidence reproducible from committed raw logs
+  without rerunning stochastic harnesses or hand-parsing tables.
+- Active lenses: Grace (reproducible tooling), Curie/Fisher (summary fields),
+  Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added `sim/summarize_recovery_calibration.jl`, a deterministic log parser
+    and Markdown summarizer for recovery harness output;
+  - added tests that parse the committed unstructured and structured recovery
+    logs and pin the 30 parsed rows, pass counts, max errors, and failed-seed
+    strings;
+  - documented the summarizer in the changelog and multivariate docs.
+- Local smoke, throttled with one-thread BLAS/OpenMP/Julia settings and
+  `nice -n 15`:
+  - `~/.juliaup/bin/julia --project=. sim/summarize_recovery_calibration.jl docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-unstructured.log docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-structured.log`:
+    printed the expected Markdown table (`unstructured` 6/10,
+    `factor_analytic` 8/10, `lowrank` 9/10).
+  - First throttled `Pkg.test()` failed because the new script imported
+    `Printf`, which was not present in the package test environment. The script
+    now uses dependency-free fixed-width formatting.
+  - Final throttled `Pkg.test()` passed. The new recovery calibration log
+    summarizer testset has 12 checks; Phase 0 remains 182 checks; Phase 4B
+    remains 61 checks.
+  - Final throttled docs build passed with the known Documenter/manual and
+    VitePress local-build caveats.
+- Boundary: deterministic tooling only. No simulation rerun, no new recovery
+  evidence, no broad calibration claim, no R syntax, and no bridge payload or
+  `result_payload()` change.
+
 ## 2026-06-14 multivariate recovery calibration execution
 
 - Goal: execute the predeclared multivariate recovery calibration protocol from

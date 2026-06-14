@@ -176,6 +176,9 @@ multi-seed calibration claim. It was executed on the predeclared seed sets and
 did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
 low-rank passed 9/10, with all fits converged. The raw logs and summary live in
 `docs/dev-log/recovery-checkpoints/`.
+The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
+the Markdown case summary and failed-seed list from those raw logs without
+rerunning any simulations.
 The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but

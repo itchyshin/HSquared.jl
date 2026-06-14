@@ -189,6 +189,9 @@
   `docs/dev-log/recovery-checkpoints/`: unstructured passed 6/10,
   factor-analytic passed 8/10, and low-rank passed 9/10, with all fits
   converged. No broad multi-seed calibration claim is made.
+- Added deterministic `sim/summarize_recovery_calibration.jl` tooling to parse
+  committed recovery harness logs and regenerate the Markdown case summary and
+  failed-seed list without rerunning stochastic simulations.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

@@ -277,6 +277,33 @@ end
     @test_throws Phase0NotImplementedError fit_animal_model(nothing)
 end
 
+include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
+
+@testset "Recovery calibration log summarizer" begin
+    root = normpath(joinpath(@__DIR__, ".."))
+    log_paths = [
+        joinpath(root, "docs", "dev-log", "recovery-checkpoints", "2026-06-14-multivariate-recovery-calibration-unstructured.log"),
+        joinpath(root, "docs", "dev-log", "recovery-checkpoints", "2026-06-14-multivariate-recovery-calibration-structured.log"),
+    ]
+    rows = RecoveryCalibrationSummary.parse_recovery_logs(log_paths)
+    summaries = RecoveryCalibrationSummary.case_summaries(rows)
+
+    @test length(rows) == 30
+    @test summaries["unstructured"].seeds == 10
+    @test summaries["unstructured"].converged == 10
+    @test summaries["unstructured"].passed == 6
+    @test summaries["factor_analytic"].passed == 8
+    @test summaries["lowrank"].passed == 9
+    @test summaries["unstructured"].max_g ≈ 0.478375
+    @test summaries["factor_analytic"].max_r ≈ 0.252226
+    @test summaries["lowrank"].max_r ≈ 0.262608
+
+    summary = RecoveryCalibrationSummary.markdown_summary(rows)
+    @test occursin("| unstructured | 10 | 10 | 6 | 0.600000 |", summary)
+    @test occursin("20260625 (G=0.478375, R=0.105180)", summary)
+    @test occursin("20260619 (G=0.422179, R=0.262608)", summary)
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],
