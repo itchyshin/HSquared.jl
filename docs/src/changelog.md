@@ -183,8 +183,12 @@
   `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`,
   a shared protocol for the unstructured and structured multivariate recovery
   harnesses. It defines the minimum seed counts, run-plan fields, summaries,
-  and claim gate required before any broad multi-seed calibration claim; it has
-  not been executed.
+  and claim gate required before any broad multi-seed calibration claim.
+- Executed that recovery calibration protocol outside CI on the predeclared
+  seed lists and recorded negative calibration evidence in
+  `docs/dev-log/recovery-checkpoints/`: unstructured passed 6/10,
+  factor-analytic passed 8/10, and low-rank passed 9/10, with all fits
+  converged. No broad multi-seed calibration claim is made.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

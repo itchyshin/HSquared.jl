@@ -2,6 +2,52 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 multivariate recovery calibration execution
+
+- Goal: execute the predeclared multivariate recovery calibration protocol from
+  `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-run-plan.md`
+  and record the full seed-level result, including failures.
+- Active lenses: Curie/Fisher (simulation result and pass-proportion summary),
+  Gauss (REML recovery interpretation), Kirkpatrick (structured covariance
+  semantics), Grace (raw evidence preservation), Rose (claim boundary).
+  Spawned subagents: none.
+- Runtime note: after the heavy harness run, future local Julia commands in this
+  thread should be throttled with `JULIA_NUM_THREADS=1`,
+  `OPENBLAS_NUM_THREADS=1`, `OMP_NUM_THREADS=1`,
+  `VECLIB_MAXIMUM_THREADS=1`, and `nice`.
+- Commands:
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seeds=20260616,20260617,20260618,20260619,20260620,20260621,20260622,20260623,20260624,20260625`
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=both --seeds=20260614,20260615,20260616,20260617,20260618,20260619,20260620,20260621,20260622,20260623`
+- Result: the calibration protocol was executed and did **not** pass.
+  - Unstructured: 10/10 converged; 6/10 passed. Max relative errors:
+    `G = 0.478375`, `R = 0.206494`. Wilson 95% pass interval:
+    `0.312674-0.831820`.
+  - Factor-analytic: 10/10 converged; 8/10 passed. Max relative errors:
+    `G = 0.577749`, `R = 0.252226`. Wilson 95% pass interval:
+    `0.490162-0.943318`.
+  - Low-rank: 10/10 converged; 9/10 passed. Max relative errors:
+    `G = 0.422179`, `R = 0.262608`. Wilson 95% pass interval:
+    `0.595850-0.982124`.
+- Raw evidence:
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-unstructured.log`
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-structured.log`
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-summary.md`
+- Local checks, throttled with one-thread BLAS/OpenMP/Julia settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 182 checks; Phase
+    4B structured covariance testset remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Status updates: `validation_status()`, tests, roadmap, capability/debt/public
+  claims rows, docs pages, changelog, and coordination board now say the
+  protocol executed and did not pass.
+- Boundary: negative calibration evidence only. No broad multi-seed calibration
+  claim, no CI RNG, no R-facing syntax, no bridge payload or
+  `result_payload()` change, no covariance SE/LRT evidence, no comparator
+  parity, and no status promotion.
+
 ## 2026-06-14 multivariate recovery calibration protocol
 
 - Goal: define the minimum run-plan and reporting gate required before the

@@ -1,0 +1,303 @@
+[PASS] factor_analytic seed=20260614 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2362
+  relative_error_G=0.200897 threshold=0.450
+  relative_error_R=0.167222 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.268   0.422  -0.211
+  0.422   0.677  -0.34
+ -0.211  -0.34    0.489
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.851   0.025   0.021
+ 0.025   0.757  -0.096
+ 0.021  -0.096   0.653
+
+[PASS] factor_analytic seed=20260615 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2233
+  relative_error_G=0.442116 threshold=0.450
+  relative_error_R=0.159929 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.703   0.209  -0.56
+  0.209   0.411  -0.167
+ -0.56   -0.167   0.707
+  estimated_R =
+3×3 Matrix{Float64}:
+ 1.008  0.152  0.02
+ 0.152  0.779  0.008
+ 0.02   0.008  0.683
+
+[FAIL] factor_analytic seed=20260616 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2151
+  relative_error_G=0.559690 threshold=0.450
+  relative_error_R=0.150753 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.507   0.638  -0.754
+  0.638   0.964  -0.319
+ -0.754  -0.319   1.268
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.963   0.131   0.081
+ 0.131   0.625  -0.108
+ 0.081  -0.108   0.713
+
+[PASS] factor_analytic seed=20260617 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=656
+  relative_error_G=0.150967 threshold=0.450
+  relative_error_R=0.206706 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.004   0.395  -0.227
+  0.395   0.731  -0.231
+ -0.227  -0.231   0.582
+  estimated_R =
+3×3 Matrix{Float64}:
+  0.915   0.338  -0.019
+  0.338   0.721  -0.105
+ -0.019  -0.105   0.752
+
+[PASS] factor_analytic seed=20260618 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=1899
+  relative_error_G=0.188808 threshold=0.450
+  relative_error_R=0.105089 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.209   0.617  -0.405
+  0.617   0.784  -0.207
+ -0.405  -0.207   0.424
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.887   0.142   0.09
+ 0.142   0.74   -0.016
+ 0.09   -0.016   0.714
+
+[FAIL] factor_analytic seed=20260619 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2226
+  relative_error_G=0.577749 threshold=0.450
+  relative_error_R=0.252226 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+ 0.729  0.276  0.212
+ 0.276  0.551  0.08
+ 0.212  0.08   0.803
+  estimated_R =
+3×3 Matrix{Float64}:
+  1.104   0.124  -0.01
+  0.124   0.614  -0.151
+ -0.01   -0.151   0.734
+
+[PASS] factor_analytic seed=20260620 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=1268
+  relative_error_G=0.383702 threshold=0.450
+  relative_error_R=0.144246 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.561   0.495  -0.416
+  0.495   0.515  -0.143
+ -0.416  -0.143   1.14
+  estimated_R =
+3×3 Matrix{Float64}:
+  0.886   0.156  -0.066
+  0.156   0.797  -0.102
+ -0.066  -0.102   0.72
+
+[PASS] factor_analytic seed=20260621 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=688
+  relative_error_G=0.298427 threshold=0.450
+  relative_error_R=0.176012 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.909   0.299  -0.244
+  0.299   0.509  -0.3
+ -0.244  -0.3     0.457
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.848   0.117   0.092
+ 0.117   0.878  -0.08
+ 0.092  -0.08    0.816
+
+[PASS] factor_analytic seed=20260622 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2490
+  relative_error_G=0.146994 threshold=0.450
+  relative_error_R=0.070665 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.15   0.54   -0.22
+  0.54   0.727  -0.103
+ -0.22  -0.103   0.503
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.801   0.155   0.056
+ 0.155   0.763  -0.072
+ 0.056  -0.072   0.58
+
+[PASS] factor_analytic seed=20260623 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=2653
+  relative_error_G=0.203613 threshold=0.450
+  relative_error_R=0.094706 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.458   0.555  -0.426
+  0.555   0.706  -0.162
+ -0.426  -0.162   0.743
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.911   0.233   0.009
+ 0.233   0.741  -0.112
+ 0.009  -0.112   0.616
+
+[PASS] lowrank seed=20260614 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=446
+  relative_error_G=0.149899 threshold=0.450
+  relative_error_R=0.217969 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.972   0.486  -0.303
+  0.486   0.243  -0.152
+ -0.303  -0.152   0.095
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.849   0.006   0.026
+ 0.006   0.796  -0.181
+ 0.026  -0.181   0.614
+
+[PASS] lowrank seed=20260615 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=423
+  relative_error_G=0.376322 threshold=0.450
+  relative_error_R=0.133646 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.536   0.282  -0.228
+  0.282   0.148  -0.12
+ -0.228  -0.12    0.097
+  estimated_R =
+3×3 Matrix{Float64}:
+  0.957   0.131  -0.023
+  0.131   0.735  -0.039
+ -0.023  -0.039   0.61
+
+[PASS] lowrank seed=20260616 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=440
+  relative_error_G=0.299148 threshold=0.450
+  relative_error_R=0.145071 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.109   0.628  -0.38
+  0.628   0.355  -0.215
+ -0.38   -0.215   0.13
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.957   0.13    0.067
+ 0.13    0.636  -0.095
+ 0.067  -0.095   0.734
+
+[PASS] lowrank seed=20260617 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=408
+  relative_error_G=0.192377 threshold=0.450
+  relative_error_R=0.201773 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.691   0.442  -0.204
+  0.442   0.283  -0.13
+ -0.204  -0.13    0.06
+  estimated_R =
+3×3 Matrix{Float64}:
+  0.914   0.345  -0.015
+  0.345   0.743  -0.116
+ -0.015  -0.116   0.704
+
+[PASS] lowrank seed=20260618 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=442
+  relative_error_G=0.128983 threshold=0.450
+  relative_error_R=0.098467 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.782   0.494  -0.225
+  0.494   0.313  -0.142
+ -0.225  -0.142   0.065
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.886   0.149   0.089
+ 0.149   0.724  -0.014
+ 0.089  -0.014   0.691
+
+[FAIL] lowrank seed=20260619 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=412
+  relative_error_G=0.422179 threshold=0.450
+  relative_error_R=0.262608 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.477   0.306  -0.15
+  0.306   0.197  -0.096
+ -0.15   -0.096   0.047
+  estimated_R =
+3×3 Matrix{Float64}:
+ 1.104   0.134   0.019
+ 0.134   0.55   -0.101
+ 0.019  -0.101   0.758
+
+[PASS] lowrank seed=20260620 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=368
+  relative_error_G=0.224385 threshold=0.450
+  relative_error_R=0.146974 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.981   0.589  -0.412
+  0.589   0.354  -0.247
+ -0.412  -0.247   0.173
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.932   0.164   0.014
+ 0.164   0.713  -0.129
+ 0.014  -0.129   0.8
+
+[PASS] lowrank seed=20260621 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=298
+  relative_error_G=0.184473 threshold=0.450
+  relative_error_R=0.158085 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.677   0.413  -0.237
+  0.413   0.252  -0.145
+ -0.237  -0.145   0.083
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.838   0.129   0.085
+ 0.129   0.842  -0.121
+ 0.085  -0.121   0.808
+
+[PASS] lowrank seed=20260622 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=429
+  relative_error_G=0.128799 threshold=0.450
+  relative_error_R=0.075919 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  0.832   0.506  -0.228
+  0.506   0.308  -0.139
+ -0.228  -0.139   0.062
+  estimated_R =
+3×3 Matrix{Float64}:
+ 0.804   0.158   0.054
+ 0.158   0.753  -0.097
+ 0.054  -0.097   0.568
+
+[PASS] lowrank seed=20260623 observations=180 animals=60 traits=3 records_per_animal=3
+  converged=true iterations=485
+  relative_error_G=0.195509 threshold=0.450
+  relative_error_R=0.102907 threshold=0.250
+  estimated_G =
+3×3 Matrix{Float64}:
+  1.028   0.546  -0.293
+  0.546   0.29   -0.155
+ -0.293  -0.155   0.083
+  estimated_R =
+3×3 Matrix{Float64}:
+  0.905   0.228  -0.005
+  0.228   0.718  -0.117
+ -0.005  -0.117   0.611
+
+SUMMARY
+  factor_analytic seeds=10 passed=8 max_relative_error_G=0.577749 max_relative_error_R=0.252226
+  lowrank seeds=10 passed=9 max_relative_error_G=0.422179 max_relative_error_R=0.262608

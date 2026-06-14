@@ -172,14 +172,17 @@ seed lists with per-case summaries. Both use loose, version-robust thresholds.
 The shared calibration protocol in
 `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
 defines the seed-count, run-plan, and reporting gate required before any broad
-multi-seed calibration claim; it has not been executed.
+multi-seed calibration claim. It was executed on the predeclared seed sets and
+did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
+low-rank passed 9/10, with all fits converged. The raw logs and summary live in
+`docs/dev-log/recovery-checkpoints/`.
 The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but
 does not identify rotations or make loading columns uniquely interpretable. The
 current policy is recorded in
 `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`.
-Execution of the calibration protocol, covariance standard errors,
+A passing or revised calibration protocol, covariance standard errors,
 external-comparator parity, and R-facing multivariate / covariance-structure
 syntax are still missing.
 
