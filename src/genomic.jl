@@ -992,6 +992,13 @@ function _checked_region_flank(flank::Real)
     return flank_value
 end
 
+function _checked_marker_alpha(alpha)
+    alpha_value = _checked_real_scalar(alpha, :alpha)
+    isfinite(alpha_value) && 0 < alpha_value <= 1 ||
+        throw(ArgumentError("alpha must be finite and in (0, 1]"))
+    return alpha_value
+end
+
 function _marker_map_order_for_scan(marker_ids::Vector{String}, marker_spec::HSMarkerMapSpec)
     duplicate_scan_ids = _duplicate_string_ids(marker_ids)
     isempty(duplicate_scan_ids) ||
@@ -1089,6 +1096,76 @@ function marker_genomic_inflation(scan; expected_median::Real = _CHISQ1_MEDIAN)
         median_chisq = median_chisq,
         expected_median = expected,
         n_markers = length(values),
+        target = target,
+    )
+end
+
+"""
+    marker_significance_summary(scan; alpha = 0.05)
+
+Summarize nominal marker hits from a direct marker-scan result.
+
+The helper expects the scan fields returned by [`single_marker_scan`](@ref),
+[`mixed_model_marker_scan`](@ref), or [`loco_mixed_model_marker_scan`](@ref):
+marker IDs, raw p-values, Bonferroni-adjusted p-values,
+Benjamini-Hochberg q-values, chi-square values, and LOD-equivalent scores. It
+returns per-marker significance flags, counts, marker IDs and scan indices for
+raw, Bonferroni, and BH summaries, plus the top marker by raw p-value.
+
+The thresholds are nominal summaries over the markers already present in the
+scan: raw `p <= alpha`, Bonferroni raw-p threshold `alpha / m`, adjusted
+Bonferroni `p_adj <= alpha`, and BH `q <= alpha`. This helper does not
+calibrate correlated-marker genome-wide thresholds, estimate effective marker
+counts, correct p-values, choose public GWAS/QTL thresholds, draw plots, or
+activate R-facing `marker_scan()` syntax.
+"""
+function marker_significance_summary(scan; alpha = 0.05)
+    alpha_value = _checked_marker_alpha(alpha)
+    marker_ids, p_values = _scan_marker_ids_and_p_values(scan)
+    m = length(marker_ids)
+    bonferroni_p_values = _checked_scan_p_value_field(scan, :bonferroni_p_values, m)
+    bh_q_values = _checked_scan_p_value_field(scan, :bh_q_values, m)
+    chisq = _checked_scan_float_field(scan, :chisq, m; nonnegative = true)
+    lod_scores = _checked_scan_float_field(scan, :lod_scores, m; nonnegative = true)
+
+    raw_flags = collect(p_values .<= alpha_value)
+    bonferroni_flags = collect(bonferroni_p_values .<= alpha_value)
+    bh_flags = collect(bh_q_values .<= alpha_value)
+    scan_indices = collect(1:m)
+    top_index = first(sortperm(scan_indices; by = i -> (p_values[i], i)))
+    target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
+
+    return (
+        marker_count = m,
+        alpha = alpha_value,
+        nominal_p_threshold = alpha_value,
+        bonferroni_raw_p_threshold = alpha_value / m,
+        adjusted_p_threshold = alpha_value,
+        bh_q_threshold = alpha_value,
+        raw_significant = raw_flags,
+        bonferroni_significant = bonferroni_flags,
+        bh_significant = bh_flags,
+        n_raw_significant = count(identity, raw_flags),
+        n_bonferroni_significant = count(identity, bonferroni_flags),
+        n_bh_significant = count(identity, bh_flags),
+        raw_marker_ids = marker_ids[raw_flags],
+        bonferroni_marker_ids = marker_ids[bonferroni_flags],
+        bh_marker_ids = marker_ids[bh_flags],
+        raw_scan_indices = scan_indices[raw_flags],
+        bonferroni_scan_indices = scan_indices[bonferroni_flags],
+        bh_scan_indices = scan_indices[bh_flags],
+        min_p_value = minimum(p_values),
+        min_bonferroni_p_value = minimum(bonferroni_p_values),
+        min_bh_q_value = minimum(bh_q_values),
+        max_chisq = maximum(chisq),
+        max_lod_score = maximum(lod_scores),
+        top_marker_id = marker_ids[top_index],
+        top_scan_index = top_index,
+        top_p_value = p_values[top_index],
+        top_bonferroni_p_value = bonferroni_p_values[top_index],
+        top_bh_q_value = bh_q_values[top_index],
+        top_chisq = chisq[top_index],
+        top_lod_score = lod_scores[top_index],
         target = target,
     )
 end

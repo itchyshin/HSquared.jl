@@ -375,6 +375,9 @@ row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, optional
 mixed/LOCO fields when present, and the same exact marker-map alignment; it is
 not `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+`marker_significance_summary()` reports nominal returned-marker-set raw,
+Bonferroni, and BH significance flags/counts plus top-marker provenance from
+the same scan fields; it is not a calibrated genome-wide threshold workflow.
 `marker_effects()`
 prepares sorted top-marker effect summaries from the same scan fields, with
 optional chromosome/position alignment. `marker_variance_explained()` prepares
@@ -392,8 +395,8 @@ leave-one-group-out relationship precisions from marker groups, and
 running the same dense GLS scan. These helpers do not compute interval-mapping
 or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
 workflows, estimate marker-scan variance components, claim calibrated
-PVE/model R², choose public LOCO defaults, parse marker files, draw figures, or
-activate the R-facing
+PVE/model R², choose public LOCO defaults, choose calibrated genome-wide
+thresholds, parse marker files, draw figures, or activate the R-facing
 `marker_scan()` formula term. `marker_genomic_inflation()` provides a
 diagnostic lambda summary over returned chi-square statistics; it does not
 calibrate p-values or correct scan statistics.
@@ -423,6 +426,7 @@ loco_scan = loco_mixed_model_marker_scan(
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
+significance = marker_significance_summary(scan; alpha = 0.05)
 table = marker_scan_table(scan; total_variance = 2.0)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 2)
 variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 2)
@@ -438,6 +442,7 @@ map_effects = marker_effects(scan, marker_data; top_n = 2)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
 manhattan.neglog10_p_values
 table.marker_variances
+significance.bonferroni_marker_ids
 qq.expected_neglog10_p_values
 ```
 
@@ -839,6 +844,7 @@ Genomics/QTL:
 - `marker_variance_explained(scan)`;
 - `marker_scan_table(scan)`;
 - `marker_region_data(scan)`;
+- `marker_significance_summary(scan)`;
 - `qtl_table(fit)`;
 - `eqtl_table(fit)`;
 - `gwas_table(fit)`;

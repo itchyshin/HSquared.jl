@@ -241,7 +241,7 @@ status tables remain the source of truth.
           <tr><td>Dense REML/ML</td><td><span class="hs-tag partial">experimental</span></td><td>tiny validation optimizer, guarded by <code>max_dense_cells</code>.</td></tr>
           <tr><td>Sparse REML / AI-REML</td><td><span class="hs-tag partial">experimental</span></td><td>Gaussian validation-scale estimators; not production sparse fitting.</td></tr>
           <tr><td>Genomic utilities</td><td><span class="hs-tag partial">experimental</span></td><td>VanRaden G, GBLUP, SNP-BLUP, supplied H-inverse, and genomic REML; no public genomic model-spec default.</td></tr>
-          <tr><td>Marker screening</td><td><span class="hs-tag partial">experimental</span></td><td>direct fixed-effect, supplied-variance mixed, dense LOCO precision construction, and supplied LOCO marker-scan helpers plus row-aligned scan-table, effect-summary, marker-variance contribution, Manhattan/regional-window/QQ/lambda_GC diagnostic data; no formula-driven GWAS/QTL, calibrated p-values, calibrated PVE/model R², gwas_table/qtl_table activation, regional_plot/fine-mapping activation, or R formula activation.</td></tr>
+          <tr><td>Marker screening</td><td><span class="hs-tag partial">experimental</span></td><td>direct fixed-effect, supplied-variance mixed, dense LOCO precision construction, and supplied LOCO marker-scan helpers plus row-aligned scan-table, effect-summary, marker-variance contribution, nominal significance-summary, Manhattan/regional-window/QQ/lambda_GC diagnostic data; no formula-driven GWAS/QTL, calibrated p-values, calibrated genome-wide thresholds, calibrated PVE/model R², gwas_table/qtl_table activation, regional_plot/fine-mapping activation, or R formula activation.</td></tr>
           <tr><td>Multivariate G</td><td><span class="hs-tag partial">experimental</span></td><td>dense validation-scale multi-trait REML plus diag/lowrank/fa structured covariance; no comparator parity.</td></tr>
           <tr><td>HSData diagnostics</td><td><span class="hs-tag done">implemented</span></td><td>component, ID, pedigree, genotype, marker, expression, annotation, and environment metadata checks.</td></tr>
           <tr><td>Backends</td><td><span class="hs-tag plan">planned</span></td><td>typed vocabulary and status diagnostics only; no runtime dispatch.</td></tr>
@@ -254,7 +254,7 @@ status tables remain the source of truth.
         <li>No production sparse REML/ML/AI-REML fitting claim.</li>
         <li>No production sparse PEV/reliability claim.</li>
         <li>No public R-facing genomic model-spec, mixed-model marker scan, QTL/eQTL, or GLLVM fitting claim.</li>
-        <li>No calibrated mixed-model p-values, calibrated PVE/model R² claims, interval-mapping or mixed-model LOD workflows, public LOCO workflow defaults, plotting backend, advanced/correlated-marker multiple-testing workflow, or comparator-parity claim for marker scans.</li>
+        <li>No calibrated mixed-model p-values, calibrated PVE/model R² claims, calibrated/correlated-marker genome-wide thresholds, interval-mapping or mixed-model LOD workflows, public LOCO workflow defaults, plotting backend, advanced/correlated-marker multiple-testing workflow, or comparator-parity claim for marker scans.</li>
         <li>No GPU execution, backend benchmarking, or CPU/GPU agreement claim.</li>
         <li>No ASReml, BLUPF90, DMU, WOMBAT, sommer, JWAS, or GLLVM superiority claim.</li>
       </ul>

@@ -2,6 +2,65 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker significance summary
+
+- Goal: add a direct-Julia marker-scan helper that summarizes nominal raw-p,
+  Bonferroni, and Benjamini-Hochberg hits over the returned marker set without
+  claiming calibrated GWAS/QTL/eQTL thresholds.
+- Active lenses: Ada/Shannon (lane discipline), Jason (sister diagnostic
+  patterns), Fisher (threshold/claim boundary), Curie (deterministic flags and
+  malformed-input tests), Rose (public wording), Grace (checks). Spawned
+  subagents: none.
+- Scout:
+  - checked local `gllvmTMB/R/diagnose.R`,
+    `gllvmTMB/R/confint-inspect.R`, and `drmTMB/R/check.R`;
+  - durable note:
+    `docs/dev-log/scout/2026-06-14-marker-significance-summary-scout.md`;
+  - lesson: return threshold-adjacent outputs as explicit diagnostic data
+    (thresholds, flags, counts, marker IDs, scan indices) and block calibrated
+    genome-wide-threshold wording.
+- Change:
+  - added exported `marker_significance_summary(scan; alpha = 0.05)`;
+  - returns marker count, thresholds, raw/Bonferroni/BH boolean flags, counts,
+    marker IDs, scan indices, min adjusted summaries, max test statistics, and
+    top-marker provenance;
+  - supports fixed, supplied-variance mixed, LOCO, and custom direct scan
+    results that carry the expected scan fields;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, mission-control,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset is now 415 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is 415 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - Root-level docs command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    failed locally with `IOError: cd("build/"): no such file or directory`
+    during Documenter examples / VitePress rendering. This appears to be the
+    existing local cwd assumption for DocumenterVitepress, not the new marker
+    helper.
+  - Docs-directory command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("make.jl")'`
+    from `docs/`: passed. Known local caveats remained: 8 unrelated docstrings
+    not included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon/package.json substitutions, and
+    4 npm audit advisories in generated docs dependencies.
+  - Rose grep for high-risk wording found only blocked/negative wording and
+    the new scout note's explicitly blocked examples.
+- Boundary: nominal returned-marker-set summary only. This does not calibrate
+  p-values, estimate effective marker counts, choose calibrated
+  correlated-marker genome-wide thresholds, define significant QTL/eQTL, draw
+  plots, activate `gwas_table()` / `qtl_table()` / `eqtl_table()`, activate R
+  `marker_scan()` syntax, change `result_payload()`, or add comparator
+  evidence.
+
 ## 2026-06-14 marker regional data helper
 
 - Goal: add a deterministic direct-Julia regional marker-scan data helper over

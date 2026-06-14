@@ -121,8 +121,9 @@ Implemented now:
   screening, approximate Wald p-values plus
   Bonferroni and Benjamini-Hochberg adjustments, LOD-equivalent scores,
   row-aligned marker-scan table preparation, marker-effect summaries,
-  marker-variance contribution summaries, and marker-map-backed Manhattan,
-  regional-window, QQ, and lambda_GC diagnostic preparation;
+  marker-variance contribution summaries, nominal returned-marker-set
+  significance summaries, and marker-map-backed Manhattan, regional-window,
+  QQ, and lambda_GC diagnostic preparation;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured

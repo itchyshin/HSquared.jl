@@ -230,6 +230,7 @@ inflation = marker_genomic_inflation(scan)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 10)
 variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 10)
 table = marker_scan_table(scan; total_variance = 2.0)
+significance = marker_significance_summary(scan; alpha = 0.05)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
 map_backed = marker_manhattan_data(scan, marker_data)
@@ -297,6 +298,13 @@ by exact marker ID. It does not sort markers, activate `gwas_table()` /
 calibrated PVE/model R², choose thresholds, calibrate p-values, draw plots, or
 change bridge payloads.
 
+`marker_significance_summary()` prepares deterministic nominal
+returned-marker-set significance summaries only. It reports raw, Bonferroni, and BH flags /
+counts, marker IDs, scan indices, and top-marker provenance from the scan's
+existing p-value and adjusted-p fields. It does not estimate effective marker
+counts, calibrate correlated-marker genome-wide thresholds, change p-values,
+draw plots, or change bridge payloads.
+
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes
 and positions to scan marker IDs exactly and uses the marker-map order for
@@ -307,8 +315,8 @@ change bridge payloads.
 chromosome-window data only. It reuses the row-aligned scan table fields,
 preserves original scan indices, accepts optional `start`/`stop`/`flank`
 bounds, and aligns already-validated marker metadata by exact marker ID. It
-does not draw regional plots, run fine mapping, choose thresholds, calibrate
-p-values, or change bridge payloads.
+does not draw regional plots, run fine mapping, choose calibrated genome-wide
+thresholds, calibrate p-values, or change bridge payloads.
 
 `marker_qq_data()` prepares deterministic QQ plot data only. It sorts observed
 p-values from the direct scan, pairs them with expected uniform order-statistic

@@ -251,16 +251,20 @@ end
     @test occursin("marker_variance_explained", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
     @test occursin("marker_region_data", fixed_marker_row.evidence)
+    @test occursin("marker_significance_summary", fixed_marker_row.evidence)
     @test occursin("marker_qq_data", fixed_marker_row.evidence)
     @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
     @test occursin("marker-effect summary", fixed_marker_row.evidence)
     @test occursin("scan-table order", fixed_marker_row.evidence)
     @test occursin("marker-variance summary", fixed_marker_row.evidence)
+    @test occursin("marker-significance summary", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
     @test occursin("Fixed-effect Gaussian screening utility with row-aligned scan-table", fixed_marker_row.claim_boundary)
     @test occursin("regional marker-window data", fixed_marker_row.claim_boundary)
+    @test occursin("nominal returned-marker-set significance summary", fixed_marker_row.claim_boundary)
+    @test occursin("no calibrated/correlated-marker genome-wide threshold claim", fixed_marker_row.claim_boundary)
     @test occursin("no `gwas_table`/`qtl_table`/`eqtl_table` activation", fixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", fixed_marker_row.claim_boundary)
@@ -1856,6 +1860,38 @@ end
     @test inflation.median_chisq ≈ sum(scan.chisq) / 2 atol = 1e-12
     @test inflation.expected_median ≈ HSquared._CHISQ1_MEDIAN atol = 1e-15
     @test inflation.lambda_gc ≈ inflation.median_chisq / HSquared._CHISQ1_MEDIAN atol = 1e-12
+    significance = marker_significance_summary(scan; alpha = 0.1)
+    @test significance.target == :direct_marker_scan
+    @test significance.marker_count == 2
+    @test significance.alpha == 0.1
+    @test significance.nominal_p_threshold == 0.1
+    @test significance.bonferroni_raw_p_threshold == 0.05
+    @test significance.adjusted_p_threshold == 0.1
+    @test significance.bh_q_threshold == 0.1
+    @test significance.raw_significant == [true, false]
+    @test significance.bonferroni_significant == [true, false]
+    @test significance.bh_significant == [true, false]
+    @test significance.n_raw_significant == 1
+    @test significance.n_bonferroni_significant == 1
+    @test significance.n_bh_significant == 1
+    @test significance.raw_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == ["m1"]
+    @test significance.bh_marker_ids == ["m1"]
+    @test significance.raw_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == [1]
+    @test significance.bh_scan_indices == [1]
+    @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
+    @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
+    @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
+    @test significance.max_chisq ≈ maximum(scan.chisq) atol = 1e-12
+    @test significance.max_lod_score ≈ maximum(scan.lod_scores) atol = 1e-12
+    @test significance.top_marker_id == "m1"
+    @test significance.top_scan_index == 1
+    @test significance.top_p_value ≈ scan.p_values[1] atol = 1e-12
+    @test significance.top_bonferroni_p_value ≈ scan.bonferroni_p_values[1] atol = 1e-12
+    @test significance.top_bh_q_value ≈ scan.bh_q_values[1] atol = 1e-12
+    @test significance.top_chisq ≈ scan.chisq[1] atol = 1e-12
+    @test significance.top_lod_score ≈ scan.lod_scores[1] atol = 1e-12
     summary = marker_effects(scan)
     @test summary.target == :direct_marker_scan
     @test summary.sort_by == :p_value
@@ -2005,6 +2041,7 @@ end
     mixed_inflation = marker_genomic_inflation(mixed)
     @test mixed_inflation.target == :mixed_model_marker_scan
     @test mixed_inflation.median_chisq ≈ sum(mixed.chisq) / 2 atol = 1e-12
+    @test marker_significance_summary(mixed).target == :mixed_model_marker_scan
     mixed_summary = marker_effects(mixed; sort_by = :lod_score)
     @test mixed_summary.target == :mixed_model_marker_scan
     @test mixed_summary.sort_by == :lod_score
@@ -2070,6 +2107,7 @@ end
     loco_inflation = marker_genomic_inflation(loco)
     @test loco_inflation.target == :loco_mixed_model_marker_scan
     @test loco_inflation.median_chisq ≈ sum(loco.chisq) / 2 atol = 1e-12
+    @test marker_significance_summary(loco).target == :loco_mixed_model_marker_scan
     loco_summary = marker_effects(loco; top_n = 1)
     @test loco_summary.target == :loco_mixed_model_marker_scan
     @test length(loco_summary.marker_ids) == 1
@@ -2298,6 +2336,26 @@ end
     @test custom_table.scan_indices == [1, 2, 3]
     @test custom_table.marker_variances ≈ [4.5, 1.5, 0.0] atol = 1e-12
     @test custom_table.proportion_variance_explained ≈ [0.45, 0.15, 0.0] atol = 1e-12
+    custom_significance = marker_significance_summary(custom_full_scan; alpha = 0.05)
+    @test custom_significance.target == :custom
+    @test custom_significance.marker_count == 3
+    @test custom_significance.bonferroni_raw_p_threshold ≈ 0.05 / 3 atol = 1e-12
+    @test custom_significance.raw_significant == [true, true, false]
+    @test custom_significance.bonferroni_significant == [true, false, false]
+    @test custom_significance.bh_significant == [true, true, false]
+    @test custom_significance.n_raw_significant == 2
+    @test custom_significance.n_bonferroni_significant == 1
+    @test custom_significance.n_bh_significant == 2
+    @test custom_significance.raw_marker_ids == ["a", "b"]
+    @test custom_significance.bonferroni_marker_ids == ["a"]
+    @test custom_significance.bh_marker_ids == ["a", "b"]
+    @test custom_significance.raw_scan_indices == [1, 2]
+    @test custom_significance.bonferroni_scan_indices == [1]
+    @test custom_significance.bh_scan_indices == [1, 2]
+    @test custom_significance.top_marker_id == "a"
+    @test custom_significance.top_scan_index == 1
+    @test custom_significance.max_chisq == 9.0
+    @test custom_significance.max_lod_score ≈ 9.0 / (2 * log(10)) atol = 1e-12
     custom_region = marker_region_data(
         custom_full_scan;
         chromosomes = ["2", "1", "2"],
@@ -2340,6 +2398,16 @@ end
     @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, -0.1],))
     @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, NaN],))
     @test_throws ArgumentError marker_genomic_inflation(scan; expected_median = 0.0)
+    @test_throws ArgumentError marker_significance_summary((p_values = [0.5],))
+    @test_throws ArgumentError marker_significance_summary((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (bonferroni_p_values = [0.5],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (bh_q_values = [0.5, NaN],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (lod_scores = [0.1],)))
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = 0.0)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = 1.1)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = NaN)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = "not numeric")
     @test_throws ArgumentError marker_effects((marker_ids = ["m1"], p_values = [0.5]))
     @test_throws ArgumentError marker_effects(merge(scan, (effects = [1.0],)))
     @test_throws ArgumentError marker_effects(merge(scan, (effects = [NaN, 1.0],)))

@@ -107,7 +107,8 @@ unimplemented.
   screening (`single_marker_scan`) plus row-aligned marker-scan table
   preparation, marker-map-backed Manhattan metadata and QQ plot-data
   preparation, marker-effect summaries, marker-variance contribution
-  summaries, and a genomic-inflation diagnostic.
+  summaries, nominal returned-marker-set significance summaries, and a
+  genomic-inflation diagnostic.
   `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
   correction from a supplied marginal covariance.
@@ -371,7 +372,10 @@ Manhattan data, including overloads that consume already-validated `HSData` /
 `HSMarkerMapSpec` marker metadata by exact marker ID. `marker_region_data`
 prepares one-chromosome or coordinate-window slices from the same row-aligned
 scan fields for future regional plot/fine-mapping front ends, but does not
-activate them. `marker_scan_table`
+activate them. `marker_significance_summary` reports nominal returned-marker-set
+raw, Bonferroni, and BH significance flags/counts plus top-marker provenance
+from the same scan fields; it is not a calibrated genome-wide threshold
+workflow. `marker_scan_table`
 prepares row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, and the
 same metadata alignment, but does not activate `gwas_table()`, `qtl_table()`,
@@ -393,8 +397,9 @@ precision dictionary from marker groups. These helpers are not
 formula-driven mixed-model GWAS/QTL workflows, do not estimate marker-scan
 variance components, do not choose public LOCO defaults, do not compute
 interval-mapping or mixed-model LOD workflows or calibrated / correlated-marker
-multiple-testing workflows, do not draw plots or calibrate p-values,
-and do not activate the R-facing `marker_scan()` formula term.
+multiple-testing workflows, do not draw plots, calibrate p-values, or choose
+calibrated genome-wide thresholds, and do not activate the R-facing
+`marker_scan()` formula term.
 
 Gate: marker-map validation, estimand definition, genome-wide multiple-testing
 calibration, and comparator/simulation evidence.

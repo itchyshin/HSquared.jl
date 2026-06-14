@@ -229,6 +229,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   prepares sorted marker-level variance-contribution summaries as
   `2p(1-p) * effect^2`, with optional total-variance proportions and exact
   marker-map metadata alignment; it is not a calibrated PVE/model R² claim.
+  `marker_significance_summary()` reports nominal returned-marker-set raw,
+  Bonferroni, and BH significance flags/counts plus top-marker provenance from
+  the same direct scan fields; it is not a calibrated genome-wide threshold
+  workflow.
   `marker_manhattan_data()`
   prepares plot-ready Manhattan data from those direct scan fields and can
   consume already-validated `HSMarkerMapSpec` / `HSData` marker metadata by
@@ -243,7 +247,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
   calibrated mixed-model p-values, calibrated PVE/model R² claims,
   interval-mapping or mixed-model LOD workflows, marker file parsing, plotting
-  backend, `regional_plot()` / fine-mapping activation,
+  backend, calibrated/correlated-marker genome-wide thresholds,
+  `regional_plot()` / fine-mapping activation,
   advanced/correlated-marker multiple-testing workflow,
   `gwas_table()` / `qtl_table()` / `eqtl_table()` activation,
   R `marker_scan()` formula activation, bridge payload change, or
