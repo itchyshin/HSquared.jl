@@ -2,6 +2,39 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 PR18 base reconcile
+
+- Goal: resolve draft PR #18 (`codex/phase5-marker-pvalues`) against the
+  repaired PR #17 base branch (`phase4b-factor-analytic-g`) without widening
+  the marker-scan or bridge contract.
+- Active lenses: Ada/Shannon (stack order), Fisher/Curie (p-value scope),
+  Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/phase4b-factor-analytic-g` into
+    `codex/phase5-marker-pvalues`;
+  - resolved conflicts in `README.md`,
+    `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`, and
+    `docs/dev-log/check-log.md`;
+  - preserved the PR #17 reconcile evidence, current landing-page audit, and
+    PR #18 fixed-effect marker-scan p-value evidence.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 5 fixed-effect
+    single-marker scan (`27` checks) and Phase 4B structured genetic
+    covariance (`61` checks), on the reconciled PR #18 branch state.
+  - `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    first attempt rendered the VitePress pages but failed in
+    `DocumenterVitepress.deploydocs` because `docs/build/bases.txt` was not
+    yet visible at deploy time.
+  - Re-run without deleting `docs/build`:
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed with the known local Documenter/VitePress caveats.
+- Boundary: stack reconciliation only. No engine code, tests, validation-status
+  row, capability-status row, validation-debt row, R bridge payload,
+  `result_payload()`, or public claim changed.
+
 ## 2026-06-14 Phase 4B PR17 main reconcile
 
 - Goal: resolve the draft PR #17 `phase4b-factor-analytic-g` conflict against

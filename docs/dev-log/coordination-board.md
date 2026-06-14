@@ -29,6 +29,11 @@ support beyond the recorded evidence.
   `main` on 2026-06-14. The only conflict was the append-only check log; both
   the `main` landing-page entry and the Phase 4B branch evidence are preserved.
   Local full `Pkg.test()` and Documenter build passed before push.
+- PR #18 (`codex/phase5-marker-pvalues`) was locally reconciled with the
+  repaired PR #17 base on 2026-06-14. Conflicts were limited to README and
+  docs/dev-log evidence files; no engine code or bridge contract changed.
+  Local full `Pkg.test()` passed before push, with docs build evidence recorded
+  in the check log / after-task note for this slice.
 
 ## Shared Contract
 
