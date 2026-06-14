@@ -896,6 +896,117 @@ function marker_genomic_inflation(scan; expected_median::Real = _CHISQ1_MEDIAN)
 end
 
 """
+    marker_scan_table(scan; total_variance = nothing)
+    marker_scan_table(scan, marker_spec::HSMarkerMapSpec; ...)
+    marker_scan_table(scan, data::HSData; ...)
+
+Prepare a deterministic row-aligned marker-scan table from a direct scan result.
+
+The helper expects the scan fields returned by [`single_marker_scan`](@ref),
+[`mixed_model_marker_scan`](@ref), or [`loco_mixed_model_marker_scan`](@ref):
+marker effects, standard errors, Wald statistics, chi-square values, p-values,
+Bonferroni p-values, Benjamini-Hochberg q-values, LOD-equivalent scores,
+denominators, and allele frequencies. It preserves the original scan order and
+returns those vectors with `scan_indices`, the scan `target`, allele variances,
+and marker-level variance contributions `2p(1-p) * effect^2`. If
+`total_variance` is supplied, it also returns
+`proportion_variance_explained = marker_variance / total_variance`.
+
+When an already-validated [`HSMarkerMapSpec`](@ref) or [`HSData`](@ref) with
+marker metadata is supplied, marker IDs must match exactly and chromosome /
+position vectors are aligned to the scan order.
+
+This is a direct Julia table-preparation helper only. It does not sort markers,
+draw plots, calibrate p-values, choose thresholds, estimate marker-scan
+variance components, activate R-facing `marker_scan()` syntax, or change the
+bridge payload.
+"""
+function marker_scan_table(scan; total_variance = nothing)
+    return _marker_scan_table(scan, nothing, nothing; total_variance = total_variance)
+end
+
+function marker_scan_table(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    total_variance = nothing,
+)
+    marker_ids = _scan_marker_ids(scan)
+    map_order = _marker_map_order_for_scan(marker_ids, marker_spec)
+    return _marker_scan_table(
+        scan,
+        marker_spec.chromosome[map_order],
+        marker_spec.position[map_order];
+        total_variance = total_variance,
+    )
+end
+
+function marker_scan_table(
+    scan,
+    data::HSData;
+    total_variance = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return marker_scan_table(scan, data.marker_spec; total_variance = total_variance)
+end
+
+function _marker_scan_table(scan, chromosomes, positions; total_variance)
+    marker_ids = _scan_marker_ids(scan)
+    m = length(marker_ids)
+
+    effects = _checked_scan_float_field(scan, :effects, m)
+    standard_errors = _checked_scan_float_field(scan, :standard_errors, m; positive = true)
+    z_scores = _checked_scan_float_field(scan, :z_scores, m)
+    chisq = _checked_scan_float_field(scan, :chisq, m; nonnegative = true)
+    p_values = _checked_scan_p_value_field(scan, :p_values, m)
+    bonferroni_p_values = _checked_scan_p_value_field(scan, :bonferroni_p_values, m)
+    bh_q_values = _checked_scan_p_value_field(scan, :bh_q_values, m)
+    lod_scores = _checked_scan_float_field(scan, :lod_scores, m; nonnegative = true)
+    denominators = _checked_scan_float_field(scan, :denominators, m; positive = true)
+    allele_frequencies = _checked_scan_allele_frequencies(scan, m)
+    allele_variances = 2 .* allele_frequencies .* (1 .- allele_frequencies)
+    marker_variances = allele_variances .* effects .^ 2
+    total = _checked_marker_total_variance(total_variance)
+    proportions = total === nothing ? nothing : marker_variances ./ total
+    target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
+
+    table = (
+        marker_ids = marker_ids,
+        scan_indices = collect(1:m),
+        effects = effects,
+        abs_effects = abs.(effects),
+        standard_errors = standard_errors,
+        z_scores = z_scores,
+        chisq = chisq,
+        p_values = p_values,
+        bonferroni_p_values = bonferroni_p_values,
+        bh_q_values = bh_q_values,
+        lod_scores = lod_scores,
+        denominators = denominators,
+        allele_frequencies = allele_frequencies,
+        allele_variances = allele_variances,
+        marker_variances = marker_variances,
+        proportion_variance_explained = proportions,
+        total_variance = total,
+        target = target,
+    )
+
+    if hasproperty(scan, :k)
+        table = merge(table, (vanraden_scale = _checked_scan_scalar(scan, :k; nonnegative = true),))
+    end
+    if hasproperty(scan, :variance_components)
+        table = merge(table, (variance_components = getproperty(scan, :variance_components),))
+    end
+    if hasproperty(scan, :marker_groups)
+        table = merge(table, (marker_groups = _checked_scan_marker_groups(scan, m),))
+    end
+
+    chromosomes === nothing && positions === nothing && return table
+    chromosome_values, position_values = _checked_marker_summary_metadata(chromosomes, positions, m)
+    return merge(table, (chromosomes = chromosome_values, positions = position_values))
+end
+
+"""
     marker_effects(scan; sort_by = :p_value, top_n = nothing,
                            decreasing = nothing)
     marker_effects(scan, marker_spec::HSMarkerMapSpec; ...)
@@ -1150,10 +1261,38 @@ end
 
 function _checked_marker_total_variance(total_variance)
     total_variance === nothing && return nothing
-    total = Float64(total_variance)
+    total = _checked_real_scalar(total_variance, :total_variance)
     isfinite(total) && total > 0 ||
         throw(ArgumentError("total_variance must be positive and finite"))
     return total
+end
+
+function _checked_scan_scalar(scan, field::Symbol; nonnegative::Bool = false)
+    value = _checked_real_scalar(getproperty(scan, field), field)
+    isfinite(value) ||
+        throw(ArgumentError("$(field) must be finite"))
+    if nonnegative
+        value >= 0 ||
+            throw(ArgumentError("$(field) must be non-negative"))
+    end
+    return value
+end
+
+function _checked_real_scalar(value, field::Symbol)
+    try
+        return Float64(value)
+    catch
+        throw(ArgumentError("$(field) must be numeric"))
+    end
+end
+
+function _checked_scan_marker_groups(scan, n::Int)
+    marker_groups = string.(collect(getproperty(scan, :marker_groups)))
+    length(marker_groups) == n ||
+        throw(ArgumentError("marker_groups must have one entry per marker"))
+    all(!isempty, marker_groups) ||
+        throw(ArgumentError("marker_groups cannot contain empty labels"))
+    return marker_groups
 end
 
 function _marker_variance_sort_metric(

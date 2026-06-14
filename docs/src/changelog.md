@@ -49,6 +49,11 @@
   already-validated `HSMarkerMapSpec` / `HSData` marker metadata.
   `marker_effects()` prepares deterministic sorted marker-effect
   summaries from the same scan fields, with optional metadata alignment.
+  `marker_scan_table()` prepares row-aligned scan tables from the same direct
+  scan fields in original scan order, with allele variances, marker-variance
+  contributions, optional total-variance proportions, optional mixed/LOCO
+  fields when present, and optional marker-map metadata alignment; it is not
+  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
   `marker_variance_explained()` prepares deterministic marker-level
   variance-contribution summaries as `2p(1-p) * effect^2`, with optional
   total-variance proportions and metadata alignment.

@@ -2,6 +2,64 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker scan table helper
+
+- Goal: add a deterministic direct-Julia row-aligned marker-scan table helper
+  over already-computed marker-scan fields, without activating R
+  `marker_scan()` syntax, `gwas_table()` / `qtl_table()` / `eqtl_table()`,
+  bridge payload changes, calibrated p-values, calibrated PVE/model R² claims,
+  plotting, threshold selection, or marker-scan variance-component estimation.
+- Active lenses: Fisher (scan-table-vs-calibrated-GWAS/QTL table boundary),
+  Pat (table ergonomics), Curie (scan-order, variance, metadata, mixed/LOCO
+  optional-field tests), Shannon (R/Julia boundary), Grace (low-core checks),
+  Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_scan_table(scan; total_variance = nothing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - preserves original scan order through `scan_indices = 1:m`;
+  - returns existing scan statistics, allele frequencies, allele variances,
+    marker-variance contributions `2p(1-p) * effect^2`, optional
+    `proportion_variance_explained`, optional scan variance components, and
+    optional LOCO marker groups when present;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose the same core scan fields;
+  - hardened malformed optional scalar inputs so non-numeric `total_variance`
+    or scan `k` values throw package-level `ArgumentError`s;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-scan-table-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Focused `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset was 316 checks.
+  - Preliminary `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block was 225 checks; Phase 5
+    fixed-effect single-marker scan testset was 313 checks; Phase 4B structured
+    covariance remained 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 228 checks; Phase
+    5 fixed-effect single-marker scan testset is now 316 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+  - `git diff --check`: passed.
+  - Rose boundary grep for unsupported marker/GWAS/QTL/eQTL claims: only
+    explicit planned/blocked/no-claim wording matched.
+- Boundary: row-aligned table preparation over returned marker-scan fields
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, activate
+  R `marker_scan()` syntax, activate `gwas_table()` / `qtl_table()` /
+  `eqtl_table()`, change the bridge payload, change `result_payload()`, or add
+  comparator parity.
+
 ## 2026-06-14 marker-variance contribution summary helper
 
 - Goal: add a deterministic direct-Julia marker-variance contribution summary

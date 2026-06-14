@@ -217,7 +217,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   chi-square statistics, approximate two-sided Gaussian/Wald p-values,
   Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, fixed-effect
   known-variance LOD-equivalent scores, denominators, marker IDs, allele
-  frequencies, and the VanRaden scale. `marker_effects()` prepares
+  frequencies, and the VanRaden scale. `marker_scan_table()` prepares
+  row-aligned marker-scan tables from those direct scan fields in original scan
+  order, with allele variances, marker-variance contributions, optional
+  total-variance proportions, optional variance components / marker groups
+  when present, and optional exact marker-map metadata alignment. It is not
+  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+  `marker_effects()` prepares
   sorted top-marker effect summaries from those direct scan fields, with
   optional exact marker-map metadata alignment. `marker_variance_explained()`
   prepares sorted marker-level variance-contribution summaries as
@@ -235,6 +241,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   calibrated mixed-model p-values, calibrated PVE/model R² claims,
   interval-mapping or mixed-model LOD workflows, marker file parsing, plotting
   backend, advanced/correlated-marker multiple-testing workflow,
+  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation,
   R `marker_scan()` formula activation, bridge payload change, or
   `result_payload()` change.
 - Julia now has `mixed_model_marker_scan` as a direct Phase 5 dense

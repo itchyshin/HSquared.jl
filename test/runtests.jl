@@ -246,6 +246,7 @@ end
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
     @test occursin("single_marker_scan", fixed_marker_row.evidence)
+    @test occursin("marker_scan_table", fixed_marker_row.evidence)
     @test occursin("marker_effects", fixed_marker_row.evidence)
     @test occursin("marker_variance_explained", fixed_marker_row.evidence)
     @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
@@ -253,10 +254,12 @@ end
     @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
     @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
     @test occursin("marker-effect summary", fixed_marker_row.evidence)
+    @test occursin("scan-table order", fixed_marker_row.evidence)
     @test occursin("marker-variance summary", fixed_marker_row.evidence)
     @test occursin("17/14", fixed_marker_row.evidence)
     @test occursin("marker_scan()", fixed_marker_row.missing)
-    @test occursin("Fixed-effect Gaussian screening utility with marker-effect and marker-variance-contribution summaries", fixed_marker_row.claim_boundary)
+    @test occursin("Fixed-effect Gaussian screening utility with row-aligned scan-table", fixed_marker_row.claim_boundary)
+    @test occursin("no `gwas_table`/`qtl_table`/`eqtl_table` activation", fixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
@@ -265,7 +268,7 @@ end
     @test mixed_marker_row.status == "partial"
     @test occursin("mixed_model_marker_scan", mixed_marker_row.evidence)
     @test occursin("independent GLS", mixed_marker_row.evidence)
-    @test occursin("marker-effect and marker-variance summaries", mixed_marker_row.evidence)
+    @test occursin("marker-scan-table, marker-effect, and marker-variance summaries", mixed_marker_row.evidence)
     @test occursin("single_marker_scan", mixed_marker_row.evidence)
     @test occursin("LOCO", mixed_marker_row.missing)
     @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
@@ -279,7 +282,7 @@ end
     @test occursin("leave-one-group-out VanRaden", loco_marker_row.evidence)
     @test occursin("loco_mixed_model_marker_scan", loco_marker_row.evidence)
     @test occursin("separate `mixed_model_marker_scan` calls", loco_marker_row.evidence)
-    @test occursin("marker-effect and marker-variance summaries", loco_marker_row.evidence)
+    @test occursin("marker-scan-table, marker-effect, and marker-variance summaries", loco_marker_row.evidence)
     @test occursin("LOCO defaults", loco_marker_row.missing)
     @test occursin("Dense validation-scale LOCO construction and supplied-matrix selection helpers only", loco_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", loco_marker_row.claim_boundary)
@@ -1822,6 +1825,29 @@ end
     @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
     @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
+    scan_table = marker_scan_table(scan)
+    @test scan_table.target == :direct_marker_scan
+    @test scan_table.marker_ids == scan.marker_ids
+    @test scan_table.scan_indices == [1, 2]
+    @test scan_table.effects ≈ scan.effects atol = 1e-12
+    @test scan_table.abs_effects ≈ abs.(scan.effects) atol = 1e-12
+    @test scan_table.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test scan_table.z_scores ≈ scan.z_scores atol = 1e-12
+    @test scan_table.chisq ≈ scan.chisq atol = 1e-12
+    @test scan_table.p_values ≈ scan.p_values atol = 1e-12
+    @test scan_table.bonferroni_p_values ≈ scan.bonferroni_p_values atol = 1e-12
+    @test scan_table.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test scan_table.lod_scores ≈ scan.lod_scores atol = 1e-12
+    @test scan_table.denominators ≈ scan.denominators atol = 1e-12
+    @test scan_table.allele_frequencies ≈ scan.p atol = 1e-12
+    @test scan_table.allele_variances ≈ 2 .* scan.p .* (1 .- scan.p) atol = 1e-12
+    @test scan_table.marker_variances ≈ 2 .* scan.p .* (1 .- scan.p) .* scan.effects .^ 2 atol = 1e-12
+    @test scan_table.proportion_variance_explained === nothing
+    @test scan_table.total_variance === nothing
+    @test scan_table.vanraden_scale ≈ scan.k atol = 1e-12
+    scan_table_total = marker_scan_table(scan; total_variance = 2.0)
+    @test scan_table_total.total_variance == 2.0
+    @test scan_table_total.proportion_variance_explained ≈ scan_table.marker_variances ./ 2 atol = 1e-12
     inflation = marker_genomic_inflation(scan)
     @test inflation.target == :direct_marker_scan
     @test inflation.n_markers == 2
@@ -1986,6 +2012,11 @@ end
     @test mixed_variance.target == :mixed_model_marker_scan
     @test mixed_variance.total_variance == 3.0
     @test mixed_variance.proportion_variance_explained !== nothing
+    mixed_table = marker_scan_table(mixed; total_variance = 3.0)
+    @test mixed_table.target == :mixed_model_marker_scan
+    @test mixed_table.marker_ids == mixed.marker_ids
+    @test mixed_table.variance_components == mixed.variance_components
+    @test mixed_table.proportion_variance_explained ≈ mixed_table.marker_variances ./ 3 atol = 1e-12
 
     Ainv_loco1 = Matrix(Ainv_mixed)
     Ainv_loco2 = 1.4 .* Matrix(Ainv_mixed)
@@ -2043,6 +2074,10 @@ end
     loco_variance = marker_variance_explained(loco; top_n = 1)
     @test loco_variance.target == :loco_mixed_model_marker_scan
     @test length(loco_variance.marker_ids) == 1
+    loco_table = marker_scan_table(loco)
+    @test loco_table.target == :loco_mixed_model_marker_scan
+    @test loco_table.marker_groups == ["chr1", "chr2"]
+    @test loco_table.marker_ids == loco.marker_ids
 
     loco_precisions = loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = 0.2)
     @test sort(collect(keys(loco_precisions))) == ["chr1", "chr2"]
@@ -2152,6 +2187,11 @@ end
     @test map_variance.chromosomes == ["2", "1"]
     @test map_variance.positions == [5.0, 1.0]
     @test map_variance.scan_indices == [1, 2]
+    map_table = marker_scan_table(scan, marker_map_data)
+    @test map_table.marker_ids == ["m1", "m2"]
+    @test map_table.chromosomes == ["2", "1"]
+    @test map_table.positions == [5.0, 1.0]
+    @test map_table.scan_indices == [1, 2]
 
     qq = marker_qq_data(scan)
     @test qq.marker_ids == ["m1", "m2"]
@@ -2210,6 +2250,24 @@ end
     @test custom_variance_summary.marker_ids == ["a", "b"]
     @test custom_variance_summary.marker_variances ≈ [4.5, 1.5] atol = 1e-12
     @test custom_variance_summary.proportion_variance_explained ≈ [0.45, 0.15] atol = 1e-12
+    custom_table = marker_scan_table((
+        marker_ids = ["a", "b", "c"],
+        effects = [-3.0, 2.0, 0.5],
+        standard_errors = [1.0, 1.0, 0.5],
+        z_scores = [-3.0, 2.0, 1.0],
+        chisq = [9.0, 4.0, 1.0],
+        p_values = [0.01, 0.02, 0.5],
+        bonferroni_p_values = [0.03, 0.06, 1.0],
+        bh_q_values = [0.03, 0.03, 0.5],
+        lod_scores = [9.0, 4.0, 1.0] ./ (2 * log(10)),
+        denominators = [2.0, 3.0, 4.0],
+        p = [0.5, 0.25, 0.0],
+        target = :custom,
+    ); total_variance = 10.0)
+    @test custom_table.marker_ids == ["a", "b", "c"]
+    @test custom_table.scan_indices == [1, 2, 3]
+    @test custom_table.marker_variances ≈ [4.5, 1.5, 0.0] atol = 1e-12
+    @test custom_table.proportion_variance_explained ≈ [0.45, 0.15, 0.0] atol = 1e-12
 
     default_ids = single_marker_scan(y, X, M).marker_ids
     @test default_ids == ["marker_1", "marker_2"]
@@ -2264,6 +2322,16 @@ end
         sort_by = :p_value,
     )
     @test_throws ArgumentError marker_variance_explained(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_scan_table((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (effects = [1.0],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (standard_errors = [0.0, 1.0],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (p = [-0.1, 0.5],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (k = missing,)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (marker_groups = ["chr1"],)))
+    @test_throws ArgumentError marker_scan_table(scan; total_variance = 0.0)
+    @test_throws ArgumentError marker_scan_table(scan; total_variance = "not numeric")
+    @test_throws ArgumentError marker_scan_table(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
     @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)

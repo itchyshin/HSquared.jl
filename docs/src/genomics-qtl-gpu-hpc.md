@@ -366,7 +366,12 @@ approximate two-sided Gaussian/Wald p-values plus Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set, and
 LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
 already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
-chromosomes and positions by exact marker ID. `marker_effects()`
+chromosomes and positions by exact marker ID. `marker_scan_table()` prepares
+row-aligned scan tables in original scan order with allele variances,
+marker-variance contributions, optional total-variance proportions, optional
+mixed/LOCO fields when present, and the same exact marker-map alignment; it is
+not `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+`marker_effects()`
 prepares sorted top-marker effect summaries from the same scan fields, with
 optional chromosome/position alignment. `marker_variance_explained()` prepares
 sorted marker-level variance-contribution summaries as `2p(1-p) * effect^2`,
@@ -414,6 +419,7 @@ loco_scan = loco_mixed_model_marker_scan(
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
+table = marker_scan_table(scan; total_variance = 2.0)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 2)
 variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 2)
 marker_data = HSData((id = ["example"], y = [0.0]); markers = (
@@ -422,9 +428,11 @@ marker_data = HSData((id = ["example"], y = [0.0]); markers = (
     pos = [10, 20],
 ))
 map_manhattan = marker_manhattan_data(scan, marker_data)
+map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
 map_effects = marker_effects(scan, marker_data; top_n = 2)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
 manhattan.neglog10_p_values
+table.marker_variances
 qq.expected_neglog10_p_values
 ```
 
@@ -824,6 +832,7 @@ Genomics/QTL:
 
 - `marker_effects(scan)`;
 - `marker_variance_explained(scan)`;
+- `marker_scan_table(scan)`;
 - `qtl_table(fit)`;
 - `eqtl_table(fit)`;
 - `gwas_table(fit)`;

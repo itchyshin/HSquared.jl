@@ -104,9 +104,10 @@ unimplemented.
   marker-effect output and the GBLUP/SNP-BLUP equivalence
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
   GBLUP REML variance-component estimation, and fixed-effect single-marker
-  screening (`single_marker_scan`) plus marker-map-backed Manhattan metadata
-  and QQ plot-data preparation, marker-effect summaries, marker-variance
-  contribution summaries, and a genomic-inflation diagnostic.
+  screening (`single_marker_scan`) plus row-aligned marker-scan table
+  preparation, marker-map-backed Manhattan metadata and QQ plot-data
+  preparation, marker-effect summaries, marker-variance contribution
+  summaries, and a genomic-inflation diagnostic.
   `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
   correction from a supplied marginal covariance.
@@ -367,7 +368,11 @@ Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
 p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
 marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
 Manhattan data, including overloads that consume already-validated `HSData` /
-`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_effects`
+`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_scan_table`
+prepares row-aligned scan tables in original scan order with allele variances,
+marker-variance contributions, optional total-variance proportions, and the
+same metadata alignment, but does not activate `gwas_table()`, `qtl_table()`,
+or `eqtl_table()`. `marker_effects`
 prepares sorted top-marker effect summaries from the same scan fields, with
 optional chromosome/position alignment from validated marker metadata.
 `marker_variance_explained` prepares sorted marker-level variance-contribution
