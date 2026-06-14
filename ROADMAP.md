@@ -117,7 +117,8 @@ unimplemented.
   `fit_multivariate_reml` estimation of `G0`/`R0` exist as engine-internal,
   validation-scale utilities. Phase 4B now has structured genetic covariance
   builders and REML constraints for diagonal, low-rank, and factor-analytic
-  `G0`, plus an opt-in seeded recovery harness outside CI. No R-facing
+  `G0`, plus an opt-in seeded recovery harness outside CI and a serialized
+  two-trait Julia target fixture for R-lane comparator work. No R-facing
   multivariate model-spec, no external comparator parity, no loading
   rotation/identifiability convention, and no production sparse multivariate
   fitting.
@@ -296,6 +297,10 @@ factor column is flipped, if needed, so its largest-absolute loading is
 non-negative. This does not solve rotation non-identifiability for `rank > 1`,
 and loadings remain uninterpreted engine metadata until extractor meanings and
 external parity are validated.
+
+`test/fixtures/phase4_multitrait_parity/` serializes a deterministic two-trait
+Julia REML target for R-lane sommer/ASReml/BLUPF90 parity work. It is an input
+and target bundle, not external comparator evidence.
 
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.

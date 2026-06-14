@@ -184,6 +184,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   loose covariance-recovery thresholds. This strengthens Julia-internal recovery
   evidence only; it does not open R-facing covariance syntax, bridge payload
   changes, or comparator claims.
+- Julia now has a shared deterministic two-trait CSV fixture at
+  `test/fixtures/phase4_multitrait_parity/` for R-lane sommer/ASReml/BLUPF90
+  comparator work. It serializes the pedigree, phenotypes, and Julia REML
+  target values (`G0`, `R0`, beta, EBVs, h², loglik). This is a target fixture
+  for future R-lane parity, not external comparator evidence and not a bridge
+  payload change.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix

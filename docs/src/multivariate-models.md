@@ -168,6 +168,11 @@ Covered now (self-consistent, comparator-free):
   univariate REML estimate), the REML log-likelihood matching the univariate
   package scale, the optimum beating a coarse grid, and EBV consistency with the
   MME at the estimate;
+- a shared deterministic two-trait CSV fixture in
+  `test/fixtures/phase4_multitrait_parity/` records a Julia REML target for
+  R-lane comparator work; CI checks fast self-consistency at the stored target
+  covariances (beta, EBVs, h², and REML log-likelihood), but does not re-run the
+  optimizer;
 - **structured genetic covariance** builders and REML constraints are validated
   by deterministic constructor identities, metadata checks, returned-loglik
   equality to the existing evaluator, PSD/PD covariance checks, and constrained

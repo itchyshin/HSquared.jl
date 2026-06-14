@@ -5,6 +5,30 @@ using Test
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
+function _csv_strings_for_test(path)
+    lines = readlines(path)
+    !isempty(lines) || error("empty CSV fixture: $path")
+    header = String.(split(lines[1], ","))
+    data = Matrix{String}(undef, length(lines) - 1, length(header))
+    for (i, line) in enumerate(lines[2:end])
+        fields = String.(split(line, ","))
+        length(fields) == length(header) ||
+            error("CSV fixture row $i in $path has $(length(fields)) fields; expected $(length(header))")
+        data[i, :] .= fields
+    end
+    return header, data
+end
+
+function _named_matrix_csv_for_test(path)
+    _, data = _csv_strings_for_test(path)
+    return vec(data[:, 1]), parse.(Float64, data[:, 2:end])
+end
+
+function _metadata_csv_for_test(path)
+    _, data = _csv_strings_for_test(path)
+    return Dict(data[i, 1] => data[i, 2] for i in axes(data, 1))
+end
+
 function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     yv = Float64.(y)
     Xd = Matrix{Float64}(X)
@@ -2247,6 +2271,51 @@ end
         @test_throws ArgumentError fit_multivariate_reml(Y2inf, X, Z, Ainv)
     end
     @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
+end
+
+@testset "Phase 4 shared multi-trait parity fixture" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "phase4_multitrait_parity")
+
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_animals = pheno[:, 2]
+    x = parse.(Float64, pheno[:, 3])
+    Y = hcat(parse.(Float64, pheno[:, 4]), parse.(Float64, pheno[:, 5]))
+    X = hcat(ones(length(x)), x)
+    Z = zeros(length(x), length(ped.ids))
+    animal_index = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for (i, animal) in enumerate(record_animals)
+        Z[i, animal_index[animal]] = 1.0
+    end
+
+    cov_traits, G0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_genetic_covariance.csv"))
+    residual_traits, R0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_residual_covariance.csv"))
+    effects, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    h_traits, h_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_heritability.csv"))
+    ebv_ids, ebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_ebv.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test cov_traits == ["trait1", "trait2"]
+    @test residual_traits == cov_traits
+    @test effects == ["Intercept", "x"]
+    @test h_traits == cov_traits
+    @test ebv_ids == ped.ids
+    @test isposdef(Symmetric(G0))
+    @test isposdef(Symmetric(R0))
+
+    mme = multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = ped.ids, traits = cov_traits)
+    h_calc = [G0[k, k] / (G0[k, k] + R0[k, k]) for k in 1:length(cov_traits)]
+    loglik = HSquared._multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
+
+    @test mme.beta ≈ beta_expected atol = 5e-6
+    @test mme.breeding_values.values ≈ ebv_expected atol = 5e-6
+    @test h_calc ≈ vec(h_expected) atol = 5e-6
+    @test loglik ≈ parse(Float64, metadata["loglik"]) atol = 5e-6
+    @test mme.genetic_correlation[1, 2] ≈ parse(Float64, metadata["genetic_correlation_trait1_trait2"]) atol = 5e-6
+    @test mme.residual_correlation[1, 2] ≈ parse(Float64, metadata["residual_correlation_trait1_trait2"]) atol = 5e-6
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin

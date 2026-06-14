@@ -129,6 +129,11 @@
   exactly), grid-beating, and EBV consistency with `multivariate_mme`.
   Experimental, dense/validation-scale; multi-trait known-truth recovery is
   one-off only, with no external-comparator parity yet.
+- Added `test/fixtures/phase4_multitrait_parity/`, a deterministic two-trait
+  CSV fixture for R-lane sommer/ASReml/BLUPF90 parity work. It records a Julia
+  REML target (`G0`, `R0`, beta, EBVs, h², and loglik) and CI checks fast
+  self-consistency at the stored target covariances. It is not external
+  comparator evidence.
 - Hardened the multivariate engine after a 7-lens adversarial review (each finding
   verified by running Julia): `multivariate_mme` / `fit_multivariate_reml` now
   reject non-finite observed phenotypes (`Inf` — only `missing`/`NaN` mark an

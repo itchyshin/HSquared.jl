@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 Phase 4 shared multi-trait parity fixture
+
+- Goal: serialize a deterministic multi-trait animal-model fixture that the R
+  lane can use for sommer/ASReml/BLUPF90 parity work, without editing R code or
+  claiming external comparator evidence.
+- Active lenses: Shannon/Hopper (twin coordination), Gauss/Fisher (target
+  covariances and loglik), Curie (fixture tests), Rose (claim boundary).
+  Spawned subagents: none.
+- Fixture:
+  - directory: `test/fixtures/phase4_multitrait_parity/`;
+  - 20 animals, 80 records, 2 traits, shared intercept + numeric `x` design;
+  - CSV files record pedigree, phenotypes, Julia REML target `G0`/`R0`, beta,
+    EBVs, h², loglik, and correlation summaries.
+- Tests:
+  - test suite reads the CSV files from disk;
+  - reconstructs `Ainv`, `X`, `Z`, and `Y`;
+  - checks `multivariate_mme` beta and EBVs at the stored target covariances;
+  - checks h² and `_multivariate_reml_loglik` at the stored target covariances;
+  - deliberately does not re-run the dense optimizer in CI.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    New testset "Phase 4 shared multi-trait parity fixture" = 13 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+  - Claim scan for accidental external-comparator / production sparse
+    multivariate promotion found only explicit negative/boundary statements.
+- Boundary: this is a Julia target fixture for future R-lane comparator work,
+  not sommer/ASReml/BLUPF90 evidence. `V4-MV-REML` remains partial.
+
 ## 2026-06-14 Phase 4B loading sign convention
 
 - Goal: make returned `genetic_loadings` metadata deterministic for
