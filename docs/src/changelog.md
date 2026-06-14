@@ -167,9 +167,11 @@
   `genetic_structure()`/`genetic_loadings()`/`genetic_uniqueness()` accessors,
   loglik equality to the existing evaluator, PSD/PD covariance checks,
   constrained loglik ≤ the unstructured fit, and deterministic
-  sign-canonicalization of returned loading columns.
+  sign-canonicalization of returned loading columns. The
+  `2026-06-14-loading-rotation-identifiability` decision note records this as a
+  sign-only metadata convention and defers full loading rotation/interpretation.
   Experimental, dense/validation-scale; no R-facing covariance-structure syntax,
-  bridge change, loading rotation/identifiability convention, or external
+  bridge change, full loading rotation/interpretation convention, or external
   comparator yet.
 - Added opt-in Phase-4B recovery harness
   `sim/phase4b_structured_covariance_recovery.jl` for seeded low-rank and

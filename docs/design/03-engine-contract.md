@@ -279,7 +279,10 @@ sign-canonicalized as engine metadata: each factor column is multiplied by `-1`
 when needed so the largest-absolute loading in that column is non-negative.
 This convention is deterministic but not a rotation or lower-triangular
 identification constraint; rank-`K > 1` loading columns remain
-rotation-nonunique.
+rotation-nonunique. The current policy is recorded in
+`docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`: sign
+canonicalization is accepted for stable metadata, while rotation and biological
+interpretation are deferred.
 
 The multivariate result accessors are Julia-side wrappers over existing
 `NamedTuple` fields:

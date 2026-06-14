@@ -2,6 +2,38 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 loading rotation identifiability decision
+
+- Goal: record the Phase 4B loading metadata identifiability policy so the
+  existing sign-canonicalized `genetic_loadings()` metadata is not mistaken for
+  uniquely identified or biologically interpretable factor loadings.
+- Active lenses: Kirkpatrick/Gauss (factor-analytic covariance semantics),
+  Hopper (result and bridge boundary), Fisher/Rose (identifiability and claim
+  boundary), Grace (checks). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`;
+  - recorded that Phase 4B currently uses a sign-only metadata convention:
+    each loading column is flipped, if needed, so its largest-absolute loading
+    is non-negative;
+  - synced the engine contract, roadmap, multivariate docs, validation-status
+    row, capability/debt/public-claims rows, changelog, and coordination board
+    to say full loading rotation and interpretation remain future work.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 172 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Boundary scan found the new sign-only / rotation-identifiability wording
+    paired with explicit `result_payload()` and bridge-payload no-change
+    boundaries.
+- Boundary: policy/status/documentation only. No estimator behavior,
+  covariance parameterization, `result_payload()` field, bridge payload,
+  R-facing covariance syntax, full rotation convention, biological
+  interpretation, comparator evidence, or capability promotion changed.
+
 ## 2026-06-14 structured covariance metadata accessors
 
 - Goal: add Julia-local, copy-returning accessors for Phase 4B structured

@@ -125,8 +125,8 @@ unimplemented.
   covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
   own opt-in seeded recovery harness. No R-facing multivariate model-spec, no
-  external comparator parity, no loading rotation/identifiability convention,
-  and no production sparse multivariate fitting.
+  external comparator parity, no full loading rotation/interpretation
+  convention, and no production sparse multivariate fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
@@ -301,7 +301,9 @@ The returned loading metadata now has a deterministic sign convention: each
 factor column is flipped, if needed, so its largest-absolute loading is
 non-negative. This does not solve rotation non-identifiability for `rank > 1`,
 and loadings remain uninterpreted engine metadata until extractor meanings and
-external parity are validated.
+external parity are validated. The current sign-only policy is recorded in
+`docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`;
+full rotation and biological interpretation remain future work.
 
 `test/fixtures/phase4_multitrait_parity/` serializes a deterministic two-trait
 Julia REML target for R-lane sommer/ASReml/BLUPF90 parity work. It is an input
