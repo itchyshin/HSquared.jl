@@ -115,8 +115,10 @@ unimplemented.
   `loco_relationship_precisions` constructs dense VanRaden-plus-ridge
   leave-one-group-out relationship precisions, and
   `loco_mixed_model_marker_scan` selects supplied relationship precisions by
-  marker group for a direct leave-one-group-out scan. These remain
-  experimental supplied-variance / validation-scale engine utilities.
+  marker group for a direct leave-one-group-out scan. An opt-in seeded
+  `sim/phase5_marker_scan_recovery.jl` harness records marker-signal recovery
+  outside CI for the fixed, supplied-variance mixed, and supplied LOCO helpers.
+  These remain experimental supplied-variance / validation-scale engine utilities.
   No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
   the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
@@ -400,6 +402,15 @@ interval-mapping or mixed-model LOD workflows or calibrated / correlated-marker
 multiple-testing workflows, do not draw plots, calibrate p-values, or choose
 calibrated genome-wide thresholds, and do not activate the R-facing
 `marker_scan()` formula term.
+
+`sim/phase5_marker_scan_recovery.jl` records opt-in seeded marker-signal
+recovery outside CI for the fixed, supplied-variance mixed, and supplied LOCO
+direct scan helpers. Default seed `20260614` passes all three cases on a
+half-sib simulated design with top causal marker `m08` and effect relative
+errors `0.008513`, `0.000349`, and `0.019075`. This is internal recovery smoke
+evidence only; it is not broad multi-seed calibration, calibrated
+multiple-testing evidence, QTL/eQTL validation, public R syntax, bridge
+payload change, or comparator parity.
 
 Gate: marker-map validation, estimand definition, genome-wide multiple-testing
 calibration, and comparator/simulation evidence.

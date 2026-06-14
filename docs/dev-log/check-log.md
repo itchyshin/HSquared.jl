@@ -2,6 +2,66 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 marker scan recovery harness
+
+- Goal: add an opt-in, outside-CI recovery harness for the existing direct
+  Julia fixed, supplied-variance mixed, and supplied LOCO marker-scan helpers
+  without adding RNG to the test suite or claiming calibrated GWAS/QTL/eQTL
+  validation.
+- Active lenses: Ada/Shannon (lane discipline), Curie (recovery scenario and
+  smoke thresholds), Fisher (threshold and p-value claim boundary), Grace
+  (low-core checks), Rose (public claim audit). Spawned subagents: none.
+- Scout:
+  - checked existing Julia recovery harnesses
+    `sim/phase4_multivariate_reml_recovery.jl` and
+    `sim/phase4b_structured_covariance_recovery.jl`;
+  - checked direct Phase 5 marker helpers and status boundaries;
+  - durable note:
+    `docs/dev-log/scout/2026-06-14-marker-scan-recovery-harness-scout.md`;
+  - lesson: stochastic recovery stays in `sim/` plus committed recovery logs,
+    while CI remains deterministic and public wording stays partial.
+- Change:
+  - added `sim/phase5_marker_scan_recovery.jl`;
+  - default seed `20260614` simulates one strong causal marker (`m08`) on a
+    half-sib random-effect design and checks fixed, supplied-variance mixed,
+    and supplied LOCO scans;
+  - recorded the default run in
+    `docs/dev-log/recovery-checkpoints/2026-06-14-phase5-marker-scan-recovery.log`;
+  - synced `validation_status()`, validation-status tests, capability-status,
+    validation-debt, public-claims register, roadmap, README, Documenter pages,
+    changelog, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. sim/phase5_marker_scan_recovery.jl`:
+    passed. Fixed, mixed, and LOCO cases all recovered top causal marker
+    `m08`; effect relative errors were `0.008513`, `0.000349`, and `0.019075`
+    against the committed loose smoke threshold `0.350`; top LOD-equivalent
+    scores exceeded the committed minimum `4.000`.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset is now 415 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is 415 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - Docs command
+    `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Narrow Rose grep for high-risk marker/GWAS/QTL/eQTL wording found only
+    planned, negative, or explicitly blocked examples. An initial broader grep
+    was stopped after it entered generated `docs/build` output.
+- Boundary: internal recovery smoke for existing direct Julia helpers only.
+  This does not add RNG to CI, calibrate p-values, estimate effective marker
+  counts, choose calibrated genome-wide thresholds, validate QTL/eQTL, add a
+  plotting backend, activate R `marker_scan()` syntax, activate
+  `gwas_table()` / `qtl_table()` / `eqtl_table()`, change `result_payload()`,
+  change the bridge payload, or add comparator parity.
+
 ## 2026-06-14 marker significance summary
 
 - Goal: add a direct-Julia marker-scan helper that summarizes nominal raw-p,

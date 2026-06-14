@@ -106,7 +106,8 @@ Implemented:
   `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
   row-aligned marker-scan tables, marker-effect summaries, marker-variance
   contribution summaries, nominal returned-marker-set significance summaries,
-  and Manhattan/regional-window/QQ plot-data helpers.
+  and Manhattan/regional-window/QQ plot-data helpers, plus an opt-in marker-scan
+  recovery harness outside CI.
 - experimental repeatability / two-effect REML utilities.
 - experimental multivariate animal-model utilities, including
   supplied-covariance MME, missing-trait records, dense multivariate REML,

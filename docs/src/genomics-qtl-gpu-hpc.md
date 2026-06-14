@@ -401,6 +401,15 @@ thresholds, parse marker files, draw figures, or activate the R-facing
 diagnostic lambda summary over returned chi-square statistics; it does not
 calibrate p-values or correct scan statistics.
 
+`sim/phase5_marker_scan_recovery.jl` is an opt-in recovery harness outside CI.
+It simulates one strong causal marker on a half-sib random-effect design and
+checks that the fixed, supplied-variance mixed, and supplied LOCO direct scans
+recover the top causal marker and effect direction/magnitude under loose
+thresholds. Default seed `20260614` passes all three cases. This is internal
+recovery smoke evidence only; it is not broad calibration, a calibrated
+genome-wide threshold workflow, public QTL/eQTL validation, or comparator
+parity.
+
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
 X = ones(5, 1)

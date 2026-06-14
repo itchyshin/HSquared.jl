@@ -123,7 +123,8 @@ Implemented now:
   row-aligned marker-scan table preparation, marker-effect summaries,
   marker-variance contribution summaries, nominal returned-marker-set
   significance summaries, and marker-map-backed Manhattan, regional-window,
-  QQ, and lambda_GC diagnostic preparation;
+  QQ, and lambda_GC diagnostic preparation, plus an opt-in marker-scan recovery
+  harness outside CI;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured

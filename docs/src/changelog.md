@@ -75,6 +75,12 @@
   genome-wide threshold workflow, no calibrated PVE/model R² claim, no R
   `marker_scan()` syntax, no
   bridge payload change, and no comparator parity.
+- Added opt-in `sim/phase5_marker_scan_recovery.jl` for seeded marker-signal
+  recovery of the direct fixed, supplied-variance mixed, and supplied LOCO
+  marker-scan helpers outside CI. Default seed `20260614` passes all three
+  cases on a half-sib simulated design. This is internal recovery smoke
+  evidence, not broad multiple-testing calibration, QTL/eQTL validation,
+  public R syntax, bridge payload change, or comparator parity.
 - Added `mixed_model_marker_scan()` — a dense, supplied-variance GLS
   marker-screening helper that forms `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`
   from supplied variance components and a supplied relationship precision, then

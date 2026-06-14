@@ -1,0 +1,26 @@
+Command:
+env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. sim/phase5_marker_scan_recovery.jl
+
+Output:
+[PASS] fixed seed=20260614 observations=180 markers=24 causal_marker=m08 top_marker=m08
+  estimated_effect=1.487230 target_effect=1.500000 relative_error=0.008513 threshold=0.350
+  top_p_value=0.000000e+00 threshold=1.000000e-06
+  top_bh_q_value=0.000000e+00 threshold=5.000000e-02 n_bh_significant=5
+  top_lod_score=81.709940 threshold=4.000
+
+[PASS] mixed seed=20260614 observations=180 markers=24 causal_marker=m08 top_marker=m08
+  estimated_effect=1.499477 target_effect=1.500000 relative_error=0.000349 threshold=0.350
+  top_p_value=0.000000e+00 threshold=1.000000e-06
+  top_bh_q_value=0.000000e+00 threshold=5.000000e-02 n_bh_significant=8
+  top_lod_score=104.604351 threshold=4.000
+
+[PASS] loco seed=20260614 observations=180 markers=24 causal_marker=m08 top_marker=m08
+  estimated_effect=1.471388 target_effect=1.500000 relative_error=0.019075 threshold=0.350
+  top_p_value=0.000000e+00 threshold=1.000000e-06
+  top_bh_q_value=0.000000e+00 threshold=5.000000e-02 n_bh_significant=1
+  top_lod_score=106.506332 threshold=4.000
+
+SUMMARY
+  fixed seeds=1 passed=1 max_effect_rel_error=0.008513 max_top_p_value=0.000000e+00
+  mixed seeds=1 passed=1 max_effect_rel_error=0.000349 max_top_p_value=0.000000e+00
+  loco seeds=1 passed=1 max_effect_rel_error=0.019075 max_top_p_value=0.000000e+00

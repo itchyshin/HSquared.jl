@@ -242,7 +242,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   future regional display code. `marker_qq_data()` prepares sorted
   observed/expected QQ plot data from the same direct scan output, and
   `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
-  diagnostic from returned chi-square values.
+  diagnostic from returned chi-square values. The opt-in
+  `sim/phase5_marker_scan_recovery.jl` harness records default-seed marker
+  recovery smoke for fixed, supplied-variance mixed, and supplied LOCO direct
+  scans outside CI.
   This is engine-internal / direct-Julia only:
   no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
   calibrated mixed-model p-values, calibrated PVE/model R² claims,

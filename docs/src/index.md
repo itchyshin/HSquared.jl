@@ -70,7 +70,8 @@ Implemented engine utilities:
   row-aligned marker-scan tables, marker-effect summaries, marker-variance
   contribution summaries, nominal returned-marker-set significance summaries,
   and marker-map-backed `marker_manhattan_data`, `marker_region_data`, and
-  `marker_qq_data` plot-data preparation;
+  `marker_qq_data` plot-data preparation, plus an opt-in marker-scan recovery
+  harness outside CI;
 - experimental repeatability, two-effect, multivariate, and structured
   genetic-covariance utilities, all validation-scale and not public R formula
   defaults;
