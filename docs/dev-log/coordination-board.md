@@ -228,6 +228,15 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   backend, advanced/correlated-marker multiple-testing workflow,
   R `marker_scan()` formula activation, bridge payload change, or
   `result_payload()` change.
+- Julia now has `mixed_model_marker_scan` as a direct Phase 5 dense
+  supplied-variance GLS marker-screening utility. It forms
+  `V = sigma_a2 * Z * A * Z' + sigma_e2 * I` from supplied variance components
+  and a supplied relationship precision, then runs marker-by-marker Wald tests
+  conditional on `X`. This is engine-internal / direct-Julia only: no
+  marker-scan variance-component estimation, LOCO, sparse production scan,
+  calibrated p-values, genomic-inflation diagnostics, interval-mapping or
+  mixed-model LOD workflows, plotting backend, R `marker_scan()` formula
+  activation, bridge payload change, or `result_payload()` change.
 - R head `21161a5` documents multivariate extractor examples, with CI recorded
   by `6b5758b`. Julia mirrors the extractor vocabulary locally for
   multivariate result `NamedTuple`s:

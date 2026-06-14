@@ -167,7 +167,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 29
+    @test length(validation) == 30
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -254,6 +254,16 @@ end
     @test occursin("Fixed-effect Gaussian screening utility with marker-map-backed Manhattan and QQ plot-data helpers only", fixed_marker_row.claim_boundary)
     @test occursin("no genomic-inflation or calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
+    mixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-MIXED")
+    @test mixed_marker_row.phase == "Phase 5"
+    @test mixed_marker_row.status == "partial"
+    @test occursin("mixed_model_marker_scan", mixed_marker_row.evidence)
+    @test occursin("independent GLS", mixed_marker_row.evidence)
+    @test occursin("single_marker_scan", mixed_marker_row.evidence)
+    @test occursin("LOCO", mixed_marker_row.missing)
+    @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
+    @test occursin("no p-value calibration", mixed_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", mixed_marker_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -1824,6 +1834,70 @@ end
     @test scan2.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(scan2.p_values) atol = 1e-12
     @test scan2.lod_scores ≈ scan2.chisq ./ (2 * log(10)) atol = 1e-12
 
+    zeroZ = zeros(5, 1)
+    fixed_reduction = mixed_model_marker_scan(
+        y,
+        X,
+        zeroZ,
+        Matrix{Float64}(I, 1, 1),
+        M,
+        2.0,
+        1.0;
+        marker_ids = ["m1", "m2"],
+    )
+    @test fixed_reduction.target == :mixed_model_marker_scan
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.marker_ids == scan.marker_ids
+    @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
+    @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test fixed_reduction.p_values ≈ scan.p_values atol = 1e-12
+    @test fixed_reduction.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test fixed_reduction.lod_scores ≈ scan.lod_scores atol = 1e-12
+
+    ids = [1, 2, 3, 4, 5]
+    Ainv_mixed = pedigree_inverse(ids, [0, 0, 1, 1, 3], [0, 0, 2, 2, 4])
+    Z_mixed = Matrix{Float64}(I, 5, 5)
+    mixed = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_mixed,
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    @test mixed.marker_ids == ["m1", "m2"]
+    @test mixed.p ≈ scan.p atol = 1e-12
+    @test mixed.k ≈ scan.k atol = 1e-12
+    @test mixed.variance_components == (sigma_a2 = 0.7, sigma_e2 = 1.2)
+
+    A_mixed = inv(Symmetric(Matrix(Ainv_mixed)))
+    V_mixed = Symmetric(0.7 * Z_mixed * A_mixed * transpose(Z_mixed) + 1.2 * Matrix{Float64}(I, 5, 5))
+    cholV = cholesky(V_mixed)
+    Vinv_X = cholV \ X2
+    Vinv_y = cholV \ y
+    XtVinvX = Symmetric(transpose(X2) * Vinv_X)
+    cholXtVinvX = cholesky(XtVinvX)
+    Py = Vinv_y - Vinv_X * (cholXtVinvX \ (transpose(X2) * Vinv_y))
+    for j in axes(M, 2)
+        w = cm.W[:, j]
+        Vinv_w = cholV \ w
+        Pw = Vinv_w - Vinv_X * (cholXtVinvX \ (transpose(X2) * Vinv_w))
+        denom = dot(w, Pw)
+        effect = dot(w, Py) / denom
+        @test mixed.denominators[j] ≈ denom atol = 1e-12
+        @test mixed.effects[j] ≈ effect atol = 1e-12
+        @test mixed.standard_errors[j] ≈ sqrt(inv(denom)) atol = 1e-12
+        @test mixed.p_values[j] ≈ HSquared._standard_normal_two_sided_pvalue(mixed.z_scores[j]) atol = 1e-12
+    end
+    @test mixed.chisq ≈ mixed.z_scores .^ 2 atol = 1e-12
+    @test mixed.bonferroni_p_values ≈ HSquared._bonferroni_adjust(mixed.p_values) atol = 1e-12
+    @test mixed.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(mixed.p_values) atol = 1e-12
+    @test mixed.lod_scores ≈ mixed.chisq ./ (2 * log(10)) atol = 1e-12
+    @test marker_manhattan_data(mixed).marker_ids == mixed.marker_ids
+    @test marker_qq_data(mixed).marker_ids == mixed.marker_ids
+
     manhattan = marker_manhattan_data(scan)
     @test manhattan.marker_ids == ["m1", "m2"]
     @test manhattan.chromosomes == ["1", "1"]
@@ -1903,6 +1977,11 @@ end
     @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"],))
     @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
     @test_throws ArgumentError marker_qq_data(scan; p_floor = 0.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Matrix{Float64}(I, 4, 4), M, 1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, [ones(5) ones(5)], Z_mixed, Ainv_mixed, M, 1.0, 1.0)
     @test_throws ArgumentError marker_manhattan_data(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError marker_manhattan_data(
         (marker_ids = ["m1", "m1"], p_values = [0.1, 0.2]),
@@ -1914,6 +1993,15 @@ end
     )
     cm_one = centered_markers(M[:, 1:1])
     @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
+    @test_throws ArgumentError mixed_model_marker_scan(
+        y,
+        [ones(5) cm_one.W],
+        Z_mixed,
+        Ainv_mixed,
+        M[:, 1:1],
+        1.0,
+        1.0,
+    )
     @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)
     @test_throws ArgumentError single_marker_scan([1.0, 2.0], ones(2, 1), M)
 end

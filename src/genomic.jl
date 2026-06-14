@@ -270,6 +270,141 @@ function single_marker_scan(
 end
 
 """
+    mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2;
+                            allele_frequencies = nothing, marker_ids = nothing)
+
+Supplied-variance mixed-model single-marker scan for biallelic marker dosages.
+
+The helper forms the dense validation-scale marginal covariance
+`V = sigma_a2 * Z * A * Z' + sigma_e2 * I`, where `A = inv(Ainv)`, then tests
+each centered marker as a fixed effect by generalized least squares conditional
+on the fixed-effect design `X`. The returned fields mirror
+[`single_marker_scan`](@ref): marker effects, standard errors, Wald z-scores,
+chi-square statistics, approximate two-sided Gaussian/Wald p-values,
+Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, LOD-equivalent
+scores, GLS denominators, marker IDs, allele frequencies, and the VanRaden
+scale, plus supplied variance components and `target = :mixed_model_marker_scan`.
+
+This is an engine-internal, dense, supplied-variance Phase 5 utility. It is not
+variance-component estimation, LOCO, interval mapping, calibrated genome-wide
+testing, a plotting backend, a bridge payload, or activation of the R-facing
+`marker_scan()` formula term.
+"""
+function mixed_model_marker_scan(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix,
+    markers::AbstractMatrix,
+    sigma_a2::Real,
+    sigma_e2::Real;
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    marker_ids = nothing,
+)
+    yv = Float64.(y)
+    Xmat = Matrix{Float64}(X)
+    Zmat = Matrix{Float64}(Z)
+    Ainvmat = Matrix{Float64}(Ainv)
+    n = length(yv)
+    size(Xmat, 1) == n ||
+        throw(ArgumentError("X row count must match y length"))
+    size(Zmat, 1) == n ||
+        throw(ArgumentError("Z row count must match y length"))
+    size(Ainvmat, 1) == size(Ainvmat, 2) ||
+        throw(ArgumentError("Ainv must be square"))
+    size(Zmat, 2) == size(Ainvmat, 1) ||
+        throw(ArgumentError("Z columns must match Ainv dimensions"))
+    n > size(Xmat, 2) ||
+        throw(ArgumentError("mixed-model marker scan requires more observations than fixed effects"))
+    all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
+    all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
+    all(isfinite, Zmat) || throw(ArgumentError("Z must contain only finite values"))
+    all(isfinite, Ainvmat) || throw(ArgumentError("Ainv must contain only finite values"))
+    rank(Xmat) == size(Xmat, 2) ||
+        throw(ArgumentError("X must have full column rank"))
+    sa2 = Float64(sigma_a2)
+    se2 = Float64(sigma_e2)
+    isfinite(sa2) && sa2 > 0 ||
+        throw(ArgumentError("sigma_a2 must be positive and finite"))
+    isfinite(se2) && se2 > 0 ||
+        throw(ArgumentError("sigma_e2 must be positive and finite"))
+
+    Ainv_sym = Symmetric(Ainvmat)
+    isposdef(Ainv_sym) ||
+        throw(ArgumentError("Ainv must be positive definite"))
+    A = inv(Ainv_sym)
+    V = Symmetric(sa2 * Zmat * A * transpose(Zmat) + se2 * Matrix{Float64}(I, n, n))
+    isposdef(V) ||
+        throw(ArgumentError("supplied covariance must be positive definite"))
+    cholV = cholesky(V)
+
+    cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    size(cm.W, 1) == n ||
+        throw(ArgumentError("markers row count must match y length"))
+    marker_names = if marker_ids === nothing
+        ["marker_$j" for j in axes(cm.W, 2)]
+    else
+        length(marker_ids) == size(cm.W, 2) ||
+            throw(ArgumentError("marker_ids must have one entry per marker"))
+        string.(marker_ids)
+    end
+
+    Vinv_X = cholV \ Xmat
+    Vinv_y = cholV \ yv
+    XtVinvX = Symmetric(transpose(Xmat) * Vinv_X)
+    isposdef(XtVinvX) ||
+        throw(ArgumentError("X must have full column rank under the supplied covariance"))
+    cholXtVinvX = cholesky(XtVinvX)
+    Py = Vinv_y - Vinv_X * (cholXtVinvX \ (transpose(Xmat) * Vinv_y))
+
+    effects = zeros(Float64, size(cm.W, 2))
+    standard_errors = similar(effects)
+    z_scores = similar(effects)
+    chisq = similar(effects)
+    p_values = similar(effects)
+    denominators = similar(effects)
+
+    for j in axes(cm.W, 2)
+        w = Vector(@view(cm.W[:, j]))
+        Vinv_w = cholV \ w
+        Pw = Vinv_w - Vinv_X * (cholXtVinvX \ (transpose(Xmat) * Vinv_w))
+        denom = dot(w, Pw)
+        denom > sqrt(eps(Float64)) ||
+            throw(ArgumentError("marker $(marker_names[j]) is collinear with X under the supplied covariance"))
+        alpha = dot(w, Py) / denom
+        se = sqrt(inv(denom))
+        z = alpha / se
+        denominators[j] = denom
+        effects[j] = alpha
+        standard_errors[j] = se
+        z_scores[j] = z
+        chisq[j] = z^2
+        p_values[j] = _standard_normal_two_sided_pvalue(z)
+    end
+
+    bonferroni_p_values = _bonferroni_adjust(p_values)
+    bh_q_values = _benjamini_hochberg_adjust(p_values)
+    lod_scores = chisq ./ (2 * log(10))
+
+    return (
+        marker_ids = marker_names,
+        effects = effects,
+        standard_errors = standard_errors,
+        z_scores = z_scores,
+        chisq = chisq,
+        p_values = p_values,
+        bonferroni_p_values = bonferroni_p_values,
+        bh_q_values = bh_q_values,
+        lod_scores = lod_scores,
+        denominators = denominators,
+        p = cm.p,
+        k = cm.k,
+        variance_components = (sigma_a2 = sa2, sigma_e2 = se2),
+        target = :mixed_model_marker_scan,
+    )
+end
+
+"""
     marker_manhattan_data(scan; chromosomes = nothing, positions = nothing,
                           p_floor = floatmin(Float64), chromosome_gap = 1.0)
     marker_manhattan_data(scan, marker_spec::HSMarkerMapSpec; ...)

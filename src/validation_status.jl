@@ -252,13 +252,22 @@ const VALIDATION_STATUS_DATA = (
         "Fixed-effect Gaussian screening utility with marker-map-backed Manhattan and QQ plot-data helpers only, using supplied residual variance plus approximate Wald p-values, Bonferroni/BH adjustments, LOD-equivalent scores, Manhattan data, and QQ data over the returned marker set; no mixed-model GWAS/QTL claim, no genomic-inflation or calibration claim, no R formula term activation, no bridge payload change, and no comparator evidence.",
     ),
     (
+        "V5-MARKER-MIXED",
+        "supplied-variance mixed-model marker scan",
+        "Phase 5",
+        "partial",
+        "`mixed_model_marker_scan` forms the dense validation-scale marginal covariance `V = sigma_a2 * Z * A * Z' + sigma_e2 * I` from supplied variance components and a supplied relationship precision, then runs a marker-by-marker GLS Wald scan conditional on `X`. It returns marker effects, standard errors, z-scores, χ² statistics, approximate two-sided Gaussian/Wald p-values, Bonferroni/BH adjustments, fixed-effect known-variance LOD-equivalent scores, GLS denominators, marker IDs, allele frequencies, VanRaden scale, supplied variance components, and `target = :mixed_model_marker_scan`. Deterministic tests pin the reduction to `single_marker_scan` when the random-effect design contributes zero covariance, agreement with an independent GLS calculation on a pedigree-covariance fixture, compatibility with Manhattan/QQ plot-data helpers, and guardrails for variance components, dimensions, positive-definite `Ainv`, rank-deficient `X`, and marker collinearity under the supplied covariance.",
+        "variance-component estimation inside marker scans, LOCO, sparse production marker scans, calibrated mixed-model p-values, genomic-inflation diagnostics, interval-mapping or mixed-model LOD workflows, advanced/correlated-marker multiple-testing workflows, plotting backends, external comparator parity, and R-facing `marker_scan()` syntax",
+        "Dense validation-scale supplied-variance Julia utility only; relationship correction is by the supplied marginal covariance and tested by GLS identities, but there is no variance-component estimation, no LOCO, no p-value calibration/genomic-inflation claim, no R formula activation, no bridge payload change, and no comparator evidence.",
+    ),
+    (
         "V5-GENOMIC-QTL",
         "genomic, marker, QTL, and eQTL validation",
         "Phase 5",
         "planned",
-        "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan` utility is tracked separately in `V5-MARKER-FIXED`.",
-        "model-spec contracts, mixed-model marker scans, simulations, marker-map validation, genome-wide multiple-testing calibration, calibrated mixed-model p-values, interval-mapping or mixed-model LOD workflows, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
-        "No broad genomic/QTL/eQTL validation claim; direct fixed-effect marker screening is experimental and tracked separately.",
+        "Syntax vocabulary and roadmap docs exist; the direct fixed-effect `single_marker_scan` utility is tracked separately in `V5-MARKER-FIXED`, and the direct supplied-variance GLS `mixed_model_marker_scan` utility is tracked separately in `V5-MARKER-MIXED`.",
+        "model-spec contracts, formula-driven mixed-model marker scans, simulations, marker-map validation, LOCO, genome-wide multiple-testing calibration, calibrated mixed-model p-values, genomic-inflation diagnostics, interval-mapping or mixed-model LOD workflows, QTL/eQTL intervals, and JWAS/sommer/BLUPF90-style comparators",
+        "No broad genomic/QTL/eQTL validation claim; direct Julia marker-screening utilities are experimental and tracked separately.",
     ),
 )
 

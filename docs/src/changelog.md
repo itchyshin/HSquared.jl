@@ -53,6 +53,16 @@
   marker-file parser, no plotting backend, no genomic-inflation or
   calibrated/correlated-marker multiple-testing workflow, no R `marker_scan()`
   syntax, no bridge payload change, and no comparator parity.
+- Added `mixed_model_marker_scan()` — a dense, supplied-variance GLS
+  marker-screening helper that forms `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`
+  from supplied variance components and a supplied relationship precision, then
+  runs marker-by-marker Wald tests conditional on `X`. Tests pin reduction to
+  `single_marker_scan()` when the random-effect design contributes zero
+  covariance and agreement with an independent GLS calculation. Direct Julia
+  engine tooling only: no marker-scan variance-component estimation, no LOCO,
+  no sparse production scan, no calibrated p-values or genomic-inflation
+  diagnostics, no plotting backend, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the

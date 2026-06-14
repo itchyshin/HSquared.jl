@@ -2,6 +2,57 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 supplied-variance mixed-model marker scan
+
+- Goal: add a direct Julia relationship-corrected marker-screening helper that
+  uses supplied variance components and a supplied relationship precision,
+  without adding R syntax, bridge payload changes, LOCO, p-value calibration,
+  plotting, or a broad GWAS/QTL claim.
+- Active lenses: Gauss (GLS covariance and linear algebra), Fisher (Wald
+  estimand and claim boundary), Curie (deterministic tests), Grace (low-core
+  checks), Shannon (R/Julia boundary), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2,
+    sigma_e2; allele_frequencies, marker_ids)`;
+  - the helper forms dense validation-scale `V = sigma_a2 * Z * A * Z' +
+    sigma_e2 * I`, with `A = inv(Ainv)`, and runs marker-by-marker GLS Wald
+    tests conditional on `X`;
+  - returns marker effects, standard errors, z-scores, chi-square statistics,
+    approximate two-sided Gaussian/Wald p-values, Bonferroni/BH adjustments,
+    LOD-equivalent scores, GLS denominators, marker IDs, allele frequencies,
+    VanRaden scale, supplied variance components, and
+    `target = :mixed_model_marker_scan`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - First `Pkg.test()` attempt after implementation failed because a duplicated
+    fixed-effect design guard used a numerically soft weighted Cholesky check.
+    The helper now checks `rank(X) == size(X, 2)` before fitting.
+  - Second `Pkg.test()` attempt passed after implementation and before final
+    ledger/docs edits. Phase 5 fixed-effect single-marker scan testset was 123
+    checks.
+  - Third `Pkg.test()` attempt after adding the new validation row failed
+    because the validation-status row-count assertion still expected 29 rows.
+    The expected count is now 30.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 206 checks; Phase
+    5 fixed-effect single-marker scan testset is now 123 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense supplied-variance GLS marker-screening utility only.
+  This does not estimate marker-scan variance components, implement LOCO, run a
+  sparse production scan, calibrate mixed-model p-values, estimate genomic
+  inflation, add interval-mapping/mixed-model LOD workflows, draw plots,
+  activate R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
 ## 2026-06-14 fixed-effect marker-scan QQ plot data
 
 - Goal: add deterministic QQ plot-data preparation for the direct Julia

@@ -367,12 +367,14 @@ Benjamini-Hochberg adjustments over the returned marker set, and
 LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
 already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
 chromosomes and positions by exact marker ID. `marker_qq_data()` prepares
-sorted observed/expected QQ plot data from the same direct scan result. These
-helpers do not compute interval-mapping or mixed-model LOD workflows or
-calibrated/correlated-marker multiple-testing workflows, estimate genomic
-inflation, account for relatedness or population structure, perform LOCO, parse
-marker files, draw figures, or activate the R-facing `marker_scan()` formula
-term.
+sorted observed/expected QQ plot data from the same direct scan result.
+`mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
+dense supplied-variance GLS helper that accounts for a supplied relationship
+covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`. These helpers do
+not compute interval-mapping or mixed-model LOD workflows or
+calibrated/correlated-marker multiple-testing workflows, estimate marker-scan
+variance components, estimate genomic inflation, perform LOCO, parse marker
+files, draw figures, or activate the R-facing `marker_scan()` formula term.
 
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
@@ -382,6 +384,9 @@ scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
 scan.p_values
 scan.bh_q_values
 scan.lod_scores
+Z = zeros(5, 1)
+mixed_scan = mixed_model_marker_scan(y, X, Z, Matrix(1.0I, 1, 1), M, 2.0, 1.0)
+mixed_scan.p_values
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 marker_data = HSData((id = ["example"], y = [0.0]); markers = (

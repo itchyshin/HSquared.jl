@@ -115,10 +115,10 @@ Implemented now:
   `result_payload()`;
 - experimental genomic utilities: VanRaden `G`, regularized `Ginv`,
   supplied-variance GBLUP, SNP-BLUP / marker effects, single-step `H`-inverse
-  construction, genomic REML over a `Ginv` spec, and direct fixed-effect
-  marker screening with approximate Wald p-values plus Bonferroni and
-  Benjamini-Hochberg adjustments, LOD-equivalent scores, and marker-map-backed
-  Manhattan and QQ plot-data preparation;
+  construction, genomic REML over a `Ginv` spec, direct fixed-effect marker
+  screening, supplied-variance mixed-model marker screening, approximate Wald
+  p-values plus Bonferroni and Benjamini-Hochberg adjustments, LOD-equivalent
+  scores, and marker-map-backed Manhattan and QQ plot-data preparation;
 - experimental repeatability and two-effect model utilities;
 - experimental multivariate animal-model utilities, including supplied-
   covariance MME, missing-trait records, dense multivariate REML, structured

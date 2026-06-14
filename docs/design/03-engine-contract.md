@@ -219,6 +219,7 @@ Ginv = genomic_relationship_inverse(G)
 gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
 snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
 scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
+mixed_scan = mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
@@ -240,6 +241,15 @@ external comparator evidence. Its p-values are approximate two-sided
 Gaussian/Wald p-values implied by the supplied residual variance;
 `bonferroni_p_values` and `bh_q_values` are deterministic adjustments over the
 returned marker set, and `lod_scores` are `chisq / (2log(10))`.
+
+`mixed_model_marker_scan()` is also deliberately narrow. It forms a dense
+validation-scale marginal covariance from supplied variance components and a
+supplied relationship precision, then runs marker-by-marker GLS Wald tests
+conditional on `X`. It is relationship-corrected only through that supplied
+covariance. It does not estimate marker-scan variance components, implement
+LOCO, calibrate genome-wide p-values, estimate genomic inflation, draw plots, or
+change bridge payloads.
+
 `marker_manhattan_data()` prepares deterministic plot-ready data only. With
 already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes
 and positions to scan marker IDs exactly and uses the marker-map order for
