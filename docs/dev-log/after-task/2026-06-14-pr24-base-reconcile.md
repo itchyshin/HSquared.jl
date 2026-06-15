@@ -51,22 +51,31 @@ reconcile slice.
   validation-status (`197` checks), Phase 5 fixed-effect single-marker scan
   (`91` checks), and Phase 4B structured genetic covariance (`61` checks), on
   the reconciled PR #24 branch state.
-- Local docs retries exposed generated-state failures in
-  DocumenterVitepress/npm rather than Julia doc-content failures: missing
-  temporary `docs/package.json`, an `ENOTEMPTY` cleanup failure in
-  `docs/node_modules`, and an over-cleaned missing `docs/build` directory for
-  warn-only example expansion.
-- After clearing generated docs/npm artifacts, preserving an empty
-  `docs/build` directory for local example expansion, using a keeper loop to
-  restore the temporary DocumenterVitepress `docs/package.json` if npm removed
-  it mid-build, and using fresh npm cache
-  `/private/tmp/hsquared-npm-cache-pr24d`, rerunning
-  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24d npm_config_cache=/private/tmp/hsquared-npm-cache-pr24d nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+- Initial docs command after clearing generated docs/npm artifacts and using
+  fresh npm cache `/private/tmp/hsquared-npm-cache-pr24` failed in local
+  generated VitePress/npm state: one warn-only `@example mv` block reported
+  `cd("build/")`, and npm installed an incomplete VitePress tree ending with
+  `env: vitepress: No such file or directory`. Clearing generated
+  `docs/node_modules` then needed a permissions pass, and the generated
+  `docs/package.json` had to be removed explicitly because npm made it
+  read-only.
+- After clearing generated docs/npm artifacts again and using fresh npm cache
+  `/private/tmp/hsquared-npm-cache-pr24b`, rerunning
+  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24b npm_config_cache=/private/tmp/hsquared-npm-cache-pr24b nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
   passed. Generated docs/npm files and temporary npm caches were removed again
   before commit. Known caveats remained: 8 unrelated docstrings not included
   in the manual, local deployment skipped, VitePress default substitutions,
-  missing local logo/favicon substitutions, and 4 npm audit advisories in
-  generated docs dependencies.
+  missing local logo/favicon/package.json substitutions, and 4 npm audit
+  advisories in generated docs dependencies.
+- Remote workflow-dispatch checks for pushed commit `53fe5de`:
+  - CI `27516836843`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27516836843>.
+  - Documenter `27516837405`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27516837405>.
+  - Earlier Documenter run `27516780108` was cancelled by the workflow
+    concurrency group and superseded by successful run `27516837405`.
+  - Known non-failing Node.js 20 deprecation annotations were emitted by
+    upstream actions forced onto Node.js 24.
 
 ## Public Claim Audit
 
@@ -86,19 +95,17 @@ No R issue action is required because no bridge or public R contract changed.
 
 ## What Did Not Go Smoothly
 
-- Local docs needed several retries around generated DocumenterVitepress/npm
-  state: temporary `package.json` disappearance, one `ENOTEMPTY` cleanup
-  failure in `docs/node_modules`, and one over-cleaned missing `docs/build`
-  example-workdir failure. The final keeper-backed fresh-cache run passed.
+- Local docs needed retries around generated DocumenterVitepress/npm state:
+  one warn-only local example-workdir warning, an incomplete VitePress install,
+  one generated `docs/node_modules` cleanup failure, and a read-only generated
+  `docs/package.json`. The second fresh-cache run passed.
 
 ## Known Limitations
 
-- Remote CI/Documenter need to run after push.
 - PR #24 remains draft and should not be merged until the stack base decision
   is made by the maintainer.
 - Downstream PRs #25 and above should be rechecked after PR #24 is pushed.
 
 ## Next Actions
 
-- Push `codex/phase5-marker-qq-data`.
-- Watch PR #24 CI/Documenter and then inspect PR #25.
+- Inspect PR #25.
