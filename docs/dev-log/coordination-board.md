@@ -62,10 +62,11 @@ support beyond the recorded evidence.
 - PR #24 (`codex/phase5-marker-qq-data`) was locally reconciled with the
   repaired PR #23 base on 2026-06-14. No engine code or bridge contract
   changed. Local full `Pkg.test()` passed before push; local Documenter passed
-  on the second generated npm/VitePress attempt using a fresh npm cache. The
-  local docs retry is recorded in the check log / after-task note for this
-  slice. Remote workflow-dispatch CI and Documenter passed for pushed commit
-  `53fe5de` after one superseded Documenter run was cancelled by concurrency.
+  after generated npm/VitePress retries using a fresh npm cache plus a
+  temporary `docs/package.json` keeper. The local docs retry is recorded in
+  the check log / after-task note for this slice. Remote workflow-dispatch CI
+  and Documenter passed for pushed correction commit `43c28b5` after one
+  superseded Documenter run was cancelled by concurrency.
 
 ## Shared Contract
 

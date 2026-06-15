@@ -28,25 +28,25 @@ Newest entries go at the top.
     validation-status (`197` checks), Phase 5 fixed-effect single-marker scan
     (`91` checks), and Phase 4B structured genetic covariance (`61` checks),
     on the reconciled PR #24 branch state.
-  - Initial docs command after clearing generated docs/npm artifacts and using
-    fresh npm cache `/private/tmp/hsquared-npm-cache-pr24` failed in local
-    generated VitePress/npm state: one warn-only `@example mv` block reported
-    `cd("build/")`, and npm installed an incomplete VitePress tree ending with
-    `env: vitepress: No such file or directory`. Clearing generated
-    `docs/node_modules` then needed a permissions pass, and the generated
-    `docs/package.json` had to be removed explicitly because npm made it
-    read-only.
-  - After clearing generated docs/npm artifacts again and using fresh npm cache
-    `/private/tmp/hsquared-npm-cache-pr24b`, rerunning
-    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24b npm_config_cache=/private/tmp/hsquared-npm-cache-pr24b nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+  - Local docs retries exposed generated-state failures in
+    DocumenterVitepress/npm rather than Julia doc-content failures:
+    missing temporary `docs/package.json`, an `ENOTEMPTY` cleanup failure in
+    `docs/node_modules`, and an over-cleaned missing `docs/build` directory for
+    warn-only example expansion.
+  - After clearing generated docs/npm artifacts, preserving an empty
+    `docs/build` directory for local example expansion, using a keeper loop to
+    restore the temporary DocumenterVitepress `docs/package.json` if npm
+    removed it mid-build, and using fresh npm cache
+    `/private/tmp/hsquared-npm-cache-pr24d`, rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24d npm_config_cache=/private/tmp/hsquared-npm-cache-pr24d nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
     passed. Generated docs/npm files and temporary npm caches were removed
     again before commit. Known caveats remained: 8 unrelated docstrings not
     included in the manual, local deployment skipped, VitePress default
-    substitutions, missing local logo/favicon/package.json substitutions, and
-    4 npm audit advisories in generated docs dependencies.
-  - Remote workflow-dispatch checks for pushed commit `53fe5de` passed after
-    one superseded Documenter run was cancelled by the workflow concurrency
-    group: CI `27516836843` and Documenter `27516837405`.
+    substitutions, missing local logo/favicon substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed correction commit `43c28b5`
+    passed after one superseded Documenter run was cancelled by the workflow
+    concurrency group: CI `27516836843` and Documenter `27516837405`.
     Remote runs emitted only the known non-failing Node.js 20 deprecation
     annotation from upstream actions forced onto Node.js 24.
 - Boundary: stack reconciliation only. No engine code, tests,
