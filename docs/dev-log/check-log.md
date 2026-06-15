@@ -34,6 +34,10 @@ Newest entries go at the top.
     included in the manual, local deployment skipped, VitePress default
     substitutions, missing local logo/favicon/package.json substitutions, and
     4 npm audit advisories in generated docs dependencies.
+  - Remote workflow-dispatch checks for pushed correction commit `dd07b42`
+    passed: CI `27516341752` and Documenter `27516341745`.
+    Both emitted only the known non-failing Node.js 20 deprecation annotation
+    from upstream actions forced onto Node.js 24.
 - Boundary: stack reconciliation only. No engine code, tests,
   validation-status row, capability-status row, validation-debt row, R bridge
   payload, `result_payload()`, R repository file, marker-file parser, plotting

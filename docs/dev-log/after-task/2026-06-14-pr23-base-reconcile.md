@@ -58,6 +58,13 @@ implementation, or public claims changed in this reconcile slice.
   included in the manual, local deployment skipped, VitePress default
   substitutions, missing local logo/favicon/package.json substitutions, and
   4 npm audit advisories in generated docs dependencies.
+- Remote workflow-dispatch checks for pushed correction commit `dd07b42`:
+  - CI `27516341752`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27516341752>.
+  - Documenter `27516341745`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27516341745>.
+  - Known non-failing Node.js 20 deprecation annotations were emitted by
+    upstream actions forced onto Node.js 24.
 
 ## Public Claim Audit
 
@@ -78,12 +85,10 @@ No R issue action is required because no bridge or public R contract changed.
 
 ## Known Limitations
 
-- Remote CI/Documenter need to run after push.
 - PR #23 remains draft and should not be merged until the stack base decision
   is made by the maintainer.
 - Downstream PRs #24 and above should be rechecked after PR #23 is pushed.
 
 ## Next Actions
 
-- Push `codex/phase5-marker-map-manhattan`.
-- Watch PR #23 CI/Documenter and re-check downstream stack mergeability.
+- Re-check downstream stack mergeability, starting with PR #24.

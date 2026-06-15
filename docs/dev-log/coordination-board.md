@@ -57,6 +57,8 @@ support beyond the recorded evidence.
   check log; no engine code or bridge contract changed. Local full
   `Pkg.test()` and Documenter passed before push, with the local fresh npm
   cache docs run recorded in the check log / after-task note for this slice.
+  Remote workflow-dispatch CI and Documenter passed for pushed correction
+  commit `dd07b42`.
 
 ## Shared Contract
 
