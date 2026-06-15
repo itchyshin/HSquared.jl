@@ -12,6 +12,69 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Public Landing Pages
+
+- Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
+- R twin pkgdown site: <https://itchyshin.github.io/hsquared/>
+- R twin repository: <https://github.com/itchyshin/hsquared>
+
+The Julia repository homepage field points at the Julia engine docs. The
+README links both twin documentation surfaces so readers can move between the
+Julia engine status and the R user-facing package without inferring bridge
+support beyond the recorded evidence.
+
+## Stack Readiness
+
+- PR #17 (`phase4b-factor-analytic-g`) was locally reconciled with current
+  `main` on 2026-06-14. The only conflict was the append-only check log; both
+  the `main` landing-page entry and the Phase 4B branch evidence are preserved.
+  Local full `Pkg.test()` and Documenter build passed before push.
+- PR #18 (`codex/phase5-marker-pvalues`) was locally reconciled with the
+  repaired PR #17 base on 2026-06-14. Conflicts were limited to README and
+  docs/dev-log evidence files; no engine code or bridge contract changed.
+  Local full `Pkg.test()` passed before push, with docs build evidence recorded
+  in the check log / after-task note for this slice.
+- PR #19 (`codex/phase5-marker-adjustments`) was locally reconciled with the
+  repaired PR #18 base on 2026-06-14. The only textual conflict was the
+  append-only check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` passed before push, with docs build evidence recorded in the
+  check log / after-task note for this slice.
+- PR #20 (`codex/phase5-marker-lod`) was locally reconciled with the repaired
+  PR #19 base on 2026-06-14. The only conflict was the append-only check log;
+  no engine code or bridge contract changed. Local full `Pkg.test()` and
+  Documenter passed before push, and remote workflow-dispatch CI / Documenter
+  checks passed for the pushed evidence commit. The local npm-cache workaround
+  is recorded in the check log / after-task note for this slice.
+- PR #22 (`codex/phase5-marker-plot-data`) was locally reconciled with the
+  repaired PR #20 base on 2026-06-14. The only conflict was the append-only
+  check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` and Documenter passed before push, and remote
+  workflow-dispatch CI / Documenter checks passed for the pushed evidence
+  commit. The local npm-cache workaround is recorded in the check log /
+  after-task note for this slice.
+- PR #23 (`codex/phase5-marker-map-manhattan`) was locally reconciled with the
+  repaired PR #22 base on 2026-06-14. The only conflict was the append-only
+  check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` and Documenter passed before push, with the local fresh npm
+  cache docs run recorded in the check log / after-task note for this slice.
+  Remote workflow-dispatch CI and Documenter passed for pushed correction
+  commit `dd07b42`.
+- PR #24 (`codex/phase5-marker-qq-data`) was locally reconciled with the
+  repaired PR #23 base on 2026-06-14. No engine code or bridge contract
+  changed. Local full `Pkg.test()` passed before push; local Documenter passed
+  after generated npm/VitePress retries using a fresh npm cache plus a
+  temporary `docs/package.json` keeper. The local docs retry is recorded in
+  the check log / after-task note for this slice. Remote workflow-dispatch CI
+  and Documenter passed for pushed correction commit `43c28b5` after one
+  superseded Documenter run was cancelled by concurrency.
+- PR #25 (`codex/phase5-mixed-marker-scan`) was locally reconciled with the
+  repaired PR #24 base on 2026-06-14. The only conflict was the append-only
+  check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` and Documenter passed before push, with the same temporary
+  `docs/package.json` keeper workaround recorded in the check log / after-task
+  note for this slice. Remote workflow-dispatch CI and Documenter passed for
+  pushed reconcile/evidence commit `4d394a2`.
+
 ## Shared Contract
 
 - `hsquared` is the R public identity.
