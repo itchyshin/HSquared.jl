@@ -101,10 +101,9 @@ No R issue action is required because no bridge or public R contract changed.
 
 - PR #25 remains draft and should not be merged until the stack base decision
   is made by the maintainer.
-- Downstream PRs #26 and above should be rechecked after PR #25's final
-  evidence commit is pushed.
+- Downstream PRs #26 and above should be rechecked against this repaired PR
+  #25 head.
 
 ## Next Actions
 
-- Push `codex/phase5-mixed-marker-scan`.
-- Watch PR #25 CI/Documenter and then inspect PR #26.
+- Inspect PR #26 against the repaired PR #25 base.
