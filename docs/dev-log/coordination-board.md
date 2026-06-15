@@ -72,7 +72,8 @@ support beyond the recorded evidence.
   check log; no engine code or bridge contract changed. Local full
   `Pkg.test()` and Documenter passed before push, with the same temporary
   `docs/package.json` keeper workaround recorded in the check log / after-task
-  note for this slice.
+  note for this slice. Remote workflow-dispatch CI and Documenter passed for
+  pushed reconcile/evidence commit `4d394a2`.
 
 ## Shared Contract
 

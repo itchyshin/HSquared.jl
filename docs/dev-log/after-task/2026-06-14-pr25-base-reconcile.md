@@ -64,6 +64,13 @@ changed in this reconcile slice.
   not included in the manual, local deployment skipped, VitePress default
   substitutions, missing local logo/favicon substitutions, and 4 npm audit
   advisories in generated docs dependencies.
+- Remote follow-up for pushed reconcile/evidence commit `4d394a2`:
+  - `/opt/homebrew/bin/gh run watch 27517172736 --repo itchyshin/HSquared.jl --exit-status`
+    passed for Julia 1 and Julia 1.10.
+  - `/opt/homebrew/bin/gh run watch 27517173339 --repo itchyshin/HSquared.jl --exit-status`
+    passed for Documenter.
+  - Both runs emitted only the known non-failing Node.js 20 deprecation
+    annotation from GitHub Actions.
 
 ## Public Claim Audit
 
@@ -92,10 +99,10 @@ No R issue action is required because no bridge or public R contract changed.
 
 ## Known Limitations
 
-- Remote CI/Documenter need to run after push.
 - PR #25 remains draft and should not be merged until the stack base decision
   is made by the maintainer.
-- Downstream PRs #26 and above should be rechecked after PR #25 is pushed.
+- Downstream PRs #26 and above should be rechecked after PR #25's final
+  evidence commit is pushed.
 
 ## Next Actions
 

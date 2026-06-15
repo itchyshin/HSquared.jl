@@ -45,6 +45,14 @@ Newest entries go at the top.
   payload, `result_payload()`, R repository file, LOCO path, plotting backend,
   mixed-model p-value calibration, genomic-inflation calibration, or public
   claim changed.
+- Remote follow-up for pushed reconcile/evidence commit `4d394a2`:
+  - `/opt/homebrew/bin/gh run watch 27517172736 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. CI completed for Julia 1 and Julia 1.10; GitHub emitted the known
+    non-failing Node.js 20 deprecation annotation.
+  - `/opt/homebrew/bin/gh run watch 27517173339 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. Documenter completed in 2m59s; GitHub emitted the same known
+    non-failing Node.js 20 deprecation annotation.
+  - PR #25 remained mergeable/clean at head `4d394a2` after the remote checks.
 
 ## 2026-06-14 supplied-variance mixed-model marker scan
 
