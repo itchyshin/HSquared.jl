@@ -67,6 +67,12 @@ support beyond the recorded evidence.
   the check log / after-task note for this slice. Remote workflow-dispatch CI
   and Documenter passed for pushed correction commit `43c28b5` after one
   superseded Documenter run was cancelled by concurrency.
+- PR #25 (`codex/phase5-mixed-marker-scan`) was locally reconciled with the
+  repaired PR #24 base on 2026-06-14. The only conflict was the append-only
+  check log; no engine code or bridge contract changed. Local full
+  `Pkg.test()` and Documenter passed before push, with the same temporary
+  `docs/package.json` keeper workaround recorded in the check log / after-task
+  note for this slice.
 
 ## Shared Contract
 
