@@ -74,6 +74,11 @@ support beyond the recorded evidence.
   `docs/package.json` keeper workaround recorded in the check log / after-task
   note for this slice. Remote workflow-dispatch CI and Documenter passed for
   pushed reconcile/evidence commit `4d394a2`.
+- PR #26 (`codex/phase5-loco-marker-scan`) was locally reconciled with the
+  final PR #25 base on 2026-06-14. The only conflict was the append-only check
+  log; no engine code, tests, API docs, validation rows, bridge contract, or R
+  files changed in the reconcile slice beyond inherited PR #25 evidence. Local
+  full `Pkg.test()` passed before push.
 
 ## Shared Contract
 

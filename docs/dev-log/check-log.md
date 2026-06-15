@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 PR26 base reconcile
+
+- Goal: resolve draft PR #26 (`codex/phase5-loco-marker-scan`) against the
+  final PR #25 base branch (`codex/phase5-mixed-marker-scan`) after PR #25's
+  remote-check evidence commit, without widening the supplied LOCO marker-scan
+  scope or changing R/bridge/public workflow claims.
+- Active lenses: Ada/Shannon (stack order), Gauss (relationship precision
+  selection), Fisher (Wald/p-value boundary), Grace (local checks), Rose (claim
+  boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-mixed-marker-scan` into
+    `codex/phase5-loco-marker-scan`;
+  - resolved the conflict by preserving the PR #26 supplied LOCO evidence and
+    the PR #25 base-reconcile evidence;
+  - no engine code, tests, API docs, validation rows, bridge contract files, or
+    R repository files changed in the reconcile slice beyond the inherited
+    final PR #25 evidence.
+- Local checks:
+  - `git diff --check`: passed after conflict resolution.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 0 scaffold /
+    validation-status (`213` checks), Phase 5 fixed-effect single-marker scan
+    (`142` checks), and Phase 4B structured genetic covariance (`61` checks).
+- Boundary: stack reconciliation only. The PR #26 feature remains a dense
+  validation-scale supplied-matrix-selection LOCO helper; no automatic LOCO
+  workflow defaults, variance-component estimation, sparse production marker
+  scan, calibrated p-value/genomic-inflation claim, plotting backend, R
+  `marker_scan()` activation, bridge payload change, `result_payload()` change,
+  or comparator claim is added.
+
 ## 2026-06-14 supplied LOCO marker scan selection
 
 - Goal: add a direct Julia helper that selects among caller-supplied
