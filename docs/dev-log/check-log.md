@@ -2,6 +2,50 @@
 
 Newest entries go at the top.
 
+## 2026-06-14 PR24 base reconcile
+
+- Goal: resolve draft PR #24 (`codex/phase5-marker-qq-data`) against the
+  repaired PR #23 base branch (`codex/phase5-marker-map-manhattan`) without
+  widening QQ plot-data, plotting, genomic-inflation, model-fitting, or bridge
+  claims.
+- Active lenses: Ada/Shannon (stack order), Florence (plot-data boundary),
+  Fisher (QQ/p-value display semantics), Grace (low-core checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - merged `origin/codex/phase5-marker-map-manhattan` into
+    `codex/phase5-marker-qq-data`;
+  - preserved the PR #24 QQ plot-data evidence plus the repaired PR #23,
+    PR #22, PR #20, PR #19, PR #18, PR #17, and landing-page evidence from the
+    stack base;
+  - no engine code, tests, API docs, or bridge contract files changed in the
+    reconcile slice.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed on the clean reconciled branch before ledger
+    edits.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Full package suite passed, including Phase 0 scaffold /
+    validation-status (`197` checks), Phase 5 fixed-effect single-marker scan
+    (`91` checks), and Phase 4B structured genetic covariance (`61` checks),
+    on the reconciled PR #24 branch state.
+  - Initial docs command after clearing generated docs/npm artifacts and using
+    fresh npm cache `/private/tmp/hsquared-npm-cache-pr24` failed in local
+    generated VitePress/npm state: one warn-only `@example mv` block reported
+    `cd("build/")` and npm installed an incomplete VitePress tree ending with
+    `env: vitepress: No such file or directory`.
+  - After clearing generated docs/npm artifacts again and using fresh npm cache
+    `/private/tmp/hsquared-npm-cache-pr24b`, rerunning
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24b npm_config_cache=/private/tmp/hsquared-npm-cache-pr24b nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+    passed. Generated docs/npm files and temporary npm caches were removed
+    again before commit. Known caveats remained: 8 unrelated docstrings not
+    included in the manual, local deployment skipped, VitePress default
+    substitutions, missing local logo/favicon/package.json substitutions, and
+    4 npm audit advisories in generated docs dependencies.
+- Boundary: stack reconciliation only. No engine code, tests,
+  validation-status row, capability-status row, validation-debt row, R bridge
+  payload, `result_payload()`, R repository file, plotting backend, genomic
+  inflation calibration, mixed-model marker scan, or public claim changed.
+
 ## 2026-06-14 fixed-effect marker-scan QQ plot data
 
 - Goal: add deterministic QQ plot-data preparation for the direct Julia

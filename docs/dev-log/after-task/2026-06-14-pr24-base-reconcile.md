@@ -1,0 +1,101 @@
+# 2026-06-14 PR24 Base Reconcile
+
+## Task Goal
+
+Resolve PR #24 (`codex/phase5-marker-qq-data`) against the repaired PR #23
+base (`codex/phase5-marker-map-manhattan`) while preserving the QQ plot-data
+scope and keeping the stacked Phase 5 train linear.
+
+## Active Lenses And Spawned Agents
+
+- Ada/Shannon: keep the branch stack linear and non-merging.
+- Florence: preserve the plot-data-only boundary.
+- Fisher: preserve QQ/p-value display semantics and avoid calibration claims.
+- Grace: verify low-core local checks before push.
+- Rose: prevent plotting-backend, genomic-inflation, mixed-model GWAS/QTL, R
+  syntax, bridge, or comparator claims.
+- Spawned agents: none.
+
+## Files Changed
+
+- `docs/dev-log/check-log.md`
+- `docs/dev-log/coordination-board.md`
+- inherited after-task notes from the repaired base branch
+- this report
+
+## What Landed
+
+Merged `origin/codex/phase5-marker-map-manhattan` into
+`codex/phase5-marker-qq-data`. The reconciliation preserved:
+
+- the PR #24 QQ plot-data evidence;
+- the PR #23 marker-map-backed Manhattan base reconcile and feature evidence;
+- the PR #22 Manhattan plot-data evidence;
+- the PR #20 LOD-equivalent score evidence;
+- the PR #19 multiple-testing adjustment evidence;
+- the PR #18 p-value evidence;
+- the PR #17 Phase 4B main-reconcile evidence;
+- the current GitHub landing-page docs-link evidence.
+
+No engine code, tests, validation-status rows, capability rows, bridge payload,
+`result_payload()`, R package files, plotting backend, genomic-inflation
+calibration, mixed-model marker scan, or public claims changed in this
+reconcile slice.
+
+## Checks Run
+
+- `git diff --check`: passed on the clean reconciled branch before ledger
+  edits.
+- `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+  passed. The full package suite passed, including Phase 0 scaffold /
+  validation-status (`197` checks), Phase 5 fixed-effect single-marker scan
+  (`91` checks), and Phase 4B structured genetic covariance (`61` checks), on
+  the reconciled PR #24 branch state.
+- Initial docs command after clearing generated docs/npm artifacts and using
+  fresh npm cache `/private/tmp/hsquared-npm-cache-pr24` failed in local
+  generated VitePress/npm state: one warn-only `@example mv` block reported
+  `cd("build/")`, and npm installed an incomplete VitePress tree ending with
+  `env: vitepress: No such file or directory`.
+- After clearing generated docs/npm artifacts again and using fresh npm cache
+  `/private/tmp/hsquared-npm-cache-pr24b`, rerunning
+  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr24b npm_config_cache=/private/tmp/hsquared-npm-cache-pr24b nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
+  passed. Generated docs/npm files and temporary npm caches were removed again
+  before commit. Known caveats remained: 8 unrelated docstrings not included
+  in the manual, local deployment skipped, VitePress default substitutions,
+  missing local logo/favicon/package.json substitutions, and 4 npm audit
+  advisories in generated docs dependencies.
+
+## Public Claim Audit
+
+Allowed claim: PR #24 is locally reconciled against the repaired PR #23 base
+while preserving its deterministic fixed-effect marker-scan QQ plot-data output.
+
+Blocked claims remain blocked: no plotting backend, no genomic-inflation
+calibration, no calibrated p-values, no marker-file parser, no mixed-model
+marker scan, no GWAS/QTL/interval-mapping claim, no LOCO, no R
+`marker_scan()` activation, no bridge payload or `result_payload()` change,
+and no comparator parity claim.
+
+## Coordination Notes
+
+This is Julia-lane stack maintenance only. The R repository was not edited.
+No R issue action is required because no bridge or public R contract changed.
+
+## What Did Not Go Smoothly
+
+- The first local docs run failed in generated npm/VitePress state after an
+  incomplete install. A second fresh-cache run passed.
+- Clearing generated `docs/node_modules` needed a permission reset because npm
+  produced read-only generated files.
+
+## Known Limitations
+
+- Remote CI/Documenter need to run after push.
+- PR #24 remains draft and should not be merged until the stack base decision
+  is made by the maintainer.
+- Downstream PRs #25 and above should be rechecked after PR #24 is pushed.
+
+## Next Actions
+
+- Push `codex/phase5-marker-qq-data`.
+- Watch PR #24 CI/Documenter and then inspect PR #25.
