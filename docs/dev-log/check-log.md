@@ -26,18 +26,14 @@ Newest entries go at the top.
     (`72` checks), and Phase 4B structured genetic covariance (`61` checks),
     on the reconciled PR #23 branch state.
   - After clearing generated `docs/build`, `docs/node_modules`,
-    `docs/package-lock.json`, ignored `docs/Manifest.toml`, recreating a
-    temporary `docs/package.json` from the DocumenterVitepress template, and
-    using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr23`,
-    the first docs run reached VitePress but failed after npm install because
-    the temporary `docs/package.json` disappeared before the npm script phase.
-    Restoring the same temporary `docs/package.json` and rerunning
+    `docs/package-lock.json`, ignored `docs/Manifest.toml`, `docs/package.json`,
+    and using a fresh temporary npm cache at `/private/tmp/hsquared-npm-cache-pr23`,
     `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NPM_CONFIG_CACHE=/private/tmp/hsquared-npm-cache-pr23 npm_config_cache=/private/tmp/hsquared-npm-cache-pr23 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`
     passed. Generated docs/npm files and the temporary npm cache were removed
     again before commit. Known caveats remained: 8 unrelated docstrings not
     included in the manual, local deployment skipped, VitePress default
-    substitutions, missing local logo/favicon substitutions, and 4 npm audit
-    advisories in generated docs dependencies.
+    substitutions, missing local logo/favicon/package.json substitutions, and
+    4 npm audit advisories in generated docs dependencies.
 - Boundary: stack reconciliation only. No engine code, tests,
   validation-status row, capability-status row, validation-debt row, R bridge
   payload, `result_payload()`, R repository file, marker-file parser, plotting

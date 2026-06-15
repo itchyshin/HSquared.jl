@@ -55,9 +55,8 @@ support beyond the recorded evidence.
 - PR #23 (`codex/phase5-marker-map-manhattan`) was locally reconciled with the
   repaired PR #22 base on 2026-06-14. The only conflict was the append-only
   check log; no engine code or bridge contract changed. Local full
-  `Pkg.test()` and Documenter passed before push, with the local temporary
-  `docs/package.json` rerun recorded in the check log / after-task note for
-  this slice.
+  `Pkg.test()` and Documenter passed before push, with the local fresh npm
+  cache docs run recorded in the check log / after-task note for this slice.
 
 ## Shared Contract
 
