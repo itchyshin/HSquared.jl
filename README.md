@@ -120,9 +120,10 @@ Implemented now:
   relationship precision construction and supplied leave-one-group-out marker
   screening, approximate Wald p-values plus
   Bonferroni and Benjamini-Hochberg adjustments, LOD-equivalent scores,
-  row-aligned marker-scan table preparation, marker-effect summaries,
-  marker-variance contribution summaries, nominal returned-marker-set
-  significance summaries, and marker-map-backed Manhattan, regional-window,
+  row-aligned marker-scan table preparation, direct GWAS/QTL/eQTL labelled
+  table wrappers, marker-effect summaries, marker-variance contribution
+  summaries, nominal returned-marker-set significance summaries, and
+  marker-map-backed Manhattan, regional-window,
   QQ, and lambda_GC diagnostic preparation, plus an opt-in marker-scan recovery
   harness outside CI;
 - experimental repeatability and two-effect model utilities;
@@ -146,7 +147,8 @@ Planned, but not implemented yet:
 - public R-facing genomic model-spec fitting, production genomic prediction,
   APY/sparse genomic scaling, formula-driven mixed-model marker scans, public
   LOCO workflows, interval-mapping or mixed-model LOD workflows,
-  genome-wide multiple-testing calibration, QTL/eQTL intervals, and
+  genome-wide multiple-testing calibration, expression-wide eQTL scans,
+  QTL/eQTL intervals, and
   non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 

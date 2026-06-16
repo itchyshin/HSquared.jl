@@ -1282,6 +1282,156 @@ function _marker_scan_table(scan, chromosomes, positions; total_variance)
 end
 
 """
+    gwas_table(scan; trait = nothing, total_variance = nothing)
+    gwas_table(scan, marker_spec::HSMarkerMapSpec; ...)
+    gwas_table(scan, data::HSData; ...)
+
+Prepare a GWAS-labelled table from an already-computed direct marker scan.
+
+This is a semantic wrapper around [`marker_scan_table`](@ref): it preserves the
+row-aligned marker scan fields and adds `analysis = :gwas`. If `trait` is
+supplied, it is recorded as non-empty scalar table metadata. Existing scan
+statistics, optional marker-map metadata, and optional variance proportions are
+not recomputed.
+
+This helper does not run a marker scan, estimate variance components, calibrate
+p-values, choose genome-wide thresholds, activate R-facing `marker_scan()`
+syntax, draw plots, or change the bridge payload.
+"""
+function gwas_table(scan; trait = nothing, total_variance = nothing)
+    table = marker_scan_table(scan; total_variance = total_variance)
+    return _marker_analysis_table(table, :gwas; trait = trait)
+end
+
+function gwas_table(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    trait = nothing,
+    total_variance = nothing,
+)
+    table = marker_scan_table(scan, marker_spec; total_variance = total_variance)
+    return _marker_analysis_table(table, :gwas; trait = trait)
+end
+
+function gwas_table(
+    scan,
+    data::HSData;
+    trait = nothing,
+    total_variance = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return gwas_table(scan, data.marker_spec; trait = trait, total_variance = total_variance)
+end
+
+"""
+    qtl_table(scan; trait = nothing, total_variance = nothing)
+    qtl_table(scan, marker_spec::HSMarkerMapSpec; ...)
+    qtl_table(scan, data::HSData; ...)
+
+Prepare a QTL-labelled table from an already-computed direct marker scan.
+
+This is a semantic wrapper around [`marker_scan_table`](@ref): it preserves the
+row-aligned marker scan fields and adds `analysis = :qtl`. If `trait` is
+supplied, it is recorded as non-empty scalar table metadata. The LOD-equivalent
+scores are the scan's existing fixed-effect known-variance scores; no interval
+mapping or mixed-model LOD workflow is performed here.
+
+This helper does not run a marker scan, perform interval mapping, estimate
+variance components, calibrate p-values, choose QTL thresholds, activate
+R-facing `marker_scan()` / `qtl_scan()` syntax, draw plots, or change the bridge
+payload.
+"""
+function qtl_table(scan; trait = nothing, total_variance = nothing)
+    table = marker_scan_table(scan; total_variance = total_variance)
+    return _marker_analysis_table(table, :qtl; trait = trait)
+end
+
+function qtl_table(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    trait = nothing,
+    total_variance = nothing,
+)
+    table = marker_scan_table(scan, marker_spec; total_variance = total_variance)
+    return _marker_analysis_table(table, :qtl; trait = trait)
+end
+
+function qtl_table(
+    scan,
+    data::HSData;
+    trait = nothing,
+    total_variance = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return qtl_table(scan, data.marker_spec; trait = trait, total_variance = total_variance)
+end
+
+"""
+    eqtl_table(scan; feature = nothing, total_variance = nothing)
+    eqtl_table(scan, marker_spec::HSMarkerMapSpec; ...)
+    eqtl_table(scan, data::HSData; ...)
+
+Prepare an eQTL-labelled table from an already-computed direct marker scan.
+
+This is a semantic wrapper around [`marker_scan_table`](@ref): it preserves the
+row-aligned marker scan fields and adds `analysis = :eqtl`. If `feature` is
+supplied, it is recorded as non-empty scalar table metadata for the expression
+feature, gene, or transcript represented by the scan.
+
+This helper does not run expression-wide scans, classify cis/trans windows,
+join expression or annotation tables, estimate variance components, calibrate
+p-values, activate R-facing `marker_scan()` / eQTL syntax, draw plots, or
+change the bridge payload.
+"""
+function eqtl_table(scan; feature = nothing, total_variance = nothing)
+    table = marker_scan_table(scan; total_variance = total_variance)
+    return _marker_analysis_table(table, :eqtl; feature = feature)
+end
+
+function eqtl_table(
+    scan,
+    marker_spec::HSMarkerMapSpec;
+    feature = nothing,
+    total_variance = nothing,
+)
+    table = marker_scan_table(scan, marker_spec; total_variance = total_variance)
+    return _marker_analysis_table(table, :eqtl; feature = feature)
+end
+
+function eqtl_table(
+    scan,
+    data::HSData;
+    feature = nothing,
+    total_variance = nothing,
+)
+    data.marker_spec !== nothing ||
+        throw(ArgumentError("HSData must contain marker metadata"))
+    return eqtl_table(scan, data.marker_spec; feature = feature, total_variance = total_variance)
+end
+
+function _marker_analysis_table(table, analysis::Symbol; trait = nothing, feature = nothing)
+    analysis in (:gwas, :qtl, :eqtl) ||
+        throw(ArgumentError("analysis must be :gwas, :qtl, or :eqtl"))
+
+    result = merge(table, (analysis = analysis,))
+    trait_label = _checked_optional_label(trait, :trait)
+    feature_label = _checked_optional_label(feature, :feature)
+    trait_label === nothing || (result = merge(result, (trait = trait_label,)))
+    feature_label === nothing || (result = merge(result, (feature = feature_label,)))
+    return result
+end
+
+function _checked_optional_label(value, field::Symbol)
+    value === nothing && return nothing
+    label = strip(string(value))
+    !isempty(label) ||
+        throw(ArgumentError("$(field) must be a non-empty value when supplied"))
+    return label
+end
+
+"""
     marker_effects(scan; sort_by = :p_value, top_n = nothing,
                            decreasing = nothing)
     marker_effects(scan, marker_spec::HSMarkerMapSpec; ...)

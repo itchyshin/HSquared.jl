@@ -268,7 +268,7 @@ end
     @test occursin("regional marker-window data", fixed_marker_row.claim_boundary)
     @test occursin("nominal returned-marker-set significance summary", fixed_marker_row.claim_boundary)
     @test occursin("no calibrated/correlated-marker genome-wide threshold claim", fixed_marker_row.claim_boundary)
-    @test occursin("no gwas_table(), qtl_table(), or eqtl_table() activation", fixed_marker_row.claim_boundary)
+    @test occursin("gwas_table(), qtl_table(), and eqtl_table() wrappers only", fixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", fixed_marker_row.claim_boundary)
     @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
@@ -2247,6 +2247,32 @@ end
     @test map_table.chromosomes == ["2", "1"]
     @test map_table.positions == [5.0, 1.0]
     @test map_table.scan_indices == [1, 2]
+    gwas = gwas_table(scan; trait = :height, total_variance = 2.0)
+    @test gwas.analysis == :gwas
+    @test gwas.trait == "height"
+    @test gwas.marker_ids == scan.marker_ids
+    @test gwas.target == :direct_marker_scan
+    @test gwas.proportion_variance_explained ≈ scan_table.marker_variances ./ 2 atol = 1e-12
+    map_gwas = gwas_table(scan, marker_map_data; trait = "height")
+    @test map_gwas.analysis == :gwas
+    @test map_gwas.trait == "height"
+    @test map_gwas.chromosomes == ["2", "1"]
+    @test map_gwas.positions == [5.0, 1.0]
+    qtl = qtl_table(mixed; trait = "yield")
+    @test qtl.analysis == :qtl
+    @test qtl.trait == "yield"
+    @test qtl.target == :mixed_model_marker_scan
+    @test qtl.marker_ids == mixed.marker_ids
+    @test qtl.lod_scores ≈ mixed.lod_scores atol = 1e-12
+    eqtl = eqtl_table(loco; feature = "geneA")
+    @test eqtl.analysis == :eqtl
+    @test eqtl.feature == "geneA"
+    @test eqtl.target == :loco_mixed_model_marker_scan
+    @test eqtl.marker_groups == ["chr1", "chr2"]
+    map_eqtl = eqtl_table(scan, marker_map_data.marker_spec; feature = :transcript_1)
+    @test map_eqtl.analysis == :eqtl
+    @test map_eqtl.feature == "transcript_1"
+    @test map_eqtl.chromosomes == ["2", "1"]
     map_region = marker_region_data(
         scan,
         marker_map_data;
@@ -2460,6 +2486,13 @@ end
     @test_throws ArgumentError marker_scan_table(scan; total_variance = 0.0)
     @test_throws ArgumentError marker_scan_table(scan; total_variance = "not numeric")
     @test_throws ArgumentError marker_scan_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError gwas_table(scan; trait = "")
+    @test_throws ArgumentError qtl_table(scan; trait = " ")
+    @test_throws ArgumentError eqtl_table(scan; feature = "")
+    @test_throws ArgumentError gwas_table((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError gwas_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError qtl_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError eqtl_table(scan, HSData((id = ["a"], y = [1.0])))
     @test_throws ArgumentError marker_region_data(scan; chromosome = "1")
     @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1"], positions = [1.0], chromosome = "1")
     @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0], chromosome = "1")

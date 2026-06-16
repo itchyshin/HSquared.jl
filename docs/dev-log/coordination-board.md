@@ -12,6 +12,16 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Current Slice
+
+- 2026-06-16: Julia lane / `codex/phase5-gwas-qtl-eqtl-tables`.
+  Ada/Shannon/Fisher/Curie/Pat/Rose/Grace/Jason lenses. Adds direct
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` wrappers over existing
+  marker-scan table data only. No R edits, no bridge/result-payload change, no
+  formula-driven marker scan, no expression-wide eQTL workflow, no calibrated
+  p-value or genome-wide threshold claim. Next action: finish checks, commit,
+  push, and open/mark draft PR after the existing Phase 5 stack head.
+
 ## Shared Contract
 
 - `hsquared` is the R public identity.
@@ -221,8 +231,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   row-aligned marker-scan tables from those direct scan fields in original scan
   order, with allele variances, marker-variance contributions, optional
   total-variance proportions, optional variance components / marker groups
-  when present, and optional exact marker-map metadata alignment. It is not
-  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+  when present, and optional exact marker-map metadata alignment.
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` now label those
+  already-computed direct scan tables with analysis metadata and optional trait
+  or expression-feature metadata; they do not run GWAS/QTL/eQTL workflows.
   `marker_effects()` prepares
   sorted top-marker effect summaries from those direct scan fields, with
   optional exact marker-map metadata alignment. `marker_variance_explained()`
@@ -255,8 +267,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   backend, calibrated/correlated-marker genome-wide thresholds,
   `regional_plot()` / fine-mapping activation,
   advanced/correlated-marker multiple-testing workflow,
-  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation,
-  R `marker_scan()` formula activation, bridge payload change, or
+  expression-wide eQTL scanning, R `marker_scan()` formula activation,
+  bridge payload change, or
   `result_payload()` change.
 - Julia now has `mixed_model_marker_scan` as a direct Phase 5 dense
   supplied-variance GLS marker-screening utility. It forms

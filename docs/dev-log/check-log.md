@@ -2,6 +2,57 @@
 
 Newest entries go at the top.
 
+## 2026-06-16 GWAS/QTL/eQTL table wrappers
+
+- Goal: add direct Julia `gwas_table()`, `qtl_table()`, and `eqtl_table()`
+  wrappers over existing `marker_scan_table()` output without adding a new
+  marker-scan engine, R formula activation, expression-wide eQTL scans,
+  calibrated thresholds, plotting, or bridge payload changes.
+- Active lenses: Ada/Shannon (stack discipline), Fisher (claim and p-value
+  boundary), Curie (deterministic tests), Pat/Boole (table naming), Rose
+  (public claim audit), Grace (checks), Jason (sister-package scout). Spawned
+  subagents: none.
+- Scout:
+  - checked local direct marker helpers and status rows;
+  - checked local sister repositories for comparable table/diagnostic patterns;
+  - durable note:
+    `docs/dev-log/scout/2026-06-16-gwas-qtl-eqtl-table-wrappers-scout.md`;
+  - lesson: expose explicit table data with provenance fields and keep scan
+    execution, plotting, and interpretation/calibration separate.
+- Change:
+  - exported `gwas_table()`, `qtl_table()`, and `eqtl_table()`;
+  - each helper labels an already-computed direct marker-scan table with
+    `analysis = :gwas | :qtl | :eqtl`;
+  - optional non-empty `trait` metadata is supported for GWAS/QTL tables;
+  - optional non-empty `feature` metadata is supported for eQTL tables;
+  - marker-map-backed `HSMarkerMapSpec` / `HSData` alignment is supported;
+  - synced validation-status, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, engine contract, and
+    coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the package suite; Phase 5 fixed-effect
+    single-marker scan testset is now 443 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset remains 443
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Docs command
+    `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+- Boundary: direct Julia table-preparation wrappers only. This does not run
+  GWAS/QTL/eQTL workflows, estimate marker-scan variance components, classify
+  cis/trans windows, join expression/annotation data, calibrate p-values,
+  choose genome-wide thresholds, draw plots, activate R `marker_scan()` or
+  `qtl_scan()` syntax, change `result_payload()`, change the bridge payload,
+  or add comparator parity.
+
 ## 2026-06-14 marker scan recovery harness
 
 - Goal: add an opt-in, outside-CI recovery harness for the existing direct

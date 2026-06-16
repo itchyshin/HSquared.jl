@@ -59,8 +59,11 @@
   `marker_scan_table()` prepares row-aligned scan tables from the same direct
   scan fields in original scan order, with allele variances, marker-variance
   contributions, optional total-variance proportions, optional mixed/LOCO
-  fields when present, and optional marker-map metadata alignment; it is not
-  `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+  fields when present, and optional marker-map metadata alignment.
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` are semantic wrappers over
+  those already-computed direct scan tables; they add an analysis label plus
+  optional trait or expression-feature metadata, but do not run GWAS, interval
+  mapping, or expression-wide eQTL scans.
   `marker_variance_explained()` prepares deterministic marker-level
   variance-contribution summaries as `2p(1-p) * effect^2`, with optional
   total-variance proportions and metadata alignment.

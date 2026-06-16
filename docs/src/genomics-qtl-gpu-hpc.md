@@ -373,8 +373,11 @@ proportions; it is data preparation for future regional plot/fine-mapping
 front ends, not activation of those workflows. `marker_scan_table()` prepares
 row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, optional
-mixed/LOCO fields when present, and the same exact marker-map alignment; it is
-not `gwas_table()` / `qtl_table()` / `eqtl_table()` activation.
+mixed/LOCO fields when present, and the same exact marker-map alignment.
+`gwas_table()`, `qtl_table()`, and `eqtl_table()` are thin semantic wrappers
+over the same already-computed direct scan fields: they add an analysis label
+and optional trait / expression-feature metadata, but do not run GWAS, interval
+mapping, or expression-wide eQTL scans.
 `marker_significance_summary()` reports nominal returned-marker-set raw,
 Bonferroni, and BH significance flags/counts plus top-marker provenance from
 the same scan fields; it is not a calibrated genome-wide threshold workflow.
@@ -447,10 +450,14 @@ marker_data = HSData((id = ["example"], y = [0.0]); markers = (
 map_manhattan = marker_manhattan_data(scan, marker_data)
 map_region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop = 25)
 map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
+gwas = gwas_table(scan, marker_data; trait = "height")
+qtl = qtl_table(scan, marker_data; trait = "height")
+eqtl = eqtl_table(scan, marker_data; feature = "geneA")
 map_effects = marker_effects(scan, marker_data; top_n = 2)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
 manhattan.neglog10_p_values
 table.marker_variances
+gwas.analysis
 significance.bonferroni_marker_ids
 qq.expected_neglog10_p_values
 ```
@@ -852,11 +859,11 @@ Genomics/QTL:
 - `marker_effects(scan)`;
 - `marker_variance_explained(scan)`;
 - `marker_scan_table(scan)`;
+- `gwas_table(scan)`;
+- `qtl_table(scan)`;
+- `eqtl_table(scan)`;
 - `marker_region_data(scan)`;
 - `marker_significance_summary(scan)`;
-- `qtl_table(fit)`;
-- `eqtl_table(fit)`;
-- `gwas_table(fit)`;
 - `lod_scores(fit)`;
 - `manhattan_plot(fit)`;
 - `qq_plot(fit)`;

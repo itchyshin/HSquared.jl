@@ -230,6 +230,9 @@ inflation = marker_genomic_inflation(scan)
 effects = marker_effects(scan; sort_by = :p_value, top_n = 10)
 variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 10)
 table = marker_scan_table(scan; total_variance = 2.0)
+gwas = gwas_table(scan; trait = "height", total_variance = 2.0)
+qtl = qtl_table(scan; trait = "height", total_variance = 2.0)
+eqtl = eqtl_table(scan; feature = "geneA", total_variance = 2.0)
 significance = marker_significance_summary(scan; alpha = 0.05)
 marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
 marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
@@ -238,6 +241,8 @@ region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop
 map_effects = marker_effects(scan, marker_data; top_n = 10)
 map_variance = marker_variance_explained(scan, marker_data; top_n = 10)
 map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
+map_gwas = gwas_table(scan, marker_data; trait = "height")
+map_eqtl = eqtl_table(scan, marker_data; feature = "geneA")
 ```
 
 These are direct Julia engine utilities. They do not change the R bridge
@@ -293,10 +298,18 @@ change bridge payloads.
 preserves original scan order, returns the existing scan statistics with
 allele variances and marker-variance contributions, can optionally divide by a
 supplied `total_variance`, and can align already-validated marker-map metadata
-by exact marker ID. It does not sort markers, activate `gwas_table()` /
-`qtl_table()` / `eqtl_table()`, estimate marker-scan variance components, claim
+by exact marker ID. It does not sort markers, estimate marker-scan variance
+components, claim
 calibrated PVE/model R², choose thresholds, calibrate p-values, draw plots, or
 change bridge payloads.
+
+`gwas_table()`, `qtl_table()`, and `eqtl_table()` are deterministic semantic
+wrappers over `marker_scan_table()` only. They label an already-computed direct
+scan table with `analysis = :gwas | :qtl | :eqtl` and optional trait or
+expression-feature metadata. They do not run scans, perform interval mapping,
+classify cis/trans eQTL windows, join expression or annotation data, estimate
+variance components, calibrate p-values, draw plots, activate R-facing syntax,
+or change bridge payloads.
 
 `marker_significance_summary()` prepares deterministic nominal
 returned-marker-set significance summaries only. It reports raw, Bonferroni, and BH flags /

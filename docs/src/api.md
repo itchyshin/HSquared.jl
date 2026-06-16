@@ -66,6 +66,9 @@ HSquared.single_marker_scan
 HSquared.mixed_model_marker_scan
 HSquared.loco_relationship_precisions
 HSquared.loco_mixed_model_marker_scan
+HSquared.gwas_table
+HSquared.qtl_table
+HSquared.eqtl_table
 HSquared.marker_effects
 HSquared.marker_variance_explained
 HSquared.marker_scan_table

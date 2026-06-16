@@ -105,9 +105,10 @@ unimplemented.
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
   GBLUP REML variance-component estimation, and fixed-effect single-marker
   screening (`single_marker_scan`) plus row-aligned marker-scan table
-  preparation, marker-map-backed Manhattan metadata and QQ plot-data
-  preparation, marker-effect summaries, marker-variance contribution
-  summaries, nominal returned-marker-set significance summaries, and a
+  preparation, direct GWAS/QTL/eQTL labelled table wrappers, marker-map-backed
+  Manhattan metadata and QQ plot-data preparation, marker-effect summaries,
+  marker-variance contribution summaries, nominal returned-marker-set
+  significance summaries, and a
   genomic-inflation diagnostic.
   `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
@@ -380,8 +381,10 @@ from the same scan fields; it is not a calibrated genome-wide threshold
 workflow. `marker_scan_table`
 prepares row-aligned scan tables in original scan order with allele variances,
 marker-variance contributions, optional total-variance proportions, and the
-same metadata alignment, but does not activate `gwas_table()`, `qtl_table()`,
-or `eqtl_table()`. `marker_effects`
+same metadata alignment. `gwas_table()`, `qtl_table()`, and `eqtl_table()` are
+thin wrappers over already-computed direct scan tables: they add an analysis
+label plus optional trait or expression-feature metadata, but do not run GWAS,
+interval mapping, or expression-wide eQTL scans. `marker_effects`
 prepares sorted top-marker effect summaries from the same scan fields, with
 optional chromosome/position alignment from validated marker metadata.
 `marker_variance_explained` prepares sorted marker-level variance-contribution
@@ -398,10 +401,10 @@ by marker group before running the same GLS test, and
 precision dictionary from marker groups. These helpers are not
 formula-driven mixed-model GWAS/QTL workflows, do not estimate marker-scan
 variance components, do not choose public LOCO defaults, do not compute
-interval-mapping or mixed-model LOD workflows or calibrated / correlated-marker
-multiple-testing workflows, do not draw plots, calibrate p-values, or choose
-calibrated genome-wide thresholds, and do not activate the R-facing
-`marker_scan()` formula term.
+interval-mapping, expression-wide eQTL, or mixed-model LOD workflows or
+calibrated / correlated-marker multiple-testing workflows, do not draw plots,
+calibrate p-values, or choose calibrated genome-wide thresholds, and do not
+activate the R-facing `marker_scan()` formula term.
 
 `sim/phase5_marker_scan_recovery.jl` records opt-in seeded marker-signal
 recovery outside CI for the fixed, supplied-variance mixed, and supplied LOCO
