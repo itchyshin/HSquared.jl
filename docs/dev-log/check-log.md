@@ -45,6 +45,14 @@ Newest entries go at the top.
   production marker scan, calibrated p-value/genomic-inflation claim, plotting
   backend, R `marker_scan()` activation, bridge payload change,
   `result_payload()` change, or comparator claim is added.
+- Remote follow-up for pushed reconcile commit `bd23dcc`:
+  - `/opt/homebrew/bin/gh run watch 27613664700 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. CI completed for Julia 1 and Julia 1.10; GitHub emitted the known
+    non-failing Node.js 20 deprecation annotation.
+  - `/opt/homebrew/bin/gh run watch 27613664742 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. Documenter completed in 2m51s; GitHub emitted the same known
+    non-failing Node.js 20 deprecation annotation.
+  - PR #27 was mergeable/clean at head `bd23dcc` after the remote checks.
 
 ## 2026-06-14 LOCO relationship precision construction
 

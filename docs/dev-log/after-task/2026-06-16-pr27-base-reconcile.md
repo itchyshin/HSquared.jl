@@ -58,6 +58,14 @@ inherited final PR #26 evidence.
   included in the manual, local deployment skipped, VitePress default
   substitutions, missing local logo/favicon substitutions, and 4 npm audit
   advisories in generated docs dependencies.
+- Remote follow-up for pushed reconcile commit `bd23dcc`:
+  - `/opt/homebrew/bin/gh run watch 27613664700 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. CI completed for Julia 1 and Julia 1.10; GitHub emitted the known
+    non-failing Node.js 20 deprecation annotation.
+  - `/opt/homebrew/bin/gh run watch 27613664742 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. Documenter completed in 2m51s; GitHub emitted the same known
+    non-failing Node.js 20 deprecation annotation.
+  - PR #27 was mergeable/clean at head `bd23dcc` after the remote checks.
 
 ## Public Claim Audit
 
@@ -89,13 +97,11 @@ and PR #26 reconcile entry both wanted the newest position.
 
 ## Known Limitations
 
-- Remote CI/Documenter still need to run after push.
 - PR #27 remains draft and should not be merged until the stack base decision is
   made by the maintainer.
 - Downstream PRs #28 and above should be rechecked after PR #27 is pushed.
 
 ## Next Actions
 
-- Push `codex/phase5-loco-relationship-precisions`.
-- Watch PR #27 CI/Documenter after push.
+- Dispatch CI/Documenter once more after this evidence-only commit lands.
 - Continue the stack repair with PR #28 if PR #27 remains clean.

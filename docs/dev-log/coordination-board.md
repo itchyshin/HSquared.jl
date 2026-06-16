@@ -85,7 +85,8 @@ support beyond the recorded evidence.
   bridge contract, or R files changed in the reconcile slice beyond inherited
   PR #26 evidence. Local full `Pkg.test()` and Documenter passed before push,
   with the same temporary `docs/package.json` keeper workaround recorded in the
-  check log / after-task note for this slice.
+  check log / after-task note for this slice. Remote workflow-dispatch CI and
+  Documenter passed for pushed reconcile commit `bd23dcc`.
 
 ## Shared Contract
 
