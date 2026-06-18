@@ -2,6 +2,31 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 AI-REML selinv trace fusion + profile-likelihood h² interval
+
+- Goal: (A) numerical-equivalence refactor of the `fit_ai_reml` REML score trace
+  `tr(A⁻¹C^uu)` to a fused `selinv_trace_against` kernel that accumulates over
+  `Ainv`'s nonzeros without materialising the selected-inverse matrix; (B) add
+  an opt-in profile-likelihood `heritability_interval(...; method = :profile)`.
+- Active lenses: Gauss/Karpinski (numerics, allocation), Fisher (interval
+  estimand/LRT), Curie (deterministic tests, flat-surface edge case), Rose
+  (claim-vs-evidence). Spawned subagents: none (the stalled wf1 fix-agent was
+  abandoned; this lane took over `likelihood.jl` directly to avoid clobber).
+- TDD: RED confirmed for both (`UndefVarError` / missing method) before
+  implementing; GREEN confirmed per slice.
+- Command: `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+  VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e
+  'using Pkg; Pkg.test()'` → passed, exit 0, **1468/1468** checks
+  (was 1447; +7 fused-trace equivalence, +14 profile-interval).
+- Equivalence: fused trace == prior `sum(Ainv .* takahashi_selinv(...)[uu])` to
+  rtol 1e-10 on tiny + 8-animal fixtures; `fit_ai_reml` optimum unchanged.
+- Profile interval: correctly clamps to (0,1) on the flat n=8 surface; LRT
+  root-finder unit-tested on a synthetic deviance.
+- Rose: AI-REML refactor is internal — public claim surface unchanged
+  (V1-SELINV-PEV gained evidence only). Profile interval is a new opt-in
+  extractor method; V1-HERIT-CI + capability rows updated.
+- Local-only checkpoint commit; not pushed (overnight autonomous policy).
+
 ## 2026-06-16 GWAS/QTL/eQTL table wrappers
 
 - Goal: add direct Julia `gwas_table()`, `qtl_table()`, and `eqtl_table()`

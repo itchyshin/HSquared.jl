@@ -383,8 +383,7 @@ function fit_ai_reml(
         beta = solution[1:nfixed]
         u = solution[(nfixed + 1):end]
         e = y .- X * beta .- Z * u
-        trace_AC =
-            sum(Ainv .* takahashi_selinv(factor)[(nfixed + 1):end, (nfixed + 1):end])
+        trace_AC = selinv_trace_against(factor, Ainv, nfixed)
         uAu = dot(u, Ainv * u)
 
         score_a = -0.5 / sigma_a2^2 * (nrandom * sigma_a2 - trace_AC - uAu)
@@ -1217,17 +1216,89 @@ function heritability_standard_error(fit::AnimalModelFit)
     return sqrt(max(0.0, dot(g, cov * g)))
 end
 
+# Profile REML log-likelihood at a fixed heritability `h2`: maximize the REML
+# objective over the total variance `V` along the ray
+# `(sigma_a2, sigma_e2) = (h2*V, (1-h2)*V)`. A 1-D maximization reusing
+# `sparse_reml_loglik`; the search bracket is anchored on the phenotypic-variance
+# scale of `y`. `h2` must be strictly interior to `(0, 1)`. Used by the
+# profile-likelihood heritability interval.
+function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
+    0 < h2 < 1 || throw(ArgumentError("h2 must be in (0, 1)"))
+    y = Float64.(spec.y)
+    n = length(y)
+    ybar = sum(y) / n
+    v0 = max(sum(abs2, y .- ybar) / max(1, n - 1), eps())
+    function objective(logV)
+        V = exp(logV)
+        try
+            return -sparse_reml_loglik(spec, h2 * V, (1 - h2) * V).loglik
+        catch err
+            err isa PosDefException && return Inf
+            rethrow()
+        end
+    end
+    result = optimize(objective, log(v0 * 1e-4), log(v0 * 1e4))
+    return -Optim.minimum(result)
+end
+
+# Root of `target` on the heritability axis for the profile interval. `anchor`
+# is the point-estimate side where `target(anchor) < 0`; `bound` is the search
+# boundary. If `target(bound) <= 0` the interval reaches the search bound and the
+# (clamped) bound is returned; otherwise bisect to the crossing.
+function _profile_root(target, bound::Real, anchor::Real)
+    target(bound) > 0 || return float(bound)
+    a, b = float(anchor), float(bound)
+    for _ in 1:200
+        m = 0.5 * (a + b)
+        fm = target(m)
+        (abs(fm) < 1e-9 || abs(b - a) < 1e-13) && return m
+        fm < 0 ? (a = m) : (b = m)
+    end
+    return 0.5 * (a + b)
+end
+
+function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
+    fit.spec.method == :REML ||
+        throw(ArgumentError("profile heritability interval requires a REML fit"))
+    h2 = heritability(fit)
+    0 < h2 < 1 ||
+        throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
+    spec = fit.spec
+    llmax = _profile_reml_loglik(spec, h2)
+    z = _standard_normal_quantile((1 + level) / 2)
+    q = z * z
+    target(h) = 2 * (llmax - _profile_reml_loglik(spec, h)) - q
+    lower = _profile_root(target, 1e-6, h2)
+    upper = _profile_root(target, 1 - 1e-6, h2)
+    return (heritability = h2, lower = lower, upper = upper, level = level, method = :profile)
+end
+
 """
-    heritability_interval(fit; level = 0.95)
+    heritability_interval(fit; level = 0.95, method = :delta)
 
 Experimental two-sided confidence interval for `h²` of a REML
-[`AnimalModelFit`](@ref). The interval is built on the logit scale (delta method)
-and back-transformed, so it always lies in `(0, 1)`. It is a large-sample
-approximation: on small samples it is very wide and dominated by the flat REML
-surface. Returns `(heritability, lower, upper, level, se)`.
+[`AnimalModelFit`](@ref).
+
+`method = :delta` (default) builds the interval on the logit scale (delta method)
+and back-transforms, so it always lies in `(0, 1)`; it returns
+`(heritability, lower, upper, level, se, method)`.
+
+`method = :profile` inverts the REML likelihood-ratio statistic: it profiles the
+REML log-likelihood over the total variance at each fixed `h²` and reports the
+`h²` range where `2·(ℓmax − ℓprofile(h²)) ≤ χ²₁,level`. Endpoints that reach the
+`(0, 1)` search bounds are clamped. It returns
+`(heritability, lower, upper, level, method)` (no `se`).
+
+Both are large-sample approximations: on small samples the REML surface is flat,
+so the intervals are wide.
 """
-function heritability_interval(fit::AnimalModelFit; level::Real = 0.95)
+function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    if method === :profile
+        return _heritability_interval_profile(fit; level = level)
+    end
+    method === :delta ||
+        throw(ArgumentError("method must be :delta or :profile"))
     h2 = heritability(fit)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
@@ -1237,7 +1308,7 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95)
     se_eta = se / (h2 * (1 - h2))
     lower = 1 / (1 + exp(-(eta - z * se_eta)))
     upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (heritability = h2, lower = lower, upper = upper, level = level, se = se)
+    return (heritability = h2, lower = lower, upper = upper, level = level, se = se, method = :delta)
 end
 
 """

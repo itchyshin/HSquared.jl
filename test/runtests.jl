@@ -1568,6 +1568,53 @@ end
     @test_throws ArgumentError reliability(mme; method = :nope)
 end
 
+@testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
+    # The fused kernel must equal the materialize-then-broadcast formula it
+    # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to
+    # rtol 1e-10, on tiny and larger (Mrode9-shaped) pedigree MME factors.
+    function _trace_ref_and_fused(spec, sa2, se2)
+        lhs, _, _ = HSquared._sparse_mme_system(spec, sa2, se2)
+        factor = cholesky(Symmetric(lhs); check = true)
+        Ainv = sparse(Float64.(spec.Ainv))
+        nfixed = size(spec.X, 2)
+        ref = sum(Ainv .*
+                  HSquared.takahashi_selinv(factor)[(nfixed + 1):end, (nfixed + 1):end])
+        fused = HSquared.selinv_trace_against(factor, Ainv, nfixed)
+        return ref, fused
+    end
+
+    # tiny 3-animal sire/dam/calf
+    ped1 = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    spec1 = animal_model_spec([1.0, 2.5, 4.0], ones(3, 1), sparse(1.0I, 3, 3),
+                              pedigree_inverse(ped1); ids = ped1.ids, method = :REML)
+    r1, f1 = _trace_ref_and_fused(spec1, 1.2, 0.8)
+    @test f1 ≈ r1 rtol = 1e-10
+
+    # larger 8-animal pedigree with deeper relationship structure, two ratios
+    ids8 = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped8 = normalize_pedigree(ids8,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    spec8 = animal_model_spec([2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5],
+                              ones(8, 1), sparse(1.0I, 8, 8),
+                              pedigree_inverse(ped8); ids = ped8.ids, method = :REML)
+    r8, f8 = _trace_ref_and_fused(spec8, 1.5, 0.7)
+    @test f8 ≈ r8 rtol = 1e-10
+    r8b, f8b = _trace_ref_and_fused(spec8, 0.5, 2.0)
+    @test f8b ≈ r8b rtol = 1e-10
+
+    # fit_ai_reml's recovered optimum is unchanged: still matches the independent
+    # sparse REML optimizer (the trace refactor is numerically equivalent).
+    ai = fit_ai_reml(spec8; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sr = fit_sparse_reml(spec8; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ai.converged
+    # loglik is the tight invariant (the n=8 REML surface is flat, so the
+    # variance components agree only loosely — matching the AI-REML testset).
+    @test ai.likelihood.loglik ≈ sr.likelihood.loglik rtol = 1e-5
+    @test ai.variance_components.sigma_a2 ≈ sr.variance_components.sigma_a2 rtol = 2e-2
+    @test ai.variance_components.sigma_e2 ≈ sr.variance_components.sigma_e2 rtol = 2e-2
+end
+
 @testset "Phase 1 REML optimizer recovery (dense vs sparse)" begin
     # Interior REML optimum (8-animal pedigree, one record each). The dense
     # `fit_variance_components(:REML)` and sparse `fit_sparse_reml` optimize the
@@ -2771,6 +2818,36 @@ end
     @test 0 < ci95.lower < ci95.heritability < ci95.upper < 1
     @test ci95.lower < ci80.lower && ci80.upper < ci95.upper        # 95% ⊃ 80%
     @test ci95.se ≈ heritability_standard_error(fit)
+
+    # profile-likelihood interval (method = :profile), an alternative to logit-delta
+    @test heritability_interval(fit).method == :delta                 # default unchanged
+    h2hat = heritability(fit)
+    llmax = HSquared._profile_reml_loglik(spec, h2hat)
+    # the profile maximum over total variance at ĥ² recovers the fitted REML optimum
+    @test llmax ≈ sparse_reml_loglik(spec, sa2, se2).loglik atol = 1e-4
+    # and is an upper envelope of any fixed-total-variance slice at the same ratio
+    @test llmax ≥ sparse_reml_loglik(spec, h2hat * 3.0, (1 - h2hat) * 3.0).loglik - 1e-8
+    pci95 = heritability_interval(fit; level = 0.95, method = :profile)
+    pci50 = heritability_interval(fit; level = 0.50, method = :profile)
+    @test pci95.method == :profile
+    @test pci95.heritability ≈ h2hat
+    @test 0 < pci95.lower < h2hat < pci95.upper < 1
+    @test pci95.lower <= pci50.lower && pci50.upper <= pci95.upper     # 95% ⊇ 50% (weak; both clamp here)
+    # This tiny n=8 fixture has a very flat REML profile in h²: the maximum
+    # deviance over (0,1) stays below even the 50% χ²₁ threshold, so the profile
+    # interval correctly CLAMPS to the (1e-6, 1-1e-6) search bounds — the data
+    # barely constrain h². Verify both the flatness and the resulting clamp.
+    maxdev = maximum(2 * (llmax - HSquared._profile_reml_loglik(spec, h)) for h in 0.01:0.01:0.99)
+    @test maxdev < HSquared._standard_normal_quantile(0.75)^2          # below the 50% threshold
+    @test pci95.lower ≈ 1e-6 atol = 1e-9
+    @test pci95.upper ≈ 1 - 1e-6 atol = 1e-9
+    # The LRT-inversion root-finder itself, on a synthetic deviance with known
+    # crossings at 0.3 and 0.7 (target(h) = 10(h-0.5)² − 0.4):
+    synth(h) = 10 * (h - 0.5)^2 - 0.4
+    @test HSquared._profile_root(synth, 1e-6, 0.5) ≈ 0.3 atol = 1e-6
+    @test HSquared._profile_root(synth, 1 - 1e-6, 0.5) ≈ 0.7 atol = 1e-6
+    @test HSquared._profile_root(h -> -1.0, 1e-6, 0.5) == 1e-6          # never crosses -> clamps
+    @test_throws ArgumentError heritability_interval(fit; method = :bogus)
 
     # guards: level range and REML-only
     @test_throws ArgumentError heritability_interval(fit; level = 1.5)
