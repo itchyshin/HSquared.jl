@@ -3447,3 +3447,44 @@ end
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 0)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :unknown)
 end
+
+@testset "Phase 6 non-Gaussian Laplace marginal (foundation)" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    se2 = 0.7
+
+    # (1) The Gaussian family is exact: the Laplace marginal (integrating β + u)
+    # reduces to the REML log-likelihood, and the mode equals the Henderson MME
+    # solution at (sa2, se2).
+    yg = [1.0, 2.5, 4.0]
+    spec = animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML)
+    lap = HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    @test lap.converged
+    @test lap.loglik ≈ sparse_reml_loglik(spec, sa2, se2).loglik rtol = 1e-8
+    @test lap.u ≈ breeding_values(henderson_mme(spec, sa2, se2)).values rtol = 1e-7 atol = 1e-9
+
+    # (2) Poisson family: the Newton mode solves the penalized score equation.
+    yp = [3.0, 5.0, 8.0]
+    pf = HSquared.laplace_marginal_loglik(yp, X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test pf.converged
+    @test pf.gradient_norm < 1e-8
+    @test isfinite(pf.loglik)
+
+    # (3) per-family kernels: score = dℓ/dη, weight = -d²ℓ/dη² (finite differences)
+    for fam in (HSquared.GaussianResponse(se2), HSquared.PoissonResponse())
+        y0 = 4.0; η0 = 0.3
+        ll(η) = HSquared._fam_loglik(fam, y0, η)
+        h1 = 1e-6
+        @test HSquared._fam_score(fam, y0, η0) ≈ (ll(η0 + h1) - ll(η0 - h1)) / (2h1) rtol = 1e-5
+        h2 = 1e-4   # larger step for the 2nd difference (1e-6 is roundoff-dominated ÷ h²)
+        @test HSquared._fam_weight(fam, y0, η0) ≈
+              -(ll(η0 + h2) - 2ll(η0) + ll(η0 - h2)) / h2^2 rtol = 1e-3
+    end
+
+    # guard
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, -1.0,
+                                                                HSquared.GaussianResponse(se2))
+end

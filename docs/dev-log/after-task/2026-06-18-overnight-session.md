@@ -28,7 +28,8 @@ kept current at each milestone and is the "morning report".
 | `44471ad` | Julia-lane completion plan (`docs/design/11-completion-plan.md`) | planning doc; ordered critical path, gate ordering, Phase-5 PR-stack recommendation, Laplace+VA reuse map |
 | `0e3c7eb` | (A) Fuse AI-REML selinv score trace `tr(A⁻¹C^uu)` → `selinv_trace_against` (O(nnz(L)), no output matrix); (B) profile-likelihood `heritability_interval(...; method=:profile)` | fused trace == prior to rtol 1e-10, optimum unchanged; profile inverts REML LRT, clamps on flat surfaces; suite green |
 | `ee89565` | Harden multivariate `genetic_correlation` (symmetry + PSD guards, rank-deficient low-rank G allowed); pin Cholesky-param roundtrip t≥3 | RED→GREEN; closes next-50 Julia #4, #7 |
-| _(latest)_ | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified at this scale (honest, ungated) |
+| `a3eab9b` | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified (honest, ungated) |
+| _(latest)_ | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -94,3 +95,21 @@ slice I owned and finished. Full report:
   estimator's documented limitation. No claim promotion; V3 stays partial.
 - Closes the V3-REPEAT-REML "no committed recovery harness" gap (for `t`).
   Follow-on: a `fit_two_effect_reml` harness + a denser-pedigree `h²` study.
+
+### Slice 3 — Phase-6 GLLVM non-Gaussian Laplace marginal foundation (V6-LAPLACE)
+- New `src/nongaussian.jl` (unexported, not wired into `fit_*`): a
+  family-generic Laplace-approximate marginal log-likelihood
+  `laplace_marginal_loglik(y, X, Z, Ainv, σ²a, family)` for the animal model,
+  integrating `[β` flat`; u ~ N(0,Aσ²a)]` by penalized-IRLS mode-finding + a
+  Gaussian integral at the mode. Families: `GaussianResponse(σ²e)`,
+  `PoissonResponse()` (log link). Architecture follows DRM.jl's `:LA`/`:VA`
+  marginal-method idea (VA is the planned next step).
+- **Validated** by: exact reduction to `sparse_reml_loglik` for the Gaussian
+  family (rtol 1e-8) with mode == Henderson MME solution; Poisson Newton mode
+  solving the penalized score equation (‖∇‖<1e-8); per-family score/weight
+  matching central finite differences. This is the first real Phase-6 step.
+- NOT: VA, variance-component estimation, a fitted GLLVM, exported API, R
+  model-spec, or external comparator. Capability stays experimental;
+  `V6-LAPLACE` opened as partial. Full suite 1490/1490.
+- This is the headline of the night per the user's Laplace+VA directive: the
+  Laplace half of the engine has a validated foundation; VA is next.

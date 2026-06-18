@@ -57,7 +57,8 @@
 | Mixed-model marker scans and QTL/eQTL | planned | formula vocabulary reserved only; `single_marker_scan`, `mixed_model_marker_scan`, `loco_relationship_precisions`, `loco_mixed_model_marker_scan`, `marker_scan_table`, `gwas_table`, `qtl_table`, and `eqtl_table` are direct Julia utilities, not the public formula-driven `marker_scan()` / `qtl_scan()` path |
 | Standard QG effects and custom kernels | planned | vocabulary reserved only; no implementation yet |
 | Non-standard inheritance | planned | no implementation yet |
-| GLLVM-style animal models | planned | no implementation yet |
+| Non-Gaussian Laplace marginal (Phase 6 foundation) | experimental | `laplace_marginal_loglik` computes the Laplace-approximate marginal log-likelihood of the animal model for a `ResponseFamily` (`GaussianResponse`, `PoissonResponse`), integrating `[β` flat`; u ~ N(0, Aσ²a)]` by penalized-IRLS mode-finding + a Gaussian integral at the mode; validated by EXACT reduction to `sparse_reml_loglik` for the Gaussian family (rtol 1e-8, mode == Henderson MME solution), the Poisson mode solving the penalized score equation (‖∇‖<1e-8), and per-family score/weight matching central finite differences; dense/validation-scale, NOT exported, NOT wired into fitting, no VA, no variance-component estimation, no R model-spec, no external comparator |
+| GLLVM-style animal models | planned | no implementation yet (the Laplace marginal above is the first foundation step; VA + fitting + factors planned) |
 
 Status words:
 

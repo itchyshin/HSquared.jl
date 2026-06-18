@@ -2,6 +2,23 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 non-Gaussian Laplace marginal foundation (overnight)
+
+- Goal: first Phase-6 engine step toward the GLLVM Laplace+VA directive — a
+  family-generic Laplace-approximate marginal log-likelihood for the animal
+  model (`src/nongaussian.jl`, new, unexported, not wired into fitting).
+- TDD: RED (precompile collision with the model-spec `GaussianFamily`, then the
+  weight finite-diff step) → renamed families to `ResponseFamily` /
+  `GaussianResponse` / `PoissonResponse`, fixed the 2nd-difference step → GREEN.
+- Validation gates: Gaussian family reduces EXACTLY to `sparse_reml_loglik`
+  (rtol 1e-8) with the mode == Henderson MME solution; Poisson Newton mode
+  solves the penalized score equation (‖∇‖<1e-8); family score/weight match
+  central finite differences.
+- `Pkg.test()`: passed, exit 0, **1490/1490** (was 1479; +11).
+- Rose: experimental foundation only — no VA, no VC estimation, no fitted GLLVM,
+  not exported, no R model-spec, no comparator. New capability row +
+  `V6-LAPLACE` validation-debt row. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 repeatability recovery harness (overnight)
 
 - Goal: committed RNG-based recovery harness for `fit_repeatability_reml`,
