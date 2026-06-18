@@ -28,6 +28,7 @@ kept current at each milestone and is the "morning report".
 | `44471ad` | Julia-lane completion plan (`docs/design/11-completion-plan.md`) | planning doc; ordered critical path, gate ordering, Phase-5 PR-stack recommendation, Laplace+VA reuse map |
 | `0e3c7eb` | (A) Fuse AI-REML selinv score trace `tr(A⁻¹C^uu)` → `selinv_trace_against` (O(nnz(L)), no output matrix); (B) profile-likelihood `heritability_interval(...; method=:profile)` | fused trace == prior to rtol 1e-10, optimum unchanged; profile inverts REML LRT, clamps on flat surfaces; suite green |
 | `ee89565` | Harden multivariate `genetic_correlation` (symmetry + PSD guards, rank-deficient low-rank G allowed); pin Cholesky-param roundtrip t≥3 | RED→GREEN; closes next-50 Julia #4, #7 |
+| _(latest)_ | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified at this scale (honest, ungated) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -81,3 +82,15 @@ slice I owned and finished. Full report:
   t = 3, 4 (rtol 1e-12).
 - `test/runtests.jl` "Phase 4 multivariate covariance hardening" (11 checks);
   full suite 1479/1479.
+
+### Slice 2 — Phase-3 repeatability recovery harness (V3-REPEAT-REML)
+- `sim/phase3_qg_recovery.jl` (opt-in, outside CI) simulates a half-sib design
+  with repeated records from known `(σ²a,σ²pe,σ²e)=(1.0,0.6,1.4)` over 5
+  predeclared seeds.
+- **Repeatability `t` recovered on 5/5** (max rel 0.254, gate ≤0.35).
+- **`h²` (the σ²a/σ²pe split) under-identified** at this validation-scale design:
+  2/5 seeds hit the σ²pe→0 boundary (max rel 0.892). Reported, NOT gated — a
+  denser pedigree is needed for reliable `h²` recovery. This matches the
+  estimator's documented limitation. No claim promotion; V3 stays partial.
+- Closes the V3-REPEAT-REML "no committed recovery harness" gap (for `t`).
+  Follow-on: a `fit_two_effect_reml` harness + a denser-pedigree `h²` study.

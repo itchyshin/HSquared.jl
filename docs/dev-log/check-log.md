@@ -2,6 +2,20 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 repeatability recovery harness (overnight)
+
+- Goal: committed RNG-based recovery harness for `fit_repeatability_reml`,
+  closing the V3-REPEAT-REML "no committed recovery harness" gap.
+- `sim/phase3_qg_recovery.jl` (opt-in, outside CI): half-sib pedigree, repeated
+  records from known `(σ²a,σ²pe,σ²e)=(1.0,0.6,1.4)`, 5 predeclared seeds.
+- Result: repeatability `t` recovered 5/5 (max rel 0.254, gate ≤0.35, exit 0);
+  `h²` (σ²a/σ²pe split) under-identified at this scale (2/5 hit σ²pe→0 boundary,
+  max rel 0.892) — reported, ungated. Honest finding matching the documented
+  limitation; gate scoped to the identifiable `t` (transparently, after the
+  first run revealed the split is under-identified — not threshold-tuned).
+- Rose: no claim promotion (V3 stays partial). No test-suite/CI change (outside
+  `test/`). Local checkpoint, not pushed.
+
 ## 2026-06-18 Multivariate covariance hardening (overnight)
 
 - Goal: harden `genetic_correlation` (symmetry + PSD guards, allowing
