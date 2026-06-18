@@ -3127,6 +3127,28 @@ end
     @test_throws ArgumentError multivariate_mme([10.0 NaN; 12.0 NaN; 9.0 NaN; 11.0 NaN], X, Z, Ainv, G0, R0)  # empty trait 2
 end
 
+@testset "Phase 4 multivariate covariance hardening" begin
+    # genetic_correlation: valid PD -> correlations in [-1,1]; rank-deficient PSD
+    # (e.g. low-rank G) is allowed; asymmetric, indefinite, or non-square reject.
+    G = [2.0 0.6; 0.6 1.0]
+    Rg = genetic_correlation(G)
+    @test Rg ≈ [1.0 0.6/sqrt(2.0); 0.6/sqrt(2.0) 1.0]
+    @test all(-1 .<= Rg .<= 1)
+    @test genetic_correlation([1.0 1.0; 1.0 1.0]) ≈ [1.0 1.0; 1.0 1.0]   # rank-1 PSD allowed
+    @test_throws ArgumentError genetic_correlation([1.0 0.5; 0.6 1.0])    # asymmetric
+    @test_throws ArgumentError genetic_correlation([1.0 2.0; 2.0 1.0])    # indefinite (eig -1, 3)
+    @test_throws ArgumentError genetic_correlation([1.0 0.0 0.0; 0.0 1.0 0.0])  # non-square
+    @test_throws ArgumentError genetic_correlation([1.0 0.0; 0.0 -1.0])   # non-positive diagonal
+
+    # Cholesky-parameterisation roundtrip is exact for t >= 3 (parameter-order regression)
+    for t in (3, 4)
+        A = [i == j ? Float64(t + 1) : 1.0 / (abs(i - j) + 1) for i in 1:t, j in 1:t]
+        v = HSquared._cov_to_chol_params(A, t)
+        @test length(v) == t * (t + 1) ÷ 2
+        @test HSquared._chol_params_to_cov(v, t) ≈ A rtol = 1e-12
+    end
+end
+
 @testset "Phase 4 multivariate missing-trait records (unbalanced)" begin
     Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
     A = inv(Symmetric(Matrix(Ainv)))

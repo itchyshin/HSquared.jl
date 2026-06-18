@@ -2,6 +2,17 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Multivariate covariance hardening (overnight)
+
+- Goal: harden `genetic_correlation` (symmetry + PSD guards, allowing
+  rank-deficient low-rank `G`) and pin the `_cov_to_chol_params` /
+  `_chol_params_to_cov` parameterisation roundtrip for t≥3.
+- TDD: RED confirmed (asymmetric + indefinite `@test_throws` failed, 9/11) →
+  added the guards → GREEN.
+- `Pkg.test()` (low-core): passed, exit 0, **1479/1479** (was 1468; +11).
+- Rose: hardening only — guards reject invalid covariances; no new claim, no
+  `result_payload()`/bridge change. Local checkpoint commit, not pushed.
+
 ## 2026-06-18 AI-REML selinv trace fusion + profile-likelihood h² interval
 
 - Goal: (A) numerical-equivalence refactor of the `fit_ai_reml` REML score trace

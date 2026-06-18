@@ -20,8 +20,12 @@ variances.
 function genetic_correlation(C::AbstractMatrix)
     n = size(C, 1)
     size(C, 2) == n || throw(ArgumentError("C must be square"))
+    isapprox(C, transpose(C)) || throw(ArgumentError("C must be symmetric"))
     d = diag(C)
     all(>(0), d) || throw(ArgumentError("covariance diagonal must be positive"))
+    # allow rank-deficient PSD (e.g. low-rank G); reject only indefinite inputs
+    eigmin(Symmetric(Matrix(Float64.(C)))) >= -1e-8 ||
+        throw(ArgumentError("C must be positive semidefinite"))
     s = sqrt.(d)
     R = Matrix{Float64}(undef, n, n)
     @inbounds for j in 1:n, i in 1:n
