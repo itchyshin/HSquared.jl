@@ -774,3 +774,246 @@ function fit_multivariate_reml(
         traits = tlabels,
     )
 end
+
+# ---------------------------------------------------------------------------
+# Covariance standard errors + likelihood-ratio tests (V4-MV-REML / V4-FA gap)
+# ---------------------------------------------------------------------------
+# Asymptotic, observed-information + delta-method standard errors for the
+# unstructured multivariate REML estimate, and a likelihood-ratio test for
+# nested genetic-covariance structures. Both are dense/validation-scale and
+# REML-based; the SEs are computed from a finite-difference observed-information
+# matrix on the log-Cholesky parameterization (the same scale the optimizer
+# uses), mirroring the univariate V1-HERIT-CI machinery.
+
+# Lanczos log-gamma (g = 7); valid for real x. Used only for the chi-square
+# survival function below (the package avoids a SpecialFunctions dependency).
+function _loggamma(x::Real)
+    g = 7.0
+    c = (0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+         771.32342877765313, -176.61502916214059, 12.507343278686905,
+         -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7)
+    if x < 0.5
+        return log(π / sin(π * x)) - _loggamma(1 - x)
+    end
+    x -= 1
+    a = c[1]
+    tt = x + g + 0.5
+    @inbounds for i in 2:9
+        a += c[i] / (x + (i - 1))
+    end
+    return 0.5 * log(2π) + (x + 0.5) * log(tt) - tt + log(a)
+end
+
+# Regularized lower incomplete gamma P(a, x) by series (x < a + 1).
+function _reg_gamma_p_series(a::Real, x::Real)
+    ap = a
+    del = 1.0 / a
+    s = del
+    @inbounds for _ in 1:1000
+        ap += 1.0
+        del *= x / ap
+        s += del
+        abs(del) < abs(s) * 1e-15 && break
+    end
+    return s * exp(-x + a * log(x) - _loggamma(a))
+end
+
+# Regularized upper incomplete gamma Q(a, x) by continued fraction (x >= a + 1).
+function _reg_gamma_q_cf(a::Real, x::Real)
+    tiny = 1e-300
+    b = x + 1.0 - a
+    cc = 1.0 / tiny
+    d = 1.0 / b
+    h = d
+    @inbounds for i in 1:1000
+        an = -i * (i - a)
+        b += 2.0
+        d = an * d + b
+        abs(d) < tiny && (d = tiny)
+        cc = b + an / cc
+        abs(cc) < tiny && (cc = tiny)
+        d = 1.0 / d
+        del = d * cc
+        h *= del
+        abs(del - 1.0) < 1e-15 && break
+    end
+    return exp(-x + a * log(x) - _loggamma(a)) * h
+end
+
+# Upper-tail (survival) of the chi-square distribution: P(χ²_k > x).
+function _chisq_sf(x::Real, k::Real)
+    k > 0 || throw(ArgumentError("degrees of freedom must be positive"))
+    x <= 0 && return 1.0
+    a = k / 2
+    z = x / 2
+    return z < a + 1 ? 1.0 - _reg_gamma_p_series(a, z) : _reg_gamma_q_cf(a, z)
+end
+
+# Central finite-difference Hessian of a scalar function.
+function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
+    n = length(x)
+    H = zeros(n, n)
+    f0 = f(x)
+    @inbounds for i in 1:n
+        xp = collect(float.(x)); xp[i] += h
+        xm = collect(float.(x)); xm[i] -= h
+        H[i, i] = (f(xp) - 2 * f0 + f(xm)) / h^2
+    end
+    @inbounds for i in 1:n, j in (i + 1):n
+        xpp = collect(float.(x)); xpp[i] += h; xpp[j] += h
+        xpm = collect(float.(x)); xpm[i] += h; xpm[j] -= h
+        xmp = collect(float.(x)); xmp[i] -= h; xmp[j] += h
+        xmm = collect(float.(x)); xmm[i] -= h; xmm[j] -= h
+        H[i, j] = (f(xpp) - f(xpm) - f(xmp) + f(xmm)) / (4 * h^2)
+        H[j, i] = H[i, j]
+    end
+    return H
+end
+
+# Central finite-difference Jacobian of a vector-valued function.
+function _fd_jacobian(g, x::AbstractVector; h::Real = 1e-4)
+    n = length(x)
+    g0 = g(x)
+    m = length(g0)
+    J = zeros(m, n)
+    @inbounds for j in 1:n
+        xp = collect(float.(x)); xp[j] += h
+        xm = collect(float.(x)); xm[j] -= h
+        J[:, j] = (g(xp) .- g(xm)) ./ (2 * h)
+    end
+    return J
+end
+
+# Flattened quantities of interest from a log-Cholesky parameter vector:
+# [G0 lower-triangle; R0 lower-triangle; genetic-corr strict-lower;
+#  residual-corr strict-lower; per-trait h²].
+function _mv_quantities(θ::AbstractVector, t::Int, ng::Int)
+    G = _chol_params_to_cov(@view(θ[1:ng]), t)
+    R = _chol_params_to_cov(@view(θ[ng + 1:end]), t)
+    rg = genetic_correlation(Matrix(G))
+    rr = genetic_correlation(Matrix(R))
+    out = Float64[]
+    for j in 1:t, i in j:t; push!(out, G[i, j]); end
+    for j in 1:t, i in j:t; push!(out, R[i, j]); end
+    for j in 1:t, i in (j + 1):t; push!(out, rg[i, j]); end
+    for j in 1:t, i in (j + 1):t; push!(out, rr[i, j]); end
+    for k in 1:t; push!(out, G[k, k] / (G[k, k] + R[k, k])); end
+    return out
+end
+
+"""
+    multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step = 1e-4)
+
+Asymptotic standard errors for an **unstructured** multivariate REML fit
+([`fit_multivariate_reml`](@ref)). Pass the same `Y, X, Z, Ainv` used for the
+fit. Standard errors come from the observed-information matrix (a central
+finite-difference Hessian of the REML log-likelihood on the log-Cholesky
+parameterization, the scale the optimizer uses) propagated through the delta
+method to the genetic/residual covariances, the derived correlations, and the
+per-trait heritabilities.
+
+Returns a `NamedTuple` of `t×t` SE matrices `genetic_covariance`,
+`residual_covariance`, `genetic_correlation`, `residual_correlation`
+(correlation-SE diagonals are `0`), the length-`t` `heritability` SE vector, and
+the raw `information` matrix.
+
+Experimental, asymptotic, dense/validation-scale, REML-only. SEs are
+finite-difference approximations and are wide/unreliable at small `n`; not
+coverage-calibrated. Throws if the observed information is not finite
+positive-definite (a flat or boundary optimum). Structured/factor-analytic fits
+are **not** supported — their loadings are rotation-nonidentified.
+"""
+function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Real = 1e-4)
+    getproperty(fit, :genetic_structure) == :unstructured ||
+        throw(ArgumentError("covariance standard errors are implemented for the :unstructured fit only; structured/factor-analytic loadings are rotation-nonidentified"))
+    G0 = Matrix(Float64.(Matrix(fit.genetic_covariance)))
+    R0 = Matrix(Float64.(Matrix(fit.residual_covariance)))
+    t = size(G0, 1)
+    ng = t * (t + 1) ÷ 2
+    phat = vcat(_cov_to_chol_params(G0, t), _cov_to_chol_params(R0, t))
+    loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,
+        _chol_params_to_cov(@view(θ[1:ng]), t),
+        _chol_params_to_cov(@view(θ[ng + 1:end]), t))
+    H = -_fd_hessian(loglik, phat; h = fd_step)
+    Hsym = Symmetric((H + transpose(H)) / 2)
+    (all(isfinite, H) && isposdef(Hsym)) ||
+        throw(ArgumentError("observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable"))
+    Σθ = inv(Hsym)
+    J = _fd_jacobian(θ -> _mv_quantities(θ, t, ng), phat; h = fd_step)
+    Σg = J * Σθ * transpose(J)
+    se = sqrt.(max.(diag(Σg), 0.0))
+
+    seG = zeros(t, t); seR = zeros(t, t); seRG = zeros(t, t); seRR = zeros(t, t)
+    idx = 1
+    for j in 1:t, i in j:t; seG[i, j] = se[idx]; seG[j, i] = se[idx]; idx += 1; end
+    for j in 1:t, i in j:t; seR[i, j] = se[idx]; seR[j, i] = se[idx]; idx += 1; end
+    for j in 1:t, i in (j + 1):t; seRG[i, j] = se[idx]; seRG[j, i] = se[idx]; idx += 1; end
+    for j in 1:t, i in (j + 1):t; seRR[i, j] = se[idx]; seRR[j, i] = se[idx]; idx += 1; end
+    seh2 = se[idx:idx + t - 1]
+
+    return (
+        genetic_covariance = seG,
+        residual_covariance = seR,
+        genetic_correlation = seRG,
+        residual_correlation = seRR,
+        heritability = collect(seh2),
+        information = Matrix(Hsym),
+    )
+end
+
+function _mv_nparams(fit)
+    t = size(Matrix(fit.genetic_covariance), 1)
+    s = getproperty(fit, :genetic_structure)
+    r = getproperty(fit, :genetic_rank)
+    ngen = if s == :unstructured
+        t * (t + 1) ÷ 2
+    elseif s == :diagonal
+        t
+    elseif s == :lowrank
+        t * Int(r)
+    elseif s == :factor_analytic
+        t * Int(r) + t
+    else
+        throw(ArgumentError("unknown genetic_structure $s"))
+    end
+    return ngen + t * (t + 1) ÷ 2  # R0 is always unstructured
+end
+
+"""
+    covariance_structure_lrt(constrained, full)
+
+Likelihood-ratio test comparing a nested constrained genetic-covariance fit
+against the `full` (less-constrained) fit, both from
+[`fit_multivariate_reml`](@ref) on the **same data**. Returns a `NamedTuple`
+with the LRT `statistic` `= 2(ℓ_full − ℓ_constrained)`, the parameter-count
+difference `df`, the asymptotic χ²`df` `pvalue`, a `boundary` flag, and a `note`.
+
+The χ²`df` reference is exact only for an **interior** null — testing whether the
+off-diagonal genetic covariances are zero (`:diagonal` nested in
+`:unstructured`), where the constrained parameters lie in the interior of the
+full space (`boundary = false`). For **rank/PSD-boundary** nulls
+(`:lowrank`/`:factor_analytic` nested in `:unstructured`), the true null
+distribution is a χ² mixture, so the reported χ²`df` p-value is asymptotically
+**conservative** (`boundary = true`). Experimental, asymptotic,
+dense/validation-scale.
+"""
+function covariance_structure_lrt(constrained, full)
+    npc = _mv_nparams(constrained)
+    npf = _mv_nparams(full)
+    df = npf - npc
+    df > 0 ||
+        throw(ArgumentError("`full` must have more covariance parameters than `constrained` (df = $df); call as covariance_structure_lrt(constrained, full)"))
+    stat = 2 * (Float64(full.loglik) - Float64(constrained.loglik))
+    sc = getproperty(constrained, :genetic_structure)
+    sf = getproperty(full, :genetic_structure)
+    boundary = !(sc == :diagonal && sf == :unstructured)
+    p = _chisq_sf(max(stat, 0.0), df)
+    note = if stat < -1e-6
+        "negative statistic ($(round(stat, digits = 6))): `full` did not dominate `constrained` — check they are nested and both converged"
+    elseif boundary
+        "rank/PSD-boundary null: the χ²_$df p-value is asymptotically conservative (true null is a χ² mixture)"
+    else
+        "interior null (off-diagonal genetic covariances = 0): χ²_$df asymptotics apply"
+    end
+    return (statistic = stat, df = df, pvalue = p, boundary = boundary, note = note)
+end
