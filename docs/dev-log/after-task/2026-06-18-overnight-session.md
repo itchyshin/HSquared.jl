@@ -34,7 +34,8 @@ kept current at each milestone and is the "morning report".
 | `a4ddaba` | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
 | `023f076` | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
 | `50657f4` | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
-| _(latest)_ | Phase-6 **fitted** non-Gaussian (`fit_laplace_reml`, Laplace/VA REML over variance components) | Gaussian recovers `fit_sparse_reml` exactly (both :laplace & :variational); Poisson estimates σ²a>0; suite 1524/1524 |
+| `616651c`/`b56d6c9` | Phase-6 **fitted** non-Gaussian (`fit_laplace_reml`, Laplace/VA REML over variance components) + fitted EBVs | Gaussian recovers `fit_sparse_reml` exactly (both :laplace & :variational); Poisson estimates σ²a>0; EBVs == BLUP at fitted VCs; suite 1526/1526 |
+| _(latest)_ | Phase-6 **Poisson known-truth recovery** (`sim/phase6_poisson_recovery.jl`, opt-in) | σ̂²a recovers 5/5 seeds (rel ≤ 0.323, mild Laplace bias); breeding-value recovery cor 0.81–0.88 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -190,3 +191,15 @@ slice I owned and finished. Full report:
   intervals, no fitted-object/EBV extractors, no Poisson known-truth recovery,
   no external comparator, not exported, no R model-spec — those are the next
   steps toward a genuinely usable fitted GLLVM.
+
+### Slice 9 — Poisson known-truth recovery (`sim/phase6_poisson_recovery.jl`)
+- Opt-in (outside CI): half-sib pedigree (165 animals), `u ~ N(0, A·0.5)`,
+  `yᵢ ~ Poisson(exp(1.5 + uₐ))`, fit with `fit_laplace_reml(family = :poisson)`,
+  5 predeclared seeds.
+- **5/5 pass**: σ̂²a recovers within rel ≤ 0.323 (mild expected Laplace downward
+  bias, no boundary collapse) and breeding-value recovery correlation 0.81–0.88.
+  Genuine recovery of known truth — closes the V6-FIT recovery gap.
+- This rounds out the Phase-6 non-Gaussian arc: marginals → fitting → EBVs →
+  known-truth recovery, all internally validated. Remaining items (intervals, a
+  full fitted-object API, latent factors, external comparators, R model-spec)
+  genuinely need the R lane / external packages / your steer.

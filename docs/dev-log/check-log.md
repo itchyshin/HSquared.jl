@@ -2,6 +2,19 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Poisson known-truth recovery (overnight)
+
+- Goal: known-truth recovery study for the fitted Poisson animal model
+  (`fit_laplace_reml(...; family = :poisson)`), closing the V6-FIT recovery gap.
+- `sim/phase6_poisson_recovery.jl` (opt-in, outside CI): half-sib pedigree, 165
+  animals, `u ~ N(0, A·0.5)`, `yᵢ ~ Poisson(exp(1.5 + uₐ))` (Knuth sampler), 5
+  predeclared seeds.
+- Result (RAN): **5/5 pass** — σ̂²a recovers within rel ≤ 0.323 (mild expected
+  Laplace downward bias, no boundary collapse) and breeding-value recovery
+  correlation 0.81–0.88. Genuine recovery of known truth.
+- Rose: opt-in evidence (outside CI); no test-suite/claim-surface change; V6-FIT
+  recovery gap closed. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 fitted non-Gaussian (Laplace/VA REML) (overnight)
 
 - Goal: the first *fitted* non-Gaussian capability — variance-component
