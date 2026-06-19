@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 repeatability `t` confidence interval (delta method)
+
+- Goal: close the V3-REPEAT-REML "needs `t`/`h²` intervals" gap for the
+  well-identified summary `t = (σ²a+σ²pe)/total` (the `h²` split stays ill-
+  conditioned, so its interval is deferred).
+- `repeatability_interval(y, X, Z, Ainv; level, initial, ...)`: fits by REML, forms
+  the observed information as the central finite-difference Hessian of the REML
+  loglik at the optimum, delta-methods `t` on the logit scale (so the CI lies in
+  `(0,1)`). Returns `(repeatability, lower, upper, level, se)`; throws on a
+  non-positive-definite/flat information or boundary `t`. Exported. The interval
+  itself is RNG-free/deterministic.
+- Probe confirmed the numerics are well-conditioned for `t` (`cond(Info) ≈ 28`,
+  `SE(t) ≈ 0.067`) even though the σ²a/σ²pe split is not.
+- Gates (verified, `test/runtests.jl`, seeded fixture — only the FIXTURE uses a
+  seed; added `Random` to the test deps): valid bracketing `(0,1)` interval,
+  `level == 0.95`, `se > 0`, point estimate matches the fit, and higher
+  confidence ⇒ wider interval; `level = 1.5` throws.
+- `Pkg.test()`: passed, exit 0, **1783/1783** (+6). V3-REPEAT-REML debt +
+  capability rows updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 1 Mendelian sampling variances accessor
 
 - Goal: expose the per-individual Mendelian sampling variances `d_i` (the `D` in

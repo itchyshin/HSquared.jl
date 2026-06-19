@@ -2,6 +2,7 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -3298,6 +3299,43 @@ end
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, -1.0, spe2, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, sa2, -1.0, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z[:, 1:2], Ainv, sa2, spe2, se2)
+end
+
+@testset "Phase 3 repeatability t confidence interval (delta method)" begin
+    # The interval FUNCTION is RNG-free/deterministic; only this test FIXTURE is
+    # seeded (the repeatability model needs genuine independent pe/e variation,
+    # which a hand-pattern can't supply without collapsing the σpe/σe split).
+    rng = MersenneTwister(20260618)
+    nsire, ndam, noff, reps = 8, 16, 40, 3
+    sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+    ids = vcat(sids, dids, oids)
+    sire = vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff])
+    dam = vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff])
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    A = Matrix(inv(Symmetric(Matrix(Ainv)))); q = length(ped.ids)
+    LA = cholesky(Symmetric(A)).L
+    a = (LA * randn(rng, q)) .* sqrt(1.0)        # σ²a = 1.0
+    pe = randn(rng, q) .* sqrt(0.6)              # σ²pe = 0.6
+    n = q * reps; X = ones(n, 1); Z = zeros(n, q); y = zeros(n)
+    for an in 1:q, k in 1:reps
+        row = (an - 1) * reps + k
+        Z[row, an] = 1.0
+        y[row] = 5.0 + a[an] + pe[an] + sqrt(1.4) * randn(rng)   # σ²e = 1.4
+    end
+
+    ci = repeatability_interval(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test 0 < ci.lower < ci.repeatability < ci.upper < 1     # valid bracketing (0,1) interval
+    @test ci.level == 0.95
+    @test ci.se > 0
+    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test ci.repeatability ≈ fit.repeatability               # point estimate matches the fit
+    # higher confidence ⇒ wider interval
+    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90)
+    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99)
+    @test ci99.lower < ci90.lower && ci99.upper > ci90.upper
+    # guard
+    @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; level = 1.5)
 end
 
 @testset "Phase 3 repeatability REML (variance-component estimation)" begin
