@@ -2,6 +2,27 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 self-fertilization (allow_selfing) (overnight)
+
+- Goal: the next solo-doable Phase-3 non-standard-inheritance primitive named by
+  the Stop hook — self-fertilization.
+- Finding: the existing math machinery was ALREADY self-correct. With
+  `sire == dam == P`, `_numerator_relationship` gives `A[i,j] = A[P,j]` and
+  `A_ii = 1 + ½(1+F_P)`, and `_mendelian_sampling_variance` returns `½(1−F_P)` —
+  both the textbook selfing values. The only blocker was the `normalize_pedigree`
+  guard that rejected `sire == dam`.
+- Change: added `normalize_pedigree(...; allow_selfing = false)`. When true the
+  selfing guard is skipped (the self-as-own-parent guard stays). No estimation
+  code touched.
+- Gates (verified, `test/runtests.jl`): the canonical repeated-selfing inbreeding
+  series `F = 0, 1/2, 3/4`; `A_ii = 3/2, 7/4`; `A[i,P] = 1`; symmetry;
+  `pedigree_inverse == inv(A)` for a pure-selfing pedigree AND a mixed
+  sexual/selfed pedigree; default-reject preserved.
+- `Pkg.test()`: passed, exit 0, **1648/1648** (selfing testset +11).
+- Rose: opt-in flag, default behaviour unchanged; capability row moved
+  planned→experimental, new `V3-SELFING` debt row, ROADMAP Phase-3 status
+  updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 cytoplasmic / maternal-lineage relationship (overnight)
 
 - Goal: start the non-standard-inheritance scope of Phase 3 (ROADMAP Phase 3

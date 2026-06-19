@@ -290,13 +290,16 @@ Status: the first engine utilities have landed (experimental, validation-scale)
 — repeatability / permanent-environment (`repeatability_mme`,
 `fit_repeatability_reml`) and a general two-random-effect model covering
 common-environment and maternal-genetic effects (`two_effect_mme`,
-`fit_two_effect_reml`). A first non-standard-inheritance relationship primitive
-has also landed: cytoplasmic / maternal-lineage construction
-(`maternal_lineage`, `cytoplasmic_relationship`), the 0/1 same-maternal-line
-indicator usable as the relationship for an i.i.d. cytoplasmic random effect.
-Sire models, dominance, the other non-standard inheritance systems (selfing,
-clonal, haplodiploid, polyploid), unknown-parent groups, and random regression
-remain open, as does any public model-spec.
+`fit_two_effect_reml`). Two non-standard-inheritance primitives have also landed: cytoplasmic /
+maternal-lineage construction (`maternal_lineage`, `cytoplasmic_relationship`,
+the 0/1 same-maternal-line indicator usable as the relationship for an i.i.d.
+cytoplasmic random effect), and self-fertilization
+(`normalize_pedigree(...; allow_selfing = true)`, with the additive-relationship
+recursion and Henderson `Ainv` rules already self-correct — a selfed offspring of
+a non-inbred parent has `F = 1/2`). Sire models, dominance, the other
+non-standard inheritance systems (clonal, haplodiploid, polyploid),
+unknown-parent groups, and random regression remain open, as does any public
+model-spec.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

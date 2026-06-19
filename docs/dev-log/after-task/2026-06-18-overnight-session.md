@@ -43,7 +43,9 @@ kept current at each milestone and is the "morning report".
 | `8636339` | Phase-6 **Binomial/logit family + recovery** (`BinomialResponse(n_trials)`, `sim/phase6_binomial_recovery.jl`) | generalises Bernoulli (m=1); Laplace + VA (GH kernels ×m + binom offset); m=8 value gate (va.elbo ≤ R, Laplace gap 0.031); recovery q=345/m=20 **σ²a HARD-gated 5/5** (rel ≤ 0.175, EBV cor 0.90–0.92) — binary bias is an information effect; suite 1584/1584 (+31) |
 | `25d16f1` | Phase-3 **repeatability h² identifiability study** (docs evidence; no src/test) | full-sib designs: q=315/n=1575 recovers h² 4/5 within ~0.26 (vs original 2/5) but STILL not gateable (1 seed misses at 0.58) — σ²a/σ²pe split intrinsically ill-conditioned at validation scale; honest negative result, closes the speculative gap |
 | `16b2684` | **Dense-inverse conditioning caveat** (`V1-DENSE-COND`, docs) | the dense `inv(Ainv)` estimators are O(q³)/precision-limited for ill-conditioned `Ainv`; sparse/Henderson/Laplace+VA use `Ainv` directly; tracked limitation |
-| _(latest)_ | Phase-3 **cytoplasmic / maternal-lineage relationship** (`maternal_lineage`, `cytoplasmic_relationship`, exported) | first non-standard-inheritance primitive; maternal-founder trace + 0/1 same-line indicator; hand-verified multi-lineage fixture; suite 1637/1637 (+53) |
+| `80b2c2d` | Phase-3 **cytoplasmic / maternal-lineage relationship** (`maternal_lineage`, `cytoplasmic_relationship`, exported) | first non-standard-inheritance primitive; maternal-founder trace + 0/1 same-line indicator; hand-verified multi-lineage fixture; suite 1637/1637 (+53) |
+| `cf09adf` | Cytoplasmic/additive confounding forward note (`V3-CYTO`, docs) | exploratory probe: σ²c partially recovers but confounds with σ²a; documented, not committed as a confounded gate |
+| _(latest)_ | Phase-3 **self-fertilization** (`normalize_pedigree(...; allow_selfing=true)`) | machinery already self-correct; canonical F=0,½,¾ & A_ii=3/2,7/4 verified; `pedigree_inverse == inv(A)` for pure + mixed selfed pedigrees; suite 1648/1648 (+11) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -52,7 +54,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1637/1637 pass, exit 0**.
+- Full local suite: **1648/1648 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -85,12 +87,12 @@ dense-inverse conditioning caveat (Slice 16, `V1-DENSE-COND`), and the first
 non-standard-inheritance primitive — cytoplasmic / maternal-lineage relationship
 (Slice 17).
 
-**Still solo-doable (newly visible after Slice 17):** Phase 3's non-standard
-inheritance scope has more relationship-construction primitives that ARE solo +
-hand-verifiable — selfing-aware inbreeding, clonal (identical-genotype groups),
-haplodiploid, polyploid relationship coefficients — plus a cytoplasmic-variance
-estimation example feeding `fit_two_effect_reml`. These are genuine remaining
-runway.
+**Still solo-doable:** Phase 3's non-standard inheritance scope has more
+relationship-construction primitives that ARE solo + hand-verifiable. Selfing is
+now done (Slice 18); remaining: clonal (identical-genotype groups), haplodiploid
+and polyploid relationship coefficients (these need the sex/ploidy-specific
+coancestry canon checked), plus a confounding-breaking cytoplasmic-variance
+estimation example.
 
 **Genuinely NOT solo (needs you / R lane / external):** external GLLVM.jl /
 gllvmTMB / sommer / ASReml comparator parity; the R-facing model-spec + bridge
@@ -389,3 +391,20 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   capability row planned→experimental, adds `V3-CYTO`, updates ROADMAP Phase 3.
   The other inheritance systems (selfing, clonal, haplodiploid, polyploid) and
   the cytoplasmic-variance estimation example remain open.
+
+### Slice 18 — self-fertilization (`allow_selfing`)
+- The next solo Phase-3 inheritance primitive the hook named. The key finding:
+  the math machinery was **already self-correct** — with `sire == dam == P`,
+  `_numerator_relationship` yields `A[i,j] = A[P,j]` and `A_ii = 1 + ½(1+F_P)`,
+  and `_mendelian_sampling_variance` returns `½(1−F_P)`, both the textbook
+  selfing values, and the Henderson `Ainv` direct rules accumulate the correct
+  `(1/d)[1,−1;−1,1]` contribution. The ONLY blocker was the `normalize_pedigree`
+  guard rejecting `sire == dam`.
+- Change: `normalize_pedigree(...; allow_selfing = false)` — opt-in skips just
+  the selfing guard (self-as-own-parent still rejected). No estimation code
+  touched, default behaviour unchanged.
+- **Gates** (11 checks): the canonical repeated-selfing inbreeding series
+  `F = 0, ½, ¾`, diagonals `A_ii = 3/2, 7/4`, `A[i,P] = 1`, symmetry, and
+  `pedigree_inverse == inv(A)` for both a pure-selfing and a mixed sexual/selfed
+  pedigree. Suite 1648/1648. Capability row planned→experimental, new
+  `V3-SELFING` debt row, ROADMAP Phase-3 updated.

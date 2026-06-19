@@ -22,7 +22,7 @@ function Base.show(io::IO, pedigree::Pedigree)
 end
 
 """
-    normalize_pedigree(ids, sire, dam; missing_values = ...)
+    normalize_pedigree(ids, sire, dam; missing_values = ..., allow_selfing = false)
 
 Validate, recode, and topologically sort an animal pedigree.
 
@@ -32,8 +32,16 @@ unknown-parent markers or values present in `ids`. By default, `missing`,
 
 The returned [`Pedigree`](@ref) stores parents as integer row indices, with `0`
 for unknown parents.
+
+`allow_selfing = true` permits self-fertilization (`sire == dam`), a Phase-3
+non-standard-inheritance feature: the additive-relationship recursion and the
+Henderson `Ainv` rules already handle a self (a selfed offspring of a non-inbred
+parent has inbreeding `F = 1/2`, `A_ii = 3/2`). It is rejected by default to
+preserve the sexual-pedigree contract; an individual still cannot be its own
+parent.
 """
-function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PARENT_VALUES)
+function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                            allow_selfing::Bool = false)
     ids_vec = collect(ids)
     sire_vec = collect(sire)
     dam_vec = collect(dam)
@@ -64,8 +72,8 @@ function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PAR
             throw(ArgumentError("sire cannot equal id for $(_repr(id))"))
         dam_index[index] == index &&
             throw(ArgumentError("dam cannot equal id for $(_repr(id))"))
-        if sire_index[index] != 0 && sire_index[index] == dam_index[index]
-            throw(ArgumentError("sire and dam cannot be the same known parent for $(_repr(id)); selfing is a planned Phase 7 feature"))
+        if sire_index[index] != 0 && sire_index[index] == dam_index[index] && !allow_selfing
+            throw(ArgumentError("sire and dam cannot be the same known parent for $(_repr(id)); pass allow_selfing = true to model self-fertilization"))
         end
     end
 

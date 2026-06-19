@@ -476,6 +476,37 @@ end
     @test HSquared.cytoplasmic_relationship(fped) == Matrix(1.0I, 3, 3)
 end
 
+@testset "Phase 3 selfing (self-fertilization)" begin
+    # By default selfing (sire == dam) is rejected — preserves the sexual contract.
+    @test_throws ArgumentError normalize_pedigree(["P", "i"], ["0", "P"], ["0", "P"])
+
+    # Opt-in: allow_selfing = true. Canonical inbreeding series for repeated
+    # selfing of a non-inbred founder: F = 0, 1/2, 3/4, ... (Falconer/Mrode).
+    ped = normalize_pedigree(["P", "i", "j"], ["0", "P", "i"], ["0", "P", "i"];
+                             allow_selfing = true)
+    idx(id) = findfirst(==(id), ped.ids)
+    F = inbreeding_coefficients(ped)
+    @test F[idx("P")] ≈ 0.0
+    @test F[idx("i")] ≈ 0.5            # one generation of selfing
+    @test F[idx("j")] ≈ 0.75           # two generations
+
+    A = HSquared._numerator_relationship(ped)
+    @test A[idx("i"), idx("i")] ≈ 1.5  # 1 + F_i
+    @test A[idx("j"), idx("j")] ≈ 1.75 # 1 + F_j
+    @test A[idx("i"), idx("P")] ≈ 1.0  # selfed offspring of a non-inbred founder
+    @test issymmetric(A)
+
+    # Henderson's direct inverse rules handle selfing: Ainv == inv(A) exactly.
+    @test Matrix(pedigree_inverse(ped)) ≈ inv(A)
+
+    # A selfed founder line still composes with a normal sexual pedigree.
+    mixed = normalize_pedigree(["P", "s", "i", "o"],
+                               ["0", "0", "P", "s"], ["0", "0", "P", "i"];
+                               allow_selfing = true)
+    @test inbreeding_coefficients(mixed)[findfirst(==("i"), mixed.ids)] ≈ 0.5
+    @test Matrix(pedigree_inverse(mixed)) ≈ inv(HSquared._numerator_relationship(mixed))
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],
