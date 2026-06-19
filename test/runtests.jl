@@ -3767,3 +3767,90 @@ end
                                     initial = (sigma_a2 = 1.0,))
     @test fbv.family === :bernoulli && fbv.converged
 end
+
+@testset "Phase 6 Binomial (logit, n trials) family" begin
+    # The Binomial(m) family generalises Bernoulli (m = 1). With more trials per
+    # record the data is more informative, so the Laplace variance bias shrinks —
+    # the scientific resolution of the "binary σ²a is uncalibrated" limit.
+    b1 = HSquared.BinomialResponse(1)
+    bern = HSquared.BernoulliResponse()
+    # --- reduces to Bernoulli at m = 1 (kernels identical)
+    for η in (-1.3, 0.0, 0.7), y in (0.0, 1.0)
+        @test HSquared._fam_loglik(b1, y, η) ≈ HSquared._fam_loglik(bern, y, η) atol = 1e-12
+        @test HSquared._fam_score(b1, y, η) ≈ HSquared._fam_score(bern, y, η) atol = 1e-12
+        @test HSquared._fam_weight(b1, y, η) ≈ HSquared._fam_weight(bern, y, η) atol = 1e-12
+    end
+
+    f = HSquared.BinomialResponse(10)
+    η0 = 0.37; h = 1e-6
+    @test HSquared._fam_score(f, 6.0, η0) ≈
+          (HSquared._fam_loglik(f, 6.0, η0 + h) - HSquared._fam_loglik(f, 6.0, η0 - h)) / (2h) rtol = 1e-5
+    h2 = 1e-4
+    @test HSquared._fam_weight(f, 6.0, η0) ≈
+          -(HSquared._fam_loglik(f, 6.0, η0 + h2) - 2 * HSquared._fam_loglik(f, 6.0, η0) +
+            HSquared._fam_loglik(f, 6.0, η0 - h2)) / h2^2 rtol = 1e-3
+    # VA expected kernels are the η̄-derivatives of the expected loglik
+    ηb, vv = 0.4, 0.6
+    @test HSquared._fam_expected_score(f, 6.0, ηb, vv) ≈
+          (HSquared._fam_expected_loglik(f, 6.0, ηb + h, vv) -
+           HSquared._fam_expected_loglik(f, 6.0, ηb - h, vv)) / (2h) rtol = 1e-5
+    @test HSquared._fam_expected_weight(f, ηb, vv) ≈
+          -(HSquared._fam_expected_loglik(f, 6.0, ηb + h2, vv) -
+            2 * HSquared._fam_expected_loglik(f, 6.0, ηb, vv) +
+            HSquared._fam_expected_loglik(f, 6.0, ηb - h2, vv)) / h2^2 rtol = 1e-3
+
+    # --- value gate vs an independent tensor Gauss–Hermite quadrature (β-fixed)
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.0
+    m = 8
+    yb = [6.0, 2.0, 5.0]                  # successes in 0..m
+    X0 = zeros(3, 0)
+    _gh(k) = (E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _l1pe(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+    _lbin(mm, yy) = HSquared._logfactorial(mm) - HSquared._logfactorial(yy) -
+                    HSquared._logfactorial(mm - yy)
+    function _binom_marginal(y, Zd, G, mm, k)
+        x, w = _gh(k)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> k, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - mm * _l1pe(η[i]) + _lbin(mm, Int(y[i])) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _binom_marginal(yb, Matrix(Z), G, m, 32)
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BinomialResponse(m))
+    va = HSquared.variational_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BinomialResponse(m))
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6                       # ELBO valid lower bound
+    @test abs(lap.loglik - R) < 0.2                 # Laplace close (better than m=1)
+
+    # --- guards
+    @test_throws ArgumentError HSquared.BinomialResponse(0)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([9.0, 2.0, 5.0], X0, Z, Ainv, sa2,
+                                                                HSquared.BinomialResponse(m))  # y > m
+
+    # --- fitted: family = :binomial requires n_trials and converges
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]    # successes in 0..10
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fbn = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial, n_trials = 10,
+                                    initial = (sigma_a2 = 1.0,))
+    @test fbn.family === :binomial
+    @test fbn.converged && fbn.variance_components.sigma_a2 > 0
+    @test length(fbn.breeding_values) == 8
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial)  # missing n_trials
+end

@@ -2,6 +2,32 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Binomial (logit, n-trials) family + recovery (overnight)
+
+- Goal: generalise Bernoulli to the Binomial(m) family AND scientifically
+  resolve the "binary `sigma_a2` is uncalibrated" limit — with more trials per
+  record the data is informative enough to recover `sigma_a2` tightly.
+- `BinomialResponse(n_trials)`: conditional `ℓ = yη − m·log1pexp(η) + log C(m,y)`,
+  score `y − m·p`, weight `m·p(1−p)`; VA expected kernels reuse the Bernoulli
+  Gauss–Hermite kernels scaled by `m` (plus the constant binomial offset).
+  `BernoulliResponse` is exactly `n_trials = 1`. `fit_laplace_reml` gains a
+  `:binomial` branch + required `n_trials` keyword.
+- Gates (verified, `test/runtests.jl`, 31/31): `n_trials = 1` kernels match
+  `BernoulliResponse` exactly; conditional + expected score/weight match finite
+  differences; a β-fixed Gauss–Hermite value gate (m=8) confirms `va.elbo ≤ R`
+  (gap ≈2e-3) and `|lap − R| ≈ 0.031`; guards reject `n_trials < 1`, `y ∉ 0:m`,
+  and `:binomial` without `n_trials`.
+- Recovery (RAN, exit 0; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-binomial-recovery.log`):
+  `sim/phase6_binomial_recovery.jl` (q=345, m=20, truth σ²a=1.0) — **5/5 with
+  `sigma_a2` HARD-gated**: rel ≤ 0.175, EBV correlation 0.900–0.916. This
+  demonstrates the single-trial Bernoulli `sigma_a2` bias is an INFORMATION
+  effect, not an estimator flaw.
+- `Pkg.test()`: passed, exit 0, **1584/1584** (Binomial testset +31).
+- Rose: experimental, dense, not exported, no R model-spec; the Binomial
+  `sigma_a2` recovery is genuinely gated (unlike single-trial Bernoulli). New
+  `V6-BINOMIAL` debt + capability rows. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 two-effect REML known-truth recovery (overnight)
 
 - Goal: close the V3-TWOEFFECT-REML "no committed RNG recovery harness" gap and

@@ -11,9 +11,10 @@
 # This is the `:LA` marginal; the `:VA` (variational) marginal reuses the
 # per-family kernels here (architecture adapted from the MIT DRM.jl
 # `src/variational.jl` :LA/:VA dispatch). Families currently: Gaussian (identity
-# link, exact), Poisson (log link, closed-form VA via the log-normal MGF), and
+# link, exact), Poisson (log link, closed-form VA via the log-normal MGF),
 # Bernoulli (logit link; the VA expected kernels use Gauss–Hermite quadrature
-# because the logistic log-partition has no closed-form Gaussian expectation).
+# because the logistic log-partition has no closed-form Gaussian expectation),
+# and Binomial (logit link, `n_trials` successes; Bernoulli is `n_trials = 1`).
 #
 # NOT exported into the public/bridge surface; not wired into `fit_*`; no R
 # model-spec. Validation: Gaussian reduces to `sparse_reml_loglik` to machine
@@ -37,9 +38,24 @@ struct PoissonResponse <: ResponseFamily end
 """Bernoulli family with logit link (`p = logistic(η)`) for binary 0/1 traits."""
 struct BernoulliResponse <: ResponseFamily end
 
+"""
+Binomial family with logit link for counts of successes out of a common number of
+trials `n_trials` (`y ∈ 0:n_trials`, `p = logistic(η)`). Generalises
+`BernoulliResponse` (= `n_trials = 1`); more trials per record make the data more
+informative, so the Laplace variance bias shrinks.
+"""
+struct BinomialResponse <: ResponseFamily
+    n_trials::Int
+    function BinomialResponse(n_trials::Integer)
+        n_trials >= 1 || throw(ArgumentError("n_trials must be >= 1"))
+        return new(Int(n_trials))
+    end
+end
+
 # numerically stable logistic and log(1 + exp η)
 _logistic(η) = η >= 0 ? 1.0 / (1.0 + exp(-η)) : (e = exp(η); e / (1.0 + e))
 _log1pexp(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+_logbinom(m, y) = _logfactorial(m) - _logfactorial(y) - _logfactorial(m - y)
 
 # per-observation conditional log-density ℓ(y|η), score dℓ/dη, working weight -d²ℓ/dη²
 _fam_loglik(f::GaussianResponse, y, η) = -0.5 * ((y - η)^2 / f.sigma_e2 + log(2π * f.sigma_e2))
@@ -53,6 +69,10 @@ _fam_weight(::PoissonResponse, y, η) = exp(η)
 _fam_loglik(::BernoulliResponse, y, η) = y * η - _log1pexp(η)
 _fam_score(::BernoulliResponse, y, η) = y - _logistic(η)
 _fam_weight(::BernoulliResponse, y, η) = (p = _logistic(η); p * (1.0 - p))
+
+_fam_loglik(f::BinomialResponse, y, η) = y * η - f.n_trials * _log1pexp(η) + _logbinom(f.n_trials, Int(round(y)))
+_fam_score(f::BinomialResponse, y, η) = y - f.n_trials * _logistic(η)
+_fam_weight(f::BinomialResponse, y, η) = (p = _logistic(η); f.n_trials * p * (1.0 - p))
 
 function _logfactorial(y)
     k = Int(round(y))
@@ -75,6 +95,11 @@ end
 function _check_counts(::BernoulliResponse, yv)
     all(y -> y == 0 || y == 1, yv) ||
         throw(ArgumentError("BernoulliResponse requires binary 0/1 responses"))
+    return nothing
+end
+function _check_counts(f::BinomialResponse, yv)
+    all(y -> isinteger(y) && 0 <= y <= f.n_trials, yv) ||
+        throw(ArgumentError("BinomialResponse requires integer counts in 0:n_trials"))
     return nothing
 end
 
@@ -182,6 +207,12 @@ _fam_expected_loglik(::BernoulliResponse, y, ηbar, v) = y * ηbar - _gh_expect(
 _fam_expected_score(::BernoulliResponse, y, ηbar, v) = y - _gh_expect(_logistic, ηbar, v)
 _fam_expected_weight(::BernoulliResponse, ηbar, v) =
     _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), ηbar, v)
+
+_fam_expected_loglik(f::BinomialResponse, y, ηbar, v) =
+    y * ηbar - f.n_trials * _gh_expect(_log1pexp, ηbar, v) + _logbinom(f.n_trials, Int(round(y)))
+_fam_expected_score(f::BinomialResponse, y, ηbar, v) = y - f.n_trials * _gh_expect(_logistic, ηbar, v)
+_fam_expected_weight(f::BinomialResponse, ηbar, v) =
+    f.n_trials * _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), ηbar, v)
 
 # Self-consistent variational covariance S = (Zᵀ W̃ Z + P0)⁻¹ and per-record
 # marginal variances v = diag(Z S Zᵀ), with W̃ depending on (η̄, v). Fixed-point.
@@ -305,14 +336,16 @@ end
 Estimate the variance component(s) of the non-Gaussian animal model by maximising
 the marginal log-likelihood (`marginal = :laplace`) or the ELBO
 (`marginal = :variational`) over the variance components. `family = :gaussian`
-estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson` and
-`family = :bernoulli` estimate the single `sigma_a2` (Brent). Returns
+estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
+`family = :bernoulli`, and `family = :binomial` (which requires the `n_trials`
+keyword) estimate the single `sigma_a2` (Brent). Returns
 `(variance_components, marginal_loglik, beta, breeding_values, converged, family,
 marginal)`.
 
 Binary `:bernoulli` data carries little variance information at small scale, so
-`sigma_a2` is prone to running to a search-bound boundary; the estimate is not
-yet calibrated by a known-truth recovery study.
+`sigma_a2` is prone to running to a search-bound boundary; `:binomial` with more
+trials per record is more informative and recovers `sigma_a2` far better (see
+`sim/phase6_binomial_recovery.jl`).
 
 EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
 For the Gaussian family the objective is the exact REML log-likelihood, so this
@@ -322,9 +355,11 @@ public default, no R model-spec, no external comparator.
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
-                          iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, or :bernoulli"))
+                          n_trials = nothing, iterations::Integer = 200)
+    family in (:gaussian, :poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, or :binomial"))
+    family === :binomial && n_trials === nothing &&
+        throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     marginal in (:laplace, :variational) ||
         throw(ArgumentError("marginal must be :laplace or :variational"))
     margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
@@ -343,8 +378,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                 converged = Optim.converged(res) && fit.converged,
                 family = :gaussian, marginal = marginal)
     else
-        # single-variance-component families: Poisson (log link) and Bernoulli (logit)
-        fam = family === :poisson ? PoissonResponse() : BernoulliResponse()
+        # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
+        fam = family === :poisson ? PoissonResponse() :
+              family === :bernoulli ? BernoulliResponse() : BinomialResponse(n_trials)
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
         res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),

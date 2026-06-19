@@ -39,7 +39,8 @@ kept current at each milestone and is the "morning report".
 | `92cc4bf` | Phase-6 **Poisson variance-component profile interval** (`laplace_reml_interval`, `src/nongaussian.jl`); reverted a stray uncommitted `FastGaussQuadrature` entry in `Project.toml` | inverts marginal LRT `2·(ℓ̂−ℓ(σ²a))=χ²₁,level`; interior upper endpoint pinned to χ²₁ root (3.8415/2.7055), lower clamps on flat profile, nests by level; suite 1538/1538 (+12) |
 | `907bf75` | Phase-6 **Bernoulli/logit family** (`BernoulliResponse`, Laplace + VA) — binary 0/1 traits | VA expected kernels via 20-node Gauss–Hermite (logistic has no closed-form Gaussian expectation); β-fixed GH gate confirms `va.elbo ≤ R` (gap 4e-4) and Laplace close (gap 0.028); finite-diff kernels; `fit_laplace_reml(:bernoulli)` converges (`:laplace`/`:variational`); suite 1553/1553 (+15) |
 | `44a7dbd` | Phase-6 **Bernoulli known-truth recovery** (`sim/phase6_bernoulli_recovery.jl`, opt-in) | q=1075 half-sib, truth σ²a=1.0 (logit); 5/5 gated pass (EBV cor 0.565–0.701 ≥ 0.5, non-collapse); σ̂²a 0.36–0.81 reported-not-gated (known Laplace-for-binary downward bias) |
-| _(latest)_ | Phase-3 **two-effect REML known-truth recovery** (`sim/phase3_two_effect_recovery.jl`, opt-in) | q=860, common-env groups independent of pedigree (identifiable); 5/5 recover ALL THREE components (max rel σ1 0.286, σ2 0.277, σe 0.123) — prior additive underestimation was a confounding artifact, not an estimator flaw |
+| `02f63f3` | Phase-3 **two-effect REML known-truth recovery** (`sim/phase3_two_effect_recovery.jl`, opt-in) | q=860, common-env groups independent of pedigree (identifiable); 5/5 recover ALL THREE components (max rel σ1 0.286, σ2 0.277, σe 0.123) — prior additive underestimation was a confounding artifact, not an estimator flaw |
+| _(latest)_ | Phase-6 **Binomial/logit family + recovery** (`BinomialResponse(n_trials)`, `sim/phase6_binomial_recovery.jl`) | generalises Bernoulli (m=1); Laplace + VA (GH kernels ×m + binom offset); m=8 value gate (va.elbo ≤ R, Laplace gap 0.031); recovery q=345/m=20 **σ²a HARD-gated 5/5** (rel ≤ 0.175, EBV cor 0.90–0.92) — binary bias is an information effect; suite 1584/1584 (+31) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -48,7 +49,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1553/1553 pass, exit 0**.
+- Full local suite: **1584/1584 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -74,14 +75,13 @@ Laplace + VA foundations, family hardening, Gauss–Hermite value gate, `:diagon
 VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, the Poisson
 profile interval (Slice 10), the Bernoulli/logit family for Laplace + VA
 (Slice 11), the Bernoulli known-truth recovery harness (Slice 12), and the
-two-effect REML recovery harness (Slice 13). Remaining solo-doable, internally
-verifiable items:
+two-effect REML recovery harness (Slice 13), and the Binomial/logit family +
+recovery (Slice 14, which resolved the binary-bias question). Remaining
+solo-doable, internally verifiable items:
 
 1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
 2. A denser-pedigree repeatability `h²` study (the σ²a/σ²pe split was
    under-identified at validation scale in Slice 2).
-3. A binary `sigma_a2` bias correction or a many-trial binomial family/design
-   (the Laplace-for-binary downward bias is now documented but uncorrected).
 
 Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
 latent genetic factors, more families, external GLLVM.jl/gllvmTMB comparators,
@@ -305,3 +305,22 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   correction to the prior note. Evidence log:
   `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-two-effect-recovery.log`.
   No test-suite change (opt-in).
+
+### Slice 14 — Binomial/logit family + recovery (resolves the binary-bias question)
+- Generalises the Bernoulli family to `BinomialResponse(n_trials)` (`y` successes
+  out of a common `m`; Bernoulli is `m=1`), for BOTH Laplace and VA. Conditional
+  `ℓ = yη − m·log1pexp(η) + log C(m,y)`; the VA expected kernels reuse the
+  Bernoulli Gauss–Hermite kernels scaled by `m` (plus the constant binomial
+  offset). `fit_laplace_reml` gains a `:binomial` branch + required `n_trials`.
+- **Gates** (31/31): exact `m=1`→Bernoulli reduction; conditional + expected
+  score/weight finite-diff; a β-fixed Gauss–Hermite value gate (m=8) with
+  `va.elbo ≤ R` (gap ≈2e-3) and Laplace close (gap ≈0.031); guards on
+  `n_trials < 1`, `y ∉ 0:m`, and missing `n_trials`.
+- **Scientific payoff** (`sim/phase6_binomial_recovery.jl`, RAN exit 0, q=345,
+  m=20, truth σ²a=1.0): **5/5 with `σ̂²a` HARD-gated** — rel ≤ 0.175, EBV
+  correlation 0.900–0.916. Where the single-trial Bernoulli left `σ̂²a`
+  downward-biased and reported-not-gated (Slice 12), 20 trials/record make the
+  data informative enough to recover `σ̂²a` tightly. So the binary "bias" is an
+  INFORMATION effect, not an estimator flaw — the honest resolution of the
+  Slice-11/12 limitation. Suite 1584/1584. Evidence log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-binomial-recovery.log`.
