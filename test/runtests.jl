@@ -3630,6 +3630,11 @@ end
     fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
     @test fp.converged && fp.variance_components.sigma_a2 > 0
     @test fp.family === :poisson
+    # fitted breeding values are the BLUP at the fitted variance components (Gaussian)
+    @test fl.breeding_values ≈
+          breeding_values(henderson_mme(spec, fl.variance_components.sigma_a2,
+                                        fl.variance_components.sigma_e2)).values rtol = 1e-6 atol = 1e-9
+    @test length(fp.breeding_values) == 8
 
     @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :bogus)
     @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; marginal = :bogus)

@@ -291,6 +291,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
         return (variance_components = (sigma_a2 = sa2, sigma_e2 = se2),
                 marginal_loglik = val(fit), beta = fit.beta,
+                breeding_values = (marginal === :variational ? fit.m : fit.u),
                 converged = Optim.converged(res) && fit.converged,
                 family = :gaussian, marginal = marginal)
     else
@@ -302,6 +303,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = margfun(y, X, Z, Ainv, sa2, PoissonResponse())
         return (variance_components = (sigma_a2 = sa2,),
                 marginal_loglik = val(fit), beta = fit.beta,
+                breeding_values = (marginal === :variational ? fit.m : fit.u),
                 converged = Optim.converged(res) && fit.converged,
                 family = :poisson, marginal = marginal)
     end
