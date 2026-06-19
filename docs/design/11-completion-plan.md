@@ -27,7 +27,8 @@ v0.6 non-Gaussian/GLLVM → v0.7 CPU/GPU → v0.8 HPC.
 ## Progress update (2026-06-19) — critical-path status vs. this plan
 
 Reconciling the critical path (below) against the engine work landed since
-authoring (39 local commits this session, suite 1792/1792, **unpushed**):
+authoring (39 local commits this session, suite 1792/1792, **pushed 2026-06-19
+to `origin/codex/phase5-gwas-qtl-eqtl-tables`**):
 
 | # | Slice | Status now |
 | --- | --- | --- |

@@ -8,9 +8,10 @@ fixed).
 
 ## State (repository = source of truth)
 
-- Branch `codex/phase5-gwas-qtl-eqtl-tables`, **40 local commits unpushed**,
-  full suite **1792/1792 green**. Edits confined to `HSquared.jl`; R twin
-  read-only.
+- Branch `codex/phase5-gwas-qtl-eqtl-tables`, **pushed 2026-06-19 to
+  `origin/codex/phase5-gwas-qtl-eqtl-tables`** (was 40 unpushed; pushed after a
+  clean local suite + docs build). Full suite **1792/1792 green**. Edits confined
+  to `HSquared.jl`; R twin read-only.
 - One fully public-covered capability: the v0.1 Gaussian animal model. Everything
   else is experimental / validation-scale (honest status throughout).
 
