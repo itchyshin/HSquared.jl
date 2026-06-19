@@ -24,6 +24,42 @@ Release milestones map to the phases: v0.1 Gaussian animal model (**done**) →
 v0.2 genomic → v0.3 standard QG → v0.4 multivariate (+4B FA) → v0.5 QTL/marker →
 v0.6 non-Gaussian/GLLVM → v0.7 CPU/GPU → v0.8 HPC.
 
+## Progress update (2026-06-19) — critical-path status vs. this plan
+
+Reconciling the critical path (below) against the engine work landed since
+authoring (39 local commits this session, suite 1792/1792, **unpushed**):
+
+| # | Slice | Status now |
+| --- | --- | --- |
+| 0 | Merge Phase-5 stack → `main` | **PENDING — your action** (direct push policy-blocked) |
+| 1 | Profile-likelihood h² interval | **DONE** (`heritability_interval(...; method = :profile)`) |
+| 2 | Fitted Mrode validation | open — `[needs-canon-reference]` + R comparator |
+| 3 | Genomic external-comparator parity | **engine half done** (`fit_gblup_reml`/`fit_snp_blup_reml` REML, `single_step_inverse`/`fit_single_step[_reml]`, VanRaden method-2 + weighted G); comparator half `[needs-external-package]` |
+| 4 | Multivariate recovery-calibration rerun | open `[solo]` (prior run failed; rerun re-documents) |
+| 5 | Multivariate external comparator | open `[needs-R / external]` |
+| 6 | Production sparse fitting + large-pedigree hardening | open `[solo, large build]`; conditioning probed (V1-DENSE-COND tested: direct Henderson inverse exact at cond≈1.7e3) |
+| 7 | Calibrated genome-wide thresholds | open `[solo, RNG/sim]` |
+| 8 | Public genomic model-spec activation | open `[needs-R]` |
+| 9 | Public standard-QG model-spec | open `[needs-R]` |
+| 10 | Phase 6 GLLVM Laplace + VA | **DONE (engine)** — Gaussian/Poisson/Bernoulli/Binomial × Laplace+VA, `fit_laplace_reml`/`laplace_reml_interval` exported, `NonGaussianFit` fitted-object + extractors, Poisson/Bernoulli/Binomial recovery; GLLVM.jl comparator + latent factors remain |
+| 11 | Phase 7 CPU/GPU | not started — `[needs-hardware]` |
+| 12 | Phase 8 HPC | not started — `[needs-hardware]` |
+
+Also landed this session beyond the original table: the **Phase-3 inheritance
+relationship-matrix family** (`additive_relationship`, `dominance_relationship`,
+`epistatic_relationship` A∘A/A∘D/D∘D, `cytoplasmic_relationship`,
+`clonal_relationship`, `allow_selfing`), `mendelian_sampling_variances`, and the
+**`repeatability_interval`** (delta-method CI for `t`). The parametric-bootstrap
+h² interval was assessed and **deliberately not built** (degenerate at validation
+scale — see the check-log).
+
+Net: items #1 and #10 are done; #3 and Phase-3 inheritance are substantially
+advanced engine-side. The remaining work splits cleanly into (a) **external
+comparators / fitted Mrode** (#2, #3-comparator, #5 — need external packages + the
+R lane), (b) **public R model-spec activation** (#8, #9 — need the R twin), (c)
+**substantial solo builds** (#6 sparse production, #7 calibrated scans, random
+regression, interval mapping), and (d) **hardware-gated** (#11, #12).
+
 ## Current reality (honest)
 
 - **One fully public-covered capability**: the v0.1 univariate Gaussian animal
