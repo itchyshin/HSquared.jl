@@ -9,14 +9,16 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-19 (BT2/BT3 relaunch, S1).** `main` @ `2a3eed5` carries the full
+- **As of 2026-06-19 (BT2/BT3 relaunch, S1+S2).** `main` carries the full
   Phase-4B/5/6 engine work (PR #36) plus multivariate covariance SEs/LRTs (#47, PR
-  #59) and the refreshed Documenter API page. The BT2/BT3 programme was relaunched
-  (R-lane joint critical path on #61); **S1 honesty closeout** in flight via PR
-  (#47 `validation_status()` rows + #38 doc + #44 V6-LAPLACE row). Suite **1837**
-  (1822 + 15), CI green on `main`. Read
+  #59). BT2/BT3 relaunched against the R-lane joint critical path (#61):
+  **S1 honesty closeout** (#47 `validation_status()` rows + #38 doc + #44
+  V6-LAPLACE row) merged via PR #62; **S2 `:diagonal` multivariate bridge payload**
+  (#42 scoped — `multivariate_result_payload`, rotation-free, unblocks the R-lane
+  diagonal LRT) in flight via PR. `Pkg.test()` + Documenter green;
+  `validation_status()` has 33 rows. Read
   `docs/dev-log/after-task/2026-06-19-session-handover-v2.md` then
-  `docs/dev-log/after-task/2026-06-19-honesty-closeout-s1.md`.
+  `docs/dev-log/after-task/2026-06-19-diagonal-bridge-payload.md`.
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial`.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 = engine

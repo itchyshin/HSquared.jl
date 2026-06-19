@@ -211,6 +211,40 @@ column slots. It is intended for R `Matrix::dgCMatrix` payloads, where the
 indices, value lengths, and strictly increasing row indices within each column.
 It is a marshalling helper only; it does not fit a model.
 
+## Implemented Multivariate Bridge Payload (Diagonal/Unstructured)
+
+```julia
+payload = multivariate_result_payload(
+    fit_multivariate_reml(Y, X, Z, Ainv; genetic_structure = :diagonal))
+```
+
+`multivariate_result_payload(result)` returns the "boring" bridge `NamedTuple`
+for a multivariate REML fit, mirroring `result_payload` for the univariate
+animal model so the R twin marshals one shape across traits. Keys: `engine`,
+`target = "multivariate_reml"`, `genetic_structure`, `n_traits`, `traits`,
+`genetic_covariance` (`G0`), `genetic_variances` (`diag(G0)`),
+`residual_covariance` (`R0`), `genetic_correlation`, `residual_correlation`,
+`heritability`, `fixed_effects`, `breeding_values`, `loglik`,
+`n_genetic_params`, and `converged`.
+
+It is exposed only for the **rotation-free** genetic structures `:unstructured`
+and `:diagonal`. `:lowrank` / `:factor_analytic` are rejected with an
+`ArgumentError`: their loadings are rotation-nonidentified, so surfacing them
+across the bridge requires a rotation/interpretation convention first. The
+payload never carries `genetic_loadings` / `genetic_uniqueness`.
+
+`n_genetic_params` is `t` for `:diagonal` and `t(t+1)/2` for `:unstructured`, so
+the diagonal-vs-unstructured likelihood-ratio test degrees of freedom are just
+the difference of the two fits' counts — an interior null
+(`covariance_structure_lrt(diagonal_fit, unstructured_fit)`, `boundary = false`).
+
+`test/fixtures/structured_covariance_parity/` serializes a deterministic
+two-trait `:diagonal` target (the same inputs as the unstructured
+`phase4_multitrait_parity` fixture) for R-lane comparator work, with CI
+self-consistency at the stored covariances. This is an input + Julia-target
+bundle, not external comparator evidence; the R-side activation and the diagonal
+LRT wiring are coordinated cross-lane.
+
 ## Experimental Genomic And Marker Utilities
 
 ```julia
