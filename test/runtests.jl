@@ -3532,8 +3532,15 @@ end
           4.0 * 0.3 - exp(0.3 + 0.25) - HSquared._logfactorial(4.0) rtol = 1e-12
     @test HSquared._fam_expected_weight(HSquared.PoissonResponse(), 0.3, 0.5) ≈ exp(0.3 + 0.25) rtol = 1e-12
 
+    # :diagonal (mean-field) VA: converges and is a LOOSER lower bound than full
+    # covariance (β-fixed, where the ELBO is a proper lower bound on log p(y)).
+    X0 = zeros(3, 0)
+    vfull = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse(); covariance = :full)
+    vdiag = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse(); covariance = :diagonal)
+    @test vdiag.converged && vdiag.covariance === :diagonal
+    @test vfull.elbo >= vdiag.elbo - 1e-9               # richer q ⇒ tighter bound
     @test_throws ArgumentError HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2,
-        HSquared.GaussianResponse(se2); covariance = :diagonal)
+        HSquared.GaussianResponse(se2); covariance = :bogus)
 end
 
 @testset "Phase 6 non-Gaussian family hardening" begin

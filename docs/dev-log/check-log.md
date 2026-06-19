@@ -2,6 +2,17 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 :diagonal (mean-field) VA + ELBO monotonicity (overnight)
+
+- Goal: the team's `:diagonal` lower-bound VA option + ELBO-monotonicity test.
+- `variational_marginal_loglik(...; covariance = :diagonal)` profiles `S` to the
+  closed-form `Diagonal(1 ./ diag(H_uu))` (mean-field). Verified looser than full
+  covariance (`ELBO_full ≥ ELBO_diagonal`, β-fixed where the ELBO is a proper
+  lower bound); invalid `covariance` rejected.
+- `Pkg.test()`: passed, exit 0, **1515/1515** (was 1513; +2). VA testset 16/16.
+- Rose: `:full` remains the validated (REML-exact) foundation; `:diagonal` is
+  explicitly lower-bound-only. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 Poisson marginal value vs Gauss–Hermite (overnight)
 
 - Goal: the team's strongest remaining honest-coverage item — pin the Poisson

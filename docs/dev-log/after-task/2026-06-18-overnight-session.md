@@ -32,7 +32,8 @@ kept current at each milestone and is the "morning report".
 | `c0125ba` | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
 | `57c0b7c` | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
 | `a4ddaba` | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
-| _(latest)_ | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
+| `023f076` | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
+| _(latest)_ | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -163,3 +164,14 @@ slice I owned and finished. Full report:
   option + ELBO-monotonicity test; the Laplace `gradient_norm`-at-mode nit;
   variance-component estimation and a fitted GLLVM path; external GLLVM.jl/
   gllvmTMB comparators; the R-facing model-spec.
+
+### Slice 7 — `:diagonal` (mean-field) VA + ELBO-monotonicity
+- `variational_marginal_loglik(...; covariance = :diagonal)` adds the mean-field
+  option with the closed-form `S = Diagonal(1 ./ diag H_uu)`. Verified it is a
+  *looser* lower bound than full covariance (`ELBO_full ≥ ELBO_diagonal`,
+  β-fixed). `:full` remains the validated (REML-exact) foundation; `:diagonal`
+  is explicitly lower-bound-only (it discards pedigree relatedness). Full suite
+  1515/1515.
+- Remaining Phase-6 (the genuinely larger, still-unstarted work): variance-
+  component estimation → a *fitted* non-Gaussian/GLLVM model, latent genetic
+  factors, external GLLVM.jl/gllvmTMB comparators, and the R-facing model-spec.

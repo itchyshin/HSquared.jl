@@ -142,12 +142,13 @@ _fam_expected_weight(::PoissonResponse, ηbar, v) = exp(ηbar + 0.5 * v)
 
 # Self-consistent variational covariance S = (Zᵀ W̃ Z + P0)⁻¹ and per-record
 # marginal variances v = diag(Z S Zᵀ), with W̃ depending on (η̄, v). Fixed-point.
-function _va_covariance(family, Zd, P0, ηbar, v0, n, tol)
+function _va_covariance(family, Zd, P0, ηbar, v0, n, tol, covariance)
     v = copy(v0)
     local S
     for _ in 1:200
         w = [_fam_expected_weight(family, ηbar[i], v[i]) for i in 1:n]
-        S = inv(Symmetric(transpose(Zd) * (w .* Zd) .+ P0))
+        Huu = transpose(Zd) * (w .* Zd) .+ P0
+        S = covariance === :diagonal ? Diagonal(1.0 ./ diag(Huu)) : inv(Symmetric(Huu))
         ZS = Zd * S
         vnew = [dot(view(ZS, i, :), view(Zd, i, :)) for i in 1:n]
         change = maximum(abs.(vnew .- v))
@@ -186,8 +187,8 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
                                      covariance::Symbol = :full,
                                      tol::Real = 1e-10, maxiter::Integer = 100)
     sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
-    covariance === :full ||
-        throw(ArgumentError("only covariance = :full is implemented in the VA foundation"))
+    covariance in (:full, :diagonal) ||
+        throw(ArgumentError("covariance must be :full or :diagonal"))
     yv = Float64.(y)
     Xd = Matrix{Float64}(X)
     Zd = Matrix{Float64}(Z)
@@ -211,7 +212,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     for outer_it in 1:maxiter
         iters = outer_it
         ηbar = Xd * beta .+ Zd * m
-        S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol)
+        S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol, covariance)
         w = [_fam_expected_weight(family, ηbar[i], v[i]) for i in 1:n]
         g = [_fam_expected_score(family, yv[i], ηbar[i], v[i]) for i in 1:n]
         grad = vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m)
@@ -231,12 +232,12 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
 
     # ELBO and gradient at the returned mode
     ηbar = Xd * beta .+ Zd * m
-    S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol)
+    S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol, covariance)
     g = [_fam_expected_score(family, yv[i], ηbar[i], v[i]) for i in 1:n]
     gnorm = norm(vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m))
     Ell = sum(_fam_expected_loglik(family, yv[i], ηbar[i], v[i]) for i in 1:n)
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
-    logdet_S = logdet(cholesky(Symmetric(S)))
+    logdet_S = covariance === :diagonal ? sum(log, diag(S)) : logdet(cholesky(Symmetric(S)))
     kl = 0.5 * ((dot(m, Ai * m) + tr(Ai * S)) / sigma_a2 + q * log(sigma_a2) -
                 logdet_Ainv - logdet_S - q)
     # β integrated under a flat prior (Laplace over β): the Schur-complement
