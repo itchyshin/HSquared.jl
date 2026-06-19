@@ -29,7 +29,8 @@ kept current at each milestone and is the "morning report".
 | `0e3c7eb` | (A) Fuse AI-REML selinv score trace `tr(A⁻¹C^uu)` → `selinv_trace_against` (O(nnz(L)), no output matrix); (B) profile-likelihood `heritability_interval(...; method=:profile)` | fused trace == prior to rtol 1e-10, optimum unchanged; profile inverts REML LRT, clamps on flat surfaces; suite green |
 | `ee89565` | Harden multivariate `genetic_correlation` (symmetry + PSD guards, rank-deficient low-rank G allowed); pin Cholesky-param roundtrip t≥3 | RED→GREEN; closes next-50 Julia #4, #7 |
 | `a3eab9b` | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified (honest, ungated) |
-| _(latest)_ | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
+| `c0125ba` | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
+| _(latest)_ | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -113,3 +114,25 @@ slice I owned and finished. Full report:
   `V6-LAPLACE` opened as partial. Full suite 1490/1490.
 - This is the headline of the night per the user's Laplace+VA directive: the
   Laplace half of the engine has a validated foundation; VA is next.
+
+### Slice 4 — Phase-6 GLLVM variational (VA) marginal foundation (V6-VA) — team-designed
+- **The breakthrough, designed WITH the team** (ultracode workflow `w0ux3t4fu`,
+  7 agents): Gauss/Noether/Curie adversarially verified the Laplace base
+  (independently re-derived the Gaussian reduction to ~3e-15; verdict solid, no
+  blocking bugs); Karpinski/Kirkpatrick/Fisher designed the VA and resolved the
+  crux — use a **FULL** variational covariance `S=(ZᵀW̃Z+Ainv/σ²a)⁻¹` (a
+  mean-field/diagonal S discards pedigree relatedness and is not REML-exact) with
+  **β integrated under a flat prior**; Ada synthesized the spec + exact tests.
+- `variational_marginal_loglik` (`src/nongaussian.jl`, unexported): ELBO over
+  `q(u)=N(m,S)`, closed-form expected-loglik kernels (Gaussian; Poisson via the
+  log-normal MGF), Schur-complement β-integration term.
+- **Validated**: Gaussian VA-ELBO == `sparse_reml_loglik` EXACTLY (rtol 1e-8;
+  ELBO tight, mode == BLUP, `S` == Henderson `H_uu⁻¹`); Poisson ELBO stationary
+  (‖∇‖<1e-8); closed-form kernels match their definitions. The team predicted the
+  exact "0.88 gap" I first hit (the missing β-integration term) — adversarial
+  design paid off.
+- Returns `elbo` (a lower bound, tight only for Gaussian). NOT: a Poisson
+  marginal-value comparator (vs Gauss–Hermite — follow-on), `:diagonal` option,
+  VC estimation, fitted GLLVM, exported API, or R model-spec. Full suite
+  1504/1504. **Both halves of the Laplace+VA directive now have validated
+  foundations.**

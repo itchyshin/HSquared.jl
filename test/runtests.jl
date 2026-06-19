@@ -3488,3 +3488,50 @@ end
     @test_throws ArgumentError HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, -1.0,
                                                                 HSquared.GaussianResponse(se2))
 end
+
+@testset "Phase 6 variational (VA) marginal (foundation)" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    se2 = 0.7
+
+    # T1 — Gaussian exactness (primary gate): full-covariance VA-ELBO is tight and
+    # equals both the Laplace marginal and the REML log-likelihood; the variational
+    # mean is the BLUP and S is the Henderson MME u-block inverse.
+    yg = [1.0, 2.5, 4.0]
+    spec = animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML)
+    va = HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    lap = HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    @test va.converged
+    @test va.covariance === :full
+    @test va.elbo ≈ lap.loglik rtol = 1e-8
+    @test va.elbo ≈ sparse_reml_loglik(spec, sa2, se2).loglik rtol = 1e-8
+    @test va.elbo <= lap.loglik + 1e-9                  # ELBO ≤ true marginal (tight for Gaussian)
+    @test va.m ≈ breeding_values(henderson_mme(spec, sa2, se2)).values rtol = 1e-7 atol = 1e-9
+    Huu = transpose(Matrix(Z)) * ((1 / se2) .* Matrix(Z)) .+ Matrix(Ainv) ./ sa2
+    @test va.S ≈ inv(Symmetric(Huu)) rtol = 1e-7
+
+    # T3 — Poisson: the variational optimum solves the ELBO stationarity equation.
+    yp = [3.0, 5.0, 8.0]
+    vp = HSquared.variational_marginal_loglik(yp, X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test vp.converged
+    @test vp.gradient_norm < 1e-8
+    @test isfinite(vp.elbo)
+    # NB: do not assert va.elbo <= laplace.loglik — the Laplace value itself lies
+    # below the true Poisson marginal, so the two approximations do not bound
+    # each other (a proper Poisson-value gate vs Gauss–Hermite is future work).
+
+    # T5 — per-family expected-loglik / weight closed forms (pin the Poisson
+    # normalizer that the Gaussian-only value gate cannot catch).
+    gf = HSquared.GaussianResponse(se2)
+    @test HSquared._fam_expected_loglik(gf, 4.0, 0.3, 0.5) ≈
+          HSquared._fam_loglik(gf, 4.0, 0.3) - 0.5 * 0.5 / se2 rtol = 1e-12
+    @test HSquared._fam_expected_loglik(HSquared.PoissonResponse(), 4.0, 0.3, 0.5) ≈
+          4.0 * 0.3 - exp(0.3 + 0.25) - HSquared._logfactorial(4.0) rtol = 1e-12
+    @test HSquared._fam_expected_weight(HSquared.PoissonResponse(), 0.3, 0.5) ≈ exp(0.3 + 0.25) rtol = 1e-12
+
+    @test_throws ArgumentError HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2,
+        HSquared.GaussianResponse(se2); covariance = :diagonal)
+end

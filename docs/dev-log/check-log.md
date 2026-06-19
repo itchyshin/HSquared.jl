@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 variational (VA) marginal foundation (overnight, team-designed)
+
+- Goal: the VA half of the GLLVM Laplace+VA directive — `variational_marginal_loglik`
+  in `src/nongaussian.jl`, designed by an ultracode team workflow (w0ux3t4fu).
+- Team: Gauss/Noether/Curie adversarially verified the Laplace base (re-derived
+  the Gaussian reduction 3 ways to ~3e-15; no blocking bugs). Karpinski/
+  Kirkpatrick/Fisher specified the VA: FULL covariance `S=(ZᵀW̃Z+Ainv/σ²a)⁻¹`
+  (keeps relatedness; mean-field would not be REML-exact) + β integrated under a
+  flat prior (the Schur-complement β-term — the "0.88 gap" they predicted when I
+  first omitted it). Ada synthesized the go/no-go + exact tests.
+- TDD: RED (0.88 gap = missing β-integration) → added the Schur β-term → GREEN.
+- Validation gates: Gaussian VA-ELBO == `sparse_reml_loglik` EXACTLY (rtol 1e-8,
+  ELBO tight, mode == BLUP, S == Henderson H_uu⁻¹); Poisson ELBO stationary
+  (‖∇‖<1e-8); closed-form kernel checks.
+- `Pkg.test()`: passed, exit 0, **1504/1504** (was 1490; +14).
+- Rose: experimental foundation — `elbo` is a lower bound (tight for Gaussian);
+  no Poisson-value comparator yet, no VC estimation, no fitted GLLVM, not
+  exported, no R model-spec. New capability + `V6-VA` rows. Local, not pushed.
+- Follow-on (team's `laplace_fixes_needed`, separate hardening slice): Poisson
+  divergence→NaN guard, non-integer-y guard, `sigma_e2>0` guard, Poisson
+  marginal-value test vs Gauss–Hermite.
+
 ## 2026-06-18 Phase 6 non-Gaussian Laplace marginal foundation (overnight)
 
 - Goal: first Phase-6 engine step toward the GLLVM Laplace+VA directive — a
