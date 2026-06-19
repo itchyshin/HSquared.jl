@@ -368,6 +368,41 @@ end
 
 dominance_relationship(ids, sire, dam) = dominance_relationship(normalize_pedigree(ids, sire, dam))
 
+"""
+    epistatic_relationship(pedigree; kind = :additive_additive)
+    epistatic_relationship(ids, sire, dam; kind = :additive_additive)
+
+Dense epistatic relationship matrix as a Hadamard (element-wise) product of the
+additive `A` and dominance `D` relationship matrices (Henderson 1985):
+
+- `kind = :additive_additive` → `A ∘ A`,
+- `kind = :additive_dominance` → `A ∘ D`,
+- `kind = :dominance_dominance` → `D ∘ D`.
+
+These give the orthogonal additive×additive, additive×dominance, and
+dominance×dominance epistatic relationship matrices used for epistatic variance
+components. Full sibs have additive×additive `= 1/4`. Returned in `pedigree.ids`
+order. Experimental Phase 3 primitive, validation-scale and dense; inherits the
+[`dominance_relationship`](@ref) non-inbred-parent assumption. No public
+model-spec.
+"""
+function epistatic_relationship(pedigree::Pedigree; kind::Symbol = :additive_additive)
+    if kind === :additive_additive
+        A = additive_relationship(pedigree)
+        return A .* A
+    elseif kind === :additive_dominance
+        return additive_relationship(pedigree) .* dominance_relationship(pedigree)
+    elseif kind === :dominance_dominance
+        D = dominance_relationship(pedigree)
+        return D .* D
+    else
+        throw(ArgumentError("kind must be :additive_additive, :additive_dominance, or :dominance_dominance"))
+    end
+end
+
+epistatic_relationship(ids, sire, dam; kwargs...) =
+    epistatic_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
+
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0
     haskey(id_to_index, parent) &&

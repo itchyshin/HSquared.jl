@@ -300,8 +300,11 @@ a non-inbred parent has `F = 1/2`), and clonal / asexual reproduction
 (`clonal_relationship(pedigree, clone_of)`, where ramets alias their genet's
 relationships — `C[i,j] = A[rep(i), rep(j)]` — so clonemates are identical), and
 the Cockerham dominance relationship matrix (`dominance_relationship`, full sibs
-`1/4`, half sibs `0`). Sire models, the remaining non-standard inheritance
-systems (haplodiploid, polyploid), dominance-inbreeding corrections,
+`1/4`, half sibs `0`), and Henderson Hadamard-product epistatic relationship
+matrices (`epistatic_relationship`, additive×additive / additive×dominance /
+dominance×dominance). The dense additive relationship `A` is also now a public
+accessor (`additive_relationship`). Sire models, the remaining non-standard
+inheritance systems (haplodiploid, polyploid), dominance-inbreeding corrections,
 unknown-parent groups, and random regression remain open, as does any public
 model-spec.
 

@@ -610,6 +610,40 @@ end
     @test_throws ArgumentError additive_relationship(ped; max_relationship_cache = 2)
 end
 
+@testset "Phase 3 epistatic relationship (Hadamard products)" begin
+    # Henderson (1985): orthogonal epistatic relationship matrices are Hadamard
+    # products of the additive A and dominance D matrices — A∘A (additive×additive),
+    # A∘D (additive×dominance), D∘D (dominance×dominance).
+    ids = ["s1", "d1", "d2", "x", "y", "z", "w"]
+    sire = ["0", "0", "0", "s1", "s1", "s1", "s1"]
+    dam = ["0", "0", "0", "d1", "d1", "d2", "d2"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    A = additive_relationship(ped)
+    D = HSquared.dominance_relationship(ped)
+
+    AA = HSquared.epistatic_relationship(ped; kind = :additive_additive)
+    AD = HSquared.epistatic_relationship(ped; kind = :additive_dominance)
+    DD = HSquared.epistatic_relationship(ped; kind = :dominance_dominance)
+    @test AA == A .* A
+    @test AD == A .* D
+    @test DD == D .* D
+    @test issymmetric(AA)
+    @test all(diag(AA) .== 1.0)            # non-inbred: A_ii = 1 → (A∘A)_ii = 1
+
+    # full sibs: A = 1/2, D = 1/4 → A∘A = 1/4, A∘D = 1/8, D∘D = 1/16
+    @test AA[idx("x"), idx("y")] ≈ 0.25
+    @test AD[idx("x"), idx("y")] ≈ 0.125
+    @test DD[idx("x"), idx("y")] ≈ 0.0625
+    # paternal half sibs: A = 1/4, D = 0 → A∘A = 1/16, A∘D = 0, D∘D = 0
+    @test AA[idx("x"), idx("z")] ≈ 0.0625
+    @test AD[idx("x"), idx("z")] ≈ 0.0
+    @test DD[idx("x"), idx("z")] ≈ 0.0
+
+    @test HSquared.epistatic_relationship(ids, sire, dam; kind = :additive_additive) == AA
+    @test_throws ArgumentError HSquared.epistatic_relationship(ped; kind = :bogus)
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

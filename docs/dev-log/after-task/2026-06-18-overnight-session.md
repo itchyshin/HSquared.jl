@@ -48,7 +48,8 @@ kept current at each milestone and is the "morning report".
 | `66be55c` | Phase-3 **self-fertilization** (`normalize_pedigree(...; allow_selfing=true)`) | machinery already self-correct; canonical F=0,½,¾ & A_ii=3/2,7/4 verified; `pedigree_inverse == inv(A)` for pure + mixed selfed pedigrees; suite 1648/1648 (+11) |
 | `97b9715` | Phase-3 **clonal / asexual relationship** (`clonal_relationship`, exported) | ramets alias their genet (`C[i,j]=A[rep i,rep j]`, transitive); clonemates identical; hand-verified fixture + cycle/self/unknown guards; suite 1663/1663 (+15) |
 | `21af2ff` | Phase-3 **dominance relationship matrix** (`dominance_relationship`, exported) | Cockerham `D[x,y]=¼(A[sx,sy]A[dx,dy]+A[sx,dy]A[dx,sy])`; full sibs ¼, half sibs 0; exhaustive formula check vs A; suite 1685/1685 (+22) |
-| _(latest)_ | **Public additive relationship accessor** (`additive_relationship`, exported) | dense `A = inv(Ainv)` companion of D/cytoplasmic/clonal; `A==inv(pedigree_inverse)`, full sibs 0.5, inbred diag 1.25; completes the relationship-matrix family; suite 1695/1695 (+10) |
+| `3ee146e` | **Public additive relationship accessor** (`additive_relationship`, exported) | dense `A = inv(Ainv)` companion of D/cytoplasmic/clonal; `A==inv(pedigree_inverse)`, full sibs 0.5, inbred diag 1.25; completes the relationship-matrix family; suite 1695/1695 (+10) |
+| _(latest)_ | Phase-3 **epistatic relationship matrices** (`epistatic_relationship`, exported) | Henderson Hadamard products `A∘A`/`A∘D`/`D∘D`; full sibs A∘A=¼, A∘D=⅛, D∘D=1/16; starts the reserved `epistasis()` term; suite 1708/1708 (+13) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -57,7 +58,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1695/1695 pass, exit 0**.
+- Full local suite: **1708/1708 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -452,3 +453,17 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
 - **Gates**: equals the internal recursion, `A == inv(pedigree_inverse)`, full
   sibs `0.5`, parent–offspring `0.5`, unrelated founders `0`, inbred diagonal
   `1.25` at `F = 0.25`, and the cache guard. Suite 1695/1695.
+
+### Slice 22 — epistatic relationship matrices (Henderson Hadamard products)
+- With additive `A` and dominance `D` both public, the orthogonal epistatic
+  relationship matrices are their Hadamard products (Henderson 1985):
+  `epistatic_relationship(pedigree; kind)` → `A∘A` (additive×additive), `A∘D`
+  (additive×dominance), `D∘D` (dominance×dominance). Exported; begins fulfilling
+  the reserved `epistasis()` vocabulary.
+- **Gates**: equals the explicit Hadamard products; full sibs `A∘A = 1/4`,
+  `A∘D = 1/8`, `D∘D = 1/16`; half sibs `A∘A = 1/16`, `A∘D = D∘D = 0`; unit
+  diagonal; symmetry; invalid-`kind` guard. Suite 1708/1708. New `V3-EPISTASIS`
+  debt row. Inherits the dominance non-inbred-parent assumption.
+- This rounds out the **variance-component relationship toolkit**: additive,
+  dominance, additive×additive / additive×dominance / dominance×dominance
+  epistatic, plus cytoplasmic and clonal — all exported and hand-verified.

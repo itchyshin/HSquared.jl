@@ -2,6 +2,22 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 epistatic relationship matrices (Hadamard) (overnight)
+
+- Goal: another canonical, hand-verifiable Phase-3 capability — Henderson (1985)
+  epistatic relationship matrices, now that the additive `A` and dominance `D`
+  matrices are both public. Begins fulfilling the reserved `epistasis()` term.
+- `epistatic_relationship(pedigree; kind)`: Hadamard products —
+  `:additive_additive` → `A∘A`, `:additive_dominance` → `A∘D`,
+  `:dominance_dominance` → `D∘D`. Exported, `(ids,sire,dam)` convenience.
+- Gates (verified, `test/runtests.jl`): equals the explicit Hadamard products;
+  full sibs `A∘A = 1/4`, `A∘D = 1/8`, `D∘D = 1/16`; half sibs `A∘A = 1/16`,
+  `A∘D = D∘D = 0`; unit diagonal; symmetry; invalid-`kind` guard.
+- `Pkg.test()`: passed, exit 0, **1708/1708** (epistatic testset +13).
+- Rose: exported public primitive with full evidence; inherits the dominance
+  non-inbred-parent assumption; new capability row + `V3-EPISTASIS` debt row,
+  ROADMAP Phase-3 updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Public additive relationship accessor (overnight)
 
 - Goal: API consistency — this session exported the dominance, cytoplasmic, and
