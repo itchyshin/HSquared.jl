@@ -610,6 +610,39 @@ end
     @test_throws ArgumentError additive_relationship(ped; max_relationship_cache = 2)
 end
 
+@testset "Phase 1 Mendelian sampling variances" begin
+    # d_i = Var of the within-family deviation: founders 1; both parents known &
+    # non-inbred 1/2; one parent known & non-inbred 3/4. (A = T·D·Tᵀ.)
+    ped = normalize_pedigree(["s", "d", "o", "o2"], ["0", "0", "s", "s"], ["0", "0", "d", "0"])
+    idx(id) = findfirst(==(id), ped.ids)
+    dvar = mendelian_sampling_variances(ped)
+    @test dvar[idx("s")] ≈ 1.0 && dvar[idx("d")] ≈ 1.0     # founders
+    @test dvar[idx("o")] ≈ 0.5                              # both parents known, non-inbred
+    @test dvar[idx("o2")] ≈ 0.75                            # one parent known, non-inbred
+
+    # matches the internal per-record helper
+    F = inbreeding_coefficients(ped)
+    for i in 1:length(ped)
+        @test dvar[i] ≈ HSquared._mendelian_sampling_variance(ped.sire[i], ped.dam[i], F)
+    end
+
+    # LDL'-style identity: det(A) = ∏ d_i  (A = T·D·Tᵀ, T unit lower-triangular)
+    @test det(additive_relationship(ped)) ≈ prod(dvar) atol = 1e-10
+
+    # selfing chain: d_k = ½(1 − F_{k−1})
+    sped = normalize_pedigree(["g0", "g1", "g2", "g3"],
+                              ["0", "g0", "g1", "g2"], ["0", "g0", "g1", "g2"]; allow_selfing = true)
+    ds = mendelian_sampling_variances(sped); Fs = inbreeding_coefficients(sped)
+    j(id) = findfirst(==(id), sped.ids)
+    @test ds[j("g1")] ≈ 0.5
+    @test ds[j("g2")] ≈ 0.5 * (1 - Fs[j("g1")])            # 0.5·(1−0.5) = 0.25
+    @test det(additive_relationship(sped)) ≈ prod(ds) atol = 1e-10
+
+    # convenience (ids, sire, dam) method
+    @test mendelian_sampling_variances(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]) ==
+          mendelian_sampling_variances(normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]))
+end
+
 @testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
     # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
     # relationship matrix increasingly ill-conditioned. This pins the documented

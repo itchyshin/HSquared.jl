@@ -2,6 +2,20 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 1 Mendelian sampling variances accessor
+
+- Goal: expose the per-individual Mendelian sampling variances `d_i` (the `D` in
+  `A = T·D·Tᵀ`) — the within-family variances used in gene-dropping / accuracy
+  and the `1/d_i` scales behind the Henderson `pedigree_inverse`.
+- `mendelian_sampling_variances(pedigree)` (+ `(ids,sire,dam)` convenience),
+  exported. RNG-free, hand-verifiable.
+- Gates (verified, `test/runtests.jl`): founders `d=1`, both-parents-known
+  non-inbred `d=0.5`, one-parent-known `d=0.75`; matches the internal per-record
+  helper; the strong `det(A) = ∏ d_i` identity (atol 1e-10) on a mixed and a
+  selfing-chain pedigree; the selfing recurrence `d_k = ½(1−F_{k−1})`.
+- `Pkg.test()`: passed, exit 0, **1777/1777** (+12). New capability row. Local
+  checkpoint, not pushed.
+
 ## 2026-06-18 Phase 2 weighted genomic relationship (weighted GBLUP)
 
 - Goal: add per-marker weighting to the genomic relationship (the basis of

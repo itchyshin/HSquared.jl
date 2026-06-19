@@ -138,6 +138,30 @@ function _numerator_relationship(
 end
 
 """
+    mendelian_sampling_variances(pedigree; max_relationship_cache = 10_000)
+    mendelian_sampling_variances(ids, sire, dam; max_relationship_cache = 10_000)
+
+Per-individual Mendelian sampling variances `d_i` — the diagonal of `D` in the
+decomposition `A = T·D·Tᵀ` of the additive relationship matrix (`T` unit
+lower-triangular). `d_i` is the variance of an individual's breeding value
+*given its parents*: `1` for a founder, `0.75 − 0.25·F_parent` with one known
+parent, and `0.5 − 0.25·(F_sire + F_dam)` with both known. Returned in
+`pedigree.ids` (topologically sorted) order; `det(A) = ∏_i d_i`.
+
+These are the reciprocals (`1/d_i`) that scale the Henderson `pedigree_inverse`
+contributions, and the within-family variances used in gene-dropping and
+within-family accuracy.
+"""
+function mendelian_sampling_variances(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
+    F = inbreeding_coefficients(pedigree; max_relationship_cache = max_relationship_cache)
+    return [_mendelian_sampling_variance(pedigree.sire[i], pedigree.dam[i], F)
+            for i in 1:length(pedigree)]
+end
+
+mendelian_sampling_variances(ids, sire, dam; kwargs...) =
+    mendelian_sampling_variances(normalize_pedigree(ids, sire, dam); kwargs...)
+
+"""
     additive_relationship(pedigree; max_relationship_cache = 10_000)
     additive_relationship(ids, sire, dam; max_relationship_cache = 10_000)
 
