@@ -38,7 +38,8 @@ kept current at each milestone and is the "morning report".
 | `3f4a97a` | Phase-6 **Poisson known-truth recovery** (`sim/phase6_poisson_recovery.jl`, opt-in) | σ̂²a recovers 5/5 seeds (rel ≤ 0.323, mild Laplace bias); breeding-value recovery cor 0.81–0.88 |
 | `92cc4bf` | Phase-6 **Poisson variance-component profile interval** (`laplace_reml_interval`, `src/nongaussian.jl`); reverted a stray uncommitted `FastGaussQuadrature` entry in `Project.toml` | inverts marginal LRT `2·(ℓ̂−ℓ(σ²a))=χ²₁,level`; interior upper endpoint pinned to χ²₁ root (3.8415/2.7055), lower clamps on flat profile, nests by level; suite 1538/1538 (+12) |
 | `907bf75` | Phase-6 **Bernoulli/logit family** (`BernoulliResponse`, Laplace + VA) — binary 0/1 traits | VA expected kernels via 20-node Gauss–Hermite (logistic has no closed-form Gaussian expectation); β-fixed GH gate confirms `va.elbo ≤ R` (gap 4e-4) and Laplace close (gap 0.028); finite-diff kernels; `fit_laplace_reml(:bernoulli)` converges (`:laplace`/`:variational`); suite 1553/1553 (+15) |
-| _(latest)_ | Phase-6 **Bernoulli known-truth recovery** (`sim/phase6_bernoulli_recovery.jl`, opt-in) | q=1075 half-sib, truth σ²a=1.0 (logit); 5/5 gated pass (EBV cor 0.565–0.701 ≥ 0.5, non-collapse); σ̂²a 0.36–0.81 reported-not-gated (known Laplace-for-binary downward bias) |
+| `44a7dbd` | Phase-6 **Bernoulli known-truth recovery** (`sim/phase6_bernoulli_recovery.jl`, opt-in) | q=1075 half-sib, truth σ²a=1.0 (logit); 5/5 gated pass (EBV cor 0.565–0.701 ≥ 0.5, non-collapse); σ̂²a 0.36–0.81 reported-not-gated (known Laplace-for-binary downward bias) |
+| _(latest)_ | Phase-3 **two-effect REML known-truth recovery** (`sim/phase3_two_effect_recovery.jl`, opt-in) | q=860, common-env groups independent of pedigree (identifiable); 5/5 recover ALL THREE components (max rel σ1 0.286, σ2 0.277, σe 0.123) — prior additive underestimation was a confounding artifact, not an estimator flaw |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -72,12 +73,13 @@ Done this session (moved to the slice log): Phase-3 recovery harness, Phase-6
 Laplace + VA foundations, family hardening, Gauss–Hermite value gate, `:diagonal`
 VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, the Poisson
 profile interval (Slice 10), the Bernoulli/logit family for Laplace + VA
-(Slice 11), and the Bernoulli known-truth recovery harness (Slice 12).
-Remaining solo-doable, internally verifiable items:
+(Slice 11), the Bernoulli known-truth recovery harness (Slice 12), and the
+two-effect REML recovery harness (Slice 13). Remaining solo-doable, internally
+verifiable items:
 
 1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
-2. A `fit_two_effect_reml` committed recovery harness + a denser-pedigree `h²`
-   study (the σ²a/σ²pe split was under-identified at validation scale).
+2. A denser-pedigree repeatability `h²` study (the σ²a/σ²pe split was
+   under-identified at validation scale in Slice 2).
 3. A binary `sigma_a2` bias correction or a many-trial binomial family/design
    (the Laplace-for-binary downward bias is now documented but uncorrected).
 
@@ -286,3 +288,20 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   Evidence log: `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-bernoulli-recovery.log`.
   No test-suite change (opt-in). This rounds out the Bernoulli arc: kernels →
   marginals (Laplace + VA) → fitting → honest recovery characterization.
+
+### Slice 13 — two-effect REML known-truth recovery (V3-TWOEFFECT-REML)
+- Closes the V3-TWOEFFECT-REML "no committed RNG recovery harness" gap, and
+  answers whether the prior additive-variance underestimation was an estimator
+  flaw or a design artifact. `sim/phase3_two_effect_recovery.jl` (opt-in):
+  `y = μ + u1[animal] + u2[group] + e` with `u1 ~ N(0,A·σ1²)` (additive,
+  pedigree), `u2 ~ N(0,I·σ2²)` (common environment), `e ~ N(0,I·σe²)`.
+- The fix vs. the old confounded one-off: the common-environment GROUPS are
+  assigned INDEPENDENTLY of the pedigree, so the pedigree-structured additive
+  covariance and the block-structured group covariance are separable. q=860
+  half-sib (20 sires / 40 dams / 800 offspring), 80 groups, truth (1.0,0.5,1.0).
+- **Result (RAN, exit 0):** 5/5 recover ALL THREE components (max rel σ1 0.286,
+  σ2 0.277, σe 0.123). The earlier additive underestimation was a confounding
+  artifact of the aliased design, NOT an estimator flaw — an important honest
+  correction to the prior note. Evidence log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-two-effect-recovery.log`.
+  No test-suite change (opt-in).

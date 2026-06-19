@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 two-effect REML known-truth recovery (overnight)
+
+- Goal: close the V3-TWOEFFECT-REML "no committed RNG recovery harness" gap and
+  test whether the prior additive-variance underestimation was an estimator flaw
+  or a design (confounding) artifact.
+- `sim/phase3_two_effect_recovery.jl` (opt-in, outside CI): `y = μ + u1[animal] +
+  u2[group] + e`, `u1 ~ N(0, A·σ1²)` (additive, pedigree), `u2 ~ N(0, I·σ2²)`
+  (common environment), `e ~ N(0, I·σe²)`. The fix vs. the old confounded one-off
+  is that the common-environment GROUPS are assigned INDEPENDENTLY of the
+  pedigree, so the two covariances are separable. q=860 half-sib (20 sires / 40
+  dams / 800 offspring), 80 groups, truth (1.0, 0.5, 1.0), 5 predeclared seeds.
+- Result (RAN, exit 0, deterministic; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-two-effect-recovery.log`):
+  **5/5 pass** — ALL THREE components recover (max rel σ1 0.286, σ2 0.277, σe
+  0.123). The earlier additive underestimation was a confounding artifact of the
+  aliased design, NOT an estimator flaw.
+- Rose: opt-in evidence (outside CI); no test-suite/claim-surface change; the
+  V3-TWOEFFECT-REML debt row now records a committed identifiable-design harness.
+  Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 Bernoulli known-truth recovery (overnight)
 
 - Goal: honest recovery calibration of the Bernoulli/logit fit — close (as far
