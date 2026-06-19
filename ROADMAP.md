@@ -298,10 +298,12 @@ cytoplasmic random effect), and self-fertilization
 recursion and Henderson `Ainv` rules already self-correct — a selfed offspring of
 a non-inbred parent has `F = 1/2`), and clonal / asexual reproduction
 (`clonal_relationship(pedigree, clone_of)`, where ramets alias their genet's
-relationships — `C[i,j] = A[rep(i), rep(j)]` — so clonemates are identical).
-Sire models, dominance, the remaining non-standard inheritance systems
-(haplodiploid, polyploid), unknown-parent groups, and random regression remain
-open, as does any public model-spec.
+relationships — `C[i,j] = A[rep(i), rep(j)]` — so clonemates are identical), and
+the Cockerham dominance relationship matrix (`dominance_relationship`, full sibs
+`1/4`, half sibs `0`). Sire models, the remaining non-standard inheritance
+systems (haplodiploid, polyploid), dominance-inbreeding corrections,
+unknown-parent groups, and random regression remain open, as does any public
+model-spec.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

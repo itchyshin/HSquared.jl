@@ -548,6 +548,40 @@ end
     @test_throws ArgumentError HSquared.clonal_relationship(pedc, self)
 end
 
+@testset "Phase 3 dominance relationship" begin
+    # Cockerham/Mrode dominance relationship: for animals x, y with parents
+    # (sx,dx), (sy,dy), D[x,y] = ¼(A[sx,sy]A[dx,dy] + A[sx,dy]A[dx,sy]); D[x,x]=1
+    # (non-inbred parents). Full sibs → ¼, half sibs / parent-offspring → 0.
+    ids = ["s1", "d1", "d2", "x", "y", "z", "w"]
+    sire = ["0", "0", "0", "s1", "s1", "s1", "s1"]
+    dam = ["0", "0", "0", "d1", "d1", "d2", "d2"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    D = HSquared.dominance_relationship(ped)
+
+    @test size(D) == (7, 7)
+    @test issymmetric(D)
+    @test all(diag(D) .== 1.0)
+    @test D[idx("x"), idx("y")] ≈ 0.25     # full sibs (s1×d1)
+    @test D[idx("z"), idx("w")] ≈ 0.25     # full sibs (s1×d2)
+    @test D[idx("x"), idx("z")] ≈ 0.0      # paternal half sibs
+    @test D[idx("x"), idx("w")] ≈ 0.0      # paternal half sibs
+    @test D[idx("x"), idx("s1")] ≈ 0.0     # parent–offspring
+    @test D[idx("s1"), idx("d1")] ≈ 0.0    # unrelated founders
+    # off-diagonal matches the explicit Cockerham formula against A
+    A = HSquared._numerator_relationship(ped)
+    si, di = ped.sire, ped.dam
+    for a in 1:length(ped), b in 1:length(ped)
+        if a != b && si[a] != 0 && di[a] != 0 && si[b] != 0 && di[b] != 0
+            expected = 0.25 * (A[si[a], si[b]] * A[di[a], di[b]] +
+                               A[si[a], di[b]] * A[di[a], si[b]])
+            @test D[a, b] ≈ expected
+        end
+    end
+    # convenience (ids, sire, dam) method
+    @test HSquared.dominance_relationship(ids, sire, dam) == D
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

@@ -307,6 +307,47 @@ function clonal_relationship(pedigree::Pedigree, clone_of)
     return C
 end
 
+"""
+    dominance_relationship(pedigree)
+    dominance_relationship(ids, sire, dam)
+
+Dense dominance relationship matrix `D` (Cockerham). For animals `x`, `y` with
+both parents known — sires `sx, sy`, dams `dx, dy` —
+`D[x, y] = ¼·(A[sx, sy]·A[dx, dy] + A[sx, dy]·A[dx, sy])`, where `A` is the
+additive numerator relationship. The diagonal is set to `1`, and any pair in
+which either animal has an unknown parent has `D = 0`. Returned in `pedigree.ids`
+order, aligned with [`pedigree_inverse`](@ref).
+
+Experimental Phase 3 primitive, validation-scale and dense — `D` is the
+relationship for a dominance random effect. The off-diagonal formula is general;
+the unit diagonal and the absence of dominance-inbreeding corrections hold for
+non-inbred parents (the standard textbook case). Full sibs have `D = 1/4`, half
+sibs and parent–offspring `D = 0`.
+"""
+function dominance_relationship(pedigree::Pedigree)
+    n = length(pedigree)
+    A = _numerator_relationship(pedigree)
+    s = pedigree.sire
+    d = pedigree.dam
+    D = Matrix{Float64}(undef, n, n)
+    for i in 1:n
+        D[i, i] = 1.0
+        for j in 1:(i - 1)
+            if s[i] != 0 && d[i] != 0 && s[j] != 0 && d[j] != 0
+                value = 0.25 * (A[s[i], s[j]] * A[d[i], d[j]] +
+                                A[s[i], d[j]] * A[d[i], s[j]])
+            else
+                value = 0.0
+            end
+            D[i, j] = value
+            D[j, i] = value
+        end
+    end
+    return D
+end
+
+dominance_relationship(ids, sire, dam) = dominance_relationship(normalize_pedigree(ids, sire, dam))
+
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0
     haskey(id_to_index, parent) &&

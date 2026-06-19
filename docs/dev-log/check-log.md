@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 dominance relationship matrix (overnight)
+
+- Goal: a mainstream Phase-3 capability I had wrongly lumped with the
+  canon-dependent items — the dominance relationship matrix (dominance variance
+  is standard quantitative genetics, and the construction is canonical).
+- `dominance_relationship(pedigree)`: the dense Cockerham dominance relationship
+  `D[x,y] = ¼(A[sx,sy]·A[dx,dy] + A[sx,dy]·A[dx,sy])` from the additive numerator
+  relationship `A`; unit diagonal; `0` whenever either animal has an unknown
+  parent. Exported, with a `(ids,sire,dam)` convenience method.
+- Gates (verified, `test/runtests.jl`): full-sib / half-sib fixture — full sibs
+  `= 1/4`, half sibs and parent–offspring `= 0`, symmetry, unit diagonal, and an
+  EXHAUSTIVE check that every both-parents-known off-diagonal matches the
+  explicit Cockerham formula evaluated against `A`.
+- `Pkg.test()`: passed, exit 0, **1685/1685** (dominance testset +22).
+- Honest scope: off-diagonal formula is general; the unit diagonal / no
+  dominance-inbreeding correction assumes non-inbred parents (the standard
+  textbook case) — the inbred-parent extension is recorded as future work.
+- Rose: exported public primitive with full evidence; new capability row, new
+  `V3-DOMINANCE` debt row, ROADMAP Phase-3 updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 clonal / asexual relationship (overnight)
 
 - Goal: the next solo Phase-3 inheritance primitive named by the Stop hook —
