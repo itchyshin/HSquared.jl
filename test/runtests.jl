@@ -4049,7 +4049,7 @@ end
 
     # Gaussian non-Gaussian fit equals the exact sparse REML (the validated gate)
     yg = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
-    fg = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian,
+    fg = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian, ids = ped.ids,
                           initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
     sr = fit_sparse_reml(animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML);
                          initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
@@ -4063,6 +4063,20 @@ end
     ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
     @test ci.lower < ci.sigma_a2 < ci.upper
     @test ci.level == 0.95
+
+    # fitted-object extractor API (same contract as AnimalModelFit; distinct type,
+    # so it does NOT collide with the multivariate NamedTuple extractors)
+    @test fg isa HSquared.NonGaussianFit
+    bv = breeding_values(fg)
+    @test bv isa HSquared.BreedingValues
+    @test bv.values == fg.breeding_values           # function wraps the field vector
+    @test bv.ids == ped.ids                          # ids threaded through
+    @test length(bv.values) == 8
+    @test variance_components(fg) === fg.variance_components
+    @test fixed_effects(fg) == fg.beta
+    @test EBV(fg).values == bv.values
+    # ids default to 1:q when not supplied
+    @test breeding_values(fp).ids == collect(1:8)
 end
 
 @testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin

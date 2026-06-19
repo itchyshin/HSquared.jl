@@ -332,17 +332,46 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
 end
 
 """
+    NonGaussianFit
+
+Experimental fitted-object container for the non-Gaussian animal model returned by
+[`fit_laplace_reml`](@ref). Fields: `variance_components`, `marginal_loglik`,
+`beta`, `breeding_values` (the posterior-mode random effect), `ids`, `converged`,
+`family`, `marginal`. Use the extractor functions [`breeding_values`](@ref) (→
+`BreedingValues(ids, values)`), [`variance_components`](@ref), and
+[`fixed_effects`](@ref) for the same access contract as [`AnimalModelFit`](@ref);
+this is a distinct type so its extractors do not collide with the multivariate
+`NamedTuple` extractors.
+"""
+struct NonGaussianFit
+    variance_components::NamedTuple
+    marginal_loglik::Float64
+    beta::Vector{Float64}
+    breeding_values::Vector{Float64}
+    ids::Vector
+    converged::Bool
+    family::Symbol
+    marginal::Symbol
+end
+
+variance_components(fit::NonGaussianFit) = fit.variance_components
+fixed_effects(fit::NonGaussianFit) = fit.beta
+breeding_values(fit::NonGaussianFit) = BreedingValues(fit.ids, fit.breeding_values)
+EBV(fit::NonGaussianFit) = breeding_values(fit)
+
+"""
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
-                     initial = nothing, iterations = 200)
+                     initial = nothing, ids = nothing, iterations = 200)
 
 Estimate the variance component(s) of the non-Gaussian animal model by maximising
 the marginal log-likelihood (`marginal = :laplace`) or the ELBO
 (`marginal = :variational`) over the variance components. `family = :gaussian`
 estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
 `family = :bernoulli`, and `family = :binomial` (which requires the `n_trials`
-keyword) estimate the single `sigma_a2` (Brent). Returns
-`(variance_components, marginal_loglik, beta, breeding_values, converged, family,
-marginal)`.
+keyword) estimate the single `sigma_a2` (Brent). Returns a [`NonGaussianFit`](@ref)
+with fields `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
+`ids`, `converged`, `family`, `marginal`, and the extractor methods
+`breeding_values(fit)` / `variance_components(fit)` / `fixed_effects(fit)`.
 
 Binary `:bernoulli` data carries little variance information at small scale, so
 `sigma_a2` is prone to running to a search-bound boundary; `:binomial` with more
@@ -358,7 +387,7 @@ no R model-spec, no external comparator.
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
-                          n_trials = nothing, iterations::Integer = 200)
+                          n_trials = nothing, ids = nothing, iterations::Integer = 200)
     family in (:gaussian, :poisson, :bernoulli, :binomial) ||
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, or :binomial"))
     family === :binomial && n_trials === nothing &&
@@ -367,6 +396,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         throw(ArgumentError("marginal must be :laplace or :variational"))
     margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
     val(r) = marginal === :variational ? r.elbo : r.loglik
+    aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
     if family === :gaussian
         sa0, se0 = initial === nothing ? (1.0, 1.0) :
                    (Float64(initial.sigma_a2), Float64(initial.sigma_e2))
@@ -375,11 +405,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         res = optimize(obj, log.([sa0, se0]), NelderMead(), Optim.Options(iterations = iterations))
         sa2, se2 = exp.(Optim.minimizer(res))
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
-        return (variance_components = (sigma_a2 = sa2, sigma_e2 = se2),
-                marginal_loglik = val(fit), beta = fit.beta,
-                breeding_values = (marginal === :variational ? fit.m : fit.u),
-                converged = Optim.converged(res) && fit.converged,
-                family = :gaussian, marginal = marginal)
+        return NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
+                              marginal === :variational ? fit.m : fit.u, aids,
+                              Optim.converged(res) && fit.converged, :gaussian, marginal)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
         fam = family === :poisson ? PoissonResponse() :
@@ -390,11 +418,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                        log(sa0) - 6.0, log(sa0) + 6.0)
         sa2 = exp(Optim.minimizer(res))
         fit = margfun(y, X, Z, Ainv, sa2, fam)
-        return (variance_components = (sigma_a2 = sa2,),
-                marginal_loglik = val(fit), beta = fit.beta,
-                breeding_values = (marginal === :variational ? fit.m : fit.u),
-                converged = Optim.converged(res) && fit.converged,
-                family = family, marginal = marginal)
+        return NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
+                              marginal === :variational ? fit.m : fit.u, aids,
+                              Optim.converged(res) && fit.converged, family, marginal)
     end
 end
 

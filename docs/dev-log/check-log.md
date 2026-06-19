@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 non-Gaussian fitted-object API (NonGaussianFit struct + extractors)
+
+- Goal: give the just-exported non-Gaussian fitter a proper fitted-object with the
+  same extractor contract as `AnimalModelFit` (closes the V6-FIT "no full
+  fitted-object/extractor API" gap), AND fix a latent dispatch hazard: the fit
+  was a bare `NamedTuple`, which could collide with the multivariate
+  `::NamedTuple` extractors in `multivariate.jl`.
+- `fit_laplace_reml` now returns a distinct `struct NonGaussianFit` (fields
+  unchanged: `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
+  `ids`, `converged`, `family`, `marginal` — so existing field access is
+  unaffected) with methods `breeding_values(fit)` (→ `BreedingValues(ids,
+  values)`), `variance_components(fit)`, `fixed_effects(fit)`, `EBV(fit)`. Added
+  an `ids` kwarg (default `1:q`).
+- Gates (verified, `test/runtests.jl`): `fg isa NonGaussianFit`;
+  `breeding_values(fg)` is a `BreedingValues` wrapping the field vector with the
+  threaded `ids`; `variance_components`/`fixed_effects`/`EBV` match; ids default
+  to `1:q`; all prior field-access tests + sims still pass unchanged.
+- `Pkg.test()`: passed, exit 0, **1792/1792** (+9). V6-FIT debt + capability rows
+  updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Assessment: parametric-bootstrap h² interval NOT built (evidence-based)
 
 - Considered the V1-HERIT-CI "parametric-bootstrap alternative" gap. Probed it on
