@@ -2,6 +2,21 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 1 deep-inbreeding dense-inverse stress test (V1-DENSE-COND)
+
+- Goal: close the inventory's "V1-DENSE-COND is currently untested" gap — test
+  the dense relationship path on a deeply ill-conditioned (inbred) pedigree.
+- Fixture: a selfing chain `F_k = 1 − (1/2)^k` (g0..g6, `F₆ ≈ 0.984`), RNG-free.
+- Finding (verified, `test/runtests.jl`): `cond(A) ≈ 1.7e3` (genuinely
+  ill-conditioned), yet the DIRECT Henderson `pedigree_inverse` is EXACT
+  (`max|Ainv·A − I| < 1e-9`, `Ainv == inv(A)` to < 1e-6) and the supplied-variance
+  MME solve stays finite. So `pedigree_inverse` is conditioning-robust (it is a
+  direct construction, not a numerical inverse); the V1-DENSE-COND caveat is
+  specifically about the downstream dense-`inv(Ainv)` estimators, not the sparse
+  Ainv. F series matches `1 − (1/2)^k` exactly.
+- `Pkg.test()`: passed, exit 0, **1756/1756** (+12). V1-DENSE-COND moved
+  documented→partial (now tested, boundary pinned). Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 2 VanRaden method-2 (standardized) genomic relationship (post-inventory)
 
 - Goal: add the second standard genomic-relationship construction (equal-weight,

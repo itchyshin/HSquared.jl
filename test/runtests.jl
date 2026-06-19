@@ -610,6 +610,37 @@ end
     @test_throws ArgumentError additive_relationship(ped; max_relationship_cache = 2)
 end
 
+@testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
+    # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
+    # relationship matrix increasingly ill-conditioned. This pins the documented
+    # V1-DENSE-COND caveat: `pedigree_inverse` is a DIRECT Henderson construction,
+    # so it stays exact regardless of conditioning — the caveat is about the
+    # downstream dense-`inv(Ainv)` estimators, not the sparse Ainv itself.
+    ids = ["g0", "g1", "g2", "g3", "g4", "g5", "g6"]
+    sire = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+    dam = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+    ped = normalize_pedigree(ids, sire, dam; allow_selfing = true)
+    idx(id) = findfirst(==(id), ped.ids)
+    F = inbreeding_coefficients(ped)
+    for k in 0:6
+        @test F[idx("g$k")] ≈ 1 - 0.5^k atol = 1e-10
+    end
+
+    A = additive_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ped))
+    # conditioning genuinely grows with inbreeding (documents the caveat)
+    @test cond(A) > 1.0e3
+    # the DIRECT Henderson inverse is exact despite the conditioning
+    @test maximum(abs.(Ainv * A - I)) < 1e-9
+    @test maximum(abs.(Ainv .- inv(A))) < 1e-6
+
+    # a supplied-variance MME solve on the deeply-inbred pedigree stays finite
+    y = [1.0, 2.0, 1.5, 2.5, 1.0, 2.0, 1.5]; X = ones(7, 1); Z = Matrix(1.0I, 7, 7)
+    res = henderson_mme(animal_model_spec(y, X, Z, pedigree_inverse(ped); ids = ped.ids), 1.0, 1.5)
+    @test all(isfinite, breeding_values(res).values)
+    @test all(isfinite, fixed_effects(res))
+end
+
 @testset "Phase 3 epistatic relationship (Hadamard products)" begin
     # Henderson (1985): orthogonal epistatic relationship matrices are Hadamard
     # products of the additive A and dominance D matrices — A∘A (additive×additive),
