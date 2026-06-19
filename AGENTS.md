@@ -9,9 +9,13 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-19.** `main` carries the full Phase-4B/5/6 engine work (landed
-  via PR #36, `c4fb442`, CI green). Suite **1792/1792**. Remote heads: `main` +
-  `gh-pages`; **0 open PRs**.
+- **As of 2026-06-19 (handover v2).** `main` @ `2a3eed5` carries the full
+  Phase-4B/5/6 engine work (PR #36) plus multivariate covariance SEs/LRTs (#47, PR
+  #59) and the refreshed Documenter API page. Suite **1822**, CI green. Remote
+  heads: `main` + `gh-pages`; **0 open PRs**. Read
+  `docs/dev-log/after-task/2026-06-19-session-handover-v2.md` first. NOTE: an
+  ultracode BT2/BT3 workflow + a JWAS comparator agent were killed by a process
+  exit (committed nothing) — relaunch.
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial`.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 = engine
