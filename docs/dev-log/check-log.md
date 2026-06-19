@@ -2,6 +2,27 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Bernoulli known-truth recovery (overnight)
+
+- Goal: honest recovery calibration of the Bernoulli/logit fit — close (as far
+  as the method honestly allows) the V6-BERNOULLI recovery gap.
+- `sim/phase6_bernoulli_recovery.jl` (opt-in, outside CI): half-sib pedigree
+  (25 sires, 50 dams, 1000 offspring; q=1075), `u ~ N(0, A·1.0)` on the logit
+  scale, `yᵢ ~ Bernoulli(logistic(uₐ))` (μ=0 ⇒ prevalence ≈ 0.5, the most
+  informative binary case), 5 predeclared seeds.
+- Result (RAN, exit 0, deterministic; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-bernoulli-recovery.log`):
+  **5/5 pass the gated criteria** — converged, interior (non-collapsed)
+  `sigma_a2`, and EBV recovery correlation `cor(û,u) ∈ [0.565, 0.701]` ≥ 0.5.
+  The variance point estimate is REPORTED-not-gated and confirms the known
+  Laplace-for-binary DOWNWARD bias: `σ̂²a ∈ [0.362, 0.813]` (mean ≈0.65 vs truth
+  1.0), with one persistent low-bias seed.
+- Honest framing (Curie/Rose, mirroring the Phase-3 `h²` split): the rank/EBV
+  signal is reliable and gated; the variance MAGNITUDE is biased and only
+  reported. No claim that binary `sigma_a2` is calibrated. V6-BERNOULLI debt +
+  capability rows updated; no test-suite change (opt-in). Local checkpoint, not
+  pushed.
+
 ## 2026-06-18 Phase 6 Bernoulli (logit) family — Laplace + VA (overnight)
 
 - Goal: extend the non-Gaussian engine to BINARY 0/1 traits (disease, survival,
