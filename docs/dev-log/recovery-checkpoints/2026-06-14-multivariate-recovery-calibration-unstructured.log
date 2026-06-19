@@ -1,0 +1,131 @@
+[PASS] unstructured seed=20260616 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=244
+  relative_error_G=0.174500 threshold=0.250
+  relative_error_R=0.131056 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 0.951  0.462
+ 0.462  0.859
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.911  0.237
+ 0.237  0.5
+
+[PASS] unstructured seed=20260617 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=257
+  relative_error_G=0.157752 threshold=0.250
+  relative_error_R=0.062275 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 0.849  0.288
+ 0.288  0.587
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.828  0.184
+ 0.184  0.499
+
+[FAIL] unstructured seed=20260618 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=211
+  relative_error_G=0.327252 threshold=0.250
+  relative_error_R=0.096695 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 1.321  0.549
+ 0.549  0.762
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.715  0.167
+ 0.167  0.556
+
+[FAIL] unstructured seed=20260619 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=259
+  relative_error_G=0.416039 threshold=0.250
+  relative_error_R=0.093377 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 0.511  0.293
+ 0.293  0.933
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.762  0.149
+ 0.149  0.597
+
+[PASS] unstructured seed=20260620 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=250
+  relative_error_G=0.247717 threshold=0.250
+  relative_error_R=0.086263 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 1.245  0.211
+ 0.211  0.789
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.789  0.219
+ 0.219  0.632
+
+[FAIL] unstructured seed=20260621 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=231
+  relative_error_G=0.261302 threshold=0.250
+  relative_error_R=0.206494 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 1.06   0.166
+ 0.166  0.483
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.994  0.253
+ 0.253  0.56
+
+[PASS] unstructured seed=20260622 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=202
+  relative_error_G=0.238716 threshold=0.250
+  relative_error_R=0.107839 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 0.933  0.438
+ 0.438  0.981
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.732  0.156
+ 0.156  0.492
+
+[PASS] unstructured seed=20260623 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=214
+  relative_error_G=0.169861 threshold=0.250
+  relative_error_R=0.193753 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 1.13  0.45
+ 0.45  0.814
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.613  0.16
+ 0.16   0.534
+
+[PASS] unstructured seed=20260624 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=207
+  relative_error_G=0.140662 threshold=0.250
+  relative_error_R=0.068421 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 0.853  0.34
+ 0.34   0.812
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.789  0.248
+ 0.248  0.553
+
+[FAIL] unstructured seed=20260625 observations=240 animals=80 traits=2 records_per_animal=3
+  converged=true iterations=228
+  relative_error_G=0.478375 threshold=0.250
+  relative_error_R=0.105180 threshold=0.200
+  estimated_G =
+2×2 Matrix{Float64}:
+ 1.515  0.593
+ 0.593  0.819
+  estimated_R =
+2×2 Matrix{Float64}:
+ 0.831  0.193
+ 0.193  0.449
+
+SUMMARY seeds=10 passed=6 max_relative_error_G=0.478375 max_relative_error_R=0.206494

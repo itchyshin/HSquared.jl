@@ -38,6 +38,77 @@
   prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
   (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
   supplied-variance only, unweighted VanRaden method-1.
+- Added `single_marker_scan()` — a Phase-5 fixed-effect single-marker screening
+  utility that residualizes `y` and centered marker dosages against `X`, then
+  reports marker effects, supplied-variance standard errors, Wald z-scores, and
+  chi-square statistics plus approximate two-sided Gaussian/Wald p-values,
+  Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, and fixed-effect
+  known-variance LOD-equivalent scores. `marker_manhattan_data()` prepares
+  plot-ready marker IDs, chromosome/position metadata, cumulative plot
+  positions, raw p-values, and `-log10(p)` values, including overloads for
+  already-validated `HSMarkerMapSpec` / `HSData` marker metadata.
+  `marker_region_data()` prepares one-chromosome or coordinate-window data
+  slices from the same row-aligned scan fields, preserving scan indices and
+  optional marker-variance proportions for future regional plot/fine-mapping
+  front ends without activating them.
+  `marker_significance_summary()` reports nominal returned-marker-set raw,
+  Bonferroni, and BH significance flags/counts plus top-marker provenance from
+  the same scan fields; it is not a calibrated genome-wide threshold workflow.
+  `marker_effects()` prepares deterministic sorted marker-effect
+  summaries from the same scan fields, with optional metadata alignment.
+  `marker_scan_table()` prepares row-aligned scan tables from the same direct
+  scan fields in original scan order, with allele variances, marker-variance
+  contributions, optional total-variance proportions, optional mixed/LOCO
+  fields when present, and optional marker-map metadata alignment.
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` are semantic wrappers over
+  those already-computed direct scan tables; they add an analysis label plus
+  optional trait or expression-feature metadata, but do not run GWAS, interval
+  mapping, or expression-wide eQTL scans.
+  `marker_variance_explained()` prepares deterministic marker-level
+  variance-contribution summaries as `2p(1-p) * effect^2`, with optional
+  total-variance proportions and metadata alignment.
+  `marker_qq_data()` prepares sorted observed/expected QQ plot data from the
+  same direct scan output. `marker_genomic_inflation()` computes a
+  genomic-control-style lambda_GC diagnostic from returned chi-square
+  statistics.
+  This is direct Julia engine tooling only: no
+  mixed-model GWAS/QTL, no interval-mapping or mixed-model LOD workflow, no
+  marker-file parser, no plotting backend, no `regional_plot()` or fine-mapping
+  activation, no p-value calibration or calibrated/correlated-marker
+  genome-wide threshold workflow, no calibrated PVE/model R² claim, no R
+  `marker_scan()` syntax, no
+  bridge payload change, and no comparator parity.
+- Added opt-in `sim/phase5_marker_scan_recovery.jl` for seeded marker-signal
+  recovery of the direct fixed, supplied-variance mixed, and supplied LOCO
+  marker-scan helpers outside CI. Default seed `20260614` passes all three
+  cases on a half-sib simulated design. This is internal recovery smoke
+  evidence, not broad multiple-testing calibration, QTL/eQTL validation,
+  public R syntax, bridge payload change, or comparator parity.
+- Added `mixed_model_marker_scan()` — a dense, supplied-variance GLS
+  marker-screening helper that forms `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`
+  from supplied variance components and a supplied relationship precision, then
+  runs marker-by-marker Wald tests conditional on `X`. Tests pin reduction to
+  `single_marker_scan()` when the random-effect design contributes zero
+  covariance and agreement with an independent GLS calculation. Direct Julia
+  engine tooling only: no marker-scan variance-component estimation, no LOCO,
+  no sparse production scan, no calibrated p-values, no calibrated PVE/model
+  R² claim, no plotting backend, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity. The shared `marker_effects()`,
+  `marker_variance_explained()`, Manhattan, QQ, and inflation helpers work over
+  the returned scan fields.
+- Added `loco_relationship_precisions()` and
+  `loco_mixed_model_marker_scan()` — dense validation-scale
+  leave-one-group-out marker-screening helpers. The construction helper drops
+  each marker group, builds a VanRaden relationship matrix from the remaining
+  markers, and applies the existing ridge-regularized inverse. The scan helper
+  selects the matching precision before running the dense supplied-variance GLS
+  scan. Tests pin explicit LOCO precision identities and marker-wise agreement
+  with separate `mixed_model_marker_scan()` calls. Direct Julia engine tooling
+  only: no public LOCO defaults, no marker-scan variance-component estimation,
+  no sparse production scan, no calibrated p-values, no calibrated PVE/model
+  R² claim, no plotting backend, no R `marker_scan()` syntax, no bridge
+  payload change, and no comparator parity. The same effect-summary,
+  marker-variance, and diagnostic helpers remain direct Julia-only.
 - Internal: deduped the numerator-relationship recursion into
   `_numerator_relationship(pedigree[, rows])` (one source shared by
   `inbreeding_coefficients` and single-step `A₂₂` construction); removed the
@@ -127,8 +198,28 @@
   heritabilities, and breeding values at the estimate. Validated by the `t = 1`
   reduction to the univariate REML (the loglik equals `sparse_reml_loglik`
   exactly), grid-beating, and EBV consistency with `multivariate_mme`.
-  Experimental, dense/validation-scale; multi-trait known-truth recovery is
-  one-off only, with no external-comparator parity yet.
+  Experimental, dense/validation-scale; the opt-in recovery harness accepts
+  `--seed` or explicit `--seeds` lists and prints summaries outside CI, but is
+  not broadly multi-seed calibrated and has no external-comparator parity yet.
+- Added copy-returning Julia-side multivariate result accessors:
+  `variance_components`, `fixed_effects`, `breeding_values`/`EBV`/`BLUP`, and
+  REML-only `heritability`. These wrap existing `multivariate_mme` /
+  `fit_multivariate_reml` fields and do not change `result_payload()` or the R
+  bridge contract.
+- Added `test/fixtures/phase4_multitrait_parity/`, a deterministic two-trait
+  CSV fixture for R-lane sommer/ASReml/BLUPF90 parity work. It records a Julia
+  REML target (`G0`, `R0`, beta, EBVs, h², and loglik) and CI checks fast
+  self-consistency at the stored target covariances. Its README and
+  `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md` define
+  the comparator protocol; it is not external comparator evidence.
+- Added opt-in `sim/phase4_multivariate_reml_recovery.jl` for seeded two-trait
+  known-truth recovery of the unstructured multivariate REML estimator outside
+  CI. Default seed `20260616` passed with relative errors `G = 0.174500` and
+  `R = 0.131056` against thresholds `0.25` and `0.20`. This is internal
+  recovery evidence, not multi-seed calibration or external comparator parity.
+- Updated the validation-status documentation table to include the current
+  Phase 2, Phase 3, Phase 4, and Phase 4B validation rows and their claim
+  boundaries.
 - Hardened the multivariate engine after a 7-lens adversarial review (each finding
   verified by running Julia): `multivariate_mme` / `fit_multivariate_reml` now
   reject non-finite observed phenotypes (`Inf` — only `missing`/`NaN` mark an
@@ -137,6 +228,56 @@
   `fit_multivariate_reml`'s `loglik` is now the **full** REML log-likelihood
   including the `(N−p')·log(2π)` constant, on the same scale as the other loglik
   functions (safe for LRT/AIC). Regression-tested.
+- Added Phase-4B structured genetic covariance support for the dense multivariate
+  REML engine: `diagonal_covariance()`, `lowrank_covariance()`, and
+  `factor_analytic_covariance()` build `diag(σ²)`, `ΛΛ'`, and `ΛΛ' + Ψ`, and
+  `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+  :factor_analytic, rank = K)` estimates constrained genetic covariance
+  structures while keeping residual `R0` unstructured. Validated by deterministic
+  constructor identities, structure metadata, copy-returning
+  `genetic_structure()`/`genetic_loadings()`/`genetic_uniqueness()` accessors,
+  loglik equality to the existing evaluator, PSD/PD covariance checks,
+  constrained loglik ≤ the unstructured fit, and deterministic
+  sign-canonicalization of returned loading columns. The
+  `2026-06-14-loading-rotation-identifiability` decision note records this as a
+  sign-only metadata convention and defers full loading rotation/interpretation.
+  Experimental, dense/validation-scale; no R-facing covariance-structure syntax,
+  bridge change, full loading rotation/interpretation convention, or external
+  comparator yet.
+- Added opt-in Phase-4B recovery harness
+  `sim/phase4b_structured_covariance_recovery.jl` for seeded low-rank and
+  factor-analytic covariance recovery outside CI. It now accepts explicit
+  `--seeds` lists and prints per-case summaries. This strengthens internal
+  recovery tooling but does not add R-facing syntax, bridge payload fields,
+  broad multi-seed calibration, or external comparator parity.
+- Added
+  `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`,
+  a shared protocol for the unstructured and structured multivariate recovery
+  harnesses. It defines the minimum seed counts, run-plan fields, summaries,
+  and claim gate required before any broad multi-seed calibration claim.
+- Executed that recovery calibration protocol outside CI on the predeclared
+  seed lists and recorded negative calibration evidence in
+  `docs/dev-log/recovery-checkpoints/`: unstructured passed 6/10,
+  factor-analytic passed 8/10, and low-rank passed 9/10, with all fits
+  converged. No broad multi-seed calibration claim is made.
+- Added deterministic `sim/summarize_recovery_calibration.jl` tooling to parse
+  committed recovery harness logs and regenerate the Markdown case summary,
+  failure-mode table, and failed-seed list without rerunning stochastic
+  simulations.
+- Added
+  `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-failure-modes.md`,
+  which records that unstructured failures were 3 G-only plus 1 G+R,
+  factor-analytic failures were 1 G-only plus 1 G+R, and low-rank had 1 R-only
+  failure.
+- Documented a throttled local command form for opt-in recovery/calibration
+  harnesses (`JULIA_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`,
+  `OMP_NUM_THREADS=1`, `VECLIB_MAXIMUM_THREADS=1`, `nice -n 15`) so long
+  stochastic runs do not monopolize interactive workstations.
+- Added
+  `docs/dev-log/decisions/2026-06-14-calibration-failure-response.md`, which
+  records that the failed predeclared calibration run cannot be rescued by
+  silently relaxing thresholds, dropping failed seeds, or rerunning until the
+  pass count improves.
 - Added a "Multivariate models" documentation page with a runnable balanced
   two-trait example and the experimental / not-yet-R-wired boundary.
 - Expanded planned backend marker/control vocabulary to include threaded CPU,

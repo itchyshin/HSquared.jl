@@ -211,6 +211,132 @@ column slots. It is intended for R `Matrix::dgCMatrix` payloads, where the
 indices, value lengths, and strictly increasing row indices within each column.
 It is a marshalling helper only; it does not fit a model.
 
+## Experimental Genomic And Marker Utilities
+
+```julia
+G = genomic_relationship_matrix(markers)
+Ginv = genomic_relationship_inverse(G)
+gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2)
+snp = fit_snp_blup(y, X, markers, sigma_g2, sigma_e2)
+scan = single_marker_scan(y, X, markers; sigma_e2 = 1.0)
+mixed_scan = mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)
+loco_precisions = loco_relationship_precisions(markers, marker_groups; ridge = 0.01)
+loco_scan = loco_mixed_model_marker_scan(
+    y, X, Z, loco_precisions, marker_groups, markers, sigma_a2, sigma_e2
+)
+manhattan = marker_manhattan_data(scan)
+qq = marker_qq_data(scan)
+inflation = marker_genomic_inflation(scan)
+effects = marker_effects(scan; sort_by = :p_value, top_n = 10)
+variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 10)
+table = marker_scan_table(scan; total_variance = 2.0)
+gwas = gwas_table(scan; trait = "height", total_variance = 2.0)
+qtl = qtl_table(scan; trait = "height", total_variance = 2.0)
+eqtl = eqtl_table(scan; feature = "geneA", total_variance = 2.0)
+significance = marker_significance_summary(scan; alpha = 0.05)
+marker_map = (marker = ["m1", "m2"], chr = ["1", "2"], pos = [10, 20])
+marker_data = HSData((id = ["example"], y = [0.0]); markers = marker_map)
+map_backed = marker_manhattan_data(scan, marker_data)
+region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop = 25)
+map_effects = marker_effects(scan, marker_data; top_n = 10)
+map_variance = marker_variance_explained(scan, marker_data; top_n = 10)
+map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
+map_gwas = gwas_table(scan, marker_data; trait = "height")
+map_eqtl = eqtl_table(scan, marker_data; feature = "geneA")
+```
+
+These are direct Julia engine utilities. They do not change the R bridge
+payload, do not construct formula model specs, and do not activate the
+R-facing `genomic()`, `markers()`, `single_step()`, `marker_scan()`, or
+`qtl_scan()` terms.
+
+`single_marker_scan()` is deliberately narrow: it centers biallelic marker
+dosages, residualizes `y` and each marker against `X`, and reports
+supplied-variance Wald summaries. It is fixed-effect Gaussian screening only,
+not a mixed-model GWAS/QTL scan, not LOCO, not interval-mapping or mixed-model
+LOD output, not calibrated / correlated-marker multiple-testing output, and not
+external comparator evidence. Its p-values are approximate two-sided
+Gaussian/Wald p-values implied by the supplied residual variance;
+`bonferroni_p_values` and `bh_q_values` are deterministic adjustments over the
+returned marker set, and `lod_scores` are `chisq / (2log(10))`.
+
+`mixed_model_marker_scan()` is also deliberately narrow. It forms a dense
+validation-scale marginal covariance from supplied variance components and a
+supplied relationship precision, then runs marker-by-marker GLS Wald tests
+conditional on `X`. It is relationship-corrected only through that supplied
+covariance. It does not estimate marker-scan variance components, implement
+LOCO, calibrate genome-wide p-values, draw plots, or
+change bridge payloads.
+
+`loco_relationship_precisions()` constructs dense leave-one-group-out VanRaden
+relationship precisions by dropping each marker group and applying the existing
+ridge-regularized inverse. `loco_mixed_model_marker_scan()` then selects one
+relationship precision for each marker group and runs the same GLS test. These
+helpers do not choose public LOCO defaults, estimate marker-scan variance
+components, calibrate p-values, draw plots, or change bridge payloads.
+
+`marker_genomic_inflation()` computes a genomic-control-style lambda_GC
+diagnostic from the returned chi-square statistics of direct marker scans. It
+is a summary diagnostic only and does not correct or calibrate scan statistics,
+choose thresholds, or change bridge payloads.
+
+`marker_effects()` prepares deterministic effect-summary data only. It
+sorts returned marker effects and scan statistics by a requested field, can
+limit to top markers, and can align already-validated marker-map metadata by
+exact marker ID. It does not choose thresholds, calibrate p-values, draw plots,
+or change bridge payloads.
+
+`marker_variance_explained()` prepares deterministic marker-level variance
+contribution summaries only. It computes `2p(1-p) * effect^2` from returned
+scan effects and allele frequencies, can optionally divide by a supplied
+`total_variance`, and can align already-validated marker-map metadata by exact
+marker ID. It does not estimate marker-scan variance components, claim
+calibrated PVE/model R², choose thresholds, calibrate p-values, draw plots, or
+change bridge payloads.
+
+`marker_scan_table()` prepares deterministic row-aligned scan tables only. It
+preserves original scan order, returns the existing scan statistics with
+allele variances and marker-variance contributions, can optionally divide by a
+supplied `total_variance`, and can align already-validated marker-map metadata
+by exact marker ID. It does not sort markers, estimate marker-scan variance
+components, claim
+calibrated PVE/model R², choose thresholds, calibrate p-values, draw plots, or
+change bridge payloads.
+
+`gwas_table()`, `qtl_table()`, and `eqtl_table()` are deterministic semantic
+wrappers over `marker_scan_table()` only. They label an already-computed direct
+scan table with `analysis = :gwas | :qtl | :eqtl` and optional trait or
+expression-feature metadata. They do not run scans, perform interval mapping,
+classify cis/trans eQTL windows, join expression or annotation data, estimate
+variance components, calibrate p-values, draw plots, activate R-facing syntax,
+or change bridge payloads.
+
+`marker_significance_summary()` prepares deterministic nominal
+returned-marker-set significance summaries only. It reports raw, Bonferroni, and BH flags /
+counts, marker IDs, scan indices, and top-marker provenance from the scan's
+existing p-value and adjusted-p fields. It does not estimate effective marker
+counts, calibrate correlated-marker genome-wide thresholds, change p-values,
+draw plots, or change bridge payloads.
+
+`marker_manhattan_data()` prepares deterministic plot-ready data only. With
+already-validated `HSMarkerMapSpec` or `HSData` metadata it aligns chromosomes
+and positions to scan marker IDs exactly and uses the marker-map order for
+chromosome display. It does not draw figures, parse marker files, run scans, or
+change bridge payloads.
+
+`marker_region_data()` prepares deterministic one-chromosome or
+chromosome-window data only. It reuses the row-aligned scan table fields,
+preserves original scan indices, accepts optional `start`/`stop`/`flank`
+bounds, and aligns already-validated marker metadata by exact marker ID. It
+does not draw regional plots, run fine mapping, choose calibrated genome-wide
+thresholds, calibrate p-values, or change bridge payloads.
+
+`marker_qq_data()` prepares deterministic QQ plot data only. It sorts observed
+p-values from the direct scan, pairs them with expected uniform order-statistic
+p-values, and returns raw and `-log10` display values. It does not draw figures,
+estimate genomic inflation, calibrate p-values, run scans, or change bridge
+payloads.
+
 ## Implemented Likelihood Evaluator
 
 ```julia
@@ -256,6 +382,58 @@ true`, and `variance_components_source = :estimated_sparse_reml_validation` in
 `fit_diagnostics()`. It is REML-only. It is not the default public R fitting
 path, not a production sparse solver, and not fitted Mrode or ASReml parity
 evidence.
+
+## Experimental Multivariate REML
+
+```julia
+fit = fit_multivariate_reml(Y, X, Z, Ainv)
+fit = fit_multivariate_reml(Y, X, Z, Ainv;
+    genetic_structure = :factor_analytic,
+    rank = 1,
+)
+```
+
+The multivariate engine accepts a wide `Y` matrix (`records × traits`), shared
+fixed-effect and incidence designs, and a relationship inverse. The default
+estimator uses unstructured genetic and residual trait covariance matrices.
+The Phase-4B structured path constrains only the genetic covariance:
+`:diagonal` gives `diag(σ²)`, `:lowrank` gives `ΛΛ'`, and `:factor_analytic`
+gives `ΛΛ' + Ψ`; residual `R0` remains unstructured.
+
+For `:lowrank` and `:factor_analytic`, returned `genetic_loadings` are
+sign-canonicalized as engine metadata: each factor column is multiplied by `-1`
+when needed so the largest-absolute loading in that column is non-negative.
+This convention is deterministic but not a rotation or lower-triangular
+identification constraint; rank-`K > 1` loading columns remain
+rotation-nonunique. The current policy is recorded in
+`docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`: sign
+canonicalization is accepted for stable metadata, while rotation and biological
+interpretation are deferred.
+
+The multivariate result accessors are Julia-side wrappers over existing
+`NamedTuple` fields:
+
+```julia
+variance_components(fit)
+fixed_effects(fit)
+breeding_values(fit)
+EBV(fit)
+BLUP(fit)
+heritability(fit)   # REML results only
+genetic_structure(fit)
+genetic_loadings(fit)
+genetic_uniqueness(fit)
+```
+
+They return copies of matrix/vector fields and are guarded so unrelated
+`NamedTuple`s fail loudly. Structured metadata accessors return `nothing` when
+the fitted structure has no loading or uniqueness metadata. They do not add new
+result fields.
+
+This is a direct Julia engine API only. It does not change the v0.1 R bridge
+payload, `result_payload()`, or the R formula grammar. Any future R
+multi-trait / covariance-structure syntax must be designed in the R lane and
+then mirrored here in lockstep.
 
 ## Experimental Average-Information REML
 
@@ -419,6 +597,11 @@ reliability.
 R head `afa25f1` adds R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
 ergonomics. Julia mirrors the vocabulary locally as aliases and derived output
 only; there is no new bridge payload requirement.
+
+R head `21161a5` documents R-side multivariate extractor examples. Julia mirrors
+the same local vocabulary for multivariate engine results (`NamedTuple`s) with
+copy-returning accessors over existing fields. This is accessor ergonomics only:
+`result_payload()` remains compact and no R bridge payload field is required.
 
 R head `060988d` adds R-side `fit_diagnostics()` over existing result-payload
 metadata. Julia mirrors this as:

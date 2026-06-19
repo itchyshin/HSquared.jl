@@ -1,0 +1,13 @@
+# Phase 6 Binomial (logit, n trials) known-truth recovery — RAN 2026-06-18
+# Harness: sim/phase6_binomial_recovery.jl (opt-in, outside CI)
+# Truth: sigma_a2=1.0 (logit scale), mu=0.0, m=20 trials/record; half-sib 15 sires/30 dams/300 offspring (q=345)
+# Gate: converged AND rel(sigma_a2)<=0.30 AND cor(uhat,u)>=0.80
+# Contrast: single-trial Bernoulli (sim/phase6_bernoulli_recovery.jl) left sigma_a2 downward-biased/uncalibrated; more trials => tight recovery.
+# Command: env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. sim/phase6_binomial_recovery.jl
+
+[PASS] seed=20260618 animals=345 trials=20 converged=true  σ̂²a=1.029 (truth 1.00, rel 0.029)  cor(û,u)=0.916
+[PASS] seed=20260619 animals=345 trials=20 converged=true  σ̂²a=0.979 (truth 1.00, rel 0.021)  cor(û,u)=0.907
+[PASS] seed=20260620 animals=345 trials=20 converged=true  σ̂²a=1.108 (truth 1.00, rel 0.108)  cor(û,u)=0.900
+[PASS] seed=20260621 animals=345 trials=20 converged=true  σ̂²a=1.175 (truth 1.00, rel 0.175)  cor(û,u)=0.900
+[PASS] seed=20260622 animals=345 trials=20 converged=true  σ̂²a=1.061 (truth 1.00, rel 0.061)  cor(û,u)=0.909
+SUMMARY binomial-recovery seeds=5 passed=5 (gate: rel≤0.30 AND cor≥0.80)  max_rel=0.175  min_cor=0.900

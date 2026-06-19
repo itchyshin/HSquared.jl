@@ -42,6 +42,9 @@ Implemented engine utilities:
   the Henderson MME determinant identity;
 - experimental sparse REML validation optimization for low-level validated
   specs;
+- experimental average-information REML for two-component Gaussian animal
+  models, with known-truth and published-anchor evidence recorded through the
+  R lane;
 - experimental dense variance-component optimization for validated specs;
 - experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
   fitted-value, heritability, PEV, reliability, and checked accuracy extractors
@@ -58,6 +61,21 @@ Implemented engine utilities:
   ID-overlap counts, pedigree status, genotype metadata status, marker
   alignment, expression metadata status, annotation-feature metadata status,
   and environment-key metadata status;
+- experimental genomic utilities: VanRaden `G`,
+  `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
+  `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
+  `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
+  `mixed_model_marker_scan`, dense LOCO precision construction via
+  `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
+  row-aligned marker-scan tables, GWAS/QTL/eQTL labelled table wrappers,
+  marker-effect summaries, marker-variance contribution summaries, nominal
+  returned-marker-set significance summaries, and marker-map-backed
+  `marker_manhattan_data`, `marker_region_data`, and `marker_qq_data`
+  plot-data preparation, plus an opt-in marker-scan recovery
+  harness outside CI;
+- experimental repeatability, two-effect, multivariate, and structured
+  genetic-covariance utilities, all validation-scale and not public R formula
+  defaults;
 - external opt-in R bridge evidence from the `hsquared` twin;
 - small deterministic tests for malformed pedigrees, hand-checked `Ainv`
   matrices, and supplied-variance Henderson MME outputs.
@@ -69,16 +87,18 @@ Planned, but not implemented yet:
 - production sparse EBVs/BLUPs, reliability, prediction error variance, and
   heritability extraction;
 - production R-to-Julia fitting bridge;
-- genotype parsing, imputation, automatic relationship construction, and
-  marker-scan workflows;
+- genotype parsing, imputation, public genomic model-spec fitting,
+  formula-driven mixed-model marker scans, public LOCO workflows, calibrated
+  mixed-model p-values, calibrated PVE/model R² claims, interval-mapping or
+  mixed-model LOD workflows, genome-wide multiple-testing calibration, and
+  QTL/eQTL intervals;
 - environmental model terms, automatic environment joins, and
   multi-environment animal-model workflows;
 - expression-feature joins and eQTL/omics fitting from expression metadata;
 - annotation joins, eQTL/omics fitting, and GLLVM workflows from annotation
   metadata;
-- multivariate animal models and G matrices;
-- genomic prediction, single-step fitting, marker-effect estimation,
-  marker scans, QTL/eQTL scans, and non-standard inheritance models;
+- R-facing multivariate model-spec syntax and comparator parity;
+- non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 - backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests.

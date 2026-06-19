@@ -103,15 +103,46 @@ unimplemented.
   (`genomic_relationship_inverse`), GBLUP (`fit_gblup`), SNP-BLUP with
   marker-effect output and the GBLUP/SNP-BLUP equivalence
   (`fit_snp_blup`, `centered_markers`), single-step `H`-inverse construction,
-  and GBLUP REML variance-component estimation exist as experimental
-  supplied-variance / validation-scale engine utilities. No production genomic
-  fitting, marker scan, or QTL/eQTL scan; not the public default.
+  GBLUP REML variance-component estimation, and fixed-effect single-marker
+  screening (`single_marker_scan`) plus row-aligned marker-scan table
+  preparation, direct GWAS/QTL/eQTL labelled table wrappers, marker-map-backed
+  Manhattan metadata and QQ plot-data preparation, marker-effect summaries,
+  marker-variance contribution summaries, nominal returned-marker-set
+  significance summaries, and a
+  genomic-inflation diagnostic.
+  `mixed_model_marker_scan` adds a dense
+  validation-scale, supplied-variance GLS marker scan with relationship
+  correction from a supplied marginal covariance.
+  `loco_relationship_precisions` constructs dense VanRaden-plus-ridge
+  leave-one-group-out relationship precisions, and
+  `loco_mixed_model_marker_scan` selects supplied relationship precisions by
+  marker group for a direct leave-one-group-out scan. An opt-in seeded
+  `sim/phase5_marker_scan_recovery.jl` harness records marker-signal recovery
+  outside CI for the fixed, supplied-variance mixed, and supplied LOCO helpers.
+  These remain experimental supplied-variance / validation-scale engine utilities.
+  No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
+  the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
   permanent-environment (`repeatability_mme`, `fit_repeatability_reml`) and a
   general two-random-effect model for common-environment / maternal-genetic
   effects (`two_effect_mme`, `fit_two_effect_reml`) exist as experimental
   dense/validation-scale engine utilities at supplied or REML-estimated
   variance components. No R-facing model-spec; not the public default.
+- Experimental multivariate Gaussian animal-model utilities (Phase 4): supplied
+  covariance `multivariate_mme`, missing-trait handling, and dense
+  `fit_multivariate_reml` estimation of `G0`/`R0` exist as engine-internal,
+  validation-scale utilities. The multivariate REML path now has an opt-in
+  seeded recovery harness outside CI and a serialized two-trait Julia target
+  fixture plus comparator protocol for R-lane comparator work. Julia-side
+  extractors (`variance_components`, `fixed_effects`, `heritability`, and
+  `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
+  without changing `result_payload()` or the R bridge. Phase 4B now has
+  structured genetic
+  covariance builders and REML constraints for diagonal, low-rank, and
+  factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
+  own opt-in seeded recovery harness. No R-facing multivariate model-spec, no
+  external comparator parity, no full loading rotation/interpretation
+  convention, and no production sparse multivariate fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
@@ -139,9 +170,10 @@ unimplemented.
   checkpointing are not implemented. AI-REML and the Takahashi selected inverse
   exist only as the experimental, validation-scale utilities above, not as
   production-scale, sparse, large-pedigree fitting.
-- Marker scans and QTL/eQTL scans are not implemented. Genomic prediction,
-  single-step `H`-inverse, and marker-effect estimation exist only as the
-  experimental engine utilities above, not as production genomic fitting.
+- Mixed-model marker scans and QTL/eQTL scans are not implemented. Genomic
+  prediction, single-step `H`-inverse, marker-effect estimation, and a
+  fixed-effect single-marker scan exist only as the experimental engine
+  utilities above, not as production genomic fitting.
 - Paternal effects, cytoplasmic inheritance, imprinting, dominance, epistasis,
   sire models, random regression, unknown-parent groups, and custom
   relationship/precision kernels are not implemented. Permanent environment,
@@ -231,8 +263,18 @@ and first marker-effect outputs.
 Status: the engine utilities have landed (experimental, validation-scale) —
 `genomic_relationship_matrix`, `genomic_relationship_inverse`, `fit_gblup`,
 `fit_snp_blup`/`centered_markers`, single-step `H`-inverse construction, and
-GBLUP REML. These are engine-internal; production genotype-ID matching at scale,
-a public genomic model-spec, and external comparator parity remain open.
+GBLUP REML. The first Phase-5 marker utility,
+`single_marker_scan`, also exists as a fixed-effect Gaussian screening helper
+with supplied residual variance, marker-map-backed Manhattan plot data, and QQ
+plot data. `mixed_model_marker_scan` adds a supplied-variance dense GLS marker
+scan using a supplied relationship precision and random-effect design.
+`loco_relationship_precisions` constructs dense VanRaden-plus-ridge
+leave-one-group-out relationship precisions from marker groups, and
+`loco_mixed_model_marker_scan` selects among relationship precisions by marker
+group for a direct leave-one-group-out scan. These are engine-internal;
+production genotype-ID matching at scale, formula-driven mixed-model marker
+scans, public LOCO workflow defaults, QTL/eQTL scans, a public genomic
+model-spec, and external comparator parity remain open.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.
@@ -248,9 +290,23 @@ Status: the first engine utilities have landed (experimental, validation-scale)
 — repeatability / permanent-environment (`repeatability_mme`,
 `fit_repeatability_reml`) and a general two-random-effect model covering
 common-environment and maternal-genetic effects (`two_effect_mme`,
-`fit_two_effect_reml`). Sire models, dominance, cytoplasmic inheritance,
-non-standard inheritance systems, unknown-parent groups, and random regression
-remain open, as does any public model-spec.
+`fit_two_effect_reml`). Two non-standard-inheritance primitives have also landed: cytoplasmic /
+maternal-lineage construction (`maternal_lineage`, `cytoplasmic_relationship`,
+the 0/1 same-maternal-line indicator usable as the relationship for an i.i.d.
+cytoplasmic random effect), and self-fertilization
+(`normalize_pedigree(...; allow_selfing = true)`, with the additive-relationship
+recursion and Henderson `Ainv` rules already self-correct — a selfed offspring of
+a non-inbred parent has `F = 1/2`), and clonal / asexual reproduction
+(`clonal_relationship(pedigree, clone_of)`, where ramets alias their genet's
+relationships — `C[i,j] = A[rep(i), rep(j)]` — so clonemates are identical), and
+the Cockerham dominance relationship matrix (`dominance_relationship`, full sibs
+`1/4`, half sibs `0`), and Henderson Hadamard-product epistatic relationship
+matrices (`epistatic_relationship`, additive×additive / additive×dominance /
+dominance×dominance). The dense additive relationship `A` is also now a public
+accessor (`additive_relationship`). Sire models, the remaining non-standard
+inheritance systems (haplodiploid, polyploid), dominance-inbreeding corrections,
+unknown-parent groups, and random regression remain open, as does any public
+model-spec.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.
@@ -270,16 +326,111 @@ Add `diag()`, `lowrank(K)`, and `fa(K)` covariance structures:
 - `lowrank(K) = Lambda Lambda'`
 - `fa(K) = Lambda Lambda' + Psi`
 
+Status: initial engine utilities have landed (experimental, dense /
+validation-scale). `diagonal_covariance`, `lowrank_covariance`, and
+`factor_analytic_covariance` build the structured trait covariance matrices, and
+`fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+:factor_analytic, rank = K)` estimates constrained genetic covariance structures
+while leaving residual `R0` unstructured. Deterministic tests cover constructor
+identities, metadata, loglik self-consistency, PSD/PD properties, and constrained
+loglik ordering. The opt-in script
+`sim/phase4b_structured_covariance_recovery.jl` records seeded low-rank and
+factor-analytic known-truth recovery outside CI and now accepts explicit
+`--seeds` lists with per-case summaries. The shared calibration protocol in
+`docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
+defines the seed-count, run-plan, and reporting gate required before any broad
+multi-seed calibration claim. The protocol was executed on the predeclared
+10-seed structured sets and did not pass: factor-analytic passed 8/10 and
+low-rank passed 9/10, with all fits converged. Rotation conventions, covariance
+inference, external comparators, and R syntax remain open.
+
+The returned loading metadata now has a deterministic sign convention: each
+factor column is flipped, if needed, so its largest-absolute loading is
+non-negative. This does not solve rotation non-identifiability for `rank > 1`,
+and loadings remain uninterpreted engine metadata until extractor meanings and
+external parity are validated. The current sign-only policy is recorded in
+`docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`;
+full rotation and biological interpretation remain future work.
+
+`test/fixtures/phase4_multitrait_parity/` serializes a deterministic two-trait
+Julia REML target for R-lane sommer/ASReml/BLUPF90 parity work. It is an input
+and target bundle, not external comparator evidence.
+
+`sim/phase4_multivariate_reml_recovery.jl` records opt-in seeded unstructured
+two-trait REML recovery outside CI. It accepts `--seed` for the historical
+single-seed run or explicit `--seeds` lists with summaries. The default seed
+`20260616` passes with relative errors `G = 0.174500` and `R = 0.131056`
+against thresholds `0.25` and `0.20`. This is internal recovery evidence only;
+the shared calibration protocol was later executed on a predeclared 10-seed
+unstructured set and did not pass (6/10 passed, all fits converged). It is not
+broad multi-seed calibration, external comparator parity, or an R bridge change.
+The calibration failure response decision note requires any future rerun,
+threshold revision, or narrower claim to be declared before execution. The
+deterministic failure-mode triage records that the unstructured failures were
+mostly G-threshold failures, factor-analytic had both G-only and G+R failures,
+and low-rank had one R-only failure.
+
 Gate: Kirkpatrick and Noether sign off on notation, syntax, parameterization,
 and extractor meanings.
 
 ## Phase 5: QTL, GWAS, And eQTL
 
-Add single-marker scans, mixed-model marker scans, LOCO, LOD/p-value output,
-cis/trans eQTL, multiple testing, and basic plots.
+Add single-marker scans, mixed-model marker scans, LOCO, LOD output,
+calibrated mixed-model p-values, calibrated PVE/model R² summaries, cis/trans
+eQTL, multiple testing, and basic plots.
 
-Gate: marker-map validation, estimand definition, multiple-testing checks, and
-comparator/simulation evidence.
+Status: `single_marker_scan` provides the first direct Julia engine utility for
+fixed-effect single-marker screening. It residualizes `y` and centered marker
+dosages against `X` and reports effects, supplied-variance standard errors,
+Wald z-scores, chi-square statistics, and approximate two-sided Gaussian/Wald
+p-values with Bonferroni and Benjamini-Hochberg adjustments over the returned
+marker set, fixed-effect known-variance LOD-equivalent scores, and plot-ready
+Manhattan data, including overloads that consume already-validated `HSData` /
+`HSMarkerMapSpec` marker metadata by exact marker ID. `marker_region_data`
+prepares one-chromosome or coordinate-window slices from the same row-aligned
+scan fields for future regional plot/fine-mapping front ends, but does not
+activate them. `marker_significance_summary` reports nominal returned-marker-set
+raw, Bonferroni, and BH significance flags/counts plus top-marker provenance
+from the same scan fields; it is not a calibrated genome-wide threshold
+workflow. `marker_scan_table`
+prepares row-aligned scan tables in original scan order with allele variances,
+marker-variance contributions, optional total-variance proportions, and the
+same metadata alignment. `gwas_table()`, `qtl_table()`, and `eqtl_table()` are
+thin wrappers over already-computed direct scan tables: they add an analysis
+label plus optional trait or expression-feature metadata, but do not run GWAS,
+interval mapping, or expression-wide eQTL scans. `marker_effects`
+prepares sorted top-marker effect summaries from the same scan fields, with
+optional chromosome/position alignment from validated marker metadata.
+`marker_variance_explained` prepares sorted marker-level variance-contribution
+summaries as `2p(1-p) * effect^2`, with optional total-variance proportions and
+the same metadata alignment; it is not a calibrated PVE/model R² claim.
+`marker_qq_data` prepares sorted observed/expected QQ plot data from the same
+direct scan output, and `marker_genomic_inflation` reports a
+genomic-control-style lambda_GC diagnostic from returned chi-square values.
+`mixed_model_marker_scan` forms a supplied dense marginal covariance from
+`Z`, `Ainv`, `sigma_a2`, and `sigma_e2`, then runs marker-by-marker GLS Wald
+tests. `loco_mixed_model_marker_scan` selects a supplied relationship precision
+by marker group before running the same GLS test, and
+`loco_relationship_precisions` can construct the dense VanRaden-plus-ridge
+precision dictionary from marker groups. These helpers are not
+formula-driven mixed-model GWAS/QTL workflows, do not estimate marker-scan
+variance components, do not choose public LOCO defaults, do not compute
+interval-mapping, expression-wide eQTL, or mixed-model LOD workflows or
+calibrated / correlated-marker multiple-testing workflows, do not draw plots,
+calibrate p-values, or choose calibrated genome-wide thresholds, and do not
+activate the R-facing `marker_scan()` formula term.
+
+`sim/phase5_marker_scan_recovery.jl` records opt-in seeded marker-signal
+recovery outside CI for the fixed, supplied-variance mixed, and supplied LOCO
+direct scan helpers. Default seed `20260614` passes all three cases on a
+half-sib simulated design with top causal marker `m08` and effect relative
+errors `0.008513`, `0.000349`, and `0.019075`. This is internal recovery smoke
+evidence only; it is not broad multi-seed calibration, calibrated
+multiple-testing evidence, QTL/eQTL validation, public R syntax, bridge
+payload change, or comparator parity.
+
+Gate: marker-map validation, estimand definition, genome-wide multiple-testing
+calibration, and comparator/simulation evidence.
 
 ## Phase 6: Non-Gaussian And GLLVM-Style Animal Models
 

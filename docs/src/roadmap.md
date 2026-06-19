@@ -8,7 +8,11 @@ For a dashboard view of this status, see [Mission control](mission-control.md).
 
 ## Current Status
 
-Phase 0 is complete. Phase 1 has started.
+Phase 0 is complete. The Julia engine now has experimental validation-scale
+coverage through univariate animal models, genomic utilities, repeatability /
+two-effect models, multivariate REML, structured multivariate genetic
+covariance, and a first fixed-effect marker-screening helper. These are not
+production sparse pipelines or public R formula defaults.
 
 Implemented:
 
@@ -33,6 +37,9 @@ Implemented:
   Henderson MME determinant identity;
 - experimental sparse REML validation optimization for low-level validated
   specs;
+- experimental average-information REML for two-component Gaussian animal
+  models, with R-lane recovery / published-anchor evidence but pending
+  Julia-native large-pedigree hardening;
 - experimental dense variance-component optimization;
 - experimental MME-backed EBV/BLUP aliases, fitted-value, heritability, PEV,
   reliability, and checked accuracy extraction for dense spec and
@@ -91,15 +98,35 @@ Implemented:
 - roadmap documentation for genomics, QTL/eQTL, GLLVM, backend, algorithm, and
   HPC strategy mirrored from the R twin's expanded plan at `hsquared` head
   `2c18b30`.
+- experimental genomic utilities: VanRaden `G`,
+  `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
+  `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
+  `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
+  `mixed_model_marker_scan`, dense LOCO precision construction via
+  `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
+  row-aligned marker-scan tables, marker-effect summaries, marker-variance
+  contribution summaries, nominal returned-marker-set significance summaries,
+  and Manhattan/regional-window/QQ plot-data helpers, plus an opt-in marker-scan
+  recovery harness outside CI.
+- experimental repeatability / two-effect REML utilities.
+- experimental multivariate animal-model utilities, including
+  supplied-covariance MME, missing-trait records, dense multivariate REML,
+  structured genetic covariance (`diag`, `lowrank`, `fa`), Julia-side
+  extractors, opt-in recovery harnesses, and a serialized target fixture for
+  future R-lane comparator work.
 
 Not implemented:
 
-- sparse production animal-model REML/ML or AI-REML fitting;
+- production sparse animal-model REML/ML/AI-REML fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
 - production R-to-Julia fitting bridge;
-- genomic prediction, single-step fitting, marker-effect estimation,
-  marker scans, and QTL/eQTL scans;
-- permanent environment, common environment, maternal/paternal effects,
+- public R-facing genomic/marker model-spec fitting, production genomic
+  prediction, APY/sparse genomic scaling, formula-driven mixed-model marker
+  scans, public LOCO workflows, calibrated mixed-model p-values, calibrated
+  PVE/model R² claims, interval-mapping or mixed-model LOD workflows,
+  genome-wide calibration, and QTL/eQTL intervals;
+- public R-facing permanent environment, common environment,
+  maternal/paternal effects,
   cytoplasmic inheritance, imprinting, dominance, epistasis, and custom
   relationship/precision kernels;
 - backend execution dispatch, runtime backend availability probing, GPU
@@ -118,19 +145,33 @@ Next engine targets:
    beyond sparse `Z`, and stable production
    engine controls;
 4. production sparse covariance/precision computations;
-5. AI-REML or a documented sparse optimizer path;
+5. production hardening for sparse REML / AI-REML;
 6. production sparse reliability and prediction error variance.
 
 ## Later Phases
 
 - Phase 2: genomic relationship models, GBLUP, SNP-BLUP, supplied `Hinv`, and
-  first marker-effect outputs.
+  first marker-effect outputs are experimental engine utilities; production
+  genomic model-spec wiring and comparator parity remain future work.
 - Phase 3: maternal, paternal, repeatability, common-environment, dominance,
   cytoplasmic, and inheritance-kernel models.
 - Phase 4: multivariate G matrices with `us()`, `diag()`, `lowrank(K)`, and
-  `fa(K)`.
-- Phase 5: QTL/GWAS/eQTL scans, LOCO option, multiple testing, and basic
-  plots.
+  `fa(K)` are experimental engine utilities; R-facing syntax and comparator
+  parity remain future work.
+- Phase 5: direct fixed-effect marker screening has started with Wald p-values,
+  Bonferroni/BH adjustments, LOD-equivalent scores, marker-effect summaries,
+  row-aligned marker-scan tables, marker-variance contribution summaries, and
+  nominal returned-marker-set significance summaries, plus marker-map-backed
+  Manhattan, regional-window, QQ, and lambda_GC diagnostic data. A
+  supplied-variance dense GLS
+  `mixed_model_marker_scan` exists for direct Julia relationship-corrected
+  screening, `loco_relationship_precisions` constructs dense
+  VanRaden-plus-ridge leave-one-group-out precision matrices, and
+  `loco_mixed_model_marker_scan` can select among supplied LOCO precision
+  matrices. Formula-driven QTL/GWAS/eQTL scans, public LOCO workflow defaults,
+  calibrated/correlated-marker genome-wide thresholds, calibrated p-values,
+  calibrated PVE/model R² claims, and actual plotting backends remain future
+  work.
 - Phase 6: non-Gaussian and GLLVM-style animal models, omics, and community
   examples.
 - Phase 7: CPU/GPU acceleration with CPU, threads, Metal, CUDA, AMDGPU, oneAPI,

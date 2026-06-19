@@ -3,20 +3,24 @@
 This page records the long-range technical plan for `hsquared` and
 `HSquared.jl`.
 
-Status: roadmap. The current implemented Julia capability is pedigree
-normalization plus sparse `Ainv` construction. Animal-model fitting, genomics,
-QTL/eQTL, GLLVM-style models, and GPU acceleration are planned or experimental
-future work unless a capability table says otherwise.
+Status: roadmap plus experimental Julia engine utilities. The implemented
+Julia capability now includes pedigree/Ainv utilities, validation-scale animal
+models, genomic relationship / GBLUP / SNP-BLUP utilities, and a fixed-effect
+single-marker screening helper. Public R-facing genomic/QTL/eQTL syntax,
+mixed-model marker scans, GLLVM-style models, and GPU acceleration remain
+planned unless a capability table says otherwise.
 
 See [Backend And Algorithm Roadmap](backend-algorithm-roadmap.md) for the
 Julia-side execution plan behind CPU, threaded CPU, CUDA, AMDGPU, Metal,
 oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY, and backend
 claim gates.
 
-The names `genomic()`, `single_step()`, `markers()`, `marker_scan()`, and
-`qtl_scan()` are now reserved in both twins. In Julia they currently throw
-planned-not-implemented errors. They do not fit genomic models, estimate marker
-effects, or run QTL/eQTL scans yet.
+The formula names `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
+and `qtl_scan()` are now reserved in both twins. In Julia they currently throw
+planned-not-implemented errors. They do not fit genomic models or run QTL/eQTL
+scans. Direct Julia utilities such as `fit_snp_blup()` and
+`single_marker_scan()` are engine-internal and do not activate those formula
+terms.
 
 Related Phase 2+ names such as `permanent()`, `common_env()`,
 `maternal_genetic()`, `paternal_genetic()`, `dominance()`, `epistasis()`,
@@ -353,6 +357,110 @@ Levels:
 1. single-marker scan;
 2. multi-marker penalized or random-effect model;
 3. joint marker scan with pedigree/genomic random effects.
+
+Current Julia status: `single_marker_scan(y, X, markers; sigma_e2 = 1.0)` is a
+fixed-effect Gaussian screening helper. It centers biallelic dosages,
+residualizes `y` and each marker against `X`, and reports marker effects,
+supplied-variance standard errors, Wald z-scores, chi-square statistics, and
+approximate two-sided Gaussian/Wald p-values plus Bonferroni and
+Benjamini-Hochberg adjustments over the returned marker set, and
+LOD-equivalent scores `chisq / (2log(10))`. `marker_manhattan_data()` can use
+already-validated `HSData` / `HSMarkerMapSpec` marker metadata to align
+chromosomes and positions by exact marker ID. `marker_region_data()` prepares
+one-chromosome or coordinate-window slices from the same row-aligned scan
+fields, preserving original scan indices and optional marker-variance
+proportions; it is data preparation for future regional plot/fine-mapping
+front ends, not activation of those workflows. `marker_scan_table()` prepares
+row-aligned scan tables in original scan order with allele variances,
+marker-variance contributions, optional total-variance proportions, optional
+mixed/LOCO fields when present, and the same exact marker-map alignment.
+`gwas_table()`, `qtl_table()`, and `eqtl_table()` are thin semantic wrappers
+over the same already-computed direct scan fields: they add an analysis label
+and optional trait / expression-feature metadata, but do not run GWAS, interval
+mapping, or expression-wide eQTL scans.
+`marker_significance_summary()` reports nominal returned-marker-set raw,
+Bonferroni, and BH significance flags/counts plus top-marker provenance from
+the same scan fields; it is not a calibrated genome-wide threshold workflow.
+`marker_effects()`
+prepares sorted top-marker effect summaries from the same scan fields, with
+optional chromosome/position alignment. `marker_variance_explained()` prepares
+sorted marker-level variance-contribution summaries as `2p(1-p) * effect^2`,
+with optional total-variance proportions and the same metadata alignment. These
+are direct marker-variance contributions, not calibrated PVE/model R² claims.
+`marker_qq_data()` prepares sorted observed/expected QQ plot data from the same
+direct scan result.
+`mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
+dense supplied-variance GLS helper that accounts for a supplied relationship
+covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`.
+`loco_relationship_precisions()` constructs dense VanRaden-plus-ridge
+leave-one-group-out relationship precisions from marker groups, and
+`loco_mixed_model_marker_scan()` selects a precision by marker group before
+running the same dense GLS scan. These helpers do not compute interval-mapping
+or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
+workflows, estimate marker-scan variance components, claim calibrated
+PVE/model R², choose public LOCO defaults, choose calibrated genome-wide
+thresholds, parse marker files, draw figures, or activate the R-facing
+`marker_scan()` formula term. `marker_genomic_inflation()` provides a
+diagnostic lambda summary over returned chi-square statistics; it does not
+calibrate p-values or correct scan statistics.
+
+`sim/phase5_marker_scan_recovery.jl` is an opt-in recovery harness outside CI.
+It simulates one strong causal marker on a half-sib random-effect design and
+checks that the fixed, supplied-variance mixed, and supplied LOCO direct scans
+recover the top causal marker and effect direction/magnitude under loose
+thresholds. Default seed `20260614` passes all three cases. This is internal
+recovery smoke evidence only; it is not broad calibration, a calibrated
+genome-wide threshold workflow, public QTL/eQTL validation, or comparator
+parity.
+
+```julia
+y = [1.0, 2.0, 4.0, 2.0, 3.0]
+X = ones(5, 1)
+M = [0.0 0.0; 1.0 0.0; 2.0 1.0; 0.0 2.0; 1.0 2.0]
+scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
+scan.p_values
+scan.bh_q_values
+scan.lod_scores
+Z = zeros(5, 1)
+mixed_scan = mixed_model_marker_scan(y, X, Z, Matrix(1.0I, 1, 1), M, 2.0, 1.0)
+mixed_scan.p_values
+loco_precisions = loco_relationship_precisions(M, ["1", "2"]; ridge = 0.01)
+loco_scan = loco_mixed_model_marker_scan(
+    y,
+    X,
+    Matrix{Float64}(I, 5, 5),
+    loco_precisions,
+    ["1", "2"],
+    M,
+    2.0,
+    1.0,
+)
+manhattan = marker_manhattan_data(scan)
+qq = marker_qq_data(scan)
+inflation = marker_genomic_inflation(scan)
+significance = marker_significance_summary(scan; alpha = 0.05)
+table = marker_scan_table(scan; total_variance = 2.0)
+effects = marker_effects(scan; sort_by = :p_value, top_n = 2)
+variance = marker_variance_explained(scan; total_variance = 2.0, top_n = 2)
+marker_data = HSData((id = ["example"], y = [0.0]); markers = (
+    marker = ["m1", "m2"],
+    chr = ["1", "2"],
+    pos = [10, 20],
+))
+map_manhattan = marker_manhattan_data(scan, marker_data)
+map_region = marker_region_data(scan, marker_data; chromosome = "1", start = 5, stop = 25)
+map_table = marker_scan_table(scan, marker_data; total_variance = 2.0)
+gwas = gwas_table(scan, marker_data; trait = "height")
+qtl = qtl_table(scan, marker_data; trait = "height")
+eqtl = eqtl_table(scan, marker_data; feature = "geneA")
+map_effects = marker_effects(scan, marker_data; top_n = 2)
+map_variance = marker_variance_explained(scan, marker_data; top_n = 2)
+manhattan.neglog10_p_values
+table.marker_variances
+gwas.analysis
+significance.bonferroni_marker_ids
+qq.expected_neglog10_p_values
+```
 
 QTL/GWAS syntax:
 
@@ -748,11 +856,14 @@ Animal/genomic:
 
 Genomics/QTL:
 
-- `marker_effects(fit)`;
-- `marker_variance_explained(fit)`;
-- `qtl_table(fit)`;
-- `eqtl_table(fit)`;
-- `gwas_table(fit)`;
+- `marker_effects(scan)`;
+- `marker_variance_explained(scan)`;
+- `marker_scan_table(scan)`;
+- `gwas_table(scan)`;
+- `qtl_table(scan)`;
+- `eqtl_table(scan)`;
+- `marker_region_data(scan)`;
+- `marker_significance_summary(scan)`;
 - `lod_scores(fit)`;
 - `manhattan_plot(fit)`;
 - `qq_plot(fit)`;
@@ -853,7 +964,8 @@ Phase 5: QTL/GWAS/eQTL.
 - single-marker scans;
 - mixed-model marker scans;
 - LOCO;
-- LOD/p-value output;
+- interval-mapping / mixed-model LOD output and calibrated mixed-model p-value
+  workflows;
 - cis/trans eQTL;
 - multiple testing;
 - plots.

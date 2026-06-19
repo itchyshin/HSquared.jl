@@ -2,8 +2,33 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
+
+function _csv_strings_for_test(path)
+    lines = readlines(path)
+    !isempty(lines) || error("empty CSV fixture: $path")
+    header = String.(split(lines[1], ","))
+    data = Matrix{String}(undef, length(lines) - 1, length(header))
+    for (i, line) in enumerate(lines[2:end])
+        fields = String.(split(line, ","))
+        length(fields) == length(header) ||
+            error("CSV fixture row $i in $path has $(length(fields)) fields; expected $(length(header))")
+        data[i, :] .= fields
+    end
+    return header, data
+end
+
+function _named_matrix_csv_for_test(path)
+    _, data = _csv_strings_for_test(path)
+    return vec(data[:, 1]), parse.(Float64, data[:, 2:end])
+end
+
+function _metadata_csv_for_test(path)
+    _, data = _csv_strings_for_test(path)
+    return Dict(data[i, 1] => data[i, 2] for i in axes(data, 1))
+end
 
 function _solve_mme_for_test(y, X, Z, Ainv, sigma_a2, sigma_e2)
     yv = Float64.(y)
@@ -143,7 +168,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 27
+    @test length(validation) == 31
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V5-GENOMIC-QTL"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -180,12 +205,110 @@ end
     @test mv_row.status == "partial"
     @test occursin("multivariate_mme", mv_row.evidence)
     @test occursin("missing-trait records", mv_row.evidence)
+    @test occursin("variance_components", mv_row.evidence)
+    @test occursin("breeding_values", mv_row.evidence)
     @test occursin("does not estimate G0/R0", mv_row.claim_boundary)
+    @test occursin("bridge payload change", mv_row.claim_boundary)
     mvreml_row = only(row for row in validation if row.id == "V4-MV-REML")
     @test mvreml_row.phase == "Phase 4"
     @test mvreml_row.status == "partial"
     @test occursin("fit_multivariate_reml", mvreml_row.evidence)
-    @test occursin("one-off", mvreml_row.claim_boundary)
+    @test occursin("heritability", mvreml_row.evidence)
+    @test occursin("comparator protocol", mvreml_row.evidence)
+    @test occursin("explicit `--seeds`", mvreml_row.evidence)
+    @test occursin("calibration protocol", mvreml_row.evidence)
+    @test occursin("did not pass", mvreml_row.evidence)
+    @test occursin("6/10 passed", mvreml_row.evidence)
+    @test occursin("failure-mode triage", mvreml_row.evidence)
+    @test occursin("3 G-only failures", mvreml_row.evidence)
+    @test occursin("result_payload", mvreml_row.claim_boundary)
+    @test occursin("comparator protocol", mvreml_row.claim_boundary)
+    @test occursin("not broadly multi-seed calibrated", mvreml_row.claim_boundary)
+    @test occursin("did not pass", mvreml_row.claim_boundary)
+    @test occursin("opt-in seeded recovery harness", mvreml_row.claim_boundary)
+    fa_row = only(row for row in validation if row.id == "V4-FA")
+    @test fa_row.phase == "Phase 4B"
+    @test fa_row.status == "partial"
+    @test occursin("factor_analytic_covariance", fa_row.evidence)
+    @test occursin("sign-canonicalization", fa_row.evidence)
+    @test occursin("genetic_loadings", fa_row.evidence)
+    @test occursin("rotation-identifiability decision", fa_row.evidence)
+    @test occursin("explicit `--seeds`", fa_row.evidence)
+    @test occursin("calibration protocol", fa_row.evidence)
+    @test occursin("did not pass", fa_row.evidence)
+    @test occursin("8/10", fa_row.evidence)
+    @test occursin("9/10", fa_row.evidence)
+    @test occursin("failure-mode triage", fa_row.evidence)
+    @test occursin("R-only failure", fa_row.evidence)
+    @test occursin("structured-metadata accessors", fa_row.claim_boundary)
+    @test occursin("no R-facing", fa_row.claim_boundary)
+    @test occursin("not rotation-identified", fa_row.claim_boundary)
+    fixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-FIXED")
+    @test fixed_marker_row.phase == "Phase 5"
+    @test fixed_marker_row.status == "partial"
+    @test occursin("single_marker_scan", fixed_marker_row.evidence)
+    @test occursin("marker_scan_table", fixed_marker_row.evidence)
+    @test occursin("marker_effects", fixed_marker_row.evidence)
+    @test occursin("marker_variance_explained", fixed_marker_row.evidence)
+    @test occursin("marker_manhattan_data", fixed_marker_row.evidence)
+    @test occursin("marker_region_data", fixed_marker_row.evidence)
+    @test occursin("marker_significance_summary", fixed_marker_row.evidence)
+    @test occursin("marker_qq_data", fixed_marker_row.evidence)
+    @test occursin("marker_genomic_inflation", fixed_marker_row.evidence)
+    @test occursin("HSMarkerMapSpec", fixed_marker_row.evidence)
+    @test occursin("marker-effect summary", fixed_marker_row.evidence)
+    @test occursin("scan-table order", fixed_marker_row.evidence)
+    @test occursin("marker-variance summary", fixed_marker_row.evidence)
+    @test occursin("marker-significance summary", fixed_marker_row.evidence)
+    @test occursin("phase5_marker_scan_recovery.jl", fixed_marker_row.evidence)
+    @test occursin("seed 20260614", fixed_marker_row.evidence)
+    @test occursin("effect relative errors", fixed_marker_row.evidence)
+    @test occursin("17/14", fixed_marker_row.evidence)
+    @test occursin("marker_scan()", fixed_marker_row.missing)
+    @test occursin("Fixed-effect Gaussian screening utility with row-aligned scan-table", fixed_marker_row.claim_boundary)
+    @test occursin("regional marker-window data", fixed_marker_row.claim_boundary)
+    @test occursin("nominal returned-marker-set significance summary", fixed_marker_row.claim_boundary)
+    @test occursin("no calibrated/correlated-marker genome-wide threshold claim", fixed_marker_row.claim_boundary)
+    @test occursin("gwas_table(), qtl_table(), and eqtl_table() wrappers only", fixed_marker_row.claim_boundary)
+    @test occursin("no p-value calibration claim", fixed_marker_row.claim_boundary)
+    @test occursin("no calibrated PVE", fixed_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", fixed_marker_row.claim_boundary)
+    mixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-MIXED")
+    @test mixed_marker_row.phase == "Phase 5"
+    @test mixed_marker_row.status == "partial"
+    @test occursin("mixed_model_marker_scan", mixed_marker_row.evidence)
+    @test occursin("independent GLS", mixed_marker_row.evidence)
+    @test occursin("marker-scan-table, marker-effect, and marker-variance summaries", mixed_marker_row.evidence)
+    @test occursin("phase5_marker_scan_recovery.jl", mixed_marker_row.evidence)
+    @test occursin("half-sib simulated random-effect design", mixed_marker_row.evidence)
+    @test occursin("single_marker_scan", mixed_marker_row.evidence)
+    @test occursin("LOCO", mixed_marker_row.missing)
+    @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
+    @test occursin("no p-value calibration", mixed_marker_row.claim_boundary)
+    @test occursin("no calibrated PVE", mixed_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", mixed_marker_row.claim_boundary)
+    loco_marker_row = only(row for row in validation if row.id == "V5-MARKER-LOCO")
+    @test loco_marker_row.phase == "Phase 5"
+    @test loco_marker_row.status == "partial"
+    @test occursin("loco_relationship_precisions", loco_marker_row.evidence)
+    @test occursin("leave-one-group-out VanRaden", loco_marker_row.evidence)
+    @test occursin("loco_mixed_model_marker_scan", loco_marker_row.evidence)
+    @test occursin("separate `mixed_model_marker_scan` calls", loco_marker_row.evidence)
+    @test occursin("marker-scan-table, marker-effect, and marker-variance summaries", loco_marker_row.evidence)
+    @test occursin("phase5_marker_scan_recovery.jl", loco_marker_row.evidence)
+    @test occursin("constructed VanRaden-plus-ridge LOCO precisions", loco_marker_row.evidence)
+    @test occursin("LOCO defaults", loco_marker_row.missing)
+    @test occursin("Dense validation-scale LOCO construction and supplied-matrix selection helpers only", loco_marker_row.claim_boundary)
+    @test occursin("no calibrated PVE", loco_marker_row.claim_boundary)
+    @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
+    marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
+    @test isfile(marker_recovery_script)
+    marker_recovery_source = read(marker_recovery_script, String)
+    @test occursin("single_marker_scan", marker_recovery_source)
+    @test occursin("mixed_model_marker_scan", marker_recovery_source)
+    @test occursin("loco_mixed_model_marker_scan", marker_recovery_source)
+    @test occursin("unknown arguments", marker_recovery_source)
+    @test occursin("not calibrated genome-wide thresholds", marker_recovery_source)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
@@ -223,6 +346,43 @@ end
 
     @test_throws Phase0NotImplementedError hsquared(nothing)
     @test_throws Phase0NotImplementedError fit_animal_model(nothing)
+end
+
+include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
+
+@testset "Recovery calibration log summarizer" begin
+    root = normpath(joinpath(@__DIR__, ".."))
+    log_paths = [
+        joinpath(root, "docs", "dev-log", "recovery-checkpoints", "2026-06-14-multivariate-recovery-calibration-unstructured.log"),
+        joinpath(root, "docs", "dev-log", "recovery-checkpoints", "2026-06-14-multivariate-recovery-calibration-structured.log"),
+    ]
+    rows = RecoveryCalibrationSummary.parse_recovery_logs(log_paths)
+    summaries = RecoveryCalibrationSummary.case_summaries(rows)
+    failure_counts = RecoveryCalibrationSummary.failure_mode_counts(rows)
+
+    @test length(rows) == 30
+    @test summaries["unstructured"].seeds == 10
+    @test summaries["unstructured"].converged == 10
+    @test summaries["unstructured"].passed == 6
+    @test summaries["factor_analytic"].passed == 8
+    @test summaries["lowrank"].passed == 9
+    @test summaries["unstructured"].max_g ≈ 0.478375
+    @test summaries["factor_analytic"].max_r ≈ 0.252226
+    @test summaries["lowrank"].max_r ≈ 0.262608
+    @test failure_counts["unstructured"].g_only == 3
+    @test failure_counts["unstructured"].r_only == 0
+    @test failure_counts["unstructured"].both == 1
+    @test failure_counts["factor_analytic"].g_only == 1
+    @test failure_counts["factor_analytic"].both == 1
+    @test failure_counts["lowrank"].r_only == 1
+    @test all(row.reported_fail == 0 for row in values(failure_counts))
+
+    summary = RecoveryCalibrationSummary.markdown_summary(rows)
+    @test occursin("| unstructured | 10 | 10 | 6 | 0.600000 |", summary)
+    @test occursin("| unstructured | 4 | 3 | 0 | 1 | 0 |", summary)
+    @test occursin("| lowrank | 1 | 0 | 1 | 0 | 0 |", summary)
+    @test occursin("20260625 (G; G=0.478375, R=0.105180)", summary)
+    @test occursin("20260619 (R; G=0.422179, R=0.262608)", summary)
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin
@@ -271,6 +431,282 @@ end
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["b", "a"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
     @test_throws ArgumentError inbreeding_coefficients(ped; max_relationship_cache = 2)
+end
+
+@testset "Phase 3 cytoplasmic (maternal-lineage) relationship" begin
+    # Cytoplasmic / mitochondrial inheritance is maternal-lineage: two individuals
+    # share it (relationship 1) iff they trace to the same maternal founder.
+    # Hand fixture: maternal lines A:{A,C,D,F} and B:{B,E}.
+    ids = ["A", "B", "C", "D", "E", "F"]
+    sire = ["0", "0", "B", "B", "A", "E"]
+    dam = ["0", "0", "A", "A", "B", "C"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+
+    lab = HSquared.maternal_lineage(ped)
+    @test length(lab) == length(ped)
+    @test lab[idx("A")] == lab[idx("C")] == lab[idx("D")] == lab[idx("F")]   # A line
+    @test lab[idx("B")] == lab[idx("E")]                                     # B line
+    @test lab[idx("A")] != lab[idx("B")]
+    # founders label their own lineage
+    @test lab[idx("A")] == "A" && lab[idx("B")] == "B"
+    @test lab[idx("F")] == "A"                                               # F→C→A
+
+    M = HSquared.cytoplasmic_relationship(ped)
+    @test size(M) == (6, 6)
+    @test issymmetric(M)
+    @test all(diag(M) .== 1.0)
+    @test M[idx("A"), idx("F")] == 1.0    # same maternal line
+    @test M[idx("C"), idx("D")] == 1.0
+    @test M[idx("B"), idx("E")] == 1.0
+    @test M[idx("A"), idx("B")] == 0.0    # different lines
+    @test M[idx("E"), idx("F")] == 0.0
+    # M is exactly the same-lineage indicator
+    for i in 1:length(ped), j in 1:length(ped)
+        @test M[i, j] == (lab[i] == lab[j] ? 1.0 : 0.0)
+    end
+
+    # convenience (ids, sire, dam) method agrees
+    M2 = HSquared.cytoplasmic_relationship(ids, sire, dam)
+    @test M2 == M
+    lab2 = HSquared.maternal_lineage(ids, sire, dam)
+    @test lab2 == lab
+
+    # all-founder pedigree → identity (every individual its own maternal line)
+    fped = normalize_pedigree(["x", "y", "z"], ["0", "0", "0"], ["0", "0", "0"])
+    @test HSquared.cytoplasmic_relationship(fped) == Matrix(1.0I, 3, 3)
+end
+
+@testset "Phase 3 selfing (self-fertilization)" begin
+    # By default selfing (sire == dam) is rejected — preserves the sexual contract.
+    @test_throws ArgumentError normalize_pedigree(["P", "i"], ["0", "P"], ["0", "P"])
+
+    # Opt-in: allow_selfing = true. Canonical inbreeding series for repeated
+    # selfing of a non-inbred founder: F = 0, 1/2, 3/4, ... (Falconer/Mrode).
+    ped = normalize_pedigree(["P", "i", "j"], ["0", "P", "i"], ["0", "P", "i"];
+                             allow_selfing = true)
+    idx(id) = findfirst(==(id), ped.ids)
+    F = inbreeding_coefficients(ped)
+    @test F[idx("P")] ≈ 0.0
+    @test F[idx("i")] ≈ 0.5            # one generation of selfing
+    @test F[idx("j")] ≈ 0.75           # two generations
+
+    A = HSquared._numerator_relationship(ped)
+    @test A[idx("i"), idx("i")] ≈ 1.5  # 1 + F_i
+    @test A[idx("j"), idx("j")] ≈ 1.75 # 1 + F_j
+    @test A[idx("i"), idx("P")] ≈ 1.0  # selfed offspring of a non-inbred founder
+    @test issymmetric(A)
+
+    # Henderson's direct inverse rules handle selfing: Ainv == inv(A) exactly.
+    @test Matrix(pedigree_inverse(ped)) ≈ inv(A)
+
+    # A selfed founder line still composes with a normal sexual pedigree.
+    mixed = normalize_pedigree(["P", "s", "i", "o"],
+                               ["0", "0", "P", "s"], ["0", "0", "P", "i"];
+                               allow_selfing = true)
+    @test inbreeding_coefficients(mixed)[findfirst(==("i"), mixed.ids)] ≈ 0.5
+    @test Matrix(pedigree_inverse(mixed)) ≈ inv(HSquared._numerator_relationship(mixed))
+end
+
+@testset "Phase 3 clonal (asexual) relationship" begin
+    # Genets P, Q (founders), G = sexual offspring of P×Q; r1, r2 = clonal ramets
+    # of G. Ramets are genetically identical to their genet and to each other, and
+    # inherit the genet's relationships to everyone else (no Mendelian sampling).
+    ped = normalize_pedigree(["P", "Q", "G", "r1", "r2"],
+                             ["0", "0", "P", "0", "0"], ["0", "0", "Q", "0", "0"])
+    idx(id) = findfirst(==(id), ped.ids)
+    A = HSquared._numerator_relationship(ped)
+    clone_of = [id in ("r1", "r2") ? "G" : "0" for id in ped.ids]   # aligned to ped.ids
+
+    C = HSquared.clonal_relationship(ped, clone_of)
+    @test size(C) == (5, 5)
+    @test issymmetric(C)
+    @test C[idx("r1"), idx("r2")] == 1.0     # clonemates identical
+    @test C[idx("r1"), idx("G")] == 1.0      # ramet identical to its genet
+    @test C[idx("r1"), idx("r1")] == 1.0
+    @test C[idx("r1"), idx("P")] == A[idx("G"), idx("P")]   # inherits genet's links (0.5)
+    @test C[idx("r2"), idx("Q")] == A[idx("G"), idx("Q")]   # 0.5
+    @test C[idx("P"), idx("Q")] == A[idx("P"), idx("Q")]    # non-clones unchanged (0)
+    @test C[idx("G"), idx("G")] == A[idx("G"), idx("G")]    # 1
+
+    # no clones → identical to the numerator relationship
+    @test HSquared.clonal_relationship(ped, fill("0", 5)) == A
+
+    # chained ramets resolve to the ultimate genet (clone of a clone)
+    ped2 = normalize_pedigree(["G", "r1", "r2"], ["0", "0", "0"], ["0", "0", "0"])
+    j(id) = findfirst(==(id), ped2.ids)
+    chain = [ped2.ids[k] == "r1" ? "G" : (ped2.ids[k] == "r2" ? "r1" : "0") for k in 1:3]
+    C2 = HSquared.clonal_relationship(ped2, chain)
+    @test C2 == ones(3, 3)                   # all one genet line → all identical
+
+    # guards
+    @test_throws ArgumentError HSquared.clonal_relationship(ped, ["0", "0", "0", "G"])     # wrong length
+    @test_throws ArgumentError HSquared.clonal_relationship(ped, [id == "r1" ? "ZZ" : "0" for id in ped.ids])  # unknown genet
+    pedc = normalize_pedigree(["a", "b"], ["0", "0"], ["0", "0"])
+    cyc = [pedc.ids[k] == "a" ? "b" : "a" for k in 1:2]                  # a→b, b→a cycle
+    @test_throws ArgumentError HSquared.clonal_relationship(pedc, cyc)
+    self = [pedc.ids[k] == "a" ? "a" : "0" for k in 1:2]                 # a clone of itself
+    @test_throws ArgumentError HSquared.clonal_relationship(pedc, self)
+end
+
+@testset "Phase 3 dominance relationship" begin
+    # Cockerham/Mrode dominance relationship: for animals x, y with parents
+    # (sx,dx), (sy,dy), D[x,y] = ¼(A[sx,sy]A[dx,dy] + A[sx,dy]A[dx,sy]); D[x,x]=1
+    # (non-inbred parents). Full sibs → ¼, half sibs / parent-offspring → 0.
+    ids = ["s1", "d1", "d2", "x", "y", "z", "w"]
+    sire = ["0", "0", "0", "s1", "s1", "s1", "s1"]
+    dam = ["0", "0", "0", "d1", "d1", "d2", "d2"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    D = HSquared.dominance_relationship(ped)
+
+    @test size(D) == (7, 7)
+    @test issymmetric(D)
+    @test all(diag(D) .== 1.0)
+    @test D[idx("x"), idx("y")] ≈ 0.25     # full sibs (s1×d1)
+    @test D[idx("z"), idx("w")] ≈ 0.25     # full sibs (s1×d2)
+    @test D[idx("x"), idx("z")] ≈ 0.0      # paternal half sibs
+    @test D[idx("x"), idx("w")] ≈ 0.0      # paternal half sibs
+    @test D[idx("x"), idx("s1")] ≈ 0.0     # parent–offspring
+    @test D[idx("s1"), idx("d1")] ≈ 0.0    # unrelated founders
+    # off-diagonal matches the explicit Cockerham formula against A
+    A = HSquared._numerator_relationship(ped)
+    si, di = ped.sire, ped.dam
+    for a in 1:length(ped), b in 1:length(ped)
+        if a != b && si[a] != 0 && di[a] != 0 && si[b] != 0 && di[b] != 0
+            expected = 0.25 * (A[si[a], si[b]] * A[di[a], di[b]] +
+                               A[si[a], di[b]] * A[di[a], si[b]])
+            @test D[a, b] ≈ expected
+        end
+    end
+    # convenience (ids, sire, dam) method
+    @test HSquared.dominance_relationship(ids, sire, dam) == D
+end
+
+@testset "Phase 1 additive relationship matrix (public accessor)" begin
+    # Public accessor for the dense additive numerator relationship A, the
+    # companion of pedigree_inverse and of the exported D / cytoplasmic / clonal
+    # relationship matrices.
+    ids = ["s", "d", "x", "y"]
+    sire = ["0", "0", "s", "s"]
+    dam = ["0", "0", "d", "d"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    A = additive_relationship(ped)
+
+    @test A == HSquared._numerator_relationship(ped)
+    @test issymmetric(A)
+    @test all(diag(A) .== 1.0)               # non-inbred founders/offspring
+    @test A[idx("x"), idx("y")] ≈ 0.5        # full sibs
+    @test A[idx("x"), idx("s")] ≈ 0.5        # parent–offspring
+    @test A[idx("s"), idx("d")] ≈ 0.0        # unrelated founders
+    @test A ≈ inv(Matrix(pedigree_inverse(ped)))   # exact inverse of Ainv
+    @test additive_relationship(ids, sire, dam) == A
+
+    # inbreeding shows on the diagonal (offspring of related parents)
+    inbred = normalize_pedigree(["a", "b", "c", "k"],
+                                ["0", "0", "a", "a"], ["0", "0", "b", "c"])
+    Ai = additive_relationship(inbred)
+    @test Ai[findfirst(==("k"), inbred.ids), findfirst(==("k"), inbred.ids)] ≈ 1.25  # 1 + F, F = 0.25
+    @test_throws ArgumentError additive_relationship(ped; max_relationship_cache = 2)
+end
+
+@testset "Phase 1 Mendelian sampling variances" begin
+    # d_i = Var of the within-family deviation: founders 1; both parents known &
+    # non-inbred 1/2; one parent known & non-inbred 3/4. (A = T·D·Tᵀ.)
+    ped = normalize_pedigree(["s", "d", "o", "o2"], ["0", "0", "s", "s"], ["0", "0", "d", "0"])
+    idx(id) = findfirst(==(id), ped.ids)
+    dvar = mendelian_sampling_variances(ped)
+    @test dvar[idx("s")] ≈ 1.0 && dvar[idx("d")] ≈ 1.0     # founders
+    @test dvar[idx("o")] ≈ 0.5                              # both parents known, non-inbred
+    @test dvar[idx("o2")] ≈ 0.75                            # one parent known, non-inbred
+
+    # matches the internal per-record helper
+    F = inbreeding_coefficients(ped)
+    for i in 1:length(ped)
+        @test dvar[i] ≈ HSquared._mendelian_sampling_variance(ped.sire[i], ped.dam[i], F)
+    end
+
+    # LDL'-style identity: det(A) = ∏ d_i  (A = T·D·Tᵀ, T unit lower-triangular)
+    @test det(additive_relationship(ped)) ≈ prod(dvar) atol = 1e-10
+
+    # selfing chain: d_k = ½(1 − F_{k−1})
+    sped = normalize_pedigree(["g0", "g1", "g2", "g3"],
+                              ["0", "g0", "g1", "g2"], ["0", "g0", "g1", "g2"]; allow_selfing = true)
+    ds = mendelian_sampling_variances(sped); Fs = inbreeding_coefficients(sped)
+    j(id) = findfirst(==(id), sped.ids)
+    @test ds[j("g1")] ≈ 0.5
+    @test ds[j("g2")] ≈ 0.5 * (1 - Fs[j("g1")])            # 0.5·(1−0.5) = 0.25
+    @test det(additive_relationship(sped)) ≈ prod(ds) atol = 1e-10
+
+    # convenience (ids, sire, dam) method
+    @test mendelian_sampling_variances(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]) ==
+          mendelian_sampling_variances(normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]))
+end
+
+@testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
+    # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
+    # relationship matrix increasingly ill-conditioned. This pins the documented
+    # V1-DENSE-COND caveat: `pedigree_inverse` is a DIRECT Henderson construction,
+    # so it stays exact regardless of conditioning — the caveat is about the
+    # downstream dense-`inv(Ainv)` estimators, not the sparse Ainv itself.
+    ids = ["g0", "g1", "g2", "g3", "g4", "g5", "g6"]
+    sire = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+    dam = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+    ped = normalize_pedigree(ids, sire, dam; allow_selfing = true)
+    idx(id) = findfirst(==(id), ped.ids)
+    F = inbreeding_coefficients(ped)
+    for k in 0:6
+        @test F[idx("g$k")] ≈ 1 - 0.5^k atol = 1e-10
+    end
+
+    A = additive_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ped))
+    # conditioning genuinely grows with inbreeding (documents the caveat)
+    @test cond(A) > 1.0e3
+    # the DIRECT Henderson inverse is exact despite the conditioning
+    @test maximum(abs.(Ainv * A - I)) < 1e-9
+    @test maximum(abs.(Ainv .- inv(A))) < 1e-6
+
+    # a supplied-variance MME solve on the deeply-inbred pedigree stays finite
+    y = [1.0, 2.0, 1.5, 2.5, 1.0, 2.0, 1.5]; X = ones(7, 1); Z = Matrix(1.0I, 7, 7)
+    res = henderson_mme(animal_model_spec(y, X, Z, pedigree_inverse(ped); ids = ped.ids), 1.0, 1.5)
+    @test all(isfinite, breeding_values(res).values)
+    @test all(isfinite, fixed_effects(res))
+end
+
+@testset "Phase 3 epistatic relationship (Hadamard products)" begin
+    # Henderson (1985): orthogonal epistatic relationship matrices are Hadamard
+    # products of the additive A and dominance D matrices — A∘A (additive×additive),
+    # A∘D (additive×dominance), D∘D (dominance×dominance).
+    ids = ["s1", "d1", "d2", "x", "y", "z", "w"]
+    sire = ["0", "0", "0", "s1", "s1", "s1", "s1"]
+    dam = ["0", "0", "0", "d1", "d1", "d2", "d2"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    A = additive_relationship(ped)
+    D = HSquared.dominance_relationship(ped)
+
+    AA = HSquared.epistatic_relationship(ped; kind = :additive_additive)
+    AD = HSquared.epistatic_relationship(ped; kind = :additive_dominance)
+    DD = HSquared.epistatic_relationship(ped; kind = :dominance_dominance)
+    @test AA == A .* A
+    @test AD == A .* D
+    @test DD == D .* D
+    @test issymmetric(AA)
+    @test all(diag(AA) .== 1.0)            # non-inbred: A_ii = 1 → (A∘A)_ii = 1
+
+    # full sibs: A = 1/2, D = 1/4 → A∘A = 1/4, A∘D = 1/8, D∘D = 1/16
+    @test AA[idx("x"), idx("y")] ≈ 0.25
+    @test AD[idx("x"), idx("y")] ≈ 0.125
+    @test DD[idx("x"), idx("y")] ≈ 0.0625
+    # paternal half sibs: A = 1/4, D = 0 → A∘A = 1/16, A∘D = 0, D∘D = 0
+    @test AA[idx("x"), idx("z")] ≈ 0.0625
+    @test AD[idx("x"), idx("z")] ≈ 0.0
+    @test DD[idx("x"), idx("z")] ≈ 0.0
+
+    @test HSquared.epistatic_relationship(ids, sire, dam; kind = :additive_additive) == AA
+    @test_throws ArgumentError HSquared.epistatic_relationship(ped; kind = :bogus)
 end
 
 @testset "Phase 1 HSData ID container" begin
@@ -1409,6 +1845,53 @@ end
     @test_throws ArgumentError reliability(mme; method = :nope)
 end
 
+@testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
+    # The fused kernel must equal the materialize-then-broadcast formula it
+    # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to
+    # rtol 1e-10, on tiny and larger (Mrode9-shaped) pedigree MME factors.
+    function _trace_ref_and_fused(spec, sa2, se2)
+        lhs, _, _ = HSquared._sparse_mme_system(spec, sa2, se2)
+        factor = cholesky(Symmetric(lhs); check = true)
+        Ainv = sparse(Float64.(spec.Ainv))
+        nfixed = size(spec.X, 2)
+        ref = sum(Ainv .*
+                  HSquared.takahashi_selinv(factor)[(nfixed + 1):end, (nfixed + 1):end])
+        fused = HSquared.selinv_trace_against(factor, Ainv, nfixed)
+        return ref, fused
+    end
+
+    # tiny 3-animal sire/dam/calf
+    ped1 = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    spec1 = animal_model_spec([1.0, 2.5, 4.0], ones(3, 1), sparse(1.0I, 3, 3),
+                              pedigree_inverse(ped1); ids = ped1.ids, method = :REML)
+    r1, f1 = _trace_ref_and_fused(spec1, 1.2, 0.8)
+    @test f1 ≈ r1 rtol = 1e-10
+
+    # larger 8-animal pedigree with deeper relationship structure, two ratios
+    ids8 = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped8 = normalize_pedigree(ids8,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    spec8 = animal_model_spec([2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5],
+                              ones(8, 1), sparse(1.0I, 8, 8),
+                              pedigree_inverse(ped8); ids = ped8.ids, method = :REML)
+    r8, f8 = _trace_ref_and_fused(spec8, 1.5, 0.7)
+    @test f8 ≈ r8 rtol = 1e-10
+    r8b, f8b = _trace_ref_and_fused(spec8, 0.5, 2.0)
+    @test f8b ≈ r8b rtol = 1e-10
+
+    # fit_ai_reml's recovered optimum is unchanged: still matches the independent
+    # sparse REML optimizer (the trace refactor is numerically equivalent).
+    ai = fit_ai_reml(spec8; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sr = fit_sparse_reml(spec8; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ai.converged
+    # loglik is the tight invariant (the n=8 REML surface is flat, so the
+    # variance components agree only loosely — matching the AI-REML testset).
+    @test ai.likelihood.loglik ≈ sr.likelihood.loglik rtol = 1e-5
+    @test ai.variance_components.sigma_a2 ≈ sr.variance_components.sigma_a2 rtol = 2e-2
+    @test ai.variance_components.sigma_e2 ≈ sr.variance_components.sigma_e2 rtol = 2e-2
+end
+
 @testset "Phase 1 REML optimizer recovery (dense vs sparse)" begin
     # Interior REML optimum (8-animal pedigree, one record each). The dense
     # `fit_variance_components(:REML)` and sparse `fit_sparse_reml` optimize the
@@ -1548,6 +2031,56 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(zeros(2, 2))
 end
 
+@testset "Phase 2 VanRaden method-2 (standardized) genomic relationship" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
+    G1 = genomic_relationship_matrix(M)                          # method 1 (default)
+    G2 = genomic_relationship_matrix(M; method = :vanraden2)     # standardized markers
+
+    @test genomic_relationship_matrix(M; method = :vanraden1) == G1   # default == :vanraden1
+    @test issymmetric(G2)
+    @test minimum(eigvals(Symmetric(G2))) >= -1e-8               # PSD
+    @test !isapprox(G2, G1)                                       # genuinely different construction
+
+    # explicit standardized construction: Zs[:,j] = (M-2p)/sqrt(2p(1-p)), G2 = Zs Zs' / m
+    cm = HSquared.centered_markers(M)
+    Zs = cm.W ./ transpose(sqrt.(2 .* cm.p .* (1 .- cm.p)))
+    @test G2 ≈ Zs * transpose(Zs) ./ size(M, 2)
+
+    # supplied allele frequencies path works for method 2
+    @test genomic_relationship_matrix(M; method = :vanraden2,
+                                      allele_frequencies = cm.p) ≈ G2
+
+    # guards: unknown method, and a monomorphic marker (2p(1-p)=0) under standardization
+    @test_throws ArgumentError genomic_relationship_matrix(M; method = :bogus)
+    mono = [0.0 1.0; 0.0 1.0; 0.0 2.0]   # column 1 monomorphic (p = 0)
+    @test_throws ArgumentError genomic_relationship_matrix(mono; method = :vanraden2)
+end
+
+@testset "Phase 2 weighted genomic relationship (weighted GBLUP)" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
+    G1 = genomic_relationship_matrix(M)                         # unweighted method 1
+    m = size(M, 2)
+
+    # equal weights reduce EXACTLY to the unweighted method-1 G
+    @test genomic_relationship_matrix(M; weights = ones(m)) ≈ G1
+    @test genomic_relationship_matrix(M; weights = fill(3.0, m)) ≈ G1   # scale-invariant
+
+    # a genuine non-uniform weighting: G_w = Z diag(w) Z' / sum(w_j 2 p_j(1-p_j))
+    w = [2.0, 0.5, 1.0]
+    Gw = genomic_relationship_matrix(M; weights = w)
+    cm = HSquared.centered_markers(M)
+    scale = sum(w .* 2 .* cm.p .* (1 .- cm.p))
+    @test Gw ≈ (cm.W * Diagonal(w) * transpose(cm.W)) ./ scale
+    @test issymmetric(Gw)
+    @test minimum(eigvals(Symmetric(Gw))) >= -1e-8              # PSD
+    @test !isapprox(Gw, G1)                                      # weighting genuinely changes G
+
+    # guards: length, positivity, and method-2 + weights not supported
+    @test_throws ArgumentError genomic_relationship_matrix(M; weights = [1.0, 2.0])
+    @test_throws ArgumentError genomic_relationship_matrix(M; weights = [1.0, -1.0, 1.0])
+    @test_throws ArgumentError genomic_relationship_matrix(M; method = :vanraden2, weights = ones(m))
+end
+
 @testset "Phase 2 regularized genomic inverse (Ginv)" begin
     # full-rank symmetric PD matrix: ridge = 0 returns the plain inverse
     Gpd = [2.0 0.5; 0.5 2.0]
@@ -1663,6 +2196,775 @@ end
     @test_throws ArgumentError centered_markers(fill(2.0, 4, 3))   # monomorphic (k = 0)
 end
 
+@testset "Phase 5 fixed-effect single-marker scan" begin
+    y = [1.0, 2.0, 4.0, 2.0, 3.0]
+    X = ones(5, 1)
+    M = [
+        0.0 0.0
+        1.0 0.0
+        2.0 1.0
+        0.0 2.0
+        1.0 2.0
+    ]
+    scan = single_marker_scan(y, X, M; marker_ids = ["m1", "m2"])
+
+    @test scan.marker_ids == ["m1", "m2"]
+    @test scan.p ≈ [0.4, 0.5] atol = 1e-12
+    @test scan.k ≈ 0.98 atol = 1e-12
+    @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
+    @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
+    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
+    scan_table = marker_scan_table(scan)
+    @test scan_table.target == :direct_marker_scan
+    @test scan_table.marker_ids == scan.marker_ids
+    @test scan_table.scan_indices == [1, 2]
+    @test scan_table.effects ≈ scan.effects atol = 1e-12
+    @test scan_table.abs_effects ≈ abs.(scan.effects) atol = 1e-12
+    @test scan_table.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test scan_table.z_scores ≈ scan.z_scores atol = 1e-12
+    @test scan_table.chisq ≈ scan.chisq atol = 1e-12
+    @test scan_table.p_values ≈ scan.p_values atol = 1e-12
+    @test scan_table.bonferroni_p_values ≈ scan.bonferroni_p_values atol = 1e-12
+    @test scan_table.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test scan_table.lod_scores ≈ scan.lod_scores atol = 1e-12
+    @test scan_table.denominators ≈ scan.denominators atol = 1e-12
+    @test scan_table.allele_frequencies ≈ scan.p atol = 1e-12
+    @test scan_table.allele_variances ≈ 2 .* scan.p .* (1 .- scan.p) atol = 1e-12
+    @test scan_table.marker_variances ≈ 2 .* scan.p .* (1 .- scan.p) .* scan.effects .^ 2 atol = 1e-12
+    @test scan_table.proportion_variance_explained === nothing
+    @test scan_table.total_variance === nothing
+    @test scan_table.vanraden_scale ≈ scan.k atol = 1e-12
+    scan_table_total = marker_scan_table(scan; total_variance = 2.0)
+    @test scan_table_total.total_variance == 2.0
+    @test scan_table_total.proportion_variance_explained ≈ scan_table.marker_variances ./ 2 atol = 1e-12
+    inflation = marker_genomic_inflation(scan)
+    @test inflation.target == :direct_marker_scan
+    @test inflation.n_markers == 2
+    @test inflation.median_chisq ≈ sum(scan.chisq) / 2 atol = 1e-12
+    @test inflation.expected_median ≈ HSquared._CHISQ1_MEDIAN atol = 1e-15
+    @test inflation.lambda_gc ≈ inflation.median_chisq / HSquared._CHISQ1_MEDIAN atol = 1e-12
+    significance = marker_significance_summary(scan; alpha = 0.1)
+    @test significance.target == :direct_marker_scan
+    @test significance.marker_count == 2
+    @test significance.alpha == 0.1
+    @test significance.nominal_p_threshold == 0.1
+    @test significance.bonferroni_raw_p_threshold == 0.05
+    @test significance.adjusted_p_threshold == 0.1
+    @test significance.bh_q_threshold == 0.1
+    @test significance.raw_significant == [true, false]
+    @test significance.bonferroni_significant == [true, false]
+    @test significance.bh_significant == [true, false]
+    @test significance.n_raw_significant == 1
+    @test significance.n_bonferroni_significant == 1
+    @test significance.n_bh_significant == 1
+    @test significance.raw_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == ["m1"]
+    @test significance.bh_marker_ids == ["m1"]
+    @test significance.raw_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == [1]
+    @test significance.bh_scan_indices == [1]
+    @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
+    @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
+    @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
+    @test significance.max_chisq ≈ maximum(scan.chisq) atol = 1e-12
+    @test significance.max_lod_score ≈ maximum(scan.lod_scores) atol = 1e-12
+    @test significance.top_marker_id == "m1"
+    @test significance.top_scan_index == 1
+    @test significance.top_p_value ≈ scan.p_values[1] atol = 1e-12
+    @test significance.top_bonferroni_p_value ≈ scan.bonferroni_p_values[1] atol = 1e-12
+    @test significance.top_bh_q_value ≈ scan.bh_q_values[1] atol = 1e-12
+    @test significance.top_chisq ≈ scan.chisq[1] atol = 1e-12
+    @test significance.top_lod_score ≈ scan.lod_scores[1] atol = 1e-12
+    summary = marker_effects(scan)
+    @test summary.target == :direct_marker_scan
+    @test summary.sort_by == :p_value
+    @test summary.decreasing == false
+    @test summary.top_n == 2
+    @test summary.scan_indices == [1, 2]
+    @test summary.marker_ids == scan.marker_ids
+    @test summary.effects ≈ scan.effects atol = 1e-12
+    @test summary.abs_effects ≈ abs.(scan.effects) atol = 1e-12
+    @test summary.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test summary.chisq ≈ scan.chisq atol = 1e-12
+    @test summary.p_values ≈ scan.p_values atol = 1e-12
+    @test summary.bonferroni_p_values ≈ scan.bonferroni_p_values atol = 1e-12
+    @test summary.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test summary.lod_scores ≈ scan.lod_scores atol = 1e-12
+    @test summary.denominators ≈ scan.denominators atol = 1e-12
+    top_chisq = marker_effects(scan; sort_by = :chisq, top_n = 1)
+    @test top_chisq.sort_by == :chisq
+    @test top_chisq.decreasing == true
+    @test top_chisq.top_n == 1
+    @test top_chisq.marker_ids == ["m1"]
+    @test top_chisq.scan_indices == [1]
+    expected_marker_variances = 2 .* scan.p .* (1 .- scan.p) .* scan.effects .^ 2
+    variance_summary = marker_variance_explained(scan)
+    variance_order = sortperm(collect(1:2); by = i -> (-expected_marker_variances[i], i))
+    @test variance_summary.target == :direct_marker_scan
+    @test variance_summary.sort_by == :marker_variance
+    @test variance_summary.decreasing == true
+    @test variance_summary.top_n == 2
+    @test variance_summary.marker_ids == scan.marker_ids[variance_order]
+    @test variance_summary.effects ≈ scan.effects[variance_order] atol = 1e-12
+    @test variance_summary.allele_frequencies ≈ scan.p[variance_order] atol = 1e-12
+    @test variance_summary.allele_variances ≈ (2 .* scan.p .* (1 .- scan.p))[variance_order] atol = 1e-12
+    @test variance_summary.marker_variances ≈ expected_marker_variances[variance_order] atol = 1e-12
+    @test variance_summary.proportion_variance_explained === nothing
+    @test variance_summary.p_values ≈ scan.p_values[variance_order] atol = 1e-12
+    @test variance_summary.scan_indices == variance_order
+    top_pve = marker_variance_explained(
+        scan;
+        total_variance = 2.0,
+        sort_by = :proportion_variance_explained,
+        top_n = 1,
+    )
+    @test top_pve.sort_by == :proportion_variance_explained
+    @test top_pve.total_variance == 2.0
+    @test top_pve.marker_ids == ["m1"]
+    @test top_pve.proportion_variance_explained ≈ [expected_marker_variances[1] / 2] atol = 1e-12
+    pvalue_variance = marker_variance_explained(scan; sort_by = :p_value)
+    @test pvalue_variance.sort_by == :p_value
+    @test pvalue_variance.decreasing == false
+    @test pvalue_variance.marker_ids == scan.marker_ids
+    @test HSquared._standard_normal_two_sided_pvalue(0.0) ≈ 1.0 atol = 1e-12
+    @test HSquared._standard_normal_two_sided_pvalue(1.96) ≈ 0.04999579029644087 atol = 1e-6
+    @test all(0 .<= scan.p_values .<= 1)
+    @test all(0 .<= scan.bonferroni_p_values .<= 1)
+    @test all(0 .<= scan.bh_q_values .<= 1)
+    @test all(scan.lod_scores .>= 0)
+    @test HSquared._bonferroni_adjust([0.04, 0.01, 0.20, 0.03]) ≈
+          [0.16, 0.04, 0.80, 0.12] atol = 1e-12
+    @test HSquared._benjamini_hochberg_adjust([0.04, 0.01, 0.20, 0.03]) ≈
+          [0.05333333333333334, 0.04, 0.20, 0.05333333333333334] atol = 1e-12
+
+    # With a nontrivial fixed-effect design, the scan equals independent
+    # residualization of y and each marker against X.
+    X2 = [ones(5) [0.0, 1.0, 0.0, 1.0, 0.0]]
+    scan2 = single_marker_scan(y, X2, M; sigma_e2 = 2.0)
+    cm = centered_markers(M)
+    XtX = Symmetric(transpose(X2) * X2)
+    y_resid = y - X2 * (XtX \ (transpose(X2) * y))
+    for j in axes(M, 2)
+        w = cm.W[:, j]
+        w_resid = w - X2 * (XtX \ (transpose(X2) * w))
+        denom = dot(w_resid, w_resid)
+        effect = dot(w_resid, y_resid) / denom
+        @test scan2.denominators[j] ≈ denom atol = 1e-12
+        @test scan2.effects[j] ≈ effect atol = 1e-12
+        @test scan2.standard_errors[j] ≈ sqrt(2.0 / denom) atol = 1e-12
+        @test scan2.p_values[j] ≈ HSquared._standard_normal_two_sided_pvalue(scan2.z_scores[j]) atol = 1e-12
+    end
+    @test scan2.bonferroni_p_values ≈ HSquared._bonferroni_adjust(scan2.p_values) atol = 1e-12
+    @test scan2.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(scan2.p_values) atol = 1e-12
+    @test scan2.lod_scores ≈ scan2.chisq ./ (2 * log(10)) atol = 1e-12
+
+    zeroZ = zeros(5, 1)
+    fixed_reduction = mixed_model_marker_scan(
+        y,
+        X,
+        zeroZ,
+        Matrix{Float64}(I, 1, 1),
+        M,
+        2.0,
+        1.0;
+        marker_ids = ["m1", "m2"],
+    )
+    @test fixed_reduction.target == :mixed_model_marker_scan
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.marker_ids == scan.marker_ids
+    @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
+    @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
+    @test fixed_reduction.p_values ≈ scan.p_values atol = 1e-12
+    @test fixed_reduction.bh_q_values ≈ scan.bh_q_values atol = 1e-12
+    @test fixed_reduction.lod_scores ≈ scan.lod_scores atol = 1e-12
+
+    ids = [1, 2, 3, 4, 5]
+    Ainv_mixed = pedigree_inverse(ids, [0, 0, 1, 1, 3], [0, 0, 2, 2, 4])
+    Z_mixed = Matrix{Float64}(I, 5, 5)
+    mixed = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_mixed,
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    @test mixed.marker_ids == ["m1", "m2"]
+    @test mixed.p ≈ scan.p atol = 1e-12
+    @test mixed.k ≈ scan.k atol = 1e-12
+    @test mixed.variance_components == (sigma_a2 = 0.7, sigma_e2 = 1.2)
+
+    A_mixed = inv(Symmetric(Matrix(Ainv_mixed)))
+    V_mixed = Symmetric(0.7 * Z_mixed * A_mixed * transpose(Z_mixed) + 1.2 * Matrix{Float64}(I, 5, 5))
+    cholV = cholesky(V_mixed)
+    Vinv_X = cholV \ X2
+    Vinv_y = cholV \ y
+    XtVinvX = Symmetric(transpose(X2) * Vinv_X)
+    cholXtVinvX = cholesky(XtVinvX)
+    Py = Vinv_y - Vinv_X * (cholXtVinvX \ (transpose(X2) * Vinv_y))
+    for j in axes(M, 2)
+        w = cm.W[:, j]
+        Vinv_w = cholV \ w
+        Pw = Vinv_w - Vinv_X * (cholXtVinvX \ (transpose(X2) * Vinv_w))
+        denom = dot(w, Pw)
+        effect = dot(w, Py) / denom
+        @test mixed.denominators[j] ≈ denom atol = 1e-12
+        @test mixed.effects[j] ≈ effect atol = 1e-12
+        @test mixed.standard_errors[j] ≈ sqrt(inv(denom)) atol = 1e-12
+        @test mixed.p_values[j] ≈ HSquared._standard_normal_two_sided_pvalue(mixed.z_scores[j]) atol = 1e-12
+    end
+    @test mixed.chisq ≈ mixed.z_scores .^ 2 atol = 1e-12
+    @test mixed.bonferroni_p_values ≈ HSquared._bonferroni_adjust(mixed.p_values) atol = 1e-12
+    @test mixed.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(mixed.p_values) atol = 1e-12
+    @test mixed.lod_scores ≈ mixed.chisq ./ (2 * log(10)) atol = 1e-12
+    @test marker_manhattan_data(mixed).marker_ids == mixed.marker_ids
+    @test marker_qq_data(mixed).marker_ids == mixed.marker_ids
+    mixed_inflation = marker_genomic_inflation(mixed)
+    @test mixed_inflation.target == :mixed_model_marker_scan
+    @test mixed_inflation.median_chisq ≈ sum(mixed.chisq) / 2 atol = 1e-12
+    @test marker_significance_summary(mixed).target == :mixed_model_marker_scan
+    mixed_summary = marker_effects(mixed; sort_by = :lod_score)
+    @test mixed_summary.target == :mixed_model_marker_scan
+    @test mixed_summary.sort_by == :lod_score
+    @test mixed_summary.decreasing == true
+    @test mixed_summary.marker_ids == mixed.marker_ids[sortperm(collect(1:2); by = i -> (-mixed.lod_scores[i], i))]
+    mixed_variance = marker_variance_explained(mixed; total_variance = 3.0)
+    @test mixed_variance.target == :mixed_model_marker_scan
+    @test mixed_variance.total_variance == 3.0
+    @test mixed_variance.proportion_variance_explained !== nothing
+    mixed_table = marker_scan_table(mixed; total_variance = 3.0)
+    @test mixed_table.target == :mixed_model_marker_scan
+    @test mixed_table.marker_ids == mixed.marker_ids
+    @test mixed_table.variance_components == mixed.variance_components
+    @test mixed_table.proportion_variance_explained ≈ mixed_table.marker_variances ./ 3 atol = 1e-12
+
+    Ainv_loco1 = Matrix(Ainv_mixed)
+    Ainv_loco2 = 1.4 .* Matrix(Ainv_mixed)
+    loco = loco_mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Ainv_loco2),
+        ["chr1", "chr2"],
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    @test loco.target == :loco_mixed_model_marker_scan
+    @test loco.marker_ids == ["m1", "m2"]
+    @test loco.marker_groups == ["chr1", "chr2"]
+    @test loco.relationship_groups == ["chr1", "chr2"]
+    @test loco.variance_components == (sigma_a2 = 0.7, sigma_e2 = 1.2)
+    ref_chr1 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_loco1,
+        M[:, 1:1],
+        0.7,
+        1.2;
+        marker_ids = ["m1"],
+    )
+    ref_chr2 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        Ainv_loco2,
+        M[:, 2:2],
+        0.7,
+        1.2;
+        marker_ids = ["m2"],
+    )
+    @test loco.effects ≈ [only(ref_chr1.effects), only(ref_chr2.effects)] atol = 1e-12
+    @test loco.standard_errors ≈ [only(ref_chr1.standard_errors), only(ref_chr2.standard_errors)] atol = 1e-12
+    @test loco.denominators ≈ [only(ref_chr1.denominators), only(ref_chr2.denominators)] atol = 1e-12
+    @test loco.p_values ≈ [only(ref_chr1.p_values), only(ref_chr2.p_values)] atol = 1e-12
+    @test loco.bonferroni_p_values ≈ HSquared._bonferroni_adjust(loco.p_values) atol = 1e-12
+    @test loco.bh_q_values ≈ HSquared._benjamini_hochberg_adjust(loco.p_values) atol = 1e-12
+    @test loco.lod_scores ≈ loco.chisq ./ (2 * log(10)) atol = 1e-12
+    @test marker_manhattan_data(loco).marker_ids == loco.marker_ids
+    @test marker_qq_data(loco).marker_ids == loco.marker_ids
+    loco_inflation = marker_genomic_inflation(loco)
+    @test loco_inflation.target == :loco_mixed_model_marker_scan
+    @test loco_inflation.median_chisq ≈ sum(loco.chisq) / 2 atol = 1e-12
+    @test marker_significance_summary(loco).target == :loco_mixed_model_marker_scan
+    loco_summary = marker_effects(loco; top_n = 1)
+    @test loco_summary.target == :loco_mixed_model_marker_scan
+    @test length(loco_summary.marker_ids) == 1
+    loco_variance = marker_variance_explained(loco; top_n = 1)
+    @test loco_variance.target == :loco_mixed_model_marker_scan
+    @test length(loco_variance.marker_ids) == 1
+    loco_table = marker_scan_table(loco)
+    @test loco_table.target == :loco_mixed_model_marker_scan
+    @test loco_table.marker_groups == ["chr1", "chr2"]
+    @test loco_table.marker_ids == loco.marker_ids
+
+    loco_precisions = loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = 0.2)
+    @test sort(collect(keys(loco_precisions))) == ["chr1", "chr2"]
+    @test loco_precisions["chr1"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 2:2]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    @test loco_precisions["chr2"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 1:1]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    loco_precisions_p = loco_relationship_precisions(
+        M,
+        ["chr1", "chr2"];
+        allele_frequencies = [0.25, 0.45],
+        ridge = 0.2,
+    )
+    @test loco_precisions_p["chr1"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 2:2]; allele_frequencies = [0.45]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    @test loco_precisions_p["chr2"] ≈ genomic_relationship_inverse(
+        genomic_relationship_matrix(M[:, 1:1]; allele_frequencies = [0.25]);
+        ridge = 0.2,
+    ) atol = 1e-12
+    loco_constructed = loco_mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions,
+        ["chr1", "chr2"],
+        M,
+        0.7,
+        1.2;
+        marker_ids = ["m1", "m2"],
+    )
+    ref_constructed_chr1 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions["chr1"],
+        M[:, 1:1],
+        0.7,
+        1.2;
+        marker_ids = ["m1"],
+    )
+    ref_constructed_chr2 = mixed_model_marker_scan(
+        y,
+        X2,
+        Z_mixed,
+        loco_precisions["chr2"],
+        M[:, 2:2],
+        0.7,
+        1.2;
+        marker_ids = ["m2"],
+    )
+    @test loco_constructed.effects ≈ [only(ref_constructed_chr1.effects), only(ref_constructed_chr2.effects)] atol = 1e-12
+    @test loco_constructed.standard_errors ≈
+          [only(ref_constructed_chr1.standard_errors), only(ref_constructed_chr2.standard_errors)] atol = 1e-12
+    @test loco_constructed.p_values ≈ [only(ref_constructed_chr1.p_values), only(ref_constructed_chr2.p_values)] atol = 1e-12
+
+    manhattan = marker_manhattan_data(scan)
+    @test manhattan.marker_ids == ["m1", "m2"]
+    @test manhattan.chromosomes == ["1", "1"]
+    @test manhattan.positions == [1.0, 2.0]
+    @test manhattan.plot_positions == [1.0, 2.0]
+    @test manhattan.p_values ≈ scan.p_values atol = 1e-12
+    @test manhattan.neglog10_p_values ≈ .-log10.(scan.p_values) atol = 1e-12
+    @test manhattan.order == [1, 2]
+
+    custom_scan = (
+        marker_ids = ["a", "b", "c"],
+        p_values = [0.01, 0.0, 1.0],
+    )
+    custom_manhattan = marker_manhattan_data(
+        custom_scan;
+        chromosomes = ["2", "1", "2"],
+        positions = [5, 2, 1],
+        p_floor = 1e-12,
+        chromosome_gap = 2,
+    )
+    @test custom_manhattan.order == [3, 1, 2]
+    @test custom_manhattan.chromosomes == ["2", "1", "2"]
+    @test custom_manhattan.positions == [5.0, 2.0, 1.0]
+    @test custom_manhattan.plot_positions == [5.0, 9.0, 1.0]
+    @test custom_manhattan.neglog10_p_values ≈ [2.0, 12.0, -0.0] atol = 1e-12
+    @test custom_manhattan.p_floor == 1e-12
+
+    marker_map_data = HSData(
+        (id = ["a"], y = [1.0]);
+        markers = (marker = ["m2", "m1"], chr = ["1", "2"], pos = [1, 5]),
+    )
+    map_manhattan = marker_manhattan_data(scan, marker_map_data.marker_spec)
+    @test map_manhattan.marker_ids == ["m1", "m2"]
+    @test map_manhattan.chromosomes == ["2", "1"]
+    @test map_manhattan.positions == [5.0, 1.0]
+    @test map_manhattan.plot_positions == [7.0, 1.0]
+    @test map_manhattan.order == [2, 1]
+    @test marker_manhattan_data(scan, marker_map_data).plot_positions == map_manhattan.plot_positions
+    map_summary = marker_effects(scan, marker_map_data)
+    @test map_summary.marker_ids == ["m1", "m2"]
+    @test map_summary.chromosomes == ["2", "1"]
+    @test map_summary.positions == [5.0, 1.0]
+    @test map_summary.scan_indices == [1, 2]
+    map_variance = marker_variance_explained(scan, marker_map_data)
+    @test map_variance.marker_ids == ["m1", "m2"]
+    @test map_variance.chromosomes == ["2", "1"]
+    @test map_variance.positions == [5.0, 1.0]
+    @test map_variance.scan_indices == [1, 2]
+    map_table = marker_scan_table(scan, marker_map_data)
+    @test map_table.marker_ids == ["m1", "m2"]
+    @test map_table.chromosomes == ["2", "1"]
+    @test map_table.positions == [5.0, 1.0]
+    @test map_table.scan_indices == [1, 2]
+    gwas = gwas_table(scan; trait = :height, total_variance = 2.0)
+    @test gwas.analysis == :gwas
+    @test gwas.trait == "height"
+    @test gwas.marker_ids == scan.marker_ids
+    @test gwas.target == :direct_marker_scan
+    @test gwas.proportion_variance_explained ≈ scan_table.marker_variances ./ 2 atol = 1e-12
+    map_gwas = gwas_table(scan, marker_map_data; trait = "height")
+    @test map_gwas.analysis == :gwas
+    @test map_gwas.trait == "height"
+    @test map_gwas.chromosomes == ["2", "1"]
+    @test map_gwas.positions == [5.0, 1.0]
+    qtl = qtl_table(mixed; trait = "yield")
+    @test qtl.analysis == :qtl
+    @test qtl.trait == "yield"
+    @test qtl.target == :mixed_model_marker_scan
+    @test qtl.marker_ids == mixed.marker_ids
+    @test qtl.lod_scores ≈ mixed.lod_scores atol = 1e-12
+    eqtl = eqtl_table(loco; feature = "geneA")
+    @test eqtl.analysis == :eqtl
+    @test eqtl.feature == "geneA"
+    @test eqtl.target == :loco_mixed_model_marker_scan
+    @test eqtl.marker_groups == ["chr1", "chr2"]
+    map_eqtl = eqtl_table(scan, marker_map_data.marker_spec; feature = :transcript_1)
+    @test map_eqtl.analysis == :eqtl
+    @test map_eqtl.feature == "transcript_1"
+    @test map_eqtl.chromosomes == ["2", "1"]
+    map_region = marker_region_data(
+        scan,
+        marker_map_data;
+        chromosome = "2",
+        start = 4,
+        stop = 4,
+        flank = 1,
+        total_variance = 2.0,
+    )
+    @test map_region.marker_ids == ["m1"]
+    @test map_region.chromosomes == ["2"]
+    @test map_region.positions == [5.0]
+    @test map_region.plot_positions == [5.0]
+    @test map_region.scan_indices == [1]
+    @test map_region.effects ≈ [scan.effects[1]] atol = 1e-12
+    @test map_region.p_values ≈ [scan.p_values[1]] atol = 1e-12
+    @test map_region.marker_variances ≈ [map_table.marker_variances[1]] atol = 1e-12
+    @test map_region.proportion_variance_explained ≈ [map_table.marker_variances[1] / 2] atol = 1e-12
+    @test map_region.total_variance == 2.0
+    @test map_region.chromosome == "2"
+    @test map_region.requested_start == 4.0
+    @test map_region.requested_stop == 4.0
+    @test map_region.flank == 1.0
+    @test map_region.window_start == 3.0
+    @test map_region.window_stop == 5.0
+    @test map_region.neglog10_p_values ≈ .-log10.([scan.p_values[1]]) atol = 1e-12
+    @test map_region.target == :direct_marker_scan
+    @test marker_region_data(scan, marker_map_data.marker_spec; chromosome = :1).marker_ids == ["m2"]
+    qq = marker_qq_data(scan)
+    @test qq.marker_ids == ["m1", "m2"]
+    @test qq.p_values ≈ scan.p_values atol = 1e-12
+    @test qq.order == [1, 2]
+    @test qq.sorted_marker_ids == ["m1", "m2"]
+    @test qq.sorted_p_values ≈ scan.p_values atol = 1e-12
+    @test qq.expected_p_values ≈ [1 / 3, 2 / 3] atol = 1e-12
+    @test qq.observed_neglog10_p_values ≈ .-log10.(scan.p_values) atol = 1e-12
+    @test qq.expected_neglog10_p_values ≈ .-log10.([1 / 3, 2 / 3]) atol = 1e-12
+
+    custom_qq = marker_qq_data(custom_scan; p_floor = 1e-12)
+    @test custom_qq.order == [2, 1, 3]
+    @test custom_qq.sorted_marker_ids == ["b", "a", "c"]
+    @test custom_qq.sorted_p_values == [0.0, 0.01, 1.0]
+    @test custom_qq.expected_p_values ≈ [0.25, 0.5, 0.75] atol = 1e-12
+    @test custom_qq.observed_neglog10_p_values ≈ [12.0, 2.0, -0.0] atol = 1e-12
+    @test custom_qq.expected_neglog10_p_values ≈ .-log10.([0.25, 0.5, 0.75]) atol = 1e-12
+    @test custom_qq.p_floor == 1e-12
+    custom_inflation = marker_genomic_inflation((chisq = [9.0, 1.0, 4.0], target = :custom); expected_median = 1.0)
+    @test custom_inflation.target == :custom
+    @test custom_inflation.n_markers == 3
+    @test custom_inflation.median_chisq == 4.0
+    @test custom_inflation.lambda_gc == 4.0
+    custom_effects_summary = marker_effects((
+        marker_ids = ["a", "b", "c"],
+        effects = [-3.0, 2.0, 0.5],
+        standard_errors = [1.0, 1.0, 0.5],
+        z_scores = [-3.0, 2.0, 1.0],
+        chisq = [9.0, 4.0, 1.0],
+        p_values = [0.01, 0.02, 0.5],
+        bonferroni_p_values = [0.03, 0.06, 1.0],
+        bh_q_values = [0.03, 0.03, 0.5],
+        lod_scores = [9.0, 4.0, 1.0] ./ (2 * log(10)),
+        denominators = [2.0, 3.0, 4.0],
+        target = :custom,
+    ); sort_by = :abs_effect, top_n = 2)
+    @test custom_effects_summary.target == :custom
+    @test custom_effects_summary.sort_by == :abs_effect
+    @test custom_effects_summary.marker_ids == ["a", "b"]
+    @test custom_effects_summary.abs_effects == [3.0, 2.0]
+    @test custom_effects_summary.scan_indices == [1, 2]
+    bh_summary = marker_effects(custom_effects_summary; sort_by = :bh_q_value, decreasing = true)
+    @test bh_summary.sort_by == :bh_q_value
+    @test bh_summary.decreasing == true
+    @test bh_summary.marker_ids == ["a", "b"]
+    custom_variance_summary = marker_variance_explained((
+        marker_ids = ["a", "b", "c"],
+        effects = [-3.0, 2.0, 0.5],
+        p = [0.5, 0.25, 0.0],
+        p_values = [0.01, 0.02, 0.5],
+        target = :custom,
+    ); total_variance = 10.0, sort_by = :abs_effect, top_n = 2)
+    @test custom_variance_summary.target == :custom
+    @test custom_variance_summary.sort_by == :abs_effect
+    @test custom_variance_summary.marker_ids == ["a", "b"]
+    @test custom_variance_summary.marker_variances ≈ [4.5, 1.5] atol = 1e-12
+    @test custom_variance_summary.proportion_variance_explained ≈ [0.45, 0.15] atol = 1e-12
+    custom_full_scan = (
+        marker_ids = ["a", "b", "c"],
+        effects = [-3.0, 2.0, 0.5],
+        standard_errors = [1.0, 1.0, 0.5],
+        z_scores = [-3.0, 2.0, 1.0],
+        chisq = [9.0, 4.0, 1.0],
+        p_values = [0.01, 0.02, 0.5],
+        bonferroni_p_values = [0.03, 0.06, 1.0],
+        bh_q_values = [0.03, 0.03, 0.5],
+        lod_scores = [9.0, 4.0, 1.0] ./ (2 * log(10)),
+        denominators = [2.0, 3.0, 4.0],
+        p = [0.5, 0.25, 0.0],
+        target = :custom,
+    )
+    custom_table = marker_scan_table(custom_full_scan; total_variance = 10.0)
+    @test custom_table.marker_ids == ["a", "b", "c"]
+    @test custom_table.scan_indices == [1, 2, 3]
+    @test custom_table.marker_variances ≈ [4.5, 1.5, 0.0] atol = 1e-12
+    @test custom_table.proportion_variance_explained ≈ [0.45, 0.15, 0.0] atol = 1e-12
+    custom_significance = marker_significance_summary(custom_full_scan; alpha = 0.05)
+    @test custom_significance.target == :custom
+    @test custom_significance.marker_count == 3
+    @test custom_significance.bonferroni_raw_p_threshold ≈ 0.05 / 3 atol = 1e-12
+    @test custom_significance.raw_significant == [true, true, false]
+    @test custom_significance.bonferroni_significant == [true, false, false]
+    @test custom_significance.bh_significant == [true, true, false]
+    @test custom_significance.n_raw_significant == 2
+    @test custom_significance.n_bonferroni_significant == 1
+    @test custom_significance.n_bh_significant == 2
+    @test custom_significance.raw_marker_ids == ["a", "b"]
+    @test custom_significance.bonferroni_marker_ids == ["a"]
+    @test custom_significance.bh_marker_ids == ["a", "b"]
+    @test custom_significance.raw_scan_indices == [1, 2]
+    @test custom_significance.bonferroni_scan_indices == [1]
+    @test custom_significance.bh_scan_indices == [1, 2]
+    @test custom_significance.top_marker_id == "a"
+    @test custom_significance.top_scan_index == 1
+    @test custom_significance.max_chisq == 9.0
+    @test custom_significance.max_lod_score ≈ 9.0 / (2 * log(10)) atol = 1e-12
+    custom_region = marker_region_data(
+        custom_full_scan;
+        chromosomes = ["2", "1", "2"],
+        positions = [5, 2, 1],
+        chromosome = "2",
+        start = 0.5,
+        stop = 5,
+        p_floor = 1e-12,
+    )
+    @test custom_region.marker_ids == ["c", "a"]
+    @test custom_region.positions == [1.0, 5.0]
+    @test custom_region.scan_indices == [3, 1]
+    @test custom_region.neglog10_p_values ≈ .-log10.([0.5, 0.01]) atol = 1e-12
+    @test custom_region.window_start == 0.5
+    @test custom_region.window_stop == 5.0
+
+    default_ids = single_marker_scan(y, X, M).marker_ids
+    @test default_ids == ["marker_1", "marker_2"]
+    @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = 0.0)
+    @test_throws ArgumentError single_marker_scan(y, X, M; marker_ids = ["m1"])
+    @test_throws ArgumentError HSquared._standard_normal_two_sided_pvalue(NaN)
+    @test_throws ArgumentError HSquared._bonferroni_adjust(Float64[])
+    @test_throws ArgumentError HSquared._bonferroni_adjust([-0.01, 0.5])
+    @test_throws ArgumentError HSquared._bonferroni_adjust([0.5, 1.01])
+    @test_throws ArgumentError HSquared._benjamini_hochberg_adjust([0.5, NaN])
+    @test_throws ArgumentError marker_manhattan_data((p_values = [0.5],))
+    @test_throws ArgumentError marker_manhattan_data((marker_ids = ["m1"],))
+    @test_throws ArgumentError marker_manhattan_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
+    @test_throws ArgumentError marker_manhattan_data(scan; chromosomes = ["1"])
+    @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0])
+    @test_throws ArgumentError marker_manhattan_data(scan; positions = [1.0, -1.0])
+    @test_throws ArgumentError marker_manhattan_data(scan; p_floor = 0.0)
+    @test_throws ArgumentError marker_manhattan_data(scan; chromosome_gap = -1.0)
+    @test_throws ArgumentError marker_qq_data((p_values = [0.5],))
+    @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"],))
+    @test_throws ArgumentError marker_qq_data((marker_ids = ["m1"], p_values = [0.5, 0.6]))
+    @test_throws ArgumentError marker_qq_data(scan; p_floor = 0.0)
+    @test_throws ArgumentError marker_genomic_inflation((p_values = [0.5],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = Float64[],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, -0.1],))
+    @test_throws ArgumentError marker_genomic_inflation((chisq = [0.5, NaN],))
+    @test_throws ArgumentError marker_genomic_inflation(scan; expected_median = 0.0)
+    @test_throws ArgumentError marker_significance_summary((p_values = [0.5],))
+    @test_throws ArgumentError marker_significance_summary((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (bonferroni_p_values = [0.5],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (bh_q_values = [0.5, NaN],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_significance_summary(merge(scan, (lod_scores = [0.1],)))
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = 0.0)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = 1.1)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = NaN)
+    @test_throws ArgumentError marker_significance_summary(scan; alpha = "not numeric")
+    @test_throws ArgumentError marker_effects((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_effects(merge(scan, (effects = [1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (effects = [NaN, 1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (standard_errors = [0.0, 1.0],)))
+    @test_throws ArgumentError marker_effects(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_effects(scan; sort_by = :unsupported)
+    @test_throws ArgumentError marker_effects(scan; top_n = 0)
+    @test_throws ArgumentError marker_effects(scan; top_n = 3)
+    @test_throws ArgumentError marker_effects(scan; top_n = 1.5)
+    @test_throws ArgumentError marker_effects(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_variance_explained((marker_ids = ["m1"], effects = [1.0]))
+    @test_throws ArgumentError marker_variance_explained(merge(scan, (effects = [1.0],)))
+    @test_throws ArgumentError marker_variance_explained(merge(scan, (effects = [NaN, 1.0],)))
+    @test_throws ArgumentError marker_variance_explained(merge(scan, (p = [0.5],)))
+    @test_throws ArgumentError marker_variance_explained(merge(scan, (p = [-0.1, 0.5],)))
+    @test_throws ArgumentError marker_variance_explained(merge(scan, (p = [NaN, 0.5],)))
+    @test_throws ArgumentError marker_variance_explained(scan; total_variance = 0.0)
+    @test_throws ArgumentError marker_variance_explained(scan; sort_by = :unsupported)
+    @test_throws ArgumentError marker_variance_explained(scan; sort_by = :proportion)
+    @test_throws ArgumentError marker_variance_explained(scan; top_n = 0)
+    @test_throws ArgumentError marker_variance_explained(scan; top_n = 3)
+    @test_throws ArgumentError marker_variance_explained(scan; top_n = 1.5)
+    @test_throws ArgumentError marker_variance_explained(
+        (marker_ids = ["m1"], effects = [1.0], p = [0.5]);
+        sort_by = :p_value,
+    )
+    @test_throws ArgumentError marker_variance_explained(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_scan_table((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (effects = [1.0],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (standard_errors = [0.0, 1.0],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (chisq = [1.0, -0.1],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (p = [-0.1, 0.5],)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (k = missing,)))
+    @test_throws ArgumentError marker_scan_table(merge(scan, (marker_groups = ["chr1"],)))
+    @test_throws ArgumentError marker_scan_table(scan; total_variance = 0.0)
+    @test_throws ArgumentError marker_scan_table(scan; total_variance = "not numeric")
+    @test_throws ArgumentError marker_scan_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError gwas_table(scan; trait = "")
+    @test_throws ArgumentError qtl_table(scan; trait = " ")
+    @test_throws ArgumentError eqtl_table(scan; feature = "")
+    @test_throws ArgumentError gwas_table((marker_ids = ["m1"], p_values = [0.5]))
+    @test_throws ArgumentError gwas_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError qtl_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError eqtl_table(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_region_data(scan; chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1"], positions = [1.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", ""], positions = [1.0, 2.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, -2.0], chromosome = "1")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "")
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", start = -1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", start = 2.0, stop = 1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", flank = -1.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "1", p_floor = 0.0)
+    @test_throws ArgumentError marker_region_data(scan; chromosomes = ["1", "1"], positions = [1.0, 2.0], chromosome = "2")
+    @test_throws ArgumentError marker_region_data(scan, HSData((id = ["a"], y = [1.0])); chromosome = "1")
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, -1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Ainv_mixed, M, 1.0, 0.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed[1:4, :], Ainv_mixed, M, 1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z_mixed, Matrix{Float64}(I, 4, 4), M, 1.0, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, [ones(5) ones(5)], Z_mixed, Ainv_mixed, M, 1.0, 1.0)
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Ainv_loco2),
+        ["chr1"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1, "chr2" => Matrix{Float64}(I, 4, 4)),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        X,
+        Z_mixed,
+        Dict{String,Matrix{Float64}}(),
+        ["chr1", "chr2"],
+        M,
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError marker_manhattan_data(scan, HSData((id = ["a"], y = [1.0])))
+    @test_throws ArgumentError marker_manhattan_data(
+        (marker_ids = ["m1", "m1"], p_values = [0.1, 0.2]),
+        marker_map_data.marker_spec,
+    )
+    @test_throws ArgumentError marker_manhattan_data(
+        scan,
+        HSData((id = ["a"], y = [1.0]); markers = (marker = ["m1"], chr = ["1"], pos = [1])).marker_spec,
+    )
+    cm_one = centered_markers(M[:, 1:1])
+    @test_throws ArgumentError single_marker_scan(y, [ones(5) cm_one.W], M[:, 1:1])
+    @test_throws ArgumentError mixed_model_marker_scan(
+        y,
+        [ones(5) cm_one.W],
+        Z_mixed,
+        Ainv_mixed,
+        M[:, 1:1],
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y,
+        [ones(5) cm_one.W],
+        Z_mixed,
+        Dict("chr1" => Ainv_loco1),
+        ["chr1"],
+        M[:, 1:1],
+        1.0,
+        1.0,
+    )
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1"])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", ""])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr1"])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = -0.1)
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; ridge = Inf)
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; allele_frequencies = [0.4])
+    @test_throws ArgumentError loco_relationship_precisions(M, ["chr1", "chr2"]; allele_frequencies = [0.4, 1.2])
+    @test_throws ArgumentError single_marker_scan(y, [ones(5) ones(5)], M)
+    @test_throws ArgumentError single_marker_scan([1.0, 2.0], ones(2, 1), M)
+end
+
 @testset "Phase 2 dense NRM helper" begin
     ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]   # 5=(3x4), full-sib parents
     ped = normalize_pedigree(ids, sire, dam)
@@ -1759,6 +3061,46 @@ end
     @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, A[g, g], [3, 4])
 end
 
+@testset "Phase 2 single-step fitting (public Hinv + fit)" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ids, sire, dam))
+    g = [3, 4, 5]
+    y = [10.0, 12.0, 11.0, 9.0, 13.0]; X = ones(5, 1); Z = Matrix(1.0I, 5, 5)
+
+    # public wrapper delegates to the internal constructor
+    Hinv = single_step_inverse(Ainv, A, A[g, g] + 0.1 * I, g)
+    @test Hinv == HSquared._single_step_Hinv(Ainv, A, A[g, g] + 0.1 * I, g)
+    # reduction: G = A22 ⇒ H⁻¹ = A⁻¹
+    @test single_step_inverse(Ainv, A, A[g, g], g) ≈ Ainv atol = 1e-10
+
+    # fit_single_step at G = A22 reproduces the pedigree animal model (supplied variance)
+    fs = fit_single_step(y, X, Z, Ainv, A, A[g, g], g, 1.0, 1.5)
+    ped_fit = fit_gblup(y, X, Z, Ainv, 1.0, 1.5)
+    @test breeding_values(fs).values ≈ breeding_values(ped_fit).values atol = 1e-9
+
+    # fit_single_step with a genomic block uses the single-step H-inverse
+    Hg = single_step_inverse(Ainv, A, A[g, g] + 0.1 * I, g)
+    fs2 = fit_single_step(y, X, Z, Ainv, A, A[g, g] + 0.1 * I, g, 1.0, 1.5)
+    direct = fit_gblup(y, X, Z, Hg, 1.0, 1.5)
+    @test breeding_values(fs2).values ≈ breeding_values(direct).values atol = 1e-10
+
+    # REML variant at G = A22 reproduces the pedigree REML optimum
+    fsr = fit_single_step_reml(y, X, Z, Ainv, A, A[g, g], g; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    ped_reml = fit_ai_reml(animal_model_spec(y, X, Z, Ainv; method = :REML);
+                           initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fsr isa AnimalModelFit
+    @test fsr.converged == ped_reml.converged                                   # same optimizer state
+    @test fsr.likelihood.loglik ≈ ped_reml.likelihood.loglik rtol = 1e-6        # identical REML objective
+    @test fsr.variance_components.sigma_a2 ≈ ped_reml.variance_components.sigma_a2 rtol = 1e-5 atol = 1e-7
+    @test fsr.variance_components.sigma_e2 ≈ ped_reml.variance_components.sigma_e2 rtol = 1e-5
+
+    # guards delegate to the constructor
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A[g, g], [3, 4])
+    @test_throws ArgumentError fit_single_step(y, X, Z, Ainv, A, genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1]), g, 1.0, 1.5)  # singular raw G
+end
+
 @testset "Phase 2 GBLUP REML variance-component estimation" begin
     # the existing REML optimizers estimate genomic variance components on a Ginv spec
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
@@ -1789,6 +3131,41 @@ end
     t = fit_animal_model(spec; target = :ai_reml, initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
     @test t.target == :ai_reml
     @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
+end
+
+@testset "Phase 2 GBLUP/SNP-BLUP REML convenience (variance-component estimation)" begin
+    # one-call genomic/marker fitting that ESTIMATES the variance components by REML
+    # (closes the supplied-variance-only limitation of fit_gblup / fit_snp_blup).
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
+    y = [10.0, 12.0, 11.0, 9.0, 13.0, 10.5]
+    X = ones(6, 1); Z = Matrix(1.0I, 6, 6)
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = 0.05)
+    spec = animal_model_spec(y, X, Z, Ginv; method = :REML)
+    ai = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    # fit_gblup_reml estimates (σ²_g, σ²_e) on the Ginv spec == generic AI-REML
+    g = fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test g isa AnimalModelFit
+    @test g.converged
+    @test g.variance_components.sigma_a2 ≈ ai.variance_components.sigma_a2 rtol = 1e-6
+    @test g.variance_components.sigma_e2 ≈ ai.variance_components.sigma_e2 rtol = 1e-6
+    @test breeding_values(g).values ≈ breeding_values(ai).values atol = 1e-8
+
+    # fit_snp_blup_reml estimates σ²_g and returns marker effects + GEBVs
+    s = fit_snp_blup_reml(y, X, M; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test s.converged
+    @test s.sigma_g2 > 0 && s.sigma_e2 > 0
+    @test length(s.marker_effects) == 3
+    @test length(s.gebv) == 6
+    # the REML wrapper reproduces supplied-variance SNP-BLUP at the ESTIMATED variances
+    sup = fit_snp_blup(y, X, M, s.sigma_g2, s.sigma_e2)
+    @test sup.gebv ≈ s.gebv atol = 1e-8
+    @test sup.marker_effects ≈ s.marker_effects atol = 1e-8
+
+    # guards inherited from the REML core
+    @test_throws ArgumentError fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_snp_blup_reml(y, X, M; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
 end
 
 @testset "Phase 1 variance-component covariance and heritability interval" begin
@@ -1844,6 +3221,36 @@ end
     @test ci95.lower < ci80.lower && ci80.upper < ci95.upper        # 95% ⊃ 80%
     @test ci95.se ≈ heritability_standard_error(fit)
 
+    # profile-likelihood interval (method = :profile), an alternative to logit-delta
+    @test heritability_interval(fit).method == :delta                 # default unchanged
+    h2hat = heritability(fit)
+    llmax = HSquared._profile_reml_loglik(spec, h2hat)
+    # the profile maximum over total variance at ĥ² recovers the fitted REML optimum
+    @test llmax ≈ sparse_reml_loglik(spec, sa2, se2).loglik atol = 1e-4
+    # and is an upper envelope of any fixed-total-variance slice at the same ratio
+    @test llmax ≥ sparse_reml_loglik(spec, h2hat * 3.0, (1 - h2hat) * 3.0).loglik - 1e-8
+    pci95 = heritability_interval(fit; level = 0.95, method = :profile)
+    pci50 = heritability_interval(fit; level = 0.50, method = :profile)
+    @test pci95.method == :profile
+    @test pci95.heritability ≈ h2hat
+    @test 0 < pci95.lower < h2hat < pci95.upper < 1
+    @test pci95.lower <= pci50.lower && pci50.upper <= pci95.upper     # 95% ⊇ 50% (weak; both clamp here)
+    # This tiny n=8 fixture has a very flat REML profile in h²: the maximum
+    # deviance over (0,1) stays below even the 50% χ²₁ threshold, so the profile
+    # interval correctly CLAMPS to the (1e-6, 1-1e-6) search bounds — the data
+    # barely constrain h². Verify both the flatness and the resulting clamp.
+    maxdev = maximum(2 * (llmax - HSquared._profile_reml_loglik(spec, h)) for h in 0.01:0.01:0.99)
+    @test maxdev < HSquared._standard_normal_quantile(0.75)^2          # below the 50% threshold
+    @test pci95.lower ≈ 1e-6 atol = 1e-9
+    @test pci95.upper ≈ 1 - 1e-6 atol = 1e-9
+    # The LRT-inversion root-finder itself, on a synthetic deviance with known
+    # crossings at 0.3 and 0.7 (target(h) = 10(h-0.5)² − 0.4):
+    synth(h) = 10 * (h - 0.5)^2 - 0.4
+    @test HSquared._profile_root(synth, 1e-6, 0.5) ≈ 0.3 atol = 1e-6
+    @test HSquared._profile_root(synth, 1 - 1e-6, 0.5) ≈ 0.7 atol = 1e-6
+    @test HSquared._profile_root(h -> -1.0, 1e-6, 0.5) == 1e-6          # never crosses -> clamps
+    @test_throws ArgumentError heritability_interval(fit; method = :bogus)
+
     # guards: level range and REML-only
     @test_throws ArgumentError heritability_interval(fit; level = 1.5)
     ml = fit_variance_components(animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML))
@@ -1892,6 +3299,43 @@ end
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, -1.0, spe2, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z, Ainv, sa2, -1.0, se2)
     @test_throws ArgumentError repeatability_mme(y, X, Z[:, 1:2], Ainv, sa2, spe2, se2)
+end
+
+@testset "Phase 3 repeatability t confidence interval (delta method)" begin
+    # The interval FUNCTION is RNG-free/deterministic; only this test FIXTURE is
+    # seeded (the repeatability model needs genuine independent pe/e variation,
+    # which a hand-pattern can't supply without collapsing the σpe/σe split).
+    rng = MersenneTwister(20260618)
+    nsire, ndam, noff, reps = 8, 16, 40, 3
+    sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+    ids = vcat(sids, dids, oids)
+    sire = vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff])
+    dam = vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff])
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    A = Matrix(inv(Symmetric(Matrix(Ainv)))); q = length(ped.ids)
+    LA = cholesky(Symmetric(A)).L
+    a = (LA * randn(rng, q)) .* sqrt(1.0)        # σ²a = 1.0
+    pe = randn(rng, q) .* sqrt(0.6)              # σ²pe = 0.6
+    n = q * reps; X = ones(n, 1); Z = zeros(n, q); y = zeros(n)
+    for an in 1:q, k in 1:reps
+        row = (an - 1) * reps + k
+        Z[row, an] = 1.0
+        y[row] = 5.0 + a[an] + pe[an] + sqrt(1.4) * randn(rng)   # σ²e = 1.4
+    end
+
+    ci = repeatability_interval(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test 0 < ci.lower < ci.repeatability < ci.upper < 1     # valid bracketing (0,1) interval
+    @test ci.level == 0.95
+    @test ci.se > 0
+    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
+    @test ci.repeatability ≈ fit.repeatability               # point estimate matches the fit
+    # higher confidence ⇒ wider interval
+    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90)
+    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99)
+    @test ci99.lower < ci90.lower && ci99.upper > ci90.upper
+    # guard
+    @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; level = 1.5)
 end
 
 @testset "Phase 3 repeatability REML (variance-component estimation)" begin
@@ -2025,6 +3469,23 @@ end
     @test size(res.beta) == (1, t)
     @test size(res.breeding_values.values) == (q, t)
     @test res.breeding_values.ids == collect(1:q)
+    res_vc = variance_components(res)
+    @test res_vc.genetic_covariance ≈ res.genetic_covariance
+    @test res_vc.residual_covariance ≈ res.residual_covariance
+    @test fixed_effects(res) ≈ res.beta
+    @test breeding_values(res).values ≈ res.breeding_values.values
+    @test EBV(res).values ≈ res.breeding_values.values
+    @test BLUP(res).values ≈ res.breeding_values.values
+    res_vc.genetic_covariance[1, 1] = -999.0
+    @test res.genetic_covariance[1, 1] == G0[1, 1]
+    res_beta = fixed_effects(res)
+    res_beta[1, 1] = -999.0
+    @test res.beta[1, 1] != -999.0
+    res_ebv = breeding_values(res)
+    res_ebv.values[1, 1] = -999.0
+    @test res.breeding_values.values[1, 1] != -999.0
+    @test_throws ArgumentError heritability(res)
+    @test_throws ArgumentError variance_components((foo = 1,))
 
     # Reference 1: loop-built multivariate MME (independent assembly, trait-fastest)
     invR0 = inv(R0); invG0 = inv(G0); p = size(X, 2)
@@ -2103,6 +3564,28 @@ end
         @test_throws ArgumentError multivariate_mme(Y, X, Zinf, Ainv, G0, R0)            # Inf in Z
     end
     @test_throws ArgumentError multivariate_mme([10.0 NaN; 12.0 NaN; 9.0 NaN; 11.0 NaN], X, Z, Ainv, G0, R0)  # empty trait 2
+end
+
+@testset "Phase 4 multivariate covariance hardening" begin
+    # genetic_correlation: valid PD -> correlations in [-1,1]; rank-deficient PSD
+    # (e.g. low-rank G) is allowed; asymmetric, indefinite, or non-square reject.
+    G = [2.0 0.6; 0.6 1.0]
+    Rg = genetic_correlation(G)
+    @test Rg ≈ [1.0 0.6/sqrt(2.0); 0.6/sqrt(2.0) 1.0]
+    @test all(-1 .<= Rg .<= 1)
+    @test genetic_correlation([1.0 1.0; 1.0 1.0]) ≈ [1.0 1.0; 1.0 1.0]   # rank-1 PSD allowed
+    @test_throws ArgumentError genetic_correlation([1.0 0.5; 0.6 1.0])    # asymmetric
+    @test_throws ArgumentError genetic_correlation([1.0 2.0; 2.0 1.0])    # indefinite (eig -1, 3)
+    @test_throws ArgumentError genetic_correlation([1.0 0.0 0.0; 0.0 1.0 0.0])  # non-square
+    @test_throws ArgumentError genetic_correlation([1.0 0.0; 0.0 -1.0])   # non-positive diagonal
+
+    # Cholesky-parameterisation roundtrip is exact for t >= 3 (parameter-order regression)
+    for t in (3, 4)
+        A = [i == j ? Float64(t + 1) : 1.0 / (abs(i - j) + 1) for i in 1:t, j in 1:t]
+        v = HSquared._cov_to_chol_params(A, t)
+        @test length(v) == t * (t + 1) ÷ 2
+        @test HSquared._chol_params_to_cov(v, t) ≈ A rtol = 1e-12
+    end
 end
 
 @testset "Phase 4 multivariate missing-trait records (unbalanced)" begin
@@ -2219,6 +3702,19 @@ end
     @test chk.breeding_values.values ≈ mv2.breeding_values.values atol = 1e-6   # GLS vs MME solve
     @test -1 <= mv2.genetic_correlation[1, 2] <= 1
     @test all(0 .<= mv2.heritability .<= 1)
+    mv2_vc = variance_components(mv2)
+    @test mv2_vc.genetic_covariance ≈ mv2.genetic_covariance
+    @test mv2_vc.residual_covariance ≈ mv2.residual_covariance
+    @test fixed_effects(mv2) ≈ mv2.beta
+    @test heritability(mv2) ≈ mv2.heritability
+    @test breeding_values(mv2).ids == mv2.breeding_values.ids
+    @test breeding_values(mv2).traits == mv2.breeding_values.traits
+    @test breeding_values(mv2).values ≈ mv2.breeding_values.values
+    @test EBV(mv2).values ≈ mv2.breeding_values.values
+    @test BLUP(mv2).values ≈ mv2.breeding_values.values
+    mv2_h2 = heritability(mv2)
+    mv2_h2[1] = -999.0
+    @test mv2.heritability[1] != -999.0
 
     # (4) missing records are handled by the estimator too (a boundary estimate
     # is still valid — the EBV solve is robust to a singular G0)
@@ -2242,4 +3738,598 @@ end
         @test_throws ArgumentError fit_multivariate_reml(Y2inf, X, Z, Ainv)
     end
     @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
+end
+
+@testset "Phase 4 shared multi-trait parity fixture" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "phase4_multitrait_parity")
+
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_animals = pheno[:, 2]
+    x = parse.(Float64, pheno[:, 3])
+    Y = hcat(parse.(Float64, pheno[:, 4]), parse.(Float64, pheno[:, 5]))
+    X = hcat(ones(length(x)), x)
+    Z = zeros(length(x), length(ped.ids))
+    animal_index = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for (i, animal) in enumerate(record_animals)
+        Z[i, animal_index[animal]] = 1.0
+    end
+
+    cov_traits, G0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_genetic_covariance.csv"))
+    residual_traits, R0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_residual_covariance.csv"))
+    effects, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    h_traits, h_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_heritability.csv"))
+    ebv_ids, ebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_ebv.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test cov_traits == ["trait1", "trait2"]
+    @test residual_traits == cov_traits
+    @test effects == ["Intercept", "x"]
+    @test h_traits == cov_traits
+    @test ebv_ids == ped.ids
+    @test isposdef(Symmetric(G0))
+    @test isposdef(Symmetric(R0))
+
+    mme = multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = ped.ids, traits = cov_traits)
+    h_calc = [G0[k, k] / (G0[k, k] + R0[k, k]) for k in 1:length(cov_traits)]
+    loglik = HSquared._multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
+
+    @test mme.beta ≈ beta_expected atol = 5e-6
+    @test mme.breeding_values.values ≈ ebv_expected atol = 5e-6
+    @test h_calc ≈ vec(h_expected) atol = 5e-6
+    @test loglik ≈ parse(Float64, metadata["loglik"]) atol = 5e-6
+    @test mme.genetic_correlation[1, 2] ≈ parse(Float64, metadata["genetic_correlation_trait1_trait2"]) atol = 5e-6
+    @test mme.residual_correlation[1, 2] ≈ parse(Float64, metadata["residual_correlation_trait1_trait2"]) atol = 5e-6
+end
+
+@testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
+    @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
+    Λ = reshape([1.0, -2.0], 2, 1)
+    @test lowrank_covariance(Λ) ≈ Λ * transpose(Λ)
+    @test factor_analytic_covariance(Λ, [0.5, 0.25]) ≈ Λ * transpose(Λ) + Diagonal([0.5, 0.25])
+    Λraw = [-2.0 0.1; 1.0 -3.0; 0.5 2.0]
+    Λcanon = HSquared._canonicalize_loadings(Λraw)
+    @test Λraw[1, 1] == -2.0
+    @test Λcanon[:, 1] == [2.0, -1.0, -0.5]
+    @test Λcanon[:, 2] == [-0.1, 3.0, -2.0]
+    @test Λcanon * transpose(Λcanon) ≈ Λraw * transpose(Λraw)
+    @test_throws ArgumentError HSquared._canonicalize_loadings(zeros(0, 1))
+    @test_throws ArgumentError diagonal_covariance([1.0, 0.0])
+    @test_throws ArgumentError lowrank_covariance(reshape([0.0, 1.0], 2, 1))
+    @test_throws ArgumentError factor_analytic_covariance(Λ, [0.5, -0.1])
+    @test_throws ArgumentError factor_analytic_covariance(zeros(0, 1), Float64[])
+
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    Y2 = hcat(y1, reverse(y1))
+    X = ones(8, 1)
+    Z = Matrix(1.0I, 8, 8)
+    h = HSquared._multivariate_reml_loglik
+
+    full = fit_multivariate_reml(Y2, X, Z, Ainv)
+    @test genetic_structure(full) == (structure = :unstructured, rank = nothing)
+    @test genetic_loadings(full) === nothing
+    @test genetic_uniqueness(full) === nothing
+
+    diagfit = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal)
+    @test diagfit.converged
+    @test diagfit.genetic_structure == :diagonal
+    @test diagfit.genetic_rank === nothing
+    @test diagfit.genetic_loadings === nothing
+    @test diagfit.genetic_uniqueness ≈ diag(diagfit.genetic_covariance)
+    @test genetic_structure(diagfit) == (structure = :diagonal, rank = nothing)
+    @test genetic_loadings(diagfit) === nothing
+    diag_uniq = genetic_uniqueness(diagfit)
+    @test diag_uniq ≈ diagfit.genetic_uniqueness
+    diag_uniq[1] = -1.0
+    @test diagfit.genetic_uniqueness[1] > 0
+    @test diagfit.genetic_covariance[1, 2] == 0.0
+    @test diagfit.loglik ≈ h(Y2, X, Z, Ainv, diagfit.genetic_covariance, diagfit.residual_covariance) atol = 1e-6
+    @test diagfit.loglik <= full.loglik + 1e-6
+
+    low = fit_multivariate_reml(Y2, X, Z, Ainv;
+        genetic_structure = :lowrank,
+        rank = 1,
+        initial = (loadings = reshape([0.7, -0.4], 2, 1), R0 = [1.0 0.0; 0.0 1.0]))
+    @test low.converged
+    @test low.genetic_structure == :lowrank
+    @test low.genetic_rank == 1
+    @test genetic_structure(low) == (structure = :lowrank, rank = 1)
+    @test low.genetic_covariance ≈ lowrank_covariance(low.genetic_loadings) atol = 1e-8
+    @test low.genetic_loadings[argmax(abs.(low.genetic_loadings[:, 1])), 1] >= 0
+    @test minimum(eigvals(Symmetric(low.genetic_covariance))) >= -1e-8
+    @test low.genetic_uniqueness === nothing   # pure low-rank G = ΛΛ' has NO specific variance
+    low_loadings = genetic_loadings(low)
+    @test low_loadings ≈ low.genetic_loadings
+    low_loadings[1, 1] = -99.0
+    @test low.genetic_loadings[1, 1] != -99.0
+    @test genetic_uniqueness(low) === nothing  # accessor returns nothing for low-rank
+    @test low.loglik ≈ h(Y2, X, Z, Ainv, low.genetic_covariance, low.residual_covariance) atol = 1e-6
+    @test low.loglik <= full.loglik + 1e-6
+
+    fa = fit_multivariate_reml(Y2, X, Z, Ainv;
+        genetic_structure = :factor_analytic,
+        rank = 1,
+        initial = (loadings = reshape([0.5, -0.3], 2, 1), uniqueness = [0.4, 0.4], R0 = [1.0 0.0; 0.0 1.0]))
+    @test fa.converged
+    @test fa.genetic_structure == :factor_analytic
+    @test fa.genetic_rank == 1
+    @test genetic_structure(fa) == (structure = :factor_analytic, rank = 1)
+    @test all(fa.genetic_uniqueness .> 0)
+    @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
+    @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
+    fa_loadings = genetic_loadings(fa)
+    @test fa_loadings ≈ fa.genetic_loadings
+    fa_loadings[1, 1] = -99.0
+    @test fa.genetic_loadings[1, 1] != -99.0
+    fa_uniq = genetic_uniqueness(fa)
+    @test fa_uniq ≈ fa.genetic_uniqueness
+    fa_uniq[1] = -99.0
+    @test fa.genetic_uniqueness[1] > 0
+    @test isposdef(Symmetric(fa.genetic_covariance))
+    @test fa.loglik ≈ h(Y2, X, Z, Ainv, fa.genetic_covariance, fa.residual_covariance) atol = 1e-6
+    @test fa.loglik <= full.loglik + 1e-6
+
+    @test_throws ArgumentError genetic_structure((foo = 1,))
+    @test_throws ArgumentError genetic_loadings((foo = 1,))
+    @test_throws ArgumentError genetic_uniqueness((foo = 1,))
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank)
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 0)
+    @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :unknown)
+end
+
+@testset "Phase 6 non-Gaussian Laplace marginal (foundation)" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    se2 = 0.7
+
+    # (1) The Gaussian family is exact: the Laplace marginal (integrating β + u)
+    # reduces to the REML log-likelihood, and the mode equals the Henderson MME
+    # solution at (sa2, se2).
+    yg = [1.0, 2.5, 4.0]
+    spec = animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML)
+    lap = HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    @test lap.converged
+    @test lap.loglik ≈ sparse_reml_loglik(spec, sa2, se2).loglik rtol = 1e-8
+    @test lap.u ≈ breeding_values(henderson_mme(spec, sa2, se2)).values rtol = 1e-7 atol = 1e-9
+
+    # (2) Poisson family: the Newton mode solves the penalized score equation.
+    yp = [3.0, 5.0, 8.0]
+    pf = HSquared.laplace_marginal_loglik(yp, X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test pf.converged
+    @test pf.gradient_norm < 1e-8
+    @test isfinite(pf.loglik)
+
+    # (3) per-family kernels: score = dℓ/dη, weight = -d²ℓ/dη² (finite differences)
+    for fam in (HSquared.GaussianResponse(se2), HSquared.PoissonResponse())
+        y0 = 4.0; η0 = 0.3
+        ll(η) = HSquared._fam_loglik(fam, y0, η)
+        h1 = 1e-6
+        @test HSquared._fam_score(fam, y0, η0) ≈ (ll(η0 + h1) - ll(η0 - h1)) / (2h1) rtol = 1e-5
+        h2 = 1e-4   # larger step for the 2nd difference (1e-6 is roundoff-dominated ÷ h²)
+        @test HSquared._fam_weight(fam, y0, η0) ≈
+              -(ll(η0 + h2) - 2ll(η0) + ll(η0 - h2)) / h2^2 rtol = 1e-3
+    end
+
+    # guard
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, -1.0,
+                                                                HSquared.GaussianResponse(se2))
+end
+
+@testset "Phase 6 variational (VA) marginal (foundation)" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    se2 = 0.7
+
+    # T1 — Gaussian exactness (primary gate): full-covariance VA-ELBO is tight and
+    # equals both the Laplace marginal and the REML log-likelihood; the variational
+    # mean is the BLUP and S is the Henderson MME u-block inverse.
+    yg = [1.0, 2.5, 4.0]
+    spec = animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML)
+    va = HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    lap = HSquared.laplace_marginal_loglik(yg, X, Z, Ainv, sa2, HSquared.GaussianResponse(se2))
+    @test va.converged
+    @test va.covariance === :full
+    @test va.elbo ≈ lap.loglik rtol = 1e-8
+    @test va.elbo ≈ sparse_reml_loglik(spec, sa2, se2).loglik rtol = 1e-8
+    @test va.elbo <= lap.loglik + 1e-9                  # ELBO ≤ true marginal (tight for Gaussian)
+    @test va.m ≈ breeding_values(henderson_mme(spec, sa2, se2)).values rtol = 1e-7 atol = 1e-9
+    Huu = transpose(Matrix(Z)) * ((1 / se2) .* Matrix(Z)) .+ Matrix(Ainv) ./ sa2
+    @test va.S ≈ inv(Symmetric(Huu)) rtol = 1e-7
+
+    # T3 — Poisson: the variational optimum solves the ELBO stationarity equation.
+    yp = [3.0, 5.0, 8.0]
+    vp = HSquared.variational_marginal_loglik(yp, X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test vp.converged
+    @test vp.gradient_norm < 1e-8
+    @test isfinite(vp.elbo)
+    # NB: do not assert va.elbo <= laplace.loglik — the Laplace value itself lies
+    # below the true Poisson marginal, so the two approximations do not bound
+    # each other (a proper Poisson-value gate vs Gauss–Hermite is future work).
+
+    # T5 — per-family expected-loglik / weight closed forms (pin the Poisson
+    # normalizer that the Gaussian-only value gate cannot catch).
+    gf = HSquared.GaussianResponse(se2)
+    @test HSquared._fam_expected_loglik(gf, 4.0, 0.3, 0.5) ≈
+          HSquared._fam_loglik(gf, 4.0, 0.3) - 0.5 * 0.5 / se2 rtol = 1e-12
+    @test HSquared._fam_expected_loglik(HSquared.PoissonResponse(), 4.0, 0.3, 0.5) ≈
+          4.0 * 0.3 - exp(0.3 + 0.25) - HSquared._logfactorial(4.0) rtol = 1e-12
+    @test HSquared._fam_expected_weight(HSquared.PoissonResponse(), 0.3, 0.5) ≈ exp(0.3 + 0.25) rtol = 1e-12
+
+    # :diagonal (mean-field) VA: converges and is a LOOSER lower bound than full
+    # covariance (β-fixed, where the ELBO is a proper lower bound on log p(y)).
+    X0 = zeros(3, 0)
+    vfull = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse(); covariance = :full)
+    vdiag = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse(); covariance = :diagonal)
+    @test vdiag.converged && vdiag.covariance === :diagonal
+    @test vfull.elbo >= vdiag.elbo - 1e-9               # richer q ⇒ tighter bound
+    @test_throws ArgumentError HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2,
+        HSquared.GaussianResponse(se2); covariance = :bogus)
+end
+
+@testset "Phase 6 non-Gaussian family hardening" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    # GaussianResponse requires sigma_e2 > 0
+    @test_throws ArgumentError HSquared.GaussianResponse(-1.0)
+    @test_throws ArgumentError HSquared.GaussianResponse(0.0)
+    # Poisson requires non-negative integer counts (both marginals)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([1.5, 2.0, 3.0], X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test_throws ArgumentError HSquared.variational_marginal_loglik([1.0, 2.0, -3.0], X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    # a non-converged fit returns NaN (not a finite non-mode value), flagged converged=false
+    r1 = HSquared.laplace_marginal_loglik([3.0, 5.0, 8.0], X, Z, Ainv, sa2, HSquared.PoissonResponse(); maxiter = 1)
+    @test !r1.converged && isnan(r1.loglik)
+    v1 = HSquared.variational_marginal_loglik([3.0, 5.0, 8.0], X, Z, Ainv, sa2, HSquared.PoissonResponse(); maxiter = 1)
+    @test !v1.converged && isnan(v1.elbo)
+end
+
+@testset "Phase 6 Poisson marginal value vs Gauss–Hermite (β-fixed)" begin
+    # The honest Poisson-VALUE gate: against an independent tensor Gauss–Hermite
+    # quadrature of the true marginal ∫ ∏ Poisson(yᵢ | exp((Zu)ᵢ))·N(u; 0, A·σ²a) du
+    # (β-fixed via a zero-column X), the VA ELBO is a valid LOWER BOUND and the
+    # Laplace value is close (not a bound).
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    yp = [3.0, 5.0, 8.0]
+    X0 = zeros(3, 0)                      # β-fixed (no fixed effects)
+
+    _gh(m) = (E = eigen(SymTridiagonal(zeros(m), [sqrt(k / 2) for k in 1:m-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    function _poisson_marginal(y, Zd, G, m)
+        x, w = _gh(m)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2)
+        tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> m, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - exp(η[i]) - HSquared._logfactorial(y[i]) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _poisson_marginal(yp, Matrix(Z), G, 24)
+    lap = HSquared.laplace_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse())
+    va = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6            # ELBO is a valid lower bound on log p(y)
+    @test isapprox(lap.loglik, R; atol = 5e-2)   # Laplace close to the true marginal (documents the gap)
+end
+
+@testset "Phase 6 public (exported) non-Gaussian fitting API" begin
+    # fit_laplace_reml and laplace_reml_interval are now part of the public
+    # (experimental) surface — exercise them UNQUALIFIED (no HSquared. prefix).
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 8, 8)
+    X = ones(8, 1)
+
+    # Gaussian non-Gaussian fit equals the exact sparse REML (the validated gate)
+    yg = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    fg = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian, ids = ped.ids,
+                          initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sr = fit_sparse_reml(animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML);
+                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fg.converged
+    @test fg.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+
+    # Poisson fit + the exported profile interval
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    fp = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    @test fp.family === :poisson && fp.converged
+    ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    @test ci.lower < ci.sigma_a2 < ci.upper
+    @test ci.level == 0.95
+
+    # fitted-object extractor API (same contract as AnimalModelFit; distinct type,
+    # so it does NOT collide with the multivariate NamedTuple extractors)
+    @test fg isa HSquared.NonGaussianFit
+    bv = breeding_values(fg)
+    @test bv isa HSquared.BreedingValues
+    @test bv.values == fg.breeding_values           # function wraps the field vector
+    @test bv.ids == ped.ids                          # ids threaded through
+    @test length(bv.values) == 8
+    @test variance_components(fg) === fg.variance_components
+    @test fixed_effects(fg) == fg.beta
+    @test EBV(fg).values == bv.values
+    # ids default to 1:q when not supplied
+    @test breeding_values(fp).ids == collect(1:8)
+end
+
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+    # 8-animal interior fixture (where the REML optimum is interior)
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    sr = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    # Gaussian Laplace-REML maximises the EXACT REML loglik => recovers fit_sparse_reml.
+    fl = HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :gaussian,
+                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fl.converged
+    @test fl.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+    @test fl.variance_components.sigma_a2 ≈ sr.variance_components.sigma_a2 rtol = 1e-2
+    @test fl.variance_components.sigma_e2 ≈ sr.variance_components.sigma_e2 rtol = 1e-2
+    # VA variant (full covariance) recovers the same REML optimum for Gaussian.
+    fv = HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :variational,
+                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fv.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+
+    # Poisson: estimates a positive sigma_a2 and converges.
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    @test fp.converged && fp.variance_components.sigma_a2 > 0
+    @test fp.family === :poisson
+    # fitted breeding values are the BLUP at the fitted variance components (Gaussian)
+    @test fl.breeding_values ≈
+          breeding_values(henderson_mme(spec, fl.variance_components.sigma_a2,
+                                        fl.variance_components.sigma_e2)).values rtol = 1e-6 atol = 1e-9
+    @test length(fp.breeding_values) == 8
+
+    @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :bogus)
+    @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; marginal = :bogus)
+end
+
+@testset "Phase 6 Poisson variance-component profile interval" begin
+    # Profile LRT interval for the Poisson animal-model sigma_a2, by inverting
+    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. For this 8-animal count fixture the estimate
+    # is near zero with a flat lower profile (the lower endpoint clamps), while
+    # the upper endpoint is an interior LRT root.
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+
+    fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    sa2hat = fp.variance_components.sigma_a2
+    llhat = fp.marginal_loglik
+    dev(s) = 2 * (llhat - HSquared.laplace_marginal_loglik(yp, X, Z, Ainv, s,
+                                                           HSquared.PoissonResponse()).loglik)
+
+    ci = HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    @test ci.level == 0.95
+    @test ci.sigma_a2 == sa2hat                          # point estimate is the REML optimum
+    @test dev(sa2hat) ≈ 0.0 atol = 1e-8                  # deviance vanishes at the MLE
+    @test ci.lower < ci.sigma_a2 < ci.upper              # interval brackets the estimate
+    @test ci.lower > 0                                   # variance stays positive
+
+    # Upper endpoint is an interior LRT root: deviance reaches χ²₁,₀.₉₅ = 3.841459.
+    @test dev(ci.upper) ≈ 3.841459 atol = 1e-4
+    # Lower endpoint clamps (flat profile toward zero) → deviance stays below the threshold.
+    @test dev(ci.lower) < 3.841459
+
+    # Higher confidence ⇒ wider interval (nesting on the interior upper endpoint).
+    ci90 = HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.90)
+    @test 0 < ci90.upper < ci.upper
+    @test dev(ci90.upper) ≈ 2.705543 atol = 1e-4         # χ²₁,₀.₉₀
+
+    # Guards.
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :gaussian)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; level = 1.5)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; marginal = :bogus)
+end
+
+@testset "Phase 6 Bernoulli (logit) family (Laplace + VA)" begin
+    # Binary/threshold traits (disease, survival, reproductive success) are a
+    # major real-world quantitative-genetic case. The logistic log-partition has
+    # NO closed-form Gaussian expectation, so the VA expected kernels use 1D
+    # Gauss–Hermite quadrature (the Poisson case had a closed-form MGF).
+    f = HSquared.BernoulliResponse()
+
+    # --- conditional kernels match finite differences of the conditional loglik
+    η0 = 0.37
+    h = 1e-6
+    @test HSquared._fam_score(f, 1.0, η0) ≈
+          (HSquared._fam_loglik(f, 1.0, η0 + h) - HSquared._fam_loglik(f, 1.0, η0 - h)) / (2h) rtol = 1e-5
+    h2 = 1e-4
+    @test HSquared._fam_weight(f, 1.0, η0) ≈
+          -(HSquared._fam_loglik(f, 1.0, η0 + h2) - 2 * HSquared._fam_loglik(f, 1.0, η0) +
+            HSquared._fam_loglik(f, 1.0, η0 - h2)) / h2^2 rtol = 1e-3
+    # logistic weight p(1-p) ∈ (0, 0.25]
+    @test 0 < HSquared._fam_weight(f, 1.0, 2.0) <= 0.25
+
+    # --- VA expected kernels are the η̄-derivatives of the expected loglik
+    ηb, vv = 0.4, 0.6
+    @test HSquared._fam_expected_score(f, 1.0, ηb, vv) ≈
+          (HSquared._fam_expected_loglik(f, 1.0, ηb + h, vv) -
+           HSquared._fam_expected_loglik(f, 1.0, ηb - h, vv)) / (2h) rtol = 1e-5
+    @test HSquared._fam_expected_weight(f, ηb, vv) ≈
+          -(HSquared._fam_expected_loglik(f, 1.0, ηb + h2, vv) -
+            2 * HSquared._fam_expected_loglik(f, 1.0, ηb, vv) +
+            HSquared._fam_expected_loglik(f, 1.0, ηb - h2, vv)) / h2^2 rtol = 1e-3
+    # at v → 0 the expected kernels reduce to the conditional kernels
+    @test HSquared._fam_expected_loglik(f, 1.0, ηb, 0.0) ≈ HSquared._fam_loglik(f, 1.0, ηb) atol = 1e-10
+    @test HSquared._fam_expected_score(f, 1.0, ηb, 0.0) ≈ HSquared._fam_score(f, 1.0, ηb) atol = 1e-10
+
+    # --- value gate vs an independent tensor Gauss–Hermite quadrature (β-fixed)
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    yb = [1.0, 0.0, 1.0]
+    X0 = zeros(3, 0)                      # β-fixed (no fixed effects)
+    _gh(m) = (E = eigen(SymTridiagonal(zeros(m), [sqrt(k / 2) for k in 1:m-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _l1pe(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+    function _bern_marginal(y, Zd, G, m)
+        x, w = _gh(m)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> m, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - _l1pe(η[i]) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _bern_marginal(yb, Matrix(Z), G, 32)
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BernoulliResponse())
+    va = HSquared.variational_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BernoulliResponse())
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6                       # ELBO is a valid lower bound on log p(y)
+    @test abs(lap.loglik - R) < 0.5                 # Laplace in the right ballpark (binary gap documented)
+
+    # --- guard: Bernoulli requires binary 0/1 responses
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, sa2,
+                                                                HSquared.BernoulliResponse())
+
+    # --- fitted: estimate sigma_a2 by Laplace and by VA on an 8-animal binary fixture
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fb = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :bernoulli, initial = (sigma_a2 = 1.0,))
+    @test fb.family === :bernoulli
+    @test fb.converged && fb.variance_components.sigma_a2 > 0
+    @test length(fb.breeding_values) == 8
+    fbv = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :bernoulli, marginal = :variational,
+                                    initial = (sigma_a2 = 1.0,))
+    @test fbv.family === :bernoulli && fbv.converged
+end
+
+@testset "Phase 6 Binomial (logit, n trials) family" begin
+    # The Binomial(m) family generalises Bernoulli (m = 1). With more trials per
+    # record the data is more informative, so the Laplace variance bias shrinks —
+    # the scientific resolution of the "binary σ²a is uncalibrated" limit.
+    b1 = HSquared.BinomialResponse(1)
+    bern = HSquared.BernoulliResponse()
+    # --- reduces to Bernoulli at m = 1 (kernels identical)
+    for η in (-1.3, 0.0, 0.7), y in (0.0, 1.0)
+        @test HSquared._fam_loglik(b1, y, η) ≈ HSquared._fam_loglik(bern, y, η) atol = 1e-12
+        @test HSquared._fam_score(b1, y, η) ≈ HSquared._fam_score(bern, y, η) atol = 1e-12
+        @test HSquared._fam_weight(b1, y, η) ≈ HSquared._fam_weight(bern, y, η) atol = 1e-12
+    end
+
+    f = HSquared.BinomialResponse(10)
+    η0 = 0.37; h = 1e-6
+    @test HSquared._fam_score(f, 6.0, η0) ≈
+          (HSquared._fam_loglik(f, 6.0, η0 + h) - HSquared._fam_loglik(f, 6.0, η0 - h)) / (2h) rtol = 1e-5
+    h2 = 1e-4
+    @test HSquared._fam_weight(f, 6.0, η0) ≈
+          -(HSquared._fam_loglik(f, 6.0, η0 + h2) - 2 * HSquared._fam_loglik(f, 6.0, η0) +
+            HSquared._fam_loglik(f, 6.0, η0 - h2)) / h2^2 rtol = 1e-3
+    # VA expected kernels are the η̄-derivatives of the expected loglik
+    ηb, vv = 0.4, 0.6
+    @test HSquared._fam_expected_score(f, 6.0, ηb, vv) ≈
+          (HSquared._fam_expected_loglik(f, 6.0, ηb + h, vv) -
+           HSquared._fam_expected_loglik(f, 6.0, ηb - h, vv)) / (2h) rtol = 1e-5
+    @test HSquared._fam_expected_weight(f, ηb, vv) ≈
+          -(HSquared._fam_expected_loglik(f, 6.0, ηb + h2, vv) -
+            2 * HSquared._fam_expected_loglik(f, 6.0, ηb, vv) +
+            HSquared._fam_expected_loglik(f, 6.0, ηb - h2, vv)) / h2^2 rtol = 1e-3
+
+    # --- value gate vs an independent tensor Gauss–Hermite quadrature (β-fixed)
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.0
+    m = 8
+    yb = [6.0, 2.0, 5.0]                  # successes in 0..m
+    X0 = zeros(3, 0)
+    _gh(k) = (E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _l1pe(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+    _lbin(mm, yy) = HSquared._logfactorial(mm) - HSquared._logfactorial(yy) -
+                    HSquared._logfactorial(mm - yy)
+    function _binom_marginal(y, Zd, G, mm, k)
+        x, w = _gh(k)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> k, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - mm * _l1pe(η[i]) + _lbin(mm, Int(y[i])) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _binom_marginal(yb, Matrix(Z), G, m, 32)
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BinomialResponse(m))
+    va = HSquared.variational_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BinomialResponse(m))
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6                       # ELBO valid lower bound
+    @test abs(lap.loglik - R) < 0.2                 # Laplace close (better than m=1)
+
+    # --- guards
+    @test_throws ArgumentError HSquared.BinomialResponse(0)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([9.0, 2.0, 5.0], X0, Z, Ainv, sa2,
+                                                                HSquared.BinomialResponse(m))  # y > m
+
+    # --- fitted: family = :binomial requires n_trials and converges
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]    # successes in 0..10
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fbn = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial, n_trials = 10,
+                                    initial = (sigma_a2 = 1.0,))
+    @test fbn.family === :binomial
+    @test fbn.converged && fbn.variance_components.sigma_a2 > 0
+    @test length(fbn.breeding_values) == 8
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial)  # missing n_trials
 end

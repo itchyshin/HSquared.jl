@@ -1,0 +1,12 @@
+# Phase 6 Bernoulli (logit) known-truth recovery — RAN 2026-06-18
+# Harness: sim/phase6_bernoulli_recovery.jl (opt-in, outside CI)
+# Truth: sigma_a2=1.0 (logit scale), mu=0.0; half-sib 25 sires / 50 dams / 1000 offspring (q=1075)
+# Gate: converged AND 0.1<sigma_a2<5.0 (non-collapse) AND cor(uhat,u)>=0.5; sigma_a2 reported (downward-biased), not gated
+# Command: env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. sim/phase6_bernoulli_recovery.jl
+
+[PASS] seed=20260618 animals=1075 converged=true  σ̂²a=0.731 (truth 1.00, rel 0.269, reported)  cor(û,u)=0.691  prev=0.471
+[PASS] seed=20260619 animals=1075 converged=true  σ̂²a=0.362 (truth 1.00, rel 0.638, reported)  cor(û,u)=0.565  prev=0.462
+[PASS] seed=20260620 animals=1075 converged=true  σ̂²a=0.644 (truth 1.00, rel 0.356, reported)  cor(û,u)=0.685  prev=0.535
+[PASS] seed=20260621 animals=1075 converged=true  σ̂²a=0.691 (truth 1.00, rel 0.309, reported)  cor(û,u)=0.693  prev=0.482
+[PASS] seed=20260622 animals=1075 converged=true  σ̂²a=0.813 (truth 1.00, rel 0.187, reported)  cor(û,u)=0.701  prev=0.556
+SUMMARY bernoulli-recovery seeds=5 passed=5 (gate: cor≥0.5, interior σ̂²a)  min_cor=0.565  σ̂²a∈[0.362,0.813] (downward-biased, reported)

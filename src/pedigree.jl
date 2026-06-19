@@ -22,7 +22,7 @@ function Base.show(io::IO, pedigree::Pedigree)
 end
 
 """
-    normalize_pedigree(ids, sire, dam; missing_values = ...)
+    normalize_pedigree(ids, sire, dam; missing_values = ..., allow_selfing = false)
 
 Validate, recode, and topologically sort an animal pedigree.
 
@@ -32,8 +32,16 @@ unknown-parent markers or values present in `ids`. By default, `missing`,
 
 The returned [`Pedigree`](@ref) stores parents as integer row indices, with `0`
 for unknown parents.
+
+`allow_selfing = true` permits self-fertilization (`sire == dam`), a Phase-3
+non-standard-inheritance feature: the additive-relationship recursion and the
+Henderson `Ainv` rules already handle a self (a selfed offspring of a non-inbred
+parent has inbreeding `F = 1/2`, `A_ii = 3/2`). It is rejected by default to
+preserve the sexual-pedigree contract; an individual still cannot be its own
+parent.
 """
-function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PARENT_VALUES)
+function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                            allow_selfing::Bool = false)
     ids_vec = collect(ids)
     sire_vec = collect(sire)
     dam_vec = collect(dam)
@@ -64,8 +72,8 @@ function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PAR
             throw(ArgumentError("sire cannot equal id for $(_repr(id))"))
         dam_index[index] == index &&
             throw(ArgumentError("dam cannot equal id for $(_repr(id))"))
-        if sire_index[index] != 0 && sire_index[index] == dam_index[index]
-            throw(ArgumentError("sire and dam cannot be the same known parent for $(_repr(id)); selfing is a planned Phase 7 feature"))
+        if sire_index[index] != 0 && sire_index[index] == dam_index[index] && !allow_selfing
+            throw(ArgumentError("sire and dam cannot be the same known parent for $(_repr(id)); pass allow_selfing = true to model self-fertilization"))
         end
     end
 
@@ -128,6 +136,50 @@ function _numerator_relationship(
     A = _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
     return A[rows, rows]
 end
+
+"""
+    mendelian_sampling_variances(pedigree; max_relationship_cache = 10_000)
+    mendelian_sampling_variances(ids, sire, dam; max_relationship_cache = 10_000)
+
+Per-individual Mendelian sampling variances `d_i` — the diagonal of `D` in the
+decomposition `A = T·D·Tᵀ` of the additive relationship matrix (`T` unit
+lower-triangular). `d_i` is the variance of an individual's breeding value
+*given its parents*: `1` for a founder, `0.75 − 0.25·F_parent` with one known
+parent, and `0.5 − 0.25·(F_sire + F_dam)` with both known. Returned in
+`pedigree.ids` (topologically sorted) order; `det(A) = ∏_i d_i`.
+
+These are the reciprocals (`1/d_i`) that scale the Henderson `pedigree_inverse`
+contributions, and the within-family variances used in gene-dropping and
+within-family accuracy.
+"""
+function mendelian_sampling_variances(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
+    F = inbreeding_coefficients(pedigree; max_relationship_cache = max_relationship_cache)
+    return [_mendelian_sampling_variance(pedigree.sire[i], pedigree.dam[i], F)
+            for i in 1:length(pedigree)]
+end
+
+mendelian_sampling_variances(ids, sire, dam; kwargs...) =
+    mendelian_sampling_variances(normalize_pedigree(ids, sire, dam); kwargs...)
+
+"""
+    additive_relationship(pedigree; max_relationship_cache = 10_000)
+    additive_relationship(ids, sire, dam; max_relationship_cache = 10_000)
+
+Dense additive (numerator) relationship matrix `A` for a pedigree — the companion
+of the sparse [`pedigree_inverse`](@ref) (`A = inv(Ainv)`). `A[i, i] = 1 + F_i`
+and `A[i, j]` is twice the coancestry of `i` and `j`. Returned in `pedigree.ids`
+(topologically sorted) order.
+
+Validation-scale and dense (bounded by `max_relationship_cache`); for production
+use the sparse `pedigree_inverse`. This is the additive companion of the exported
+[`dominance_relationship`](@ref), [`cytoplasmic_relationship`](@ref), and
+[`clonal_relationship`](@ref) matrices.
+"""
+additive_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_000) =
+    _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
+
+additive_relationship(ids, sire, dam; kwargs...) =
+    additive_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
 
 """
     inbreeding_coefficients(pedigree; max_relationship_cache = 10_000)
@@ -193,6 +245,187 @@ end
 function inbreeding_coefficients(ids, sire, dam; kwargs...)
     return inbreeding_coefficients(normalize_pedigree(ids, sire, dam); kwargs...)
 end
+
+"""
+    maternal_lineage(pedigree)
+    maternal_lineage(ids, sire, dam)
+
+Maternal-lineage label of each individual: the id of its earliest known maternal
+ancestor (the maternal founder reached by following dam links). Two individuals
+share a maternal lineage iff they carry the same label. Returned in
+`pedigree.ids` (topologically sorted) order, aligned with
+[`cytoplasmic_relationship`](@ref) and [`pedigree_inverse`](@ref).
+
+This is the inheritance pattern of strictly maternally transmitted factors
+(mitochondrial DNA / cytoplasm). An individual with no recorded dam is its own
+maternal founder.
+"""
+function maternal_lineage(pedigree::Pedigree)
+    n = length(pedigree)
+    founder = Vector{Int}(undef, n)        # index of each individual's maternal founder
+    for i in 1:n
+        d = pedigree.dam[i]                # topological order ⇒ d == 0 or d < i
+        founder[i] = d == 0 ? i : founder[d]
+    end
+    return [pedigree.ids[founder[i]] for i in 1:n]
+end
+
+maternal_lineage(ids, sire, dam) = maternal_lineage(normalize_pedigree(ids, sire, dam))
+
+"""
+    cytoplasmic_relationship(pedigree)
+    cytoplasmic_relationship(ids, sire, dam)
+
+Dense cytoplasmic (maternal-lineage) relationship matrix `C`: `C[i, j] = 1` if
+`i` and `j` share a maternal lineage (see [`maternal_lineage`](@ref)), else `0`
+(diagonal `1`). This is the relationship structure of strictly maternally
+inherited factors (mitochondrial DNA, cytoplasm). Returned in `pedigree.ids`
+(topologically sorted) order, so it aligns with [`pedigree_inverse`](@ref).
+
+Experimental Phase 7 primitive — a relationship-construction helper for a
+non-standard inheritance system. `C` is a 0/1 same-lineage indicator (rank =
+number of maternal lineages), so it is singular whenever a lineage has more than
+one member: use it as the relationship for an i.i.d. cytoplasmic lineage random
+effect (a grouping), not as a matrix to invert.
+"""
+function cytoplasmic_relationship(pedigree::Pedigree)
+    labels = maternal_lineage(pedigree)
+    n = length(labels)
+    C = zeros(Float64, n, n)
+    for i in 1:n, j in 1:n
+        C[i, j] = labels[i] == labels[j] ? 1.0 : 0.0
+    end
+    return C
+end
+
+cytoplasmic_relationship(ids, sire, dam) = cytoplasmic_relationship(normalize_pedigree(ids, sire, dam))
+
+"""
+    clonal_relationship(pedigree, clone_of)
+
+Dense additive relationship matrix for a pedigree containing clonal (asexual)
+ramets. `clone_of` is aligned to `pedigree.ids`: entry `i` is the id of the genet
+that individual `i` is a clonal copy of, or an unknown-parent marker (`missing`,
+`""`, `"0"`, `0`, …) if `i` is not a clone. Clonal ramets carry no new Mendelian
+variation, so each ramet is genetically identical to its genet and inherits the
+genet's whole row/column of the numerator relationship: `C[i, j] = A[rep(i),
+rep(j)]`, where `rep` maps each individual to its ultimate genet (clone links are
+followed transitively). Returned in `pedigree.ids` order, aligned with
+[`pedigree_inverse`](@ref).
+
+Experimental Phase 3 non-standard-inheritance primitive. Because clonemates are
+identical rows, `C` is rank-deficient — it is a relationship matrix to use
+directly, not to invert. Record the genets sexually in `pedigree`; record ramets
+with unknown parents and mark them through `clone_of`.
+"""
+function clonal_relationship(pedigree::Pedigree, clone_of)
+    n = length(pedigree)
+    length(clone_of) == n ||
+        throw(ArgumentError("clone_of must have one entry per pedigree individual"))
+    id_to_index = Dict(id => i for (i, id) in pairs(pedigree.ids))
+    genet = zeros(Int, n)              # genet index for each clone, 0 if not a clone
+    for i in 1:n
+        c = clone_of[i]
+        _is_unknown_parent(c, DEFAULT_UNKNOWN_PARENT_VALUES) && continue
+        haskey(id_to_index, c) ||
+            throw(ArgumentError("clone_of references unknown genet id: $(_repr(c))"))
+        genet[i] = id_to_index[c]
+    end
+    rep = collect(1:n)                 # resolve each individual to its ultimate genet
+    for i in 1:n
+        j = i
+        steps = 0
+        while genet[j] != 0
+            j = genet[j]
+            steps += 1
+            steps > n &&
+                throw(ArgumentError("clonal cycle detected starting from $(_repr(pedigree.ids[i]))"))
+        end
+        rep[i] = j
+    end
+    A = _numerator_relationship(pedigree)
+    C = Matrix{Float64}(undef, n, n)
+    for i in 1:n, j in 1:n
+        C[i, j] = A[rep[i], rep[j]]
+    end
+    return C
+end
+
+"""
+    dominance_relationship(pedigree)
+    dominance_relationship(ids, sire, dam)
+
+Dense dominance relationship matrix `D` (Cockerham). For animals `x`, `y` with
+both parents known — sires `sx, sy`, dams `dx, dy` —
+`D[x, y] = ¼·(A[sx, sy]·A[dx, dy] + A[sx, dy]·A[dx, sy])`, where `A` is the
+additive numerator relationship. The diagonal is set to `1`, and any pair in
+which either animal has an unknown parent has `D = 0`. Returned in `pedigree.ids`
+order, aligned with [`pedigree_inverse`](@ref).
+
+Experimental Phase 3 primitive, validation-scale and dense — `D` is the
+relationship for a dominance random effect. The off-diagonal formula is general;
+the unit diagonal and the absence of dominance-inbreeding corrections hold for
+non-inbred parents (the standard textbook case). Full sibs have `D = 1/4`, half
+sibs and parent–offspring `D = 0`.
+"""
+function dominance_relationship(pedigree::Pedigree)
+    n = length(pedigree)
+    A = _numerator_relationship(pedigree)
+    s = pedigree.sire
+    d = pedigree.dam
+    D = Matrix{Float64}(undef, n, n)
+    for i in 1:n
+        D[i, i] = 1.0
+        for j in 1:(i - 1)
+            if s[i] != 0 && d[i] != 0 && s[j] != 0 && d[j] != 0
+                value = 0.25 * (A[s[i], s[j]] * A[d[i], d[j]] +
+                                A[s[i], d[j]] * A[d[i], s[j]])
+            else
+                value = 0.0
+            end
+            D[i, j] = value
+            D[j, i] = value
+        end
+    end
+    return D
+end
+
+dominance_relationship(ids, sire, dam) = dominance_relationship(normalize_pedigree(ids, sire, dam))
+
+"""
+    epistatic_relationship(pedigree; kind = :additive_additive)
+    epistatic_relationship(ids, sire, dam; kind = :additive_additive)
+
+Dense epistatic relationship matrix as a Hadamard (element-wise) product of the
+additive `A` and dominance `D` relationship matrices (Henderson 1985):
+
+- `kind = :additive_additive` → `A ∘ A`,
+- `kind = :additive_dominance` → `A ∘ D`,
+- `kind = :dominance_dominance` → `D ∘ D`.
+
+These give the orthogonal additive×additive, additive×dominance, and
+dominance×dominance epistatic relationship matrices used for epistatic variance
+components. Full sibs have additive×additive `= 1/4`. Returned in `pedigree.ids`
+order. Experimental Phase 3 primitive, validation-scale and dense; inherits the
+[`dominance_relationship`](@ref) non-inbred-parent assumption. No public
+model-spec.
+"""
+function epistatic_relationship(pedigree::Pedigree; kind::Symbol = :additive_additive)
+    if kind === :additive_additive
+        A = additive_relationship(pedigree)
+        return A .* A
+    elseif kind === :additive_dominance
+        return additive_relationship(pedigree) .* dominance_relationship(pedigree)
+    elseif kind === :dominance_dominance
+        D = dominance_relationship(pedigree)
+        return D .* D
+    else
+        throw(ArgumentError("kind must be :additive_additive, :additive_dominance, or :dominance_dominance"))
+    end
+end
+
+epistatic_relationship(ids, sire, dam; kwargs...) =
+    epistatic_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
 
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0

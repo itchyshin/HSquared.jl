@@ -20,8 +20,12 @@ variances.
 function genetic_correlation(C::AbstractMatrix)
     n = size(C, 1)
     size(C, 2) == n || throw(ArgumentError("C must be square"))
+    isapprox(C, transpose(C)) || throw(ArgumentError("C must be symmetric"))
     d = diag(C)
     all(>(0), d) || throw(ArgumentError("covariance diagonal must be positive"))
+    # allow rank-deficient PSD (e.g. low-rank G); reject only indefinite inputs
+    eigmin(Symmetric(Matrix(Float64.(C)))) >= -1e-8 ||
+        throw(ArgumentError("C must be positive semidefinite"))
     s = sqrt.(d)
     R = Matrix{Float64}(undef, n, n)
     @inbounds for j in 1:n, i in 1:n
@@ -35,15 +39,205 @@ end
 
 genetic_correlation(result::NamedTuple) = result.genetic_correlation
 
+function _require_multivariate_result(result::NamedTuple)
+    ok = hasproperty(result, :genetic_covariance) &&
+         hasproperty(result, :residual_covariance) &&
+         hasproperty(result, :beta) &&
+         hasproperty(result, :breeding_values)
+    ok ||
+        throw(ArgumentError("result is not a multivariate HSquared result"))
+    return result
+end
+
+"""
+    variance_components(result::NamedTuple)
+
+Return the genetic and residual covariance matrices from a multivariate
+`HSquared` result as `(genetic_covariance, residual_covariance)`.
+"""
+function variance_components(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    return (
+        genetic_covariance = copy(r.genetic_covariance),
+        residual_covariance = copy(r.residual_covariance),
+    )
+end
+
+"""
+    fixed_effects(result::NamedTuple)
+
+Return the fixed-effect matrix from a multivariate `HSquared` result.
+"""
+function fixed_effects(result::NamedTuple)
+    return copy(_require_multivariate_result(result).beta)
+end
+
+"""
+    breeding_values(result::NamedTuple)
+
+Return the multivariate breeding-value metadata from a multivariate `HSquared`
+result as `(ids, traits, values)`.
+"""
+function breeding_values(result::NamedTuple)
+    bv = _require_multivariate_result(result).breeding_values
+    ok = hasproperty(bv, :ids) && hasproperty(bv, :traits) && hasproperty(bv, :values)
+    ok ||
+        throw(ArgumentError("multivariate breeding_values metadata must contain ids, traits, and values"))
+    return (
+        ids = collect(bv.ids),
+        traits = collect(bv.traits),
+        values = copy(bv.values),
+    )
+end
+
+"""
+    heritability(result::NamedTuple)
+
+Return the per-trait heritability vector from a multivariate REML result.
+"""
+function heritability(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    hasproperty(r, :heritability) ||
+        throw(ArgumentError("multivariate result does not contain heritability"))
+    return copy(collect(r.heritability))
+end
+
+function _require_structured_genetic_metadata(result::NamedTuple)
+    r = _require_multivariate_result(result)
+    ok = hasproperty(r, :genetic_structure) &&
+         hasproperty(r, :genetic_rank) &&
+         hasproperty(r, :genetic_loadings) &&
+         hasproperty(r, :genetic_uniqueness)
+    ok ||
+        throw(ArgumentError("multivariate result does not contain structured genetic metadata"))
+    return r
+end
+
+"""
+    genetic_structure(result::NamedTuple)
+
+Return structured genetic covariance metadata from a multivariate REML result as
+`(structure, rank)`.
+"""
+function genetic_structure(result::NamedTuple)
+    r = _require_structured_genetic_metadata(result)
+    return (structure = r.genetic_structure, rank = r.genetic_rank)
+end
+
+"""
+    genetic_loadings(result::NamedTuple)
+
+Return a copy of the structured genetic loading matrix from a low-rank or
+factor-analytic multivariate REML result. Returns `nothing` when the fitted
+structure has no loading matrix.
+"""
+function genetic_loadings(result::NamedTuple)
+    L = _require_structured_genetic_metadata(result).genetic_loadings
+    return isnothing(L) ? nothing : copy(L)
+end
+
+"""
+    genetic_uniqueness(result::NamedTuple)
+
+Return a copy of the structured genetic uniqueness vector from a multivariate
+REML result. Returns `nothing` when the fitted structure has no uniqueness
+metadata.
+"""
+function genetic_uniqueness(result::NamedTuple)
+    ψ = _require_structured_genetic_metadata(result).genetic_uniqueness
+    return isnothing(ψ) ? nothing : copy(collect(ψ))
+end
+
+function _check_finite_matrix(M, name)
+    Mf = Float64.(Matrix(M))
+    all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))
+    return Mf
+end
+
 function _check_covariance(M, name, t)
     size(M, 1) == t && size(M, 2) == t ||
         throw(ArgumentError("$name must be $t×$t (one row/column per trait)"))
-    Mf = Float64.(Matrix(M))
+    Mf = _check_finite_matrix(M, name)
     isapprox(Mf, transpose(Mf); atol = 1e-10) ||
         throw(ArgumentError("$name must be symmetric"))
     Ms = Symmetric(Mf)
     isposdef(Ms) || throw(ArgumentError("$name must be positive definite"))
     return Ms
+end
+
+"""
+    diagonal_covariance(variances)
+
+Build a diagonal trait covariance matrix from positive variance components.
+This is the direct Julia engine utility for the Phase-4B `diag` genetic
+covariance structure. It is a matrix builder only; it does not change the R
+formula contract.
+"""
+function diagonal_covariance(variances)
+    v = Float64.(collect(variances))
+    !isempty(v) || throw(ArgumentError("variances must not be empty"))
+    all(isfinite, v) || throw(ArgumentError("variances must not contain Inf or NaN"))
+    all(>(0), v) || throw(ArgumentError("variances must be positive"))
+    return Matrix(Diagonal(v))
+end
+
+"""
+    lowrank_covariance(loadings)
+
+Build a low-rank covariance matrix `ΛΛ'` from a `traits × rank` loading matrix
+`Λ`. The result is positive semidefinite and may be singular when
+`rank < traits`.
+"""
+function lowrank_covariance(loadings::AbstractMatrix)
+    L = _check_finite_matrix(loadings, "loadings")
+    size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
+    size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
+    C = L * transpose(L)
+    all(>(0), diag(C)) || throw(ArgumentError("each trait must have positive low-rank genetic variance"))
+    return C
+end
+
+"""
+    factor_analytic_covariance(loadings, uniqueness)
+
+Build a factor-analytic covariance matrix `ΛΛ' + Ψ`, where `Λ` is a
+`traits × rank` loading matrix and `Ψ` is a positive diagonal uniqueness vector.
+This is the direct Julia engine utility for the Phase-4B `fa(K)` covariance
+structure.
+"""
+function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
+    L = _check_finite_matrix(loadings, "loadings")
+    ψ = Float64.(collect(uniqueness))
+    size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
+    size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
+    size(L, 1) == length(ψ) ||
+        throw(ArgumentError("uniqueness length must match the number of loading rows"))
+    all(isfinite, ψ) || throw(ArgumentError("uniqueness must not contain Inf or NaN"))
+    all(>(0), ψ) || throw(ArgumentError("uniqueness values must be positive"))
+    return L * transpose(L) + Diagonal(ψ)
+end
+
+function _canonicalize_loadings(loadings::AbstractMatrix)
+    L = _check_finite_matrix(loadings, "loadings")
+    size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
+    size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
+    for j in axes(L, 2)
+        imax = firstindex(L, 1)
+        maxabs = -Inf
+        @inbounds for i in axes(L, 1)
+            a = abs(L[i, j])
+            if a > maxabs
+                maxabs = a
+                imax = i
+            end
+        end
+        if L[imax, j] < 0
+            @inbounds for i in axes(L, 1)
+                L[i, j] = -L[i, j]
+            end
+        end
+    end
+    return L
 end
 
 # A trait record is "missing" if it is `missing` or a NaN float; everything else
@@ -230,6 +424,75 @@ function _cov_to_chol_params(M::AbstractMatrix, t)
     return v
 end
 
+function _validate_genetic_structure(genetic_structure::Symbol, rank, t)
+    genetic_structure in (:unstructured, :diagonal, :lowrank, :factor_analytic) ||
+        throw(ArgumentError("genetic_structure must be :unstructured, :diagonal, :lowrank, or :factor_analytic"))
+    if genetic_structure in (:lowrank, :factor_analytic)
+        rank === nothing && throw(ArgumentError("rank is required for $genetic_structure"))
+        rank isa Integer || throw(ArgumentError("rank must be an integer"))
+        1 <= rank <= t || throw(ArgumentError("rank must be between 1 and the number of traits"))
+        return Int(rank)
+    end
+    rank === nothing || throw(ArgumentError("rank is only used for :lowrank and :factor_analytic"))
+    return 0
+end
+
+function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol, rank::Int)
+    if genetic_structure == :unstructured
+        return _chol_params_to_cov(params, t), nothing, nothing
+    elseif genetic_structure == :diagonal
+        G0 = diagonal_covariance(exp.(params))
+        return G0, nothing, diag(G0)
+    elseif genetic_structure == :lowrank
+        L = _canonicalize_loadings(reshape(collect(params), t, rank))
+        # pure low-rank G = ΛΛ' has no specific (uniqueness) variance — signal that
+        # with `nothing` rather than a misleading estimated-zero vector.
+        return lowrank_covariance(L), L, nothing
+    else
+        nload = t * rank
+        L = _canonicalize_loadings(reshape(collect(@view(params[1:nload])), t, rank))
+        ψ = exp.(params[(nload + 1):end])
+        return factor_analytic_covariance(L, ψ), L, ψ
+    end
+end
+
+function _structured_genetic_params0(G0_start, genetic_structure::Symbol, rank::Int, t, initial)
+    if genetic_structure == :unstructured
+        return _cov_to_chol_params(G0_start, t)
+    elseif genetic_structure == :diagonal
+        return log.(diag(G0_start))
+    end
+
+    L = if initial !== nothing && hasproperty(initial, :loadings)
+        L0 = _check_finite_matrix(initial.loadings, "initial.loadings")
+        size(L0) == (t, rank) ||
+            throw(ArgumentError("initial.loadings must be $t×$rank"))
+        L0
+    else
+        L0 = zeros(t, rank)
+        d = sqrt.(max.(diag(G0_start), eps(Float64)))
+        for k in 1:t
+            L0[k, ((k - 1) % rank) + 1] = d[k]
+        end
+        L0
+    end
+
+    if genetic_structure == :lowrank
+        return vec(L)
+    end
+
+    ψ = if initial !== nothing && hasproperty(initial, :uniqueness)
+        ψ0 = Float64.(collect(initial.uniqueness))
+        length(ψ0) == t || throw(ArgumentError("initial.uniqueness length must match the number of traits"))
+        all(isfinite, ψ0) || throw(ArgumentError("initial.uniqueness must not contain Inf or NaN"))
+        all(>(0), ψ0) || throw(ArgumentError("initial.uniqueness values must be positive"))
+        ψ0
+    else
+        max.(0.5 .* diag(G0_start), eps(Float64))
+    end
+    return vcat(vec(L), log.(ψ))
+end
+
 # Validate the observed data. `present` is the n×t observed mask. Throws a clear
 # ArgumentError on a non-finite observed phenotype (e.g. Inf — only missing/NaN
 # mark an unobserved trait), a non-finite entry of `X`/`Z`, or a trait with no
@@ -342,7 +605,8 @@ end
 
 """
     fit_multivariate_reml(Y, X, Z, Ainv; initial = nothing, iterations = 2000,
-                          ids = nothing, traits = nothing)
+                          ids = nothing, traits = nothing,
+                          genetic_structure = :unstructured, rank = nothing)
 
 Estimate the genetic and residual covariance matrices `G0`, `R0` of the
 multi-trait animal model by **dense REML**. Inputs match [`multivariate_mme`](@ref)
@@ -351,20 +615,39 @@ multi-trait animal model by **dense REML**. Inputs match [`multivariate_mme`](@r
     y ~ N(X·β, V),   V = Z_full·(A ⊗ G0)·Z_full' + R,
 
 with `R` block-diagonal over individuals (individual `i`'s block `R0[Sᵢ, Sᵢ]`).
-The REML log-likelihood `-½(log|V| + log|X'V⁻¹X| + (y−Xβ̂)'V⁻¹(y−Xβ̂))` is
-maximized by Nelder–Mead over an unconstrained log-Cholesky parameterization of
-`G0` and `R0` (which keeps both positive definite). At the optimum the breeding
-values and fixed effects are obtained from [`multivariate_mme`](@ref) at the
-estimated covariances.
+The REML log-likelihood is maximized by Nelder–Mead. The default
+`:unstructured` fit uses a log-Cholesky parameterization for both `G0` and `R0`;
+structured fits constrain only the additive genetic covariance and keep `R0`
+unstructured positive definite. At the optimum the breeding values and fixed
+effects are computed from the marginal GLS BLUP form, which remains defined for
+low-rank genetic covariances.
+
+The additive genetic covariance can be constrained with `genetic_structure`:
+
+  - `:unstructured` (default) — full positive-definite `G0`;
+  - `:diagonal` — independent trait-specific genetic variances;
+  - `:lowrank` — `G0 = ΛΛ'`, requiring `rank`;
+  - `:factor_analytic` — `G0 = ΛΛ' + Ψ`, requiring `rank` and positive diagonal
+    uniquenesses.
+
+For structured fits, `initial` may supply `G0`, `R0`, `loadings`
+(`traits × rank`), and `uniqueness` for `:factor_analytic`; omitted fields use
+deterministic phenotypic-scale defaults.
+
+Returned `genetic_loadings` use a deterministic sign convention: for each factor
+column, the largest-absolute loading is non-negative. This removes arbitrary
+sign flips from returned metadata but does not impose a rotation or
+lower-triangular identification constraint; for `rank > 1`, loadings remain
+rotation-nonunique and should not be interpreted as uniquely identified factors.
 
 Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
-validated by deterministic self-consistency checks (the `t = 1` reduction recovers
-the univariate REML estimate; the multivariate REML log-likelihood matches the
-univariate one up to a constant; the optimum beats a coarse grid). Known-truth
-covariance recovery for `t ≥ 2` is exercised only by one-off simulations (the test
-suite is RNG-free) and has **not** had external-comparator (sommer / ASReml /
-JWAS) parity or independent adversarial review yet — treat multi-trait variance
-estimates as experimental. There is no R-facing multivariate model-spec.
+validated by deterministic self-consistency checks (the `t = 1` reduction
+recovers the univariate REML estimate; the multivariate REML log-likelihood is on
+the same full-constant scale as the univariate one; the optimum beats a coarse
+grid). Known-truth covariance recovery for `t ≥ 2` is exercised only by one-off
+simulations (the test suite is RNG-free), and external-comparator (sommer /
+ASReml / JWAS) parity is still missing — treat multi-trait variance estimates as
+experimental. There is no R-facing multivariate model-spec.
 
 Returns a `NamedTuple`:
 
@@ -372,6 +655,8 @@ Returns a `NamedTuple`:
   - `genetic_correlation`, `residual_correlation` — derived `t×t` correlations;
   - `heritability` — per-trait `h² = diag(G0)/(diag(G0)+diag(R0))`;
   - `beta`, `breeding_values` — fixed effects and EBVs at the estimate;
+  - `genetic_structure`, `genetic_rank`, `genetic_loadings`,
+    `genetic_uniqueness` — structure metadata (`nothing` where not applicable);
   - `loglik` — the full REML log-likelihood at the estimate, including the
     `(N − p')·log(2π)` constant, so it is on the same scale as
     [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref) (safe for LRT/AIC);
@@ -390,6 +675,8 @@ function fit_multivariate_reml(
     iterations::Integer = 2_000,
     ids = nothing,
     traits = nothing,
+    genetic_structure::Symbol = :unstructured,
+    rank = nothing,
 )
     n = size(Y, 1)
     t = size(Y, 2)
@@ -405,42 +692,61 @@ function fit_multivariate_reml(
     A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
 
-    nG = t * (t + 1) ÷ 2
+    grank = _validate_genetic_structure(genetic_structure, rank, t)
+    ngen = if genetic_structure == :unstructured
+        t * (t + 1) ÷ 2
+    elseif genetic_structure == :diagonal
+        t
+    elseif genetic_structure == :lowrank
+        t * grank
+    else
+        t * grank + t
+    end
 
     function negloglik(params)
-        G0 = _chol_params_to_cov(@view(params[1:nG]), t)
-        R0 = _chol_params_to_cov(@view(params[nG + 1:end]), t)
+        G0, _, _ = _structured_genetic_params_to_cov(@view(params[1:ngen]), t, genetic_structure, grank)
+        R0 = _chol_params_to_cov(@view(params[ngen + 1:end]), t)
         try
             return -_mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
         catch err
-            err isa PosDefException && return Inf
+            (err isa PosDefException || err isa ArgumentError) && return Inf
             rethrow()
         end
     end
 
-    if initial === nothing
-        Ym = Matrix(Y)
-        phen = ones(t)
-        for k in 1:t
-            vals = [Float64(Ym[i, k]) for i in 1:n if _is_present(Ym[i, k])]
-            if length(vals) >= 2
-                mu = sum(vals) / length(vals)
-                v = sum(abs2, vals .- mu) / (length(vals) - 1)
-                v > 0 && (phen[k] = v)
-            end
+    Ym = Matrix(Y)
+    phen = ones(t)
+    for k in 1:t
+        vals = [Float64(Ym[i, k]) for i in 1:n if _is_present(Ym[i, k])]
+        if length(vals) >= 2
+            mu = sum(vals) / length(vals)
+            v = sum(abs2, vals .- mu) / (length(vals) - 1)
+            v > 0 && (phen[k] = v)
         end
+    end
+
+    if initial === nothing
         G0_start = Matrix(Diagonal(0.5 .* phen))
         R0_start = Matrix(Diagonal(0.5 .* phen))
     else
-        G0_start = Matrix(Float64.(Matrix(initial.G0)))
-        R0_start = Matrix(Float64.(Matrix(initial.R0)))
+        G0_start = hasproperty(initial, :G0) ? Matrix(Float64.(Matrix(initial.G0))) : Matrix(Diagonal(0.5 .* phen))
+        R0_start = hasproperty(initial, :R0) ? Matrix(Float64.(Matrix(initial.R0))) : Matrix(Diagonal(0.5 .* phen))
     end
-    params0 = vcat(_cov_to_chol_params(G0_start, t), _cov_to_chol_params(R0_start, t))
+    _check_covariance(R0_start, "initial.R0", t)
+    if genetic_structure in (:unstructured, :diagonal) ||
+            (initial !== nothing && hasproperty(initial, :G0))
+        _check_covariance(G0_start, "initial.G0", t)
+    end
+    params0 = vcat(
+        _structured_genetic_params0(G0_start, genetic_structure, grank, t, initial),
+        _cov_to_chol_params(R0_start, t),
+    )
 
     result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
     phat = Optim.minimizer(result)
-    G0hat = Matrix(Symmetric(_chol_params_to_cov(phat[1:nG], t)))
-    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[nG + 1:end], t)))
+    G0raw, Lhat, ψhat = _structured_genetic_params_to_cov(phat[1:ngen], t, genetic_structure, grank)
+    G0hat = Matrix(Symmetric(G0raw))
+    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[ngen + 1:end], t)))
 
     # EBVs via the GLS form (robust to a singular G0 at a boundary optimum).
     beta, ebv = _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, R0hat, t, p, q)
@@ -458,6 +764,10 @@ function fit_multivariate_reml(
         heritability = hsq,
         beta = beta,
         breeding_values = (ids = aids, traits = tlabels, values = ebv),
+        genetic_structure = genetic_structure,
+        genetic_rank = genetic_structure in (:lowrank, :factor_analytic) ? grank : nothing,
+        genetic_loadings = Lhat,
+        genetic_uniqueness = ψhat,
         loglik = -Optim.minimum(result),
         converged = Optim.converged(result),
         iterations = Optim.iterations(result),

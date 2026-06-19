@@ -23,6 +23,16 @@ README links both twin documentation surfaces so readers can move between the
 Julia engine status and the R user-facing package without inferring bridge
 support beyond the recorded evidence.
 
+## Current Slice
+
+- 2026-06-16: Julia lane / `codex/phase5-gwas-qtl-eqtl-tables`.
+  Ada/Shannon/Fisher/Curie/Pat/Rose/Grace/Jason lenses. Adds direct
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` wrappers over existing
+  marker-scan table data only. No R edits, no bridge/result-payload change, no
+  formula-driven marker scan, no expression-wide eQTL workflow, no calibrated
+  p-value or genome-wide threshold claim. Next action: finish checks, commit,
+  push, and open/mark draft PR after the existing Phase 5 stack head.
+
 ## Shared Contract
 
 - `hsquared` is the R public identity.
@@ -180,6 +190,128 @@ support beyond the recorded evidence.
   stays dense and `result_payload()` is unchanged (no R bridge change required);
   R can opt in via its existing PEV/reliability extractor enrichment. Posted to
   `HSquared.jl` issue #6.
+- Julia now has experimental Phase-4B structured multivariate genetic covariance
+  support: `diagonal_covariance`, `lowrank_covariance`,
+  `factor_analytic_covariance`, and
+  `fit_multivariate_reml(...; genetic_structure = :diagonal | :lowrank |
+  :factor_analytic, rank = K)`. This is dense/validation-scale and
+  engine-internal; `result_payload()` and the R bridge contract are unchanged.
+  Returned loading metadata is sign-canonicalized on the Julia side only, with
+  the sign-only policy recorded in
+  `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`.
+  R-facing covariance-structure syntax, full loading rotation/interpretation
+  conventions, and external comparators remain coordinated future work.
+- Julia now also has an opt-in Phase-4B structured-covariance recovery harness:
+  `sim/phase4b_structured_covariance_recovery.jl`. It runs seeded low-rank and
+  factor-analytic repeated-record half-sib simulations outside CI, accepts
+  explicit `--seeds` lists, and records loose covariance-recovery thresholds
+  with per-case summaries. This strengthens Julia-internal recovery tooling
+  only; it does not open R-facing covariance syntax, bridge payload changes,
+  broad multi-seed calibration, or comparator claims.
+- Julia now has a shared deterministic two-trait CSV fixture at
+  `test/fixtures/phase4_multitrait_parity/` for R-lane sommer/ASReml/BLUPF90
+  comparator work. It serializes the pedigree, phenotypes, and Julia REML
+  target values (`G0`, `R0`, beta, EBVs, h², loglik). This is a target fixture
+  for future R-lane parity, not external comparator evidence and not a bridge
+  payload change.
+- The fixture README and
+  `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md` now
+  define the R-lane comparator protocol: same bivariate Gaussian animal model,
+  REML target, likelihood-scale caveat, version/control reporting, and no row
+  promotion until a comparator run records a tolerance and evidence chain.
+- Julia now has opt-in unstructured multivariate REML recovery evidence at
+  `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
+  a repeated-record half-sib design outside CI, and the harness now accepts
+  `--seed` or explicit `--seeds` lists with summaries. This retires the "no
+  committed recovery harness" gap for `V4-MV-REML`, but does not provide broad
+  multi-seed calibration or external comparator parity.
+- Julia now records the shared multivariate recovery calibration protocol at
+  `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`.
+  It defines the seed-count, run-plan, and reporting gate required before any
+  broad multi-seed calibration claim for `V4-MV-REML` or `V4-FA`. The protocol
+  has now been executed on predeclared seed lists and did not pass
+  (unstructured 6/10, factor-analytic 8/10, low-rank 9/10; all fits converged).
+  This does not change R syntax, bridge payloads, or comparator status.
+- Julia now has `single_marker_scan` as a direct Phase 5 fixed-effect Gaussian
+  marker-screening utility. It residualizes `y` and centered marker dosages
+  against `X` and returns effects, supplied-variance standard errors, z-scores,
+  chi-square statistics, approximate two-sided Gaussian/Wald p-values,
+  Bonferroni-adjusted p-values, Benjamini-Hochberg q-values, fixed-effect
+  known-variance LOD-equivalent scores, denominators, marker IDs, allele
+  frequencies, and the VanRaden scale. `marker_scan_table()` prepares
+  row-aligned marker-scan tables from those direct scan fields in original scan
+  order, with allele variances, marker-variance contributions, optional
+  total-variance proportions, optional variance components / marker groups
+  when present, and optional exact marker-map metadata alignment.
+  `gwas_table()`, `qtl_table()`, and `eqtl_table()` now label those
+  already-computed direct scan tables with analysis metadata and optional trait
+  or expression-feature metadata; they do not run GWAS/QTL/eQTL workflows.
+  `marker_effects()` prepares
+  sorted top-marker effect summaries from those direct scan fields, with
+  optional exact marker-map metadata alignment. `marker_variance_explained()`
+  prepares sorted marker-level variance-contribution summaries as
+  `2p(1-p) * effect^2`, with optional total-variance proportions and exact
+  marker-map metadata alignment; it is not a calibrated PVE/model R² claim.
+  `marker_significance_summary()` reports nominal returned-marker-set raw,
+  Bonferroni, and BH significance flags/counts plus top-marker provenance from
+  the same direct scan fields; it is not a calibrated genome-wide threshold
+  workflow.
+  `marker_manhattan_data()`
+  prepares plot-ready Manhattan data from those direct scan fields and can
+  consume already-validated `HSMarkerMapSpec` / `HSData` marker metadata by
+  exact marker ID. `marker_region_data()` prepares one-chromosome or
+  coordinate-window regional data from those row-aligned scan fields,
+  preserving original scan indices and optional marker-variance proportions for
+  future regional display code. `marker_qq_data()` prepares sorted
+  observed/expected QQ plot data from the same direct scan output, and
+  `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
+  diagnostic from returned chi-square values. The opt-in
+  `sim/phase5_marker_scan_recovery.jl` harness records default-seed marker
+  recovery smoke for fixed, supplied-variance mixed, and supplied LOCO direct
+  scans outside CI; draft PR #34 is open on
+  `codex/phase5-marker-recovery-harness` with CI and Documenter green for
+  commit `03eaae2`.
+  This is engine-internal / direct-Julia only:
+  no mixed-model GWAS/QTL/eQTL, relatedness or population-structure correction,
+  calibrated mixed-model p-values, calibrated PVE/model R² claims,
+  interval-mapping or mixed-model LOD workflows, marker file parsing, plotting
+  backend, calibrated/correlated-marker genome-wide thresholds,
+  `regional_plot()` / fine-mapping activation,
+  advanced/correlated-marker multiple-testing workflow,
+  expression-wide eQTL scanning, R `marker_scan()` formula activation,
+  bridge payload change, or
+  `result_payload()` change.
+- Julia now has `mixed_model_marker_scan` as a direct Phase 5 dense
+  supplied-variance GLS marker-screening utility. It forms
+  `V = sigma_a2 * Z * A * Z' + sigma_e2 * I` from supplied variance components
+  and a supplied relationship precision, then runs marker-by-marker Wald tests
+  conditional on `X`. This is engine-internal / direct-Julia only: no
+  marker-scan variance-component estimation, LOCO, sparse production scan,
+  calibrated p-values, calibrated PVE/model R² claims, interval-mapping or
+  mixed-model LOD workflows, plotting backend, R `marker_scan()` formula
+  activation, bridge payload change, or `result_payload()` change.
+- Julia now has `loco_relationship_precisions` and
+  `loco_mixed_model_marker_scan` as direct Phase 5 leave-one-group-out
+  marker-screening utilities. The construction helper drops each marker group,
+  builds a dense VanRaden relationship from the remaining markers, and applies
+  the existing ridge-regularized inverse; the scan helper selects the matching
+  precision before running the dense supplied-variance GLS scan. This is
+  engine-internal / direct-Julia only: no public LOCO defaults, marker-scan
+  variance-component estimation, sparse production scan, calibrated p-values,
+  calibrated PVE/model R² claims, plotting backend, R `marker_scan()` formula
+  activation, bridge payload change, or `result_payload()` change.
+- R head `21161a5` documents multivariate extractor examples, with CI recorded
+  by `6b5758b`. Julia mirrors the extractor vocabulary locally for
+  multivariate result `NamedTuple`s:
+  `variance_components`, `fixed_effects`, `heritability` (REML results only),
+  and `breeding_values`/`EBV`/`BLUP`. These are copy-returning wrappers over
+  existing result fields and do not change `result_payload()` or the R bridge
+  contract.
+- The Julia backend algorithm roadmap now distinguishes the implemented
+  Phase-4B dense CPU validation-scale structured-`G0` path from the still
+  planned GPU/performance path. This is status wording only: no backend
+  dispatch, R-facing covariance syntax, bridge payload, or `result_payload()`
+  change.
 - Julia now has an experimental average-information REML estimator:
   `fit_ai_reml` / `fit_animal_model(...; target = :ai_reml)`. It recovers the
   same optimum as the dense/sparse NelderMead optimizers, and its AI matrix
@@ -436,6 +568,45 @@ support beyond the recorded evidence.
   validation, live Julia `HSData` object marshalling parity, the first real
   genomic/QTL model-spec contract, and the first real standard
   quantitative-genetic model-spec contract.
+
+## 2026-06-18 (overnight) — Julia lane status handoff to the R twin
+
+Durable cross-lane note (NOT posted to GitHub — outward posting is the user's
+call). Julia lane on `codex/phase5-gwas-qtl-eqtl-tables`, suite 1707/1707 green,
+all local commits UNPUSHED (push + the Phase-5 stack #26→#35 merge await the
+user). What the engine now offers that the R lane may eventually surface (after a
+JOINT bridge/parser/result-payload contract — not unilaterally):
+
+- **Phase-3 relationship-matrix family, all exported:** `additive_relationship`,
+  `dominance_relationship` (Cockerham, full-sib ¼), `epistatic_relationship`
+  (Henderson Hadamard A∘A/A∘D/D∘D), `cytoplasmic_relationship` (maternal
+  lineage), `clonal_relationship`, and `normalize_pedigree(...; allow_selfing)`.
+  These are candidate precision/relationship inputs for an eventual R
+  `relmat()` / `precision()` random-effect contract.
+- **Phase-6 GLLVM families (UNEXPORTED, experimental):** Gaussian/Poisson/
+  Bernoulli/Binomial × Laplace + VA marginals, `fit_laplace_reml`,
+  `laplace_reml_interval`. Gaussian reduces exactly to `sparse_reml_loglik`.
+  Candidate for a future R non-Gaussian `family()` vocabulary once exported +
+  comparator-validated.
+
+Pre-merge engine fixes the R/coordinator twin flagged for Phase 4B:
+
+- **DONE (Julia side):** `genetic_uniqueness` for a `:lowrank` fit now returns
+  `nothing` (was a misleading `zeros(t)`) — a pure low-rank `G = ΛΛ'` has no
+  specific variance. Tests updated; suite green.
+- **R-LANE:** the "eigen-G" claim flagged for rewording lives in the R repo;
+  there is no eigen-G claim in the Julia engine to change. Over to the R twin.
+
+Honest-status drift fix this session: the two `genomic.jl` docstrings (and
+capability-status row 50) that under-claimed `fit_gblup` / `fit_snp_blup` (said
+GBLUP "not implemented") are corrected.
+
+Engine-side solo runway in progress (will appear as further local commits):
+REML estimation of `σ²_g` for `fit_gblup`/`fit_snp_blup`, exporting the internal
+single-step `H`-inverse with validated blending, a parametric-bootstrap
+heritability interval, and a high-condition dense-inverse stress test. R-lane
+activation (model-specs, bridge targets, the dead R extractor fields) remains a
+JOINT contract task per AGENTS.md rule 2.
 
 ## Sister References
 

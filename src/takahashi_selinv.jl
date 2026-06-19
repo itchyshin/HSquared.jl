@@ -49,16 +49,13 @@
     return -1
 end
 
-"""
-    takahashi_selinv(ch::SparseArrays.CHOLMOD.Factor{Float64}) -> SparseMatrixCSC
-
-Compute the Takahashi selected inverse of the matrix `C` whose sparse Cholesky
-factor is `ch` (`P · C · Pᵀ = L · Lᵀ`). Returns a `SparseMatrixCSC` holding
-`C⁻¹` (in the ORIGINAL un-permuted ordering) at the union sparsity of
-`Pᵀ (L + Lᵀ) P`. Entries outside that pattern are NOT computed (and are NOT zero
-in general). Adapted from DRM.jl (MIT).
-"""
-function takahashi_selinv(ch::SparseArrays.CHOLMOD.Factor{Float64})
+# Shared Takahashi recursion, reused by takahashi_selinv, takahashi_diag, and
+# selinv_trace_against. Returns the selected-inverse values `Zvals` aligned to the
+# CSC structure of `L = sparse(ch.L)` (permuted ordering; column `j`'s diagonal is
+# at `colptr[j]`, off-diagonals at the following nonzero offsets), plus the CSC
+# arrays and permutation to map back to the original ordering. O(nnz(L)); the
+# `L + Lᵀ` pattern entries are exact.
+function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64})
     L = sparse(ch.L)
     perm = ch.p
     n = size(L, 1)
@@ -102,7 +99,22 @@ function takahashi_selinv(ch::SparseArrays.CHOLMOD.Factor{Float64})
         Zvals[cs] = invLjj * invLjj - s * invLjj
     end
 
-    nnz_out = 2 * length(Lvals) - n
+    return Zvals, colptr, rowval, perm, n
+end
+
+"""
+    takahashi_selinv(ch::SparseArrays.CHOLMOD.Factor{Float64}) -> SparseMatrixCSC
+
+Compute the Takahashi selected inverse of the matrix `C` whose sparse Cholesky
+factor is `ch` (`P · C · Pᵀ = L · Lᵀ`). Returns a `SparseMatrixCSC` holding
+`C⁻¹` (in the ORIGINAL un-permuted ordering) at the union sparsity of
+`Pᵀ (L + Lᵀ) P`. Entries outside that pattern are NOT computed (and are NOT zero
+in general). Adapted from DRM.jl (MIT).
+"""
+function takahashi_selinv(ch::SparseArrays.CHOLMOD.Factor{Float64})
+    Zvals, colptr, rowval, perm, n = _selinv_zvals(ch)
+
+    nnz_out = 2 * length(Zvals) - n
     I_out = Vector{Int}(undef, nnz_out)
     J_out = Vector{Int}(undef, nnz_out)
     V_out = Vector{Float64}(undef, nnz_out)
@@ -132,52 +144,48 @@ diagonal is always in the `L + Lᵀ` pattern, so it is exact. Adapted from
 DRM.jl (MIT).
 """
 function takahashi_diag(ch::SparseArrays.CHOLMOD.Factor{Float64})
-    L = sparse(ch.L)
-    perm = ch.p
-    n = size(L, 1)
-    colptr = L.colptr
-    rowval = L.rowval
-    Lvals = L.nzval
-
-    Zvals = zeros(Float64, length(Lvals))
-
-    @inbounds for j in n:-1:1
-        cs = colptr[j]; ce = colptr[j + 1] - 1
-        Ljj = Lvals[cs]
-        invLjj = 1.0 / Ljj
-
-        for off_r in ce:-1:(cs + 1)
-            r = rowval[off_r]
-            s = 0.0
-            for off_k in (cs + 1):ce
-                k = rowval[off_k]
-                Lkj = Lvals[off_k]
-                if k == r
-                    z_kr = Zvals[colptr[r]]
-                elseif k < r
-                    idx = _csc_rowidx(colptr, rowval, k, r)
-                    z_kr = idx == -1 ? 0.0 : Zvals[idx]
-                else
-                    idx = _csc_rowidx(colptr, rowval, r, k)
-                    z_kr = idx == -1 ? 0.0 : Zvals[idx]
-                end
-                s += Lkj * z_kr
-            end
-            Zvals[off_r] = -s * invLjj
-        end
-
-        s = 0.0
-        for off_k in (cs + 1):ce
-            Lkj = Lvals[off_k]
-            Z_kj = Zvals[off_k]
-            s += Lkj * Z_kj
-        end
-        Zvals[cs] = invLjj * invLjj - s * invLjj
-    end
-
+    Zvals, colptr, _, perm, n = _selinv_zvals(ch)
     d = Vector{Float64}(undef, n)
     @inbounds for j in 1:n
         d[perm[j]] = Zvals[colptr[j]]
     end
     return d
+end
+
+"""
+    selinv_trace_against(ch, Ainv, nfixed) -> Float64
+
+Accumulate `tr(Ainv · C⁻¹[uu]) = Σ Ainv[i,j] · C⁻¹[nfixed+i, nfixed+j]` over the
+nonzeros of the random-effect precision `Ainv`, using the Takahashi selected
+inverse of the MME coefficient matrix `C` (factor `ch`) WITHOUT materialising the
+full selected-inverse sparse matrix. `Ainv`'s sparsity pattern is a subset of the
+random block of `C`, hence of the `L + Lᵀ` pattern, so every entry looked up is
+in-pattern (exact). Numerically identical (up to summation order) to
+`sum(Ainv .* takahashi_selinv(ch)[(nfixed+1):end, (nfixed+1):end])`, but `O(nnz(L))`
+and without the `O(nnz)` output allocation. This is the REML score trace term
+`tr(A⁻¹ C^uu)` in [`fit_ai_reml`](@ref). Adapted from DRM.jl (MIT).
+"""
+function selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
+                              Ainv::SparseMatrixCSC, nfixed::Integer)
+    Zvals, colptr, rowval, perm, n = _selinv_zvals(ch)
+    iperm = invperm(perm)            # original index -> permuted index
+    rows = rowvals(Ainv)
+    vals = nonzeros(Ainv)
+    trace = 0.0
+    @inbounds for jcol in 1:size(Ainv, 2)
+        vp = iperm[nfixed + jcol]
+        for k in nzrange(Ainv, jcol)
+            up = iperm[nfixed + rows[k]]
+            if up == vp
+                z = Zvals[colptr[up]]
+            else
+                lo = up < vp ? up : vp
+                hi = up < vp ? vp : up
+                idx = _csc_rowidx(colptr, rowval, lo, hi)
+                z = idx == -1 ? 0.0 : Zvals[idx]
+            end
+            trace += vals[k] * z
+        end
+    end
+    return trace
 end

@@ -2,33 +2,2150 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 non-Gaussian fitted-object API (NonGaussianFit struct + extractors)
+
+- Goal: give the just-exported non-Gaussian fitter a proper fitted-object with the
+  same extractor contract as `AnimalModelFit` (closes the V6-FIT "no full
+  fitted-object/extractor API" gap), AND fix a latent dispatch hazard: the fit
+  was a bare `NamedTuple`, which could collide with the multivariate
+  `::NamedTuple` extractors in `multivariate.jl`.
+- `fit_laplace_reml` now returns a distinct `struct NonGaussianFit` (fields
+  unchanged: `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
+  `ids`, `converged`, `family`, `marginal` — so existing field access is
+  unaffected) with methods `breeding_values(fit)` (→ `BreedingValues(ids,
+  values)`), `variance_components(fit)`, `fixed_effects(fit)`, `EBV(fit)`. Added
+  an `ids` kwarg (default `1:q`).
+- Gates (verified, `test/runtests.jl`): `fg isa NonGaussianFit`;
+  `breeding_values(fg)` is a `BreedingValues` wrapping the field vector with the
+  threaded `ids`; `variance_components`/`fixed_effects`/`EBV` match; ids default
+  to `1:q`; all prior field-access tests + sims still pass unchanged.
+- `Pkg.test()`: passed, exit 0, **1792/1792** (+9). V6-FIT debt + capability rows
+  updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Assessment: parametric-bootstrap h² interval NOT built (evidence-based)
+
+- Considered the V1-HERIT-CI "parametric-bootstrap alternative" gap. Probed it on
+  the interior 8-animal REML fixture: 200 simulate-and-refit draws give a 95%
+  bootstrap CI of `(0.0, 1.0)` — correct but uninformative, because n=8 carries
+  almost no information about h² (the bootstrap h² distribution piles at both
+  boundaries). It also costs ~2.7s for 200 refits, and h² already has two
+  interval methods (`:delta` logit + `:profile` LRT).
+- Decision: do NOT build it as an in-suite capability — it would be a degenerate,
+  slow, redundant addition (padding). It is better suited to an opt-in sim
+  harness with a large fixture (where the CI is interior and informative), like
+  the recovery harnesses; recorded here as a deliberate, evidence-based deferral.
+- No code/test change. (Honest-status discipline: not every listed gap is worth
+  filling at validation scale.)
+
+## 2026-06-18 Phase 3 repeatability `t` confidence interval (delta method)
+
+- Goal: close the V3-REPEAT-REML "needs `t`/`h²` intervals" gap for the
+  well-identified summary `t = (σ²a+σ²pe)/total` (the `h²` split stays ill-
+  conditioned, so its interval is deferred).
+- `repeatability_interval(y, X, Z, Ainv; level, initial, ...)`: fits by REML, forms
+  the observed information as the central finite-difference Hessian of the REML
+  loglik at the optimum, delta-methods `t` on the logit scale (so the CI lies in
+  `(0,1)`). Returns `(repeatability, lower, upper, level, se)`; throws on a
+  non-positive-definite/flat information or boundary `t`. Exported. The interval
+  itself is RNG-free/deterministic.
+- Probe confirmed the numerics are well-conditioned for `t` (`cond(Info) ≈ 28`,
+  `SE(t) ≈ 0.067`) even though the σ²a/σ²pe split is not.
+- Gates (verified, `test/runtests.jl`, seeded fixture — only the FIXTURE uses a
+  seed; added `Random` to the test deps): valid bracketing `(0,1)` interval,
+  `level == 0.95`, `se > 0`, point estimate matches the fit, and higher
+  confidence ⇒ wider interval; `level = 1.5` throws.
+- `Pkg.test()`: passed, exit 0, **1783/1783** (+6). V3-REPEAT-REML debt +
+  capability rows updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 1 Mendelian sampling variances accessor
+
+- Goal: expose the per-individual Mendelian sampling variances `d_i` (the `D` in
+  `A = T·D·Tᵀ`) — the within-family variances used in gene-dropping / accuracy
+  and the `1/d_i` scales behind the Henderson `pedigree_inverse`.
+- `mendelian_sampling_variances(pedigree)` (+ `(ids,sire,dam)` convenience),
+  exported. RNG-free, hand-verifiable.
+- Gates (verified, `test/runtests.jl`): founders `d=1`, both-parents-known
+  non-inbred `d=0.5`, one-parent-known `d=0.75`; matches the internal per-record
+  helper; the strong `det(A) = ∏ d_i` identity (atol 1e-10) on a mixed and a
+  selfing-chain pedigree; the selfing recurrence `d_k = ½(1−F_{k−1})`.
+- `Pkg.test()`: passed, exit 0, **1777/1777** (+12). New capability row. Local
+  checkpoint, not pushed.
+
+## 2026-06-18 Phase 2 weighted genomic relationship (weighted GBLUP)
+
+- Goal: add per-marker weighting to the genomic relationship (the basis of
+  weighted GBLUP / GWAS-informed prediction).
+- `genomic_relationship_matrix(markers; weights)` (method 1): `G = Z·diag(w)·Zᵀ /
+  Σ_j w_j·2p_j(1−p_j)`. RNG-free, backward-compatible (no weights ⇒ unchanged).
+- Gates (verified, `test/runtests.jl`): equal weights reduce EXACTLY to the
+  unweighted method-1 `G`; scale-invariant (constant weights); matches the
+  explicit `Z·diag(w)·Zᵀ` construction; symmetric + PSD; non-uniform weights
+  genuinely change `G`; guards reject wrong length, negative weights, and
+  `method = :vanraden2` + weights.
+- `Pkg.test()`: passed, exit 0, **1765/1765** (+9). V2-GRM debt + capability rows
+  updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 1 deep-inbreeding dense-inverse stress test (V1-DENSE-COND)
+
+- Goal: close the inventory's "V1-DENSE-COND is currently untested" gap — test
+  the dense relationship path on a deeply ill-conditioned (inbred) pedigree.
+- Fixture: a selfing chain `F_k = 1 − (1/2)^k` (g0..g6, `F₆ ≈ 0.984`), RNG-free.
+- Finding (verified, `test/runtests.jl`): `cond(A) ≈ 1.7e3` (genuinely
+  ill-conditioned), yet the DIRECT Henderson `pedigree_inverse` is EXACT
+  (`max|Ainv·A − I| < 1e-9`, `Ainv == inv(A)` to < 1e-6) and the supplied-variance
+  MME solve stays finite. So `pedigree_inverse` is conditioning-robust (it is a
+  direct construction, not a numerical inverse); the V1-DENSE-COND caveat is
+  specifically about the downstream dense-`inv(Ainv)` estimators, not the sparse
+  Ainv. F series matches `1 − (1/2)^k` exactly.
+- `Pkg.test()`: passed, exit 0, **1756/1756** (+12). V1-DENSE-COND moved
+  documented→partial (now tested, boundary pinned). Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 2 VanRaden method-2 (standardized) genomic relationship (post-inventory)
+
+- Goal: add the second standard genomic-relationship construction (equal-weight,
+  per-marker standardized) alongside the existing method 1.
+- `genomic_relationship_matrix(markers; method = :vanraden1 | :vanraden2)`:
+  method 1 (default, unchanged) `G = ZZ'/(2Σp(1-p))`; method 2
+  `G = ZₛZₛ'/m`, `Zₛ[:,j] = (M-2p)/√(2p(1-p))`. RNG-free, backward-compatible
+  (default preserves method 1 — existing tests unaffected).
+- Gates (verified, `test/runtests.jl`): default `== :vanraden1`; method 2 equals
+  its explicit standardized construction, is symmetric and PSD, and genuinely
+  differs from method 1; supplied-`p` path works; guards reject an unknown
+  `method` and a monomorphic marker (`2p(1-p)=0` cannot be standardized).
+- `Pkg.test()`: passed, exit 0, **1744/1744** (+8). V2-GRM debt + capability rows
+  updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 non-Gaussian fitter promoted to the public surface (post-inventory)
+
+- Goal: the substantial, internally-validated Phase-6 GLLVM engine was
+  deliberately UNEXPORTED (= unusable from the public API). Promote the FITTERS to
+  the experimental public surface so non-Gaussian animal models are actually
+  callable.
+- Exported `fit_laplace_reml` and `laplace_reml_interval` (the marginal-loglik
+  kernels `laplace_marginal_loglik`/`variational_marginal_loglik` and the
+  `ResponseFamily` types stay internal — lower-level). Updated the three
+  "not exported" docstring notes accordingly.
+- Gate (verified, `test/runtests.jl`, exercised UNQUALIFIED): the Gaussian
+  non-Gaussian fit equals the exact `fit_sparse_reml` loglik (rtol 1e-6); a
+  Poisson fit + the exported `laplace_reml_interval` bracket the estimate at
+  level 0.95.
+- `Pkg.test()`: passed, exit 0, **1736/1736** (+5). Capability rows (fitted +
+  Bernoulli + Binomial) and the V6-FIT debt row updated — families are now
+  reachable via the exported `fit_laplace_reml(...; family = …)`; a full
+  extractor-method API (the fit returns a `NamedTuple`) remains future work.
+- Rose: honest experimental promotion — all caveats kept (dense/validation-scale,
+  no external comparator, not the public default, no R model-spec). Local
+  checkpoint, not pushed.
+
+## 2026-06-18 Phase 2 single-step (H-matrix) export + fitting (post-inventory)
+
+- Goal: close the inventory's "single-step `_single_step_Hinv` is implemented but
+  unexported, not wired into fitting" gap.
+- `single_step_inverse(Ainv, A, G, genotyped_rows; tau, omega, blend_weight,
+  ridge)` — public wrapper over the validated internal `H⁻¹` constructor (Aguilar
+  2010 / Christensen & Lund 2009). `fit_single_step` (supplied-variance) and
+  `fit_single_step_reml` (REML-estimated) build `H⁻¹` and solve the single-step
+  MME via `fit_gblup`/`fit_gblup_reml`. All three exported.
+- Gates (verified, `test/runtests.jl`): public wrapper == internal constructor;
+  `G = A₂₂` ⇒ `H⁻¹ ≈ A⁻¹` (atol 1e-10); `fit_single_step` at `G = A₂₂`
+  reproduces the pedigree animal-model BLUP (atol 1e-9); `fit_single_step` with a
+  genomic block equals `fit_gblup` on the same `H⁻¹` (atol 1e-10);
+  `fit_single_step_reml` at `G = A₂₂` reproduces the pedigree-REML optimum
+  (loglik rtol 1e-6, VCs; both reach the same boundary state); singular-raw-`G`
+  guard delegates.
+- `Pkg.test()`: passed, exit 0, **1731/1731** (+11). Single-step capability +
+  V2-SSHINV / Ginv rows updated (no longer "unexported / not wired"). Local
+  checkpoint, not pushed.
+
+## 2026-06-18 Phase 2 GBLUP/SNP-BLUP REML convenience (post-inventory)
+
+- Goal: close the inventory's "`fit_gblup`/`fit_snp_blup` are supplied-variance
+  only" gap with a one-call REML-estimating convenience (the generic REML fitter
+  already estimates genomic VCs on a `Ginv` spec, but no path returned marker
+  effects with a REML-estimated variance).
+- `fit_gblup_reml(y, X, Z, Ginv; initial, target, ids)` — builds the genomic
+  spec and estimates `(σ²_g, σ²_e)` by REML (`:ai_reml` default), returns the
+  `AnimalModelFit`. `fit_snp_blup_reml(y, X, markers; initial, target, ...)` —
+  estimates the per-marker variance by REML on the centered-marker spec and
+  returns `(marker_effects, gebv, beta, sigma_g2 = σ̂²_marker·k, sigma_e2, k, p,
+  loglik, converged)`. Both exported.
+- Gates (verified, `test/runtests.jl`): `fit_gblup_reml` VCs/breeding-values ==
+  generic `fit_ai_reml` on the `Ginv` spec (rtol 1e-6 / atol 1e-8);
+  `fit_snp_blup_reml` converges, `σ²_g > 0`, and reproduces supplied-variance
+  `fit_snp_blup` at the estimated variances (GEBV/marker-effects atol 1e-8);
+  guards inherited. On the fixture both parameterisations estimate σ²_g ≈ 1.558
+  (GBLUP↔SNP-BLUP equivalence at the REML level).
+- Also fixed two more stale capability-status drifts (the VanRaden-`G` row said
+  "no GBLUP / marker-effect estimation"; the GBLUP/SNP-BLUP rows said "no REML
+  estimation").
+- `Pkg.test()`: passed, exit 0, **1720/1720** (+13). V2-GBLUP / V2-SNPBLUP /
+  V2-GREML debt rows updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Drift fix + Phase-4B twin-flagged fix + twin coordination (post-inventory)
+
+- Context: ran a multi-agent inventory workflow over ROADMAP / capability-status
+  / validation-debt / completion-plan / R-twin / code to get the authoritative
+  "what's left" map, then worked the solo-verifiable items it surfaced.
+- **Honest-status drift fix:** `src/genomic.jl` `genomic_relationship_matrix` and
+  `genomic_relationship_inverse` docstrings (and capability-status row 50) said
+  GBLUP / fitting were "not implemented" / "not yet wired" — FALSE, since
+  `fit_gblup`/`fit_snp_blup` consume exactly these utilities. Corrected to point
+  at them (doc-only; under-claim removed).
+- **Phase-4B twin-flagged fix:** `genetic_uniqueness` for a `:lowrank` fit now
+  returns `nothing` (was `zeros(t)`) — a pure low-rank `G = ΛΛ'` has no specific
+  variance, and the accessor's documented contract already returns `nothing`
+  where uniqueness is N/A. Test updated to assert `=== nothing`.
+- **Twin coordination:** appended a durable cross-lane status handoff to
+  `docs/dev-log/coordination-board.md` (engine's exported Phase-3 relationship
+  family + unexported Phase-6 GLLVM families that R may later surface; the
+  lowrank fix done; the eigen-G wording flagged as R-lane). NOT posted to GitHub
+  (outward posting is the user's call).
+- `Pkg.test()`: passed, exit 0, **1707/1707** (lowrank-uniqueness test net −1).
+- Rose: no over-claim; doc accuracy improved, one behavior fix with honest
+  contract. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 epistatic relationship matrices (Hadamard) (overnight)
+
+- Goal: another canonical, hand-verifiable Phase-3 capability — Henderson (1985)
+  epistatic relationship matrices, now that the additive `A` and dominance `D`
+  matrices are both public. Begins fulfilling the reserved `epistasis()` term.
+- `epistatic_relationship(pedigree; kind)`: Hadamard products —
+  `:additive_additive` → `A∘A`, `:additive_dominance` → `A∘D`,
+  `:dominance_dominance` → `D∘D`. Exported, `(ids,sire,dam)` convenience.
+- Gates (verified, `test/runtests.jl`): equals the explicit Hadamard products;
+  full sibs `A∘A = 1/4`, `A∘D = 1/8`, `D∘D = 1/16`; half sibs `A∘A = 1/16`,
+  `A∘D = D∘D = 0`; unit diagonal; symmetry; invalid-`kind` guard.
+- `Pkg.test()`: passed, exit 0, **1708/1708** (epistatic testset +13).
+- Rose: exported public primitive with full evidence; inherits the dominance
+  non-inbred-parent assumption; new capability row + `V3-EPISTASIS` debt row,
+  ROADMAP Phase-3 updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Public additive relationship accessor (overnight)
+
+- Goal: API consistency — this session exported the dominance, cytoplasmic, and
+  clonal relationship matrices, but the dense additive relationship `A` was only
+  available as its sparse inverse (`pedigree_inverse`). A dominance/non-additive
+  model needs both `A` and `D`.
+- `additive_relationship(pedigree)` (and `(ids,sire,dam)` convenience): a thin
+  public wrapper over the already-validated `_numerator_relationship`. Exported.
+- Gates (`test/runtests.jl`): equals the internal recursion, `A == inv(Matrix(
+  pedigree_inverse))`, full sibs `0.5`, parent–offspring `0.5`, unrelated
+  founders `0`, inbred diagonal `1.25` at `F = 0.25`, and the `max_relationship_
+  cache` guard.
+- `Pkg.test()`: passed, exit 0, **1695/1695** (+10). Completes the public
+  relationship-matrix family (additive · dominance · cytoplasmic · clonal).
+- Rose: thin accessor over tested internals; capability row added. Local
+  checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 dominance relationship matrix (overnight)
+
+- Goal: a mainstream Phase-3 capability I had wrongly lumped with the
+  canon-dependent items — the dominance relationship matrix (dominance variance
+  is standard quantitative genetics, and the construction is canonical).
+- `dominance_relationship(pedigree)`: the dense Cockerham dominance relationship
+  `D[x,y] = ¼(A[sx,sy]·A[dx,dy] + A[sx,dy]·A[dx,sy])` from the additive numerator
+  relationship `A`; unit diagonal; `0` whenever either animal has an unknown
+  parent. Exported, with a `(ids,sire,dam)` convenience method.
+- Gates (verified, `test/runtests.jl`): full-sib / half-sib fixture — full sibs
+  `= 1/4`, half sibs and parent–offspring `= 0`, symmetry, unit diagonal, and an
+  EXHAUSTIVE check that every both-parents-known off-diagonal matches the
+  explicit Cockerham formula evaluated against `A`.
+- `Pkg.test()`: passed, exit 0, **1685/1685** (dominance testset +22).
+- Honest scope: off-diagonal formula is general; the unit diagonal / no
+  dominance-inbreeding correction assumes non-inbred parents (the standard
+  textbook case) — the inbred-parent extension is recorded as future work.
+- Rose: exported public primitive with full evidence; new capability row, new
+  `V3-DOMINANCE` debt row, ROADMAP Phase-3 updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 clonal / asexual relationship (overnight)
+
+- Goal: the next solo Phase-3 inheritance primitive named by the Stop hook —
+  clonal / asexual reproduction.
+- `clonal_relationship(pedigree, clone_of)`: clonal ramets carry no Mendelian
+  sampling, so each is genetically identical to its genet. The construction
+  aliases each individual to its ultimate genet (`rep`, clone links followed
+  transitively with a cycle guard) and returns `C[i,j] = A[rep(i), rep(j)]` from
+  the numerator relationship. This sidesteps the zero Mendelian-variance issue
+  (which would make a direct `Ainv` recursion divide by zero) — `C` is built
+  dense and is rank-deficient (identical clonemate rows), to use directly.
+  Exported, aligned to `pedigree.ids`.
+- Gates (verified, `test/runtests.jl`): hand fixture (genet G = P×Q, ramets
+  r1/r2) — clonemates and ramet↔genet `= 1`, ramet inherits the genet's `0.5` to
+  each parent, non-clones unchanged, all-marker `clone_of` → numerator
+  relationship, transitive clone-of-clone chains collapse to one genet,
+  symmetry, and guards on length / unknown genet / clone cycle / self-clone.
+- `Pkg.test()`: passed, exit 0, **1663/1663** (clonal testset +15).
+- Rose: exported public primitive with full evidence; capability row
+  planned→experimental, new `V3-CLONAL` debt row, ROADMAP Phase-3 updated. Local
+  checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 self-fertilization (allow_selfing) (overnight)
+
+- Goal: the next solo-doable Phase-3 non-standard-inheritance primitive named by
+  the Stop hook — self-fertilization.
+- Finding: the existing math machinery was ALREADY self-correct. With
+  `sire == dam == P`, `_numerator_relationship` gives `A[i,j] = A[P,j]` and
+  `A_ii = 1 + ½(1+F_P)`, and `_mendelian_sampling_variance` returns `½(1−F_P)` —
+  both the textbook selfing values. The only blocker was the `normalize_pedigree`
+  guard that rejected `sire == dam`.
+- Change: added `normalize_pedigree(...; allow_selfing = false)`. When true the
+  selfing guard is skipped (the self-as-own-parent guard stays). No estimation
+  code touched.
+- Gates (verified, `test/runtests.jl`): the canonical repeated-selfing inbreeding
+  series `F = 0, 1/2, 3/4`; `A_ii = 3/2, 7/4`; `A[i,P] = 1`; symmetry;
+  `pedigree_inverse == inv(A)` for a pure-selfing pedigree AND a mixed
+  sexual/selfed pedigree; default-reject preserved.
+- `Pkg.test()`: passed, exit 0, **1648/1648** (selfing testset +11).
+- Rose: opt-in flag, default behaviour unchanged; capability row moved
+  planned→experimental, new `V3-SELFING` debt row, ROADMAP Phase-3 status
+  updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 cytoplasmic / maternal-lineage relationship (overnight)
+
+- Goal: start the non-standard-inheritance scope of Phase 3 (ROADMAP Phase 3
+  lists cytoplasmic inheritance) with a genuine, hand-verifiable relationship
+  primitive — the first non-standard inheritance capability in the engine.
+- `maternal_lineage(pedigree)`: traces each individual to its maternal founder in
+  a single forward pass over the topologically sorted pedigree (dam index < i).
+  `cytoplasmic_relationship(pedigree)`: dense 0/1 same-maternal-line indicator
+  `C` (mitochondrial / cytoplasmic inheritance). Both exported, with
+  `(ids, sire, dam)` convenience methods.
+- Gates (verified, `test/runtests.jl`): hand fixture with maternal lines
+  A:{A,C,D,F}, B:{B,E} — exhaustive `C[i,j] == (lineage[i]==lineage[j])`,
+  symmetry, unit diagonal, founder self-labelling, `F→C→A` transitivity,
+  all-founder → identity, and `(ids,sire,dam)` agreement.
+- `Pkg.test()`: passed, exit 0, **1637/1637** (cytoplasmic testset +53).
+- Honest scope: CONSTRUCTION only. `C` is the 0/1 indicator (rank = #lineages,
+  singular) — it is the relationship for an i.i.d. cytoplasmic random effect (a
+  grouping that feeds the existing `fit_two_effect_reml` second effect), NOT a
+  matrix to invert. No cytoplasmic-variance fitting claim, no R model-spec.
+- Rose: new exported public primitive with full evidence chain; capability row
+  moved planned→experimental, new `V3-CYTO` debt row, ROADMAP Phase-3 status
+  updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Dense-inverse conditioning caveat made visible (overnight)
+
+- Goal: the last queued solo item — make the dense `inv(Ainv)` conditioning
+  limitation an explicitly tracked caveat rather than only an implied one.
+- Added `V1-DENSE-COND` (status: documented) to the validation-debt register:
+  the validation-scale dense estimators that form an explicit `A = inv(Ainv)`
+  (`fit_two_effect_reml`, `fit_repeatability_reml`, the recovery harnesses) are
+  O(q³) and lose precision for ill-conditioned `Ainv`; the sparse REML / Henderson
+  / non-Gaussian Laplace+VA paths use `Ainv`/`cholesky(Ainv)` directly and never
+  form the inverse. Validation-scale limitation, not a bug; production sparse
+  fitting (planned) is the remedy.
+- Rose: doc-only; no src/test/claim-surface change. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 repeatability h² identifiability study (overnight)
+
+- Goal: test the standing hypothesis that the repeatability `h²` (σ²a/σ²pe split)
+  becomes reliably recoverable with a denser, relatedness-richer pedigree (the
+  `sim/phase3_qg_recovery.jl` forward note). Evidence-based closure of an open
+  speculative gap — NOT a new committed always-failing harness.
+- Probed full-sib designs (shared sires ⇒ relatedness 0.5 within family, 0.25
+  across — the contrast the original half-sib design lacked), seeds 20260618–22,
+  truth (1.0,0.6,1.4): small (q=156,n=624) recovered `h²` 2/5; large
+  (q=315,n=1575) recovered 4/5 within ~0.26 — but 1 seed STILL misses at relh
+  0.58.
+- Conclusion: more relatedness contrast + more data improve the split, but it is
+  NOT reliably gateable even at n=1575 — the additive-vs-permanent-environment
+  contrast is intrinsically ill-conditioned at validation scale. `t` stays the
+  gated summary; `h²` stays reported-ungated. Recorded in
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-repeatability-h2-identifiability.md`.
+- Rose: honest negative result; converts a speculative "needs denser pedigree"
+  note into concrete evidence. No src/test change; V3-REPEAT-REML debt row +
+  harness docstring updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 Binomial (logit, n-trials) family + recovery (overnight)
+
+- Goal: generalise Bernoulli to the Binomial(m) family AND scientifically
+  resolve the "binary `sigma_a2` is uncalibrated" limit — with more trials per
+  record the data is informative enough to recover `sigma_a2` tightly.
+- `BinomialResponse(n_trials)`: conditional `ℓ = yη − m·log1pexp(η) + log C(m,y)`,
+  score `y − m·p`, weight `m·p(1−p)`; VA expected kernels reuse the Bernoulli
+  Gauss–Hermite kernels scaled by `m` (plus the constant binomial offset).
+  `BernoulliResponse` is exactly `n_trials = 1`. `fit_laplace_reml` gains a
+  `:binomial` branch + required `n_trials` keyword.
+- Gates (verified, `test/runtests.jl`, 31/31): `n_trials = 1` kernels match
+  `BernoulliResponse` exactly; conditional + expected score/weight match finite
+  differences; a β-fixed Gauss–Hermite value gate (m=8) confirms `va.elbo ≤ R`
+  (gap ≈2e-3) and `|lap − R| ≈ 0.031`; guards reject `n_trials < 1`, `y ∉ 0:m`,
+  and `:binomial` without `n_trials`.
+- Recovery (RAN, exit 0; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-binomial-recovery.log`):
+  `sim/phase6_binomial_recovery.jl` (q=345, m=20, truth σ²a=1.0) — **5/5 with
+  `sigma_a2` HARD-gated**: rel ≤ 0.175, EBV correlation 0.900–0.916. This
+  demonstrates the single-trial Bernoulli `sigma_a2` bias is an INFORMATION
+  effect, not an estimator flaw.
+- `Pkg.test()`: passed, exit 0, **1584/1584** (Binomial testset +31).
+- Rose: experimental, dense, not exported, no R model-spec; the Binomial
+  `sigma_a2` recovery is genuinely gated (unlike single-trial Bernoulli). New
+  `V6-BINOMIAL` debt + capability rows. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 two-effect REML known-truth recovery (overnight)
+
+- Goal: close the V3-TWOEFFECT-REML "no committed RNG recovery harness" gap and
+  test whether the prior additive-variance underestimation was an estimator flaw
+  or a design (confounding) artifact.
+- `sim/phase3_two_effect_recovery.jl` (opt-in, outside CI): `y = μ + u1[animal] +
+  u2[group] + e`, `u1 ~ N(0, A·σ1²)` (additive, pedigree), `u2 ~ N(0, I·σ2²)`
+  (common environment), `e ~ N(0, I·σe²)`. The fix vs. the old confounded one-off
+  is that the common-environment GROUPS are assigned INDEPENDENTLY of the
+  pedigree, so the two covariances are separable. q=860 half-sib (20 sires / 40
+  dams / 800 offspring), 80 groups, truth (1.0, 0.5, 1.0), 5 predeclared seeds.
+- Result (RAN, exit 0, deterministic; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-two-effect-recovery.log`):
+  **5/5 pass** — ALL THREE components recover (max rel σ1 0.286, σ2 0.277, σe
+  0.123). The earlier additive underestimation was a confounding artifact of the
+  aliased design, NOT an estimator flaw.
+- Rose: opt-in evidence (outside CI); no test-suite/claim-surface change; the
+  V3-TWOEFFECT-REML debt row now records a committed identifiable-design harness.
+  Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 Bernoulli known-truth recovery (overnight)
+
+- Goal: honest recovery calibration of the Bernoulli/logit fit — close (as far
+  as the method honestly allows) the V6-BERNOULLI recovery gap.
+- `sim/phase6_bernoulli_recovery.jl` (opt-in, outside CI): half-sib pedigree
+  (25 sires, 50 dams, 1000 offspring; q=1075), `u ~ N(0, A·1.0)` on the logit
+  scale, `yᵢ ~ Bernoulli(logistic(uₐ))` (μ=0 ⇒ prevalence ≈ 0.5, the most
+  informative binary case), 5 predeclared seeds.
+- Result (RAN, exit 0, deterministic; log:
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-bernoulli-recovery.log`):
+  **5/5 pass the gated criteria** — converged, interior (non-collapsed)
+  `sigma_a2`, and EBV recovery correlation `cor(û,u) ∈ [0.565, 0.701]` ≥ 0.5.
+  The variance point estimate is REPORTED-not-gated and confirms the known
+  Laplace-for-binary DOWNWARD bias: `σ̂²a ∈ [0.362, 0.813]` (mean ≈0.65 vs truth
+  1.0), with one persistent low-bias seed.
+- Honest framing (Curie/Rose, mirroring the Phase-3 `h²` split): the rank/EBV
+  signal is reliable and gated; the variance MAGNITUDE is biased and only
+  reported. No claim that binary `sigma_a2` is calibrated. V6-BERNOULLI debt +
+  capability rows updated; no test-suite change (opt-in). Local checkpoint, not
+  pushed.
+
+## 2026-06-18 Phase 6 Bernoulli (logit) family — Laplace + VA (overnight)
+
+- Goal: extend the non-Gaussian engine to BINARY 0/1 traits (disease, survival,
+  reproductive success) — the biggest missing real-world quantitative-genetic
+  family — for both the Laplace marginal and the VA ELBO. Directly serves the
+  "GLLVM with Laplace as well as VA" directive.
+- `BernoulliResponse` (logit link): stable `_logistic`/`_log1pexp`; conditional
+  kernels `ℓ = yη − log1pexp(η)`, score `y − p`, weight `p(1−p)`. The VA expected
+  kernels have NO closed form (the logistic log-partition is not Gaussian-
+  integrable), so they use a load-time 20-node Gauss–Hermite rule (`_GH_NODES`,
+  `_gh_expect`) with the SAME nodes for loglik/score/weight — so score and weight
+  are exactly the η̄-derivatives of the expected loglik and the VA Newton step
+  stays consistent with the ELBO. `fit_laplace_reml` `:bernoulli` branch (Brent,
+  single `sigma_a2`, shared with Poisson).
+- Gates (verified, `test/runtests.jl`, 15/15): conditional + expected score/
+  weight match central finite differences; expected kernels reduce to the
+  conditional kernels as `v→0`; a β-fixed independent tensor Gauss–Hermite
+  quadrature of the true Bernoulli marginal confirms `va.elbo ≤ R` (valid lower
+  bound, gap ≈4e-4) and `|lap.loglik − R| ≈ 0.028` (Laplace close); binary guard
+  rejects non-`{0,1}`; `fit_laplace_reml(...; family = :bernoulli)` converges for
+  `:laplace` and `:variational`.
+- `Pkg.test()`: passed, exit 0, **1553/1553** (Bernoulli testset +15).
+- Honest limit: binary data is variance-uninformative at small scale, so the
+  fitted `sigma_a2` is boundary-prone (the 8-animal smoke fixture runs to the
+  Brent upper bound) and is NOT yet calibrated by a known-truth recovery study —
+  recorded as such in the new `V6-BERNOULLI` debt row and capability row.
+- Rose: experimental, dense, not exported, no R model-spec; the VA-lower-bound
+  and finite-diff gates make the marginal machinery trustworthy, the *fitting*
+  is honestly flagged as uncalibrated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 Poisson variance-component profile interval (overnight)
+
+- Goal: the first *interval* for a non-Gaussian variance component — close the
+  V6-FIT "no intervals" gap (solo, internally verifiable via the profile LRT).
+- `laplace_reml_interval(y, X, Z, Ainv; family = :poisson, marginal, level,
+  initial)`: fits with `fit_laplace_reml`, then inverts the marginal LRT
+  `2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level` for the Poisson `sigma_a2`, reusing the existing
+  `_profile_root` bisection and `_standard_normal_quantile`. Endpoints that reach
+  the search bounds are clamped. Returns `(sigma_a2, lower, upper, level)`.
+- Gates (verified, `test/runtests.jl`, 8-animal count fixture): the interval
+  brackets the estimate; `dev(σ̂²a) ≈ 0` at the MLE (atol 1e-8); the interior
+  **upper** endpoint is pinned to the χ²₁ root (`dev(upper) ≈ 3.8415` at 95%,
+  `2.7055` at 90%); the **lower** endpoint clamps on the flat near-zero profile
+  (`dev(lower) < χ²₁`); higher confidence ⇒ wider interval (0 < `ci90.upper` <
+  `ci95.upper`); guards (`family = :gaussian`, `level = 1.5`, `marginal = :bogus`
+  throw `ArgumentError`). 12/12.
+- Cleanup: reverted a stray *uncommitted* `FastGaussQuadrature` entry in
+  `Project.toml` (added during earlier exploration, never committed; the
+  Gauss–Hermite test uses a self-contained Golub–Welsch quadrature, so the dep
+  was unused). `Project.toml` now matches HEAD; Gauss–Hermite testset still
+  passes (3/3).
+- `Pkg.test()`: passed, exit 0, **1538/1538** (profile-interval testset +12).
+- Rose: experimental, Poisson-only, asymptotic — no Gaussian/multi-component
+  intervals (nuisance profiling), no large-n coverage calibration; `V6-FIT` +
+  fitted capability rows updated. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 Poisson known-truth recovery (overnight)
+
+- Goal: known-truth recovery study for the fitted Poisson animal model
+  (`fit_laplace_reml(...; family = :poisson)`), closing the V6-FIT recovery gap.
+- `sim/phase6_poisson_recovery.jl` (opt-in, outside CI): half-sib pedigree, 165
+  animals, `u ~ N(0, A·0.5)`, `yᵢ ~ Poisson(exp(1.5 + uₐ))` (Knuth sampler), 5
+  predeclared seeds.
+- Result (RAN): **5/5 pass** — σ̂²a recovers within rel ≤ 0.323 (mild expected
+  Laplace downward bias, no boundary collapse) and breeding-value recovery
+  correlation 0.81–0.88. Genuine recovery of known truth.
+- Rose: opt-in evidence (outside CI); no test-suite/claim-surface change; V6-FIT
+  recovery gap closed. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 fitted non-Gaussian (Laplace/VA REML) (overnight)
+
+- Goal: the first *fitted* non-Gaussian capability — variance-component
+  estimation by maximising the marginal over `(sigma_a2[, sigma_e2])`.
+- `fit_laplace_reml(y, X, Z, Ainv; family, marginal, initial)`: NelderMead over
+  log-variances (Gaussian) / Brent over log-`sigma_a2` (Poisson), on either the
+  Laplace marginal or the VA ELBO.
+- Gate (exact): for the Gaussian family the objective IS the exact REML loglik,
+  so both the `:laplace` and full-covariance `:variational` fits recover
+  `fit_sparse_reml` (marginal loglik rtol 1e-6, VCs rtol 1e-2, interior 8-animal
+  fixture). Poisson returns a positive `sigma_a2` and converges.
+- `Pkg.test()`: passed, exit 0, **1524/1524** (was 1515; +9).
+- Rose: experimental — no intervals, no EBV extractors, no recovery/comparator
+  evidence, not exported, no R model-spec. New capability + `V6-FIT` rows.
+  Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 :diagonal (mean-field) VA + ELBO monotonicity (overnight)
+
+- Goal: the team's `:diagonal` lower-bound VA option + ELBO-monotonicity test.
+- `variational_marginal_loglik(...; covariance = :diagonal)` profiles `S` to the
+  closed-form `Diagonal(1 ./ diag(H_uu))` (mean-field). Verified looser than full
+  covariance (`ELBO_full ≥ ELBO_diagonal`, β-fixed where the ELBO is a proper
+  lower bound); invalid `covariance` rejected.
+- `Pkg.test()`: passed, exit 0, **1515/1515** (was 1513; +2). VA testset 16/16.
+- Rose: `:full` remains the validated (REML-exact) foundation; `:diagonal` is
+  explicitly lower-bound-only. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 Poisson marginal value vs Gauss–Hermite (overnight)
+
+- Goal: the team's strongest remaining honest-coverage item — pin the Poisson
+  marginal VALUE (previously only finiteness/stationarity were tested).
+- Test-only: a self-contained Golub–Welsch tensor Gauss–Hermite quadrature of the
+  true β-fixed Poisson marginal `∫ ∏ Poisson(yᵢ|exp((Zu)ᵢ))·N(u;0,A·σ²a) du`.
+- Gates (verified): the VA ELBO is a valid LOWER BOUND (`va.elbo ≤ R + 1e-6`),
+  and the Laplace value is close (`≈ R`, atol 5e-2) — documenting the gap without
+  falsely claiming the two approximations bound each other. Exercises the
+  β-fixed (p=0) path of both marginals.
+- `Pkg.test()`: passed, exit 0, **1513/1513** (was 1510; +3). No src change.
+- Rose: closes the V6-VA Poisson-value gap; experimental status unchanged.
+
+## 2026-06-18 Phase 6 non-Gaussian family hardening (overnight)
+
+- Goal: close the team's `laplace_fixes_needed` (Gauss/Noether/Curie findings)
+  on `src/nongaussian.jl`.
+- Added: `GaussianResponse` inner constructor (`sigma_e2 > 0`); `_check_counts`
+  rejecting non-integer / negative Poisson counts (both marginals); `loglik`
+  (Laplace) and `elbo` (VA) return `NaN` with `converged = false` on
+  non-convergence (so a non-mode value can't be read as a valid marginal).
+- TDD: guards absent → tests RED → implemented → GREEN. New "Phase 6
+  non-Gaussian family hardening" testset (6 checks).
+- `Pkg.test()`: passed, exit 0, **1510/1510** (was 1504; +6).
+- Rose: defensive hardening only; no claim/result/bridge change; V6-LAPLACE
+  evidence updated. Remaining (noted): the `gradient_norm`-at-mode nit and the
+  Poisson marginal-value-vs-Gauss–Hermite test. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 6 variational (VA) marginal foundation (overnight, team-designed)
+
+- Goal: the VA half of the GLLVM Laplace+VA directive — `variational_marginal_loglik`
+  in `src/nongaussian.jl`, designed by an ultracode team workflow (w0ux3t4fu).
+- Team: Gauss/Noether/Curie adversarially verified the Laplace base (re-derived
+  the Gaussian reduction 3 ways to ~3e-15; no blocking bugs). Karpinski/
+  Kirkpatrick/Fisher specified the VA: FULL covariance `S=(ZᵀW̃Z+Ainv/σ²a)⁻¹`
+  (keeps relatedness; mean-field would not be REML-exact) + β integrated under a
+  flat prior (the Schur-complement β-term — the "0.88 gap" they predicted when I
+  first omitted it). Ada synthesized the go/no-go + exact tests.
+- TDD: RED (0.88 gap = missing β-integration) → added the Schur β-term → GREEN.
+- Validation gates: Gaussian VA-ELBO == `sparse_reml_loglik` EXACTLY (rtol 1e-8,
+  ELBO tight, mode == BLUP, S == Henderson H_uu⁻¹); Poisson ELBO stationary
+  (‖∇‖<1e-8); closed-form kernel checks.
+- `Pkg.test()`: passed, exit 0, **1504/1504** (was 1490; +14).
+- Rose: experimental foundation — `elbo` is a lower bound (tight for Gaussian);
+  no Poisson-value comparator yet, no VC estimation, no fitted GLLVM, not
+  exported, no R model-spec. New capability + `V6-VA` rows. Local, not pushed.
+- Follow-on (team's `laplace_fixes_needed`, separate hardening slice): Poisson
+  divergence→NaN guard, non-integer-y guard, `sigma_e2>0` guard, Poisson
+  marginal-value test vs Gauss–Hermite.
+
+## 2026-06-18 Phase 6 non-Gaussian Laplace marginal foundation (overnight)
+
+- Goal: first Phase-6 engine step toward the GLLVM Laplace+VA directive — a
+  family-generic Laplace-approximate marginal log-likelihood for the animal
+  model (`src/nongaussian.jl`, new, unexported, not wired into fitting).
+- TDD: RED (precompile collision with the model-spec `GaussianFamily`, then the
+  weight finite-diff step) → renamed families to `ResponseFamily` /
+  `GaussianResponse` / `PoissonResponse`, fixed the 2nd-difference step → GREEN.
+- Validation gates: Gaussian family reduces EXACTLY to `sparse_reml_loglik`
+  (rtol 1e-8) with the mode == Henderson MME solution; Poisson Newton mode
+  solves the penalized score equation (‖∇‖<1e-8); family score/weight match
+  central finite differences.
+- `Pkg.test()`: passed, exit 0, **1490/1490** (was 1479; +11).
+- Rose: experimental foundation only — no VA, no VC estimation, no fitted GLLVM,
+  not exported, no R model-spec, no comparator. New capability row +
+  `V6-LAPLACE` validation-debt row. Local checkpoint, not pushed.
+
+## 2026-06-18 Phase 3 repeatability recovery harness (overnight)
+
+- Goal: committed RNG-based recovery harness for `fit_repeatability_reml`,
+  closing the V3-REPEAT-REML "no committed recovery harness" gap.
+- `sim/phase3_qg_recovery.jl` (opt-in, outside CI): half-sib pedigree, repeated
+  records from known `(σ²a,σ²pe,σ²e)=(1.0,0.6,1.4)`, 5 predeclared seeds.
+- Result: repeatability `t` recovered 5/5 (max rel 0.254, gate ≤0.35, exit 0);
+  `h²` (σ²a/σ²pe split) under-identified at this scale (2/5 hit σ²pe→0 boundary,
+  max rel 0.892) — reported, ungated. Honest finding matching the documented
+  limitation; gate scoped to the identifiable `t` (transparently, after the
+  first run revealed the split is under-identified — not threshold-tuned).
+- Rose: no claim promotion (V3 stays partial). No test-suite/CI change (outside
+  `test/`). Local checkpoint, not pushed.
+
+## 2026-06-18 Multivariate covariance hardening (overnight)
+
+- Goal: harden `genetic_correlation` (symmetry + PSD guards, allowing
+  rank-deficient low-rank `G`) and pin the `_cov_to_chol_params` /
+  `_chol_params_to_cov` parameterisation roundtrip for t≥3.
+- TDD: RED confirmed (asymmetric + indefinite `@test_throws` failed, 9/11) →
+  added the guards → GREEN.
+- `Pkg.test()` (low-core): passed, exit 0, **1479/1479** (was 1468; +11).
+- Rose: hardening only — guards reject invalid covariances; no new claim, no
+  `result_payload()`/bridge change. Local checkpoint commit, not pushed.
+
+## 2026-06-18 AI-REML selinv trace fusion + profile-likelihood h² interval
+
+- Goal: (A) numerical-equivalence refactor of the `fit_ai_reml` REML score trace
+  `tr(A⁻¹C^uu)` to a fused `selinv_trace_against` kernel that accumulates over
+  `Ainv`'s nonzeros without materialising the selected-inverse matrix; (B) add
+  an opt-in profile-likelihood `heritability_interval(...; method = :profile)`.
+- Active lenses: Gauss/Karpinski (numerics, allocation), Fisher (interval
+  estimand/LRT), Curie (deterministic tests, flat-surface edge case), Rose
+  (claim-vs-evidence). Spawned subagents: none (the stalled wf1 fix-agent was
+  abandoned; this lane took over `likelihood.jl` directly to avoid clobber).
+- TDD: RED confirmed for both (`UndefVarError` / missing method) before
+  implementing; GREEN confirmed per slice.
+- Command: `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+  VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e
+  'using Pkg; Pkg.test()'` → passed, exit 0, **1468/1468** checks
+  (was 1447; +7 fused-trace equivalence, +14 profile-interval).
+- Equivalence: fused trace == prior `sum(Ainv .* takahashi_selinv(...)[uu])` to
+  rtol 1e-10 on tiny + 8-animal fixtures; `fit_ai_reml` optimum unchanged.
+- Profile interval: correctly clamps to (0,1) on the flat n=8 surface; LRT
+  root-finder unit-tested on a synthetic deviance.
+- Rose: AI-REML refactor is internal — public claim surface unchanged
+  (V1-SELINV-PEV gained evidence only). Profile interval is a new opt-in
+  extractor method; V1-HERIT-CI + capability rows updated.
+- Local-only checkpoint commit; not pushed (overnight autonomous policy).
+
+## 2026-06-16 GWAS/QTL/eQTL table wrappers
+
+- Goal: add direct Julia `gwas_table()`, `qtl_table()`, and `eqtl_table()`
+  wrappers over existing `marker_scan_table()` output without adding a new
+  marker-scan engine, R formula activation, expression-wide eQTL scans,
+  calibrated thresholds, plotting, or bridge payload changes.
+- Active lenses: Ada/Shannon (stack discipline), Fisher (claim and p-value
+  boundary), Curie (deterministic tests), Pat/Boole (table naming), Rose
+  (public claim audit), Grace (checks), Jason (sister-package scout). Spawned
+  subagents: none.
+- Scout:
+  - checked local direct marker helpers and status rows;
+  - checked local sister repositories for comparable table/diagnostic patterns;
+  - durable note:
+    `docs/dev-log/scout/2026-06-16-gwas-qtl-eqtl-table-wrappers-scout.md`;
+  - lesson: expose explicit table data with provenance fields and keep scan
+    execution, plotting, and interpretation/calibration separate.
+- Change:
+  - exported `gwas_table()`, `qtl_table()`, and `eqtl_table()`;
+  - each helper labels an already-computed direct marker-scan table with
+    `analysis = :gwas | :qtl | :eqtl`;
+  - optional non-empty `trait` metadata is supported for GWAS/QTL tables;
+  - optional non-empty `feature` metadata is supported for eQTL tables;
+  - marker-map-backed `HSMarkerMapSpec` / `HSData` alignment is supported;
+  - synced validation-status, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, engine contract, and
+    coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the package suite; Phase 5 fixed-effect
+    single-marker scan testset is now 443 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset remains 443
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Docs command
+    `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+- Boundary: direct Julia table-preparation wrappers only. This does not run
+  GWAS/QTL/eQTL workflows, estimate marker-scan variance components, classify
+  cis/trans windows, join expression/annotation data, calibrate p-values,
+  choose genome-wide thresholds, draw plots, activate R `marker_scan()` or
+  `qtl_scan()` syntax, change `result_payload()`, change the bridge payload,
+  or add comparator parity.
+
+## 2026-06-14 marker scan recovery harness
+
+- Goal: add an opt-in, outside-CI recovery harness for the existing direct
+  Julia fixed, supplied-variance mixed, and supplied LOCO marker-scan helpers
+  without adding RNG to the test suite or claiming calibrated GWAS/QTL/eQTL
+  validation.
+- Active lenses: Ada/Shannon (lane discipline), Curie (recovery scenario and
+  smoke thresholds), Fisher (threshold and p-value claim boundary), Grace
+  (low-core checks), Rose (public claim audit). Spawned subagents: none.
+- Scout:
+  - checked existing Julia recovery harnesses
+    `sim/phase4_multivariate_reml_recovery.jl` and
+    `sim/phase4b_structured_covariance_recovery.jl`;
+  - checked direct Phase 5 marker helpers and status boundaries;
+  - durable note:
+    `docs/dev-log/scout/2026-06-14-marker-scan-recovery-harness-scout.md`;
+  - lesson: stochastic recovery stays in `sim/` plus committed recovery logs,
+    while CI remains deterministic and public wording stays partial.
+- Change:
+  - added `sim/phase5_marker_scan_recovery.jl`;
+  - default seed `20260614` simulates one strong causal marker (`m08`) on a
+    half-sib random-effect design and checks fixed, supplied-variance mixed,
+    and supplied LOCO scans;
+  - recorded the default run in
+    `docs/dev-log/recovery-checkpoints/2026-06-14-phase5-marker-scan-recovery.log`;
+  - synced `validation_status()`, validation-status tests, capability-status,
+    validation-debt, public-claims register, roadmap, README, Documenter pages,
+    changelog, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. sim/phase5_marker_scan_recovery.jl`:
+    passed. Fixed, mixed, and LOCO cases all recovered top causal marker
+    `m08`; effect relative errors were `0.008513`, `0.000349`, and `0.019075`
+    against the committed loose smoke threshold `0.350`; top LOD-equivalent
+    scores exceeded the committed minimum `4.000`.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset is now 415 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is 415 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - Docs command
+    `rm -rf docs/build && env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Narrow Rose grep for high-risk marker/GWAS/QTL/eQTL wording found only
+    planned, negative, or explicitly blocked examples. An initial broader grep
+    was stopped after it entered generated `docs/build` output.
+- Remote checks for pushed commit `03eaae2` on draft PR #34:
+  - CI `27514543334`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543334>.
+  - Documenter `27514543328`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27514543328>.
+  - Remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
+- Boundary: internal recovery smoke for existing direct Julia helpers only.
+  This does not add RNG to CI, calibrate p-values, estimate effective marker
+  counts, choose calibrated genome-wide thresholds, validate QTL/eQTL, add a
+  plotting backend, activate R `marker_scan()` syntax, activate
+  `gwas_table()` / `qtl_table()` / `eqtl_table()`, change `result_payload()`,
+  change the bridge payload, or add comparator parity.
+
+## 2026-06-14 marker significance summary
+
+- Goal: add a direct-Julia marker-scan helper that summarizes nominal raw-p,
+  Bonferroni, and Benjamini-Hochberg hits over the returned marker set without
+  claiming calibrated GWAS/QTL/eQTL thresholds.
+- Active lenses: Ada/Shannon (lane discipline), Jason (sister diagnostic
+  patterns), Fisher (threshold/claim boundary), Curie (deterministic flags and
+  malformed-input tests), Rose (public wording), Grace (checks). Spawned
+  subagents: none.
+- Scout:
+  - checked local `gllvmTMB/R/diagnose.R`,
+    `gllvmTMB/R/confint-inspect.R`, and `drmTMB/R/check.R`;
+  - durable note:
+    `docs/dev-log/scout/2026-06-14-marker-significance-summary-scout.md`;
+  - lesson: return threshold-adjacent outputs as explicit diagnostic data
+    (thresholds, flags, counts, marker IDs, scan indices) and block calibrated
+    genome-wide-threshold wording.
+- Change:
+  - added exported `marker_significance_summary(scan; alpha = 0.05)`;
+  - returns marker count, thresholds, raw/Bonferroni/BH boolean flags, counts,
+    marker IDs, scan indices, min adjusted summaries, max test statistics, and
+    top-marker provenance;
+  - supports fixed, supplied-variance mixed, LOCO, and custom direct scan
+    results that carry the expected scan fields;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, mission-control,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - Focused command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset is now 415 checks.
+  - Full command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is 415 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - Initial root-level docs command
+    `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    failed once on stale local generated output under `docs/build`.
+  - After `rm -rf docs/build`, rerunning the same root-level docs command
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - Rose grep for high-risk wording found only blocked/negative wording and
+    the new scout note's explicitly blocked examples.
+- Boundary: nominal returned-marker-set summary only. This does not calibrate
+  p-values, estimate effective marker counts, choose calibrated
+  correlated-marker genome-wide thresholds, define significant QTL/eQTL, draw
+  plots, activate `gwas_table()` / `qtl_table()` / `eqtl_table()`, activate R
+  `marker_scan()` syntax, change `result_payload()`, or add comparator
+  evidence.
+
+## 2026-06-14 marker regional data helper
+
+- Goal: add a deterministic direct-Julia regional marker-scan data helper over
+  already-computed marker-scan fields and marker metadata, without activating
+  R `marker_scan()` syntax, `gwas_table()` / `qtl_table()` / `eqtl_table()`,
+  `regional_plot()`, fine mapping, calibrated p-values, calibrated PVE/model
+  R² claims, bridge payload changes, plotting, threshold selection, or
+  marker-scan variance-component estimation.
+- Active lenses: Fisher (regional-data-vs-GWAS/QTL/fine-mapping boundary),
+  Pat (window ergonomics), Curie (window/order/flank/p-floor tests), Shannon
+  (R/Julia boundary), Grace (low-core checks), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `marker_region_data(scan; chromosomes, positions,
+    chromosome, start, stop, flank, total_variance, p_floor)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - reuses `marker_scan_table()` validation, filters one chromosome or
+    chromosome-window region, orders rows by position, preserves original
+    `scan_indices`, and carries optional marker-variance proportions,
+    variance components, VanRaden scale, and LOCO marker groups when present;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Initial focused `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    failed once because the new custom regional test expected `-log10(1.0)`
+    while the fixture p-value was `0.5`; the assertion was corrected.
+  - Rerun of the same focused command: passed. The test runner executed the
+    suite; Phase 5 fixed-effect single-marker scan testset was 353 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 230 checks; Phase
+    5 fixed-effect single-marker scan testset is now 353 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 unrelated docstrings not included
+    in the manual, local deployment skipped, VitePress default substitutions,
+    missing local logo/favicon/package.json substitutions, and 4 npm audit
+    advisories in generated docs dependencies.
+  - `git diff --check`: passed.
+- Remote checks for pushed commit `6c92ae6`:
+  - CI `27513014295`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27513014295>.
+  - Documenter `27513014305`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27513014305>.
+  - Earlier Documenter run `27512999115` was cancelled by the workflow
+    concurrency group and superseded by successful run `27513014305`.
+  - Remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
+- Boundary: regional marker data preparation over returned marker-scan fields
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, run fine
+  mapping, activate `regional_plot()`, activate R `marker_scan()` syntax,
+  activate `gwas_table()` / `qtl_table()` / `eqtl_table()`, change the bridge
+  payload, change `result_payload()`, or add comparator parity.
+
+## 2026-06-14 marker scan table helper
+
+- Goal: add a deterministic direct-Julia row-aligned marker-scan table helper
+  over already-computed marker-scan fields, without activating R
+  `marker_scan()` syntax, `gwas_table()` / `qtl_table()` / `eqtl_table()`,
+  bridge payload changes, calibrated p-values, calibrated PVE/model R² claims,
+  plotting, threshold selection, or marker-scan variance-component estimation.
+- Active lenses: Fisher (scan-table-vs-calibrated-GWAS/QTL table boundary),
+  Pat (table ergonomics), Curie (scan-order, variance, metadata, mixed/LOCO
+  optional-field tests), Shannon (R/Julia boundary), Grace (low-core checks),
+  Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_scan_table(scan; total_variance = nothing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - preserves original scan order through `scan_indices = 1:m`;
+  - returns existing scan statistics, allele frequencies, allele variances,
+    marker-variance contributions `2p(1-p) * effect^2`, optional
+    `proportion_variance_explained`, optional scan variance components, and
+    optional LOCO marker groups when present;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose the same core scan fields;
+  - hardened malformed optional scalar inputs so non-numeric `total_variance`
+    or scan `k` values throw package-level `ArgumentError`s;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-scan-table-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Focused `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test(test_args=["Phase 5 fixed-effect single-marker scan"])'`:
+    passed. The test runner executed the suite; Phase 5 fixed-effect
+    single-marker scan testset was 316 checks.
+  - Preliminary `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block was 225 checks; Phase 5
+    fixed-effect single-marker scan testset was 313 checks; Phase 4B structured
+    covariance remained 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 228 checks; Phase
+    5 fixed-effect single-marker scan testset is now 316 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+  - `git diff --check`: passed.
+  - Rose boundary grep for unsupported marker/GWAS/QTL/eQTL claims: only
+    explicit planned/blocked/no-claim wording matched.
+- Remote checks for pushed commit `662538b`:
+  - CI `27512222798`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222798>.
+  - Documenter `27512222795`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27512222795>.
+  - Both remote runs emitted the known non-failing Node.js 20 deprecation
+    annotation for upstream actions forced onto Node.js 24.
+- Boundary: row-aligned table preparation over returned marker-scan fields
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, activate
+  R `marker_scan()` syntax, activate `gwas_table()` / `qtl_table()` /
+  `eqtl_table()`, change the bridge payload, change `result_payload()`, or add
+  comparator parity.
+
+## 2026-06-14 marker-variance contribution summary helper
+
+- Goal: add a deterministic direct-Julia marker-variance contribution summary
+  helper over already-computed marker-scan effects and allele frequencies,
+  without adding calibrated PVE/model R² claims, marker-scan variance-component
+  estimation, plotting, R syntax, bridge payload changes, threshold selection,
+  or p-value calibration.
+- Active lenses: Fisher (variance-contribution-vs-calibrated-PVE boundary),
+  Pat (summary ergonomics), Curie (deterministic sorting/top-N/proportion and
+  metadata tests), Shannon (R/Julia boundary), Grace (low-core checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_variance_explained(scan; total_variance, sort_by,
+    top_n, decreasing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData`
+    marker metadata, aligning chromosome/position values by exact marker ID;
+  - computes marker-level variance contributions as
+    `2p(1-p) * effect^2` from returned scan fields;
+  - optionally reports `proportion_variance_explained` when a positive finite
+    `total_variance` is supplied;
+  - supports deterministic sorting by marker variance, optional proportion,
+    allele variance, signed effect, absolute effect, or p-value;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose marker effects and allele frequencies;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-variance-summary-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 225 checks; Phase
+    5 fixed-effect single-marker scan testset is now 270 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+  - `git diff --check`: passed after source/docs closeout edits.
+- Remote checks for pushed commit `67cb758`:
+  - CI `27511455907`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27511455907>.
+  - Documenter `27511455912`: success on
+    <https://github.com/itchyshin/HSquared.jl/actions/runs/27511455912>.
+- Boundary: summary over returned marker-scan effects and allele frequencies
+  only. This does not estimate marker-scan variance components, calibrate
+  p-values, claim calibrated PVE/model R², correct statistics, estimate
+  effective marker counts, choose genome-wide thresholds, draw plots, activate
+  R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
+## 2026-06-14 marker-effects summary helper
+
+- Goal: add a deterministic direct-Julia marker-effect summary helper over
+  already-computed marker-scan fields, without adding a new statistical
+  procedure, plotting backend, R syntax, bridge payload change, threshold
+  selection, or p-value calibration.
+- Active lenses: Fisher (effect-summary-vs-calibration boundary), Pat (summary
+  ergonomics), Curie (deterministic sorting/top-N/metadata tests), Shannon
+  (R/Julia boundary), Grace (low-core checks), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `marker_effects(scan; sort_by, top_n, decreasing)`;
+  - added overloads for already-validated `HSMarkerMapSpec` and `HSData` marker
+    metadata, aligning chromosome/position values by exact marker ID;
+  - supports deterministic sorting by p-value, Bonferroni p-value,
+    Benjamini-Hochberg q-value, chi-square, LOD score, signed effect, or
+    absolute effect;
+  - works with direct fixed-effect, supplied-variance mixed, and supplied LOCO
+    marker scans because all expose the same scan fields;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-effects-summary-scout.md`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 220 checks; Phase
+    5 fixed-effect single-marker scan testset is now 223 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Remote follow-up:
+  - Draft PR opened: `https://github.com/itchyshin/HSquared.jl/pull/29`,
+    stacked on `codex/phase5-marker-inflation-diagnostic`.
+  - `/opt/homebrew/bin/gh run watch 27510845063 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. CI succeeded on Julia stable and Julia 1.10. GitHub emitted the
+    known non-failing Node.js 20 deprecation annotation for upstream actions.
+  - `/opt/homebrew/bin/gh run watch 27510845661 --repo itchyshin/HSquared.jl --exit-status`:
+    passed. Documenter succeeded. The earlier Documenter run `27510816279` was
+    cancelled after the superseding successful run was triggered.
+- Boundary: summary over returned marker-scan fields only. This does not
+  calibrate p-values, correct statistics, estimate effective marker counts,
+  choose genome-wide thresholds, draw plots, activate R `marker_scan()` syntax,
+  change the bridge payload, change `result_payload()`, or add comparator
+  parity.
+
+## 2026-06-14 marker genomic-inflation diagnostic
+
+- Goal: add a deterministic diagnostic summary for marker-scan chi-square
+  inflation over direct Julia scan results, without calibrating p-values,
+  correcting test statistics, choosing genome-wide thresholds, changing R
+  syntax, or changing the bridge payload.
+- Active lenses: Jason (genomic-control scout), Fisher (diagnostic-vs-calibration boundary), Curie
+  (deterministic median-chi-square tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_genomic_inflation(scan; expected_median)`;
+  - the helper reads the scan `chisq` field, computes the median chi-square,
+    and reports `lambda_gc = median(chisq) / expected_median`, using the
+    committed chi-square(1) median constant `0.454936423119572` by default;
+  - the helper works with direct fixed-effect, supplied-variance mixed, and
+    supplied LOCO scan results because all expose `chisq` and `target`;
+  - recorded scout note
+    `docs/dev-log/scout/2026-06-14-marker-genomic-inflation-scout.md`
+    pointing to Devlin and Roeder's genomic-control paper and keeping the
+    diagnostic separate from calibration/correction;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Preliminary `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 216 checks; Phase
+    5 fixed-effect single-marker scan testset is now 175 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 216 checks; Phase
+    5 fixed-effect single-marker scan testset is now 175 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct diagnostic summary only. This does not calibrate p-values,
+  correct test statistics, estimate effective marker counts, choose
+  genome-wide thresholds, draw plots, activate R `marker_scan()` syntax, change
+  the bridge payload, change `result_payload()`, or add comparator parity.
+
+## 2026-06-14 LOCO relationship precision construction
+
+- Goal: add a direct Julia helper that constructs dense leave-one-group-out
+  relationship precision matrices from marker data and marker groups, so the
+  existing supplied LOCO marker-scan helper no longer requires callers to build
+  every precision matrix by hand. Keep the slice Julia-only, validation-scale,
+  and outside the R bridge contract.
+- Active lenses: Gauss (VanRaden construction and regularized inverse reuse),
+  Fisher (marker-scan estimand and no calibration overclaim), Curie
+  (deterministic reduction/identity tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `loco_relationship_precisions(markers, marker_groups;
+    allele_frequencies, ridge)`;
+  - the helper drops each marker group, builds a dense VanRaden relationship
+    matrix from the remaining markers, and applies the existing
+    `genomic_relationship_inverse` ridge-regularized inverse;
+  - `loco_mixed_model_marker_scan` documentation now points callers to the
+    construction helper while still accepting externally supplied precision
+    matrices;
+  - tests pin explicit leave-one-group-out VanRaden-plus-ridge precision
+    identities, feed the constructed matrices into
+    `loco_mixed_model_marker_scan`, and compare marker-wise results to
+    separate `mixed_model_marker_scan` calls;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - Preliminary `Pkg.test()` after implementation/status edits and before final
+    ledger/docs edits passed. Phase 0 scaffold/validation-status block is now
+    215 checks; Phase 5 fixed-effect single-marker scan testset is now 154
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 215 checks; Phase
+    5 fixed-effect single-marker scan testset is now 157 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense validation-scale LOCO precision construction and
+  supplied-matrix selection only. This does not choose public LOCO defaults,
+  estimate marker-scan variance components, run a sparse production scan,
+  calibrate p-values, estimate genomic inflation, draw plots, activate R
+  `marker_scan()` syntax, change the bridge payload, change `result_payload()`,
+  or add comparator parity.
+
+## 2026-06-14 supplied LOCO marker scan selection
+
+- Goal: add a direct Julia helper that selects among caller-supplied
+  leave-one-group-out relationship precision matrices for marker screening,
+  without constructing LOCO matrices automatically, estimating variance
+  components, changing R syntax, changing the bridge payload, or making a broad
+  GWAS/QTL claim.
+- Active lenses: Gauss (GLS covariance reuse and relationship-matrix
+  selection), Fisher (Wald estimand and no calibration overclaim), Curie
+  (deterministic tests and reduction checks), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `loco_mixed_model_marker_scan(y, X, Z,
+    relationship_precisions, marker_groups, markers, sigma_a2, sigma_e2;
+    allele_frequencies, marker_ids)`;
+  - the helper accepts a `Dict`/`AbstractDict` or `NamedTuple` of supplied
+    relationship precision matrices keyed by marker group, builds one GLS cache
+    per used group, and applies the corresponding covariance to each marker;
+  - returns the same mixed-marker scan fields as `mixed_model_marker_scan()`,
+    plus `marker_groups`, `relationship_groups`, and
+    `target = :loco_mixed_model_marker_scan`;
+  - refactored the supplied-variance mixed-marker scan internals so the direct
+    and LOCO helpers share the same GLS statistic path;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - First low-core `Pkg.test()` attempt after implementation and before final
+    status/docs edits passed. Phase 5 fixed-effect single-marker scan testset
+    was 142 checks.
+  - Later low-core `Pkg.test()` attempt after status/docs edits failed because
+    the `V5-MARKER-LOCO` validation-status row did not include the exact
+    asserted phrase `automatic LOCO relationship construction`. The row now
+    names that missing capability explicitly.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 213 checks; Phase
+    5 fixed-effect single-marker scan testset is now 142 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense supplied-matrix-selection utility only. This does not
+  construct leave-one-group-out relationship matrices from marker data, choose
+  LOCO defaults, estimate marker-scan variance components, run a sparse
+  production scan, calibrate p-values, estimate genomic inflation, draw plots,
+  activate R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
+## 2026-06-14 supplied-variance mixed-model marker scan
+
+- Goal: add a direct Julia relationship-corrected marker-screening helper that
+  uses supplied variance components and a supplied relationship precision,
+  without adding R syntax, bridge payload changes, LOCO, p-value calibration,
+  plotting, or a broad GWAS/QTL claim.
+- Active lenses: Gauss (GLS covariance and linear algebra), Fisher (Wald
+  estimand and claim boundary), Curie (deterministic tests), Grace (low-core
+  checks), Shannon (R/Julia boundary), Rose (claim boundary). Spawned
+  subagents: none.
+- Change:
+  - added exported `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2,
+    sigma_e2; allele_frequencies, marker_ids)`;
+  - the helper forms dense validation-scale `V = sigma_a2 * Z * A * Z' +
+    sigma_e2 * I`, with `A = inv(Ainv)`, and runs marker-by-marker GLS Wald
+    tests conditional on `X`;
+  - returns marker effects, standard errors, z-scores, chi-square statistics,
+    approximate two-sided Gaussian/Wald p-values, Bonferroni/BH adjustments,
+    LOD-equivalent scores, GLS denominators, marker IDs, allele frequencies,
+    VanRaden scale, supplied variance components, and
+    `target = :mixed_model_marker_scan`;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - First `Pkg.test()` attempt after implementation failed because a duplicated
+    fixed-effect design guard used a numerically soft weighted Cholesky check.
+    The helper now checks `rank(X) == size(X, 2)` before fitting.
+  - Second `Pkg.test()` attempt passed after implementation and before final
+    ledger/docs edits. Phase 5 fixed-effect single-marker scan testset was 123
+    checks.
+  - Third `Pkg.test()` attempt after adding the new validation row failed
+    because the validation-status row-count assertion still expected 29 rows.
+    The expected count is now 30.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 206 checks; Phase
+    5 fixed-effect single-marker scan testset is now 123 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: direct dense supplied-variance GLS marker-screening utility only.
+  This does not estimate marker-scan variance components, implement LOCO, run a
+  sparse production scan, calibrate mixed-model p-values, estimate genomic
+  inflation, add interval-mapping/mixed-model LOD workflows, draw plots,
+  activate R `marker_scan()` syntax, change the bridge payload, change
+  `result_payload()`, or add comparator parity.
+
+## 2026-06-14 fixed-effect marker-scan QQ plot data
+
+- Goal: add deterministic QQ plot-data preparation for the direct Julia
+  fixed-effect marker scan without adding a plotting dependency, genomic
+  inflation/calibration claim, R syntax, bridge payload change, or mixed-model
+  GWAS/QTL claim.
+- Active lenses: Florence (plot-data ergonomics), Fisher (p-value display
+  semantics), Curie (deterministic tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_qq_data(scan; p_floor)` for direct
+    `single_marker_scan()` results;
+  - the helper returns raw p-values, sorted observed p-values, sorted marker
+    IDs, expected uniform order-statistic p-values, observed and expected
+    `-log10` display values, the sort order, and the display p-value floor;
+  - zero p-values are floor-capped only for display values; raw p-values are
+    preserved;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before and after the final ledger update.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 197 checks; Phase
+    5 fixed-effect single-marker scan testset is now 91 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: QQ plot-data preparation only. This does not draw figures, estimate
+  genomic inflation, calibrate p-values, parse marker files, run mixed-model
+  marker scans, correct relatedness/population structure, add LOCO, add
+  interval-mapping/mixed-model LOD workflows, activate R `marker_scan()` syntax,
+  change the bridge payload, change `result_payload()`, or add comparator
+  parity.
+
+## 2026-06-14 marker-map-backed Manhattan plot data
+
+- Goal: connect direct fixed-effect marker-scan plot data to already-validated
+  Julia marker-map metadata without adding R syntax, marker-file parsing,
+  plotting, or mixed-model GWAS/QTL claims.
+- Active lenses: Florence (plot-data ergonomics), Shannon (R/Julia boundary),
+  Rose (claim boundary), Curie (deterministic tests), Grace (low-core checks).
+  Spawned subagents: none.
+- Change:
+  - added `marker_manhattan_data(scan, marker_spec::HSMarkerMapSpec)` and
+    `marker_manhattan_data(scan, data::HSData)` overloads;
+  - scan marker IDs must match marker-map IDs exactly and be unique;
+  - chromosome and position values are aligned to the scan marker order, while
+    chromosome display order follows the marker-map order;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, coordination board, and this report.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before final checks.
+  - Initial `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed after implementation and before final ledger/docs edits. Phase 5
+    fixed-effect single-marker scan testset is now 72 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed after ledger/docs sync. Phase 0 scaffold/validation-status block is
+    now 195 checks; Phase 5 fixed-effect single-marker scan testset is now 72
+    checks; Phase 4B structured covariance remains 61 checks.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed. Known local caveats remained: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: marker-map-backed plot-data preparation only. This does not parse
+  marker files, draw figures, run mixed-model marker scans, correct
+  relatedness/population structure, add LOCO, add interval-mapping/mixed-model
+  LOD workflows, calibrate correlated-marker p-values, activate R
+  `marker_scan()` syntax, change the bridge payload, change `result_payload()`,
+  or add comparator parity.
+
+## 2026-06-14 fixed-effect marker-scan Manhattan plot data
+
+- Goal: add deterministic plot-data preparation for the direct Julia
+  fixed-effect marker scan without adding a plotting dependency, R syntax, or
+  mixed-model GWAS/QTL claim.
+- Active lenses: Florence (plot-data ergonomics), Fisher (p-value display
+  semantics), Curie (deterministic tests), Grace (low-core checks), Shannon
+  (R/Julia boundary), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added exported `marker_manhattan_data(scan; chromosomes, positions,
+    p_floor, chromosome_gap)`;
+  - default metadata places all markers on chromosome `"1"` with sequential
+    positions;
+  - custom metadata returns chromosome labels, positions, cumulative plotting
+    positions, stable plot order, p-values, and `-log10(p)` values;
+  - zero p-values are floor-capped only for display data, and the floor is
+    returned;
+  - synced `validation_status()`, API docs, capability-status,
+    validation-debt, public-claims, roadmap, README, Documenter pages,
+    changelog, engine contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed before and after the evidence-file update.
+  - First throttled `Pkg.test()` attempt failed because status-row assertions
+    still expected the pre-plot-data claim wording. The assertions and
+    validation row now mention `marker_manhattan_data` and the plot-data
+    boundary.
+  - Second throttled `Pkg.test()` attempt failed because the default p-floor
+    used non-Julia `realmin(Float64)`. The helper now uses
+    `floatmin(Float64)`.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 194 checks; Phase
+    5 fixed-effect single-marker scan testset is now 63 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies. This was rerun after the evidence-file
+    update.
+- Boundary: plot-data preparation only. This does not draw figures, parse
+  marker maps, run mixed-model marker scans, correct relatedness/population
+  structure, add LOCO, add interval-mapping/mixed-model LOD workflows, calibrate
+  correlated-marker p-values, activate R `marker_scan()` syntax, change the
+  bridge payload, change `result_payload()`, or add comparator parity.
+
+## 2026-06-14 fixed-effect marker-scan LOD-equivalent scores
+
+- Goal: add a deterministic LOD-style summary to the direct Julia fixed-effect
+  marker-screening utility without claiming interval mapping, mixed-model QTL,
+  or R-facing marker-scan support.
+- Active lenses: Fisher (LOD interpretation), Curie (deterministic identity
+  tests), Grace (low-core checks), Shannon (R/Julia boundary), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `lod_scores` to `single_marker_scan()`;
+  - defined the field as the known-variance fixed-effect LOD-equivalent value
+    `chisq / (2log(10))`;
+  - added deterministic tests for the hand fixture, covariate-adjusted scan
+    consistency, and nonnegative output;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is now 42 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: fixed-effect Gaussian/Wald screening only. `lod_scores` are a
+  deterministic transformation of the returned chi-square statistics under the
+  supplied residual variance; this is not interval mapping, mixed-model LOD,
+  LOCO, calibrated mixed-model p-values, correlated-marker/genome-wide
+  calibration, R formula activation, bridge payload change, `result_payload()`
+  change, or comparator parity.
+
+## 2026-06-14 fixed-effect marker-scan multiple-testing adjustments
+
+- Goal: add deterministic multiple-testing summaries to the direct Julia
+  fixed-effect marker-screening utility without claiming mixed-model,
+  calibrated, or R-facing marker-scan support.
+- Active lenses: Fisher (adjustment interpretation), Curie (deterministic
+  tests), Grace (low-core checks), Shannon (R/Julia boundary), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `bonferroni_p_values` and `bh_q_values` to `single_marker_scan()`;
+  - added private checked helpers for finite `[0, 1]` p-values,
+    Bonferroni adjustment, and Benjamini-Hochberg adjustment;
+  - added deterministic tests for hand-fixture adjusted values, a separate
+    unordered p-value vector, covariate-adjusted scan consistency, output
+    ranges, empty p-value input, out-of-range p-values, and non-finite p-values;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, README, Documenter pages, changelog, engine
+    contract, and coordination-board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 5 fixed-effect single-marker scan testset is now 39 checks;
+    Phase 4B structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known local caveats: 8 docstrings not included in the
+    manual, local deployment skipped, VitePress default substitutions, missing
+    local logo/favicon/package.json substitutions, and 4 npm audit advisories
+    in generated docs dependencies.
+- Boundary: fixed-effect Gaussian/Wald screening only. Bonferroni and
+  Benjamini-Hochberg values are deterministic adjustments over the returned
+  marker set; they are not calibrated mixed-model p-values, LOCO, LOD,
+  correlated-marker/genome-wide calibration, R formula activation, bridge
+  payload change, `result_payload()` change, or comparator parity.
+
 ## 2026-06-14 GitHub landing-page docs link
 
-- Goal: make the live Julia Documenter site visible from the GitHub repository
-  landing page without waiting behind the Phase 5 draft stack.
-- Active lenses: Grace, Shannon, Rose.
-- Spawned subagents: none.
-- Live URL checks:
-  - `https://itchyshin.github.io/HSquared.jl/` returned HTTP 200 and redirects
-    to `./dev/`.
-  - `https://itchyshin.github.io/HSquared.jl/dev/` returned HTTP 200.
-  - GitHub API repository metadata reports homepage
-    `https://itchyshin.github.io/HSquared.jl/` and Pages enabled.
-- Files changed:
-  - `README.md`: added immediate Documenter, R pkgdown, and R repository links
-    under the title.
-  - `docs/dev-log/coordination-board.md`: recorded the public landing pages.
-  - `docs/dev-log/after-task/2026-06-14-github-landing-docs-link.md`.
+- Goal: make the Julia Documenter site visible from the GitHub repository
+  landing page, matching the R twin's pkgdown discoverability.
+- Active lenses: Grace (GitHub/Pages), Shannon (twin coordination), Rose
+  (public status wording). Spawned subagents: none.
+- Change:
+  - set the `itchyshin/HSquared.jl` repository homepage field to
+    `https://itchyshin.github.io/HSquared.jl/` via the GitHub API;
+  - added top-of-README links to the Julia Documenter site, the R twin pkgdown
+    site, and the R twin repository;
+  - refreshed README status wording so the landing page separates experimental
+    engine utilities from production/public R formula support.
+- Checks:
+  - `curl -L https://itchyshin.github.io/HSquared.jl/`: HTTP 200.
+  - `curl -L https://itchyshin.github.io/HSquared.jl/dev/mission-control.html`:
+    HTTP 200.
+  - `curl -L https://itchyshin.github.io/hsquared/`: HTTP 200.
+  - GitHub API repo metadata reports homepage
+    `https://itchyshin.github.io/HSquared.jl/`.
+  - `git diff --check`: passed.
+- Boundary: metadata/README discoverability only. No engine behavior, R bridge,
+  validation status, or public capability promotion.
+
+## 2026-06-14 fixed-effect marker-scan p-values
+
+- Goal: add deterministic p-value output to the direct Julia fixed-effect
+  marker-screening utility without adding a dependency or widening the R bridge
+  contract.
+- Active lenses: Fisher (Wald interpretation), Curie (deterministic tests),
+  Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added `p_values` to `single_marker_scan()` as approximate two-sided
+    Gaussian/Wald p-values implied by the supplied residual variance;
+  - added a self-contained Abramowitz-Stegun normal-CDF approximation with an
+    exact `z = 0` symmetry case;
+  - added deterministic tests for hand-fixture p-values, known z-values,
+    covariate-adjusted p-value consistency, and non-finite guardrails;
+  - synced `validation_status()`, capability-status, validation-debt,
+    public-claims, roadmap, Documenter pages, changelog, and coordination
+    board wording.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - First throttled `Pkg.test()` attempt failed because the approximation
+    returned `0.9999999989503827` rather than exactly `1.0` for the `z = 0`
+    p-value test. The helper now returns the exact symmetry value at zero.
+  - Final `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block remains 193 checks;
+    recovery calibration log summarizer remains 21 checks; Phase 5
+    fixed-effect single-marker scan testset is now 27 checks; Phase 4B
+    structured covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: fixed-effect Gaussian/Wald p-values only, using supplied residual
+  variance and a documented approximation. No calibrated mixed-model p-values,
+  LOD scores, LOCO, multiple-testing correction, relationship/population-
+  structure correction, R formula activation, bridge payload change,
+  `result_payload()` change, or comparator parity.
+
+## 2026-06-14 fixed-effect single-marker scan
+
+- Goal: land the first small Phase 5 marker-screening engine utility without
+  activating the public R `marker_scan()` contract or claiming mixed-model
+  GWAS/QTL support.
+- Active lenses: Ada/Shannon (slice and twin coordination), Jason/Fisher/Curie
+  (marker-scan scope and deterministic validation), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `single_marker_scan(y, X, markers; sigma_e2, marker_ids,
+    allele_frequencies)` as a direct Julia utility;
+  - added deterministic tests for hand-computed intercept-only effects,
+    denominators, supplied-variance standard errors, chi-square consistency,
+    covariate-adjusted residualization, default/supplied marker IDs, and
+    guardrails;
+  - synced `validation_status()`, Documenter API/status pages, roadmap,
+    capability-status, validation-debt, public-claims, engine-contract,
+    changelog, mission-control/index status prose, and coordination docs.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 193 checks;
+    recovery calibration log summarizer remains 21 checks; new Phase 5
+    fixed-effect single-marker scan testset is 20 checks; Phase 4B structured
+    covariance remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: direct fixed-effect Gaussian screening utility only, using supplied
+  residual variance. No relationship/population-structure correction, LOCO,
+  p-values, LOD scores, multiple-testing correction, mixed-model GWAS/QTL/eQTL,
+  external comparator parity, R formula activation, bridge payload change, or
+  `result_payload()` change.
+
+## 2026-06-14 recovery calibration failure-mode triage
+
+- Goal: classify the failed predeclared calibration seeds by which committed
+  threshold failed, without rerunning any stochastic harness.
+- Active lenses: Curie/Fisher (negative simulation evidence), Rose (claim
+  boundary), Grace (reproducible tooling). Spawned subagents: none.
+- Change:
+  - extended `sim/summarize_recovery_calibration.jl` with deterministic
+    failure-mode classification (`G`, `R`, `G+R`, or parser inconsistency);
+  - added tests over the committed raw logs that pin the failure-mode counts;
+  - added
+    `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-failure-modes.md`;
+  - synced `validation_status()`, docs/status, capability/debt/public-claims
+    rows, roadmap, multivariate docs, changelog, and the failure-response
+    decision note.
+- Result: unstructured failures are 3 G-only plus 1 G+R; factor-analytic
+  failures are 1 G-only plus 1 G+R; low-rank has 1 R-only failure.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and `nice -n 15`:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset is now 21 checks;
+    Phase 0 scaffold/validation-status block is now 186 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: deterministic triage of negative evidence only. No simulation
+  rerun, no threshold change, no status promotion, no R syntax, no bridge
+  payload or `result_payload()` change, and no comparator parity claim.
+
+## 2026-06-14 calibration failure response policy
+
+- Goal: record how to respond to the failed predeclared calibration run without
+  weakening the evidence gate.
+- Active lenses: Curie/Fisher (simulation interpretation), Rose (claim
+  boundary), Grace (audit trail). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-calibration-failure-response.md`;
+  - updated roadmap, multivariate docs, and changelog to point to the decision.
+- Policy: failed seeds cannot be dropped, thresholds cannot be relaxed after
+  seeing results, and new seed lists / DGP changes / narrower claims must be
+  declared before execution.
+- Local checks, run with one-thread Julia/BLAS/OpenMP settings and `nice -n 15`:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset remains 12 checks;
+    Phase 0 remains 182 checks; Phase 4B remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: docs/policy only. No new run, no result change, no R syntax, no
+  bridge payload or `result_payload()` change, and no status promotion.
+
+## 2026-06-14 local recovery run throttling guidance
+
+- Goal: prevent opt-in recovery/calibration harnesses from monopolizing an
+  interactive workstation.
+- Active lenses: Grace (developer workflow), Curie/Fisher (opt-in recovery
+  evidence), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - updated the multivariate recovery calibration protocol to require recording
+    the resource profile for local interactive runs;
+  - documented the one-thread + `nice` command form in both recovery harness
+    docstrings and the multivariate docs page;
+  - added changelog and after-task notes.
+- Recommended local command prefix:
+  `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15`.
+- Local checks, run with the same throttled prefix:
+  - `git diff --check`: passed.
+  - `~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Recovery calibration log summarizer testset remains 12 checks;
+    Phase 0 remains 182 checks; Phase 4B remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Boundary: documentation / workflow guidance only. No simulation rerun, no
+  numerical result change, no R syntax, no bridge payload or `result_payload()`
+  change, and no capability-status promotion.
+
+## 2026-06-14 recovery calibration log summarizer
+
+- Goal: make the calibration evidence reproducible from committed raw logs
+  without rerunning stochastic harnesses or hand-parsing tables.
+- Active lenses: Grace (reproducible tooling), Curie/Fisher (summary fields),
+  Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added `sim/summarize_recovery_calibration.jl`, a deterministic log parser
+    and Markdown summarizer for recovery harness output;
+  - added tests that parse the committed unstructured and structured recovery
+    logs and pin the 30 parsed rows, pass counts, max errors, and failed-seed
+    strings;
+  - documented the summarizer in the changelog and multivariate docs.
+- Local smoke, throttled with one-thread BLAS/OpenMP/Julia settings and
+  `nice -n 15`:
+  - `~/.juliaup/bin/julia --project=. sim/summarize_recovery_calibration.jl docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-unstructured.log docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-structured.log`:
+    printed the expected Markdown table (`unstructured` 6/10,
+    `factor_analytic` 8/10, `lowrank` 9/10).
+  - First throttled `Pkg.test()` failed because the new script imported
+    `Printf`, which was not present in the package test environment. The script
+    now uses dependency-free fixed-width formatting.
+  - Final throttled `Pkg.test()` passed. The new recovery calibration log
+    summarizer testset has 12 checks; Phase 0 remains 182 checks; Phase 4B
+    remains 61 checks.
+  - Final throttled docs build passed with the known Documenter/manual and
+    VitePress local-build caveats.
+- Boundary: deterministic tooling only. No simulation rerun, no new recovery
+  evidence, no broad calibration claim, no R syntax, and no bridge payload or
+  `result_payload()` change.
+
+## 2026-06-14 multivariate recovery calibration execution
+
+- Goal: execute the predeclared multivariate recovery calibration protocol from
+  `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-run-plan.md`
+  and record the full seed-level result, including failures.
+- Active lenses: Curie/Fisher (simulation result and pass-proportion summary),
+  Gauss (REML recovery interpretation), Kirkpatrick (structured covariance
+  semantics), Grace (raw evidence preservation), Rose (claim boundary).
+  Spawned subagents: none.
+- Runtime note: after the heavy harness run, future local Julia commands in this
+  thread should be throttled with `JULIA_NUM_THREADS=1`,
+  `OPENBLAS_NUM_THREADS=1`, `OMP_NUM_THREADS=1`,
+  `VECLIB_MAXIMUM_THREADS=1`, and `nice`.
+- Commands:
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seeds=20260616,20260617,20260618,20260619,20260620,20260621,20260622,20260623,20260624,20260625`
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=both --seeds=20260614,20260615,20260616,20260617,20260618,20260619,20260620,20260621,20260622,20260623`
+- Result: the calibration protocol was executed and did **not** pass.
+  - Unstructured: 10/10 converged; 6/10 passed. Max relative errors:
+    `G = 0.478375`, `R = 0.206494`. Wilson 95% pass interval:
+    `0.312674-0.831820`.
+  - Factor-analytic: 10/10 converged; 8/10 passed. Max relative errors:
+    `G = 0.577749`, `R = 0.252226`. Wilson 95% pass interval:
+    `0.490162-0.943318`.
+  - Low-rank: 10/10 converged; 9/10 passed. Max relative errors:
+    `G = 0.422179`, `R = 0.262608`. Wilson 95% pass interval:
+    `0.595850-0.982124`.
+- Raw evidence:
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-unstructured.log`
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-structured.log`
+  - `docs/dev-log/recovery-checkpoints/2026-06-14-multivariate-recovery-calibration-summary.md`
+- Local checks, throttled with one-thread BLAS/OpenMP/Julia settings and
+  `nice -n 15`:
+  - `git diff --check`: passed.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=. -e 'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; Pkg.test()'`:
+    passed. Phase 0 scaffold/validation-status block is now 182 checks; Phase
+    4B structured covariance testset remains 61 checks.
+  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
+    passed with the known Documenter/manual and VitePress local-build caveats.
+- Status updates: `validation_status()`, tests, roadmap, capability/debt/public
+  claims rows, docs pages, changelog, and coordination board now say the
+  protocol executed and did not pass.
+- Boundary: negative calibration evidence only. No broad multi-seed calibration
+  claim, no CI RNG, no R-facing syntax, no bridge payload or
+  `result_payload()` change, no covariance SE/LRT evidence, no comparator
+  parity, and no status promotion.
+
+## 2026-06-14 multivariate recovery calibration protocol
+
+- Goal: define the minimum run-plan and reporting gate required before the
+  Phase 4 unstructured or Phase 4B structured recovery harnesses can be called
+  broadly multi-seed calibrated.
+- Active lenses: Curie/Fisher (simulation target and calibration summary),
+  Gauss (multivariate REML recovery), Kirkpatrick (structured covariance
+  semantics), Grace (checks), Rose (claim boundary). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`;
+  - defined pre-run requirements: commit SHA, Julia/platform, exact commands,
+    seeds, cases, iteration cap, thresholds, DGP parameters, and intentional
+    parameter-grid variation;
+  - defined minimum broad-calibration gates: at least 10 seeds for the
+    unstructured harness and at least 10 seeds for each requested structured
+    case, with no post-hoc seed cherry-picking;
+  - defined required summaries: pass/converged counts, mean/median/max relative
+    `G` and `R` errors, seed-level table, pass-proportion interval, and all
+    failed seeds/raw output;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
 - Local checks:
   - `git diff --check`: passed.
-  - `env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 ~/.juliaup/bin/julia --project=docs -e 'using LinearAlgebra; BLAS.set_num_threads(1); include("docs/make.jl")'`:
-    passed. Known local caveats: 8 docstrings not included in the manual,
-    local deployment skipped, default VitePress substitutions, missing local
-    logo/favicon/package.json substitutions, and 4 npm audit advisories in
-    generated dependencies.
-- Boundary: docs discoverability only. No engine code, R bridge contract,
-  validation status, production fitting, comparator, genomic, QTL, GPU, or
-  performance claim changed.
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 176 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: protocol/documentation/status gate only. No recovery calibration was
+  executed in this slice, no CI RNG was added, no R-facing syntax changed, no
+  bridge payload or `result_payload()` changed, no covariance SE/LRT evidence
+  was added, and no comparator parity or status promotion is claimed.
+
+## 2026-06-14 Phase 4 multivariate recovery seed-list reporting
+
+- Goal: give the opt-in unstructured multivariate REML recovery harness the
+  same explicit seed-list reporting surface as the Phase 4B structured harness,
+  while keeping stochastic recovery outside CI and not claiming broad
+  calibration.
+- Active lenses: Curie/Fisher (simulation target and interpretation), Gauss
+  (multivariate REML recovery), Grace (checks), Rose (claim boundary).
+  Spawned subagents: none.
+- Change:
+  - added `--seeds=N[,N...]` to
+    `sim/phase4_multivariate_reml_recovery.jl`;
+  - preserved the existing `--seed=N` single-seed interface and the default
+    seed `20260616`;
+  - made `--seed` and `--seeds` mutually exclusive;
+  - prints each result as it finishes and then prints an aggregate summary;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
+- Opt-in harness checks:
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seeds=20260616`:
+    passed; converged in 244 iterations; relative error `G = 0.174500`,
+    `R = 0.131056`, thresholds `0.25` / `0.20`.
+  - `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl --seed=20260616 --seeds=20260616`:
+    failed as intended with `ArgumentError: use either --seed or --seeds, not both`.
+- Local checks:
+  - First `Pkg.test()` after the edit failed because one validation-status test
+    still expected the old `not multi-seed calibrated` phrase. The assertion
+    was updated to the new `not broadly multi-seed calibrated` boundary.
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 174 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: opt-in recovery tooling only. No CI RNG, no R-facing multivariate
+  syntax, no bridge payload or `result_payload()` change, no broad multi-seed
+  calibration, no comparator parity, and no capability-status promotion.
+
+## 2026-06-14 Phase 4B structured recovery seed-list reporting
+
+- Goal: make the opt-in Phase 4B structured-covariance recovery harness accept
+  explicit seed lists and print per-case summaries, while keeping CI RNG-free
+  and not promoting the row to calibrated multi-seed recovery.
+- Active lenses: Curie/Fisher (simulation target and interpretation),
+  Kirkpatrick/Gauss (structured covariance recovery), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Change:
+  - added `--seeds=N[,N...]` to
+    `sim/phase4b_structured_covariance_recovery.jl`;
+  - preserved the historical single default seed for each requested case when
+    `--seeds` is omitted;
+  - runs every requested case for every listed seed when `--seeds` is supplied;
+  - prints each result as it finishes and then prints per-case pass/fail
+    summaries;
+  - synced `validation_status()`, tests, capability/debt/public-claims rows,
+    multivariate docs, changelog, roadmap, and coordination board.
+- Opt-in harness checks:
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=factor_analytic --seeds=20260614`:
+    passed; converged in 2362 iterations; relative error `G = 0.200897`,
+    `R = 0.167222`, thresholds `0.45` / `0.25`.
+  - `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl --case=lowrank --seeds=20260615`:
+    passed; converged in 423 iterations; relative error `G = 0.376322`,
+    `R = 0.133646`, thresholds `0.45` / `0.25`.
+  - Negative smoke: factor-analytic `--seeds=20260614,20260615 --iterations=1500`
+    failed because neither fit converged by the reduced iteration cap. This is
+    not cited as recovery evidence.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 173 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+- Boundary: opt-in recovery tooling only. No CI RNG, no R-facing covariance
+  syntax, no bridge payload or `result_payload()` change, no broad multi-seed
+  calibration, no comparator parity, and no capability-status promotion.
+
+## 2026-06-14 loading rotation identifiability decision
+
+- Goal: record the Phase 4B loading metadata identifiability policy so the
+  existing sign-canonicalized `genetic_loadings()` metadata is not mistaken for
+  uniquely identified or biologically interpretable factor loadings.
+- Active lenses: Kirkpatrick/Gauss (factor-analytic covariance semantics),
+  Hopper (result and bridge boundary), Fisher/Rose (identifiability and claim
+  boundary), Grace (checks). Spawned subagents: none.
+- Change:
+  - added
+    `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`;
+  - recorded that Phase 4B currently uses a sign-only metadata convention:
+    each loading column is flipped, if needed, so its largest-absolute loading
+    is non-negative;
+  - synced the engine contract, roadmap, multivariate docs, validation-status
+    row, capability/debt/public-claims rows, changelog, and coordination board
+    to say full loading rotation and interpretation remain future work.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 172 checks; Phase 4B
+    structured covariance testset remains 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Boundary scan found the new sign-only / rotation-identifiability wording
+    paired with explicit `result_payload()` and bridge-payload no-change
+    boundaries.
+- Boundary: policy/status/documentation only. No estimator behavior,
+  covariance parameterization, `result_payload()` field, bridge payload,
+  R-facing covariance syntax, full rotation convention, biological
+  interpretation, comparator evidence, or capability promotion changed.
+
+## 2026-06-14 structured covariance metadata accessors
+
+- Goal: add Julia-local, copy-returning accessors for Phase 4B structured
+  covariance metadata so callers do not need to reach into raw result fields.
+- Active lenses: Hopper/Rose (result-shape and bridge boundary), Gauss
+  (structured covariance metadata), Karpinski (copy-return behavior), Grace
+  (checks). Spawned subagents: none.
+- Implementation:
+  - exported `genetic_structure(result)`, `genetic_loadings(result)`, and
+    `genetic_uniqueness(result)` for multivariate REML `NamedTuple` results;
+  - accessors return existing metadata only, with copies for arrays/vectors and
+    `nothing` where a structure has no loadings or uniqueness metadata;
+  - unrelated `NamedTuple`s fail with `ArgumentError`;
+  - API docs, multivariate examples, engine contract, status rows, changelog,
+    and validation tests were synced.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 171 checks; Phase 4B
+    structured covariance testset is now 61 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Claim-boundary scan found the new accessor wording paired with explicit
+    no-bridge/no-R-facing/no-rotation-identifiability boundaries.
+- Boundary: local Julia accessor ergonomics only. No engine estimator behavior,
+  `result_payload()` field, bridge payload, R syntax, loading rotation
+  convention, comparator evidence, or production sparse/GPU claim changed.
+
+## 2026-06-14 multi-trait comparator protocol handoff
+
+- Goal: make the shared Phase 4 multi-trait fixture directly consumable by the
+  R lane for future sommer/ASReml/BLUPF90/JWAS parity work, without editing the
+  R repository or claiming comparator evidence.
+- Active lenses: Shannon (twin coordination), Curie/Fisher/Mrode
+  (comparator-target fidelity), Rose (claim boundary), Grace (checks).
+  Spawned subagents: none.
+- Change:
+  - extended `test/fixtures/phase4_multitrait_parity/README.md` with the
+    bivariate animal-model target, REML covariance structure, likelihood-scale
+    caveat, comparator-reporting checklist, and no-promotion rule;
+  - added
+    `docs/dev-log/decisions/2026-06-14-multitrait-comparator-protocol.md`;
+  - synced `validation_status()`, its tests, validation-status docs, roadmap,
+    capability/debt/public-claims rows, changelog, multivariate docs, and the
+    coordination board around the phrase "comparator protocol".
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase 0 scaffold/validation-status block is now 169 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Protocol/boundary scan found the intended "comparator protocol" wording
+    alongside explicit "no external comparator parity" boundaries.
+- Boundary: protocol/handoff documentation only. No comparator package was run,
+  no tolerance was committed, no validation row was promoted, and no R syntax,
+  bridge payload, `result_payload()`, engine behavior, or production claim
+  changed.
+
+## 2026-06-14 Phase 4 status guardrails
+
+- Goal: tighten Phase 4/4B status guardrails after the accessor and
+  structured-`G0` slices, so stale "planned only" wording and missing
+  validation-status assertions are easier to catch.
+- Active lenses: Ada/Shannon (lane and twin boundary), Rose (claim-vs-evidence
+  wording), Grace (checks), Karpinski (narrow regression-test change).
+  Spawned subagents: none.
+- Change:
+  - updated the backend algorithm roadmap row for factor-analytic G matrices
+    to say the dense CPU validation-scale engine path exists while GPU and
+    performance work remain planned;
+  - strengthened `validation_status()` tests for the Phase 4 rows, including
+    multivariate extractors, bridge-payload boundaries, REML `result_payload()`
+    boundaries, seeded recovery wording, and Phase 4B sign-vs-rotation wording;
+  - recorded the no-bridge-change status wording on the coordination board.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Stale wording scan found no remaining source-doc occurrences of the old
+    "Factor-analytic G matrices | GPU-friendly later | ... | planned" row or
+    the old "Multivariate G matrices | planned | no implementation yet" row.
+- Boundary: status/test/docs guardrails only. No engine behavior, R syntax,
+  bridge payload, `result_payload()`, comparator evidence, GPU execution, or
+  capability status promotion changed.
+
+## 2026-06-14 multivariate capability-status wording cleanup
+
+- Goal: remove a stale capability-status row that still said "Multivariate G
+  matrices" were planned with no implementation, contradicting the Phase 4 /
+  Phase 4B engine rows on this branch.
+- Active lenses: Rose/Shannon (claim-vs-evidence consistency and lane
+  boundary). Spawned subagents: none.
+- Change:
+  - replaced the stale row with "Public multivariate G-matrix model-spec /
+    syntax", marked planned;
+  - kept the implemented evidence in the existing experimental engine rows for
+    `multivariate_mme`, `fit_multivariate_reml`, and structured `G0` builders;
+  - explicitly left public R-facing syntax, long-format interface, and
+    comparator-backed claims as planned.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+- Boundary: documentation/status wording only; no code, no tests, no bridge
+  payload change, and no capability promotion.
+
+## 2026-06-14 multivariate result extractors
+
+- Goal: mirror the R twin's multivariate extractor vocabulary locally in Julia
+  for existing Phase 4 result objects, without changing `result_payload()` or
+  the R bridge contract.
+- Active lenses: Ada/Shannon (lane and twin boundary), Hopper (result shape),
+  Gauss/Karpinski (copy-return behavior and dispatch), Grace (checks), Rose
+  (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added guarded `NamedTuple` methods for multivariate results:
+    `variance_components`, `fixed_effects`, `breeding_values`, and
+    REML-only `heritability`;
+  - `EBV()` and `BLUP()` work through the existing `breeding_values()` alias
+    path;
+  - matrix/vector accessors return copies, and unrelated `NamedTuple`s fail
+    with `ArgumentError`.
+- Tests:
+  - Phase 4 supplied-covariance testset now checks covariance, fixed-effect,
+    EBV/BLUP, copy-return, invalid-result, and no-heritability guards
+    (37 checks);
+  - Phase 4 REML testset now checks covariance, fixed-effect, heritability,
+    EBV/BLUP, and copy-return accessors (34 checks).
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress local-build caveats.
+  - `git diff --check`: passed.
+  - Claim scan over touched multivariate/source/status docs found only
+    explicit bridge/comparator/production boundary wording.
+- Boundary: accessor ergonomics only. No new fitted capability, no
+  `result_payload()` widening, no R syntax change, no external-comparator
+  parity, and no promotion of `V4-MULTIVARIATE` or `V4-MV-REML` beyond
+  partial.
+
+## 2026-06-14 validation-status docs sync
+
+- Goal: bring `docs/src/validation-status.md` back into alignment with
+  `validation_status()` after the Phase 2-4 evidence ladder expanded.
+- Active lenses: Grace/Rose (docs evidence sync and claim boundary). Spawned
+  subagents: none.
+- Change:
+  - updated the static "Current Rows" table with the current Phase 2, Phase 3,
+    Phase 4, and Phase 4B rows;
+  - added a Phase 4 boundary paragraph noting that multivariate REML has opt-in
+    recovery and target-fixture evidence, but no external multi-trait comparator
+    parity, and that structured covariance loadings remain rotation-unidentified.
+- Boundary: documentation sync only; no code capability, bridge payload, R
+  syntax, or comparator claim changed.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+
+## 2026-06-14 Phase 4 opt-in multivariate REML recovery harness
+
+- Goal: replace the uncommitted one-off multi-trait recovery note with a
+  reproducible opt-in script while keeping CI RNG-free.
+- Active lenses: Curie/Fisher (recovery target and thresholds), Gauss
+  (convergence), Rose (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added `sim/phase4_multivariate_reml_recovery.jl`;
+  - script simulates a repeated-record half-sib design with 80 animals, 240
+    records, and 2 traits;
+  - default seed is `20260616`;
+  - script exits nonzero unless the fit converges and relative Frobenius errors
+    satisfy `G <= 0.25` and `R <= 0.20`.
+- Opt-in run:
+  - command: `~/.juliaup/bin/julia --project=. sim/phase4_multivariate_reml_recovery.jl`;
+  - converged, 244 iterations;
+  - relative error `G = 0.174500`, `R = 0.131056`.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+  - Current docs/source scan found no stale "no committed recovery harness" or
+    "known-truth recovery is one-off" wording for `V4-MV-REML`.
+- Boundary: this is seeded internal recovery evidence outside CI. It is not
+  multi-seed calibration, not covariance SE/LRT evidence, not a published
+  Mrode multi-trait fixture, and not sommer/ASReml/JWAS comparator parity.
+  `V4-MV-REML` remains partial.
+
+## 2026-06-14 Phase 4 shared multi-trait parity fixture
+
+- Goal: serialize a deterministic multi-trait animal-model fixture that the R
+  lane can use for sommer/ASReml/BLUPF90 parity work, without editing R code or
+  claiming external comparator evidence.
+- Active lenses: Shannon/Hopper (twin coordination), Gauss/Fisher (target
+  covariances and loglik), Curie (fixture tests), Rose (claim boundary).
+  Spawned subagents: none.
+- Fixture:
+  - directory: `test/fixtures/phase4_multitrait_parity/`;
+  - 20 animals, 80 records, 2 traits, shared intercept + numeric `x` design;
+  - CSV files record pedigree, phenotypes, Julia REML target `G0`/`R0`, beta,
+    EBVs, h², loglik, and correlation summaries.
+- Tests:
+  - test suite reads the CSV files from disk;
+  - reconstructs `Ainv`, `X`, `Z`, and `Y`;
+  - checks `multivariate_mme` beta and EBVs at the stored target covariances;
+  - checks h² and `_multivariate_reml_loglik` at the stored target covariances;
+  - deliberately does not re-run the dense optimizer in CI.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    New testset "Phase 4 shared multi-trait parity fixture" = 13 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed with the known
+    Documenter/manual and VitePress audit caveats.
+  - `git diff --check`: passed.
+  - Claim scan for accidental external-comparator / production sparse
+    multivariate promotion found only explicit negative/boundary statements.
+- Boundary: this is a Julia target fixture for future R-lane comparator work,
+  not sommer/ASReml/BLUPF90 evidence. `V4-MV-REML` remains partial.
+
+## 2026-06-14 Phase 4B loading sign convention
+
+- Goal: make returned `genetic_loadings` metadata deterministic for
+  `:lowrank` and `:factor_analytic` structured genetic covariance fits without
+  claiming rotation identification or changing the R bridge.
+- Active lenses: Kirkpatrick/Noether (factor-loading notation and
+  identifiability), Gauss/Fisher (covariance invariance), Hopper/Rose (bridge
+  and claim boundary). Spawned subagents: none.
+- Implementation (`src/multivariate.jl`):
+  - added internal `_canonicalize_loadings(loadings)`;
+  - `_structured_genetic_params_to_cov` now returns sign-canonicalized loading
+    columns for `:lowrank` and `:factor_analytic`;
+  - the covariance remains `ΛΛ'` or `ΛΛ' + Ψ`, so the sign convention changes
+    metadata only.
+- Deterministic tests:
+  - raw negative-leading columns are flipped to the expected canonical signs;
+  - canonicalization does not mutate the input matrix;
+  - `ΛΛ'` is invariant under canonicalization;
+  - empty loading matrices error with `ArgumentError`;
+  - fitted low-rank and factor-analytic results return loading columns whose
+    largest-absolute loading is non-negative;
+  - returned structured covariances still reconstruct from the returned
+    metadata.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    Phase-4B testset "Phase 4B structured genetic covariance (diag/lowrank/fa)"
+    = 41 checks.
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: passed. Pre-existing
+    caveats remain: 8 unrelated docstrings are not included in the manual, local
+    deployment is skipped outside CI, logo/favicon/package.json substitutions
+    are absent, and VitePress reports 4 npm audit advisories in generated docs
+    dependencies.
+  - `git diff --check`: passed.
+- Status surfaces updated: `ROADMAP.md`, `03-engine-contract.md`,
+  `capability-status.md`, `validation-debt-register.md`,
+  `06-public-claims-register.md`, `validation_status.jl`,
+  `multivariate-models.md`, `changelog.md`, coordination board, and after-task
+  report.
+- Boundary: `V4-FA` remains partial. This covers a deterministic sign
+  convention only; loading rotation/identifiability, covariance SEs/LRTs,
+  published fixtures, multi-seed calibration, R-facing covariance syntax,
+  bridge payload changes, production sparse FA fitting, and external comparator
+  parity remain open.
+
+## 2026-06-14 Phase 4B opt-in structured covariance recovery harness
+
+- Goal: add a reproducible, non-CI recovery harness for the Phase-4B structured
+  multivariate covariance estimator while keeping the regular test suite
+  RNG-free.
+- Active lenses: Curie/Fisher (simulation target and recovery thresholds),
+  Gauss (REML convergence), Kirkpatrick/Noether (structured covariance
+  parameterization), Rose (claim boundary). Spawned subagents: none.
+- Implementation:
+  - added `sim/phase4b_structured_covariance_recovery.jl`;
+  - script simulates a repeated-record half-sib design with 60 animals, 180
+    records, and 3 traits;
+  - default run covers `:factor_analytic` with seed `20260614` and `:lowrank`
+    with seed `20260615`;
+  - script exits nonzero unless the fit converges and relative Frobenius errors
+    satisfy `G <= 0.45` and `R <= 0.25`.
+- Opt-in run:
+  - command: `~/.juliaup/bin/julia --project=. sim/phase4b_structured_covariance_recovery.jl`;
+  - factor-analytic: converged, 2362 iterations, relative error
+    `G = 0.200897`, `R = 0.167222`;
+  - low-rank: converged, 423 iterations, relative error `G = 0.376322`,
+    `R = 0.133646`.
+- Status surfaces updated: `validation_status.jl`, `capability-status.md`,
+  `validation-debt-register.md`, `06-public-claims-register.md`, `ROADMAP.md`,
+  `multivariate-models.md`, `changelog.md`, this report, and after-task report.
+- Boundary: this is seeded internal recovery evidence, not a CI test and not an
+  external comparator. `V4-FA` remains partial. Loading sign/rotation
+  convention, covariance SEs/LRTs, multi-seed calibration, published fixtures,
+  R-facing covariance syntax, bridge payload changes, and sommer/ASReml/BLUPF90
+  parity remain open.
+
+## 2026-06-14 Phase 4B structured genetic covariance (diag/lowrank/fa)
+
+- Goal: start Phase 4B with direct Julia engine support for structured
+  multivariate genetic covariance matrices: diagonal `diag(σ²)`, low-rank
+  `ΛΛ'`, and factor-analytic `ΛΛ' + Ψ`.
+- Active lenses: Ada/Shannon (lane discipline), Kirkpatrick/Noether
+  (covariance notation), Gauss/Fisher (REML parameterization), Curie
+  (deterministic validation), Rose (claim boundary). Spawned subagents: none.
+- Implementation (`src/multivariate.jl`, `src/HSquared.jl`):
+  - added exported covariance builders `diagonal_covariance`,
+    `lowrank_covariance`, and `factor_analytic_covariance` with
+    finiteness/positivity guards;
+  - extended `fit_multivariate_reml` with
+    `genetic_structure = :unstructured | :diagonal | :lowrank |
+    :factor_analytic` and `rank = K` for constrained genetic covariance
+    estimation while keeping residual `R0` unstructured;
+  - returned structure metadata (`genetic_structure`, `genetic_rank`,
+    `genetic_loadings`, `genetic_uniqueness`) without changing
+    `result_payload()` or the R bridge contract.
+- Local checks:
+  - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'`: passed.
+    New testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" =
+    34 checks: constructor identities and guards; structure metadata;
+    returned loglik equals `_multivariate_reml_loglik`; PSD/PD covariance
+    properties; constrained loglik does not exceed the unstructured REML fit;
+    invalid structure/rank guards. `validation_status()` 27 → 28 (`V4-FA`).
+  - `~/.juliaup/bin/julia --project=docs docs/make.jl`: green. Existing
+    Documenter warning remains for unrelated exported Phase-3/internal
+    docstrings not listed in the manual; local deployment skipped outside CI;
+    VitePress npm audit advisories reported.
+  - `git diff --check`: passed.
+- Status surfaces (lockstep): `validation_status.jl` `V4-FA` (partial);
+  `capability-status.md`; `validation-debt-register.md`;
+  `06-public-claims-register.md`; `03-engine-contract.md`; `ROADMAP.md`;
+  `api.md`; `multivariate-models.md`; `changelog.md`; this report.
+- Boundary: experimental dense/validation-scale Julia engine API only. No
+  R-facing covariance-structure syntax, no bridge/result-payload change, no
+  committed loading-recovery harness, no covariance SEs/LRTs, no production
+  sparse FA solver, and no external comparator parity.
 
 ## 2026-06-13 Multivariate engine: adversarial-review hardening (Phase 4)
 
