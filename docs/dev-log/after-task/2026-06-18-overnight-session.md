@@ -40,7 +40,8 @@ kept current at each milestone and is the "morning report".
 | `907bf75` | Phase-6 **Bernoulli/logit family** (`BernoulliResponse`, Laplace + VA) — binary 0/1 traits | VA expected kernels via 20-node Gauss–Hermite (logistic has no closed-form Gaussian expectation); β-fixed GH gate confirms `va.elbo ≤ R` (gap 4e-4) and Laplace close (gap 0.028); finite-diff kernels; `fit_laplace_reml(:bernoulli)` converges (`:laplace`/`:variational`); suite 1553/1553 (+15) |
 | `44a7dbd` | Phase-6 **Bernoulli known-truth recovery** (`sim/phase6_bernoulli_recovery.jl`, opt-in) | q=1075 half-sib, truth σ²a=1.0 (logit); 5/5 gated pass (EBV cor 0.565–0.701 ≥ 0.5, non-collapse); σ̂²a 0.36–0.81 reported-not-gated (known Laplace-for-binary downward bias) |
 | `02f63f3` | Phase-3 **two-effect REML known-truth recovery** (`sim/phase3_two_effect_recovery.jl`, opt-in) | q=860, common-env groups independent of pedigree (identifiable); 5/5 recover ALL THREE components (max rel σ1 0.286, σ2 0.277, σe 0.123) — prior additive underestimation was a confounding artifact, not an estimator flaw |
-| _(latest)_ | Phase-6 **Binomial/logit family + recovery** (`BinomialResponse(n_trials)`, `sim/phase6_binomial_recovery.jl`) | generalises Bernoulli (m=1); Laplace + VA (GH kernels ×m + binom offset); m=8 value gate (va.elbo ≤ R, Laplace gap 0.031); recovery q=345/m=20 **σ²a HARD-gated 5/5** (rel ≤ 0.175, EBV cor 0.90–0.92) — binary bias is an information effect; suite 1584/1584 (+31) |
+| `8636339` | Phase-6 **Binomial/logit family + recovery** (`BinomialResponse(n_trials)`, `sim/phase6_binomial_recovery.jl`) | generalises Bernoulli (m=1); Laplace + VA (GH kernels ×m + binom offset); m=8 value gate (va.elbo ≤ R, Laplace gap 0.031); recovery q=345/m=20 **σ²a HARD-gated 5/5** (rel ≤ 0.175, EBV cor 0.90–0.92) — binary bias is an information effect; suite 1584/1584 (+31) |
+| _(latest)_ | Phase-3 **repeatability h² identifiability study** (docs evidence; no src/test) | full-sib designs: q=315/n=1575 recovers h² 4/5 within ~0.26 (vs original 2/5) but STILL not gateable (1 seed misses at 0.58) — σ²a/σ²pe split intrinsically ill-conditioned at validation scale; honest negative result, closes the speculative gap |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -76,12 +77,12 @@ VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, the Poisson
 profile interval (Slice 10), the Bernoulli/logit family for Laplace + VA
 (Slice 11), the Bernoulli known-truth recovery harness (Slice 12), and the
 two-effect REML recovery harness (Slice 13), and the Binomial/logit family +
-recovery (Slice 14, which resolved the binary-bias question). Remaining
-solo-doable, internally verifiable items:
+recovery (Slice 14, which resolved the binary-bias question), and the
+repeatability `h²` identifiability study (Slice 15, honest negative result).
+Remaining solo-doable, internally verifiable items:
 
-1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
-2. A denser-pedigree repeatability `h²` study (the σ²a/σ²pe split was
-   under-identified at validation scale in Slice 2).
+1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6) — the last
+   low-value hygiene item.
 
 Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
 latent genetic factors, more families, external GLLVM.jl/gllvmTMB comparators,
@@ -324,3 +325,20 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   INFORMATION effect, not an estimator flaw — the honest resolution of the
   Slice-11/12 limitation. Suite 1584/1584. Evidence log:
   `docs/dev-log/recovery-checkpoints/2026-06-18-phase6-binomial-recovery.log`.
+
+### Slice 15 — repeatability `h²` identifiability study (honest negative result)
+- Tests the standing hypothesis that the repeatability `h²` (σ²a/σ²pe split)
+  becomes reliably recoverable with a denser, relatedness-richer pedigree (the
+  forward note in `sim/phase3_qg_recovery.jl`). Probed full-sib designs (shared
+  sires ⇒ relatedness 0.5 within family, 0.25 across — the contrast the original
+  half-sib design lacked), truth (1.0,0.6,1.4), 5 seeds.
+- **Result:** the split improves with richness — small (q=156,n=624) recovers
+  `h²` 2/5, large (q=315,n=1575) recovers 4/5 within ~0.26 — but it is STILL not
+  reliably gateable even at n=1575 (1 seed misses at relh 0.58). The
+  additive-vs-permanent-environment contrast is intrinsically ill-conditioned at
+  validation scale.
+- This is an honest **negative** result that closes a speculative gap: it
+  replaces "needs a denser pedigree (future work)" with concrete evidence, so a
+  future session won't re-litigate it. No always-failing harness committed (that
+  would mean tuning a threshold to a hard problem); `t` stays the gated summary.
+  Evidence: `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-repeatability-h2-identifiability.md`.

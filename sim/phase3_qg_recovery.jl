@@ -17,9 +17,13 @@ The heritability `h² = σ²a/total` (the σ²a-vs-σ²pe split) and the raw com
 are printed for information ONLY and are NOT gated: at this validation-scale
 design that split is weakly identified and can sit on a boundary (σ²pe → 0). An
 initial 5-seed run confirmed this — `t` recovered on all 5 (max rel 0.254) while
-`h²` missed on 2 (boundary solutions). Recovering `h²` reliably needs a denser
-pedigree / more relationship contrast; that remains future work and `h²` is
-deliberately left ungated rather than have the threshold tuned to it.
+`h²` missed on 2 (boundary solutions). A follow-up identifiability study
+(`docs/dev-log/recovery-checkpoints/2026-06-18-phase3-repeatability-h2-identifiability.md`)
+shows a relatedness-richer full-sib design improves the `h²` split (q=315/n=1575:
+4/5 within ~0.26) but it is still NOT reliably gateable even at n=1575 (1 seed
+misses badly) — the σ²a-vs-σ²pe contrast is intrinsically ill-conditioned at
+validation scale. So `h²` stays ungated here rather than have the threshold tuned
+to a hard problem; `t` is the gated, identifiable summary.
 
 Run from the repository root:
 

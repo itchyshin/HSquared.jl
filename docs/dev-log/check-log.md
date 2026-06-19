@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 repeatability h² identifiability study (overnight)
+
+- Goal: test the standing hypothesis that the repeatability `h²` (σ²a/σ²pe split)
+  becomes reliably recoverable with a denser, relatedness-richer pedigree (the
+  `sim/phase3_qg_recovery.jl` forward note). Evidence-based closure of an open
+  speculative gap — NOT a new committed always-failing harness.
+- Probed full-sib designs (shared sires ⇒ relatedness 0.5 within family, 0.25
+  across — the contrast the original half-sib design lacked), seeds 20260618–22,
+  truth (1.0,0.6,1.4): small (q=156,n=624) recovered `h²` 2/5; large
+  (q=315,n=1575) recovered 4/5 within ~0.26 — but 1 seed STILL misses at relh
+  0.58.
+- Conclusion: more relatedness contrast + more data improve the split, but it is
+  NOT reliably gateable even at n=1575 — the additive-vs-permanent-environment
+  contrast is intrinsically ill-conditioned at validation scale. `t` stays the
+  gated summary; `h²` stays reported-ungated. Recorded in
+  `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-repeatability-h2-identifiability.md`.
+- Rose: honest negative result; converts a speculative "needs denser pedigree"
+  note into concrete evidence. No src/test change; V3-REPEAT-REML debt row +
+  harness docstring updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 Binomial (logit, n-trials) family + recovery (overnight)
 
 - Goal: generalise Bernoulli to the Binomial(m) family AND scientifically
