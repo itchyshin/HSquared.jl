@@ -2,6 +2,21 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Assessment: parametric-bootstrap h² interval NOT built (evidence-based)
+
+- Considered the V1-HERIT-CI "parametric-bootstrap alternative" gap. Probed it on
+  the interior 8-animal REML fixture: 200 simulate-and-refit draws give a 95%
+  bootstrap CI of `(0.0, 1.0)` — correct but uninformative, because n=8 carries
+  almost no information about h² (the bootstrap h² distribution piles at both
+  boundaries). It also costs ~2.7s for 200 refits, and h² already has two
+  interval methods (`:delta` logit + `:profile` LRT).
+- Decision: do NOT build it as an in-suite capability — it would be a degenerate,
+  slow, redundant addition (padding). It is better suited to an opt-in sim
+  harness with a large fixture (where the CI is interior and informative), like
+  the recovery harnesses; recorded here as a deliberate, evidence-based deferral.
+- No code/test change. (Honest-status discipline: not every listed gap is worth
+  filling at validation scale.)
+
 ## 2026-06-18 Phase 3 repeatability `t` confidence interval (delta method)
 
 - Goal: close the V3-REPEAT-REML "needs `t`/`h²` intervals" gap for the

@@ -22,11 +22,30 @@ each; now **1756/1756**, nothing pushed):
 | `e0c64fb` | Export `fit_laplace_reml` / `laplace_reml_interval` | the Phase-6 GLLVM fitter is now publicly callable (experimental) |
 | `19d81d9` | VanRaden **method-2** (standardized) G | second standard genomic-relationship construction |
 | `b954b1c` | Deep-inbreeding dense-inverse stress test | V1-DENSE-COND now tested: direct Henderson inverse exact at cond(A)≈1.7e3 |
+| `c68e89c` | **Weighted** genomic relationship (weighted GBLUP) | per-marker weights, reduces exactly to method 1 at equal weights |
+| `51514c4` | `mendelian_sampling_variances` accessor | the `d` in `A = T·D·Tᵀ`, verified via `det(A)=∏dᵢ` |
+| `314d649` | `repeatability_interval` (delta-method CI for `t`) | observed info from finite-diff REML Hessian (well-conditioned for `t`, `cond≈28`); RNG-free function |
+
+Total post-inventory: **10 capabilities/validations, suite 1731→1783 green at
+every step, nothing pushed.**
 
 Twin coordination (read-only): durable handoff in
 `docs/dev-log/coordination-board.md` (the engine's exported relationship-matrix +
 GLLVM surface for the R lane to wire; lowrank fix done; eigen-G wording is
 R-lane). NOT posted to GitHub — outward posting remains the maintainer's call.
+
+**Boundary assessment (honest, evidence-based).** After these 10, I evaluated the
+remaining solo candidates and stopped adding rather than pad: the
+parametric-bootstrap h² interval is **degenerate at validation scale** (n=8 ⇒ a
+`(0,1)` CI), slow, and redundant with the existing `:delta`/`:profile` intervals
+(probed; recorded in the check-log); the non-Gaussian extractor-method API is a
+public-API **contract decision** (field-vs-method `breeding_values` semantics)
+that warrants deliberate design or your input; and random regression / interval
+mapping / calibrated marker thresholds are **substantial new builds** better done
+deliberately than rushed at the tail of a long session. The clean, high-value,
+low-risk solo surface is exhausted; the remainder is genuinely bigger, RNG/sim-
+bound, contract-bound, or not-solo (external comparators, R model-spec, Phases
+7–8 hardware).
 
 The full per-phase "what's left" map (the inventory output) is the authoritative
 remaining-work reference; the headline: the literal 8-phase finish is a
