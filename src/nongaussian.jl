@@ -254,3 +254,55 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     return (elbo = elbo, beta = beta, m = m, S = S, converged = converged,
             gradient_norm = gnorm, iterations = iters, covariance = covariance)
 end
+
+"""
+    fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
+                     initial = nothing, iterations = 200)
+
+Estimate the variance component(s) of the non-Gaussian animal model by maximising
+the marginal log-likelihood (`marginal = :laplace`) or the ELBO
+(`marginal = :variational`) over the variance components. `family = :gaussian`
+estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson` estimates
+`sigma_a2` (Brent). Returns
+`(variance_components, marginal_loglik, beta, converged, family, marginal)`.
+
+EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
+For the Gaussian family the objective is the exact REML log-likelihood, so this
+recovers the same estimate as [`fit_sparse_reml`](@ref). Not exported, not the
+public default, no R model-spec, no external comparator.
+"""
+function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                          Ainv::AbstractMatrix; family::Symbol = :gaussian,
+                          marginal::Symbol = :laplace, initial = nothing,
+                          iterations::Integer = 200)
+    family in (:gaussian, :poisson) ||
+        throw(ArgumentError("family must be :gaussian or :poisson"))
+    marginal in (:laplace, :variational) ||
+        throw(ArgumentError("marginal must be :laplace or :variational"))
+    margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
+    val(r) = marginal === :variational ? r.elbo : r.loglik
+    if family === :gaussian
+        sa0, se0 = initial === nothing ? (1.0, 1.0) :
+                   (Float64(initial.sigma_a2), Float64(initial.sigma_e2))
+        (sa0 > 0 && se0 > 0) || throw(ArgumentError("initial variances must be positive"))
+        obj(p) = -val(margfun(y, X, Z, Ainv, exp(p[1]), GaussianResponse(exp(p[2]))))
+        res = optimize(obj, log.([sa0, se0]), NelderMead(), Optim.Options(iterations = iterations))
+        sa2, se2 = exp.(Optim.minimizer(res))
+        fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
+        return (variance_components = (sigma_a2 = sa2, sigma_e2 = se2),
+                marginal_loglik = val(fit), beta = fit.beta,
+                converged = Optim.converged(res) && fit.converged,
+                family = :gaussian, marginal = marginal)
+    else
+        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
+        sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
+        res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), PoissonResponse())),
+                       log(sa0) - 6.0, log(sa0) + 6.0)
+        sa2 = exp(Optim.minimizer(res))
+        fit = margfun(y, X, Z, Ainv, sa2, PoissonResponse())
+        return (variance_components = (sigma_a2 = sa2,),
+                marginal_loglik = val(fit), beta = fit.beta,
+                converged = Optim.converged(res) && fit.converged,
+                family = :poisson, marginal = marginal)
+    end
+end

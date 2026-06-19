@@ -33,7 +33,8 @@ kept current at each milestone and is the "morning report".
 | `57c0b7c` | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
 | `a4ddaba` | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
 | `023f076` | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
-| _(latest)_ | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
+| `50657f4` | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
+| _(latest)_ | Phase-6 **fitted** non-Gaussian (`fit_laplace_reml`, Laplace/VA REML over variance components) | Gaussian recovers `fit_sparse_reml` exactly (both :laplace & :variational); Poisson estimates σ²a>0; suite 1524/1524 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -175,3 +176,17 @@ slice I owned and finished. Full report:
 - Remaining Phase-6 (the genuinely larger, still-unstarted work): variance-
   component estimation → a *fitted* non-Gaussian/GLLVM model, latent genetic
   factors, external GLLVM.jl/gllvmTMB comparators, and the R-facing model-spec.
+
+### Slice 8 — fitted non-Gaussian: variance-component estimation (`fit_laplace_reml`)
+- The first *fitted* non-Gaussian capability: `fit_laplace_reml` maximises the
+  Laplace marginal or the VA ELBO over `(sigma_a2[, sigma_e2])` (NelderMead for
+  Gaussian, Brent for Poisson).
+- **Exact gate**: for the Gaussian family the objective IS the exact REML loglik,
+  so both the `:laplace` and the full-covariance `:variational` fits recover
+  `fit_sparse_reml` (marginal loglik rtol 1e-6, VCs rtol 1e-2, interior 8-animal
+  fixture). Poisson returns a positive `sigma_a2` and converges. Full suite
+  1524/1524.
+- This moves Phase 6 from *marginals* into *fitting*. Still experimental: no
+  intervals, no fitted-object/EBV extractors, no Poisson known-truth recovery,
+  no external comparator, not exported, no R model-spec — those are the next
+  steps toward a genuinely usable fitted GLLVM.

@@ -2,6 +2,22 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 fitted non-Gaussian (Laplace/VA REML) (overnight)
+
+- Goal: the first *fitted* non-Gaussian capability — variance-component
+  estimation by maximising the marginal over `(sigma_a2[, sigma_e2])`.
+- `fit_laplace_reml(y, X, Z, Ainv; family, marginal, initial)`: NelderMead over
+  log-variances (Gaussian) / Brent over log-`sigma_a2` (Poisson), on either the
+  Laplace marginal or the VA ELBO.
+- Gate (exact): for the Gaussian family the objective IS the exact REML loglik,
+  so both the `:laplace` and full-covariance `:variational` fits recover
+  `fit_sparse_reml` (marginal loglik rtol 1e-6, VCs rtol 1e-2, interior 8-animal
+  fixture). Poisson returns a positive `sigma_a2` and converges.
+- `Pkg.test()`: passed, exit 0, **1524/1524** (was 1515; +9).
+- Rose: experimental — no intervals, no EBV extractors, no recovery/comparator
+  evidence, not exported, no R model-spec. New capability + `V6-FIT` rows.
+  Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 :diagonal (mean-field) VA + ELBO monotonicity (overnight)
 
 - Goal: the team's `:diagonal` lower-bound VA option + ELBO-monotonicity test.

@@ -3599,3 +3599,38 @@ end
     @test va.elbo <= R + 1e-6            # ELBO is a valid lower bound on log p(y)
     @test isapprox(lap.loglik, R; atol = 5e-2)   # Laplace close to the true marginal (documents the gap)
 end
+
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+    # 8-animal interior fixture (where the REML optimum is interior)
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    sr = fit_sparse_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    # Gaussian Laplace-REML maximises the EXACT REML loglik => recovers fit_sparse_reml.
+    fl = HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :gaussian,
+                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fl.converged
+    @test fl.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+    @test fl.variance_components.sigma_a2 ≈ sr.variance_components.sigma_a2 rtol = 1e-2
+    @test fl.variance_components.sigma_e2 ≈ sr.variance_components.sigma_e2 rtol = 1e-2
+    # VA variant (full covariance) recovers the same REML optimum for Gaussian.
+    fv = HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :variational,
+                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fv.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+
+    # Poisson: estimates a positive sigma_a2 and converges.
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    @test fp.converged && fp.variance_components.sigma_a2 > 0
+    @test fp.family === :poisson
+
+    @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :bogus)
+    @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; marginal = :bogus)
+end
