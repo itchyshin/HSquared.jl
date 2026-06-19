@@ -12,6 +12,17 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Public Landing Pages
+
+- Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
+- R twin pkgdown site: <https://itchyshin.github.io/hsquared/>
+- R twin repository: <https://github.com/itchyshin/hsquared>
+
+The Julia repository homepage field points at the Julia engine docs. The
+README links both twin documentation surfaces so readers can move between the
+Julia engine status and the R user-facing package without inferring bridge
+support beyond the recorded evidence.
+
 ## Current Slice
 
 - 2026-06-16: Julia lane / `codex/phase5-gwas-qtl-eqtl-tables`.
