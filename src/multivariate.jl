@@ -148,6 +148,55 @@ function genetic_uniqueness(result::NamedTuple)
     return isnothing(ψ) ? nothing : copy(collect(ψ))
 end
 
+"""
+    multivariate_result_payload(result)
+
+Bridge-ready, "boring" result payload (a `NamedTuple` of scalars / arrays /
+nested `NamedTuple`s — Julia structs stay Julia-side) for a multivariate REML
+fit from [`fit_multivariate_reml`](@ref). It mirrors [`result_payload`](@ref) for
+the univariate animal model so the R twin can marshal one shape across traits.
+
+Exposed only for the **rotation-free** genetic structures `:unstructured` and
+`:diagonal`. `:lowrank` / `:factor_analytic` are rejected on purpose: their
+loadings are rotation-nonidentified, so surfacing them across the bridge needs a
+rotation/interpretation convention first. The payload carries the estimated
+`G0`/`R0`, the per-trait genetic variances `diag(G0)`, the genetic/residual
+correlations, the REML `loglik`, the genetic parameter count `n_genetic_params`
+(so a `:diagonal`-vs-`:unstructured` LRT `df` is just the difference of the two
+fits' counts), the fixed effects, breeding values, per-trait heritabilities, and
+`converged`. It deliberately omits `genetic_loadings` / `genetic_uniqueness`.
+"""
+function multivariate_result_payload(result)
+    s = getproperty(result, :genetic_structure)
+    s in (:unstructured, :diagonal) || throw(ArgumentError(
+        "multivariate_result_payload is bridge-exposed only for :unstructured and " *
+        ":diagonal; :lowrank/:factor_analytic loadings are rotation-nonidentified " *
+        "and gated on a rotation/interpretation convention"))
+    G0 = Matrix(result.genetic_covariance)
+    R0 = Matrix(result.residual_covariance)
+    t = size(G0, 1)
+    n_genetic_params = s == :diagonal ? t : t * (t + 1) ÷ 2
+    bv = result.breeding_values
+    return (
+        engine = "HSquared.jl",
+        target = "multivariate_reml",
+        genetic_structure = String(s),
+        n_traits = t,
+        traits = collect(result.traits),
+        genetic_covariance = G0,
+        genetic_variances = diag(G0),
+        residual_covariance = R0,
+        genetic_correlation = Matrix(result.genetic_correlation),
+        residual_correlation = Matrix(result.residual_correlation),
+        heritability = copy(collect(result.heritability)),
+        fixed_effects = Matrix(result.beta),
+        breeding_values = (ids = bv.ids, traits = bv.traits, values = Matrix(bv.values)),
+        loglik = result.loglik,
+        n_genetic_params = n_genetic_params,
+        converged = result.converged,
+    )
+end
+
 function _check_finite_matrix(M, name)
     Mf = Float64.(Matrix(M))
     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))

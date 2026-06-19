@@ -168,7 +168,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 32
+    @test length(validation) == 33
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
@@ -253,6 +253,14 @@ end
     @test occursin("rotation-nonidentified", fa_row.evidence)
     @test !occursin("covariance SEs or LRTs", fa_row.missing)
     @test occursin("standard errors for the rotation-nonidentified structured loadings", fa_row.missing)
+    # #42 scoped: the diagonal/unstructured bridge payload row
+    bridge_row = only(row for row in validation if row.id == "V4-BRIDGE")
+    @test bridge_row.phase == "Phase 4"
+    @test bridge_row.status == "partial"
+    @test occursin("multivariate_result_payload", bridge_row.evidence)
+    @test occursin("rotation-nonidentified", bridge_row.evidence)
+    @test occursin("structured_covariance_parity", bridge_row.evidence)
+    @test occursin("rotation convention pending", bridge_row.missing)
     fixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-FIXED")
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
@@ -3806,6 +3814,49 @@ end
     @test mme.residual_correlation[1, 2] ≈ parse(Float64, metadata["residual_correlation_trait1_trait2"]) atol = 5e-6
 end
 
+@testset "Phase 4B diagonal structured-covariance parity fixture" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "structured_covariance_parity")
+
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_animals = pheno[:, 2]
+    x = parse.(Float64, pheno[:, 3])
+    Y = hcat(parse.(Float64, pheno[:, 4]), parse.(Float64, pheno[:, 5]))
+    X = hcat(ones(length(x)), x)
+    Z = zeros(length(x), length(ped.ids))
+    animal_index = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for (i, animal) in enumerate(record_animals)
+        Z[i, animal_index[animal]] = 1.0
+    end
+
+    cov_traits, G0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_genetic_covariance.csv"))
+    _, R0 = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_residual_covariance.csv"))
+    _, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    _, ebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_ebv.csv"))
+    _, h_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_heritability.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test cov_traits == ["trait1", "trait2"]
+    @test metadata["genetic_structure"] == "diagonal"
+    @test parse(Int, metadata["n_genetic_params"]) == 2          # diagonal: t (vs t(t+1)/2)
+    @test G0[1, 2] == 0.0 && G0[2, 1] == 0.0                     # diagonal target: no genetic covariance
+    @test isposdef(Symmetric(G0))
+    @test isposdef(Symmetric(R0))
+
+    # self-consistency: the supplied-covariance MME at the stored diagonal G0/R0
+    # reproduces beta/EBVs/h², and the REML loglik matches the stored target.
+    mme = multivariate_mme(Y, X, Z, Ainv, G0, R0; ids = ped.ids, traits = cov_traits)
+    @test mme.beta ≈ beta_expected atol = 5e-6
+    @test mme.breeding_values.values ≈ ebv_expected atol = 5e-6
+    h_calc = [G0[k, k] / (G0[k, k] + R0[k, k]) for k in 1:length(cov_traits)]
+    @test h_calc ≈ vec(h_expected) atol = 5e-6
+    loglik = HSquared._multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
+    @test loglik ≈ parse(Float64, metadata["loglik"]) atol = 5e-6
+end
+
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
     Λ = reshape([1.0, -2.0], 2, 1)
@@ -3903,6 +3954,37 @@ end
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 0)
     @test_throws ArgumentError fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :unknown)
+
+    # multivariate_result_payload — bridge-ready :diagonal/:unstructured payload (#42 scoped,
+    # the rotation-free subset; unblocks the R-lane diagonal-vs-unstructured LRT)
+    pd = multivariate_result_payload(diagfit)
+    @test pd.engine == "HSquared.jl"
+    @test pd.target == "multivariate_reml"
+    @test pd.genetic_structure == "diagonal"
+    @test pd.n_traits == 2
+    @test pd.genetic_variances ≈ diag(pd.genetic_covariance)
+    @test pd.genetic_covariance[1, 2] == 0.0          # diagonal => no genetic covariance surfaced
+    @test pd.n_genetic_params == 2                    # diagonal: t
+    @test pd.loglik ≈ diagfit.loglik
+    @test pd.heritability ≈ diagfit.heritability
+    @test pd.fixed_effects ≈ diagfit.beta
+    @test pd.breeding_values.values == diagfit.breeding_values.values
+    @test pd.converged == diagfit.converged
+    @test !hasproperty(pd, :genetic_loadings)         # rotation-arbitrary loadings NOT surfaced
+    @test !hasproperty(pd, :genetic_uniqueness)
+
+    pu = multivariate_result_payload(full)
+    @test pu.genetic_structure == "unstructured"
+    @test pu.n_genetic_params == 3                    # unstructured: t(t+1)/2
+
+    # the diagonal-vs-unstructured LRT df is just the difference of the counts (interior null)
+    lrt = covariance_structure_lrt(diagfit, full)
+    @test lrt.df == pu.n_genetic_params - pd.n_genetic_params == 1   # t(t-1)/2
+    @test lrt.boundary == false
+
+    # lowrank/fa are gated at the engine boundary — payload refuses them (rotation-nonidentified)
+    @test_throws ArgumentError multivariate_result_payload(low)
+    @test_throws ArgumentError multivariate_result_payload(fa)
 end
 
 @testset "Phase 6 non-Gaussian Laplace marginal (foundation)" begin
