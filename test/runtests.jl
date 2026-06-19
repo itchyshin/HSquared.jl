@@ -3682,3 +3682,88 @@ end
     @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; level = 1.5)
     @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; marginal = :bogus)
 end
+
+@testset "Phase 6 Bernoulli (logit) family (Laplace + VA)" begin
+    # Binary/threshold traits (disease, survival, reproductive success) are a
+    # major real-world quantitative-genetic case. The logistic log-partition has
+    # NO closed-form Gaussian expectation, so the VA expected kernels use 1D
+    # Gauss–Hermite quadrature (the Poisson case had a closed-form MGF).
+    f = HSquared.BernoulliResponse()
+
+    # --- conditional kernels match finite differences of the conditional loglik
+    η0 = 0.37
+    h = 1e-6
+    @test HSquared._fam_score(f, 1.0, η0) ≈
+          (HSquared._fam_loglik(f, 1.0, η0 + h) - HSquared._fam_loglik(f, 1.0, η0 - h)) / (2h) rtol = 1e-5
+    h2 = 1e-4
+    @test HSquared._fam_weight(f, 1.0, η0) ≈
+          -(HSquared._fam_loglik(f, 1.0, η0 + h2) - 2 * HSquared._fam_loglik(f, 1.0, η0) +
+            HSquared._fam_loglik(f, 1.0, η0 - h2)) / h2^2 rtol = 1e-3
+    # logistic weight p(1-p) ∈ (0, 0.25]
+    @test 0 < HSquared._fam_weight(f, 1.0, 2.0) <= 0.25
+
+    # --- VA expected kernels are the η̄-derivatives of the expected loglik
+    ηb, vv = 0.4, 0.6
+    @test HSquared._fam_expected_score(f, 1.0, ηb, vv) ≈
+          (HSquared._fam_expected_loglik(f, 1.0, ηb + h, vv) -
+           HSquared._fam_expected_loglik(f, 1.0, ηb - h, vv)) / (2h) rtol = 1e-5
+    @test HSquared._fam_expected_weight(f, ηb, vv) ≈
+          -(HSquared._fam_expected_loglik(f, 1.0, ηb + h2, vv) -
+            2 * HSquared._fam_expected_loglik(f, 1.0, ηb, vv) +
+            HSquared._fam_expected_loglik(f, 1.0, ηb - h2, vv)) / h2^2 rtol = 1e-3
+    # at v → 0 the expected kernels reduce to the conditional kernels
+    @test HSquared._fam_expected_loglik(f, 1.0, ηb, 0.0) ≈ HSquared._fam_loglik(f, 1.0, ηb) atol = 1e-10
+    @test HSquared._fam_expected_score(f, 1.0, ηb, 0.0) ≈ HSquared._fam_score(f, 1.0, ηb) atol = 1e-10
+
+    # --- value gate vs an independent tensor Gauss–Hermite quadrature (β-fixed)
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    yb = [1.0, 0.0, 1.0]
+    X0 = zeros(3, 0)                      # β-fixed (no fixed effects)
+    _gh(m) = (E = eigen(SymTridiagonal(zeros(m), [sqrt(k / 2) for k in 1:m-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _l1pe(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+    function _bern_marginal(y, Zd, G, m)
+        x, w = _gh(m)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> m, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - _l1pe(η[i]) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _bern_marginal(yb, Matrix(Z), G, 32)
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BernoulliResponse())
+    va = HSquared.variational_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BernoulliResponse())
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6                       # ELBO is a valid lower bound on log p(y)
+    @test abs(lap.loglik - R) < 0.5                 # Laplace in the right ballpark (binary gap documented)
+
+    # --- guard: Bernoulli requires binary 0/1 responses
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, sa2,
+                                                                HSquared.BernoulliResponse())
+
+    # --- fitted: estimate sigma_a2 by Laplace and by VA on an 8-animal binary fixture
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fb = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :bernoulli, initial = (sigma_a2 = 1.0,))
+    @test fb.family === :bernoulli
+    @test fb.converged && fb.variance_components.sigma_a2 > 0
+    @test length(fb.breeding_values) == 8
+    fbv = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :bernoulli, marginal = :variational,
+                                    initial = (sigma_a2 = 1.0,))
+    @test fbv.family === :bernoulli && fbv.converged
+end

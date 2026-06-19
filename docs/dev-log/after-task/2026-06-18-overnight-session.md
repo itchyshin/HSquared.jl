@@ -36,7 +36,8 @@ kept current at each milestone and is the "morning report".
 | `50657f4` | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
 | `616651c`/`b56d6c9` | Phase-6 **fitted** non-Gaussian (`fit_laplace_reml`, Laplace/VA REML over variance components) + fitted EBVs | Gaussian recovers `fit_sparse_reml` exactly (both :laplace & :variational); Poisson estimates σ²a>0; EBVs == BLUP at fitted VCs; suite 1526/1526 |
 | `3f4a97a` | Phase-6 **Poisson known-truth recovery** (`sim/phase6_poisson_recovery.jl`, opt-in) | σ̂²a recovers 5/5 seeds (rel ≤ 0.323, mild Laplace bias); breeding-value recovery cor 0.81–0.88 |
-| _(latest)_ | Phase-6 **Poisson variance-component profile interval** (`laplace_reml_interval`, `src/nongaussian.jl`); reverted a stray uncommitted `FastGaussQuadrature` entry in `Project.toml` | inverts marginal LRT `2·(ℓ̂−ℓ(σ²a))=χ²₁,level`; interior upper endpoint pinned to χ²₁ root (3.8415/2.7055), lower clamps on flat profile, nests by level; suite 1538/1538 (+12) |
+| `92cc4bf` | Phase-6 **Poisson variance-component profile interval** (`laplace_reml_interval`, `src/nongaussian.jl`); reverted a stray uncommitted `FastGaussQuadrature` entry in `Project.toml` | inverts marginal LRT `2·(ℓ̂−ℓ(σ²a))=χ²₁,level`; interior upper endpoint pinned to χ²₁ root (3.8415/2.7055), lower clamps on flat profile, nests by level; suite 1538/1538 (+12) |
+| _(latest)_ | Phase-6 **Bernoulli/logit family** (`BernoulliResponse`, Laplace + VA) — binary 0/1 traits | VA expected kernels via 20-node Gauss–Hermite (logistic has no closed-form Gaussian expectation); β-fixed GH gate confirms `va.elbo ≤ R` (gap 4e-4) and Laplace close (gap 0.028); finite-diff kernels; `fit_laplace_reml(:bernoulli)` converges (`:laplace`/`:variational`); suite 1553/1553 (+15) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -45,7 +46,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1538/1538 pass, exit 0**.
+- Full local suite: **1553/1553 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -68,12 +69,15 @@ slice I owned and finished. Full report:
 
 Done this session (moved to the slice log): Phase-3 recovery harness, Phase-6
 Laplace + VA foundations, family hardening, Gauss–Hermite value gate, `:diagonal`
-VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, and the
-Poisson profile interval (Slice 10). Remaining solo-doable, internally
-verifiable items:
+VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, the Poisson
+profile interval (Slice 10), and the Bernoulli/logit family for Laplace + VA
+(Slice 11). Remaining solo-doable, internally verifiable items:
 
-1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
-2. A `fit_two_effect_reml` committed recovery harness + a denser-pedigree `h²`
+1. A larger-`n` Bernoulli known-truth recovery harness (binary data is
+   variance-uninformative at small scale; the fitted `sigma_a2` is currently
+   boundary-prone and uncalibrated) — closes the V6-BERNOULLI recovery gap.
+2. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
+3. A `fit_two_effect_reml` committed recovery harness + a denser-pedigree `h²`
    study (the σ²a/σ²pe split was under-identified at validation scale).
 
 Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
@@ -235,3 +239,31 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
 - Still experimental, Poisson-only, asymptotic: no Gaussian/multi-component
   intervals (needs nuisance profiling), no large-n coverage calibration. Full
   suite 1538/1538.
+
+### Slice 11 — Bernoulli/logit family (Laplace + VA) — binary traits
+- The biggest missing real-world quantitative-genetic family: BINARY 0/1 traits
+  (disease, survival, reproductive success). `BernoulliResponse` (logit link)
+  extends the non-Gaussian engine to **both** the Laplace marginal and the VA
+  ELBO — directly the "GLLVM with Laplace as well as VA" directive.
+- The genuine work is the VA path: the logistic log-partition `log(1+eη)` has no
+  closed-form Gaussian expectation (unlike Poisson's log-normal MGF), so the VA
+  expected loglik/score/weight kernels are computed by a load-time 20-node
+  Gauss–Hermite rule. Using the **same nodes** for all three makes the expected
+  score and weight *exactly* the η̄-derivatives of the expected loglik, so the VA
+  Newton iteration stays consistent with the ELBO it maximises.
+- **Gates** (15/15): conditional + expected score/weight match central finite
+  differences; the expected kernels reduce to the conditional ones as `v→0`; a
+  β-fixed independent tensor Gauss–Hermite quadrature of the true Bernoulli
+  marginal confirms `va.elbo ≤ R` (valid lower bound, gap ≈4e-4) and the Laplace
+  value is close (`|lap−R| ≈ 0.028`); binary guard rejects non-`{0,1}`;
+  `fit_laplace_reml(...; family = :bernoulli)` converges for both `:laplace` and
+  `:variational`.
+- **Honest limit**: binary data is variance-uninformative at small scale, so the
+  fitted `sigma_a2` is boundary-prone (the 8-animal smoke fixture runs to the
+  Brent upper bound) and is NOT yet calibrated by a known-truth recovery study.
+  The marginal *machinery* is trustworthy (VA-lower-bound + finite-diff gates);
+  the *fitting* is flagged as uncalibrated in the new `V6-BERNOULLI` rows. Full
+  suite 1553/1553. Team lenses: Gauss/Noether (kernel derivatives + quadrature
+  consistency), Curie (the GH value gate as the truth oracle), Darwin/Falconer
+  (binary/threshold traits are the high-value biological case), Karpinski
+  (load-time GH rule, `@inbounds` reduction), Rose (uncalibrated-fit honesty).

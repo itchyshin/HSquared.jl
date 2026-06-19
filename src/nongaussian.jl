@@ -8,10 +8,12 @@
 # the mode). β is integrated (flat prior), so for a Gaussian family this is the
 # REML-type marginal and reduces EXACTLY to `sparse_reml_loglik`.
 #
-# This is the `:LA` marginal; the `:VA` (variational) marginal is planned and
-# will reuse the per-family kernels here (architecture adapted from the MIT
-# DRM.jl `src/variational.jl` :LA/:VA dispatch). Families currently: Gaussian
-# (identity link, exact) and Poisson (log link).
+# This is the `:LA` marginal; the `:VA` (variational) marginal reuses the
+# per-family kernels here (architecture adapted from the MIT DRM.jl
+# `src/variational.jl` :LA/:VA dispatch). Families currently: Gaussian (identity
+# link, exact), Poisson (log link, closed-form VA via the log-normal MGF), and
+# Bernoulli (logit link; the VA expected kernels use Gauss–Hermite quadrature
+# because the logistic log-partition has no closed-form Gaussian expectation).
 #
 # NOT exported into the public/bridge surface; not wired into `fit_*`; no R
 # model-spec. Validation: Gaussian reduces to `sparse_reml_loglik` to machine
@@ -32,6 +34,13 @@ end
 """Poisson family with log link (`μ = exp(η)`)."""
 struct PoissonResponse <: ResponseFamily end
 
+"""Bernoulli family with logit link (`p = logistic(η)`) for binary 0/1 traits."""
+struct BernoulliResponse <: ResponseFamily end
+
+# numerically stable logistic and log(1 + exp η)
+_logistic(η) = η >= 0 ? 1.0 / (1.0 + exp(-η)) : (e = exp(η); e / (1.0 + e))
+_log1pexp(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+
 # per-observation conditional log-density ℓ(y|η), score dℓ/dη, working weight -d²ℓ/dη²
 _fam_loglik(f::GaussianResponse, y, η) = -0.5 * ((y - η)^2 / f.sigma_e2 + log(2π * f.sigma_e2))
 _fam_score(f::GaussianResponse, y, η) = (y - η) / f.sigma_e2
@@ -40,6 +49,10 @@ _fam_weight(f::GaussianResponse, y, η) = 1.0 / f.sigma_e2
 _fam_loglik(::PoissonResponse, y, η) = y * η - exp(η) - _logfactorial(y)
 _fam_score(::PoissonResponse, y, η) = y - exp(η)
 _fam_weight(::PoissonResponse, y, η) = exp(η)
+
+_fam_loglik(::BernoulliResponse, y, η) = y * η - _log1pexp(η)
+_fam_score(::BernoulliResponse, y, η) = y - _logistic(η)
+_fam_weight(::BernoulliResponse, y, η) = (p = _logistic(η); p * (1.0 - p))
 
 function _logfactorial(y)
     k = Int(round(y))
@@ -57,6 +70,11 @@ _check_counts(::ResponseFamily, yv) = nothing
 function _check_counts(::PoissonResponse, yv)
     all(y -> isinteger(y) && y >= 0, yv) ||
         throw(ArgumentError("PoissonResponse requires non-negative integer counts"))
+    return nothing
+end
+function _check_counts(::BernoulliResponse, yv)
+    all(y -> y == 0 || y == 1, yv) ||
+        throw(ArgumentError("BernoulliResponse requires binary 0/1 responses"))
     return nothing
 end
 
@@ -139,6 +157,31 @@ _fam_expected_weight(f::GaussianResponse, ηbar, v) = 1.0 / f.sigma_e2
 _fam_expected_loglik(::PoissonResponse, y, ηbar, v) = y * ηbar - exp(ηbar + 0.5 * v) - _logfactorial(y)
 _fam_expected_score(::PoissonResponse, y, ηbar, v) = y - exp(ηbar + 0.5 * v)
 _fam_expected_weight(::PoissonResponse, ηbar, v) = exp(ηbar + 0.5 * v)
+
+# Gauss–Hermite rule (Golub–Welsch), built once at load time, for families whose
+# Gaussian expectation E_{η~N(η̄,v)}[g(η)] has no closed form (e.g. Bernoulli logit).
+const _GH_NODES, _GH_WEIGHTS = let m = 20
+    E = eigen(SymTridiagonal(zeros(m), [sqrt(k / 2) for k in 1:(m - 1)]))
+    (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2))
+end
+# E[g(η)] with η ~ N(η̄, v): change of variables η = η̄ + √(2v)·x against e^{-x²}.
+function _gh_expect(g, ηbar, v)
+    s = sqrt(2.0 * v)
+    acc = 0.0
+    @inbounds for k in eachindex(_GH_NODES)
+        acc += _GH_WEIGHTS[k] * g(ηbar + s * _GH_NODES[k])
+    end
+    return acc / sqrt(π)
+end
+
+# Bernoulli (logit): no closed-form Gaussian expectation, so integrate the log
+# partition and its η̄-derivatives by Gauss–Hermite. Using the SAME nodes makes
+# `_fam_expected_score`/`_fam_expected_weight` exactly the η̄-derivatives of
+# `_fam_expected_loglik`, so the VA Newton step stays consistent with the ELBO.
+_fam_expected_loglik(::BernoulliResponse, y, ηbar, v) = y * ηbar - _gh_expect(_log1pexp, ηbar, v)
+_fam_expected_score(::BernoulliResponse, y, ηbar, v) = y - _gh_expect(_logistic, ηbar, v)
+_fam_expected_weight(::BernoulliResponse, ηbar, v) =
+    _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), ηbar, v)
 
 # Self-consistent variational covariance S = (Zᵀ W̃ Z + P0)⁻¹ and per-record
 # marginal variances v = diag(Z S Zᵀ), with W̃ depending on (η̄, v). Fixed-point.
@@ -262,9 +305,14 @@ end
 Estimate the variance component(s) of the non-Gaussian animal model by maximising
 the marginal log-likelihood (`marginal = :laplace`) or the ELBO
 (`marginal = :variational`) over the variance components. `family = :gaussian`
-estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson` estimates
-`sigma_a2` (Brent). Returns
-`(variance_components, marginal_loglik, beta, converged, family, marginal)`.
+estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson` and
+`family = :bernoulli` estimate the single `sigma_a2` (Brent). Returns
+`(variance_components, marginal_loglik, beta, breeding_values, converged, family,
+marginal)`.
+
+Binary `:bernoulli` data carries little variance information at small scale, so
+`sigma_a2` is prone to running to a search-bound boundary; the estimate is not
+yet calibrated by a known-truth recovery study.
 
 EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
 For the Gaussian family the objective is the exact REML log-likelihood, so this
@@ -275,8 +323,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
                           iterations::Integer = 200)
-    family in (:gaussian, :poisson) ||
-        throw(ArgumentError("family must be :gaussian or :poisson"))
+    family in (:gaussian, :poisson, :bernoulli) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, or :bernoulli"))
     marginal in (:laplace, :variational) ||
         throw(ArgumentError("marginal must be :laplace or :variational"))
     margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
@@ -295,17 +343,19 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                 converged = Optim.converged(res) && fit.converged,
                 family = :gaussian, marginal = marginal)
     else
+        # single-variance-component families: Poisson (log link) and Bernoulli (logit)
+        fam = family === :poisson ? PoissonResponse() : BernoulliResponse()
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
-        res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), PoissonResponse())),
+        res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),
                        log(sa0) - 6.0, log(sa0) + 6.0)
         sa2 = exp(Optim.minimizer(res))
-        fit = margfun(y, X, Z, Ainv, sa2, PoissonResponse())
+        fit = margfun(y, X, Z, Ainv, sa2, fam)
         return (variance_components = (sigma_a2 = sa2,),
                 marginal_loglik = val(fit), beta = fit.beta,
                 breeding_values = (marginal === :variational ? fit.m : fit.u),
                 converged = Optim.converged(res) && fit.converged,
-                family = :poisson, marginal = marginal)
+                family = family, marginal = marginal)
     end
 end
 

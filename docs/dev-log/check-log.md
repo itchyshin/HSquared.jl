@@ -2,6 +2,36 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Bernoulli (logit) family — Laplace + VA (overnight)
+
+- Goal: extend the non-Gaussian engine to BINARY 0/1 traits (disease, survival,
+  reproductive success) — the biggest missing real-world quantitative-genetic
+  family — for both the Laplace marginal and the VA ELBO. Directly serves the
+  "GLLVM with Laplace as well as VA" directive.
+- `BernoulliResponse` (logit link): stable `_logistic`/`_log1pexp`; conditional
+  kernels `ℓ = yη − log1pexp(η)`, score `y − p`, weight `p(1−p)`. The VA expected
+  kernels have NO closed form (the logistic log-partition is not Gaussian-
+  integrable), so they use a load-time 20-node Gauss–Hermite rule (`_GH_NODES`,
+  `_gh_expect`) with the SAME nodes for loglik/score/weight — so score and weight
+  are exactly the η̄-derivatives of the expected loglik and the VA Newton step
+  stays consistent with the ELBO. `fit_laplace_reml` `:bernoulli` branch (Brent,
+  single `sigma_a2`, shared with Poisson).
+- Gates (verified, `test/runtests.jl`, 15/15): conditional + expected score/
+  weight match central finite differences; expected kernels reduce to the
+  conditional kernels as `v→0`; a β-fixed independent tensor Gauss–Hermite
+  quadrature of the true Bernoulli marginal confirms `va.elbo ≤ R` (valid lower
+  bound, gap ≈4e-4) and `|lap.loglik − R| ≈ 0.028` (Laplace close); binary guard
+  rejects non-`{0,1}`; `fit_laplace_reml(...; family = :bernoulli)` converges for
+  `:laplace` and `:variational`.
+- `Pkg.test()`: passed, exit 0, **1553/1553** (Bernoulli testset +15).
+- Honest limit: binary data is variance-uninformative at small scale, so the
+  fitted `sigma_a2` is boundary-prone (the 8-animal smoke fixture runs to the
+  Brent upper bound) and is NOT yet calibrated by a known-truth recovery study —
+  recorded as such in the new `V6-BERNOULLI` debt row and capability row.
+- Rose: experimental, dense, not exported, no R model-spec; the VA-lower-bound
+  and finite-diff gates make the marginal machinery trustworthy, the *fitting*
+  is honestly flagged as uncalibrated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 Poisson variance-component profile interval (overnight)
 
 - Goal: the first *interval* for a non-Gaussian variance component — close the
