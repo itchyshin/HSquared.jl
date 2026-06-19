@@ -25,13 +25,18 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
-- 2026-06-16: Julia lane / `codex/phase5-gwas-qtl-eqtl-tables`.
-  Ada/Shannon/Fisher/Curie/Pat/Rose/Grace/Jason lenses. Adds direct
-  `gwas_table()`, `qtl_table()`, and `eqtl_table()` wrappers over existing
-  marker-scan table data only. No R edits, no bridge/result-payload change, no
-  formula-driven marker scan, no expression-wide eQTL workflow, no calibrated
-  p-value or genome-wide threshold claim. Next action: finish checks, commit,
-  push, and open/mark draft PR after the existing Phase 5 stack head.
+- 2026-06-19: Julia lane / next-phase programme plan, **Big Thing 1 (clean
+  base)** done. Ada/Shannon/Rose/Grace/Jason lenses. Landed Phase-4B/5/6 engine
+  work to `main` via PR #36 (`c4fb442`, CI green); closed the #16–#35 PR stack and
+  deleted superseded branches (remote = `main` + `gh-pages`, 0 open PRs); rebuilt
+  the mirrored issue ledger (Julia #42–#56; coordinated R #7/#10/#11–#15/#18).
+  Adopted process scaffolding: per-file `check-log.d/`, AGENTS.md lane-routing +
+  live phase snapshot, `docs/design/12-bridge-compatibility.md`, scout cadence.
+  Next: BT2 engine bridge-readiness (#42–#45, coordinate live with the R twin) and
+  BT3 Julia-native validation (#46–#49). No capability moved to covered.
+
+  Prior slice — 2026-06-16: direct `gwas_table()`/`qtl_table()`/`eqtl_table()`
+  wrappers over existing marker-scan table data (no bridge/payload change).
 
 ## Shared Contract
 

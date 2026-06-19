@@ -32,7 +32,7 @@ to `origin/codex/phase5-gwas-qtl-eqtl-tables`**):
 
 | # | Slice | Status now |
 | --- | --- | --- |
-| 0 | Merge Phase-5 stack → `main` | **PENDING — your action** (direct push policy-blocked) |
+| 0 | Merge Phase-5 stack → `main` | **DONE 2026-06-19** — landed via PR #36 (`c4fb442`, CI green); stack #16–#35 closed, branches deleted, issue ledger rebuilt (#42–#56) |
 | 1 | Profile-likelihood h² interval | **DONE** (`heritability_interval(...; method = :profile)`) |
 | 2 | Fitted Mrode validation | open — `[needs-canon-reference]` + R comparator |
 | 3 | Genomic external-comparator parity | **engine half done** (`fit_gblup_reml`/`fit_snp_blup_reml` REML, `single_step_inverse`/`fit_single_step[_reml]`, VanRaden method-2 + weighted G); comparator half `[needs-external-package]` |
@@ -76,18 +76,15 @@ regression, interval mapping), and (d) **hardware-gated** (#11, #12).
   recovery-calibration did **not** pass (unstructured 6/10, FA 8/10, low-rank
   9/10); and the Phase-5 work sits in an unmerged stacked draft-PR chain.
 
-## Blocker to clear first — Phase 5 draft PR stack #26→#35
+## Blocker cleared (2026-06-19) — Phase 5 draft PR stack
 
-~10 stacked draft PRs (`codex/phase5-*`) carry all the Phase-5 marker work and
-are **not merged to `main`**; each grows the reconcile cost.
-
-**Recommendation:** merge the stack into `main` in dependency order now (CI is
-green per PR), then delete the merged branches, so `main` reflects reality and
-later slices branch from a clean base. Merging to the default branch is a
-**user action** (direct push is policy-blocked), so this needs your go-ahead or
-hands-on merge. If you prefer to keep stacking, the alternative is to land the
-whole chain in one squash once Phase 5 reaches a natural close — but that defers
-the growing-stack risk rather than removing it.
+**RESOLVED.** The whole Phase-4B/5 draft stack (#16–#35, ~19 PRs) was landed to
+`main` as a single trunk merge via **PR #36** (`c4fb442`, CI green): `origin/main`'s
+one divergent commit (`abf777d`, #21) was merged into the branch first (doc-only
+conflicts, union-resolved), then the branch went to `main` through a reviewed PR.
+The stack PRs were closed as superseded and all merged/superseded branches
+deleted (remote heads now `main` + `gh-pages`; 0 open PRs). `main` reflects engine
+reality; later slices branch from a clean base.
 
 ## Critical path (gate-closing before new capability)
 
