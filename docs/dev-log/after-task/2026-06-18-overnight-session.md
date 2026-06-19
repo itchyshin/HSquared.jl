@@ -31,7 +31,8 @@ kept current at each milestone and is the "morning report".
 | `a3eab9b` | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified (honest, ungated) |
 | `c0125ba` | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
 | `57c0b7c` | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
-| _(latest)_ | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
+| `a4ddaba` | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
+| _(latest)_ | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -148,3 +149,17 @@ slice I owned and finished. Full report:
 - Remaining team-flagged items (still open, recorded): the Laplace
   `gradient_norm`-at-returned-mode nit, and a Poisson marginal-VALUE test vs
   Gauss–Hermite quadrature (the one honest Poisson-value gate).
+
+### Slice 6 — Poisson marginal-value gate vs Gauss–Hermite (closes the last team item)
+- Test-only: a self-contained Golub–Welsch tensor Gauss–Hermite quadrature of the
+  true β-fixed Poisson marginal, used as an INDEPENDENT reference. Confirms the
+  VA `elbo` is a valid lower bound on `log p(y)` (`va.elbo ≤ R + 1e-6`) and the
+  Laplace value is close (`≈ R`, atol 5e-2) — without falsely asserting the two
+  approximations bound each other (they don't; both lie below the truth in
+  different amounts). Exercises the β-fixed (p=0) path of both marginals.
+- Full suite 1513/1513. This was the team's strongest remaining honest-coverage
+  item; the only Poisson check that was missing a true-value comparator is now in.
+- Remaining Phase-6 follow-ons (clearly scoped, not started): a `:diagonal` VA
+  option + ELBO-monotonicity test; the Laplace `gradient_norm`-at-mode nit;
+  variance-component estimation and a fitted GLLVM path; external GLLVM.jl/
+  gllvmTMB comparators; the R-facing model-spec.

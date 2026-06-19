@@ -3554,3 +3554,41 @@ end
     v1 = HSquared.variational_marginal_loglik([3.0, 5.0, 8.0], X, Z, Ainv, sa2, HSquared.PoissonResponse(); maxiter = 1)
     @test !v1.converged && isnan(v1.elbo)
 end
+
+@testset "Phase 6 Poisson marginal value vs Gauss–Hermite (β-fixed)" begin
+    # The honest Poisson-VALUE gate: against an independent tensor Gauss–Hermite
+    # quadrature of the true marginal ∫ ∏ Poisson(yᵢ | exp((Zu)ᵢ))·N(u; 0, A·σ²a) du
+    # (β-fixed via a zero-column X), the VA ELBO is a valid LOWER BOUND and the
+    # Laplace value is close (not a bound).
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    yp = [3.0, 5.0, 8.0]
+    X0 = zeros(3, 0)                      # β-fixed (no fixed effects)
+
+    _gh(m) = (E = eigen(SymTridiagonal(zeros(m), [sqrt(k / 2) for k in 1:m-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    function _poisson_marginal(y, Zd, G, m)
+        x, w = _gh(m)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2)
+        tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> m, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - exp(η[i]) - HSquared._logfactorial(y[i]) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _poisson_marginal(yp, Matrix(Z), G, 24)
+    lap = HSquared.laplace_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse())
+    va = HSquared.variational_marginal_loglik(yp, X0, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test lap.converged && va.converged
+    @test va.elbo <= R + 1e-6            # ELBO is a valid lower bound on log p(y)
+    @test isapprox(lap.loglik, R; atol = 5e-2)   # Laplace close to the true marginal (documents the gap)
+end

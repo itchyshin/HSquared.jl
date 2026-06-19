@@ -2,6 +2,19 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Poisson marginal value vs Gauss–Hermite (overnight)
+
+- Goal: the team's strongest remaining honest-coverage item — pin the Poisson
+  marginal VALUE (previously only finiteness/stationarity were tested).
+- Test-only: a self-contained Golub–Welsch tensor Gauss–Hermite quadrature of the
+  true β-fixed Poisson marginal `∫ ∏ Poisson(yᵢ|exp((Zu)ᵢ))·N(u;0,A·σ²a) du`.
+- Gates (verified): the VA ELBO is a valid LOWER BOUND (`va.elbo ≤ R + 1e-6`),
+  and the Laplace value is close (`≈ R`, atol 5e-2) — documenting the gap without
+  falsely claiming the two approximations bound each other. Exercises the
+  β-fixed (p=0) path of both marginals.
+- `Pkg.test()`: passed, exit 0, **1513/1513** (was 1510; +3). No src change.
+- Rose: closes the V6-VA Poisson-value gap; experimental status unchanged.
+
 ## 2026-06-18 Phase 6 non-Gaussian family hardening (overnight)
 
 - Goal: close the team's `laplace_fixes_needed` (Gauss/Noether/Curie findings)
