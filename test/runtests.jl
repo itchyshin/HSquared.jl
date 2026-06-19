@@ -3884,6 +3884,35 @@ end
     @test isapprox(lap.loglik, R; atol = 5e-2)   # Laplace close to the true marginal (documents the gap)
 end
 
+@testset "Phase 6 public (exported) non-Gaussian fitting API" begin
+    # fit_laplace_reml and laplace_reml_interval are now part of the public
+    # (experimental) surface — exercise them UNQUALIFIED (no HSquared. prefix).
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 8, 8)
+    X = ones(8, 1)
+
+    # Gaussian non-Gaussian fit equals the exact sparse REML (the validated gate)
+    yg = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    fg = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian,
+                          initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    sr = fit_sparse_reml(animal_model_spec(yg, X, Z, Ainv; ids = ped.ids, method = :REML);
+                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fg.converged
+    @test fg.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+
+    # Poisson fit + the exported profile interval
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    fp = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    @test fp.family === :poisson && fp.converged
+    ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    @test ci.lower < ci.sigma_a2 < ci.upper
+    @test ci.level == 0.95
+end
+
 @testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
     # 8-animal interior fixture (where the REML optimum is interior)
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]

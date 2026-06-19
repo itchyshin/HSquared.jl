@@ -16,8 +16,10 @@
 # because the logistic log-partition has no closed-form Gaussian expectation),
 # and Binomial (logit link, `n_trials` successes; Bernoulli is `n_trials = 1`).
 #
-# NOT exported into the public/bridge surface; not wired into `fit_*`; no R
-# model-spec. Validation: Gaussian reduces to `sparse_reml_loglik` to machine
+# The fitters `fit_laplace_reml` / `laplace_reml_interval` are exported
+# (experimental); the marginal-loglik kernels and `ResponseFamily` types stay
+# internal. Not wired into the R formula `fit_*` path; no R model-spec.
+# Validation: Gaussian reduces to `sparse_reml_loglik` to machine
 # precision; the Poisson mode solves the penalized score equation (∇ = 0); the
 # per-family score/weight match finite differences of the conditional loglik.
 
@@ -349,8 +351,9 @@ trials per record is more informative and recovers `sigma_a2` far better (see
 
 EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
 For the Gaussian family the objective is the exact REML log-likelihood, so this
-recovers the same estimate as [`fit_sparse_reml`](@ref). Not exported, not the
-public default, no R model-spec, no external comparator.
+recovers the same estimate as [`fit_sparse_reml`](@ref). Exported as an
+experimental fitter; not the public default, not wired into the R formula path,
+no R model-spec, no external comparator.
 """
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,

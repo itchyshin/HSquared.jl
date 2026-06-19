@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 non-Gaussian fitter promoted to the public surface (post-inventory)
+
+- Goal: the substantial, internally-validated Phase-6 GLLVM engine was
+  deliberately UNEXPORTED (= unusable from the public API). Promote the FITTERS to
+  the experimental public surface so non-Gaussian animal models are actually
+  callable.
+- Exported `fit_laplace_reml` and `laplace_reml_interval` (the marginal-loglik
+  kernels `laplace_marginal_loglik`/`variational_marginal_loglik` and the
+  `ResponseFamily` types stay internal — lower-level). Updated the three
+  "not exported" docstring notes accordingly.
+- Gate (verified, `test/runtests.jl`, exercised UNQUALIFIED): the Gaussian
+  non-Gaussian fit equals the exact `fit_sparse_reml` loglik (rtol 1e-6); a
+  Poisson fit + the exported `laplace_reml_interval` bracket the estimate at
+  level 0.95.
+- `Pkg.test()`: passed, exit 0, **1736/1736** (+5). Capability rows (fitted +
+  Bernoulli + Binomial) and the V6-FIT debt row updated — families are now
+  reachable via the exported `fit_laplace_reml(...; family = …)`; a full
+  extractor-method API (the fit returns a `NamedTuple`) remains future work.
+- Rose: honest experimental promotion — all caveats kept (dense/validation-scale,
+  no external comparator, not the public default, no R model-spec). Local
+  checkpoint, not pushed.
+
 ## 2026-06-18 Phase 2 single-step (H-matrix) export + fitting (post-inventory)
 
 - Goal: close the inventory's "single-step `_single_step_Hinv` is implemented but
