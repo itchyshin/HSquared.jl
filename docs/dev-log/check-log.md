@@ -2,6 +2,28 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 clonal / asexual relationship (overnight)
+
+- Goal: the next solo Phase-3 inheritance primitive named by the Stop hook —
+  clonal / asexual reproduction.
+- `clonal_relationship(pedigree, clone_of)`: clonal ramets carry no Mendelian
+  sampling, so each is genetically identical to its genet. The construction
+  aliases each individual to its ultimate genet (`rep`, clone links followed
+  transitively with a cycle guard) and returns `C[i,j] = A[rep(i), rep(j)]` from
+  the numerator relationship. This sidesteps the zero Mendelian-variance issue
+  (which would make a direct `Ainv` recursion divide by zero) — `C` is built
+  dense and is rank-deficient (identical clonemate rows), to use directly.
+  Exported, aligned to `pedigree.ids`.
+- Gates (verified, `test/runtests.jl`): hand fixture (genet G = P×Q, ramets
+  r1/r2) — clonemates and ramet↔genet `= 1`, ramet inherits the genet's `0.5` to
+  each parent, non-clones unchanged, all-marker `clone_of` → numerator
+  relationship, transitive clone-of-clone chains collapse to one genet,
+  symmetry, and guards on length / unknown genet / clone cycle / self-clone.
+- `Pkg.test()`: passed, exit 0, **1663/1663** (clonal testset +15).
+- Rose: exported public primitive with full evidence; capability row
+  planned→experimental, new `V3-CLONAL` debt row, ROADMAP Phase-3 updated. Local
+  checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 self-fertilization (allow_selfing) (overnight)
 
 - Goal: the next solo-doable Phase-3 non-standard-inheritance primitive named by

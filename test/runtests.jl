@@ -507,6 +507,47 @@ end
     @test Matrix(pedigree_inverse(mixed)) ≈ inv(HSquared._numerator_relationship(mixed))
 end
 
+@testset "Phase 3 clonal (asexual) relationship" begin
+    # Genets P, Q (founders), G = sexual offspring of P×Q; r1, r2 = clonal ramets
+    # of G. Ramets are genetically identical to their genet and to each other, and
+    # inherit the genet's relationships to everyone else (no Mendelian sampling).
+    ped = normalize_pedigree(["P", "Q", "G", "r1", "r2"],
+                             ["0", "0", "P", "0", "0"], ["0", "0", "Q", "0", "0"])
+    idx(id) = findfirst(==(id), ped.ids)
+    A = HSquared._numerator_relationship(ped)
+    clone_of = [id in ("r1", "r2") ? "G" : "0" for id in ped.ids]   # aligned to ped.ids
+
+    C = HSquared.clonal_relationship(ped, clone_of)
+    @test size(C) == (5, 5)
+    @test issymmetric(C)
+    @test C[idx("r1"), idx("r2")] == 1.0     # clonemates identical
+    @test C[idx("r1"), idx("G")] == 1.0      # ramet identical to its genet
+    @test C[idx("r1"), idx("r1")] == 1.0
+    @test C[idx("r1"), idx("P")] == A[idx("G"), idx("P")]   # inherits genet's links (0.5)
+    @test C[idx("r2"), idx("Q")] == A[idx("G"), idx("Q")]   # 0.5
+    @test C[idx("P"), idx("Q")] == A[idx("P"), idx("Q")]    # non-clones unchanged (0)
+    @test C[idx("G"), idx("G")] == A[idx("G"), idx("G")]    # 1
+
+    # no clones → identical to the numerator relationship
+    @test HSquared.clonal_relationship(ped, fill("0", 5)) == A
+
+    # chained ramets resolve to the ultimate genet (clone of a clone)
+    ped2 = normalize_pedigree(["G", "r1", "r2"], ["0", "0", "0"], ["0", "0", "0"])
+    j(id) = findfirst(==(id), ped2.ids)
+    chain = [ped2.ids[k] == "r1" ? "G" : (ped2.ids[k] == "r2" ? "r1" : "0") for k in 1:3]
+    C2 = HSquared.clonal_relationship(ped2, chain)
+    @test C2 == ones(3, 3)                   # all one genet line → all identical
+
+    # guards
+    @test_throws ArgumentError HSquared.clonal_relationship(ped, ["0", "0", "0", "G"])     # wrong length
+    @test_throws ArgumentError HSquared.clonal_relationship(ped, [id == "r1" ? "ZZ" : "0" for id in ped.ids])  # unknown genet
+    pedc = normalize_pedigree(["a", "b"], ["0", "0"], ["0", "0"])
+    cyc = [pedc.ids[k] == "a" ? "b" : "a" for k in 1:2]                  # a→b, b→a cycle
+    @test_throws ArgumentError HSquared.clonal_relationship(pedc, cyc)
+    self = [pedc.ids[k] == "a" ? "a" : "0" for k in 1:2]                 # a clone of itself
+    @test_throws ArgumentError HSquared.clonal_relationship(pedc, self)
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

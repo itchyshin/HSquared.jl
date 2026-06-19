@@ -296,10 +296,12 @@ the 0/1 same-maternal-line indicator usable as the relationship for an i.i.d.
 cytoplasmic random effect), and self-fertilization
 (`normalize_pedigree(...; allow_selfing = true)`, with the additive-relationship
 recursion and Henderson `Ainv` rules already self-correct — a selfed offspring of
-a non-inbred parent has `F = 1/2`). Sire models, dominance, the other
-non-standard inheritance systems (clonal, haplodiploid, polyploid),
-unknown-parent groups, and random regression remain open, as does any public
-model-spec.
+a non-inbred parent has `F = 1/2`), and clonal / asexual reproduction
+(`clonal_relationship(pedigree, clone_of)`, where ramets alias their genet's
+relationships — `C[i,j] = A[rep(i), rep(j)]` — so clonemates are identical).
+Sire models, dominance, the remaining non-standard inheritance systems
+(haplodiploid, polyploid), unknown-parent groups, and random regression remain
+open, as does any public model-spec.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

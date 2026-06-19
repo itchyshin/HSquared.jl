@@ -256,6 +256,57 @@ end
 
 cytoplasmic_relationship(ids, sire, dam) = cytoplasmic_relationship(normalize_pedigree(ids, sire, dam))
 
+"""
+    clonal_relationship(pedigree, clone_of)
+
+Dense additive relationship matrix for a pedigree containing clonal (asexual)
+ramets. `clone_of` is aligned to `pedigree.ids`: entry `i` is the id of the genet
+that individual `i` is a clonal copy of, or an unknown-parent marker (`missing`,
+`""`, `"0"`, `0`, …) if `i` is not a clone. Clonal ramets carry no new Mendelian
+variation, so each ramet is genetically identical to its genet and inherits the
+genet's whole row/column of the numerator relationship: `C[i, j] = A[rep(i),
+rep(j)]`, where `rep` maps each individual to its ultimate genet (clone links are
+followed transitively). Returned in `pedigree.ids` order, aligned with
+[`pedigree_inverse`](@ref).
+
+Experimental Phase 3 non-standard-inheritance primitive. Because clonemates are
+identical rows, `C` is rank-deficient — it is a relationship matrix to use
+directly, not to invert. Record the genets sexually in `pedigree`; record ramets
+with unknown parents and mark them through `clone_of`.
+"""
+function clonal_relationship(pedigree::Pedigree, clone_of)
+    n = length(pedigree)
+    length(clone_of) == n ||
+        throw(ArgumentError("clone_of must have one entry per pedigree individual"))
+    id_to_index = Dict(id => i for (i, id) in pairs(pedigree.ids))
+    genet = zeros(Int, n)              # genet index for each clone, 0 if not a clone
+    for i in 1:n
+        c = clone_of[i]
+        _is_unknown_parent(c, DEFAULT_UNKNOWN_PARENT_VALUES) && continue
+        haskey(id_to_index, c) ||
+            throw(ArgumentError("clone_of references unknown genet id: $(_repr(c))"))
+        genet[i] = id_to_index[c]
+    end
+    rep = collect(1:n)                 # resolve each individual to its ultimate genet
+    for i in 1:n
+        j = i
+        steps = 0
+        while genet[j] != 0
+            j = genet[j]
+            steps += 1
+            steps > n &&
+                throw(ArgumentError("clonal cycle detected starting from $(_repr(pedigree.ids[i]))"))
+        end
+        rep[i] = j
+    end
+    A = _numerator_relationship(pedigree)
+    C = Matrix{Float64}(undef, n, n)
+    for i in 1:n, j in 1:n
+        C[i, j] = A[rep[i], rep[j]]
+    end
+    return C
+end
+
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0
     haskey(id_to_index, parent) &&

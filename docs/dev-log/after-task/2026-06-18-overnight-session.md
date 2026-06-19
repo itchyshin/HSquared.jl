@@ -45,7 +45,8 @@ kept current at each milestone and is the "morning report".
 | `16b2684` | **Dense-inverse conditioning caveat** (`V1-DENSE-COND`, docs) | the dense `inv(Ainv)` estimators are O(q³)/precision-limited for ill-conditioned `Ainv`; sparse/Henderson/Laplace+VA use `Ainv` directly; tracked limitation |
 | `80b2c2d` | Phase-3 **cytoplasmic / maternal-lineage relationship** (`maternal_lineage`, `cytoplasmic_relationship`, exported) | first non-standard-inheritance primitive; maternal-founder trace + 0/1 same-line indicator; hand-verified multi-lineage fixture; suite 1637/1637 (+53) |
 | `cf09adf` | Cytoplasmic/additive confounding forward note (`V3-CYTO`, docs) | exploratory probe: σ²c partially recovers but confounds with σ²a; documented, not committed as a confounded gate |
-| _(latest)_ | Phase-3 **self-fertilization** (`normalize_pedigree(...; allow_selfing=true)`) | machinery already self-correct; canonical F=0,½,¾ & A_ii=3/2,7/4 verified; `pedigree_inverse == inv(A)` for pure + mixed selfed pedigrees; suite 1648/1648 (+11) |
+| `66be55c` | Phase-3 **self-fertilization** (`normalize_pedigree(...; allow_selfing=true)`) | machinery already self-correct; canonical F=0,½,¾ & A_ii=3/2,7/4 verified; `pedigree_inverse == inv(A)` for pure + mixed selfed pedigrees; suite 1648/1648 (+11) |
+| _(latest)_ | Phase-3 **clonal / asexual relationship** (`clonal_relationship`, exported) | ramets alias their genet (`C[i,j]=A[rep i,rep j]`, transitive); clonemates identical; hand-verified fixture + cycle/self/unknown guards; suite 1663/1663 (+15) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -54,7 +55,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1648/1648 pass, exit 0**.
+- Full local suite: **1663/1663 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -87,11 +88,11 @@ dense-inverse conditioning caveat (Slice 16, `V1-DENSE-COND`), and the first
 non-standard-inheritance primitive — cytoplasmic / maternal-lineage relationship
 (Slice 17).
 
-**Still solo-doable:** Phase 3's non-standard inheritance scope has more
-relationship-construction primitives that ARE solo + hand-verifiable. Selfing is
-now done (Slice 18); remaining: clonal (identical-genotype groups), haplodiploid
-and polyploid relationship coefficients (these need the sex/ploidy-specific
-coancestry canon checked), plus a confounding-breaking cytoplasmic-variance
+**Still solo-doable:** Phase 3's non-standard inheritance scope. Cytoplasmic
+(Slice 17), selfing (Slice 18), and clonal (Slice 19) are now done; remaining:
+haplodiploid and polyploid relationship coefficients (these need the
+sex/ploidy-specific coancestry canon carefully cross-checked vs nadiv/textbook
+before shipping coefficients), plus a confounding-breaking cytoplasmic-variance
 estimation example.
 
 **Genuinely NOT solo (needs you / R lane / external):** external GLLVM.jl /
@@ -408,3 +409,17 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   `pedigree_inverse == inv(A)` for both a pure-selfing and a mixed sexual/selfed
   pedigree. Suite 1648/1648. Capability row planned→experimental, new
   `V3-SELFING` debt row, ROADMAP Phase-3 updated.
+
+### Slice 19 — clonal / asexual relationship (`clonal_relationship`)
+- Clonal ramets carry no Mendelian sampling, so a direct `Ainv` recursion would
+  divide by zero (`d_i = 0`). I sidestep that: build the dense relationship by
+  aliasing each individual to its ultimate genet (`rep`, clone links resolved
+  transitively with a cycle guard) and return `C[i,j] = A[rep(i), rep(j)]` from
+  the numerator relationship — so clonemates are identical rows and each ramet
+  inherits the genet's links. Exported, aligned to `pedigree.ids`.
+- **Gates** (hand fixture genet G = P×Q, ramets r1/r2): clonemates and
+  ramet↔genet `= 1`, ramet inherits the genet's `0.5` to each parent, non-clones
+  unchanged, all-marker `clone_of` → numerator relationship, transitive
+  clone-of-clone chains collapse, symmetry, and guards on length / unknown genet
+  / cycle / self-clone. Suite 1663/1663. `C` is rank-deficient (used directly,
+  not inverted). Capability planned→experimental, new `V3-CLONAL` debt row.
