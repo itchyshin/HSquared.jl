@@ -2978,6 +2978,41 @@ end
     @test t.likelihood.loglik ≈ ai.likelihood.loglik rtol = 1e-5
 end
 
+@testset "Phase 2 GBLUP/SNP-BLUP REML convenience (variance-component estimation)" begin
+    # one-call genomic/marker fitting that ESTIMATES the variance components by REML
+    # (closes the supplied-variance-only limitation of fit_gblup / fit_snp_blup).
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
+    y = [10.0, 12.0, 11.0, 9.0, 13.0, 10.5]
+    X = ones(6, 1); Z = Matrix(1.0I, 6, 6)
+    G = genomic_relationship_matrix(M)
+    Ginv = genomic_relationship_inverse(G; ridge = 0.05)
+    spec = animal_model_spec(y, X, Z, Ginv; method = :REML)
+    ai = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+
+    # fit_gblup_reml estimates (σ²_g, σ²_e) on the Ginv spec == generic AI-REML
+    g = fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test g isa AnimalModelFit
+    @test g.converged
+    @test g.variance_components.sigma_a2 ≈ ai.variance_components.sigma_a2 rtol = 1e-6
+    @test g.variance_components.sigma_e2 ≈ ai.variance_components.sigma_e2 rtol = 1e-6
+    @test breeding_values(g).values ≈ breeding_values(ai).values atol = 1e-8
+
+    # fit_snp_blup_reml estimates σ²_g and returns marker effects + GEBVs
+    s = fit_snp_blup_reml(y, X, M; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test s.converged
+    @test s.sigma_g2 > 0 && s.sigma_e2 > 0
+    @test length(s.marker_effects) == 3
+    @test length(s.gebv) == 6
+    # the REML wrapper reproduces supplied-variance SNP-BLUP at the ESTIMATED variances
+    sup = fit_snp_blup(y, X, M, s.sigma_g2, s.sigma_e2)
+    @test sup.gebv ≈ s.gebv atol = 1e-8
+    @test sup.marker_effects ≈ s.marker_effects atol = 1e-8
+
+    # guards inherited from the REML core
+    @test_throws ArgumentError fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+    @test_throws ArgumentError fit_snp_blup_reml(y, X, M; initial = (sigma_a2 = -1.0, sigma_e2 = 1.0))
+end
+
 @testset "Phase 1 variance-component covariance and heritability interval" begin
     # standard-normal quantile (Acklam) against known values
     @test HSquared._standard_normal_quantile(0.975) ≈ 1.959963985 atol = 1e-6

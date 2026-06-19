@@ -194,6 +194,34 @@ function fit_gblup(
 end
 
 """
+    fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+                   target = :ai_reml, ids = nothing)
+
+GBLUP with REML-estimated variance components: build the genomic animal-model
+spec (genomic precision `Ginv` in the `Ainv` slot) and estimate `(sigma_a2,
+sigma_e2)` by REML, instead of supplying them as in [`fit_gblup`](@ref). A
+one-call convenience over `animal_model_spec(...; method = :REML)` +
+[`fit_animal_model`](@ref); `target = :ai_reml` (default) or `:sparse_reml`.
+Returns the [`AnimalModelFit`](@ref) (estimated `variance_components`, genomic
+`breeding_values`, `likelihood`, `converged`, …).
+
+Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
+selected-inversion advantage); no external comparator, no R model-spec.
+"""
+function fit_gblup_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ginv::AbstractMatrix;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    target::Symbol = :ai_reml,
+    ids = nothing,
+)
+    spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
+    return fit_animal_model(spec; target = target, initial = initial)
+end
+
+"""
     fit_snp_blup(y, X, markers, sigma_g2, sigma_e2; allele_frequencies = nothing,
                  ids = nothing)
 
@@ -230,6 +258,41 @@ function fit_snp_blup(
     res = henderson_mme(spec, sigma_g2 / cm.k, sigma_e2)
     a = breeding_values(res).values
     return (marker_effects = a, gebv = cm.W * a, beta = fixed_effects(res), k = cm.k, p = cm.p)
+end
+
+"""
+    fit_snp_blup_reml(y, X, markers; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+                      allele_frequencies = nothing, target = :ai_reml, ids = nothing)
+
+SNP-BLUP / RR-BLUP with REML-estimated variance components: estimate the per-marker
+random-effect variance and residual variance by REML on the centered-marker spec
+(markers as the random-effect design with an identity prior), instead of supplying
+them as in [`fit_snp_blup`](@ref). Returns a `NamedTuple`
+`(marker_effects, gebv, beta, sigma_g2, sigma_e2, k, p, loglik, converged)`, where
+`sigma_g2 = σ̂²_marker · k` is the total genomic variance (`k = 2 Σ_j p_j(1 − p_j)`).
+
+At the estimated variances this reproduces [`fit_snp_blup`](@ref) exactly (the REML
+wrapper just supplies the estimated variances). Experimental, dense/validation-scale,
+unweighted VanRaden method-1 / single identity prior; no external comparator.
+"""
+function fit_snp_blup_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    markers::AbstractMatrix;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    target::Symbol = :ai_reml,
+    ids = nothing,
+)
+    cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    Im = Matrix{Float64}(I, size(cm.W, 2), size(cm.W, 2))
+    spec = animal_model_spec(y, X, cm.W, Im; ids = ids, method = :REML)
+    fit = fit_animal_model(spec; target = target, initial = initial)
+    a = breeding_values(fit).values
+    return (marker_effects = a, gebv = cm.W * a, beta = fixed_effects(fit),
+            sigma_g2 = fit.variance_components.sigma_a2 * cm.k,
+            sigma_e2 = fit.variance_components.sigma_e2, k = cm.k, p = cm.p,
+            loglik = fit.likelihood.loglik, converged = fit.converged)
 end
 
 """

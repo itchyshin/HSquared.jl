@@ -2,6 +2,30 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 2 GBLUP/SNP-BLUP REML convenience (post-inventory)
+
+- Goal: close the inventory's "`fit_gblup`/`fit_snp_blup` are supplied-variance
+  only" gap with a one-call REML-estimating convenience (the generic REML fitter
+  already estimates genomic VCs on a `Ginv` spec, but no path returned marker
+  effects with a REML-estimated variance).
+- `fit_gblup_reml(y, X, Z, Ginv; initial, target, ids)` — builds the genomic
+  spec and estimates `(σ²_g, σ²_e)` by REML (`:ai_reml` default), returns the
+  `AnimalModelFit`. `fit_snp_blup_reml(y, X, markers; initial, target, ...)` —
+  estimates the per-marker variance by REML on the centered-marker spec and
+  returns `(marker_effects, gebv, beta, sigma_g2 = σ̂²_marker·k, sigma_e2, k, p,
+  loglik, converged)`. Both exported.
+- Gates (verified, `test/runtests.jl`): `fit_gblup_reml` VCs/breeding-values ==
+  generic `fit_ai_reml` on the `Ginv` spec (rtol 1e-6 / atol 1e-8);
+  `fit_snp_blup_reml` converges, `σ²_g > 0`, and reproduces supplied-variance
+  `fit_snp_blup` at the estimated variances (GEBV/marker-effects atol 1e-8);
+  guards inherited. On the fixture both parameterisations estimate σ²_g ≈ 1.558
+  (GBLUP↔SNP-BLUP equivalence at the REML level).
+- Also fixed two more stale capability-status drifts (the VanRaden-`G` row said
+  "no GBLUP / marker-effect estimation"; the GBLUP/SNP-BLUP rows said "no REML
+  estimation").
+- `Pkg.test()`: passed, exit 0, **1720/1720** (+13). V2-GBLUP / V2-SNPBLUP /
+  V2-GREML debt rows updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Drift fix + Phase-4B twin-flagged fix + twin coordination (post-inventory)
 
 - Context: ran a multi-agent inventory workflow over ROADMAP / capability-status
