@@ -1,5 +1,10 @@
 # Check Log
 
+> **Frozen as of 2026-06-19.** New check evidence now lives per-slice in
+> [`check-log.d/`](check-log.d/) to avoid merge conflicts across parallel slices.
+> Do not append below; add a new `check-log.d/YYYY-MM-DD-<slice>.md` instead.
+> The entries below are the historical record.
+
 Newest entries go at the top.
 
 ## 2026-06-18 Phase 6 non-Gaussian fitted-object API (NonGaussianFit struct + extractors)

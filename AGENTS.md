@@ -4,6 +4,23 @@
 The R package owns the public user language; this Julia package owns the
 engine reality.
 
+## Live Phase Snapshot
+
+> Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
+> is truth; this is the at-a-glance pointer.
+
+- **As of 2026-06-19.** `main` carries the full Phase-4B/5/6 engine work (landed
+  via PR #36, `c4fb442`, CI green). Suite **1792/1792**. Remote heads: `main` +
+  `gh-pages`; **0 open PRs**.
+- **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
+  else is `experimental`/`partial`.
+- **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 = engine
+  bridge-readiness for #42 (structured covariance), #43 (PEV/reliability), #44
+  (non-Gaussian + `MarginalMethod` dispatch), #45 (post-fit marker scans),
+  coordinated live with the R twin. BT3 = Julia-native validation #46 (fitted
+  Mrode), #47 (covariance SEs/LRTs), #48 (calibrated thresholds), #49 (comparator
+  fixtures). Innovation backlog #50–#55; scout cadence #56.
+
 ## Core Scope
 
 - Sparse pedigree, genomic, and custom relationship precision matrices.
@@ -69,6 +86,27 @@ actual subagents are running.
 
 These names remain review lenses unless an actual subagent is spawned and named
 separately.
+
+### Lane routing (which lens reviews which change)
+
+Adopted 2026-06-19 (DRM.jl lane-boundary pattern). Charters live in
+`.claude/agents/*.md` and `.codex/agents/*.toml`.
+
+| Change class | Required lens(es) |
+| --- | --- |
+| `src/` numerics, REML, sparse linear algebra | Gauss + Karpinski + Noether |
+| Formula / bridge / result-payload contract | Hopper + Boole + Emmy |
+| Validation evidence, fixtures, recovery, comparators | Curie + Fisher + Mrode |
+| Non-standard inheritance, quant-gen interpretation | Mendel + Falconer |
+| G matrices / factor-analytic covariance | Kirkpatrick |
+| **Any public claim / pre-publish / repo-visibility** | **Rose (mandatory)** |
+| CI / Documenter / release / reproducibility | Grace |
+| Cross-repo / cross-lane coordination | Ada + Shannon |
+
+Scripted Workflow macros (run only on explicit opt-in / ultracode): an
+engine-quality pass (Gauss/Karpinski/Noether over `src/`), an R-bridge-parity pass
+(Hopper over payload + fixtures), and a validation-gate pass (Curie/Fisher/Mrode +
+Rose) before any `experimental→covered` move.
 
 ## Sister Project Boundaries
 
