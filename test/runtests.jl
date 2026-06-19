@@ -3617,15 +3617,12 @@ end
     @test low.genetic_covariance ≈ lowrank_covariance(low.genetic_loadings) atol = 1e-8
     @test low.genetic_loadings[argmax(abs.(low.genetic_loadings[:, 1])), 1] >= 0
     @test minimum(eigvals(Symmetric(low.genetic_covariance))) >= -1e-8
-    @test low.genetic_uniqueness == zeros(2)
+    @test low.genetic_uniqueness === nothing   # pure low-rank G = ΛΛ' has NO specific variance
     low_loadings = genetic_loadings(low)
     @test low_loadings ≈ low.genetic_loadings
     low_loadings[1, 1] = -99.0
     @test low.genetic_loadings[1, 1] != -99.0
-    low_uniq = genetic_uniqueness(low)
-    @test low_uniq == zeros(2)
-    low_uniq[1] = 99.0
-    @test low.genetic_uniqueness[1] == 0.0
+    @test genetic_uniqueness(low) === nothing  # accessor returns nothing for low-rank
     @test low.loglik ≈ h(Y2, X, Z, Ainv, low.genetic_covariance, low.residual_covariance) atol = 1e-6
     @test low.loglik <= full.loglik + 1e-6
 

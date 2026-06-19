@@ -445,7 +445,9 @@ function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol,
         return G0, nothing, diag(G0)
     elseif genetic_structure == :lowrank
         L = _canonicalize_loadings(reshape(collect(params), t, rank))
-        return lowrank_covariance(L), L, zeros(t)
+        # pure low-rank G = ΛΛ' has no specific (uniqueness) variance — signal that
+        # with `nothing` rather than a misleading estimated-zero vector.
+        return lowrank_covariance(L), L, nothing
     else
         nload = t * rank
         L = _canonicalize_loadings(reshape(collect(@view(params[1:nload])), t, rank))

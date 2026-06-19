@@ -558,6 +558,45 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   genomic/QTL model-spec contract, and the first real standard
   quantitative-genetic model-spec contract.
 
+## 2026-06-18 (overnight) — Julia lane status handoff to the R twin
+
+Durable cross-lane note (NOT posted to GitHub — outward posting is the user's
+call). Julia lane on `codex/phase5-gwas-qtl-eqtl-tables`, suite 1707/1707 green,
+all local commits UNPUSHED (push + the Phase-5 stack #26→#35 merge await the
+user). What the engine now offers that the R lane may eventually surface (after a
+JOINT bridge/parser/result-payload contract — not unilaterally):
+
+- **Phase-3 relationship-matrix family, all exported:** `additive_relationship`,
+  `dominance_relationship` (Cockerham, full-sib ¼), `epistatic_relationship`
+  (Henderson Hadamard A∘A/A∘D/D∘D), `cytoplasmic_relationship` (maternal
+  lineage), `clonal_relationship`, and `normalize_pedigree(...; allow_selfing)`.
+  These are candidate precision/relationship inputs for an eventual R
+  `relmat()` / `precision()` random-effect contract.
+- **Phase-6 GLLVM families (UNEXPORTED, experimental):** Gaussian/Poisson/
+  Bernoulli/Binomial × Laplace + VA marginals, `fit_laplace_reml`,
+  `laplace_reml_interval`. Gaussian reduces exactly to `sparse_reml_loglik`.
+  Candidate for a future R non-Gaussian `family()` vocabulary once exported +
+  comparator-validated.
+
+Pre-merge engine fixes the R/coordinator twin flagged for Phase 4B:
+
+- **DONE (Julia side):** `genetic_uniqueness` for a `:lowrank` fit now returns
+  `nothing` (was a misleading `zeros(t)`) — a pure low-rank `G = ΛΛ'` has no
+  specific variance. Tests updated; suite green.
+- **R-LANE:** the "eigen-G" claim flagged for rewording lives in the R repo;
+  there is no eigen-G claim in the Julia engine to change. Over to the R twin.
+
+Honest-status drift fix this session: the two `genomic.jl` docstrings (and
+capability-status row 50) that under-claimed `fit_gblup` / `fit_snp_blup` (said
+GBLUP "not implemented") are corrected.
+
+Engine-side solo runway in progress (will appear as further local commits):
+REML estimation of `σ²_g` for `fit_gblup`/`fit_snp_blup`, exporting the internal
+single-step `H`-inverse with validated blending, a parametric-bootstrap
+heritability interval, and a high-condition dense-inverse stress test. R-lane
+activation (model-specs, bridge targets, the dead R extractor fields) remains a
+JOINT contract task per AGENTS.md rule 2.
+
 ## Sister References
 
 - `DRM.jl`: Julia twin discipline, DocumenterVitepress structure, bridge

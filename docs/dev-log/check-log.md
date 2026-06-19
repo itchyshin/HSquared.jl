@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Drift fix + Phase-4B twin-flagged fix + twin coordination (post-inventory)
+
+- Context: ran a multi-agent inventory workflow over ROADMAP / capability-status
+  / validation-debt / completion-plan / R-twin / code to get the authoritative
+  "what's left" map, then worked the solo-verifiable items it surfaced.
+- **Honest-status drift fix:** `src/genomic.jl` `genomic_relationship_matrix` and
+  `genomic_relationship_inverse` docstrings (and capability-status row 50) said
+  GBLUP / fitting were "not implemented" / "not yet wired" — FALSE, since
+  `fit_gblup`/`fit_snp_blup` consume exactly these utilities. Corrected to point
+  at them (doc-only; under-claim removed).
+- **Phase-4B twin-flagged fix:** `genetic_uniqueness` for a `:lowrank` fit now
+  returns `nothing` (was `zeros(t)`) — a pure low-rank `G = ΛΛ'` has no specific
+  variance, and the accessor's documented contract already returns `nothing`
+  where uniqueness is N/A. Test updated to assert `=== nothing`.
+- **Twin coordination:** appended a durable cross-lane status handoff to
+  `docs/dev-log/coordination-board.md` (engine's exported Phase-3 relationship
+  family + unexported Phase-6 GLLVM families that R may later surface; the
+  lowrank fix done; the eigen-G wording flagged as R-lane). NOT posted to GitHub
+  (outward posting is the user's call).
+- `Pkg.test()`: passed, exit 0, **1707/1707** (lowrank-uniqueness test net −1).
+- Rose: no over-claim; doc accuracy improved, one behavior fix with honest
+  contract. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 epistatic relationship matrices (Hadamard) (overnight)
 
 - Goal: another canonical, hand-verifiable Phase-3 capability — Henderson (1985)

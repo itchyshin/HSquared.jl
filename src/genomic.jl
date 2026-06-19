@@ -52,10 +52,12 @@ unless supplied via `allele_frequencies`. Returns the dense symmetric
 
     G = Z * Zᵀ / (2 * Σ_j p_j (1 − p_j)),   Z = markers − 2p.
 
-This is the Phase 2 genomic-relationship construction utility. It builds `G`
-only: the genomic inverse `Ginv`, GBLUP / single-step fitting, and marker-effect
-outputs are not implemented. `G` is typically rank-deficient when there are fewer
-markers than individuals and needs regularization before inversion.
+This is the Phase 2 genomic-relationship construction utility — it builds `G`
+only. Its regularized inverse is [`genomic_relationship_inverse`](@ref), and the
+experimental supplied-variance GBLUP / SNP-BLUP fitting that consume `G` / `Ginv`
+are [`fit_gblup`](@ref) / [`fit_snp_blup`](@ref). `G` is typically rank-deficient
+when there are fewer markers than individuals and needs regularization before
+inversion.
 """
 function genomic_relationship_matrix(
     markers::AbstractMatrix;
@@ -69,14 +71,14 @@ end
     genomic_relationship_inverse(G; ridge = 0.01)
 
 Regularized inverse of a genomic relationship matrix `G` (e.g. from
-[`genomic_relationship_matrix`](@ref)). It is intended as the genomic
-relationship inverse for the animal-model engine (GBLUP), but is a construction
-utility only and is **not yet wired into model fitting**. A genomic `G` built
-from markers is usually rank-deficient (markers < individuals), so a ridge is
-added to the diagonal before inversion: `inv(G + ridge·I)`.
+[`genomic_relationship_matrix`](@ref)) — the genomic relationship inverse `Ginv`
+consumed by the experimental supplied-variance [`fit_gblup`](@ref). A genomic `G`
+built from markers is usually rank-deficient (markers < individuals), so a ridge
+is added to the diagonal before inversion: `inv(G + ridge·I)`.
 
 This is a simple ridge regularization. Blending `G` with a pedigree `A`
-(single-step / `H`-matrix) is not implemented.
+(single-step / `H`-matrix) exists as an internal validation utility and is not
+yet part of the public surface.
 """
 function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
     n = size(G, 1)
