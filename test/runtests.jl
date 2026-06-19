@@ -3639,3 +3639,46 @@ end
     @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :bogus)
     @test_throws ArgumentError HSquared.fit_laplace_reml(y, X, Z, Ainv; marginal = :bogus)
 end
+
+@testset "Phase 6 Poisson variance-component profile interval" begin
+    # Profile LRT interval for the Poisson animal-model sigma_a2, by inverting
+    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. For this 8-animal count fixture the estimate
+    # is near zero with a flat lower profile (the lower endpoint clamps), while
+    # the upper endpoint is an interior LRT root.
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+
+    fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    sa2hat = fp.variance_components.sigma_a2
+    llhat = fp.marginal_loglik
+    dev(s) = 2 * (llhat - HSquared.laplace_marginal_loglik(yp, X, Z, Ainv, s,
+                                                           HSquared.PoissonResponse()).loglik)
+
+    ci = HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    @test ci.level == 0.95
+    @test ci.sigma_a2 == sa2hat                          # point estimate is the REML optimum
+    @test dev(sa2hat) ≈ 0.0 atol = 1e-8                  # deviance vanishes at the MLE
+    @test ci.lower < ci.sigma_a2 < ci.upper              # interval brackets the estimate
+    @test ci.lower > 0                                   # variance stays positive
+
+    # Upper endpoint is an interior LRT root: deviance reaches χ²₁,₀.₉₅ = 3.841459.
+    @test dev(ci.upper) ≈ 3.841459 atol = 1e-4
+    # Lower endpoint clamps (flat profile toward zero) → deviance stays below the threshold.
+    @test dev(ci.lower) < 3.841459
+
+    # Higher confidence ⇒ wider interval (nesting on the interior upper endpoint).
+    ci90 = HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.90)
+    @test 0 < ci90.upper < ci.upper
+    @test dev(ci90.upper) ≈ 2.705543 atol = 1e-4         # χ²₁,₀.₉₀
+
+    # Guards.
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :gaussian)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; level = 1.5)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; marginal = :bogus)
+end

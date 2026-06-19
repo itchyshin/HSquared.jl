@@ -308,3 +308,35 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                 family = :poisson, marginal = marginal)
     end
 end
+
+"""
+    laplace_reml_interval(y, X, Z, Ainv; family = :poisson, marginal = :laplace,
+                          level = 0.95, initial = nothing)
+
+Profile likelihood-ratio confidence interval for the Poisson animal-model
+variance component `sigma_a2`, by inverting the marginal LRT
+`2·(ℓ̂ − ℓ(sigma_a2)) ≤ χ²₁,level`. Returns `(sigma_a2, lower, upper, level)`;
+endpoints that reach the search bounds are clamped. EXPERIMENTAL, asymptotic,
+Poisson only (a single variance component — the Gaussian two-component case needs
+nuisance profiling and is future work). Reuses `_profile_root`.
+"""
+function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                               Ainv::AbstractMatrix; family::Symbol = :poisson,
+                               marginal::Symbol = :laplace, level::Real = 0.95, initial = nothing)
+    family === :poisson ||
+        throw(ArgumentError("laplace_reml_interval currently supports family = :poisson only"))
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    marginal in (:laplace, :variational) ||
+        throw(ArgumentError("marginal must be :laplace or :variational"))
+    margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
+    val(r) = marginal === :variational ? r.elbo : r.loglik
+    fit = fit_laplace_reml(y, X, Z, Ainv; family = :poisson, marginal = marginal, initial = initial)
+    sa2hat = fit.variance_components.sigma_a2
+    llhat = fit.marginal_loglik
+    z = _standard_normal_quantile((1 + level) / 2)
+    q = z * z
+    target(sa2) = 2 * (llhat - val(margfun(y, X, Z, Ainv, sa2, PoissonResponse()))) - q
+    lower = _profile_root(target, sa2hat * 1e-4, sa2hat)
+    upper = _profile_root(target, sa2hat * 1e4, sa2hat)
+    return (sigma_a2 = sa2hat, lower = lower, upper = upper, level = level)
+end

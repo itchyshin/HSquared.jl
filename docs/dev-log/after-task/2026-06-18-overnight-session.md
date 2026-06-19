@@ -35,7 +35,8 @@ kept current at each milestone and is the "morning report".
 | `023f076` | Phase-6 Poisson marginal-value test vs Gauss–Hermite (test-only) | β-fixed tensor GH quadrature confirms VA ELBO ≤ true marginal, Laplace ≈ true; suite 1513/1513 |
 | `50657f4` | Phase-6 `:diagonal` (mean-field) VA + ELBO-monotonicity | closed-form `S=diag(1/diag H_uu)`; verified `ELBO_full ≥ ELBO_diagonal`; suite 1515/1515 |
 | `616651c`/`b56d6c9` | Phase-6 **fitted** non-Gaussian (`fit_laplace_reml`, Laplace/VA REML over variance components) + fitted EBVs | Gaussian recovers `fit_sparse_reml` exactly (both :laplace & :variational); Poisson estimates σ²a>0; EBVs == BLUP at fitted VCs; suite 1526/1526 |
-| _(latest)_ | Phase-6 **Poisson known-truth recovery** (`sim/phase6_poisson_recovery.jl`, opt-in) | σ̂²a recovers 5/5 seeds (rel ≤ 0.323, mild Laplace bias); breeding-value recovery cor 0.81–0.88 |
+| `3f4a97a` | Phase-6 **Poisson known-truth recovery** (`sim/phase6_poisson_recovery.jl`, opt-in) | σ̂²a recovers 5/5 seeds (rel ≤ 0.323, mild Laplace bias); breeding-value recovery cor 0.81–0.88 |
+| _(latest)_ | Phase-6 **Poisson variance-component profile interval** (`laplace_reml_interval`, `src/nongaussian.jl`); reverted a stray uncommitted `FastGaussQuadrature` entry in `Project.toml` | inverts marginal LRT `2·(ℓ̂−ℓ(σ²a))=χ²₁,level`; interior upper endpoint pinned to χ²₁ root (3.8415/2.7055), lower clamps on flat profile, nests by level; suite 1538/1538 (+12) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -43,8 +44,8 @@ slice I owned and finished. Full report:
 
 ## Repo state
 
-- Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD `ee89565` (local).
-- Full local suite: **1479/1479 pass, exit 0**.
+- Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
+- Full local suite: **1538/1538 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -65,13 +66,19 @@ slice I owned and finished. Full report:
 
 ## In progress / next (queued, Julia-only, internally verifiable)
 
-1. Phase-3 committed recovery harness (`sim/phase3_qg_recovery.jl`) for
-   `fit_repeatability_reml` / `fit_two_effect_reml` — closes the V3 "no
-   committed recovery harness" gap (opt-in, outside CI; honest pass/fail).
-2. Phase-6 GLLVM/non-Gaussian **Laplace** foundation, validated by the
-   Gaussian-limit reduction to `sparse_reml_loglik` (exact) — the start of the
-   Laplace+VA directive; VA reuse from `DRM.jl/src/variational.jl` (`:LA`/`:VA`).
-3. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
+Done this session (moved to the slice log): Phase-3 recovery harness, Phase-6
+Laplace + VA foundations, family hardening, Gauss–Hermite value gate, `:diagonal`
+VA, fitted `fit_laplace_reml` + EBVs, Poisson known-truth recovery, and the
+Poisson profile interval (Slice 10). Remaining solo-doable, internally
+verifiable items:
+
+1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6).
+2. A `fit_two_effect_reml` committed recovery harness + a denser-pedigree `h²`
+   study (the σ²a/σ²pe split was under-identified at validation scale).
+
+Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
+latent genetic factors, more families, external GLLVM.jl/gllvmTMB comparators,
+the R model-spec) genuinely needs the R lane, external packages, or your steer.
 
 ## Decisions awaiting you
 
@@ -200,6 +207,31 @@ slice I owned and finished. Full report:
   bias, no boundary collapse) and breeding-value recovery correlation 0.81–0.88.
   Genuine recovery of known truth — closes the V6-FIT recovery gap.
 - This rounds out the Phase-6 non-Gaussian arc: marginals → fitting → EBVs →
-  known-truth recovery, all internally validated. Remaining items (intervals, a
+  known-truth recovery, all internally validated. Remaining items (a
   full fitted-object API, latent factors, external comparators, R model-spec)
   genuinely need the R lane / external packages / your steer.
+
+### Slice 10 — Poisson variance-component profile interval (`laplace_reml_interval`)
+- The first *interval* for a non-Gaussian variance component, closing the
+  V6-FIT "no intervals" gap. `laplace_reml_interval(y, X, Z, Ainv;
+  family = :poisson, marginal, level, initial)` fits with `fit_laplace_reml`,
+  then inverts the marginal LRT `2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level` for the Poisson
+  `sigma_a2`, reusing the existing `_profile_root` bisection and
+  `_standard_normal_quantile`. No new statistical code path — it composes the
+  pieces already validated in earlier slices.
+- **Gates** (8-animal count fixture, 12/12): the interval brackets the estimate;
+  `dev(σ̂²a) ≈ 0` at the MLE; the interior **upper** endpoint is pinned to the
+  χ²₁ root (`dev(upper) ≈ 3.8415` at 95%, `2.7055` at 90%) — the genuine LRT
+  property that a wrong root-finder would fail; the **lower** endpoint clamps on
+  the flat near-zero profile; higher confidence ⇒ wider interval; guards throw.
+- I probed the fixture first (the estimate is near zero with a flat lower
+  profile, so the lower bound is non-binding) so the test asserts the *correct*
+  statistical behaviour rather than rubber-stamping output.
+- Cleanup: reverted a stray *uncommitted* `FastGaussQuadrature` entry in
+  `Project.toml` (added during earlier exploration, then superseded by the
+  self-contained Golub–Welsch quadrature in the Gauss–Hermite test; used
+  nowhere, never committed). `Project.toml` now matches HEAD; Gauss–Hermite
+  testset still passes (3/3).
+- Still experimental, Poisson-only, asymptotic: no Gaussian/multi-component
+  intervals (needs nuisance profiling), no large-n coverage calibration. Full
+  suite 1538/1538.

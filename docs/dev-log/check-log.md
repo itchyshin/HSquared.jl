@@ -2,6 +2,32 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 Poisson variance-component profile interval (overnight)
+
+- Goal: the first *interval* for a non-Gaussian variance component — close the
+  V6-FIT "no intervals" gap (solo, internally verifiable via the profile LRT).
+- `laplace_reml_interval(y, X, Z, Ainv; family = :poisson, marginal, level,
+  initial)`: fits with `fit_laplace_reml`, then inverts the marginal LRT
+  `2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level` for the Poisson `sigma_a2`, reusing the existing
+  `_profile_root` bisection and `_standard_normal_quantile`. Endpoints that reach
+  the search bounds are clamped. Returns `(sigma_a2, lower, upper, level)`.
+- Gates (verified, `test/runtests.jl`, 8-animal count fixture): the interval
+  brackets the estimate; `dev(σ̂²a) ≈ 0` at the MLE (atol 1e-8); the interior
+  **upper** endpoint is pinned to the χ²₁ root (`dev(upper) ≈ 3.8415` at 95%,
+  `2.7055` at 90%); the **lower** endpoint clamps on the flat near-zero profile
+  (`dev(lower) < χ²₁`); higher confidence ⇒ wider interval (0 < `ci90.upper` <
+  `ci95.upper`); guards (`family = :gaussian`, `level = 1.5`, `marginal = :bogus`
+  throw `ArgumentError`). 12/12.
+- Cleanup: reverted a stray *uncommitted* `FastGaussQuadrature` entry in
+  `Project.toml` (added during earlier exploration, never committed; the
+  Gauss–Hermite test uses a self-contained Golub–Welsch quadrature, so the dep
+  was unused). `Project.toml` now matches HEAD; Gauss–Hermite testset still
+  passes (3/3).
+- `Pkg.test()`: passed, exit 0, **1538/1538** (profile-interval testset +12).
+- Rose: experimental, Poisson-only, asymptotic — no Gaussian/multi-component
+  intervals (nuisance profiling), no large-n coverage calibration; `V6-FIT` +
+  fitted capability rows updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 Poisson known-truth recovery (overnight)
 
 - Goal: known-truth recovery study for the fitted Poisson animal model
