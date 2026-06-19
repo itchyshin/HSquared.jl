@@ -2022,6 +2022,31 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(mono; method = :vanraden2)
 end
 
+@testset "Phase 2 weighted genomic relationship (weighted GBLUP)" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
+    G1 = genomic_relationship_matrix(M)                         # unweighted method 1
+    m = size(M, 2)
+
+    # equal weights reduce EXACTLY to the unweighted method-1 G
+    @test genomic_relationship_matrix(M; weights = ones(m)) ≈ G1
+    @test genomic_relationship_matrix(M; weights = fill(3.0, m)) ≈ G1   # scale-invariant
+
+    # a genuine non-uniform weighting: G_w = Z diag(w) Z' / sum(w_j 2 p_j(1-p_j))
+    w = [2.0, 0.5, 1.0]
+    Gw = genomic_relationship_matrix(M; weights = w)
+    cm = HSquared.centered_markers(M)
+    scale = sum(w .* 2 .* cm.p .* (1 .- cm.p))
+    @test Gw ≈ (cm.W * Diagonal(w) * transpose(cm.W)) ./ scale
+    @test issymmetric(Gw)
+    @test minimum(eigvals(Symmetric(Gw))) >= -1e-8              # PSD
+    @test !isapprox(Gw, G1)                                      # weighting genuinely changes G
+
+    # guards: length, positivity, and method-2 + weights not supported
+    @test_throws ArgumentError genomic_relationship_matrix(M; weights = [1.0, 2.0])
+    @test_throws ArgumentError genomic_relationship_matrix(M; weights = [1.0, -1.0, 1.0])
+    @test_throws ArgumentError genomic_relationship_matrix(M; method = :vanraden2, weights = ones(m))
+end
+
 @testset "Phase 2 regularized genomic inverse (Ginv)" begin
     # full-rank symmetric PD matrix: ridge = 0 returns the plain inverse
     Gpd = [2.0 0.5; 0.5 2.0]

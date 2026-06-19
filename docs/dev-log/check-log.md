@@ -2,6 +2,20 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 2 weighted genomic relationship (weighted GBLUP)
+
+- Goal: add per-marker weighting to the genomic relationship (the basis of
+  weighted GBLUP / GWAS-informed prediction).
+- `genomic_relationship_matrix(markers; weights)` (method 1): `G = Z·diag(w)·Zᵀ /
+  Σ_j w_j·2p_j(1−p_j)`. RNG-free, backward-compatible (no weights ⇒ unchanged).
+- Gates (verified, `test/runtests.jl`): equal weights reduce EXACTLY to the
+  unweighted method-1 `G`; scale-invariant (constant weights); matches the
+  explicit `Z·diag(w)·Zᵀ` construction; symmetric + PSD; non-uniform weights
+  genuinely change `G`; guards reject wrong length, negative weights, and
+  `method = :vanraden2` + weights.
+- `Pkg.test()`: passed, exit 0, **1765/1765** (+9). V2-GRM debt + capability rows
+  updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 1 deep-inbreeding dense-inverse stress test (V1-DENSE-COND)
 
 - Goal: close the inventory's "V1-DENSE-COND is currently untested" gap — test

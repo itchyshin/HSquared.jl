@@ -56,6 +56,10 @@ unless supplied via `allele_frequencies`. Two standard constructions:
   `G = Zₛ Zₛᵀ / m`, `Zₛ[:, j] = (markers[:, j] − 2p_j) / √(2 p_j(1 − p_j))`, `m`
   markers. Requires every marker polymorphic (`0 < p_j < 1`).
 
+Optional per-marker `weights` (for weighted GBLUP / GWAS-informed prediction,
+`method = :vanraden1` only) give `G = Z·diag(w)·Zᵀ / Σ_j w_j·2 p_j(1 − p_j)`,
+which reduces exactly to the unweighted method-1 `G` when the weights are equal.
+
 This is the Phase 2 genomic-relationship construction utility — it builds `G`
 only. Its regularized inverse is [`genomic_relationship_inverse`](@ref), and the
 experimental supplied-variance GBLUP / SNP-BLUP fitting that consume `G` / `Ginv`
@@ -67,8 +71,20 @@ function genomic_relationship_matrix(
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     method::Symbol = :vanraden1,
+    weights::Union{Nothing,AbstractVector} = nothing,
 )
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
+    if weights !== nothing
+        method === :vanraden1 ||
+            throw(ArgumentError("per-marker weights are supported with method = :vanraden1 only"))
+        length(weights) == size(cm.W, 2) ||
+            throw(ArgumentError("weights must have one entry per marker"))
+        all(>=(0), weights) || throw(ArgumentError("weights must be non-negative"))
+        w = Float64.(weights)
+        scale = sum(w .* 2 .* cm.p .* (1 .- cm.p))
+        scale > 0 || throw(ArgumentError("weighted genomic scaling is zero"))
+        return (cm.W * Diagonal(w) * transpose(cm.W)) ./ scale
+    end
     if method === :vanraden1
         return (cm.W * transpose(cm.W)) ./ cm.k
     elseif method === :vanraden2
