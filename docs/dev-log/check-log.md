@@ -2,6 +2,26 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 2 single-step (H-matrix) export + fitting (post-inventory)
+
+- Goal: close the inventory's "single-step `_single_step_Hinv` is implemented but
+  unexported, not wired into fitting" gap.
+- `single_step_inverse(Ainv, A, G, genotyped_rows; tau, omega, blend_weight,
+  ridge)` — public wrapper over the validated internal `H⁻¹` constructor (Aguilar
+  2010 / Christensen & Lund 2009). `fit_single_step` (supplied-variance) and
+  `fit_single_step_reml` (REML-estimated) build `H⁻¹` and solve the single-step
+  MME via `fit_gblup`/`fit_gblup_reml`. All three exported.
+- Gates (verified, `test/runtests.jl`): public wrapper == internal constructor;
+  `G = A₂₂` ⇒ `H⁻¹ ≈ A⁻¹` (atol 1e-10); `fit_single_step` at `G = A₂₂`
+  reproduces the pedigree animal-model BLUP (atol 1e-9); `fit_single_step` with a
+  genomic block equals `fit_gblup` on the same `H⁻¹` (atol 1e-10);
+  `fit_single_step_reml` at `G = A₂₂` reproduces the pedigree-REML optimum
+  (loglik rtol 1e-6, VCs; both reach the same boundary state); singular-raw-`G`
+  guard delegates.
+- `Pkg.test()`: passed, exit 0, **1731/1731** (+11). Single-step capability +
+  V2-SSHINV / Ginv rows updated (no longer "unexported / not wired"). Local
+  checkpoint, not pushed.
+
 ## 2026-06-18 Phase 2 GBLUP/SNP-BLUP REML convenience (post-inventory)
 
 - Goal: close the inventory's "`fit_gblup`/`fit_snp_blup` are supplied-variance

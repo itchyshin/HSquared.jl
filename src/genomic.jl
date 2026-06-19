@@ -2073,3 +2073,70 @@ function _single_step_Hinv(
     Hinv[g, g] = Hinv[g, g] .+ (tau .* Gwinv .- omega .* A22inv)
     return Hinv
 end
+
+"""
+    single_step_inverse(Ainv, A, G, genotyped_rows; tau = 1.0, omega = 1.0,
+                        blend_weight = 0.0, ridge = 0.0)
+
+Single-step genomic relationship inverse `H⁻¹` (Aguilar et al. 2010; Christensen
+& Lund 2009): `H⁻¹ = A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)` over the genotyped rows,
+where `A₂₂ = A[g, g]` is the pedigree block among the genotyped animals (NOT
+`(A⁻¹)[g, g]`) and `Gʷ = (1 − blend_weight)·G + blend_weight·A₂₂` is the optionally
+blended/ridged genomic block. When `G = A₂₂`, `H⁻¹` reduces exactly to `A⁻¹`.
+
+`Ainv` is the pedigree inverse `A⁻¹`, `A` the dense pedigree relationship matrix,
+`G` the genomic relationship among the `genotyped_rows` (in sorted pedigree-row
+order). The result is the relationship PRECISION for the single-step animal model
+— pass it where [`fit_gblup`](@ref) takes `Ginv`, or use [`fit_single_step`](@ref).
+
+Experimental, dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
+knobs are not comparator-validated (defaults `blend_weight = ridge = 0`,
+`tau = omega = 1`); a singular raw `G` requires blending/ridging.
+"""
+single_step_inverse(Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
+                    genotyped_rows::AbstractVector{<:Integer}; kwargs...) =
+    _single_step_Hinv(Ainv, A, G, genotyped_rows; kwargs...)
+
+"""
+    fit_single_step(y, X, Z, Ainv, A, G, genotyped_rows, sigma_a2, sigma_e2;
+                    tau = 1.0, omega = 1.0, blend_weight = 0.0, ridge = 0.0, ids = nothing)
+
+Single-step GBLUP at supplied variance components: build the single-step
+relationship inverse `H⁻¹` ([`single_step_inverse`](@ref)) and solve the Gaussian
+animal model with `H⁻¹` as the relationship precision (via [`fit_gblup`](@ref)).
+When `G = A₂₂` it reproduces the pedigree animal model exactly. Experimental,
+dense/validation-scale; supplied-variance.
+"""
+function fit_single_step(
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+    Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer}, sigma_a2::Real, sigma_e2::Real;
+    tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
+    ids = nothing,
+)
+    Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
+                             tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
+    return fit_gblup(y, X, Z, Hinv, sigma_a2, sigma_e2; ids = ids)
+end
+
+"""
+    fit_single_step_reml(y, X, Z, Ainv, A, G, genotyped_rows;
+                         tau = 1.0, omega = 1.0, blend_weight = 0.0, ridge = 0.0,
+                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target = :ai_reml, ids = nothing)
+
+Single-step GBLUP with REML-estimated variance components: build `H⁻¹`
+([`single_step_inverse`](@ref)) and estimate `(sigma_a2, sigma_e2)` by REML on the
+single-step spec (via [`fit_gblup_reml`](@ref)). When `G = A₂₂` it reproduces the
+pedigree-REML optimum. Experimental, dense/validation-scale.
+"""
+function fit_single_step_reml(
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+    Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer};
+    tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml, ids = nothing,
+)
+    Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
+                             tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
+    return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target, ids = ids)
+end

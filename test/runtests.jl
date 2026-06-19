@@ -2946,6 +2946,46 @@ end
     @test_throws ArgumentError HSquared._single_step_Hinv(Ainv, A, A[g, g], [3, 4])
 end
 
+@testset "Phase 2 single-step fitting (public Hinv + fit)" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]
+    ped = normalize_pedigree(ids, sire, dam)
+    A = HSquared._numerator_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ids, sire, dam))
+    g = [3, 4, 5]
+    y = [10.0, 12.0, 11.0, 9.0, 13.0]; X = ones(5, 1); Z = Matrix(1.0I, 5, 5)
+
+    # public wrapper delegates to the internal constructor
+    Hinv = single_step_inverse(Ainv, A, A[g, g] + 0.1 * I, g)
+    @test Hinv == HSquared._single_step_Hinv(Ainv, A, A[g, g] + 0.1 * I, g)
+    # reduction: G = A22 ⇒ H⁻¹ = A⁻¹
+    @test single_step_inverse(Ainv, A, A[g, g], g) ≈ Ainv atol = 1e-10
+
+    # fit_single_step at G = A22 reproduces the pedigree animal model (supplied variance)
+    fs = fit_single_step(y, X, Z, Ainv, A, A[g, g], g, 1.0, 1.5)
+    ped_fit = fit_gblup(y, X, Z, Ainv, 1.0, 1.5)
+    @test breeding_values(fs).values ≈ breeding_values(ped_fit).values atol = 1e-9
+
+    # fit_single_step with a genomic block uses the single-step H-inverse
+    Hg = single_step_inverse(Ainv, A, A[g, g] + 0.1 * I, g)
+    fs2 = fit_single_step(y, X, Z, Ainv, A, A[g, g] + 0.1 * I, g, 1.0, 1.5)
+    direct = fit_gblup(y, X, Z, Hg, 1.0, 1.5)
+    @test breeding_values(fs2).values ≈ breeding_values(direct).values atol = 1e-10
+
+    # REML variant at G = A22 reproduces the pedigree REML optimum
+    fsr = fit_single_step_reml(y, X, Z, Ainv, A, A[g, g], g; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    ped_reml = fit_ai_reml(animal_model_spec(y, X, Z, Ainv; method = :REML);
+                           initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fsr isa AnimalModelFit
+    @test fsr.converged == ped_reml.converged                                   # same optimizer state
+    @test fsr.likelihood.loglik ≈ ped_reml.likelihood.loglik rtol = 1e-6        # identical REML objective
+    @test fsr.variance_components.sigma_a2 ≈ ped_reml.variance_components.sigma_a2 rtol = 1e-5 atol = 1e-7
+    @test fsr.variance_components.sigma_e2 ≈ ped_reml.variance_components.sigma_e2 rtol = 1e-5
+
+    # guards delegate to the constructor
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A[g, g], [3, 4])
+    @test_throws ArgumentError fit_single_step(y, X, Z, Ainv, A, genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1]), g, 1.0, 1.5)  # singular raw G
+end
+
 @testset "Phase 2 GBLUP REML variance-component estimation" begin
     # the existing REML optimizers estimate genomic variance components on a Ginv spec
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
