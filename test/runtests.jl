@@ -4333,3 +4333,89 @@ end
     @test length(fbn.breeding_values) == 8
     @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial)  # missing n_trials
 end
+
+@testset "Phase 4 multivariate covariance SEs + LRTs" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    y2 = [2.2, 2.8, 3.1, 3.0, 3.6, 2.1, 2.7, 4.1]   # correlated-but-distinct trait
+    X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
+    h = HSquared._multivariate_reml_loglik
+
+    # (1) chi-square survival validates against textbook 5% critical values
+    @test HSquared._chisq_sf(3.841458820694124, 1) ≈ 0.05 atol = 1e-3
+    @test HSquared._chisq_sf(5.991464547107979, 2) ≈ 0.05 atol = 1e-3
+    @test HSquared._chisq_sf(7.814727903251179, 3) ≈ 0.05 atol = 1e-3
+    @test HSquared._chisq_sf(9.487729036781154, 4) ≈ 0.05 atol = 1e-3
+    @test HSquared._chisq_sf(0.0, 2) == 1.0
+    @test HSquared._chisq_sf(1.0e6, 2) < 1e-50
+    @test HSquared._chisq_sf(2.0, 2) > HSquared._chisq_sf(4.0, 2)   # monotone decreasing
+    @test HSquared._loggamma(5.0) ≈ log(24.0) atol = 1e-10          # Γ(5) = 4! = 24
+    @test HSquared._loggamma(0.5) ≈ 0.5 * log(π) atol = 1e-10       # Γ(1/2) = √π
+
+    # (2) unstructured SEs (t=2) on an INTERIOR optimum. At n=8 single-record the
+    # multivariate optimum sits on the genetic-correlation boundary (rg→±1), so
+    # SEs are genuinely unavailable there (tested in (6)); repeated records
+    # (n=24, 3/animal) identify the covariance and give an interior optimum.
+    reps = 3
+    rows = reduce(vcat, [fill(i, reps) for i in 1:8])
+    Zr = zeros(length(rows), 8); for (k, i) in enumerate(rows); Zr[k, i] = 1.0; end
+    Xr = ones(length(rows), 1)
+    off1 = [0.0, 0.3, -0.3]; off2 = [0.2, -0.2, 0.0]   # deterministic within-animal residual
+    yr1 = Float64[]; yr2 = Float64[]
+    for i in 1:8, r in 1:reps
+        push!(yr1, y1[i] + off1[r]); push!(yr2, y2[i] + off2[r])
+    end
+    Yr = hcat(yr1, yr2)
+    mv2 = fit_multivariate_reml(Yr, Xr, Zr, Ainv)
+    @test mv2.converged
+    @test -1 < mv2.genetic_correlation[1, 2] < 1            # interior optimum
+    se = multivariate_covariance_standard_errors(mv2, Yr, Xr, Zr, Ainv)
+    @test size(se.genetic_covariance) == (2, 2)
+    @test issymmetric(se.genetic_covariance) && issymmetric(se.residual_covariance)
+    @test all(isfinite, se.genetic_covariance) && all(se.genetic_covariance .>= 0)
+    @test all(isfinite, se.residual_covariance) && all(se.residual_covariance .>= 0)
+    @test length(se.heritability) == 2 && all(se.heritability .>= 0)
+    @test isposdef(Symmetric(se.information))
+    @test se.genetic_correlation[1, 1] == 0.0 && se.genetic_correlation[2, 2] == 0.0
+
+    # (3) t=1 cross-check: the SE for σ²a from the (log-Cholesky + delta-method)
+    # machinery matches an INDEPENDENT direct FD-Hessian SE on the raw (σ²a, σ²e)
+    # parameterization of the same REML log-likelihood (validates the delta method)
+    Y1 = reshape(y1, 8, 1)
+    mv1 = fit_multivariate_reml(Y1, X, Z, Ainv)
+    se1 = multivariate_covariance_standard_errors(mv1, Y1, X, Z, Ainv)
+    va = mv1.genetic_covariance[1, 1]; ve = mv1.residual_covariance[1, 1]
+    fll(p) = h(Y1, X, Z, Ainv, reshape([p[1]], 1, 1), reshape([p[2]], 1, 1))
+    Hraw = HSquared._fd_hessian(fll, [va, ve]; h = 1e-4)
+    Σraw = inv(Symmetric(-Hraw))
+    @test se1.genetic_covariance[1, 1] ≈ sqrt(Σraw[1, 1]) rtol = 0.1
+    @test se1.residual_covariance[1, 1] ≈ sqrt(Σraw[2, 2]) rtol = 0.1
+
+    # (4) LRT — diagonal (interior null) nested in unstructured (interior fixture)
+    mv2_diag = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :diagonal)
+    lrt = covariance_structure_lrt(mv2_diag, mv2)
+    @test lrt.df == 1                       # one off-diagonal genetic covariance
+    @test lrt.statistic >= -1e-6            # full nests + dominates constrained
+    @test 0.0 <= lrt.pvalue <= 1.0
+    @test lrt.boundary == false             # off-diagonal=0 is an interior null
+    @test lrt.pvalue ≈ HSquared._chisq_sf(max(lrt.statistic, 0.0), 1) atol = 1e-12
+
+    # (5) LRT boundary flag — low-rank (rank deficiency) nested in unstructured
+    mv2_lr = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :lowrank, rank = 1)
+    lrt_lr = covariance_structure_lrt(mv2_lr, mv2)
+    @test lrt_lr.df == 1
+    @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
+
+    # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
+    # is on the genetic-correlation boundary, so the observed information is not PD
+    # and standard errors are unavailable (the function says so rather than guessing)
+    mv2_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
+    @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_bnd, hcat(y1, y2), X, Z, Ainv)
+
+    # (7) guards
+    @test_throws ArgumentError covariance_structure_lrt(mv2, mv2_diag)        # df <= 0 (wrong order)
+    @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_diag, Yr, Xr, Zr, Ainv)  # structured unsupported
+end
