@@ -41,16 +41,20 @@ function centered_markers(
 end
 
 """
-    genomic_relationship_matrix(markers; allele_frequencies = nothing)
+    genomic_relationship_matrix(markers; allele_frequencies = nothing, method = :vanraden1)
 
-VanRaden (2008) method-1 genomic relationship matrix `G` from a biallelic marker
-genotype matrix `markers` (rows = individuals, columns = markers; entries are the
-count of one allele, `0`/`1`/`2`, or an imputed dosage in `[0, 2]`).
+VanRaden (2008) genomic relationship matrix `G` from a biallelic marker genotype
+matrix `markers` (rows = individuals, columns = markers; entries are the count of
+one allele, `0`/`1`/`2`, or an imputed dosage in `[0, 2]`).
 
 Allele frequencies are estimated from the columns (`p_j = mean(markers[:, j]) / 2`)
-unless supplied via `allele_frequencies`. Returns the dense symmetric
+unless supplied via `allele_frequencies`. Two standard constructions:
 
-    G = Z * Zᵀ / (2 * Σ_j p_j (1 − p_j)),   Z = markers − 2p.
+- `method = :vanraden1` (default) — centered markers, single overall scale:
+  `G = Z Zᵀ / (2 Σ_j p_j(1 − p_j))`, `Z = markers − 2p`.
+- `method = :vanraden2` — per-marker standardized, equal marker weight:
+  `G = Zₛ Zₛᵀ / m`, `Zₛ[:, j] = (markers[:, j] − 2p_j) / √(2 p_j(1 − p_j))`, `m`
+  markers. Requires every marker polymorphic (`0 < p_j < 1`).
 
 This is the Phase 2 genomic-relationship construction utility — it builds `G`
 only. Its regularized inverse is [`genomic_relationship_inverse`](@ref), and the
@@ -62,9 +66,20 @@ inversion.
 function genomic_relationship_matrix(
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    method::Symbol = :vanraden1,
 )
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
-    return (cm.W * transpose(cm.W)) ./ cm.k
+    if method === :vanraden1
+        return (cm.W * transpose(cm.W)) ./ cm.k
+    elseif method === :vanraden2
+        scale = 2 .* cm.p .* (1 .- cm.p)
+        all(>(0), scale) ||
+            throw(ArgumentError("method = :vanraden2 requires every marker polymorphic (0 < p < 1); a monomorphic marker cannot be standardized"))
+        Zs = cm.W ./ transpose(sqrt.(scale))
+        return (Zs * transpose(Zs)) ./ size(cm.W, 2)
+    else
+        throw(ArgumentError("method must be :vanraden1 or :vanraden2"))
+    end
 end
 
 """

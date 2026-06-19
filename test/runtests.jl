@@ -1966,6 +1966,31 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(zeros(2, 2))
 end
 
+@testset "Phase 2 VanRaden method-2 (standardized) genomic relationship" begin
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
+    G1 = genomic_relationship_matrix(M)                          # method 1 (default)
+    G2 = genomic_relationship_matrix(M; method = :vanraden2)     # standardized markers
+
+    @test genomic_relationship_matrix(M; method = :vanraden1) == G1   # default == :vanraden1
+    @test issymmetric(G2)
+    @test minimum(eigvals(Symmetric(G2))) >= -1e-8               # PSD
+    @test !isapprox(G2, G1)                                       # genuinely different construction
+
+    # explicit standardized construction: Zs[:,j] = (M-2p)/sqrt(2p(1-p)), G2 = Zs Zs' / m
+    cm = HSquared.centered_markers(M)
+    Zs = cm.W ./ transpose(sqrt.(2 .* cm.p .* (1 .- cm.p)))
+    @test G2 ≈ Zs * transpose(Zs) ./ size(M, 2)
+
+    # supplied allele frequencies path works for method 2
+    @test genomic_relationship_matrix(M; method = :vanraden2,
+                                      allele_frequencies = cm.p) ≈ G2
+
+    # guards: unknown method, and a monomorphic marker (2p(1-p)=0) under standardization
+    @test_throws ArgumentError genomic_relationship_matrix(M; method = :bogus)
+    mono = [0.0 1.0; 0.0 1.0; 0.0 2.0]   # column 1 monomorphic (p = 0)
+    @test_throws ArgumentError genomic_relationship_matrix(mono; method = :vanraden2)
+end
+
 @testset "Phase 2 regularized genomic inverse (Ginv)" begin
     # full-rank symmetric PD matrix: ridge = 0 returns the plain inverse
     Gpd = [2.0 0.5; 0.5 2.0]

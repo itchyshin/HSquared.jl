@@ -2,6 +2,21 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 2 VanRaden method-2 (standardized) genomic relationship (post-inventory)
+
+- Goal: add the second standard genomic-relationship construction (equal-weight,
+  per-marker standardized) alongside the existing method 1.
+- `genomic_relationship_matrix(markers; method = :vanraden1 | :vanraden2)`:
+  method 1 (default, unchanged) `G = ZZ'/(2Σp(1-p))`; method 2
+  `G = ZₛZₛ'/m`, `Zₛ[:,j] = (M-2p)/√(2p(1-p))`. RNG-free, backward-compatible
+  (default preserves method 1 — existing tests unaffected).
+- Gates (verified, `test/runtests.jl`): default `== :vanraden1`; method 2 equals
+  its explicit standardized construction, is symmetric and PSD, and genuinely
+  differs from method 1; supplied-`p` path works; guards reject an unknown
+  `method` and a monomorphic marker (`2p(1-p)=0` cannot be standardized).
+- `Pkg.test()`: passed, exit 0, **1744/1744** (+8). V2-GRM debt + capability rows
+  updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 non-Gaussian fitter promoted to the public surface (post-inventory)
 
 - Goal: the substantial, internally-validated Phase-6 GLLVM engine was
