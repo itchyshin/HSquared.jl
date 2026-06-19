@@ -23,6 +23,10 @@ abstract type ResponseFamily end
 """Gaussian family with identity link and residual variance `sigma_e2`."""
 struct GaussianResponse <: ResponseFamily
     sigma_e2::Float64
+    function GaussianResponse(sigma_e2::Real)
+        sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+        return new(Float64(sigma_e2))
+    end
 end
 
 """Poisson family with log link (`μ = exp(η)`)."""
@@ -44,6 +48,16 @@ function _logfactorial(y)
         s += log(i)
     end
     return s
+end
+
+# Validate the response data against the family. Poisson (log link) requires
+# non-negative integer counts; the per-record kernels would otherwise mix a
+# raw-y score with a round(y) log-factorial and silently misreport the loglik.
+_check_counts(::ResponseFamily, yv) = nothing
+function _check_counts(::PoissonResponse, yv)
+    all(y -> isinteger(y) && y >= 0, yv) ||
+        throw(ArgumentError("PoissonResponse requires non-negative integer counts"))
+    return nothing
 end
 
 """
@@ -71,6 +85,7 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    _check_counts(family, yv)
 
     beta = zeros(p)
     u = zeros(q)
@@ -110,7 +125,7 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     logdet_H = logdet(cholesky(Symmetric(H)))
     loglik = cond - 0.5 * quad_u - 0.5 * q * log(sigma_a2) + 0.5 * logdet_Ainv +
              0.5 * p * log(2π) - 0.5 * logdet_H
-    return (loglik = loglik, beta = beta, u = u, converged = converged,
+    return (loglik = converged ? loglik : NaN, beta = beta, u = u, converged = converged,
             gradient_norm = gnorm, iterations = iters)
 end
 
@@ -183,6 +198,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    _check_counts(family, yv)
     P0 = Ai ./ sigma_a2
 
     beta = zeros(p)
@@ -233,7 +249,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
         schur = Symmetric(transpose(Xd) * (w .* Xd) .- XtWZ * S * transpose(XtWZ))
         beta_term = 0.5 * p * log(2π) - 0.5 * logdet(cholesky(schur))
     end
-    elbo = Ell - kl + beta_term
+    elbo = converged ? (Ell - kl + beta_term) : NaN
     return (elbo = elbo, beta = beta, m = m, S = S, converged = converged,
             gradient_norm = gnorm, iterations = iters, covariance = covariance)
 end

@@ -2,6 +2,21 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 6 non-Gaussian family hardening (overnight)
+
+- Goal: close the team's `laplace_fixes_needed` (Gauss/Noether/Curie findings)
+  on `src/nongaussian.jl`.
+- Added: `GaussianResponse` inner constructor (`sigma_e2 > 0`); `_check_counts`
+  rejecting non-integer / negative Poisson counts (both marginals); `loglik`
+  (Laplace) and `elbo` (VA) return `NaN` with `converged = false` on
+  non-convergence (so a non-mode value can't be read as a valid marginal).
+- TDD: guards absent → tests RED → implemented → GREEN. New "Phase 6
+  non-Gaussian family hardening" testset (6 checks).
+- `Pkg.test()`: passed, exit 0, **1510/1510** (was 1504; +6).
+- Rose: defensive hardening only; no claim/result/bridge change; V6-LAPLACE
+  evidence updated. Remaining (noted): the `gradient_norm`-at-mode nit and the
+  Poisson marginal-value-vs-Gauss–Hermite test. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 6 variational (VA) marginal foundation (overnight, team-designed)
 
 - Goal: the VA half of the GLLVM Laplace+VA directive — `variational_marginal_loglik`

@@ -30,7 +30,8 @@ kept current at each milestone and is the "morning report".
 | `ee89565` | Harden multivariate `genetic_correlation` (symmetry + PSD guards, rank-deficient low-rank G allowed); pin Cholesky-param roundtrip t≥3 | RED→GREEN; closes next-50 Julia #4, #7 |
 | `a3eab9b` | Phase-3 committed recovery harness `sim/phase3_qg_recovery.jl` | repeatability `t` recovered 5/5 (max rel 0.254); `h²` σ²a/σ²pe split under-identified (honest, ungated) |
 | `c0125ba` | Phase-6 GLLVM non-Gaussian **Laplace marginal foundation** (`src/nongaussian.jl`) | Gaussian Laplace == REML loglik exact (rtol 1e-8, mode == MME); Poisson mode solves score eqn; family kernels finite-diff'd; suite 1490/1490 |
-| _(latest)_ | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
+| `57c0b7c` | Phase-6 GLLVM **variational (VA) marginal foundation** (`src/nongaussian.jl`) — team-designed (workflow w0ux3t4fu) | full-cov VA, β integrated: Gaussian VA-ELBO == REML exact (rtol 1e-8, mode == BLUP, S == H_uu⁻¹); Poisson ELBO stationary; suite 1504/1504 |
+| _(latest)_ | Phase-6 non-Gaussian family hardening (`src/nongaussian.jl`) — closes the team's `laplace_fixes_needed` | `sigma_e2>0` guard, Poisson integer-count guard, non-converged → `NaN`; suite 1510/1510 |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -136,3 +137,14 @@ slice I owned and finished. Full report:
   VC estimation, fitted GLLVM, exported API, or R model-spec. Full suite
   1504/1504. **Both halves of the Laplace+VA directive now have validated
   foundations.**
+
+### Slice 5 — Phase-6 non-Gaussian family hardening (closes the team's findings)
+- Implemented the verifiers' `laplace_fixes_needed` on `src/nongaussian.jl`:
+  `GaussianResponse` now requires `sigma_e2 > 0`; both marginals reject
+  non-integer / negative Poisson counts (`_check_counts`); and `loglik`/`elbo`
+  return `NaN` with `converged = false` on non-convergence (a non-mode value is
+  never returned as a valid marginal). New 6-check hardening testset.
+- Full suite 1510/1510. Defensive only — no claim/result/bridge change.
+- Remaining team-flagged items (still open, recorded): the Laplace
+  `gradient_norm`-at-returned-mode nit, and a Poisson marginal-VALUE test vs
+  Gauss–Hermite quadrature (the one honest Poisson-value gate).

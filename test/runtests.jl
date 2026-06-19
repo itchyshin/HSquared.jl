@@ -3535,3 +3535,22 @@ end
     @test_throws ArgumentError HSquared.variational_marginal_loglik(yg, X, Z, Ainv, sa2,
         HSquared.GaussianResponse(se2); covariance = :diagonal)
 end
+
+@testset "Phase 6 non-Gaussian family hardening" begin
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.3
+    # GaussianResponse requires sigma_e2 > 0
+    @test_throws ArgumentError HSquared.GaussianResponse(-1.0)
+    @test_throws ArgumentError HSquared.GaussianResponse(0.0)
+    # Poisson requires non-negative integer counts (both marginals)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([1.5, 2.0, 3.0], X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    @test_throws ArgumentError HSquared.variational_marginal_loglik([1.0, 2.0, -3.0], X, Z, Ainv, sa2, HSquared.PoissonResponse())
+    # a non-converged fit returns NaN (not a finite non-mode value), flagged converged=false
+    r1 = HSquared.laplace_marginal_loglik([3.0, 5.0, 8.0], X, Z, Ainv, sa2, HSquared.PoissonResponse(); maxiter = 1)
+    @test !r1.converged && isnan(r1.loglik)
+    v1 = HSquared.variational_marginal_loglik([3.0, 5.0, 8.0], X, Z, Ainv, sa2, HSquared.PoissonResponse(); maxiter = 1)
+    @test !v1.converged && isnan(v1.elbo)
+end
