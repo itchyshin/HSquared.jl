@@ -78,11 +78,19 @@ profile interval (Slice 10), the Bernoulli/logit family for Laplace + VA
 (Slice 11), the Bernoulli known-truth recovery harness (Slice 12), and the
 two-effect REML recovery harness (Slice 13), and the Binomial/logit family +
 recovery (Slice 14, which resolved the binary-bias question), and the
-repeatability `h²` identifiability study (Slice 15, honest negative result).
-Remaining solo-doable, internally verifiable items:
+repeatability `h²` identifiability study (Slice 15, honest negative result), and
+the dense-inverse conditioning caveat (Slice 16, `V1-DENSE-COND`).
 
-1. Dense `inv(Ainv)` conditioning caveat made visible (next-50 #6) — the last
-   low-value hygiene item.
+**All queued solo-doable, internally-verifiable items are now done.** What
+remains genuinely needs you, the R lane, or external packages (it cannot be
+solo-validated here):
+
+- external GLLVM.jl / gllvmTMB / sommer / ASReml comparator parity;
+- the R-facing model-spec + bridge activation for the Phase-5/Phase-6 surfaces;
+- latent genetic factors (factor-analytic non-Gaussian GLLVM);
+- a full fitted-object/extractor API for the non-Gaussian fits;
+- production sparse fitting + large-pedigree hardening, and Phases 7–8 (GPU/HPC
+  backends, non-standard inheritance kernels).
 
 Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
 latent genetic factors, more families, external GLLVM.jl/gllvmTMB comparators,
@@ -342,3 +350,13 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   future session won't re-litigate it. No always-failing harness committed (that
   would mean tuning a threshold to a hard problem); `t` stays the gated summary.
   Evidence: `docs/dev-log/recovery-checkpoints/2026-06-18-phase3-repeatability-h2-identifiability.md`.
+
+### Slice 16 — dense-inverse conditioning caveat made visible
+- The last queued solo item. Added `V1-DENSE-COND` (status: documented) to the
+  validation-debt register: the validation-scale dense estimators that form an
+  explicit `A = inv(Ainv)` (`fit_two_effect_reml`, `fit_repeatability_reml`, the
+  recovery harnesses) are O(q³) and lose precision for ill-conditioned `Ainv`,
+  whereas the sparse REML / Henderson / non-Gaussian Laplace+VA paths use
+  `Ainv` / `cholesky(Ainv)` directly and never materialise the inverse. A known
+  validation-scale limitation, not a bug; production sparse fitting is the
+  remedy. Doc-only; no src/test/claim-surface change.

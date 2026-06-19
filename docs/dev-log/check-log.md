@@ -2,6 +2,19 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Dense-inverse conditioning caveat made visible (overnight)
+
+- Goal: the last queued solo item — make the dense `inv(Ainv)` conditioning
+  limitation an explicitly tracked caveat rather than only an implied one.
+- Added `V1-DENSE-COND` (status: documented) to the validation-debt register:
+  the validation-scale dense estimators that form an explicit `A = inv(Ainv)`
+  (`fit_two_effect_reml`, `fit_repeatability_reml`, the recovery harnesses) are
+  O(q³) and lose precision for ill-conditioned `Ainv`; the sparse REML / Henderson
+  / non-Gaussian Laplace+VA paths use `Ainv`/`cholesky(Ainv)` directly and never
+  form the inverse. Validation-scale limitation, not a bug; production sparse
+  fitting (planned) is the remedy.
+- Rose: doc-only; no src/test/claim-surface change. Local checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 repeatability h² identifiability study (overnight)
 
 - Goal: test the standing hypothesis that the repeatability `h²` (σ²a/σ²pe split)
