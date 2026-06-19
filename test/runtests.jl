@@ -432,6 +432,50 @@ end
     @test_throws ArgumentError inbreeding_coefficients(ped; max_relationship_cache = 2)
 end
 
+@testset "Phase 3 cytoplasmic (maternal-lineage) relationship" begin
+    # Cytoplasmic / mitochondrial inheritance is maternal-lineage: two individuals
+    # share it (relationship 1) iff they trace to the same maternal founder.
+    # Hand fixture: maternal lines A:{A,C,D,F} and B:{B,E}.
+    ids = ["A", "B", "C", "D", "E", "F"]
+    sire = ["0", "0", "B", "B", "A", "E"]
+    dam = ["0", "0", "A", "A", "B", "C"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+
+    lab = HSquared.maternal_lineage(ped)
+    @test length(lab) == length(ped)
+    @test lab[idx("A")] == lab[idx("C")] == lab[idx("D")] == lab[idx("F")]   # A line
+    @test lab[idx("B")] == lab[idx("E")]                                     # B line
+    @test lab[idx("A")] != lab[idx("B")]
+    # founders label their own lineage
+    @test lab[idx("A")] == "A" && lab[idx("B")] == "B"
+    @test lab[idx("F")] == "A"                                               # F→C→A
+
+    M = HSquared.cytoplasmic_relationship(ped)
+    @test size(M) == (6, 6)
+    @test issymmetric(M)
+    @test all(diag(M) .== 1.0)
+    @test M[idx("A"), idx("F")] == 1.0    # same maternal line
+    @test M[idx("C"), idx("D")] == 1.0
+    @test M[idx("B"), idx("E")] == 1.0
+    @test M[idx("A"), idx("B")] == 0.0    # different lines
+    @test M[idx("E"), idx("F")] == 0.0
+    # M is exactly the same-lineage indicator
+    for i in 1:length(ped), j in 1:length(ped)
+        @test M[i, j] == (lab[i] == lab[j] ? 1.0 : 0.0)
+    end
+
+    # convenience (ids, sire, dam) method agrees
+    M2 = HSquared.cytoplasmic_relationship(ids, sire, dam)
+    @test M2 == M
+    lab2 = HSquared.maternal_lineage(ids, sire, dam)
+    @test lab2 == lab
+
+    # all-founder pedigree → identity (every individual its own maternal line)
+    fped = normalize_pedigree(["x", "y", "z"], ["0", "0", "0"], ["0", "0", "0"])
+    @test HSquared.cytoplasmic_relationship(fped) == Matrix(1.0I, 3, 3)
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

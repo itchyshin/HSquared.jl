@@ -41,7 +41,9 @@ kept current at each milestone and is the "morning report".
 | `44a7dbd` | Phase-6 **Bernoulli known-truth recovery** (`sim/phase6_bernoulli_recovery.jl`, opt-in) | q=1075 half-sib, truth σ²a=1.0 (logit); 5/5 gated pass (EBV cor 0.565–0.701 ≥ 0.5, non-collapse); σ̂²a 0.36–0.81 reported-not-gated (known Laplace-for-binary downward bias) |
 | `02f63f3` | Phase-3 **two-effect REML known-truth recovery** (`sim/phase3_two_effect_recovery.jl`, opt-in) | q=860, common-env groups independent of pedigree (identifiable); 5/5 recover ALL THREE components (max rel σ1 0.286, σ2 0.277, σe 0.123) — prior additive underestimation was a confounding artifact, not an estimator flaw |
 | `8636339` | Phase-6 **Binomial/logit family + recovery** (`BinomialResponse(n_trials)`, `sim/phase6_binomial_recovery.jl`) | generalises Bernoulli (m=1); Laplace + VA (GH kernels ×m + binom offset); m=8 value gate (va.elbo ≤ R, Laplace gap 0.031); recovery q=345/m=20 **σ²a HARD-gated 5/5** (rel ≤ 0.175, EBV cor 0.90–0.92) — binary bias is an information effect; suite 1584/1584 (+31) |
-| _(latest)_ | Phase-3 **repeatability h² identifiability study** (docs evidence; no src/test) | full-sib designs: q=315/n=1575 recovers h² 4/5 within ~0.26 (vs original 2/5) but STILL not gateable (1 seed misses at 0.58) — σ²a/σ²pe split intrinsically ill-conditioned at validation scale; honest negative result, closes the speculative gap |
+| `25d16f1` | Phase-3 **repeatability h² identifiability study** (docs evidence; no src/test) | full-sib designs: q=315/n=1575 recovers h² 4/5 within ~0.26 (vs original 2/5) but STILL not gateable (1 seed misses at 0.58) — σ²a/σ²pe split intrinsically ill-conditioned at validation scale; honest negative result, closes the speculative gap |
+| `16b2684` | **Dense-inverse conditioning caveat** (`V1-DENSE-COND`, docs) | the dense `inv(Ainv)` estimators are O(q³)/precision-limited for ill-conditioned `Ainv`; sparse/Henderson/Laplace+VA use `Ainv` directly; tracked limitation |
+| _(latest)_ | Phase-3 **cytoplasmic / maternal-lineage relationship** (`maternal_lineage`, `cytoplasmic_relationship`, exported) | first non-standard-inheritance primitive; maternal-founder trace + 0/1 same-line indicator; hand-verified multi-lineage fixture; suite 1637/1637 (+53) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -50,7 +52,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1584/1584 pass, exit 0**.
+- Full local suite: **1637/1637 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -78,19 +80,23 @@ profile interval (Slice 10), the Bernoulli/logit family for Laplace + VA
 (Slice 11), the Bernoulli known-truth recovery harness (Slice 12), and the
 two-effect REML recovery harness (Slice 13), and the Binomial/logit family +
 recovery (Slice 14, which resolved the binary-bias question), and the
-repeatability `h²` identifiability study (Slice 15, honest negative result), and
-the dense-inverse conditioning caveat (Slice 16, `V1-DENSE-COND`).
+repeatability `h²` identifiability study (Slice 15, honest negative result), the
+dense-inverse conditioning caveat (Slice 16, `V1-DENSE-COND`), and the first
+non-standard-inheritance primitive — cytoplasmic / maternal-lineage relationship
+(Slice 17).
 
-**All queued solo-doable, internally-verifiable items are now done.** What
-remains genuinely needs you, the R lane, or external packages (it cannot be
-solo-validated here):
+**Still solo-doable (newly visible after Slice 17):** Phase 3's non-standard
+inheritance scope has more relationship-construction primitives that ARE solo +
+hand-verifiable — selfing-aware inbreeding, clonal (identical-genotype groups),
+haplodiploid, polyploid relationship coefficients — plus a cytoplasmic-variance
+estimation example feeding `fit_two_effect_reml`. These are genuine remaining
+runway.
 
-- external GLLVM.jl / gllvmTMB / sommer / ASReml comparator parity;
-- the R-facing model-spec + bridge activation for the Phase-5/Phase-6 surfaces;
-- latent genetic factors (factor-analytic non-Gaussian GLLVM);
-- a full fitted-object/extractor API for the non-Gaussian fits;
-- production sparse fitting + large-pedigree hardening, and Phases 7–8 (GPU/HPC
-  backends, non-standard inheritance kernels).
+**Genuinely NOT solo (needs you / R lane / external):** external GLLVM.jl /
+gllvmTMB / sommer / ASReml comparator parity; the R-facing model-spec + bridge
+activation; latent genetic factors; a full fitted-object API; production sparse
+fitting + large-pedigree hardening; and Phases 7–8 (GPU/HPC backends — these
+cannot be honestly validated without hardware and so are out of solo scope).
 
 Everything else on the Phase-6/Phase-7 path (a full fitted-object/extractor API,
 latent genetic factors, more families, external GLLVM.jl/gllvmTMB comparators,
@@ -360,3 +366,26 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
   `Ainv` / `cholesky(Ainv)` directly and never materialise the inverse. A known
   validation-scale limitation, not a bug; production sparse fitting is the
   remedy. Doc-only; no src/test/claim-surface change.
+
+### Slice 17 — cytoplasmic / maternal-lineage relationship (starts Phase-3 inheritance scope)
+- After re-checking the ROADMAP I corrected an under-scoping: Phase 3 ("Standard
+  Quantitative-Genetic AND Inheritance Models") explicitly includes cytoplasmic
+  inheritance, selfing, clonal, etc. — so non-standard inheritance has a genuine
+  solo-doable foundation (relationship construction), which I had wrongly lumped
+  with GPU/HPC. (Phase 7 = CPU/GPU and Phase 8 = HPC genuinely cannot be honestly
+  validated solo.)
+- `maternal_lineage(pedigree)` traces each individual to its maternal founder in
+  one forward pass (topological order ⇒ dam index < i); `cytoplasmic_relationship`
+  builds the dense 0/1 same-maternal-line indicator `C` (mitochondrial /
+  cytoplasmic inheritance). Both exported with `(ids, sire, dam)` methods.
+- **Gates** (53 checks): hand fixture (maternal lines A:{A,C,D,F}, B:{B,E}) with
+  an exhaustive `C[i,j] == (lineage[i]==lineage[j])` check, symmetry, unit
+  diagonal, founder self-labelling, `F→C→A` transitivity, all-founder→identity,
+  and convenience-method agreement. Suite 1637/1637.
+- **Honest scope:** construction only. `C` is the 0/1 indicator (rank = #lineages,
+  singular) — the relationship for an i.i.d. cytoplasmic random effect (a grouping
+  that feeds the existing `fit_two_effect_reml` second effect), NOT a matrix to
+  invert. No cytoplasmic-variance fitting claim, no R model-spec. Moves the
+  capability row planned→experimental, adds `V3-CYTO`, updates ROADMAP Phase 3.
+  The other inheritance systems (selfing, clonal, haplodiploid, polyploid) and
+  the cytoplasmic-variance estimation example remain open.

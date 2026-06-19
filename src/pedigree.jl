@@ -194,6 +194,60 @@ function inbreeding_coefficients(ids, sire, dam; kwargs...)
     return inbreeding_coefficients(normalize_pedigree(ids, sire, dam); kwargs...)
 end
 
+"""
+    maternal_lineage(pedigree)
+    maternal_lineage(ids, sire, dam)
+
+Maternal-lineage label of each individual: the id of its earliest known maternal
+ancestor (the maternal founder reached by following dam links). Two individuals
+share a maternal lineage iff they carry the same label. Returned in
+`pedigree.ids` (topologically sorted) order, aligned with
+[`cytoplasmic_relationship`](@ref) and [`pedigree_inverse`](@ref).
+
+This is the inheritance pattern of strictly maternally transmitted factors
+(mitochondrial DNA / cytoplasm). An individual with no recorded dam is its own
+maternal founder.
+"""
+function maternal_lineage(pedigree::Pedigree)
+    n = length(pedigree)
+    founder = Vector{Int}(undef, n)        # index of each individual's maternal founder
+    for i in 1:n
+        d = pedigree.dam[i]                # topological order ⇒ d == 0 or d < i
+        founder[i] = d == 0 ? i : founder[d]
+    end
+    return [pedigree.ids[founder[i]] for i in 1:n]
+end
+
+maternal_lineage(ids, sire, dam) = maternal_lineage(normalize_pedigree(ids, sire, dam))
+
+"""
+    cytoplasmic_relationship(pedigree)
+    cytoplasmic_relationship(ids, sire, dam)
+
+Dense cytoplasmic (maternal-lineage) relationship matrix `C`: `C[i, j] = 1` if
+`i` and `j` share a maternal lineage (see [`maternal_lineage`](@ref)), else `0`
+(diagonal `1`). This is the relationship structure of strictly maternally
+inherited factors (mitochondrial DNA, cytoplasm). Returned in `pedigree.ids`
+(topologically sorted) order, so it aligns with [`pedigree_inverse`](@ref).
+
+Experimental Phase 7 primitive — a relationship-construction helper for a
+non-standard inheritance system. `C` is a 0/1 same-lineage indicator (rank =
+number of maternal lineages), so it is singular whenever a lineage has more than
+one member: use it as the relationship for an i.i.d. cytoplasmic lineage random
+effect (a grouping), not as a matrix to invert.
+"""
+function cytoplasmic_relationship(pedigree::Pedigree)
+    labels = maternal_lineage(pedigree)
+    n = length(labels)
+    C = zeros(Float64, n, n)
+    for i in 1:n, j in 1:n
+        C[i, j] = labels[i] == labels[j] ? 1.0 : 0.0
+    end
+    return C
+end
+
+cytoplasmic_relationship(ids, sire, dam) = cytoplasmic_relationship(normalize_pedigree(ids, sire, dam))
+
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0
     haskey(id_to_index, parent) &&

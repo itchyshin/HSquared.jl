@@ -2,6 +2,29 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Phase 3 cytoplasmic / maternal-lineage relationship (overnight)
+
+- Goal: start the non-standard-inheritance scope of Phase 3 (ROADMAP Phase 3
+  lists cytoplasmic inheritance) with a genuine, hand-verifiable relationship
+  primitive — the first non-standard inheritance capability in the engine.
+- `maternal_lineage(pedigree)`: traces each individual to its maternal founder in
+  a single forward pass over the topologically sorted pedigree (dam index < i).
+  `cytoplasmic_relationship(pedigree)`: dense 0/1 same-maternal-line indicator
+  `C` (mitochondrial / cytoplasmic inheritance). Both exported, with
+  `(ids, sire, dam)` convenience methods.
+- Gates (verified, `test/runtests.jl`): hand fixture with maternal lines
+  A:{A,C,D,F}, B:{B,E} — exhaustive `C[i,j] == (lineage[i]==lineage[j])`,
+  symmetry, unit diagonal, founder self-labelling, `F→C→A` transitivity,
+  all-founder → identity, and `(ids,sire,dam)` agreement.
+- `Pkg.test()`: passed, exit 0, **1637/1637** (cytoplasmic testset +53).
+- Honest scope: CONSTRUCTION only. `C` is the 0/1 indicator (rank = #lineages,
+  singular) — it is the relationship for an i.i.d. cytoplasmic random effect (a
+  grouping that feeds the existing `fit_two_effect_reml` second effect), NOT a
+  matrix to invert. No cytoplasmic-variance fitting claim, no R model-spec.
+- Rose: new exported public primitive with full evidence chain; capability row
+  moved planned→experimental, new `V3-CYTO` debt row, ROADMAP Phase-3 status
+  updated. Local checkpoint, not pushed.
+
 ## 2026-06-18 Dense-inverse conditioning caveat made visible (overnight)
 
 - Goal: the last queued solo item — make the dense `inv(Ainv)` conditioning
