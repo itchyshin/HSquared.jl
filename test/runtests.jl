@@ -168,9 +168,9 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 31
+    @test length(validation) == 32
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V5-GENOMIC-QTL"
+    @test validation[end].id == "V6-LAPLACE"
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -226,6 +226,10 @@ end
     @test occursin("not broadly multi-seed calibrated", mvreml_row.claim_boundary)
     @test occursin("did not pass", mvreml_row.claim_boundary)
     @test occursin("opt-in seeded recovery harness", mvreml_row.claim_boundary)
+    # #47 closeout: covariance SEs + LRT are now provided (no longer "missing")
+    @test occursin("multivariate_covariance_standard_errors", mvreml_row.evidence)
+    @test occursin("covariance_structure_lrt", mvreml_row.evidence)
+    @test !occursin("likelihood-ratio tests for the covariances", mvreml_row.missing)
     fa_row = only(row for row in validation if row.id == "V4-FA")
     @test fa_row.phase == "Phase 4B"
     @test fa_row.status == "partial"
@@ -243,6 +247,12 @@ end
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
+    # #47 closeout: the boundary-aware LRT applies to structured fits; structured
+    # SEs stay honestly absent (rotation-nonidentified loadings)
+    @test occursin("covariance_structure_lrt", fa_row.evidence)
+    @test occursin("rotation-nonidentified", fa_row.evidence)
+    @test !occursin("covariance SEs or LRTs", fa_row.missing)
+    @test occursin("standard errors for the rotation-nonidentified structured loadings", fa_row.missing)
     fixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-FIXED")
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
@@ -309,6 +319,17 @@ end
     @test occursin("loco_mixed_model_marker_scan", marker_recovery_source)
     @test occursin("unknown arguments", marker_recovery_source)
     @test occursin("not calibrated genome-wide thresholds", marker_recovery_source)
+    # #44 blocker-first: Phase-6 non-Gaussian Laplace+VA now has a citable
+    # validation_status() row (already in capability-status + validation-debt)
+    v6_row = only(row for row in validation if row.id == "V6-LAPLACE")
+    @test v6_row.phase == "Phase 6"
+    @test v6_row.status == "partial"
+    @test occursin("sparse_reml_loglik", v6_row.evidence)
+    @test occursin("fit_laplace_reml", v6_row.evidence)
+    @test occursin("NonGaussianFit", v6_row.evidence)
+    @test occursin("MarginalMethod", v6_row.missing)
+    @test occursin("GLLVM.jl/gllvmTMB", v6_row.missing)
+    @test occursin("not the public default", v6_row.claim_boundary)
     @test all(!isempty(row.evidence) for row in validation)
     @test all(!isempty(row.missing) for row in validation)
 
