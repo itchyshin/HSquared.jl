@@ -3,6 +3,38 @@
 Last updated: 2026-06-18 (overnight). Maintainer away until ~5am; this doc is
 kept current at each milestone and is the "morning report".
 
+## Post-inventory continued session (autonomous, 2026-06-18) — SUMMARY
+
+After the maintainer asked me to keep working autonomously, add capabilities, and
+coordinate with the twin/oracle, I ran a **6-reader multi-agent inventory
+workflow** over ROADMAP / capability-status / validation-debt / completion-plan /
+R-twin / code to get the authoritative "what's left" map, then worked the
+**solo-verifiable** items it surfaced — shifting strategy from "build new" to
+**"promote the large body of already-built-but-unusable/under-claimed engine work
+to a usable, honestly-stated surface."** Eight new local commits (suite green at
+each; now **1756/1756**, nothing pushed):
+
+| Commit | Slice | Result |
+|---|---|---|
+| `6d07098` | Drift fix + Phase-4B twin-flagged fix + twin coordination | corrected stale `genomic.jl` "not implemented" docstrings; `genetic_uniqueness` low-rank → `nothing`; coordination-board handoff |
+| `7158644` | `fit_gblup_reml` / `fit_snp_blup_reml` | REML estimation of σ²_g (closed the supplied-variance-only gap), exported |
+| `f3eadf4` | `single_step_inverse` + `fit_single_step[_reml]` | exported single-step H-matrix + wired into fitting (G=A₂₂ ⇒ pedigree model/REML exactly) |
+| `e0c64fb` | Export `fit_laplace_reml` / `laplace_reml_interval` | the Phase-6 GLLVM fitter is now publicly callable (experimental) |
+| `19d81d9` | VanRaden **method-2** (standardized) G | second standard genomic-relationship construction |
+| `b954b1c` | Deep-inbreeding dense-inverse stress test | V1-DENSE-COND now tested: direct Henderson inverse exact at cond(A)≈1.7e3 |
+
+Twin coordination (read-only): durable handoff in
+`docs/dev-log/coordination-board.md` (the engine's exported relationship-matrix +
+GLLVM surface for the R lane to wire; lowrank fix done; eigen-G wording is
+R-lane). NOT posted to GitHub — outward posting remains the maintainer's call.
+
+The full per-phase "what's left" map (the inventory output) is the authoritative
+remaining-work reference; the headline: the literal 8-phase finish is a
+multi-party effort (engine lane + R lane + external comparators + hardware), and
+the single biggest non-engine blocker is the **R-facing public contract** (most
+capabilities are engine-internal; several R extractors read fields no bridge
+populates).
+
 ## How to review (fastest path)
 
 1. `git log --oneline main..HEAD` on branch `codex/phase5-gwas-qtl-eqtl-tables`
