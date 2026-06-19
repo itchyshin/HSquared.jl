@@ -582,6 +582,34 @@ end
     @test HSquared.dominance_relationship(ids, sire, dam) == D
 end
 
+@testset "Phase 1 additive relationship matrix (public accessor)" begin
+    # Public accessor for the dense additive numerator relationship A, the
+    # companion of pedigree_inverse and of the exported D / cytoplasmic / clonal
+    # relationship matrices.
+    ids = ["s", "d", "x", "y"]
+    sire = ["0", "0", "s", "s"]
+    dam = ["0", "0", "d", "d"]
+    ped = normalize_pedigree(ids, sire, dam)
+    idx(id) = findfirst(==(id), ped.ids)
+    A = additive_relationship(ped)
+
+    @test A == HSquared._numerator_relationship(ped)
+    @test issymmetric(A)
+    @test all(diag(A) .== 1.0)               # non-inbred founders/offspring
+    @test A[idx("x"), idx("y")] ≈ 0.5        # full sibs
+    @test A[idx("x"), idx("s")] ≈ 0.5        # parent–offspring
+    @test A[idx("s"), idx("d")] ≈ 0.0        # unrelated founders
+    @test A ≈ inv(Matrix(pedigree_inverse(ped)))   # exact inverse of Ainv
+    @test additive_relationship(ids, sire, dam) == A
+
+    # inbreeding shows on the diagonal (offspring of related parents)
+    inbred = normalize_pedigree(["a", "b", "c", "k"],
+                                ["0", "0", "a", "a"], ["0", "0", "b", "c"])
+    Ai = additive_relationship(inbred)
+    @test Ai[findfirst(==("k"), inbred.ids), findfirst(==("k"), inbred.ids)] ≈ 1.25  # 1 + F, F = 0.25
+    @test_throws ArgumentError additive_relationship(ped; max_relationship_cache = 2)
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

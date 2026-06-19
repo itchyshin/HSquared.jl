@@ -138,6 +138,26 @@ function _numerator_relationship(
 end
 
 """
+    additive_relationship(pedigree; max_relationship_cache = 10_000)
+    additive_relationship(ids, sire, dam; max_relationship_cache = 10_000)
+
+Dense additive (numerator) relationship matrix `A` for a pedigree — the companion
+of the sparse [`pedigree_inverse`](@ref) (`A = inv(Ainv)`). `A[i, i] = 1 + F_i`
+and `A[i, j]` is twice the coancestry of `i` and `j`. Returned in `pedigree.ids`
+(topologically sorted) order.
+
+Validation-scale and dense (bounded by `max_relationship_cache`); for production
+use the sparse `pedigree_inverse`. This is the additive companion of the exported
+[`dominance_relationship`](@ref), [`cytoplasmic_relationship`](@ref), and
+[`clonal_relationship`](@ref) matrices.
+"""
+additive_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_000) =
+    _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
+
+additive_relationship(ids, sire, dam; kwargs...) =
+    additive_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
+
+"""
     inbreeding_coefficients(pedigree; max_relationship_cache = 10_000)
     inbreeding_coefficients(ids, sire, dam; max_relationship_cache = 10_000)
 

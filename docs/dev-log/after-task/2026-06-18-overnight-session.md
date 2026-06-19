@@ -47,7 +47,8 @@ kept current at each milestone and is the "morning report".
 | `cf09adf` | Cytoplasmic/additive confounding forward note (`V3-CYTO`, docs) | exploratory probe: σ²c partially recovers but confounds with σ²a; documented, not committed as a confounded gate |
 | `66be55c` | Phase-3 **self-fertilization** (`normalize_pedigree(...; allow_selfing=true)`) | machinery already self-correct; canonical F=0,½,¾ & A_ii=3/2,7/4 verified; `pedigree_inverse == inv(A)` for pure + mixed selfed pedigrees; suite 1648/1648 (+11) |
 | `97b9715` | Phase-3 **clonal / asexual relationship** (`clonal_relationship`, exported) | ramets alias their genet (`C[i,j]=A[rep i,rep j]`, transitive); clonemates identical; hand-verified fixture + cycle/self/unknown guards; suite 1663/1663 (+15) |
-| _(latest)_ | Phase-3 **dominance relationship matrix** (`dominance_relationship`, exported) | Cockerham `D[x,y]=¼(A[sx,sy]A[dx,dy]+A[sx,dy]A[dx,sy])`; full sibs ¼, half sibs 0; exhaustive formula check vs A; suite 1685/1685 (+22) |
+| `21af2ff` | Phase-3 **dominance relationship matrix** (`dominance_relationship`, exported) | Cockerham `D[x,y]=¼(A[sx,sy]A[dx,dy]+A[sx,dy]A[dx,sy])`; full sibs ¼, half sibs 0; exhaustive formula check vs A; suite 1685/1685 (+22) |
+| _(latest)_ | **Public additive relationship accessor** (`additive_relationship`, exported) | dense `A = inv(Ainv)` companion of D/cytoplasmic/clonal; `A==inv(pedigree_inverse)`, full sibs 0.5, inbred diag 1.25; completes the relationship-matrix family; suite 1695/1695 (+10) |
 
 The (A)/(B) commit is your explicitly-requested refactor task plus an in-flight
 slice I owned and finished. Full report:
@@ -56,7 +57,7 @@ slice I owned and finished. Full report:
 ## Repo state
 
 - Branch `codex/phase5-gwas-qtl-eqtl-tables`, HEAD = this slice's local commit.
-- Full local suite: **1685/1685 pass, exit 0**.
+- Full local suite: **1695/1695 pass, exit 0**.
 - Working tree clean after each commit.
 - The Phase-5 draft PR stack #26→#35 remains stacked + unmerged on `main`
   (unchanged; merge is your call).
@@ -441,3 +442,13 @@ the R model-spec) genuinely needs the R lane, external packages, or your steer.
 - Honest scope: the off-diagonal formula is general; the unit diagonal / no
   dominance-inbreeding correction assumes non-inbred parents (standard textbook
   case). New `V3-DOMINANCE` debt row; inbred-parent corrections are future work.
+
+### Slice 21 — public additive relationship accessor (`additive_relationship`)
+- API-consistency completion: this session exported the dominance, cytoplasmic,
+  and clonal relationship matrices, but the dense additive `A` was only reachable
+  as its sparse inverse. `additive_relationship(pedigree)` is a thin public
+  wrapper over the validated `_numerator_relationship`, completing the public
+  relationship-matrix family (additive · dominance · cytoplasmic · clonal).
+- **Gates**: equals the internal recursion, `A == inv(pedigree_inverse)`, full
+  sibs `0.5`, parent–offspring `0.5`, unrelated founders `0`, inbred diagonal
+  `1.25` at `F = 0.25`, and the cache guard. Suite 1695/1695.

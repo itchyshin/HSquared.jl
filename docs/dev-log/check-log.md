@@ -2,6 +2,23 @@
 
 Newest entries go at the top.
 
+## 2026-06-18 Public additive relationship accessor (overnight)
+
+- Goal: API consistency — this session exported the dominance, cytoplasmic, and
+  clonal relationship matrices, but the dense additive relationship `A` was only
+  available as its sparse inverse (`pedigree_inverse`). A dominance/non-additive
+  model needs both `A` and `D`.
+- `additive_relationship(pedigree)` (and `(ids,sire,dam)` convenience): a thin
+  public wrapper over the already-validated `_numerator_relationship`. Exported.
+- Gates (`test/runtests.jl`): equals the internal recursion, `A == inv(Matrix(
+  pedigree_inverse))`, full sibs `0.5`, parent–offspring `0.5`, unrelated
+  founders `0`, inbred diagonal `1.25` at `F = 0.25`, and the `max_relationship_
+  cache` guard.
+- `Pkg.test()`: passed, exit 0, **1695/1695** (+10). Completes the public
+  relationship-matrix family (additive · dominance · cytoplasmic · clonal).
+- Rose: thin accessor over tested internals; capability row added. Local
+  checkpoint, not pushed.
+
 ## 2026-06-18 Phase 3 dominance relationship matrix (overnight)
 
 - Goal: a mainstream Phase-3 capability I had wrongly lumped with the
