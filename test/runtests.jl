@@ -4734,4 +4734,18 @@ end
     @test respondability(Gsing, [1.0, 0.0]) ≈ sqrt(2.0)
     @test_throws ArgumentError conditional_evolvability(Gsing, [1.0, 1.0])
     @test_throws ArgumentError autonomy(Gsing, [1.0, 1.0])
+
+    # --- scale-aware guards + variance clamp (review #55, Gauss) ---
+    # A meaningfully-indefinite LARGE-scale G is rejected (rel eigmin ~ -1e-3):
+    @test_throws ArgumentError evolvability([1.0e6 0.0; 0.0 -1.0e3], [0.0, 1.0])
+    # A well-conditioned PD G at TINY scale is accepted (not wrongly rejected):
+    Gtiny = [2.0e-11 0.0; 0.0 1.0e-11]
+    @test isfinite(conditional_evolvability(Gtiny, [1.0, 1.0]))
+    @test conditional_evolvability(Gtiny, [1.0, 1.0]) > 0
+    @test isfinite(autonomy(Gtiny, [1.0, 1.0]))
+    # A numerically-PSD G (rel eigmin within tolerance) is accepted and the scalar
+    # variance metrics are clamped at 0 — never a negative "variance":
+    Gpsd_eps = [1.0 0.0; 0.0 -1.0e-12]
+    @test evolvability(Gpsd_eps, [0.0, 1.0]) == 0.0
+    @test variance_along_gradient(Gpsd_eps, [0.0, 1.0]; normalize = false) ≥ 0.0
 end

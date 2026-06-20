@@ -24,7 +24,18 @@ the structured bridge payload and structured SEs.
 
 ## Review (adversarial workflow)
 
-(Recorded after the workflow returns — Kirkpatrick / Noether+Gauss / Rose.)
+Kirkpatrick + Rose **pass_with_nits**, Gauss **concerns** (no blocker). Gauss's
+catch was the high-value one: the admissibility guards used ABSOLUTE thresholds,
+so a large-variance `G` could pass with a meaningfully-negative eigenvalue (and a
+"variance" function then returned a negative value), while a small-scale
+well-conditioned PD `G` was wrongly rejected. Fixed: scale-relative symmetry/PSD
+tolerances, scale-free `isposdef` for the PD guard, and a `max(0, ·)` clamp on the
+scalar variance metrics — with new tests for each edge case. Kirkpatrick: added
+the 8 exports to `api.md` (the `warnonly=true` docs build had silently omitted
+them), refactored `autonomy` to validate once, and recorded the deferred metrics
+(random-skewers `c̄`/`ā`, a matrix-of-gradients overload, mean respondability).
+Kirkpatrick independently re-derived every Hansen–Houle formula and confirmed the
+math is correct.
 
 ## Local checks
 

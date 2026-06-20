@@ -15,21 +15,35 @@
 # geometry, NOT a selection-response prediction (no realized response without a
 # real, unmodelled selection gradient) and NOT a fitting/estimation claim; metrics
 # on an ESTIMATED G inherit all of fit_multivariate_reml's estimation caveats.
+#
+# Numerical conventions: the symmetry/PSD admissibility tolerances are
+# SCALE-RELATIVE (so a large-variance G is not accepted with a meaningfully
+# negative eigenvalue, nor a small-variance one wrongly rejected); positive-
+# definiteness for the inverse-using metrics is checked by the scale-free
+# `isposdef`; and the scalar variance metrics (evolvability, variance_along_gradient)
+# are clamped at 0 so numerical roundoff on a near-singular but admissible G never
+# yields a negative "variance".
 
 # Pull G from either a bare matrix or a multivariate result NamedTuple.
 _evolvability_G(G::AbstractMatrix) = G
 _evolvability_G(result) = getproperty(result, :genetic_covariance)
 
 # Square + symmetric + finite + PSD (allows rank-deficient G, e.g. lowrank ΛΛ').
+# Tolerances are SCALE-RELATIVE (not absolute), so a large-variance G is not
+# wrongly accepted with a meaningfully-negative eigenvalue, nor a small-variance
+# one wrongly rejected.
 function _check_symmetric_psd_G(G::AbstractMatrix)
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
     Gf = Matrix{Float64}(G)
     all(isfinite, Gf) || throw(ArgumentError("G must contain only finite values"))
-    isapprox(Gf, transpose(Gf); atol = 1e-10) ||
+    gscale = max(1.0, maximum(abs, Gf))
+    isapprox(Gf, transpose(Gf); atol = 1e-10 * gscale) ||
         throw(ArgumentError("G must be symmetric"))
     S = Symmetric(Gf)
-    eigmin(S) >= -1e-8 ||
+    ev = eigvals(S)
+    escale = max(1.0, maximum(abs, ev))
+    minimum(ev) >= -1e-8 * escale ||
         throw(ArgumentError("G must be positive semidefinite"))
     return S
 end
@@ -37,9 +51,11 @@ end
 # Additionally positive-DEFINITE: required by the inverse-using metrics
 # (conditional_evolvability, autonomy). A merely PSD (singular / reduced-rank) G
 # makes G⁻¹ undefined, so those metrics must throw rather than silently regularize.
+# Uses the scale-free `isposdef` (a Cholesky attempt), so a well-conditioned PD G
+# at any scale is accepted and a singular one rejected.
 function _check_symmetric_pd_G(G::AbstractMatrix)
     S = _check_symmetric_psd_G(G)
-    eigmin(S) > 1e-10 ||
+    isposdef(S) ||
         throw(ArgumentError("G must be positive definite for this metric (it inverts G); " *
                             "a singular / reduced-rank G has no conditional evolvability or autonomy"))
     return S
@@ -68,7 +84,7 @@ predicted response; see the module note for caveats.
 function evolvability(G, beta)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     b = _normalize_beta(beta, size(S, 1))
-    return dot(b, S * b)
+    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
 end
 
 """
@@ -109,8 +125,11 @@ other traits. Requires `G` positive definite (via `conditional_evolvability`).
 Along an eigenvector of `G` it equals `1`.
 """
 function autonomy(G, beta)
-    Gm = _evolvability_G(G)
-    return conditional_evolvability(Gm, beta) / evolvability(Gm, beta)
+    S = _check_symmetric_pd_G(_evolvability_G(G))   # PD required (validated once)
+    b = _normalize_beta(beta, size(S, 1))
+    e = dot(b, S * b)                # > 0 for a PD G, so no clamp / divide-by-zero
+    c = 1.0 / dot(b, cholesky(S) \ b)
+    return c / e
 end
 
 """
@@ -132,7 +151,7 @@ function variance_along_gradient(G, beta; normalize::Bool = true)
         b = Vector{Float64}(beta)
         all(isfinite, b) || throw(ArgumentError("beta must contain only finite values"))
     end
-    return dot(b, S * b)
+    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
 end
 
 # Deterministic sign canonicalization: make the largest-magnitude entry of each

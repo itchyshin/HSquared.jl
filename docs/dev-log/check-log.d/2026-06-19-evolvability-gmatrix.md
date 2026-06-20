@@ -36,9 +36,21 @@
 - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → **passed (exit 0)**
   (evolvability testset 61/61; re-run green after the `validation_status` row +
   count bump).
-- `~/.juliaup/bin/julia --project=docs docs/make.jl` → (recorded in after-task).
-- Adversarial review (Kirkpatrick / Noether+Gauss / Rose) → (recorded in
-  after-task).
+- `~/.juliaup/bin/julia --project=docs docs/make.jl` → **passed (exit 0)** (incl.
+  the new `api.md` entries for the 8 exports).
+- Adversarial 3-lens review (Kirkpatrick / Gauss / Rose): Kirkpatrick + Rose
+  **pass_with_nits**, Gauss **concerns** (no blocker). All addressed before merge:
+  - Gauss (should_fix): the PSD/PD guards used ABSOLUTE thresholds (scale-blind) —
+    a large-variance `G` could pass with a meaningfully-negative eigenvalue, and a
+    small-scale well-conditioned PD `G` was wrongly rejected. Now: scale-RELATIVE
+    symmetry/PSD tolerances, scale-free `isposdef` for the PD guard, and the scalar
+    variance metrics clamped at 0. New tests: large-scale indefinite throws,
+    tiny-scale PD accepted, numerically-PSD returns clamped ≥ 0.
+  - Kirkpatrick (should_fix): the 8 exports were missing from `docs/src/api.md`
+    (`warnonly=true` masked it) — added.
+  - Kirkpatrick (nits): `autonomy` validated `G` twice → refactored to validate
+    once; matrix-of-gradients overload + mean respondability noted as deferred in
+    the `V4-EVOLVE` debt row; PSD-tolerance behavior documented in the module note.
 
 ## Claim boundary
 
