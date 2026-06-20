@@ -16,9 +16,13 @@
 # `Ainv ⊗ inv(K_g)`, i.e. coefficient covariance `A ⊗ K_g`), returning per-animal
 # coefficient vectors. Still supplied-covariance — no estimation.
 #
-# DEFERRED to later slices: REML estimation of `K_g`/residual function (slice 3), the
-# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, the
-# R-facing model-spec / bridge payload, and any WOMBAT/ASReml comparator. Basis
+# Slice 3 (REML). `fit_random_regression_reml` ESTIMATES `K_g`/`σ²e` by dense
+# log-Cholesky REML on the marginal `V = W(A⊗K_g)Wᵀ + σ²e I` (analogue of
+# `fit_multivariate_reml`). Still dense/validation-scale, homogeneous residual.
+#
+# DEFERRED to later slices: the eigen-function (covariance-function) decomposition,
+# PEV of curve-valued EBVs, heterogeneous residual + permanent-environment term, the
+# R-facing model-spec / bridge payload, and any WOMBAT/ASReml/JWAS comparator. Basis
 # convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
 # (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
 # conventions.
@@ -202,8 +206,9 @@ Returns `(beta, random_coefficients = (ids, values), variance_components =
 per-animal coefficient vectors (row = animal, column = Legendre coefficient `0..k-1`).
 
 EXPERIMENTAL, dense/validation-scale, SUPPLIED-covariance: `K_g`/`sigma_e2` are NOT
-estimated (RR REML is a later slice — see the roadmap note), there is no R-facing
-model-spec or bridge payload, and homogeneous residual variance only.
+estimated here — use [`fit_random_regression_reml`](@ref) to estimate them by REML.
+There is no R-facing model-spec or bridge payload, and homogeneous residual variance
+only.
 """
 function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
                                Z::AbstractMatrix, Ainv::AbstractMatrix, K_g::AbstractMatrix,
@@ -246,6 +251,164 @@ function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::Abstra
         beta = beta,
         random_coefficients = (ids = aids, values = coeffs),
         variance_components = (K_g = Matrix(Ksym), sigma_e2 = Float64(sigma_e2)),
+        basis = (ncoef = k,),
+    )
+end
+
+# --- REML estimation of K_g / σ²e (slice 3, #54) ----------------------------
+
+# Cholesky of the marginal covariance V = W·(A ⊗ K_g)·Wᵀ + σ²e·I (n×n). PD for
+# σ²e > 0 even when K_g is only positive semidefinite (a boundary optimum),
+# mirroring the multivariate `_mv_build_Vchol`.
+function _rr_build_Vchol(W, A, K_g, sigma_e2, n)
+    Vg = W * kron(A, K_g) * transpose(W)
+    return cholesky(Symmetric(Vg + sigma_e2 * I))
+end
+
+# Full REML log-likelihood at supplied (K_g, σ²e), INCLUDING the (n−p)·log(2π)
+# constant, so it is on the same scale as `sparse_reml_loglik` /
+# `_mv_reml_loglik_core` (LRT/AIC-safe). The k=1 reduction with K_g = [2σ²a]
+# equals the univariate `sparse_reml_loglik` (φ_0² = 1/2).
+function _rr_reml_loglik_core(yv, Xm, W, A, K_g, sigma_e2, n, p)
+    Vf = _rr_build_Vchol(W, A, K_g, sigma_e2, n)
+    ViX = Vf \ Xm
+    XtViX = cholesky(Symmetric(transpose(Xm) * ViX))
+    beta = XtViX \ (transpose(Xm) * (Vf \ yv))
+    r = yv .- Xm * beta
+    return -0.5 * ((n - p) * log(2π) + logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
+end
+
+# GLS fixed effects + BLUP coefficient vectors at supplied (K_g, σ²e), via the
+# marginal form a = (A⊗K_g)·Wᵀ·V⁻¹·(y − Xβ̂) — equals the MME solution for a PD
+# K_g and stays defined at a singular boundary K_g. Returns (β, q×k coefficients).
+function _rr_gls_blup(yv, Xm, W, A, K_g, sigma_e2, n, q, k)
+    Vf = _rr_build_Vchol(W, A, K_g, sigma_e2, n)
+    ViX = Vf \ Xm
+    XtViX = cholesky(Symmetric(transpose(Xm) * ViX))
+    betavec = XtViX \ (transpose(Xm) * (Vf \ yv))
+    r = yv .- Xm * betavec
+    avec = kron(A, K_g) * (transpose(W) * (Vf \ r))
+    coeffs = permutedims(reshape(avec, k, q))   # q × k (animal × coefficient)
+    return betavec, coeffs
+end
+
+"""
+    fit_random_regression_reml(y, X, Phi, Z, Ainv; initial = nothing,
+                               iterations = 2000, ids = nothing)
+
+Estimate the random-regression coefficient genetic covariance `K_g` (`k×k`) and
+the homogeneous residual variance `σ²e` of the polynomial random-regression
+animal model by **dense REML**. Inputs match [`random_regression_mme`](@ref)
+(`Phi` the `n×k` basis design from [`legendre_design`](@ref), `Z` the `n×q`
+record→animal incidence, `Ainv` the `q×q` relationship precision), but here
+`K_g`/`σ²e` are ESTIMATED rather than supplied. The marginal model is
+
+    y ~ N(X·β, V),   V = W·(A ⊗ K_g)·Wᵀ + σ²e·I,
+
+with `A = Ainv⁻¹` and `W = ` face-splitting(`Z`, `Phi`) (animal-outer,
+coefficient-fastest — see [`random_regression_mme`](@ref)). The REML
+log-likelihood is maximized by Nelder–Mead over a log-Cholesky parameterization
+of `K_g` and `log σ²e` (so `K_g` stays positive definite and `σ²e` positive). At
+the optimum the coefficient BLUPs and `β` come from the marginal GLS BLUP form.
+
+`initial` may supply `K_g` and/or `sigma_e2`; omitted fields use
+phenotypic-scale defaults. Returns a `NamedTuple`:
+
+  - `variance_components = (K_g, sigma_e2)` — estimated `k×k` covariance + residual;
+  - `beta` — fixed effects at the estimate;
+  - `random_coefficients = (ids, values)` — `q×k` per-animal coefficient BLUPs
+    (row = animal, column = Legendre coefficient `0..k-1`);
+  - `loglik` — full REML log-likelihood at the estimate (same scale as
+    [`sparse_reml_loglik`](@ref); the `k = 1` reduction with `K_g = [2σ²a]` equals
+    the univariate REML log-likelihood);
+  - `converged`, `iterations`, `basis = (ncoef = k,)`.
+
+EXPERIMENTAL, dense/validation-scale, REML-only, Gaussian, homogeneous residual
+variance, no permanent-environment term. Validated by deterministic
+self-consistency: the `k = 1` reduction recovers the univariate `fit_sparse_reml`
+optimum (`K_g[1,1] = 2σ²a`, equal `σ²e`, equal log-likelihood); the reported
+log-likelihood matches an independent marginal oracle and beats off-optimum
+points; the BLUPs reproduce [`random_regression_mme`](@ref) at the estimate.
+Known-truth `K_g` recovery and any WOMBAT/ASReml/JWAS comparator are not yet
+exercised, and there is no R-facing model-spec or bridge payload. As a dense GLS
+path, `V`'s conditioning degrades as `O(1/σ²e)` toward the residual boundary, so a
+near-noiseless optimum (`σ²e → 0`) is conditioning-limited at this validation scale.
+"""
+function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
+                                    Z::AbstractMatrix, Ainv::AbstractMatrix;
+                                    initial = nothing, iterations::Integer = 2_000,
+                                    ids = nothing)
+    n = length(y)
+    k = size(Phi, 2)
+    q = size(Ainv, 1)
+    p = size(X, 2)
+    size(Phi, 1) == n || throw(ArgumentError("Phi must have one row per record (n = $n)"))
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record (n = $n)"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record (n = $n)"))
+    size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimension (q = $q)"))
+    size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square (q × q)"))
+    p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than records"))
+    yv = Float64.(y)
+    Xm = Matrix{Float64}(X)
+    all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
+    all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
+    all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
+    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
+
+    W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
+    A = inv(Symmetric(Matrix{Float64}(Matrix(Ainv))))
+
+    mu = sum(yv) / n
+    vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
+    vp > 0 || (vp = 1.0)
+
+    if initial !== nothing && hasproperty(initial, :K_g)
+        K_g_start = Matrix(Float64.(Matrix(initial.K_g)))
+        size(K_g_start) == (k, k) || throw(ArgumentError("initial.K_g must be $k×$k"))
+        isposdef(Symmetric(K_g_start)) || throw(ArgumentError("initial.K_g must be positive definite"))
+    else
+        K_g_start = Matrix(Diagonal(fill(0.5 * vp, k)))
+    end
+    sigma_e2_start = if initial !== nothing && hasproperty(initial, :sigma_e2)
+        s = Float64(initial.sigma_e2)
+        s > 0 || throw(ArgumentError("initial.sigma_e2 must be positive"))
+        s
+    else
+        0.5 * vp
+    end
+
+    nkg = k * (k + 1) ÷ 2
+    function negloglik(params)
+        K_g = _chol_params_to_cov(@view(params[1:nkg]), k)
+        sigma_e2 = exp(params[nkg + 1])
+        try
+            # cholesky(Symmetric(V)) does not throw on a non-finite V (logdet → Inf
+            # without error), so screen the objective: any non-finite value maps to
+            # the +Inf reject sentinel rather than feeding NaN into the simplex.
+            val = -_rr_reml_loglik_core(yv, Xm, W, A, K_g, sigma_e2, n, p)
+            return isfinite(val) ? val : Inf
+        catch err
+            (err isa PosDefException || err isa ArgumentError) && return Inf
+            rethrow()
+        end
+    end
+
+    params0 = vcat(_cov_to_chol_params(K_g_start, k), log(sigma_e2_start))
+    result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+    phat = Optim.minimizer(result)
+    K_ghat = Matrix(Symmetric(_chol_params_to_cov(phat[1:nkg], k)))
+    sigma_e2hat = exp(phat[nkg + 1])
+
+    beta, coeffs = _rr_gls_blup(yv, Xm, W, A, K_ghat, sigma_e2hat, n, q, k)
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimension (q = $q)"))
+    return (
+        variance_components = (K_g = K_ghat, sigma_e2 = sigma_e2hat),
+        beta = beta,
+        random_coefficients = (ids = aids, values = coeffs),
+        loglik = -Optim.minimum(result),
+        converged = Optim.converged(result),
+        iterations = Optim.iterations(result),
         basis = (ncoef = k,),
     )
 end

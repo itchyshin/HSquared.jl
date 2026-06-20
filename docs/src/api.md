@@ -131,6 +131,7 @@ HSquared.mean_evolvability
 HSquared.legendre_basis
 HSquared.legendre_design
 HSquared.random_regression_mme
+HSquared.fit_random_regression_reml
 HSquared.standardize_covariate
 HSquared.rr_genetic_variance
 HSquared.rr_genetic_covariance_surface
