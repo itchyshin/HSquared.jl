@@ -2124,6 +2124,30 @@ end
     @test pcgL.beta ≈ fixed_effects(mmeL) atol = 1e-7
     @test pcgL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
 
+    # MATRIX-FREE path: the operator applies C·v from X/Z/Ainv without assembling C.
+    # (a) operator == assembled C column-by-column (exact), and the matrix-free Jacobi
+    # diagonal == diag(C); (b) matrix_free solve == assembled solve == direct.
+    lhs8, _, _ = HSquared._sparse_mme_system(spec, 1.5, 0.7)
+    Xs = sparse(X); Zs = sparse(1.0I, 8, 8); Ai = sparse(Matrix(pedigree_inverse(ped)))
+    Xt = transpose(Xs); Zt = transpose(Zs); N8 = size(lhs8, 1)
+    colerr = 0.0
+    for i in 1:N8
+        e = zeros(N8); e[i] = 1.0
+        col = HSquared._mme_matvec(Xs, Xt, Zs, Zt, Ai, 1 / 0.7, 1 / 1.5, 2, e)
+        colerr = max(colerr, maximum(abs.(col .- Vector(lhs8[:, i]))))
+    end
+    @test colerr == 0.0                                                   # matrix-free C·eᵢ == C[:,i] exactly
+    @test HSquared._mme_diag(Xs, Zs, Ai, 1 / 0.7, 1 / 1.5) ≈ Vector(diag(lhs8)) atol = 1e-12
+    pf = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-12, matrix_free = true)
+    @test pf.matrix_free
+    @test pf.beta ≈ fixed_effects(mme) atol = 1e-8                        # matrix-free == direct
+    @test pf.breeding_values.values ≈ breeding_values(mme).values atol = 1e-8
+    @test pf.beta ≈ pcg.beta atol = 1e-10                                 # matrix-free == assembled PCG
+    @test pf.breeding_values.values ≈ pcg.breeding_values.values atol = 1e-10
+    pfL = solve_animal_model_pcg(specL, 1.3, 0.9; tol = 1e-11, matrix_free = true)
+    @test pfL.beta ≈ fixed_effects(mmeL) atol = 1e-7                      # also at the 110-animal scale
+    @test pfL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
+
     # deterministic non-convergence flag when the iteration budget is too small
     starved = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-14, maxiter = 1)
     @test !starved.converged
