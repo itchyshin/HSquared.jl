@@ -1400,6 +1400,8 @@ end
         :df,
         :nobs,
         :predictions,
+        :prediction_error_variance,
+        :reliability,
         :diagnostics,
         :converged,
     )
@@ -1413,6 +1415,16 @@ end
     @test payload.df == 3
     @test payload.nobs == 3
     @test payload.predictions ≈ [1.5, 2.0, 2.5]
+    # #43: PEV/reliability are now standard payload fields, computed via the
+    # production-direction Takahashi selected inverse (:selinv), shaped (ids, values)
+    # to match the R bridge's hs_julia_id_values() unpack (hsquared#21).
+    @test payload.prediction_error_variance.ids == ["a", "b", "c"]
+    @test payload.prediction_error_variance.values ≈
+          prediction_error_variance(fit; method = :selinv).values
+    @test payload.prediction_error_variance.values ≈
+          prediction_error_variance(fit; method = :dense).values
+    @test payload.reliability.ids == ["a", "b", "c"]
+    @test payload.reliability.values ≈ reliability(fit; method = :selinv).values
     @test payload.diagnostics.converged == true
     @test payload.diagnostics.optimizer_status == "test"
     @test payload.diagnostics.method == :ML

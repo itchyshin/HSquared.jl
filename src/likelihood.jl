@@ -1379,12 +1379,23 @@ Return a bridge-facing result payload with field names aligned to the R
 This is an experimental low-level payload. It is intended to make the R-Julia
 result shape explicit before live bridge execution is widened beyond tiny
 validation paths.
+
+The payload includes `prediction_error_variance` and `reliability` as standard
+fields (each a `(ids, values)` named tuple), computed through the
+production-direction Takahashi selected inverse (`method = :selinv`), which
+matches the dense MME inverse diagonal to machine precision (`V1-SELINV-PEV`).
+The R twin unpacks these top-level fields directly via `hs_julia_id_values()`
+(`hsquared#21`), so the opportunistic per-extractor enrichment is no longer
+required. This is still a validation-scale path: it is not a production
+large-pedigree reliability claim.
 """
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
     bv = breeding_values(fit)
     predictions = fitted_values(fit)
+    pev = prediction_error_variance(fit; method = :selinv)
+    rel = reliability(fit; method = :selinv)
 
     return (
         variance_components = vc,
@@ -1396,6 +1407,8 @@ function result_payload(fit::AnimalModelFit)
         df = fit.likelihood.nfixed + length(vc),
         nobs = fit.likelihood.nobs,
         predictions = predictions,
+        prediction_error_variance = (ids = pev.ids, values = pev.values),
+        reliability = (ids = rel.ids, values = rel.values),
         diagnostics = (
             converged = fit.converged,
             optimizer_status = fit.optimizer_status,
