@@ -168,13 +168,14 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 37
+    @test length(validation) == 38
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
+    @test "V1-PCG" in [row.id for row in validation]
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -2057,6 +2058,83 @@ end
     @test pev_selinv.values ≈ pev_dense.values rtol = 1e-8
     @test reliability(fit; method = :selinv).values ≈
           reliability(fit; method = :dense).values rtol = 1e-8 atol = 1e-9
+end
+
+@testset "Phase 1 PCG MME solver (iterative == direct, V1-PCG)" begin
+    # PCG solves the IDENTICAL sparse SPD MME as henderson_mme and must recover its
+    # β and EBVs. Mrode9-shaped 8-animal pedigree, nfixed = 2 (intercept + covariate).
+    ped = normalize_pedigree(
+        ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = hcat(ones(8), Float64[0, 1, 0, 1, 0, 1, 0, 1])
+    spec = animal_model_spec(y, X, sparse(1.0I, 8, 8), pedigree_inverse(ped); ids = ped.ids, method = :REML)
+    mme = henderson_mme(spec, 1.5, 0.7)
+
+    pcg = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-12)
+    @test pcg.converged
+    @test pcg.relative_residual <= 1e-12
+    @test pcg.preconditioner == :jacobi
+    @test pcg.breeding_values.ids == ped.ids
+    @test pcg.beta ≈ fixed_effects(mme) atol = 1e-8                       # iterative == direct
+    @test pcg.breeding_values.values ≈ breeding_values(mme).values atol = 1e-8
+
+    # plain CG (no preconditioner) reaches the SAME solution; Jacobi takes no more iters.
+    cg = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-12, preconditioner = :none)
+    @test cg.beta ≈ fixed_effects(mme) atol = 1e-8
+    @test cg.breeding_values.values ≈ breeding_values(mme).values atol = 1e-8
+    @test pcg.iterations <= cg.iterations
+
+    # also matches on a tiny 3-animal pedigree (intercept only)
+    ped3 = normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"])
+    spec3 = animal_model_spec([1.0, 2.5, 4.0], ones(3, 1), sparse(1.0I, 3, 3),
+                              pedigree_inverse(ped3); ids = ped3.ids, method = :REML)
+    mme3 = henderson_mme(spec3, 1.2, 0.8)
+    pcg3 = solve_animal_model_pcg(spec3, 1.2, 0.8; tol = 1e-12)
+    @test pcg3.beta ≈ fixed_effects(mme3) atol = 1e-9
+    @test pcg3.breeding_values.values ≈ breeding_values(mme3).values atol = 1e-9
+
+    # LARGER deterministic fixture: 110-animal 4-generation pedigree (disjoint sire/dam
+    # pools per generation → off-diagonal Ainv), nfixed = 2. iterative == direct at scale.
+    nf = 20
+    bids = String[]; bsire = String[]; bdam = String[]
+    for i in 1:nf
+        push!(bids, "f$i"); push!(bsire, "0"); push!(bdam, "0")
+    end
+    gens = [["f$i" for i in 1:nf]]
+    for g in 1:3
+        prev = gens[end]; half = length(prev) ÷ 2
+        spool = prev[1:half]; dpool = prev[(half + 1):end]; cur = String[]
+        for k in 1:30
+            push!(bids, "g$(g)_$(k)"); push!(bsire, spool[1 + (k % length(spool))])
+            push!(bdam, dpool[1 + (k % length(dpool))]); push!(cur, "g$(g)_$(k)")
+        end
+        push!(gens, cur)
+    end
+    pedL = normalize_pedigree(bids, bsire, bdam); qL = length(pedL)
+    @test qL == 110
+    yL = [2.0 + 0.5 * sin(Float64(i)) for i in 1:qL]
+    XL = hcat(ones(qL), [Float64(i % 3) for i in 1:qL])
+    specL = animal_model_spec(yL, XL, sparse(1.0I, qL, qL), pedigree_inverse(pedL); ids = pedL.ids, method = :REML)
+    mmeL = henderson_mme(specL, 1.3, 0.9)
+    pcgL = solve_animal_model_pcg(specL, 1.3, 0.9; tol = 1e-11)
+    @test pcgL.converged
+    @test pcgL.beta ≈ fixed_effects(mmeL) atol = 1e-7
+    @test pcgL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
+
+    # deterministic non-convergence flag when the iteration budget is too small
+    starved = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-14, maxiter = 1)
+    @test !starved.converged
+    @test starved.relative_residual > 1e-14
+
+    # guards
+    @test_throws ArgumentError solve_animal_model_pcg(spec, -1.0, 0.7)
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.0)
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; tol = -1.0)
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; maxiter = 0)
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; preconditioner = :bogus)
 end
 
 @testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin

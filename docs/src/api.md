@@ -99,6 +99,7 @@ HSquared.gaussian_loglik
 HSquared.sparse_reml_loglik
 HSquared.HendersonMMEResult
 HSquared.henderson_mme
+HSquared.solve_animal_model_pcg
 HSquared.AnimalModelFit
 HSquared.BreedingValues
 HSquared.fit_sparse_reml
