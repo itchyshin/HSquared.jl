@@ -38,7 +38,7 @@ honest-status flags (`supplied`, `rotation_invariant`, `interval_status`, …).
 | Set | Preparer(s) | Status | Source |
 | --- | --- | --- | --- |
 | **A** Random regression | `rr_eigenfunctions_plot_data`, `rr_genetic_variance_plot_data`, `rr_covariance_surface_plot_data` | **landed** (PR #91) | `rr_eigenfunctions`/`rr_genetic_variance`/`rr_genetic_covariance_surface` (PR #88) |
-| **B** Variance components + h² | `variance_components_plot_data(fit; level)` | planned | `variance_components` / `heritability_interval` / `multivariate_covariance_standard_errors` |
+| **B** Variance components + h² | `variance_components_plot_data(fit; level)` | **landed** | `variance_components` / `heritability_interval` / `variance_component_standard_errors` |
 | **C** Genetic correlations | `genetic_correlation_plot_data(G; traits, heritabilities)` | **landed** | `genetic_correlation` |
 | **C** G geometry (rotation-invariant) | `genetic_pca_plot_data(G; n_axes)` | **landed** | `genetic_pca` / `g_max` / `evolvability` |
 | **D** GWAS | `marker_manhattan_data`, `marker_qq_data`, `marker_genomic_inflation` | **already exists** (`src/genomic.jl`) | — |

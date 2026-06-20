@@ -1396,6 +1396,59 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
 end
 
 """
+    variance_components_plot_data(fit::AnimalModelFit; level = 0.95)
+
+Plot-ready data for the variance-component + heritability forest figure (plotting
+set B): tidy parallel vectors `(term, estimate, lo, hi, panel, level,
+interval_method, interval_status, supplied = false)` shaped to drop directly into
+the R `hs_gg_forest` contract. The variance-component rows (`sigma_a2`, `sigma_e2`)
+carry asymptotic `estimate ± z·SE` — NOT clamped, since an asymptotic CI can cross
+zero (surfaced, never hidden); the `h2` row carries the logit-delta
+[`heritability_interval`](@ref) (always in `(0,1)`). `lo`/`hi` are `NaN` where the
+interval is unavailable (no fabricated whiskers); `interval_status` is
+`"experimental_asymptotic"` (NOT coverage-calibrated) when any interval is present,
+else `"none"`. `interval_method` is a coarse roll-up tag (`"asymptotic_reml"`):
+the VC-row whiskers are normal-Wald on the raw variance scale, the `h2`-row whisker
+is the logit-delta back-transform — both asymptotic, both from the REML AI matrix.
+`supplied = false` is the honest-status hinge — these are ESTIMATED, unlike the
+descriptive supplied-`K_g`/`G` plot-data sets. Intervals are REML-only; a non-REML
+fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
+"none"`).
+"""
+function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    vc = variance_components(fit)
+    h2 = heritability(fit)
+    z = _standard_normal_quantile((1 + level) / 2)
+    vc_lo = [NaN, NaN]
+    vc_hi = [NaN, NaN]
+    try
+        se = variance_component_standard_errors(fit)
+        vc_lo = [vc.sigma_a2 - z * se.sigma_a2, vc.sigma_e2 - z * se.sigma_e2]
+        vc_hi = [vc.sigma_a2 + z * se.sigma_a2, vc.sigma_e2 + z * se.sigma_e2]
+    catch
+    end
+    h2_lo = NaN
+    h2_hi = NaN
+    try
+        ci = heritability_interval(fit; level = level)
+        h2_lo = ci.lower
+        h2_hi = ci.upper
+    catch
+    end
+    has_interval = any(isfinite, vc_lo) || isfinite(h2_lo)
+    return (term = ["sigma_a2", "sigma_e2", "h2"],
+            estimate = [vc.sigma_a2, vc.sigma_e2, h2],
+            lo = [vc_lo[1], vc_lo[2], h2_lo],
+            hi = [vc_hi[1], vc_hi[2], h2_hi],
+            panel = ["variance components", "variance components", "heritability"],
+            level = Float64(level),
+            interval_method = has_interval ? "asymptotic_reml" : "none",
+            interval_status = has_interval ? "experimental_asymptotic" : "none",
+            supplied = false)
+end
+
+"""
     result_payload(fit)
 
 Return a bridge-facing result payload with field names aligned to the R

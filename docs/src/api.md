@@ -136,6 +136,7 @@ HSquared.g_max
 HSquared.mean_evolvability
 HSquared.genetic_pca_plot_data
 HSquared.genetic_correlation_plot_data
+HSquared.variance_components_plot_data
 HSquared.legendre_basis
 HSquared.legendre_design
 HSquared.random_regression_mme
