@@ -772,10 +772,18 @@ end
     @test A[idx("s1"), idx("s2")] ≈ γ atol = 1e-12
     @test A[idx("s1"), idx("s1")] ≈ 1 + γ / 2 atol = 1e-12
     @test issymmetric(A)
-    # metafounder F = γ − 1 < 0 ⇒ animal F can be negative for small γ
-    Asmall = metafounder_relationship(ped, group, fill(0.1, 1, 1))
-    @test any(metafounder_inbreeding(ped, group, fill(0.1, 1, 1)) .< 0) == false  # founders F=γ/2>0 here
-    @test minimum(diag(Asmall)) >= 1.0 - 1e-12                                    # but no spurious deflation
+    # metafounder F = γ − 1 < 0 (the BASE), and a founder's Mendelian sampling
+    # variance d = 1 − γ/2 EXCEEDS ½ (heterozygote excess) — directly asserted via
+    # the internal combined helpers so the no-clamp / negative-F behaviour is a real
+    # tested gate, not just an implicit consequence of the round-trip.
+    sc1, dc1, m1, _ = HSquared._metafounder_combined_indices(ped, group)
+    Acomb1 = HSquared._metafounder_combined_A(m1, fill(0.4, 1, 1), sc1, dc1)
+    Fcomb = [Acomb1[x, x] - 1.0 for x in 1:(m1 + n)]
+    @test Fcomb[1] ≈ 0.4 - 1.0 atol = 1e-12                                       # metafounder F = γ−1 = −0.6 < 0
+    s1c = m1 + idx("s1")
+    @test HSquared._mendelian_sampling_variance(sc1[s1c], dc1[s1c], Fcomb) ≈ 0.8 atol = 1e-12  # d = 1−γ/2 = 0.8 > ½ (un-clamped)
+    # animal F stays ≥ 0 in this single-group-per-animal slice (self = 1 + γ/2)
+    @test all(metafounder_inbreeding(ped, group, fill(0.1, 1, 1)) .>= -1e-12)
 
     # INDEPENDENT DENSE TABULAR ORACLE (written here, not calling production), with a
     # two-group Γ so the off-diagonal coupling is exercised. Groups: s1,s2 → A; d1 → B.
