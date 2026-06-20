@@ -168,11 +168,12 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 39
+    @test length(validation) == 40
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-DESC"
+    @test validation[end].id == "V6-GGLLVM-MARGINAL"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
+    @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -5742,4 +5743,72 @@ end
     @test_throws ArgumentError genetic_gllvm_descriptors(full)
     diagfit = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal)
     @test_throws ArgumentError genetic_gllvm_descriptors(diagfit)
+end
+
+@testset "Genetic-GLLVM K-factor latent Laplace marginal (#50 slice 2, non-Gaussian)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    Z = Matrix(1.0I, q, q); X = ones(q, 1)
+    gl = HSquared.gllvm_laplace_marginal_loglik
+    lap = HSquared.laplace_marginal_loglik
+
+    # --- reduction 1: K=1, T=1 reduces EXACTLY to the single-factor kernel (σ²a = λ²) ---
+    λ = 0.8; σe = 1.3
+    y1 = reshape([2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5], q, 1)
+    g_gauss = gl(y1, Ainv, reshape([λ], 1, 1), HSquared.GaussianResponse(σe); X = X)
+    s_gauss = lap(vec(y1), X, Z, Ainv, λ^2, HSquared.GaussianResponse(σe))
+    @test g_gauss.loglik ≈ s_gauss.loglik                      # Gaussian: exact
+    @test size(g_gauss.beta) == (1, 1) && size(g_gauss.g) == (q, 1)
+    yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
+    g_pois = gl(yp, Ainv, reshape([λ], 1, 1), HSquared.PoissonResponse(); X = X)
+    s_pois = lap(vec(yp), X, Z, Ainv, λ^2, HSquared.PoissonResponse())
+    @test g_pois.loglik ≈ s_pois.loglik rtol = 1e-7            # Poisson: exact (Laplace affine-invariance)
+    @test g_pois.converged
+
+    # --- reduction 2: Gaussian, full-rank Λ (K=T=2) == multivariate REML marginal at G0=ΛΛ' ---
+    Y2 = [2.0 5.0; 3.0 4.5; 2.5 5.2; 3.5 4.0; 4.0 6.0; 1.5 3.5; 3.0 5.0; 4.5 6.2]
+    Λ2 = [1.1 0.3; 0.4 1.2]; σe2 = 0.9
+    g2 = gl(Y2, Ainv, Λ2, HSquared.GaussianResponse(σe2); X = X)
+    mv = HSquared._multivariate_reml_loglik(Y2, X, Z, Ainv, Λ2 * transpose(Λ2), σe2 * Matrix(1.0I, 2, 2))
+    @test g2.loglik ≈ mv rtol = 1e-7
+    @test size(g2.beta) == (1, 2) && size(g2.g) == (q, 2)
+
+    # --- non-Gaussian convergence + mode-stationarity (Bernoulli / Binomial) ---
+    yb = Float64[1 0; 0 1; 1 1; 0 0; 1 0; 1 1; 0 1; 1 0]
+    gb = gl(yb, Ainv, Λ2, HSquared.BernoulliResponse(); X = X)
+    @test gb.converged && gb.gradient_norm < 1e-8 && isfinite(gb.loglik)
+    ybin = Float64[3 7; 5 4; 6 6; 2 8; 4 5; 7 3; 1 9; 8 2]
+    gbin = gl(ybin, Ainv, Λ2, HSquared.BinomialResponse(10); X = X)
+    @test gbin.converged && gbin.gradient_norm < 1e-8 && isfinite(gbin.loglik)
+
+    # --- non-Gaussian K>1 VALUE anchor (not just stationarity): a block-diagonal Λ
+    #     makes the traits INDEPENDENT, so the K=2 Poisson marginal must equal the SUM
+    #     of two single-factor laplace marginals (σ²a = a²/b²). Pins the constant term
+    #     (e.g. the 0.5·K·logdet(Ainv) factor) against the trusted single-factor kernel.
+    a = 0.7; b = 1.1
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    gK2 = gl(Yp2, Ainv, [a 0.0; 0.0 b], HSquared.PoissonResponse(); X = X)
+    s_a = lap(Yp2[:, 1], X, Z, Ainv, a^2, HSquared.PoissonResponse())
+    s_b = lap(Yp2[:, 2], X, Z, Ainv, b^2, HSquared.PoissonResponse())
+    @test gK2.loglik ≈ s_a.loglik + s_b.loglik rtol = 1e-7
+
+    # --- singular G_lat (K<T, no Ψ) and K>T both work — P = I_K⊗Ainv is full-rank
+    #     regardless of rank(ΛΛ'), unlike the Gaussian-MME path which rejects a singular
+    #     G_lat — and equal the multivariate REML marginal at the same (possibly singular) ΛΛ'.
+    Λsing = reshape([1.0, 2.0], 2, 1)               # T=2, K=1 ⇒ ΛΛ' rank-1 (singular)
+    gsing = gl(Y2, Ainv, Λsing, HSquared.GaussianResponse(σe2); X = X)
+    @test gsing.loglik ≈ HSquared._multivariate_reml_loglik(Y2, X, Z, Ainv,
+        Λsing * transpose(Λsing), σe2 * Matrix(1.0I, 2, 2)) rtol = 1e-7
+    Λwide = [1.1 0.3 0.2; 0.4 1.2 0.5]              # T=2, K=3 (K>T)
+    gwide = gl(Y2, Ainv, Λwide, HSquared.GaussianResponse(σe2); X = X)
+    @test gwide.loglik ≈ HSquared._multivariate_reml_loglik(Y2, X, Z, Ainv,
+        Λwide * transpose(Λwide), σe2 * Matrix(1.0I, 2, 2)) rtol = 1e-7
+    @test size(gwide.g) == (q, 3)
+
+    # --- guards ---
+    @test_throws ArgumentError gl(Y2, Ainv, reshape([1.0], 1, 1), HSquared.GaussianResponse(1.0); X = X)  # Λ rows ≠ T
+    @test_throws ArgumentError gl(Y2, Matrix(1.0I, 7, 7), Λ2, HSquared.GaussianResponse(1.0); X = X)        # Ainv ≠ q×q
+    @test_throws ArgumentError gl(Y2, Ainv, Λ2, HSquared.PoissonResponse(); X = X)                          # non-count Y
 end
