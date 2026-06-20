@@ -17,8 +17,13 @@
   plot-data (#54 set B, R hs_gg_forest)` green; full `Pkg.test()` green.
 - **Gates:** tidy shape + `propertynames`; estimate-equality to `variance_components`/
   `heritability`; REML interval-consistency vs `heritability_interval` (h2 row in
-  (0,1)); ML graceful-degrade (REML-only SEs → points-only, all-NaN whiskers,
-  status `none`); `level ∉ (0,1)` guard.
+  (0,1)); VC-row normal-Wald whiskers pinned to `variance_component_standard_errors`
+  (`estimate ± z·SE`, unclamped); ML graceful-degrade (REML-only SEs → points-only,
+  all-NaN whiskers, status `none`); `level ∉ (0,1)` guard.
+- **Rose audit:** independent `rose-systems-auditor` pass at takeover → CLEAN-WITH-NITS,
+  no blockers; 3 nits fixed in-PR (docstring "REML fits only" reworded to intervals-only;
+  `interval_method` roll-up documented; VC-row whisker assertion added). All
+  honest-status flags confirmed backed; `validation.jl` untouched (38 rows).
 - **Docs:** docstring (honest-status caveats); `docs/src/api.md`;
   `docs/design/13-plotting-layer.md` set B → landed; capability-status row extended;
   `docs/make.jl`.

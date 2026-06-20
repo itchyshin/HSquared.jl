@@ -1407,8 +1407,13 @@ zero (surfaced, never hidden); the `h2` row carries the logit-delta
 [`heritability_interval`](@ref) (always in `(0,1)`). `lo`/`hi` are `NaN` where the
 interval is unavailable (no fabricated whiskers); `interval_status` is
 `"experimental_asymptotic"` (NOT coverage-calibrated) when any interval is present,
-else `"none"`. `supplied = false` is the honest-status hinge — these are ESTIMATED,
-unlike the descriptive supplied-`K_g`/`G` plot-data sets. REML fits only.
+else `"none"`. `interval_method` is a coarse roll-up tag (`"asymptotic_reml"`):
+the VC-row whiskers are normal-Wald on the raw variance scale, the `h2`-row whisker
+is the logit-delta back-transform — both asymptotic, both from the REML AI matrix.
+`supplied = false` is the honest-status hinge — these are ESTIMATED, unlike the
+descriptive supplied-`K_g`/`G` plot-data sets. Intervals are REML-only; a non-REML
+fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
+"none"`).
 """
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))

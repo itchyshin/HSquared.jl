@@ -20,8 +20,9 @@ is the honest-status hinge — these are ESTIMATED, unlike sets A/C.
 - implementation — `variance_components_plot_data` in `src/likelihood.jl`; exported.
 - tests — "Variance-component forest plot-data (#54 set B, R hs_gg_forest)": tidy
   shape + `propertynames`, estimate-equality, REML interval-consistency vs
-  `heritability_interval` (h2 in (0,1)), ML graceful-degrade (points-only), `level`
-  guard. Full suite green.
+  `heritability_interval` (h2 in (0,1)), the VC-row normal-Wald whiskers
+  (`estimate ± z·SE`, unclamped, pinned to `variance_component_standard_errors`),
+  ML graceful-degrade (points-only), `level` guard. Full suite green.
 - documentation — docstring (honest caveats); `docs/src/api.md`;
   `docs/design/13-plotting-layer.md` set B → landed; capability-status row extended.
 - check-log — `docs/dev-log/check-log.d/2026-06-20-variance-components-plot-data.md`.
@@ -32,6 +33,23 @@ is the honest-status hinge — these are ESTIMATED, unlike sets A/C.
 - Rose audit — see below.
 - clean local checks — `Pkg.test()` + `docs/make.jl`.
 - clean CI — gated on the PR.
+
+## Rose audit (claim-vs-evidence)
+
+An independent `rose-systems-auditor` pass ran at session takeover: **CLEAN-WITH-NITS,
+no blockers**. It confirmed every load-bearing honest-status claim is backed by
+code + a test assertion (`supplied = false`, `interval_status`, NaN whiskers, ML
+graceful-degrade via `variance_component_covariance` throwing for non-REML), nothing
+promoted to covered, and `validation.jl` untouched (38 rows hold). Three nits were
+fixed in-PR before merge:
+
+1. Docstring said "REML fits only", contradicting the function's own ML-fit test —
+   reworded to "intervals are REML-only; a non-REML fit degrades to points-only".
+2. `interval_method = "asymptotic_reml"` is a coarse roll-up over two constructions
+   (normal-Wald VC rows, logit-delta h²) — docstring now says so explicitly.
+3. The headline VC-row whisker claim (`estimate ± z·SE`, unclamped) was prose-only,
+   not asserted — added four assertions pinning `pd.lo/hi[1:2]` to
+   `variance_component_standard_errors`.
 
 ## Claim boundary
 

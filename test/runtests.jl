@@ -2277,6 +2277,13 @@ end
         @test pd.interval_status == "experimental_asymptotic"
         @test pd.lo[3] ≈ h2ci.lower && pd.hi[3] ≈ h2ci.upper
         @test 0 <= pd.lo[3] <= 1 && 0 <= pd.hi[3] <= 1            # h2 row in (0,1)
+        # VC-row whiskers: raw normal-Wald estimate ± z·SE, UNCLAMPED (may cross 0)
+        ses = variance_component_standard_errors(rfit)
+        zq = HSquared._standard_normal_quantile(0.975)
+        @test pd.lo[1] ≈ vc.sigma_a2 - zq * ses.sigma_a2
+        @test pd.hi[1] ≈ vc.sigma_a2 + zq * ses.sigma_a2
+        @test pd.lo[2] ≈ vc.sigma_e2 - zq * ses.sigma_e2
+        @test pd.hi[2] ≈ vc.sigma_e2 + zq * ses.sigma_e2
     end
 
     # ML fit -> SE machinery is REML-only: graceful degrade to points-only (no whiskers)
