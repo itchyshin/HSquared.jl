@@ -833,6 +833,44 @@ end
     @test metafounder_relationship(ids, sire, dam, group, fill(γ, 1, 1)) ≈ A atol = 1e-12
 end
 
+@testset "Phase 1 metafounder animal-model MME solve (supplied Γ, #53)" begin
+    # Wire the validated metafounder precision inv(A^Γ) into the supplied-variance
+    # Henderson MME: an animal-only BLUP under the metafounder-augmented relationship.
+    ids = ["s1", "s2", "d1", "o1", "o2", "o3"]
+    sire = ["0", "0", "0", "s1", "s1", "s2"]
+    dam = ["0", "0", "0", "d1", "d1", "o1"]
+    ped = normalize_pedigree(ids, sire, dam)
+    n = length(ped)
+    group = [(ped.sire[i] == 0 || ped.dam[i] == 0) ? "base" : "0" for i in 1:n]
+    y = [5.2, 4.8, 5.0, 5.5, 4.6, 5.1]
+    X = ones(n, 1)
+    Z = Matrix(1.0I, n, n)
+    σa, σe = 1.0, 2.0
+
+    # Γ = 0 REDUCTION: the metafounder solve == the classical animal model
+    # (metafounder_relationship_inverse reduces to pedigree_inverse at Γ=0).
+    res0 = metafounder_animal_model(y, X, Z, ped, group, zeros(1, 1), σa, σe)
+    std = henderson_mme(animal_model_spec(y, X, Z, pedigree_inverse(ped); ids = ped.ids), σa, σe)
+    @test res0.beta ≈ std.beta atol = 1e-9
+    @test res0.animal_effects.values ≈ std.animal_effects.values atol = 1e-9
+    @test collect(res0.animal_effects.ids) == collect(ped.ids)
+
+    # FAITHFUL WRAPPER: equals manually building the metafounder-inverse spec + solving
+    Γ = fill(0.3, 1, 1)
+    manual = henderson_mme(
+        animal_model_spec(y, X, Z, metafounder_relationship_inverse(ped, group, Γ); ids = ped.ids),
+        σa, σe)
+    res = metafounder_animal_model(y, X, Z, ped, group, Γ, σa, σe)
+    @test res.beta ≈ manual.beta atol = 1e-12
+    @test res.animal_effects.values ≈ manual.animal_effects.values atol = 1e-12
+
+    # Γ ≠ 0 actually CHANGES the solution (the shared-metafounder base enters)
+    @test maximum(abs.(res.animal_effects.values .- res0.animal_effects.values)) > 1e-6
+
+    # guard: Z columns must match the pedigree / Ainv size
+    @test_throws ArgumentError metafounder_animal_model(y, X, Z[:, 1:5], ped, group, zeros(1, 1), σa, σe)
+end
+
 @testset "Phase 1 HSData ID container" begin
     phenotypes = (
         id = ["animal_1", "animal_1", "animal_2"],

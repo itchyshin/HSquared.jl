@@ -67,6 +67,7 @@ HSquared.metafounder_relationship
 HSquared.metafounder_relationship_inverse
 HSquared.metafounder_inverse
 HSquared.metafounder_inbreeding
+HSquared.metafounder_animal_model
 HSquared.cytoplasmic_relationship
 HSquared.clonal_relationship
 HSquared.maternal_lineage
