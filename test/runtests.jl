@@ -3039,6 +3039,37 @@ end
     @test_throws ArgumentError single_marker_scan([1.0, 2.0], ones(2, 1), M)
 end
 
+@testset "Phase 5 post-fit marker scan (#45)" begin
+    # The (fit, markers) entry points must reduce EXACTLY to the explicit-argument
+    # scans at the fit's design (y/X/Z), relationship precision (Ainv), and fitted
+    # variance components — the fit object already carries spec.Ainv.
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6"],
+        ["0", "0", "a1", "a1", "a2", "a2"], ["0", "0", "a2", "a2", "0", "0"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5]
+    X = ones(6, 1)
+    Z = sparse(1.0I, 6, 6)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    lik = gaussian_loglik(spec, 1.2, 0.8; method = :REML)
+    fit = AnimalModelFit(spec, lik, (sigma_a2 = 1.2, sigma_e2 = 0.8), true, "supplied", 0)
+    markers = Float64[0 1 2; 1 1 0; 2 0 1; 0 2 1; 1 0 2; 2 1 0]
+    mids = ["m1", "m2", "m3"]
+
+    # mixed-model (relatedness-corrected GLS) post-fit == explicit args
+    pf = mixed_model_marker_scan(fit, markers; marker_ids = mids)
+    ex = mixed_model_marker_scan(y, X, Z, Ainv, markers, 1.2, 0.8; marker_ids = mids)
+    @test pf == ex
+    @test pf.target == :mixed_model_marker_scan
+    @test pf.marker_ids == mids
+    @test length(pf.effects) == 3
+
+    # fixed-effect post-fit == explicit args (uses the fit's residual variance)
+    pf2 = single_marker_scan(fit, markers; marker_ids = mids)
+    ex2 = single_marker_scan(y, X, markers; sigma_e2 = 0.8, marker_ids = mids)
+    @test pf2 == ex2
+    @test pf2.effects == ex2.effects
+end
+
 @testset "Phase 2 dense NRM helper" begin
     ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]   # 5=(3x4), full-sib parents
     ped = normalize_pedigree(ids, sire, dam)
