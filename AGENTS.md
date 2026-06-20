@@ -9,27 +9,29 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-20 (overnight autonomous run — committed BT2/BT3 runway DONE).**
-  The full committed BT2/BT3 engine runway merged to `main` this session (9 PRs,
-  #65–#72): **#43** PEV/reliability into `result_payload` (`:selinv`, PR #65),
-  **#44** `MarginalMethod` dispatch + `nongaussian_result_payload` (PR #66),
-  **#55** evolvability / G-matrix geometry (Hansen–Houle, rotation-invariant, PR #67),
-  **#45** post-fit `mixed_model_marker_scan(fit, markers)` (PR #68), **#48**
-  genome-wide threshold machinery + opt-in permutation harness (PR #69 + fast-follow
-  #70), the **FA rotation-convention decision** (rotation-invariant functionals only —
-  never raw loadings; PR #71), and **#46/#49** Julia-native fitted target fixture +
-  opt-in JWAS.jl comparator scaffold (PR #72). PLUS, beyond the committed runway,
-  **#54 random regression slices 1+2** (PR #74 descriptors, PR #75 supplied-covariance
-  RR MME `random_regression_mme` — `W = face-splitting(Z, Φ)`, precision
-  `Ainv ⊗ inv(K_g)`, oracle + degree-0 gated). Each = full-DoD PR with a 3-lens
-  adversarial review. `Pkg.test()` + Documenter green — **CI on a clean checkout is
-  the authoritative gate** (Dropbox can transiently desync working-tree fixtures; the
-  integrated `main` was reverified via a clean `git archive HEAD` export);
-  `validation_status()` has **35 rows**; nothing promoted to covered. **Next:** the
+- **As of 2026-06-20 (overnight autonomous run — ULTRACODE pass; 3 more PRs).**
+  Building on the committed BT2/BT3 runway (PRs #65–#72) + RR slices 1+2 (#74/#75),
+  this ultracode pass landed **3 full-DoD PRs (#77, #78, #79)**: **#54 slice 3 — RR
+  REML** (`fit_random_regression_reml`, PR #77; dense log-Cholesky NelderMead on the
+  marginal `V = W(A⊗K_g)Wᵀ + σ²e I`; degree-0 → `fit_sparse_reml`; 4-lens review
+  Henderson/Gauss/Karpinski/Rose); **V4-MV-REML recovery EVIDENCE** (PR #78; the
+  recovery harness now reports per-parameter bias±2·MCSE + EBV accuracy + Wilson CI —
+  a 12-seed run shows **no detectable bias** (all 6 covariance params |bias|≤2·MCSE at
+  m=12; EBV accuracy ≈0.90), so the old "6/10 failed" was **G sampling variance at
+  q=80/n=240, not estimator bias**; Rose-audited + hedged); and the **cold-start
+  replication** (PR #79; the optimizer reaches the same optimum unaided, max
+  |Δrel_G| 2.7e-5 over 12 seeds — **warm-start caveat closed**). An ultracode
+  **Workflow** (3 review lenses + 4 plan/twin readers + synthesis) verified slice 3
+  and mapped the whole completion plan; two cross-lane notes posted to **#61**
+  (R-lane action items + the multivariate-comparator handoff). `Pkg.test()` +
+  Documenter green — **CI on a clean checkout is the authoritative gate** (Dropbox can
+  transiently desync the working tree / re-touch files mid-edit); `validation_status()`
+  has **36 rows** (`V3-RR-REML` added); **nothing promoted to covered**. **Next:** the
   eigenbasis bridge exposure for `:lowrank`/`:factor_analytic` (#42, after R ratifies
-  the FA convention on #42↔R#7), **#54 slice 3 (RR REML)** (roadmap note has the
-  design), or run+record the opt-in comparator/recovery evidence. Read
-  `docs/dev-log/after-task/2026-06-20-session-handover-v4.md` (START HERE).
+  the FA convention on #42↔R#7), larger-pedigree `:selinv` PEV correctness
+  (V1-SELINV-PEV), or — the highest-leverage but cross-lane — the R-lane external
+  comparator run against `test/fixtures/phase4_multitrait_parity/`. Read
+  `docs/dev-log/after-task/2026-06-20-session-handover-v5.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
@@ -37,10 +39,15 @@ engine reality.
   exposure gated on R ratification of the FA convention) and BT3 Julia-native
   validation (#46 fitted target + #49 JWAS scaffold **done** as a serialized target +
   opt-in scaffold; #47 SEs/LRTs done; #48 threshold machinery **done**, calibration
-  evidence opt-in) are **landed**. Remaining: external-comparator EVIDENCE + fitted-
-  Mrode confrontation (R-lane + opt-in JWAS run), multivariate recovery calibration
-  (#4, not passed), innovation backlog #50–#54 (random regression #54, metafounders,
-  CRN, PCG+APY scaling, genetic GLLVM), scout cadence #56; Phase 7/8 hardware-gated.
+  evidence opt-in) are **landed**. **#54 random regression is now slices 1+2+3
+  complete** (descriptors → supplied-covariance MME → REML estimation); the
+  multivariate REML recovery is now characterised (no detectable bias + accurate EBVs,
+  robust to cold vs warm start — the "6/10" was G sampling variance, not bias), still
+  `partial` pending an external comparator. Remaining: external-comparator EVIDENCE +
+  fitted-Mrode confrontation (R-lane + opt-in JWAS run), multivariate recovery
+  calibration (#4, gate not re-declared), innovation backlog #50–#53 (metafounders,
+  CRN, PCG+APY scaling, genetic GLLVM) + RR slice 4 (eigen-function / PE term / R
+  `rr()` spec), scout cadence #56; Phase 7/8 hardware-gated.
 
 ## Core Scope
 
