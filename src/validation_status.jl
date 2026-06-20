@@ -252,6 +252,15 @@ const VALIDATION_STATUS_DATA = (
         "Bridge-ready payload for the rotation-free `:unstructured`/`:diagonal` structures only; no loadings/uniqueness surfaced, no external comparator parity, and the R-side diagonal activation is coordinated cross-lane (#42/#47).",
     ),
     (
+        "V4-EVOLVE",
+        "evolvability / G-matrix geometry (Hansen & Houle 2008)",
+        "Phase 4",
+        "partial",
+        "`evolvability`, `conditional_evolvability`, `respondability`, `autonomy`, `variance_along_gradient`, `genetic_pca`, `g_max`, and `mean_evolvability` compute Hansen & Houle (2008) directional G-metrics and the genetic principal axes on a supplied or estimated genetic covariance `G` (a matrix or a multivariate result's `genetic_covariance`). Hand-checked identities in `test/runtests.jl`: diagonal `G` (e = direction-weighted variance, c = harmonic form, autonomy = 1 along axes), isotropic `G = cI` (e = c = r and autonomy = 1 in every direction), the `[3 1; 1 3]` eigenstructure (e/c/r = eigenvalue along eigenvectors; `genetic_pca`/`g_max` recover the descending sign-canonicalized eigenpairs), `mean_evolvability = tr(G)/t`, `c ≤ e`, and EXPLICIT rotation-invariance `evolvability(ΛΛ') = evolvability((ΛQ)(ΛQ)')`. PSD-safe metrics accept a rank-deficient `G`; the inverse-using `conditional_evolvability`/`autonomy` require a positive-definite `G` and throw on a singular one.",
+        "an external comparator (evolqg / a Hansen worked example) and population-averaged conditional-evolvability/autonomy (random-skewers, no simple closed form)",
+        "Descriptive G-matrix geometry only — rotation-invariant (functions of `G`, not the loadings) so unaffected by the FA rotation convention; NOT a selection-response prediction and NOT a fitting/estimation claim; metrics on an estimated `G` inherit all `V4-MV-REML`/`V4-FA` estimation caveats.",
+    ),
+    (
         "V5-MARKER-FIXED",
         "fixed-effect single-marker scan",
         "Phase 5",

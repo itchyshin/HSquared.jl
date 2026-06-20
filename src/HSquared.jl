@@ -78,6 +78,14 @@ export AMDGPUBackend,
     genetic_loadings,
     genetic_structure,
     genetic_uniqueness,
+    evolvability,
+    conditional_evolvability,
+    respondability,
+    autonomy,
+    variance_along_gradient,
+    genetic_pca,
+    g_max,
+    mean_evolvability,
     multivariate_covariance_standard_errors,
     genomic,
     genomic_relationship_inverse,
@@ -155,6 +163,7 @@ include("genomic.jl")
 include("takahashi_selinv.jl")
 include("likelihood.jl")
 include("multivariate.jl")
+include("evolvability.jl")
 include("nongaussian.jl")
 include("planned_terms.jl")
 include("validation_status.jl")
