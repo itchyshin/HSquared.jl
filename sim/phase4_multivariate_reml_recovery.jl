@@ -121,11 +121,20 @@ function _simulate_repeated_records(config::MultivariateRecoveryConfig)
         row += 1
     end
 
-    return Y, X, Z, Ainv, Gtrue, Rtrue
+    return Y, X, Z, Ainv, Gtrue, Rtrue, U
+end
+
+# Pearson correlation (manual, to keep the harness dependency-free).
+function _pearson(a, b)
+    ma = sum(a) / length(a)
+    mb = sum(b) / length(b)
+    num = sum((a .- ma) .* (b .- mb))
+    den = sqrt(sum(abs2, a .- ma) * sum(abs2, b .- mb))
+    return den == 0 ? 0.0 : num / den
 end
 
 function _run(config::MultivariateRecoveryConfig)
-    Y, X, Z, Ainv, Gtrue, Rtrue = _simulate_repeated_records(config)
+    Y, X, Z, Ainv, Gtrue, Rtrue, Utrue = _simulate_repeated_records(config)
     fit = fit_multivariate_reml(
         Y,
         X,
@@ -137,6 +146,10 @@ function _run(config::MultivariateRecoveryConfig)
     rel_g = norm(fit.genetic_covariance - Gtrue) / norm(Gtrue)
     rel_r = norm(fit.residual_covariance - Rtrue) / norm(Rtrue)
     pass = fit.converged && rel_g <= config.threshold_g && rel_r <= config.threshold_r
+    # EBV accuracy: correlation of the estimated breeding values with the true
+    # simulated breeding values, per trait (animal order matches the pedigree).
+    ebv = fit.breeding_values.values   # q × t
+    ebv_accuracy = [_pearson(view(ebv, :, j), view(Utrue, :, j)) for j in 1:size(Utrue, 2)]
     return (
         seed = config.seed,
         observations = size(Y, 1),
@@ -151,6 +164,9 @@ function _run(config::MultivariateRecoveryConfig)
         threshold_r = config.threshold_r,
         genetic_covariance = fit.genetic_covariance,
         residual_covariance = fit.residual_covariance,
+        gtrue = Gtrue,
+        rtrue = Rtrue,
+        ebv_accuracy = ebv_accuracy,
         pass = pass,
     )
 end
@@ -179,6 +195,59 @@ function _print_summary(results)
         length(results), pass_count, max_rel_g, max_rel_r)
 end
 
+# Wilson score interval for a binomial proportion (z = 1.96, dependency-free).
+function _wilson(k, n; z = 1.96)
+    n == 0 && return (0.0, 0.0)
+    p = k / n
+    denom = 1 + z^2 / n
+    center = (p + z^2 / (2n)) / denom
+    half = z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2)) / denom
+    return (max(0.0, center - half), min(1.0, center + half))
+end
+
+# Across-seed Monte Carlo recovery report: per-parameter mean estimate, bias,
+# Monte Carlo standard error (MCSE = sd / sqrt(m)), and whether the bias is within
+# ±2·MCSE (i.e. consistent with an unbiased estimator at this seed count); per-trait
+# EBV accuracy; convergence count; and a Wilson 95% CI on the pass proportion.
+function _print_aggregate(results)
+    m = length(results)
+    m >= 2 || return
+    params = (
+        ("G[1,1]", r -> r.genetic_covariance[1, 1], r -> r.gtrue[1, 1]),
+        ("G[1,2]", r -> r.genetic_covariance[1, 2], r -> r.gtrue[1, 2]),
+        ("G[2,2]", r -> r.genetic_covariance[2, 2], r -> r.gtrue[2, 2]),
+        ("R[1,1]", r -> r.residual_covariance[1, 1], r -> r.rtrue[1, 1]),
+        ("R[1,2]", r -> r.residual_covariance[1, 2], r -> r.rtrue[1, 2]),
+        ("R[2,2]", r -> r.residual_covariance[2, 2], r -> r.rtrue[2, 2]),
+    )
+    println("AGGREGATE Monte Carlo recovery (m = $m seeds)")
+    println("  param    true     mean      bias     MCSE   |bias|<=2MCSE")
+    for (name, getter, truthgetter) in params
+        ests = [getter(r) for r in results]
+        truth = truthgetter(results[1])
+        mean_est = sum(ests) / m
+        sd = sqrt(sum(abs2, ests .- mean_est) / (m - 1))
+        mcse = sd / sqrt(m)
+        bias = mean_est - truth
+        within = abs(bias) <= 2 * mcse
+        @printf("  %-7s %7.4f %8.4f %9.4f %8.4f   %s\n",
+            name, truth, mean_est, bias, mcse, within ? "yes" : "NO")
+    end
+    nt = length(results[1].ebv_accuracy)
+    for j in 1:nt
+        accs = [r.ebv_accuracy[j] for r in results]
+        mean_acc = sum(accs) / m
+        sd_acc = sqrt(sum(abs2, accs .- mean_acc) / (m - 1))
+        @printf("  EBV accuracy trait %d: mean=%.4f sd=%.4f (corr of EBV-hat with true BV)\n",
+            j, mean_acc, sd_acc)
+    end
+    conv = count(r -> r.converged, results)
+    passes = count(r -> r.pass, results)
+    lo, hi = _wilson(passes, m)
+    @printf("  converged=%d/%d  passed=%d/%d  pass-rate=%.3f  Wilson95%%=[%.3f, %.3f]\n",
+        conv, m, passes, m, passes / m, lo, hi)
+end
+
 function main(args = ARGS)
     seeds, iterations, threshold_g, threshold_r = _parse_args(args)
     results = Any[]
@@ -189,6 +258,7 @@ function main(args = ARGS)
         flush(stdout)
     end
     _print_summary(results)
+    _print_aggregate(results)
     all(result.pass for result in results) || exit(1)
     return nothing
 end
