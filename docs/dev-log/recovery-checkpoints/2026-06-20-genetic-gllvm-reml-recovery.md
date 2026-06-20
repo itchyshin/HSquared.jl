@@ -1,49 +1,61 @@
 # Genetic-GLLVM REML — known-truth recovery checkpoint (2026-06-20)
 
 Opt-in harness: `sim/phase6_gllvm_recovery.jl` (outside CI; the committed suite stays
-RNG-free). This records the FIRST known-truth recovery evidence for the genetic-GLLVM
-REML estimator (`fit_gllvm_laplace_reml`).
+RNG-free). The FIRST known-truth recovery evidence for the genetic-GLLVM REML estimator
+(`fit_gllvm_laplace_reml`), now across TWO scenarios (rank-1 and rank-2).
 
 ## Design (ADEMP-style)
 
-- **Data-generating process:** half-sib pedigree (`nsire=20, ndam=40, noffspring=180`,
-  `q=240`); `A = inv(Ainv)`; `K=1` genetic latent factor `g ~ N(0, A)`;
-  `η[i,t] = μ + Λ[t]·g[i]` with **truth `Λ = [1.0, 0.7, 0.5]`** (`T=3`, `K=1`), `μ=1.0`;
-  `y[i,t] ~ Poisson(exp(η[i,t]))` (Knuth sampler).
-- **Estimand:** the rotation-INVARIANT among-trait genetic covariance
-  `G_lat = ΛΛ'` (a `3×3` rank-1 matrix). The loadings themselves are
-  rotation-nonidentified, so recovery is measured on `G_lat`, NOT on `Λ`.
-- **Method:** `fit_gllvm_laplace_reml(Y, Ainv, PoissonResponse(); rank=1)` (NelderMead
-  over `vec(Λ)` maximizing the K-factor Laplace marginal).
-- **Performance metric:** relative Frobenius error `rel = ‖Ĝ − G‖_F / ‖G‖_F` per seed,
-  plus the per-trait variance recovery `diag(Ĝ)` vs `diag(G)`.
-- **Predeclared:** seeds `20260620..20260624`; loose gate `rel ≤ 0.45 AND converged`.
+- **DGP:** half-sib pedigree; `A = inv(Ainv)`; `K` genetic latent factors
+  `g[·,k] ~ N(0, A)`; `η[i,t] = μ + Σ_k Λ[t,k] g[i,k]`; `y[i,t] ~ Poisson(exp(η))`
+  (Knuth sampler); `μ = 1.0`.
+- **Estimand:** the rotation-INVARIANT `G_lat = ΛΛ'` (loadings rotation-nonidentified,
+  so recovery is on `G_lat`).
+- **Method:** `fit_gllvm_laplace_reml(...; rank = K)`.
+- **Metrics:** relative Frobenius error `rel = ‖Ĝ − G‖_F / ‖G‖_F`; for the rank-2
+  scenario also the mean off-diagonal genetic-correlation error `mean |ρ̂ − ρ|`.
+- **Loose gate:** `rel ≤ 0.45 AND converged`.
 
-## Result (RAN — 2026-06-20)
+## Results (RAN — 2026-06-20)
 
-| seed | q | converged | rel(G_lat) | diag(Ĝ) vs diag(G) = [1.0, 0.49, 0.25] |
-| --- | --- | --- | --- | --- |
-| 20260620 | 240 | true | 0.0405 | [1.022, 0.525, 0.227] |
-| 20260621 | 240 | true | 0.1428 | [0.810, 0.442, 0.272] |
-| 20260622 | 240 | true | 0.0191 | [1.011, 0.502, 0.259] |
-| 20260623 | 240 | true | 0.0716 | [1.033, 0.564, 0.245] |
-| 20260624 | 240 | true | 0.1825 | [1.226, 0.534, 0.290] |
+### Scenario A — rank-1 (`K=1`), `q=240`, `Λ = [1.0, 0.7, 0.5]`
 
-**mean `rel(G_lat) = 0.091`; passed 5/5** (`rel ≤ 0.45 AND converged`).
+| seed | rel(G_lat) |
+| --- | --- |
+| 20260620 | 0.0405 |
+| 20260621 | 0.1428 |
+| 20260622 | 0.0191 |
+| 20260623 | 0.0716 |
+| 20260624 | 0.1825 |
+
+**mean `rel(G_lat) = 0.091`; 5/5 passed.** (Rank-1 ⇒ `±1` genetic correlations by
+construction, so recovery is assessed on `G_lat`.)
+
+### Scenario B — rank-2 (`K=2`, NON-degenerate ρ), `q=120`, `Λ = [1 0; 0.5 0.8; 0.3 0.9]`
+
+| seed | rel(G_lat) | mean \|Δρ\| |
+| --- | --- | --- |
+| 20260620 | 0.2510 | 0.1816 |
+| 20260621 | 0.1558 | 0.0719 |
+| 20260622 | 0.2669 | 0.0374 |
+| 20260623 | 0.1875 | 0.0249 |
+| 20260624 | 0.1628 | 0.1280 |
+
+**mean `rel(G_lat) = 0.205`, mean `|Δρ| = 0.089`; 5/5 passed.**
 
 ## Honest interpretation
 
-- **Positive:** the genetic-GLLVM REML **recovers the rank-1 Poisson `G_lat` well** —
-  ~9% mean relative Frobenius error, 5/5 seeds, with per-trait variances tracking
-  truth. This is genuine known-truth recovery evidence, not just a correctness check.
-- **Scope / caveats (NOT a broad claim):** this is ONE specific setup — **rank-1,
-  Poisson, `q=240`, `T=3`, one family, balanced/fully-observed**. It is NOT a broad
-  multi-rank / multi-family / FA(+Ψ) calibration, NOT an external-comparator parity, and
-  the loadings remain rotation-nonidentified (recovery is on `G_lat`). With a rank-1
-  truth the implied among-trait genetic correlations are `±1` by construction, so the
-  correlations are not a recovery target here. Higher ranks, the FA structure, smaller
-  `q`, and Bernoulli/Binomial (where the single-trial variance is downward-biased) are
-  expected to be harder and are left to future predeclared runs.
-- **Status:** `V6-GGLLVM-REML` stays `partial` — this strengthens its evidence (first
-  recovery study, positive) but does not promote it to `covered` (which still requires
-  broad calibration + an external comparator).
+- **Positive:** the genetic-GLLVM REML recovers `G_lat` across BOTH a rank-1
+  (`rel ≈ 0.09`) and a genuine rank-2, non-degenerate-correlation structure
+  (`rel ≈ 0.20`, **genetic correlations recovered to `|Δρ| ≈ 0.09`**) — real
+  known-truth recovery, with graceful degradation as the structure hardens / `q`
+  shrinks (rank-2 here uses the smaller `q=120`).
+- **Scope / caveats (NOT a broad claim):** Poisson only, balanced/fully-observed,
+  loadings rotation-nonidentified (recovery on `G_lat`). NOT a factor-analytic(+Ψ)
+  recovery, NOT Bernoulli/Binomial (where the single-trial variance is downward-biased),
+  NOT an external-comparator parity, and the rank-2 correlation error at `q=120` (some
+  seeds `0.13–0.18`) would tighten with larger `q`. These are left to future predeclared
+  runs.
+- **Status:** `V6-GGLLVM-REML` stays `partial` — this strengthens its evidence (two
+  positive recovery scenarios incl. correlation recovery) but does not promote it to
+  `covered` (which still requires FA/family breadth + an external comparator).
