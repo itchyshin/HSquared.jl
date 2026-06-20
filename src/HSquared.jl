@@ -86,6 +86,7 @@ export AMDGPUBackend,
     genetic_pca,
     g_max,
     mean_evolvability,
+    genetic_gllvm_descriptors,
     genetic_pca_plot_data,
     genetic_correlation_plot_data,
     variance_components_plot_data,
@@ -190,6 +191,7 @@ include("iterative_solve.jl")
 include("postfit.jl")
 include("multivariate.jl")
 include("evolvability.jl")
+include("genetic_gllvm.jl")
 include("random_regression.jl")
 include("nongaussian.jl")
 include("planned_terms.jl")
