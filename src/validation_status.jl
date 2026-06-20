@@ -85,8 +85,8 @@ const VALIDATION_STATUS_DATA = (
         "sparse selected-inversion PEV/reliability",
         "Phase 1",
         "partial",
-        "`prediction_error_variance`/`reliability` accept `method = :selinv`, using a Takahashi selected inverse of the sparse Henderson MME coefficient matrix; the selected-inverse diagonal matches the dense MME inverse diagonal to machine precision on the tiny and Mrode9-shaped fixtures. Kernel adapted from DRM.jl (MIT).",
-        "production-scale and large-pedigree sparse validation, fitted Mrode outputs, and external comparator checks",
+        "`prediction_error_variance`/`reliability` accept `method = :selinv`, using a Takahashi selected inverse of the sparse Henderson MME coefficient matrix; the selected-inverse diagonal matches the dense MME inverse diagonal to machine precision on the tiny, Mrode9-shaped, and a larger 110-animal 4-generation pedigree (nfixed = 2, off-diagonal Ainv nnz = 550) — PEV-diagonal + reliability parity to rtol 1e-8 (`test/runtests.jl`). Kernel adapted from DRM.jl (MIT).",
+        "production-scale (10⁴+ sparse) validation, fitted Mrode outputs, and external comparator checks",
         "Experimental sparse PEV path; exact at the L+Lᵀ pattern (diagonal/PEV exact); the default extractor path remains dense.",
     ),
     (

@@ -1921,6 +1921,56 @@ end
     @test_throws ArgumentError reliability(mme; method = :nope)
 end
 
+@testset "Phase 1 selinv PEV — larger multi-generation pedigree (V1-SELINV-PEV)" begin
+    # Deterministic (RNG-free) 4-generation pedigree, 110 animals, with genuine
+    # off-diagonal relatedness: each generation draws sires and dams from DISJOINT
+    # halves of the previous generation (so parents are always distinct and precede
+    # their offspring). This exercises the Takahashi :selinv recursion on a deep,
+    # densely-related structure far larger than the 8-animal fixture above, backing
+    # the V1-SELINV-PEV "larger-pedigree" evidence (still validation-scale, NOT a
+    # production-scale / large-sparse claim).
+    nf = 20
+    ids = String[]; sires = String[]; dams = String[]
+    for i in 1:nf
+        push!(ids, "f$i"); push!(sires, "0"); push!(dams, "0")
+    end
+    gens = [["f$i" for i in 1:nf]]
+    for g in 1:3
+        prev = gens[end]
+        half = length(prev) ÷ 2
+        spool = prev[1:half]
+        dpool = prev[(half + 1):end]
+        cur = String[]
+        for k in 1:30
+            s = spool[1 + (k % length(spool))]
+            d = dpool[1 + (k % length(dpool))]
+            id = "g$(g)_$(k)"
+            push!(ids, id); push!(sires, s); push!(dams, d); push!(cur, id)
+        end
+        push!(gens, cur)
+    end
+    ped = normalize_pedigree(ids, sires, dams)
+    q = length(ped.ids)
+    @test q == nf + 3 * 30          # 110 animals
+    Ainv = pedigree_inverse(ped)
+    @test count(!iszero, Ainv) > 3 * q   # genuinely off-diagonal (not near-identity)
+
+    # deterministic phenotypes + 2 fixed effects (intercept + covariate)
+    y = [2.0 + 0.5 * sin(Float64(i)) for i in 1:q]
+    X = hcat(ones(q), [Float64(i % 3) for i in 1:q])
+    spec = animal_model_spec(y, X, sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
+    lik = gaussian_loglik(spec, 1.3, 0.9; method = :REML)
+    fit = AnimalModelFit(spec, lik, (sigma_a2 = 1.3, sigma_e2 = 0.9), true, "supplied", 0)
+
+    pev_selinv = prediction_error_variance(fit; method = :selinv)
+    pev_dense = prediction_error_variance(fit; method = :dense)
+    @test length(pev_selinv.values) == q
+    @test pev_selinv.ids == ped.ids
+    @test pev_selinv.values ≈ pev_dense.values rtol = 1e-8
+    @test reliability(fit; method = :selinv).values ≈
+          reliability(fit; method = :dense).values rtol = 1e-8 atol = 1e-9
+end
+
 @testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
     # The fused kernel must equal the materialize-then-broadcast formula it
     # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to
