@@ -118,6 +118,14 @@ HSquared.genetic_correlation
 HSquared.genetic_structure
 HSquared.genetic_loadings
 HSquared.genetic_uniqueness
+HSquared.evolvability
+HSquared.conditional_evolvability
+HSquared.respondability
+HSquared.autonomy
+HSquared.variance_along_gradient
+HSquared.genetic_pca
+HSquared.g_max
+HSquared.mean_evolvability
 HSquared.diagonal_covariance
 HSquared.lowrank_covariance
 HSquared.factor_analytic_covariance

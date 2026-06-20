@@ -168,9 +168,10 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 33
+    @test length(validation) == 34
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
+    @test "V4-EVOLVE" in [row.id for row in validation]
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -4652,4 +4653,99 @@ end
     # (7) guards
     @test_throws ArgumentError covariance_structure_lrt(mv2, mv2_diag)        # df <= 0 (wrong order)
     @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_diag, Yr, Xr, Zr, Ainv)  # structured unsupported
+end
+
+@testset "Phase 4B evolvability / G-matrix geometry (#55)" begin
+    # --- 2x2 diagonal G: hand-checked Hansen-Houle identities ---
+    Gd = [4.0 0.0; 0.0 1.0]
+    @test evolvability(Gd, [1.0, 0.0]) ≈ 4.0
+    @test evolvability(Gd, [0.0, 1.0]) ≈ 1.0
+    @test evolvability(Gd, [1.0, 1.0]) ≈ 2.5             # unit β weights variances by squared cosines
+    @test conditional_evolvability(Gd, [1.0, 1.0]) ≈ 1.6  # 1/(0.5/4 + 0.5/1)
+    @test autonomy(Gd, [1.0, 1.0]) ≈ 1.6 / 2.5
+    @test respondability(Gd, [1.0, 0.0]) ≈ 4.0
+    @test respondability(Gd, [0.0, 1.0]) ≈ 1.0
+    @test variance_along_gradient(Gd, [1.0, 0.0]) ≈ 4.0                  # normalized default == evolvability
+    @test variance_along_gradient(Gd, [1.0, 1.0]; normalize = false) ≈ 5.0  # raw β'Gβ = 4 + 1
+    @test mean_evolvability(Gd) ≈ 2.5                                    # tr/2 = 5/2
+
+    # --- isotropic G = cI: e == c == r == c for ALL directions; autonomy == 1 ---
+    Gi = 2.0 * Matrix(I, 3, 3)
+    for b in ([1.0, 0.0, 0.0], [1.0, 1.0, 1.0], [0.3, -0.7, 0.5], [1.0, 2.0, -3.0])
+        @test evolvability(Gi, b) ≈ 2.0 atol = 1e-12
+        @test conditional_evolvability(Gi, b) ≈ 2.0 atol = 1e-12
+        @test respondability(Gi, b) ≈ 2.0 atol = 1e-12
+        @test autonomy(Gi, b) ≈ 1.0 atol = 1e-12
+    end
+    @test mean_evolvability(Gi) ≈ 2.0
+
+    # --- non-diagonal PD G = [3 1; 1 3]: eig 4 @ [1,1]/√2, 2 @ [1,-1]/√2 (deterministic) ---
+    Ge = [3.0 1.0; 1.0 3.0]
+    v1 = [1.0, 1.0]; v2 = [1.0, -1.0]
+    @test evolvability(Ge, v1) ≈ 4.0
+    @test evolvability(Ge, v2) ≈ 2.0
+    @test conditional_evolvability(Ge, v1) ≈ 4.0
+    @test conditional_evolvability(Ge, v2) ≈ 2.0
+    @test respondability(Ge, v1) ≈ 4.0
+    @test respondability(Ge, v2) ≈ 2.0
+    @test autonomy(Ge, v1) ≈ 1.0 atol = 1e-12
+    @test autonomy(Ge, v2) ≈ 1.0 atol = 1e-12
+    pca = genetic_pca(Ge)
+    @test issorted(pca.values; rev = true)
+    @test pca.values ≈ [4.0, 2.0]
+    @test abs(dot(pca.vectors[:, 1], v1 ./ sqrt(2))) ≈ 1.0 atol = 1e-12
+    @test abs(dot(pca.vectors[:, 2], v2 ./ sqrt(2))) ≈ 1.0 atol = 1e-12
+    gm = g_max(Ge)
+    @test gm.eigenvalue ≈ 4.0
+    @test abs(dot(gm.eigenvector, v1 ./ sqrt(2))) ≈ 1.0 atol = 1e-12
+    @test gm.eigenvector[argmax(abs.(gm.eigenvector))] > 0     # sign-canonicalized
+    @test g_max(Ge).eigenvector == gm.eigenvector              # deterministic/reproducible
+    @test mean_evolvability(Ge) ≈ 3.0                          # tr/2 = 6/2
+    # c ≤ e always (constraint cannot increase available variance)
+    for b in ([1.0, 0.0], [2.0, -1.0], [1.0, 3.0])
+        @test conditional_evolvability(Ge, b) ≤ evolvability(Ge, b) + 1e-9
+    end
+
+    # --- rotation-invariance: metrics depend on G = ΛΛ', not the loading rotation ---
+    L = [1.0 0.5; 0.5 1.0; -0.3 0.8]          # 3 traits × 2 factors -> rank-2 (singular) G
+    G_lr = lowrank_covariance(L)
+    θ = 0.7
+    Qr = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+    G_lr_rot = lowrank_covariance(L * Qr)
+    β = [0.4, -0.5, 0.3]
+    @test evolvability(G_lr, β) ≈ evolvability(G_lr_rot, β) atol = 1e-10
+    @test respondability(G_lr, β) ≈ respondability(G_lr_rot, β) atol = 1e-10
+    @test evolvability(G_lr, β) ≥ 0           # PSD-safe on a rank-deficient G
+
+    # --- NamedTuple convenience: read result.genetic_covariance ---
+    res = (genetic_covariance = Gd,)
+    @test evolvability(res, [1.0, 0.0]) ≈ 4.0
+    @test g_max(res).eigenvalue ≈ 4.0
+
+    # --- guards ---
+    @test_throws ArgumentError evolvability([1.0 2.0; 3.0 4.0], [1.0, 0.0])   # non-symmetric
+    @test_throws ArgumentError evolvability(ones(2, 3), [1.0, 0.0])           # non-square
+    @test_throws ArgumentError evolvability([1.0 0.0; 0.0 -1.0], [1.0, 0.0])  # indefinite
+    @test_throws ArgumentError evolvability(Gd, [1.0, 0.0, 0.0])              # β dimension mismatch
+    @test_throws ArgumentError evolvability(Gd, [0.0, 0.0])                   # zero β
+    # singular PSD G: evolvability/respondability OK, but conditional/autonomy throw
+    Gsing = [1.0 1.0; 1.0 1.0]               # rank-1 PSD
+    @test evolvability(Gsing, [1.0, 1.0]) ≈ 2.0
+    @test respondability(Gsing, [1.0, 0.0]) ≈ sqrt(2.0)
+    @test_throws ArgumentError conditional_evolvability(Gsing, [1.0, 1.0])
+    @test_throws ArgumentError autonomy(Gsing, [1.0, 1.0])
+
+    # --- scale-aware guards + variance clamp (review #55, Gauss) ---
+    # A meaningfully-indefinite LARGE-scale G is rejected (rel eigmin ~ -1e-3):
+    @test_throws ArgumentError evolvability([1.0e6 0.0; 0.0 -1.0e3], [0.0, 1.0])
+    # A well-conditioned PD G at TINY scale is accepted (not wrongly rejected):
+    Gtiny = [2.0e-11 0.0; 0.0 1.0e-11]
+    @test isfinite(conditional_evolvability(Gtiny, [1.0, 1.0]))
+    @test conditional_evolvability(Gtiny, [1.0, 1.0]) > 0
+    @test isfinite(autonomy(Gtiny, [1.0, 1.0]))
+    # A numerically-PSD G (rel eigmin within tolerance) is accepted and the scalar
+    # variance metrics are clamped at 0 — never a negative "variance":
+    Gpsd_eps = [1.0 0.0; 0.0 -1.0e-12]
+    @test evolvability(Gpsd_eps, [0.0, 1.0]) == 0.0
+    @test variance_along_gradient(Gpsd_eps, [0.0, 1.0]; normalize = false) ≥ 0.0
 end
