@@ -251,3 +251,61 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
             g = reshape(g, q, K),        # q×K
             converged = converged, gradient_norm = gnorm, iterations = iters)
 end
+
+"""
+    fit_gllvm_laplace_reml(Y, Ainv, family; rank, X = ones(size(Y,1), 1), initial = nothing, ...)
+
+Genetic-GLLVM REML (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`,
+so the among-trait genetic covariance is `G_lat = ΛΛ'`) by maximizing the K-factor
+Laplace marginal [`gllvm_laplace_marginal_loglik`](@ref) over the loadings (NelderMead
+on `vec(Λ)`). The marginal depends on `Λ` only through `G_lat = ΛΛ'`, so it is
+ROTATION-INVARIANT; the returned `genetic_covariance`/`latent_structure` are the
+rotation-invariant functionals (the raw `Λ̂` is an arbitrary point on the rotation
+manifold and is NOT reported as identified). Returns `(loglik, genetic_covariance,
+latent_structure, beta (p×T), breeding_values (q×K), n_latent_factors, converged,
+iterations)`.
+
+For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not estimated);
+the non-Gaussian families (Poisson/Bernoulli/Binomial) have no residual variance.
+The `K = 1, T = 1` Poisson case reduces to the single-factor [`fit_laplace_reml`](@ref)
+(`σ²a = λ̂²`). EXPERIMENTAL, dense/validation-scale, low-rank `G_lat` only, one family
+for all traits, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a known-truth
+recovery claim (structured non-Gaussian REML recovery is a separate opt-in study, and
+the multivariate FA recovery has not passed); no R model-spec or bridge payload.
+"""
+function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
+                                family::ResponseFamily; rank::Integer,
+                                X::AbstractMatrix = ones(size(Y, 1), 1),
+                                initial = nothing, iterations::Integer = 1000,
+                                tol::Real = 1e-10, maxiter::Integer = 200)
+    q, T = size(Y)
+    K = Int(rank)
+    K >= 1 || throw(ArgumentError("rank must be ≥ 1"))
+    Λ0 = if initial === nothing
+        L = fill(0.2, T, K)
+        for d in 1:min(T, K)
+            L[d, d] = 0.5
+        end
+        L
+    else
+        Matrix{Float64}(initial)
+    end
+    size(Λ0) == (T, K) || throw(ArgumentError("initial loadings must be T×K = $((T, K))"))
+
+    function negloglik(params)
+        m = gllvm_laplace_marginal_loglik(Y, Ainv, reshape(params, T, K), family;
+                                          X = X, tol = tol, maxiter = maxiter)
+        return (m.converged && isfinite(m.loglik)) ? -m.loglik : Inf
+    end
+    res = optimize(negloglik, vec(Λ0), NelderMead(), Optim.Options(iterations = iterations))
+    Λhat = reshape(Optim.minimizer(res), T, K)
+    mhat = gllvm_laplace_marginal_loglik(Y, Ainv, Λhat, family; X = X, tol = tol, maxiter = maxiter)
+    return (loglik = mhat.loglik,
+            genetic_covariance = Λhat * transpose(Λhat),
+            latent_structure = genetic_gllvm_descriptors(Λhat),
+            beta = mhat.beta,
+            breeding_values = mhat.g,
+            n_latent_factors = K,
+            converged = Optim.converged(res) && mhat.converged,
+            iterations = Optim.iterations(res))
+end
