@@ -29,7 +29,15 @@ deliverable is the convenience dispatch.
 
 ## Review (adversarial workflow)
 
-(Recorded after the workflow returns — Gauss/Henderson, Curie/Fisher, Rose.)
+Curie + Rose both **pass_with_nits**, no blocker. Curie's should_fix was the
+high-value catch: the original test used `Z = I`, under which the GLS covariance is
+invariant to whether `Z` is threaded — so it could not prove the headline claim.
+Added a non-identity (permutation) `Z` case that (a) still reduces exactly to the
+explicit call, (b) yields effects DIFFERENT from the identity-`Z` scan (proving `Z`
+enters `V`), and (c) leaves `single_marker_scan` unchanged (pinning its deliberate
+relatedness-blindness). This also closed an inherited engine-level gap (the core
+mixed scan had only ever been tested with `Z = I`). Rose confirmed the claims are
+honest and the test is genuinely red-before/green-after.
 
 ## Local checks
 

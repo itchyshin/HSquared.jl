@@ -31,9 +31,22 @@
 
 ## Commands / results
 
-- `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → (recorded after run).
-- `~/.juliaup/bin/julia --project=docs docs/make.jl` → (recorded after run).
-- Adversarial review → (recorded in after-task).
+- `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → **passed (exit 0)**
+  (post-fit testset; re-run green after the review-fix added a non-identity-Z case).
+- `~/.juliaup/bin/julia --project=docs docs/make.jl` → **passed (exit 0)**.
+- Adversarial 2-lens review (Curie / Rose): both **pass_with_nits**, no blocker.
+  - Curie (should_fix): the original fixture used `Z = I`, under which
+    `V = σ²a A + σ²e I` is invariant to whether `Z` is threaded — so the equality
+    test pinned literal arg-passing but not the headline claim. Added a
+    discriminating NON-identity (permutation) `Z` case: `(fit, markers)` still
+    equals the explicit call, AND its effects DIFFER from the identity-`Z` scan
+    (proving `Z` genuinely enters the GLS covariance), AND `single_marker_scan(fit,
+    markers)` is unchanged under the permutation `Z` (pinning the fixed-effect
+    screen's deliberate relatedness-blindness). This also closes an inherited
+    engine-level gap (the core mixed scan was only tested with `Z = I`).
+  - Curie nit: dropped the redundant `pf2.effects == ex2.effects` assertion.
+  - Rose: pass — claims honest, test red-before/green-after, no overclaim; the
+    "`Ainv = NULL` is an R-side item" framing accurate (flagged for #61, no R edit).
 
 ## Claim boundary
 

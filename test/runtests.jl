@@ -3067,7 +3067,25 @@ end
     pf2 = single_marker_scan(fit, markers; marker_ids = mids)
     ex2 = single_marker_scan(y, X, markers; sigma_e2 = 0.8, marker_ids = mids)
     @test pf2 == ex2
-    @test pf2.effects == ex2.effects
+
+    # Discriminating (review #45, Curie): a NON-identity (permutation) random-effect
+    # incidence Z changes the GLS covariance V = σ²a Z A Z' + σ²e I, so the fit's Z
+    # must genuinely be threaded through (not silently treated as identity).
+    P = sparse(Float64[0 1 0 0 0 0
+                       1 0 0 0 0 0
+                       0 0 0 1 0 0
+                       0 0 1 0 0 0
+                       0 0 0 0 0 1
+                       0 0 0 0 1 0])
+    specP = animal_model_spec(y, X, P, Ainv; ids = ped.ids, method = :REML)
+    likP = gaussian_loglik(specP, 1.2, 0.8; method = :REML)
+    fitP = AnimalModelFit(specP, likP, (sigma_a2 = 1.2, sigma_e2 = 0.8), true, "supplied", 0)
+    @test mixed_model_marker_scan(fitP, markers; marker_ids = mids) ==
+          mixed_model_marker_scan(y, X, P, Ainv, markers, 1.2, 0.8; marker_ids = mids)
+    @test mixed_model_marker_scan(fitP, markers).effects != pf.effects   # permutation Z ≠ identity Z
+    # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
+    @test single_marker_scan(fitP, markers; marker_ids = mids) ==
+          single_marker_scan(fit, markers; marker_ids = mids)
 end
 
 @testset "Phase 2 dense NRM helper" begin
