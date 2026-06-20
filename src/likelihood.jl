@@ -494,6 +494,31 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
 end
 
 """
+    metafounder_animal_model(y, X, Z, pedigree, group_of, Gamma, sigma_a2, sigma_e2;
+                             ids = pedigree.ids)
+
+Supplied-variance Gaussian animal-model BLUP under a metafounder-augmented
+relationship `A^Γ` (#53, Legarra et al. 2015). Builds the descriptive animal-only
+metafounder precision `inv(A^Γ)` via [`metafounder_relationship_inverse`](@ref) and
+solves the standard Henderson MME ([`henderson_mme`](@ref)) at supplied variance
+components, returning the `HendersonMMEResult`. At `Γ = 0` this reduces EXACTLY to
+the classical animal model (`metafounder_relationship_inverse → pedigree_inverse`),
+so the fixed effects and EBVs match `henderson_mme` with `pedigree_inverse`.
+
+SUPPLIED-variance and SUPPLIED-`Γ` only — neither `Γ` nor the variance components is
+estimated. This is the animal-only BLUP under `A^Γ`; the combined system with
+explicit metafounder effects ([`metafounder_inverse`](@ref)) is a separate path, and
+there is no R-facing model-spec or bridge payload.
+"""
+function metafounder_animal_model(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+        pedigree::Pedigree, group_of, Gamma::AbstractMatrix,
+        sigma_a2::Real, sigma_e2::Real; ids = pedigree.ids)
+    Ainv = metafounder_relationship_inverse(pedigree, group_of, Gamma)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ids)
+    return henderson_mme(spec, sigma_a2, sigma_e2)
+end
+
+"""
     two_effect_mme(y, X, Z1, Ainv1, Z2, Ainv2, sigma1, sigma2, sigma_e2;
                    ids1 = nothing, ids2 = nothing)
 
