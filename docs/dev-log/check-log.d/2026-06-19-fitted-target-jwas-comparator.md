@@ -34,10 +34,25 @@
 
 ## Commands / results
 
-- `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → (recorded after run).
-- `~/.juliaup/bin/julia --project=docs docs/make.jl` → unaffected (no `src/` or
-  `docs/src/` change); confirmed after run.
+- **AUTHORITATIVE — CI on a clean checkout (PR #72):** Julia 1, Julia 1.10, docs,
+  and Documenter-deploy all **pass**. Rose independently confirmed a clean
+  `git archive HEAD` export passes (`Testing HSquared tests passed`, exit 0).
+- `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` (clean checkout) →
+  **passed (exit 0)**, fitted-target testset 13/13.
+- `~/.juliaup/bin/julia --project=docs docs/make.jl` → **passed (exit 0)**.
 - The JWAS comparator is opt-in / outside CI and is NOT exercised by the suite.
+
+### Evidence-integrity note (review #46/#49, Rose — Dropbox sync caveat)
+
+The repository lives under Dropbox (`~/Dropbox/Github Local/HSquared.jl`). Rose
+observed Dropbox **transiently rewriting the committed fixture CSVs mid-test-run**
+(e.g. `expected_beta.csv` briefly flipping to a conflicted `x,9.9`), which produced
+a spurious 1/13 local failure during one run. The committed fixtures are correct
+(verified: `git status` clean, `git show HEAD:...expected_beta.csv` == the working
+tree == the `generate.jl` output) and CI on the clean checkout is green. **CI on a
+clean checkout is the authoritative gate; local `Pkg.test()` from the Dropbox path
+can transiently desync and must not be trusted in isolation.** Every PR this
+session was gated on CI for exactly this reason.
 
 ## Claim boundary
 

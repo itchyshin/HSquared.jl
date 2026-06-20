@@ -43,6 +43,10 @@ pheno = CSV.read(joinpath(FIXTURE, "phenotypes.csv"), DataFrame)
 # NOTE: confirm these JWAS API names against your installed JWAS version — the
 # package's public API has shifted across releases. The shape below targets the
 # JWAS "build_model / set_covariate / set_random / get_pedigree / runMCMC" flow.
+# IN PARTICULAR: JWAS conventionally keys pedigree-linked random effects and EBV
+# output off an `ID` column. The fixture's ID column is named `animal`; depending
+# on your JWAS version you may need to rename it to `ID` in the phenotype DataFrame
+# (and adjust the model term + the out[...] EBV key) before runMCMC.
 ped_path = joinpath(@__DIR__, "_jwas_pedigree.csv")
 CSV.write(ped_path, ped_df)
 pedigree = get_pedigree(ped_path, separator = ",", header = true)

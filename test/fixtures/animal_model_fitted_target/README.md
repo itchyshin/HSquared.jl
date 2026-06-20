@@ -38,7 +38,12 @@ The committed CI test (`test/runtests.jl`, "Univariate fitted animal-model targe
 fixture") rebuilds `Ainv` from `pedigree.csv` and checks **self-consistency**: the
 Henderson MME at the stored variance components reproduces the serialized fixed
 effects, EBVs, PEV/reliability, and the REML loglik. This is NOT external
-validation — it pins the serialized target.
+validation — it pins the serialized target. Note: `beta` (dense GLS vs sparse MME),
+`loglik` (dense REML vs the sparse Henderson identity), and PEV/reliability
+(`:selinv` vs `:dense`) each agree across two *distinct* numerical routes; the EBV
+check re-solves the *same* Henderson MME, so it is a determinism/integrity pin (it
+still catches a corrupted serialized EBV) rather than method-independent
+corroboration.
 
 External confrontation is separate and opt-in:
 

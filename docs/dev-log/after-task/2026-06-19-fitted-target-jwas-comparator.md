@@ -28,10 +28,23 @@ REML, so agreement is approximate by construction and is reported, never claimed
 "parity"/"validation". The R-lane `nadiv`/`pedigreemm` confrontation is cross-lane
 (coordinate on #61/#46). No capability moved to covered.
 
-## Local checks
+## Local checks + review
 
-- `Pkg.test()` → exit 0 (new fitted-target self-consistency testset).
-- `docs/make.jl` → unaffected (no `src/`/`docs/src/` change).
+- **AUTHORITATIVE — CI on a clean checkout (PR #72):** Julia 1 / 1.10 / docs /
+  deploy all pass. `Pkg.test()` exit 0 (fitted-target testset 13/13);
+  `docs/make.jl` exit 0.
+- 2-lens review (Mrode/Curie + Rose). Mrode **pass_with_nits** — verified by
+  *running*: re-ran `generate.jl` (byte-for-byte reproducible), mutation-tested the
+  self-consistency test (non-vacuous), confirmed the interior optimum + the
+  cross-method checks. Nits addressed: a test/README note that EBV self-consistency
+  re-solves the same MME (β/loglik/PEV span distinct routes); strengthened the JWAS
+  `ID`-column caveat; dropped the unused `Random` from `comparator/Project.toml`.
+- Rose **concerns** (evidence-integrity, not an overclaim): Dropbox sync can
+  transiently rewrite the committed fixture CSVs mid-run (Rose caught a conflicted
+  `x,9.9` and a 1/13 spurious failure). The committed fixtures are correct and CI on
+  a clean checkout (and Rose's `git archive HEAD` export) is green. **Resolution:**
+  CI on a clean checkout is the authoritative gate (which is why every PR this
+  session was CI-gated); recorded the Dropbox caveat in the check-log.
 
 ## Note on the JWAS API
 

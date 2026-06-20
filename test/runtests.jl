@@ -4043,6 +4043,11 @@ end
     # the serialized fixed effects, EBVs, PEV/reliability, and REML loglik. The fixture
     # is the engine's OWN fitted output (generate.jl), so this pins the serialized
     # target without re-running the optimizer — and no textbook EBVs are typed by hand.
+    # Note (review #46, Mrode): beta (dense GLS vs sparse MME), loglik (dense REML vs
+    # the sparse Henderson identity), and PEV/reliability (:selinv vs :dense) each agree
+    # across two DISTINCT numerical routes; the EBV check re-solves the SAME Henderson
+    # MME, so it is a determinism/integrity pin (it still catches a corrupted serialized
+    # EBV — mutation-verified), not method-independent corroboration.
     mme = fit_animal_model(y, X, Z, Ainv; target = :henderson_mme,
                            variance_components = (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
                            ids = ped.ids)
