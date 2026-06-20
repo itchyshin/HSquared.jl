@@ -341,6 +341,15 @@ const VALIDATION_STATUS_DATA = (
         "single-trial Bernoulli `sigma_a2` bias correction, Gaussian/multi-component intervals, external comparator (GLLVM.jl/gllvmTMB) parity, latent genetic factors, the R-facing method-string (`\"laplace\"`/`\"va\"`) + family-acceptance contract (pending R-lane coordination), and an R-facing non-Gaussian model-spec",
         "Experimental dense/validation-scale non-Gaussian Laplace+VA engine; the Gaussian-limit reduction and per-family kernels are validated, the fitted REML path is exported, and a `MarginalMethod` dispatch + `nongaussian_result_payload` bridge shape now exist (value-preserving), but the single-trial Bernoulli variance is downward-biased (reported-not-gated, an information effect), there is no external-comparator evidence, and the R-facing method-string/family-acceptance contract is pending; not the public default and no R model-spec.",
     ),
+    (
+        "V6-GGLLVM-DESC",
+        "genetic-GLLVM latent-structure descriptors (supplied loadings) (#50 slice 1)",
+        "Phase 6",
+        "partial",
+        "`genetic_gllvm_descriptors(Λ; uniqueness)` returns the rotation-INVARIANT descriptors of a genetic-GLLVM latent layer from SUPPLIED `traits × K` loadings `Λ` (and optional positive uniqueness `Ψ`): `genetic_covariance` `Σ_g = ΛΛ' (+ diag Ψ)`, `genetic_variances`, `genetic_correlation`, `communality` `c²_t = (ΛΛ')_tt / Σ_g[t,t]`, `genetic_pca`/`g_max`, and `rank`/`n_latent_factors = K`. It reuses `lowrank_covariance`/`factor_analytic_covariance`/`genetic_correlation` (`multivariate.jl`) and `genetic_pca`/`g_max` (`evolvability.jl`) — no new numerics. Deterministic RNG-free checks in `test/runtests.jl` (24 assertions): exact `Σ_g == lowrank_covariance(Λ)` (Ψ absent) / `== factor_analytic_covariance(Λ, Ψ)`; `communality == 1` at `Ψ = 0` and `== (ΛΛ')_tt / Σ_g[t,t]` strictly in `(0,1)` with positive `Ψ`; the binding rotation-invariance gate (for orthogonal `Q`, `Λ → ΛQ` leaves `Σ_g`, `genetic_variances`, `communality`, `genetic_correlation`, and the `genetic_pca` eigenvalues invariant); the `K = t`, `Λ = I`, `Ψ = 0` reduction (`Σ_g = I`, communality 1, eigenvalues all 1); and delegated dimension/positivity/rank guards.",
+        "the supplied-covariance latent marginal/solve (slice 2: `G_lat ⊗ A` into the non-Gaussian marginal), genetic-GLLVM REML estimation of structured `G_lat` (slice 3), and external comparator (GLLVM.jl / gllvmTMB) parity",
+        "Descriptive, supplied-covariance only — `Λ`/`Ψ` are NOT estimated, there is no marginal/likelihood/fit, no R model-spec or bridge payload, and only rotation-INVARIANT functionals of `Σ_g` are returned (never the raw loadings). The first foundation step of the genetic GLLVM (#50); the `GLLVM-style animal models` capability stays `planned`. Nothing promoted to covered.",
+    ),
 )
 
 """

@@ -168,10 +168,11 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 38
+    @test length(validation) == 39
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-LAPLACE"
+    @test validation[end].id == "V6-GGLLVM-DESC"
     @test "V4-EVOLVE" in [row.id for row in validation]
+    @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -5593,4 +5594,52 @@ end
     @test_throws ArgumentError fit_random_regression_reml(y, X, legendre_design(ts, 2), Zinc[:, 1:4], Ainv)  # Z cols ≠ q
     @test_throws ArgumentError fit_random_regression_reml(y, X, legendre_design(ts, 2), Zinc, Ainv;
                                                           initial = (sigma_e2 = -0.5,))  # bad initial
+end
+
+@testset "Genetic-GLLVM latent-structure descriptors (#50 slice 1, supplied Λ)" begin
+    # 3 traits, 2 latent factors; deterministic loadings (RNG-free)
+    Λ = [1.0 0.0; 0.5 0.8; 0.3 0.4]
+    Ψ = [0.2, 0.3, 0.5]
+
+    # --- low-rank (no uniqueness): Σ_g = ΛΛ' ---
+    d = genetic_gllvm_descriptors(Λ)
+    @test propertynames(d) == (:genetic_covariance, :genetic_variances, :genetic_correlation,
+                               :communality, :genetic_pca, :g_max, :rank, :n_latent_factors)
+    @test d.genetic_covariance ≈ lowrank_covariance(Λ)                  # gate 1 (Ψ = 0): exact
+    @test d.genetic_variances ≈ diag(lowrank_covariance(Λ))
+    @test d.rank == 2 && d.n_latent_factors == 2
+    @test all(d.communality .≈ 1.0)                                     # gate 2: communality == 1 at Ψ = 0
+    @test d.genetic_correlation ≈ genetic_correlation(lowrank_covariance(Λ))
+    @test d.genetic_pca.values ≈ genetic_pca(lowrank_covariance(Λ)).values
+    @test d.g_max.eigenvalue ≈ g_max(lowrank_covariance(Λ)).eigenvalue
+
+    # --- factor-analytic: Σ_g = ΛΛ' + diag(Ψ) ---
+    fa = genetic_gllvm_descriptors(Λ; uniqueness = Ψ)
+    @test fa.genetic_covariance ≈ factor_analytic_covariance(Λ, Ψ)      # gate 1 (Ψ > 0): exact
+    common = vec(sum(abs2, Λ; dims = 2))                                # diag(ΛΛ'), the common part
+    @test fa.communality ≈ common ./ (common .+ Ψ)                      # gate 2: matches definition
+    @test all(0 .<= fa.communality .<= 1)
+    @test all(fa.communality .< 1)                                      # strictly < 1 with positive Ψ
+
+    # --- gate 3: rotation invariance (Λ → ΛQ, Q orthogonal) ---
+    θ = 0.7
+    Q = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+    dR = genetic_gllvm_descriptors(Λ * Q; uniqueness = Ψ)
+    @test dR.genetic_covariance ≈ fa.genetic_covariance
+    @test dR.genetic_variances ≈ fa.genetic_variances
+    @test dR.communality ≈ fa.communality
+    @test dR.genetic_correlation ≈ fa.genetic_correlation
+    @test dR.genetic_pca.values ≈ fa.genetic_pca.values
+
+    # --- gate 4: reduction K = t, Λ = I, Ψ = 0 → Σ_g = I, communality = 1, eigenvalues all 1 ---
+    di = genetic_gllvm_descriptors(Matrix(1.0I, 3, 3))
+    @test di.genetic_covariance ≈ Matrix(1.0I, 3, 3)
+    @test all(di.communality .≈ 1.0)
+    @test di.genetic_pca.values ≈ [1.0, 1.0, 1.0]
+
+    # --- gate 5: guards (delegated to lowrank_/factor_analytic_covariance) ---
+    @test_throws ArgumentError genetic_gllvm_descriptors(Λ; uniqueness = [0.2, 0.3])        # Ψ length mismatch
+    @test_throws ArgumentError genetic_gllvm_descriptors(Λ; uniqueness = [0.2, 0.3, -0.1])  # non-positive Ψ
+    @test_throws ArgumentError genetic_gllvm_descriptors(zeros(3, 2))                        # zero common variance
+    @test_throws ArgumentError genetic_gllvm_descriptors(zeros(3, 0))                        # no latent factors
 end

@@ -134,6 +134,7 @@ HSquared.variance_along_gradient
 HSquared.genetic_pca
 HSquared.g_max
 HSquared.mean_evolvability
+HSquared.genetic_gllvm_descriptors
 HSquared.genetic_pca_plot_data
 HSquared.genetic_correlation_plot_data
 HSquared.variance_components_plot_data
