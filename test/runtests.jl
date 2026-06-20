@@ -4008,6 +4008,55 @@ end
     @test loglik ≈ parse(Float64, metadata["loglik"]) atol = 5e-6
 end
 
+@testset "Univariate fitted animal-model target fixture (#46)" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "animal_model_fitted_target")
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_animals = pheno[:, 1]
+    x = parse.(Float64, pheno[:, 2])
+    y = parse.(Float64, pheno[:, 3])
+    X = hcat(ones(length(x)), x)
+    Z = zeros(length(x), length(ped.ids))
+    animal_index = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for (i, animal) in enumerate(record_animals)
+        Z[i, animal_index[animal]] = 1.0
+    end
+
+    vc_names, vc_vals = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_variance_components.csv"))
+    effects, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    ebv_ids, ebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_ebv.csv"))
+    rel_ids, rel_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_reliability.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test vc_names == ["sigma_a2", "sigma_e2"]
+    @test effects == ["Intercept", "x"]
+    @test ebv_ids == ped.ids
+    @test rel_ids == ped.ids
+    sigma_a2 = vc_vals[1]; sigma_e2 = vc_vals[2]
+    @test sigma_a2 > 0 && sigma_e2 > 0                       # interior, non-boundary target
+    @test metadata["converged"] == "true"
+
+    # Self-consistency: the Henderson MME at the STORED variance components reproduces
+    # the serialized fixed effects, EBVs, PEV/reliability, and REML loglik. The fixture
+    # is the engine's OWN fitted output (generate.jl), so this pins the serialized
+    # target without re-running the optimizer — and no textbook EBVs are typed by hand.
+    mme = fit_animal_model(y, X, Z, Ainv; target = :henderson_mme,
+                           variance_components = (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                           ids = ped.ids)
+    @test fixed_effects(mme) ≈ vec(beta_expected) atol = 1e-6
+    @test breeding_values(mme).ids == ped.ids
+    @test breeding_values(mme).values ≈ vec(ebv_expected) atol = 1e-6
+    @test reliability(mme).values ≈ rel_expected[:, 2] atol = 1e-6
+    @test prediction_error_variance(mme).values ≈ rel_expected[:, 1] atol = 1e-6
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    @test sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik ≈ parse(Float64, metadata["loglik"]) atol = 1e-6
+    @test parse(Float64, metadata["h2"]) ≈ sigma_a2 / (sigma_a2 + sigma_e2) atol = 1e-8
+end
+
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
     Λ = reshape([1.0, -2.0], 2, 1)
