@@ -5848,8 +5848,26 @@ end
     @test gg.converged
     @test gg.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
         gg.genetic_covariance, σe * Matrix(1.0I, 2, 2)) rtol = 1e-7
+    @test gg.uniqueness === nothing                                  # low-rank carries no Ψ
+
+    # --- factor-analytic (+Ψ) structure: estimate Λ AND per-trait Ψ via augmented loadings
+    #     [Λ | diag(√Ψ)] (so G_lat = Λ̂Λ̂' + diag(Ψ̂)), reusing the marginal unchanged ---
+    fa = fitr(Yg, Ainv, HSquared.GaussianResponse(σe); rank = 1, structure = :factor_analytic,
+              initial = reshape([0.8, 0.6], 2, 1), initial_uniqueness = [0.3, 0.3])
+    @test fa.converged
+    @test fa.uniqueness !== nothing && length(fa.uniqueness) == 2 && all(fa.uniqueness .> 0)
+    @test all(0 .< fa.latent_structure.communality .< 1)             # Ψ > 0 ⇒ communality < 1
+    @test fa.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
+        fa.genetic_covariance, σe * Matrix(1.0I, 2, 2)) rtol = 1e-7  # Gaussian self-consistency at Ĝ = Λ̂Λ̂' + Ψ̂
+    @test fa.loglik ≥ gg.loglik - 1e-4                               # FA nests low-rank (Ψ → 0)
+    fap = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, structure = :factor_analytic,
+               initial = reshape([0.5, 0.4], 2, 1), initial_uniqueness = [0.2, 0.2])
+    @test fap.converged && all(fap.uniqueness .> 0)
 
     # --- guards ---
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 0)
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 1, initial = reshape([1.0], 1, 1))
+    @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 1, structure = :bogus)
+    @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 1,
+        structure = :factor_analytic, initial_uniqueness = [0.1])    # wrong Ψ length
 end

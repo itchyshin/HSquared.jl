@@ -253,34 +253,43 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
 end
 
 """
-    fit_gllvm_laplace_reml(Y, Ainv, family; rank, X = ones(size(Y,1), 1), initial = nothing, ...)
+    fit_gllvm_laplace_reml(Y, Ainv, family; rank, structure = :lowrank, X = ones(size(Y,1), 1),
+                           initial = nothing, initial_uniqueness = nothing, ...)
 
-Genetic-GLLVM REML (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`,
-so the among-trait genetic covariance is `G_lat = ΛΛ'`) by maximizing the K-factor
-Laplace marginal [`gllvm_laplace_marginal_loglik`](@ref) over the loadings (NelderMead
-on `vec(Λ)`). The marginal depends on `Λ` only through `G_lat = ΛΛ'`, so it is
-ROTATION-INVARIANT; the returned `genetic_covariance`/`latent_structure` are the
-rotation-invariant functionals (the raw `Λ̂` is an arbitrary point on the rotation
-manifold and is NOT reported as identified). Returns `(loglik, genetic_covariance,
-latent_structure, beta (p×T), breeding_values (q×K), n_latent_factors, converged,
+Genetic-GLLVM REML (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
+maximizing the K-factor Laplace marginal [`gllvm_laplace_marginal_loglik`](@ref) over
+the loadings (NelderMead). The among-trait genetic covariance is `G_lat = ΛΛ'`
+(`structure = :lowrank`) or `G_lat = ΛΛ' + diag(Ψ)` (`structure = :factor_analytic`,
+adding a per-trait specific genetic variance `Ψ > 0` — fitted on the `log` scale). The
+FA structure is fitted by augmenting the loadings to `[Λ | diag(√Ψ)]` (so
+`G_lat = ΛΛ' + diag(Ψ)`) and reusing the marginal unchanged. The marginal depends on
+the loadings only through `G_lat`, so it is ROTATION-INVARIANT; the returned
+`genetic_covariance` / `latent_structure` / `uniqueness` are the rotation-invariant
+functionals (the raw `Λ̂` is an arbitrary point on the rotation manifold, NOT reported
+as identified). Returns `(loglik, genetic_covariance, latent_structure, uniqueness,
+beta (p×T), breeding_values (q×K common-factor scores), n_latent_factors, converged,
 iterations)`.
 
 For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not estimated);
-the non-Gaussian families (Poisson/Bernoulli/Binomial) have no residual variance.
-The `K = 1, T = 1` Poisson case reduces to the single-factor [`fit_laplace_reml`](@ref)
-(`σ²a = λ̂²`). EXPERIMENTAL, dense/validation-scale, low-rank `G_lat` only, one family
-for all traits, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a known-truth
-recovery claim (structured non-Gaussian REML recovery is a separate opt-in study, and
-the multivariate FA recovery has not passed); no R model-spec or bridge payload.
+the non-Gaussian families have no residual. The `K = 1, T = 1` Poisson `:lowrank` case
+reduces to the single-factor [`fit_laplace_reml`](@ref) (`σ²a = λ̂²`). EXPERIMENTAL,
+dense/validation-scale, one family for all traits, balanced/fully-observed `Y`;
+INTERNAL (not exported). NOT a known-truth recovery claim (structured non-Gaussian REML
+recovery is a separate opt-in study, and the multivariate FA recovery has not passed);
+no R model-spec or bridge payload.
 """
 function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                 family::ResponseFamily; rank::Integer,
+                                structure::Symbol = :lowrank,
                                 X::AbstractMatrix = ones(size(Y, 1), 1),
-                                initial = nothing, iterations::Integer = 1000,
+                                initial = nothing, initial_uniqueness = nothing,
+                                iterations::Integer = 1000,
                                 tol::Real = 1e-10, maxiter::Integer = 200)
     q, T = size(Y)
     K = Int(rank)
     K >= 1 || throw(ArgumentError("rank must be ≥ 1"))
+    structure in (:lowrank, :factor_analytic) ||
+        throw(ArgumentError("structure must be :lowrank or :factor_analytic"))
     Λ0 = if initial === nothing
         L = fill(0.2, T, K)
         for d in 1:min(T, K)
@@ -291,20 +300,40 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         Matrix{Float64}(initial)
     end
     size(Λ0) == (T, K) || throw(ArgumentError("initial loadings must be T×K = $((T, K))"))
+    nλ = T * K
 
+    # Build the (possibly Ψ-augmented) loadings from the optimizer parameters.
+    augment(params) = structure == :factor_analytic ?
+        hcat(reshape(@view(params[1:nλ]), T, K), Matrix(Diagonal(sqrt.(exp.(@view(params[(nλ + 1):(nλ + T)])))))) :
+        reshape(params, T, K)
     function negloglik(params)
-        m = gllvm_laplace_marginal_loglik(Y, Ainv, reshape(params, T, K), family;
+        m = gllvm_laplace_marginal_loglik(Y, Ainv, augment(params), family;
                                           X = X, tol = tol, maxiter = maxiter)
         return (m.converged && isfinite(m.loglik)) ? -m.loglik : Inf
     end
-    res = optimize(negloglik, vec(Λ0), NelderMead(), Optim.Options(iterations = iterations))
-    Λhat = reshape(Optim.minimizer(res), T, K)
-    mhat = gllvm_laplace_marginal_loglik(Y, Ainv, Λhat, family; X = X, tol = tol, maxiter = maxiter)
+
+    params0 = if structure == :factor_analytic
+        ψ0 = initial_uniqueness === nothing ? fill(0.1, T) : Float64.(collect(initial_uniqueness))
+        (length(ψ0) == T && all(>(0), ψ0)) ||
+            throw(ArgumentError("initial_uniqueness must be a positive length-$T vector"))
+        vcat(vec(Λ0), log.(ψ0))
+    else
+        vec(Λ0)
+    end
+    res = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+    phat = Optim.minimizer(res)
+    Λhat = reshape(phat[1:nλ], T, K)
+    ψhat = structure == :factor_analytic ? exp.(phat[(nλ + 1):(nλ + T)]) : nothing
+    mhat = gllvm_laplace_marginal_loglik(Y, Ainv, augment(phat), family; X = X, tol = tol, maxiter = maxiter)
+    Glat = ψhat === nothing ? Λhat * transpose(Λhat) : Λhat * transpose(Λhat) + Diagonal(ψhat)
+    descr = ψhat === nothing ? genetic_gllvm_descriptors(Λhat) :
+        genetic_gllvm_descriptors(Λhat; uniqueness = ψhat)
     return (loglik = mhat.loglik,
-            genetic_covariance = Λhat * transpose(Λhat),
-            latent_structure = genetic_gllvm_descriptors(Λhat),
+            genetic_covariance = Matrix(Glat),
+            latent_structure = descr,
+            uniqueness = ψhat,
             beta = mhat.beta,
-            breeding_values = mhat.g,
+            breeding_values = mhat.g[:, 1:K],   # the K common-factor scores
             n_latent_factors = K,
             converged = Optim.converged(res) && mhat.converged,
             iterations = Optim.iterations(res))
