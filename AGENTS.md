@@ -9,24 +9,33 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-19 (BT2/BT3 relaunch, S1+S2).** `main` carries the full
-  Phase-4B/5/6 engine work (PR #36) plus multivariate covariance SEs/LRTs (#47, PR
-  #59). BT2/BT3 relaunched against the R-lane joint critical path (#61):
-  **S1 honesty closeout** (#47 `validation_status()` rows + #38 doc + #44
-  V6-LAPLACE row, PR #62) and **S2 `:diagonal` multivariate bridge payload**
-  (#42 scoped — `multivariate_result_payload`, rotation-free, unblocks the R-lane
-  diagonal LRT, PR #63) both merged to `main` (`c30fca0`). `Pkg.test()` +
-  Documenter green; `validation_status()` has 33 rows. **Next:** #43 PEV/reliability
-  into `result_payload`, then the FA rotation-convention note (#42/#37/#55). Read
-  `docs/dev-log/after-task/2026-06-19-session-handover-v3.md` (START HERE).
+- **As of 2026-06-20 (overnight autonomous run — committed BT2/BT3 runway DONE).**
+  The full committed BT2/BT3 engine runway merged to `main` this session (9 PRs,
+  #65–#72): **#43** PEV/reliability into `result_payload` (`:selinv`, PR #65),
+  **#44** `MarginalMethod` dispatch + `nongaussian_result_payload` (PR #66),
+  **#55** evolvability / G-matrix geometry (Hansen–Houle, rotation-invariant, PR #67),
+  **#45** post-fit `mixed_model_marker_scan(fit, markers)` (PR #68), **#48**
+  genome-wide threshold machinery + opt-in permutation harness (PR #69 + fast-follow
+  #70), the **FA rotation-convention decision** (rotation-invariant functionals only —
+  never raw loadings; PR #71), and **#46/#49** Julia-native fitted target fixture +
+  opt-in JWAS.jl comparator scaffold (PR #72). Each = full-DoD PR with a 3-lens
+  adversarial review. `Pkg.test()` + Documenter green — **CI on a clean checkout is
+  the authoritative gate** (Dropbox can transiently desync working-tree fixtures);
+  `validation_status()` has **35 rows**. **Next:** the eigenbasis bridge exposure for
+  `:lowrank`/`:factor_analytic` (#42, after R ratifies the FA convention on #42↔R#7),
+  #54 random regression, or run+record the opt-in comparator/recovery evidence. Read
+  `docs/dev-log/after-task/2026-06-20-session-handover-v4.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
-  else is `experimental`/`partial`.
-- **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 = engine
-  bridge-readiness for #42 (structured covariance), #43 (PEV/reliability), #44
-  (non-Gaussian + `MarginalMethod` dispatch), #45 (post-fit marker scans),
-  coordinated live with the R twin. BT3 = Julia-native validation #46 (fitted
-  Mrode), #47 (covariance SEs/LRTs), #48 (calibrated thresholds), #49 (comparator
-  fixtures). Innovation backlog #50–#55; scout cadence #56.
+  else is `experimental`/`partial` — nothing was promoted to covered this session.
+- **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
+  bridge-readiness (#42 diagonal done; #43/#44/#45 **done**; #42 lowrank/fa eigenbasis
+  exposure gated on R ratification of the FA convention) and BT3 Julia-native
+  validation (#46 fitted target + #49 JWAS scaffold **done** as a serialized target +
+  opt-in scaffold; #47 SEs/LRTs done; #48 threshold machinery **done**, calibration
+  evidence opt-in) are **landed**. Remaining: external-comparator EVIDENCE + fitted-
+  Mrode confrontation (R-lane + opt-in JWAS run), multivariate recovery calibration
+  (#4, not passed), innovation backlog #50–#54 (random regression #54, metafounders,
+  CRN, PCG+APY scaling, genetic GLLVM), scout cadence #56; Phase 7/8 hardware-gated.
 
 ## Core Scope
 
