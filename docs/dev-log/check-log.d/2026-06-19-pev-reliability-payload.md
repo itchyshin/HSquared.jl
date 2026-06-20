@@ -32,15 +32,42 @@
 ## Commands / results
 
 - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → **passed (exit 0)**
-  (baseline green before the change; green after, with the widened payload tuple +
-  PEV/reliability value parity).
-- `~/.juliaup/bin/julia --project=docs docs/make.jl` → (recorded in after-task).
-- Adversarial review workflow (Hopper / Gauss+Noether / Rose) → (recorded in
-  after-task).
+  (baseline green before the change; green after the widened payload tuple +
+  PEV/reliability value parity; re-run green after the review fixes added the
+  8-animal Mrode9-shaped non-trivial fixture and the `reliability` PEV-dedup).
+- `~/.juliaup/bin/julia --project=docs docs/make.jl` → **passed (DOCS_EXIT=0)**.
+- Adversarial 3-lens review workflow (Hopper / Gauss / Rose) → all **pass_with_nits**
+  (no blockers). Findings addressed in-lane:
+  - Gauss (dedup): `result_payload` now computes the `:selinv` PEV once and passes
+    it to `reliability` via a new optional `pev` kwarg (no second Cholesky).
+  - Gauss/Rose (wording): scoped "machine precision" to well-conditioned
+    validation-scale fits; softened "production-direction" → "`O(nnz(L))`
+    (sparse-scalable)"; documented that the `reliability` denominator still forms
+    the dense `inv(Ainv)`.
+  - Rose (evidence): added an 8-animal Mrode9-shaped, `nfixed = 2` fixture pinning
+    `:selinv` PEV/reliability == `:dense` and the payload values, so the
+    V1-SELINV-PEV "8-animal" wording is now actually backed; filled these
+    docs-build + review-outcome lines.
+  - Hopper (R-lane, flagged on #61, NOT edited here): the R bridge's opportunistic
+    `merge()` (`../hsquared/R/julia-bridge.R:51-58`) is last-wins and would overwrite
+    the payload's `:selinv` fields with the standalone extractors' `:dense` default
+    (numerically identical today); R-lane should drop it so the `:selinv` payload
+    passes through, then close hsquared#21 on the de-duplicated path. Also: #21 is
+    now unconditional only on the `AnimalModelFit`/REML route — the Henderson-MME R
+    route still rides opportunistic enrichment (separate slice).
+
+## Follow-ups (noted, not in this slice)
+
+- Production-direction reliability denominator: compute `diag(A)` via a selected
+  inverse of `Ainv` (`O(nnz)`) instead of the dense `inv(Ainv)`, to make the
+  payload reliability fully sparse-scalable.
+- R-lane: drop the opportunistic `merge()`; decide whether #21 needs an
+  always-present guarantee on the Henderson target too.
 
 ## Claim boundary
 
 A validation-scale bridge-shape change only. `:selinv` matches the dense MME
-inverse diagonal to machine precision (`V1-SELINV-PEV`) but this is NOT a
-production large-pedigree reliability claim, and there is no external fitted-model
-comparator for PEV/reliability. No capability moved to covered.
+inverse diagonal to machine precision for well-conditioned validation-scale fits
+(`V1-SELINV-PEV`); this is NOT a production large-pedigree reliability claim (the
+`reliability` denominator still densifies `inv(Ainv)`), and there is no external
+fitted-model comparator for PEV/reliability. No capability moved to covered.
