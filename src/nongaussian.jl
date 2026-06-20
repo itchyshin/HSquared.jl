@@ -73,8 +73,11 @@ function _marginal_method(s::Symbol)
 end
 _marginal_method_symbol(::Laplace) = :laplace
 _marginal_method_symbol(::Variational) = :variational
+# R-facing method token. Kept unabbreviated (matching the stored :variational
+# symbol and the rest of the codebase, and the "laplace" sibling) — the exact
+# on-the-wire token is pending R-lane agreement before it is a frozen contract.
 _marginal_method_string(::Laplace) = "laplace"
-_marginal_method_string(::Variational) = "va"
+_marginal_method_string(::Variational) = "variational"
 
 # numerically stable logistic and log(1 + exp η)
 _logistic(η) = η >= 0 ? 1.0 / (1.0 + exp(-η)) : (e = exp(η); e / (1.0 + e))
@@ -359,11 +362,12 @@ end
 Experimental fitted-object container for the non-Gaussian animal model returned by
 [`fit_laplace_reml`](@ref). Fields: `variance_components`, `marginal_loglik`,
 `beta`, `breeding_values` (the posterior-mode random effect), `ids`, `converged`,
-`family`, `marginal`. Use the extractor functions [`breeding_values`](@ref) (→
-`BreedingValues(ids, values)`), [`variance_components`](@ref), and
-[`fixed_effects`](@ref) for the same access contract as [`AnimalModelFit`](@ref);
-this is a distinct type so its extractors do not collide with the multivariate
-`NamedTuple` extractors.
+`family`, `marginal`, and `n_trials` (the common Binomial trials denominator for
+`family = :binomial`, `nothing` for every other family). Use the extractor
+functions [`breeding_values`](@ref) (→ `BreedingValues(ids, values)`),
+[`variance_components`](@ref), and [`fixed_effects`](@ref) for the same access
+contract as [`AnimalModelFit`](@ref); this is a distinct type so its extractors do
+not collide with the multivariate `NamedTuple` extractors.
 """
 struct NonGaussianFit
     variance_components::NamedTuple
@@ -374,6 +378,7 @@ struct NonGaussianFit
     converged::Bool
     family::Symbol
     marginal::Symbol
+    n_trials::Union{Int,Nothing}
 end
 
 variance_components(fit::NonGaussianFit) = fit.variance_components
@@ -386,32 +391,40 @@ EBV(fit::NonGaussianFit) = breeding_values(fit)
 
 Bridge-ready, "boring" result payload (a `NamedTuple` of scalars / arrays /
 nested `NamedTuple`s — Julia structs stay Julia-side) for a non-Gaussian
-animal-model fit from [`fit_laplace_reml`](@ref). It mirrors
-[`result_payload`](@ref) / [`multivariate_result_payload`](@ref) so the R twin
+animal-model fit from [`fit_laplace_reml`](@ref). It mirrors the top-level shape
+of [`multivariate_result_payload`](@ref) (the univariate [`result_payload`](@ref)
+predates this convention and nests `method`/diagnostics differently) so the R twin
 can marshal one shape and the R non-Gaussian family-acceptance can fire.
 
 Fields: `engine`, `target = "nongaussian_reml"`, `family`
-(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `method`
-(`"laplace"`/`"va"`, resolved through the [`MarginalMethod`](@ref) dispatch from
-the stored marginal symbol), `variance_components`, `fixed_effects`,
-`breeding_values = (ids, values)`, `loglik`, and `converged`.
+(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `n_trials` (the common
+Binomial trials denominator, `nothing` for other families — so a binomial payload
+is self-describing on the data scale), `method` (`"laplace"`/`"variational"`,
+resolved through the internal `MarginalMethod` dispatch from the stored marginal
+symbol), `variance_components`, `fixed_effects`, `breeding_values = (ids, values)`,
+`loglik`, and `converged`.
 
-It deliberately carries NO `heritability`: a `NonGaussianFit` does not compute a
-heritability for any family — the logit/log-link families have no
-residual-variance scale on which a liability-scale `h²` is defined here — so
-surfacing one would be an unbacked claim. EXPERIMENTAL: the fitter is not the
-public default, not wired into the R formula path, and has no external comparator;
-the Bernoulli single-trial variance is downward-biased (an information effect).
+The payload shape is deliberately **family-uniform** and therefore carries NO
+`heritability` field: a `NonGaussianFit` computes none, and h² is left to the
+consumer (it is derivable from `variance_components` for the Gaussian family, but
+on the liability scale the logit/log-link families have no residual-variance scale
+on which a single h² is defined here — surfacing one would be an unbacked claim).
+EXPERIMENTAL: the fitter is not the public default, not wired into the R formula
+path, and has no external comparator; the Bernoulli single-trial variance is
+downward-biased (an information effect). The R-facing `method` token
+(`"laplace"`/`"variational"`) and family-acceptance shape are pending R-lane
+agreement before this is treated as a frozen contract.
 """
 function nongaussian_result_payload(fit::NonGaussianFit)
     return (
         engine = "HSquared.jl",
         target = "nongaussian_reml",
         family = String(fit.family),
+        n_trials = fit.n_trials,
         method = _marginal_method_string(_marginal_method(fit.marginal)),
         variance_components = fit.variance_components,
         fixed_effects = copy(fit.beta),
-        breeding_values = (ids = fit.ids, values = copy(fit.breeding_values)),
+        breeding_values = (ids = copy(fit.ids), values = copy(fit.breeding_values)),
         loglik = fit.marginal_loglik,
         converged = fit.converged,
     )
@@ -450,10 +463,13 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, or :binomial"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
-    marginal in (:laplace, :variational) ||
-        throw(ArgumentError("marginal must be :laplace or :variational"))
-    margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
-    val(r) = marginal === :variational ? r.elbo : r.loglik
+    # Resolve the marginal through the MarginalMethod dispatch (accepts the engine
+    # :laplace/:variational and the DRM-style :LA/:VA spellings; throws otherwise),
+    # then store the canonical symbol. Value-preserving for :laplace/:variational.
+    mm = _marginal_method(marginal)
+    marginal = _marginal_method_symbol(mm)
+    margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
+    val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
     if family === :gaussian
         sa0, se0 = initial === nothing ? (1.0, 1.0) :
@@ -465,7 +481,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
         return NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
-                              Optim.converged(res) && fit.converged, :gaussian, marginal)
+                              Optim.converged(res) && fit.converged, :gaussian, marginal, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
         fam = family === :poisson ? PoissonResponse() :
@@ -478,7 +494,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = margfun(y, X, Z, Ainv, sa2, fam)
         return NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
-                              Optim.converged(res) && fit.converged, family, marginal)
+                              Optim.converged(res) && fit.converged, family, marginal,
+                              family === :binomial ? Int(n_trials) : nothing)
     end
 end
 
@@ -499,10 +516,9 @@ function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::Abstract
     family === :poisson ||
         throw(ArgumentError("laplace_reml_interval currently supports family = :poisson only"))
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    marginal in (:laplace, :variational) ||
-        throw(ArgumentError("marginal must be :laplace or :variational"))
-    margfun = marginal === :variational ? variational_marginal_loglik : laplace_marginal_loglik
-    val(r) = marginal === :variational ? r.elbo : r.loglik
+    mm = _marginal_method(marginal)
+    margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
+    val(r) = mm isa Variational ? r.elbo : r.loglik
     fit = fit_laplace_reml(y, X, Z, Ainv; family = :poisson, marginal = marginal, initial = initial)
     sa2hat = fit.variance_components.sigma_a2
     llhat = fit.marginal_loglik

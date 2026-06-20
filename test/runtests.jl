@@ -4236,7 +4236,7 @@ end
     @test HSquared._marginal_method(HSquared.Variational()) === HSquared.Variational()
     @test_throws ArgumentError HSquared._marginal_method(:nope)
     @test HSquared._marginal_method_string(HSquared.Laplace()) == "laplace"
-    @test HSquared._marginal_method_string(HSquared.Variational()) == "va"
+    @test HSquared._marginal_method_string(HSquared.Variational()) == "variational"
     @test HSquared._marginal_method_symbol(HSquared.Laplace()) === :laplace
     @test HSquared._marginal_method_symbol(HSquared.Variational()) === :variational
 
@@ -4254,12 +4254,13 @@ end
                           initial = (sigma_a2 = 1.0,))
     pp = nongaussian_result_payload(fp)
     @test propertynames(pp) == (
-        :engine, :target, :family, :method, :variance_components,
+        :engine, :target, :family, :n_trials, :method, :variance_components,
         :fixed_effects, :breeding_values, :loglik, :converged,
     )
     @test pp.engine == "HSquared.jl"
     @test pp.target == "nongaussian_reml"
     @test pp.family == "poisson"
+    @test pp.n_trials === nothing          # only :binomial carries a trials denominator
     @test pp.method == "laplace"
     @test pp.variance_components === fp.variance_components
     @test pp.fixed_effects == fp.beta
@@ -4267,27 +4268,49 @@ end
     @test pp.breeding_values.values == fp.breeding_values
     @test pp.loglik == fp.marginal_loglik
     @test pp.converged == fp.converged
-    # HONESTY: NO heritability field for non-Gaussian families (none is computed)
+    # HONESTY: NO heritability field (the payload shape is family-uniform)
     @test !hasproperty(pp, :heritability)
 
-    # Gaussian fit (two variance components), :variational marginal -> method "va"
+    # Gaussian fit (two variance components), :variational marginal -> "variational"
     yg = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
     fgv = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian, marginal = :variational,
                            ids = ped.ids, initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
     pg = nongaussian_result_payload(fgv)
     @test pg.family == "gaussian"
-    @test pg.method == "va"
+    @test pg.method == "variational"
+    @test pg.n_trials === nothing
     @test haskey(pg.variance_components, :sigma_a2)
     @test haskey(pg.variance_components, :sigma_e2)
     @test pg.loglik == fgv.marginal_loglik
-    # heritability omitted for ALL families (the payload shape is family-uniform)
     @test !hasproperty(pg, :heritability)
+
+    # Binomial fit: the payload is self-describing — it carries the trials denominator
+    yb = [3, 5, 8, 4, 6, 2, 5, 7]
+    fb = fit_laplace_reml(yb, X, Z, Ainv; family = :binomial, n_trials = 10,
+                          ids = ped.ids, initial = (sigma_a2 = 1.0,))
+    pb = nongaussian_result_payload(fb)
+    @test pb.family == "binomial"
+    @test pb.n_trials == 10
+    @test fb.n_trials == 10
+
+    # The MarginalMethod dispatch is wired into the fitter: :LA / :VA aliases work
+    # and store the canonical symbol; value-preserving vs :laplace / :variational.
+    fp_la = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, marginal = :LA,
+                             ids = ped.ids, initial = (sigma_a2 = 1.0,))
+    @test fp_la.marginal === :laplace
+    @test fp_la.marginal_loglik == fp.marginal_loglik
+    fgv_va = fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian, marginal = :VA,
+                              ids = ped.ids, initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test fgv_va.marginal === :variational
+    @test fgv_va.marginal_loglik == fgv.marginal_loglik
 
     # payload arrays are copies (mutating must not corrupt the fit)
     pp.fixed_effects[1] = NaN
     @test !isnan(fp.beta[1])
     pp.breeding_values.values[1] = NaN
     @test !isnan(fp.breeding_values[1])
+    pp.breeding_values.ids[1] = "MUT"
+    @test fp.ids[1] != "MUT"               # ids are copied too (symmetry with values)
 end
 
 @testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
