@@ -58,6 +58,39 @@ function genetic_gllvm_descriptors(loadings::AbstractMatrix; uniqueness = nothin
 end
 
 """
+    genetic_gllvm_descriptors(result::NamedTuple)
+
+Rotation-invariant genetic-GLLVM latent-structure descriptors for an ESTIMATED
+factor-analytic or low-rank multivariate REML fit (`fit_multivariate_reml(...;
+genetic_structure = :factor_analytic | :lowrank, rank = K)`). Reads the fit's
+IDENTIFIED, rotation-invariant genetic covariance `G = result.genetic_covariance`
+and uniqueness `Ψ` ([`genetic_uniqueness`](@ref); `nothing` ⇒ low-rank, `Ψ = 0`) —
+NEVER the rotation-nonidentified loadings — and returns the same NamedTuple as the
+supplied-loadings method, with `communality = 1 − Ψ / diag(G)` (the per-trait
+fraction of genetic variance from the common latent factors; `= 1` for low-rank).
+Rejects the rotation-free `:diagonal` / `:unstructured` structures, which have no
+latent-factor interpretation.
+"""
+function genetic_gllvm_descriptors(result::NamedTuple)
+    meta = genetic_structure(result)   # throws unless the fit carries structured metadata
+    meta.structure in (:lowrank, :factor_analytic) || throw(ArgumentError(
+        "genetic_gllvm_descriptors(result) needs a :lowrank or :factor_analytic fit; got :$(meta.structure)"))
+    G = Matrix{Float64}(result.genetic_covariance)
+    gv = diag(G)
+    ψ = genetic_uniqueness(result)
+    communality = ψ === nothing ? ones(length(gv)) : (gv .- ψ) ./ gv
+    K = meta.rank
+    return (genetic_covariance = G,
+            genetic_variances = gv,
+            genetic_correlation = genetic_correlation(G),
+            communality = communality,
+            genetic_pca = genetic_pca(G),
+            g_max = g_max(G),
+            rank = K,
+            n_latent_factors = K)
+end
+
+"""
     genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, loadings, R0; uniqueness = nothing, ids = nothing)
 
 Supplied-covariance **Gaussian** genetic-GLLVM latent solve (#50 slice 2). With a
