@@ -168,10 +168,11 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 34
+    @test length(validation) == 35
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
+    @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -3086,6 +3087,52 @@ end
     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
           single_marker_scan(fit, markers; marker_ids = mids)
+end
+
+@testset "Phase 5 genome-wide threshold machinery (#48)" begin
+    # _scan_max_statistic: max chi-square / max -log10 p over a scan
+    fake_scan = (chisq = [1.0, 9.0, 4.0], p_values = [0.3, 0.001, 0.05])
+    @test HSquared._scan_max_statistic(fake_scan; statistic = :chisq) == 9.0
+    @test HSquared._scan_max_statistic(fake_scan; statistic = :neglog10p) ≈ -log10(0.001)
+    @test_throws ArgumentError HSquared._scan_max_statistic(fake_scan; statistic = :nope)
+    @test_throws ArgumentError HSquared._scan_max_statistic((p_values = [0.1],); statistic = :chisq)
+
+    # _empirical_upper_quantile: type-7 linear interpolation vs hand values
+    @test HSquared._empirical_upper_quantile([1.0, 2.0, 3.0, 4.0], 0.0) == 1.0
+    @test HSquared._empirical_upper_quantile([1.0, 2.0, 3.0, 4.0], 1.0) == 4.0
+    @test HSquared._empirical_upper_quantile([1.0, 2.0, 3.0, 4.0], 0.5) ≈ 2.5
+    @test HSquared._empirical_upper_quantile([10.0], 0.95) == 10.0          # single value
+    @test HSquared._empirical_upper_quantile([3.0, 1.0, 2.0], 0.5) ≈ 2.0    # unsorted input
+    @test_throws ArgumentError HSquared._empirical_upper_quantile(Float64[], 0.5)
+    @test_throws ArgumentError HSquared._empirical_upper_quantile([1.0], 1.5)
+
+    # genome_wide_threshold_from_null: (1-alpha) empirical quantile of the null
+    nulls = collect(1.0:100.0)
+    thr5 = genome_wide_threshold_from_null(nulls; alpha = 0.05)
+    @test thr5.threshold ≈ HSquared._empirical_upper_quantile(nulls, 0.95)
+    @test thr5.alpha == 0.05
+    @test thr5.statistic == :chisq
+    @test thr5.n_null == 100
+    # monotonicity: smaller alpha ⇒ larger (more stringent) threshold
+    thr1 = genome_wide_threshold_from_null(nulls; alpha = 0.01)
+    @test thr1.threshold > thr5.threshold
+    @test_throws ArgumentError genome_wide_threshold_from_null(nulls; alpha = 0.0)
+    @test_throws ArgumentError genome_wide_threshold_from_null(Float64[])
+    @test_throws ArgumentError genome_wide_threshold_from_null(nulls; statistic = :nope)
+
+    # genome_wide_pvalue: add-one empirical p (never 0), monotone in observed
+    nulls2 = [1.0, 2.0, 3.0, 4.0]
+    @test genome_wide_pvalue(5.0, nulls2) == 1 / 5         # exceeds all -> (1+0)/(4+1)
+    @test genome_wide_pvalue(0.0, nulls2) == 5 / 5         # below all  -> (1+4)/(4+1)
+    @test genome_wide_pvalue(3.0, nulls2) == 3 / 5         # >= 3 and 4 -> (1+2)/(4+1)
+    @test genome_wide_pvalue(1.0e9, nulls2) > 0            # never zero
+    @test_throws ArgumentError genome_wide_pvalue(1.0, Float64[])
+
+    # consistency: a statistic AT the (1-alpha) threshold has empirical p ~ alpha
+    @test genome_wide_pvalue(thr5.threshold, nulls) ≈ 0.05 atol = 0.02
+
+    # validation_status carries the new V5-MARKER-THRESHOLD row
+    @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
 end
 
 @testset "Phase 2 dense NRM helper" begin

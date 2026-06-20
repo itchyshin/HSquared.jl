@@ -2171,3 +2171,103 @@ function fit_single_step_reml(
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
     return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target, ids = ids)
 end
+
+# ---------------------------------------------------------------------------
+# Genome-wide significance threshold machinery (#48).
+#
+# Deterministic, RNG-FREE machinery that turns an empirical NULL distribution of
+# per-scan maximum statistics (the max over markers, which is correlation/LD-aware
+# because the markers are scanned jointly) into a genome-wide threshold at level
+# alpha and an empirical genome-wide p-value. The null distribution itself is
+# produced by phenotype-permutation / null-resimulation — that RNG-heavy step lives
+# in the opt-in `sim/phase5_threshold_calibration.jl` harness (outside CI), exactly
+# like the other recovery harnesses; this package layer is the deterministic,
+# unit-tested core. EXPERIMENTAL, validation-scale: this is NOT a production
+# genome-wide-significance claim (that needs a realistic LD/design calibration and
+# is the gate, #48, that holds the R `gwas()` significance wording), and there is
+# no external comparator (permutation-GWAS in PLINK max(T) / GenABEL) yet.
+
+# Per-scan maximum statistic: max chi-square (default) or max -log10 p over the
+# scanned markers. The maximum is the genome-wide statistic whose null
+# distribution calibrates the threshold (it captures marker correlation because the
+# markers are scanned together).
+function _scan_max_statistic(scan; statistic::Symbol = :chisq)
+    if statistic === :chisq
+        hasproperty(scan, :chisq) ||
+            throw(ArgumentError("scan must have a :chisq field for statistic = :chisq"))
+        return maximum(Float64.(scan.chisq))
+    elseif statistic === :neglog10p
+        hasproperty(scan, :p_values) ||
+            throw(ArgumentError("scan must have a :p_values field for statistic = :neglog10p"))
+        return maximum(-log10.(max.(Float64.(scan.p_values), floatmin(Float64))))
+    else
+        throw(ArgumentError("statistic must be :chisq or :neglog10p"))
+    end
+end
+
+# Deterministic empirical quantile (type-7 / linear interpolation, the R default),
+# implemented in-package to avoid a Statistics dependency and any cross-version
+# convention drift.
+function _empirical_upper_quantile(values::AbstractVector{<:Real}, prob::Real)
+    0 <= prob <= 1 || throw(ArgumentError("prob must be in [0, 1]"))
+    isempty(values) && throw(ArgumentError("values must be non-empty"))
+    v = sort!(Float64.(collect(values)))
+    n = length(v)
+    n == 1 && return v[1]
+    h = (n - 1) * prob + 1            # 1-based interpolated position
+    lo = floor(Int, h)
+    lo >= n && return v[n]
+    frac = h - lo
+    return v[lo] + frac * (v[lo + 1] - v[lo])
+end
+
+"""
+    genome_wide_threshold_from_null(null_max_statistics; alpha = 0.05, statistic = :chisq)
+
+Turn a SUPPLIED empirical null distribution of per-scan maximum statistics into a
+genome-wide significance threshold at level `alpha`: the `(1 - alpha)` empirical
+quantile of `null_max_statistics`. Returns `(threshold, alpha, statistic, n_null)`.
+
+The null distribution is the set of per-permutation (or per-null-simulation)
+maxima (the internal `_scan_max_statistic` extracts the max chi-square / max
+-log10 p of a scan); generate it with the opt-in
+`sim/phase5_threshold_calibration.jl` harness (phenotype permutation re-runs the
+marker scan, so the maximum is correlation/LD-aware). Because it uses the
+distribution of the MAXIMUM over the jointly-scanned markers, the threshold is
+correlation-aware (less conservative than Bonferroni when markers are in LD).
+
+EXPERIMENTAL, validation-scale: this calibrates a threshold FROM a supplied null;
+it is not itself a production genome-wide-significance claim (that needs a
+realistic-design calibration — the #48 gate) and has no external comparator yet.
+"""
+function genome_wide_threshold_from_null(null_max_statistics::AbstractVector{<:Real};
+                                         alpha::Real = 0.05, statistic::Symbol = :chisq)
+    0 < alpha < 1 || throw(ArgumentError("alpha must be in (0, 1)"))
+    statistic in (:chisq, :neglog10p) ||
+        throw(ArgumentError("statistic must be :chisq or :neglog10p"))
+    isempty(null_max_statistics) &&
+        throw(ArgumentError("null_max_statistics must be non-empty"))
+    nulls = Float64.(collect(null_max_statistics))
+    return (
+        threshold = _empirical_upper_quantile(nulls, 1 - alpha),
+        alpha = Float64(alpha),
+        statistic = statistic,
+        n_null = length(nulls),
+    )
+end
+
+"""
+    genome_wide_pvalue(observed, null_max_statistics)
+
+Empirical genome-wide p-value for an `observed` per-scan maximum statistic against
+a SUPPLIED null distribution of maxima: `(1 + #{null ≥ observed}) / (n_null + 1)`
+(the standard add-one permutation p-value, so it is never 0). The same null
+distribution feeds [`genome_wide_threshold_from_null`](@ref). EXPERIMENTAL,
+validation-scale; not a production genome-wide-significance claim.
+"""
+function genome_wide_pvalue(observed::Real, null_max_statistics::AbstractVector{<:Real})
+    isempty(null_max_statistics) &&
+        throw(ArgumentError("null_max_statistics must be non-empty"))
+    nulls = Float64.(collect(null_max_statistics))
+    return (1 + count(>=(Float64(observed)), nulls)) / (length(nulls) + 1)
+end
