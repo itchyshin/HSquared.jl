@@ -16,9 +16,13 @@
 # `Ainv ⊗ inv(K_g)`, i.e. coefficient covariance `A ⊗ K_g`), returning per-animal
 # coefficient vectors. Still supplied-covariance — no estimation.
 #
-# DEFERRED to later slices: REML estimation of `K_g`/residual function (slice 3), the
-# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, the
-# R-facing model-spec / bridge payload, and any WOMBAT/ASReml comparator. Basis
+# Slice 3 (REML). `fit_random_regression_reml` ESTIMATES `K_g`/`σ²e` by dense
+# log-Cholesky REML on the marginal `V = W(A⊗K_g)Wᵀ + σ²e I` (analogue of
+# `fit_multivariate_reml`). Still dense/validation-scale, homogeneous residual.
+#
+# DEFERRED to later slices: the eigen-function (covariance-function) decomposition,
+# PEV of curve-valued EBVs, heterogeneous residual + permanent-environment term, the
+# R-facing model-spec / bridge payload, and any WOMBAT/ASReml/JWAS comparator. Basis
 # convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
 # (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
 # conventions.
@@ -202,8 +206,9 @@ Returns `(beta, random_coefficients = (ids, values), variance_components =
 per-animal coefficient vectors (row = animal, column = Legendre coefficient `0..k-1`).
 
 EXPERIMENTAL, dense/validation-scale, SUPPLIED-covariance: `K_g`/`sigma_e2` are NOT
-estimated (RR REML is a later slice — see the roadmap note), there is no R-facing
-model-spec or bridge payload, and homogeneous residual variance only.
+estimated here — use [`fit_random_regression_reml`](@ref) to estimate them by REML.
+There is no R-facing model-spec or bridge payload, and homogeneous residual variance
+only.
 """
 function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
                                Z::AbstractMatrix, Ainv::AbstractMatrix, K_g::AbstractMatrix,
@@ -324,8 +329,10 @@ self-consistency: the `k = 1` reduction recovers the univariate `fit_sparse_reml
 optimum (`K_g[1,1] = 2σ²a`, equal `σ²e`, equal log-likelihood); the reported
 log-likelihood matches an independent marginal oracle and beats off-optimum
 points; the BLUPs reproduce [`random_regression_mme`](@ref) at the estimate.
-Known-truth `K_g` recovery and any WOMBAT/ASReml comparator are not yet
-exercised, and there is no R-facing model-spec or bridge payload.
+Known-truth `K_g` recovery and any WOMBAT/ASReml/JWAS comparator are not yet
+exercised, and there is no R-facing model-spec or bridge payload. As a dense GLS
+path, `V`'s conditioning degrades as `O(1/σ²e)` toward the residual boundary, so a
+near-noiseless optimum (`σ²e → 0`) is conditioning-limited at this validation scale.
 """
 function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
                                     Z::AbstractMatrix, Ainv::AbstractMatrix;
@@ -375,7 +382,11 @@ function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::A
         K_g = _chol_params_to_cov(@view(params[1:nkg]), k)
         sigma_e2 = exp(params[nkg + 1])
         try
-            return -_rr_reml_loglik_core(yv, Xm, W, A, K_g, sigma_e2, n, p)
+            # cholesky(Symmetric(V)) does not throw on a non-finite V (logdet → Inf
+            # without error), so screen the objective: any non-finite value maps to
+            # the +Inf reject sentinel rather than feeding NaN into the simplex.
+            val = -_rr_reml_loglik_core(yv, Xm, W, A, K_g, sigma_e2, n, p)
+            return isfinite(val) ? val : Inf
         catch err
             (err isa PosDefException || err isa ArgumentError) && return Inf
             rethrow()
