@@ -350,6 +350,15 @@ const VALIDATION_STATUS_DATA = (
         "the NON-Gaussian latent marginal (Poisson/Bernoulli/Binomial `G_lat ⊗ A` into the Laplace/VA marginal), genetic-GLLVM REML estimation of structured `G_lat` (slice 3), and external comparator (GLLVM.jl / gllvmTMB) parity",
         "Supplied-covariance only — `Λ`/`Ψ`/`R0` are NOT estimated (that is slice 3), and only rotation-INVARIANT functionals of `Σ_g` are returned (never the raw loadings). The Gaussian latent solve's numerical correctness reduces to `multivariate_mme` (V4-MV). The first foundation steps of the genetic GLLVM (#50, slices 1–2); the `GLLVM-style animal models` capability stays `planned`. Nothing promoted to covered.",
     ),
+    (
+        "V6-GGLLVM-MARGINAL",
+        "genetic-GLLVM non-Gaussian K-factor latent Laplace marginal (supplied loadings) (#50 slice 2)",
+        "Phase 6",
+        "partial",
+        "`gllvm_laplace_marginal_loglik(Y, Ainv, loadings, family; X)` (internal) evaluates the Laplace-approximate marginal log-likelihood of the K-FACTOR genetic GLLVM: latent field `vec(g) ~ N(0, I_K ⊗ A)` (each factor `g[·,k] ~ N(0,A)` independently), `η[i,t] = (Xβ)[i,t] + Σ_k Λ[t,k] g[i,k]`, `y[i,t] | η ~ family` (`Gaussian`/`Poisson`/`Bernoulli`/`Binomial`), `β` integrated under a flat prior. It generalizes the single-factor `laplace_marginal_loglik` by replacing `(Z, Ainv/σ²a)` with `(W, I_K ⊗ Ainv)`, where `W` is the Λ-weighted latent design (record `(i,t)` scatters `Λ[t,:]` into animal `i`'s `K` factor slots) — penalized-IRLS Newton over `[β; vec(g)]` then a Gaussian integral at the mode. Validated (`test/runtests.jl`) by TWO INDEPENDENT trusted-path reductions: (1) the `K = 1, T = 1` case reduces EXACTLY to `laplace_marginal_loglik` with `σ²a = λ²` for BOTH the Gaussian (machine precision) and Poisson (rtol 1e-7) families (the Laplace approximation is invariant under the affine latent reparameterization `u = λg`); (2) the Gaussian, full-rank-`Λ` (`K = T`) case equals `_multivariate_reml_loglik` at `G0 = ΛΛ'`, `R0 = σ²e·I` (the Gaussian Laplace is exact, rtol 1e-7); plus Bernoulli/Binomial convergence with mode-stationarity (`‖∇‖ < 1e-8`) and dimension/count guards.",
+        "the genetic-GLLVM REML estimation of structured `G_lat` over this marginal (slice 3), a fitted-object/EBV extractor surface, per-trait families, unbalanced / missing-record support, and external GLLVM.jl/gllvmTMB comparator parity",
+        "Experimental, dense/validation-scale, SUPPLIED loadings (NOT estimated), one family for all traits, balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the single-factor kernel's visibility), no R model-spec or bridge payload. The genuinely new genetic-GLLVM capability (a `K>1` latent field carrying a genetic relationship under a non-Gaussian response), validated by independent reductions but not by an external comparator; `GLLVM-style animal models` stays `planned`. Nothing promoted to covered.",
+    ),
 )
 
 """
