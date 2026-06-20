@@ -1400,6 +1400,8 @@ end
         :df,
         :nobs,
         :predictions,
+        :prediction_error_variance,
+        :reliability,
         :diagnostics,
         :converged,
     )
@@ -1413,6 +1415,17 @@ end
     @test payload.df == 3
     @test payload.nobs == 3
     @test payload.predictions ≈ [1.5, 2.0, 2.5]
+    # #43: PEV/reliability are now standard payload fields, computed via the
+    # O(nnz(L)) (sparse-scalable) Takahashi selected inverse (:selinv), shaped
+    # (ids, values) to match the R bridge's hs_julia_id_values() unpack (hsquared#21).
+    # (Non-trivial off-diagonal-Ainv / nfixed>1 parity is in the selinv testset.)
+    @test payload.prediction_error_variance.ids == ["a", "b", "c"]
+    @test payload.prediction_error_variance.values ≈
+          prediction_error_variance(fit; method = :selinv).values
+    @test payload.prediction_error_variance.values ≈
+          prediction_error_variance(fit; method = :dense).values
+    @test payload.reliability.ids == ["a", "b", "c"]
+    @test payload.reliability.values ≈ reliability(fit; method = :selinv).values
     @test payload.diagnostics.converged == true
     @test payload.diagnostics.optimizer_status == "test"
     @test payload.diagnostics.method == :ML
@@ -1868,6 +1881,34 @@ end
           prediction_error_variance(fit).values rtol = 1e-9
     @test reliability(fit; method = :selinv).values ≈
           reliability(fit).values rtol = 1e-9 atol = 1e-8
+
+    # Non-trivial fixture: 8-animal Mrode9-shaped pedigree (genuinely off-diagonal
+    # Ainv that exercises the :selinv recursion) and nfixed = 2 (intercept +
+    # covariate, so the (nfixed+1):end random-block slice is non-degenerate),
+    # at supplied interior variances (no σ²a=0 boundary). Pins the :selinv PEV
+    # diagonal == :dense on a larger pedigree (backs the V1-SELINV-PEV wording),
+    # and pins the standard result_payload carrying those :selinv values on a
+    # non-benign fit (addresses the benign-fixture review nit).
+    ped8 = normalize_pedigree(
+        ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    y8 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X8 = hcat(ones(8), Float64[0, 1, 0, 1, 0, 1, 0, 1])
+    spec8 = animal_model_spec(y8, X8, sparse(1.0I, 8, 8), pedigree_inverse(ped8);
+                              ids = ped8.ids, method = :REML)
+    lik8 = gaussian_loglik(spec8, 1.5, 0.7; method = :REML)
+    fit8 = AnimalModelFit(spec8, lik8, (sigma_a2 = 1.5, sigma_e2 = 0.7), true, "supplied", 0)
+    pev8_selinv = prediction_error_variance(fit8; method = :selinv)
+    pev8_dense = prediction_error_variance(fit8; method = :dense)
+    @test pev8_selinv.values ≈ pev8_dense.values rtol = 1e-9
+    @test reliability(fit8; method = :selinv).values ≈
+          reliability(fit8; method = :dense).values rtol = 1e-9 atol = 1e-8
+    payload8 = result_payload(fit8)
+    @test payload8.prediction_error_variance.values ≈ pev8_selinv.values
+    @test payload8.prediction_error_variance.values ≈ pev8_dense.values rtol = 1e-9
+    @test payload8.reliability.values ≈ reliability(fit8; method = :selinv).values
 
     # invalid method rejected on both extractors
     @test_throws ArgumentError prediction_error_variance(mme; method = :nope)

@@ -1121,8 +1121,8 @@ reported reliability/accuracy and the same extractor yields genomic reliabilitie
 Values are not clipped; small examples can expose weakly informed animals
 directly.
 """
-function reliability(fit::AnimalModelFit; method::Symbol = :dense)
-    pev = prediction_error_variance(fit; method = method)
+function reliability(fit::AnimalModelFit; method::Symbol = :dense, pev = nothing)
+    pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
     A = inv(Symmetric(Matrix{Float64}(fit.spec.Ainv)))
     animal_variance = fit.variance_components.sigma_a2 .* diag(A)
 
@@ -1130,8 +1130,8 @@ function reliability(fit::AnimalModelFit; method::Symbol = :dense)
         throw(ArgumentError("animal-level additive variances must be positive"))
 
     return (
-        ids = pev.ids,
-        values = Vector{Float64}(1 .- pev.values ./ animal_variance),
+        ids = pev_res.ids,
+        values = Vector{Float64}(1 .- pev_res.values ./ animal_variance),
     )
 end
 
@@ -1379,12 +1379,27 @@ Return a bridge-facing result payload with field names aligned to the R
 This is an experimental low-level payload. It is intended to make the R-Julia
 result shape explicit before live bridge execution is widened beyond tiny
 validation paths.
+
+The payload includes `prediction_error_variance` and `reliability` as standard
+fields (each a `(ids, values)` named tuple). The PEV is computed through the
+`O(nnz(L))` (sparse-scalable) Takahashi selected inverse (`method = :selinv`),
+which matches the dense MME inverse diagonal to machine precision for
+well-conditioned validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks
+these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
+the opportunistic per-extractor enrichment is no longer required. The PEV is
+computed once here and reused by `reliability` (no second factorization). This
+remains a validation-scale path, not a production large-pedigree reliability
+claim: in particular the `reliability` denominator still forms the dense
+`A = inv(Ainv)` for the animal self-relationships (a sparse selected-inverse
+diagonal of `Ainv` is the production-direction follow-up).
 """
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
     bv = breeding_values(fit)
     predictions = fitted_values(fit)
+    pev = prediction_error_variance(fit; method = :selinv)
+    rel = reliability(fit; method = :selinv, pev = pev)
 
     return (
         variance_components = vc,
@@ -1396,6 +1411,8 @@ function result_payload(fit::AnimalModelFit)
         df = fit.likelihood.nfixed + length(vc),
         nobs = fit.likelihood.nobs,
         predictions = predictions,
+        prediction_error_variance = (ids = pev.ids, values = pev.values),
+        reliability = (ids = rel.ids, values = rel.values),
         diagnostics = (
             converged = fit.converged,
             optimizer_status = fit.optimizer_status,
