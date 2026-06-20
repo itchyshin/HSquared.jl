@@ -18,12 +18,17 @@ engine reality.
   genome-wide threshold machinery + opt-in permutation harness (PR #69 + fast-follow
   #70), the **FA rotation-convention decision** (rotation-invariant functionals only —
   never raw loadings; PR #71), and **#46/#49** Julia-native fitted target fixture +
-  opt-in JWAS.jl comparator scaffold (PR #72). Each = full-DoD PR with a 3-lens
+  opt-in JWAS.jl comparator scaffold (PR #72). PLUS, beyond the committed runway,
+  **#54 random regression slices 1+2** (PR #74 descriptors, PR #75 supplied-covariance
+  RR MME `random_regression_mme` — `W = face-splitting(Z, Φ)`, precision
+  `Ainv ⊗ inv(K_g)`, oracle + degree-0 gated). Each = full-DoD PR with a 3-lens
   adversarial review. `Pkg.test()` + Documenter green — **CI on a clean checkout is
-  the authoritative gate** (Dropbox can transiently desync working-tree fixtures);
-  `validation_status()` has **35 rows**. **Next:** the eigenbasis bridge exposure for
-  `:lowrank`/`:factor_analytic` (#42, after R ratifies the FA convention on #42↔R#7),
-  #54 random regression, or run+record the opt-in comparator/recovery evidence. Read
+  the authoritative gate** (Dropbox can transiently desync working-tree fixtures; the
+  integrated `main` was reverified via a clean `git archive HEAD` export);
+  `validation_status()` has **35 rows**; nothing promoted to covered. **Next:** the
+  eigenbasis bridge exposure for `:lowrank`/`:factor_analytic` (#42, after R ratifies
+  the FA convention on #42↔R#7), **#54 slice 3 (RR REML)** (roadmap note has the
+  design), or run+record the opt-in comparator/recovery evidence. Read
   `docs/dev-log/after-task/2026-06-20-session-handover-v4.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
