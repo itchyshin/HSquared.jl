@@ -5695,3 +5695,51 @@ end
     @test_throws ArgumentError genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, reshape([1.0, 1.0, 1.0], 3, 1), R0; uniqueness = [0.2, 0.3, 0.4])  # 3 traits vs Y's 2
     @test_throws ArgumentError genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, Λ1, R0)  # K=1<t low-rank, no Ψ ⇒ singular G_lat
 end
+
+@testset "Genetic-GLLVM descriptors from an estimated FA/lowrank fit (#50)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]; Y2 = hcat(y1, reverse(y1))
+    X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
+
+    # --- factor-analytic fit (real, deterministic — same fixture as the FA REML testset) ---
+    fa = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :factor_analytic, rank = 1,
+        initial = (loadings = reshape([0.5, -0.3], 2, 1), uniqueness = [0.4, 0.4], R0 = [1.0 0.0; 0.0 1.0]))
+    dfa = genetic_gllvm_descriptors(fa)
+    @test propertynames(dfa) == (:genetic_covariance, :genetic_variances, :genetic_correlation,
+                                 :communality, :genetic_pca, :g_max, :rank, :n_latent_factors)
+    G = fa.genetic_covariance; Ψ = genetic_uniqueness(fa)
+    @test dfa.genetic_covariance ≈ G
+    @test dfa.communality ≈ 1 .- Ψ ./ diag(G)                    # rotation-invariant: from G & Ψ, not loadings
+    @test dfa.communality ≈ (diag(G) .- Ψ) ./ diag(G)
+    @test all(0 .< dfa.communality .< 1)
+    @test dfa.n_latent_factors == 1 && dfa.rank == 1
+    @test dfa.genetic_pca.values ≈ genetic_pca(G).values
+
+    # --- low-rank fit: Ψ = nothing ⇒ communality = 1 (all genetic variance common) ---
+    low = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank, rank = 1,
+        initial = (loadings = reshape([0.7, -0.4], 2, 1), R0 = [1.0 0.0; 0.0 1.0]))
+    dlow = genetic_gllvm_descriptors(low)
+    @test genetic_uniqueness(low) === nothing
+    @test all(dlow.communality .≈ 1.0)
+    @test dlow.genetic_covariance ≈ low.genetic_covariance
+
+    # --- explicit communality values via a synthetic structured result ---
+    Λ = [1.0 0.2; 0.4 0.9; 0.3 0.5]; ψ = [0.3, 0.4, 0.6]
+    Gs = Λ * transpose(Λ) + Diagonal(ψ)
+    synth = (genetic_covariance = Gs, residual_covariance = Matrix(1.0I, 3, 3),
+             beta = zeros(1, 3), breeding_values = (ids = [1], traits = ["t1", "t2", "t3"], values = zeros(1, 3)),
+             genetic_structure = :factor_analytic, genetic_rank = 2,
+             genetic_loadings = Λ, genetic_uniqueness = ψ)
+    ds = genetic_gllvm_descriptors(synth)
+    @test ds.communality ≈ vec(sum(abs2, Λ; dims = 2)) ./ diag(Gs)   # == (ΛΛ')_tt / G_tt
+    @test ds.n_latent_factors == 2
+
+    # --- reject rotation-free structures (no latent-factor interpretation) ---
+    full = fit_multivariate_reml(Y2, X, Z, Ainv)                      # :unstructured
+    @test_throws ArgumentError genetic_gllvm_descriptors(full)
+    diagfit = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal)
+    @test_throws ArgumentError genetic_gllvm_descriptors(diagfit)
+end
