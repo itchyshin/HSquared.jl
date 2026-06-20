@@ -9,29 +9,34 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-20 (overnight autonomous run — ULTRACODE pass; 3 more PRs).**
+- **As of 2026-06-20 (overnight autonomous run — ULTRACODE pass; 7 PRs).**
   Building on the committed BT2/BT3 runway (PRs #65–#72) + RR slices 1+2 (#74/#75),
-  this ultracode pass landed **3 full-DoD PRs (#77, #78, #79)**: **#54 slice 3 — RR
-  REML** (`fit_random_regression_reml`, PR #77; dense log-Cholesky NelderMead on the
-  marginal `V = W(A⊗K_g)Wᵀ + σ²e I`; degree-0 → `fit_sparse_reml`; 4-lens review
-  Henderson/Gauss/Karpinski/Rose); **V4-MV-REML recovery EVIDENCE** (PR #78; the
-  recovery harness now reports per-parameter bias±2·MCSE + EBV accuracy + Wilson CI —
-  a 12-seed run shows **no detectable bias** (all 6 covariance params |bias|≤2·MCSE at
-  m=12; EBV accuracy ≈0.90), so the old "6/10 failed" was **G sampling variance at
-  q=80/n=240, not estimator bias**; Rose-audited + hedged); and the **cold-start
-  replication** (PR #79; the optimizer reaches the same optimum unaided, max
-  |Δrel_G| 2.7e-5 over 12 seeds — **warm-start caveat closed**). An ultracode
-  **Workflow** (3 review lenses + 4 plan/twin readers + synthesis) verified slice 3
-  and mapped the whole completion plan; two cross-lane notes posted to **#61**
-  (R-lane action items + the multivariate-comparator handoff). `Pkg.test()` +
-  Documenter green — **CI on a clean checkout is the authoritative gate** (Dropbox can
-  transiently desync the working tree / re-touch files mid-edit); `validation_status()`
-  has **36 rows** (`V3-RR-REML` added); **nothing promoted to covered**. **Next:** the
-  eigenbasis bridge exposure for `:lowrank`/`:factor_analytic` (#42, after R ratifies
-  the FA convention on #42↔R#7), larger-pedigree `:selinv` PEV correctness
-  (V1-SELINV-PEV), or — the highest-leverage but cross-lane — the R-lane external
-  comparator run against `test/fixtures/phase4_multitrait_parity/`. Read
-  `docs/dev-log/after-task/2026-06-20-session-handover-v5.md` (START HERE).
+  this ultracode pass landed **7 full-DoD PRs (#77–#83)**: **#54 slice 3 — RR REML**
+  (`fit_random_regression_reml`, PR #77; 4-lens review); **V4-MV-REML recovery
+  EVIDENCE** (PR #78; bias±2·MCSE + EBV accuracy + Wilson — 12-seed run shows **no
+  detectable bias** + EBV accuracy ≈0.90, so the old "6/10 failed" is **G sampling
+  variance at q=80/n=240, not bias**; Rose-hedged); **cold-start replication** (PR #79;
+  same optimum unaided, max |Δrel_G| 2.7e-5 — **warm-start caveat closed**); **handover
+  v5** (PR #80); **V1-SELINV-PEV larger pedigree** (PR #81; selinv==dense on a 110-animal
+  4-gen pedigree); **#53 metafounders** (PR #82; supplied-Γ `A^Γ` + combined/descriptive
+  inverses + inbreeding — Legarra 2015; the existing tabular/Henderson machinery with Γ
+  seeded; reduction-to-`A` at Γ=0; Henderson+Rose reviewed); and the **PCG MME solver**
+  (PR #83; `solve_animal_model_pcg` — iterative CG == direct `henderson_mme`, the
+  production-sparse-path primitive, Gauss+Rose reviewed; correctness only, no perf claim).
+  Two ultracode **Workflows** (verify-slice-3 + map-the-plan; metafounder design+scout)
+  drove the design/review; cross-lane notes on **#61** (R-lane action items, the
+  multivariate-comparator handoff, and metafounder Q1–Q4 gating the bridge — R already
+  reserves the `metafounder()`/`unknown_parent_group()` vocab). `Pkg.test()` + Documenter
+  green — **CI on a clean checkout is the authoritative gate** (Dropbox can transiently
+  desync the working tree / re-touch files mid-edit; a no-op push re-triggers Actions when
+  a rapid push fails to); `validation_status()` has **38 rows** (`V3-RR-REML`,
+  `V1-METAFOUNDER`, `V1-PCG` added); **nothing promoted to covered**. **Next:** the
+  metafounder R-bridge (gated on #61 Q1–Q4), the eigenbasis bridge for
+  `:lowrank`/`:factor_analytic` (#42, after R ratifies the FA convention on #42↔R#7), a
+  matrix-free PCG operator (→ large-scale, edges into performance-claim territory), the
+  genetic-GLLVM build (#50), or — highest-leverage but cross-lane — the R-lane external
+  comparator runs. Read
+  `docs/dev-log/after-task/2026-06-20-session-handover-v6.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
@@ -43,11 +48,15 @@ engine reality.
   complete** (descriptors → supplied-covariance MME → REML estimation); the
   multivariate REML recovery is now characterised (no detectable bias + accurate EBVs,
   robust to cold vs warm start — the "6/10" was G sampling variance, not bias), still
-  `partial` pending an external comparator. Remaining: external-comparator EVIDENCE +
-  fitted-Mrode confrontation (R-lane + opt-in JWAS run), multivariate recovery
-  calibration (#4, gate not re-declared), innovation backlog #50–#53 (metafounders,
-  CRN, PCG+APY scaling, genetic GLLVM) + RR slice 4 (eigen-function / PE term / R
-  `rr()` spec), scout cadence #56; Phase 7/8 hardware-gated.
+  `partial` pending an external comparator. **Innovation backlog: #53 metafounders
+  (supplied-Γ construction) DONE; PCG MME solver (production-path primitive) DONE.**
+  Remaining: external-comparator EVIDENCE + fitted-Mrode confrontation (R-lane + opt-in
+  JWAS run), multivariate recovery calibration (#4, gate not re-declared); innovation
+  backlog #50 genetic GLLVM + CRN + APY genomic scaling + a matrix-free PCG operator
+  (the actual large-scale enabler — edges into performance-claim territory needing
+  benchmarks); RR slice 4 (eigen-function / PE term / R `rr()` spec); the metafounder
+  R-bridge + single-step H^Γ (gated on #61 Q1–Q4); scout cadence #56; Phase 7/8
+  hardware-gated.
 
 ## Core Scope
 
