@@ -1,24 +1,27 @@
-# Random regression / reaction norms — covariance-function descriptors (Phase 3, #54).
+# Random regression / reaction norms (Phase 3, #54). All SUPPLIED-covariance,
+# EXPERIMENTAL, validation-scale — `K_g` and `σ²e` are SUPPLIED, never estimated.
 #
-# DESCRIPTIVE, SUPPLIED-covariance layer (slice 1). Given a SUPPLIED k×k genetic
-# covariance matrix `K_g` among an animal's random-regression coefficients over a
-# normalized-Legendre basis on a standardized covariate t ∈ [-1, 1], this reports
-# the quantitative-genetic interpretation a breeder/evolutionary user reads off a
-# reaction norm: the per-covariate additive genetic variance trajectory
-# v_g(t) = φ(t)ᵀ K_g φ(t), the genetic covariance/correlation SURFACE across
-# covariate points G(t,t') = φ(t)ᵀ K_g φ(t'), and (only when a residual variance is
-# supplied) the heritability trajectory h²(t). This mirrors how the multivariate
-# lane began — descriptive transforms on a supplied G (`genetic_correlation`,
-# `evolvability`) BEFORE any estimation.
+# Slice 1 (DESCRIPTORS). Given a SUPPLIED k×k genetic covariance matrix `K_g` among
+# an animal's random-regression coefficients over a normalized-Legendre basis on a
+# standardized covariate t ∈ [-1, 1], the descriptors report the quantitative-genetic
+# interpretation a breeder/evolutionary user reads off a reaction norm: the
+# per-covariate additive genetic variance trajectory v_g(t) = φ(t)ᵀ K_g φ(t), the
+# genetic covariance/correlation SURFACE G(t,t') = φ(t)ᵀ K_g φ(t'), and (only when a
+# residual variance is supplied) the heritability trajectory h²(t). These build NO
+# mixed-model equations and make NO selection-response prediction (descriptive
+# transforms on a supplied K_g, like `genetic_correlation`/`evolvability` on a G).
 #
-# EXPERIMENTAL, validation-scale, descriptive only. It does NOT estimate `K_g`,
-# builds NO mixed-model equations, makes NO selection-response prediction, and has
-# NO R-facing model-spec or bridge payload. The supplied-covariance random-regression
-# MME solve (Henderson Kronecker `A⁻¹ ⊗ K_g⁻¹`), REML estimation of `K_g`, the
-# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, and
-# any WOMBAT/ASReml comparator are DEFERRED to later slices. Basis convention is
-# FIXED to normalized Legendre on standardized t ∈ [-1, 1] (Kirkpatrick/Meyer/
-# Schaeffer); `K_g` values are not comparable across normalization conventions.
+# Slice 2 (SUPPLIED-COVARIANCE MME). `random_regression_mme` solves the Henderson MME
+# for the polynomial RR animal model at a SUPPLIED `K_g`/`σ²e` (genetic precision
+# `Ainv ⊗ inv(K_g)`, i.e. coefficient covariance `A ⊗ K_g`), returning per-animal
+# coefficient vectors. Still supplied-covariance — no estimation.
+#
+# DEFERRED to later slices: REML estimation of `K_g`/residual function (slice 3), the
+# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, the
+# R-facing model-spec / bridge payload, and any WOMBAT/ASReml comparator. Basis
+# convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
+# (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
+# conventions.
 
 """
     legendre_basis(t, order)
@@ -185,7 +188,7 @@ Solve the SUPPLIED-covariance Henderson mixed-model equations for the polynomial
 random-regression animal model with a homogeneous scalar residual variance:
 
     y_r = x_rᵀ β + φ(s_r)ᵀ a_{a(r)} + e_r,  e_r ~ N(0, sigma_e2),
-    vec(a) ~ N(0, K_g ⊗ A),  A = Ainv⁻¹,
+    vec(a) ~ N(0, A ⊗ K_g),  A = Ainv⁻¹,
 
 where `Phi` (`n × k`) holds the per-record basis rows `φ(s_r)ᵀ` (see
 [`legendre_design`](@ref)), `Z` (`n × q`) is the record→animal incidence, `Ainv`

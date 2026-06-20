@@ -4994,7 +4994,7 @@ end
     end
     y = [2.3, 3.1, 1.8, 4.0, 2.9, 5.2, 3.3, 3.9, 2.1, 4.7]
     X = ones(n, 1)
-    Kg = [1.0 0.2; 0.2 0.5]        # PD, asymmetric off-diagonal (pins coefficient ordering)
+    Kg = [1.0 0.2; 0.2 0.5]        # PD, UNEQUAL diagonal + off-diagonal coupling (pins coefficient ordering)
     σe2 = 0.4
 
     res = random_regression_mme(y, X, Phi, Zinc, Ainv, Kg, σe2; ids = ped.ids)
