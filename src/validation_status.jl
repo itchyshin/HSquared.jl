@@ -99,6 +99,15 @@ const VALIDATION_STATUS_DATA = (
         "Descriptive supplied-Γ relationship construction only; Γ is an INPUT, never estimated; dense/validation-scale; no fitted, single-step, external-comparator, or covered claim.",
     ),
     (
+        "V1-PCG",
+        "iterative (PCG) MME solver",
+        "Phase 1",
+        "partial",
+        "`solve_animal_model_pcg(spec, σ²a, σ²e; preconditioner = :jacobi | :none)` solves the supplied-variance animal-model MME by preconditioned conjugate gradient on the IDENTICAL sparse SPD system `_sparse_mme_system` builds for the direct `henderson_mme`, never forming a Cholesky factor. Deterministic gates (`test/runtests.jl`): the PCG β and EBVs equal `henderson_mme` to atol 1e-8 on the tiny 3-animal and Mrode9-shaped 8-animal pedigrees; plain CG (`:none`) reaches the same solution and the Jacobi preconditioner takes no more iterations; the relative residual `‖rhs−Cx‖/‖rhs‖ ≤ tol` at convergence; a starved `maxiter` deterministically reports `converged = false`; non-PD-curvature and σ/tol/maxiter/preconditioner guards. A CORRECTNESS primitive (iterative == direct).",
+        "production-scale / large-pedigree PERFORMANCE evidence (none claimed — `_sparse_mme_system` still assembles `C` explicitly, so this is not yet matrix-free), matrix-free operator + advanced preconditioners (block/incomplete-Cholesky), wiring into the fit path / REML iterations, and external comparator",
+        "Experimental iterative MME solver validated to MATCH the direct solve; NOT the default fit path and NOT a performance/large-pedigree scaling claim (C is still assembled). The iterative-solver foundation for the future production sparse path.",
+    ),
+    (
         "V1-AI-REML",
         "average-information REML estimator",
         "Phase 1",

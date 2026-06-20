@@ -103,6 +103,7 @@ export AMDGPUBackend,
     genomic_relationship_matrix,
     gwas_table,
     henderson_mme,
+    solve_animal_model_pcg,
     heritability,
     heritability_interval,
     heritability_standard_error,
@@ -177,6 +178,7 @@ include("model_spec.jl")
 include("genomic.jl")
 include("takahashi_selinv.jl")
 include("likelihood.jl")
+include("iterative_solve.jl")
 include("postfit.jl")
 include("multivariate.jl")
 include("evolvability.jl")
