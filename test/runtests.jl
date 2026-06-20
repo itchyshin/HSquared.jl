@@ -4973,3 +4973,67 @@ end
     @test_throws ArgumentError rr_heritability(Kg, [0.4, 0.5], ts)         # residual length mismatch
     @test_throws ArgumentError rr_genetic_correlation_surface([0.0 0.0; 0.0 1.0], [0.0])  # zero-variance point
 end
+
+@testset "Phase 3 supplied-covariance random-regression MME (#54 slice 2)" begin
+    # 5-animal pedigree, 2 records each at distinct covariates (n = 10), k = 2
+    # (linear reaction norm: intercept + slope).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5"],
+        ["0", "0", "a1", "a1", "a2"], ["0", "0", "a2", "a2", "a3"])
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    rec = ["a1", "a1", "a2", "a2", "a3", "a3", "a4", "a4", "a5", "a5"]
+    ts = standardize_covariate([1.0, 4.0, 2.0, 5.0, 1.5, 6.0, 3.0, 4.5, 2.5, 5.5])
+    Phi = legendre_design(ts, 2)
+    n = length(ts)
+    @test size(Phi) == (10, 2)
+    @test Phi[1, :] ≈ legendre_basis(ts[1], 2)          # design rows are the basis vectors
+    Zinc = zeros(n, q)
+    idx = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for r in 1:n
+        Zinc[r, idx[rec[r]]] = 1.0
+    end
+    y = [2.3, 3.1, 1.8, 4.0, 2.9, 5.2, 3.3, 3.9, 2.1, 4.7]
+    X = ones(n, 1)
+    Kg = [1.0 0.2; 0.2 0.5]        # PD, asymmetric off-diagonal (pins coefficient ordering)
+    σe2 = 0.4
+
+    res = random_regression_mme(y, X, Phi, Zinc, Ainv, Kg, σe2; ids = ped.ids)
+    @test res.random_coefficients.ids == ped.ids
+    @test size(res.random_coefficients.values) == (q, 2)
+    @test res.variance_components.K_g == Kg
+    @test res.basis.ncoef == 2
+
+    # INDEPENDENT dense marginal-GLS oracle (W built here from scratch, NOT via the
+    # implementation's _rr_random_design, so a design/ordering bug cannot pass):
+    A = inv(Matrix(Ainv))
+    W = zeros(n, q * 2)
+    for r in 1:n
+        a = idx[rec[r]]
+        W[r, (a - 1) * 2 + 1] = Phi[r, 1]
+        W[r, (a - 1) * 2 + 2] = Phi[r, 2]
+    end
+    Gcov = kron(A, Kg)
+    V = W * Gcov * transpose(W) + σe2 * Matrix(I, n, n)
+    Vi = inv(V)
+    β_oracle = (transpose(X) * Vi * X) \ (transpose(X) * Vi * y)
+    a_oracle = permutedims(reshape(Gcov * transpose(W) * Vi * (y - X * β_oracle), 2, q))
+    @test res.beta ≈ β_oracle atol = 1e-8
+    @test res.random_coefficients.values ≈ a_oracle atol = 1e-8
+
+    # degree-0 reduction: with k = 1 and K_g = [2σ²a], the RR MME equals the scalar
+    # animal model (φ_0 = sqrt(1/2), so var(φ_0·a) = 0.5·2σ²a·A = σ²a·A): β matches
+    # henderson_mme, and the RR coefficient a = sqrt(2)·u (since φ_0·a = u).
+    σa2 = 0.8
+    spec = animal_model_spec(y, X, sparse(Zinc), Ainv; ids = ped.ids, method = :REML)
+    mme_h = henderson_mme(spec, σa2, σe2)
+    rr0 = random_regression_mme(y, X, legendre_design(ts, 1), Zinc, Ainv,
+                                fill(2σa2, 1, 1), σe2; ids = ped.ids)
+    @test rr0.beta ≈ fixed_effects(mme_h) atol = 1e-8
+    @test rr0.random_coefficients.values[:, 1] ≈ sqrt(2) .* breeding_values(mme_h).values atol = 1e-8
+
+    # guards
+    @test_throws ArgumentError random_regression_mme(y, X, Phi, Zinc, Ainv, [1.0 0.0; 0.0 -1.0], σe2)  # K_g not PD
+    @test_throws ArgumentError random_regression_mme(y, X, Phi, Zinc, Ainv, Kg, -0.1)                  # σe2 ≤ 0
+    @test_throws ArgumentError random_regression_mme(y, X, Phi[:, 1:1], Zinc, Ainv, Kg, σe2)           # Phi cols ≠ K_g dim
+    @test_throws ArgumentError random_regression_mme(y[1:9], X, Phi, Zinc, Ainv, Kg, σe2)              # row mismatch
+end

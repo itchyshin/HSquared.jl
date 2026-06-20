@@ -129,6 +129,8 @@ HSquared.genetic_pca
 HSquared.g_max
 HSquared.mean_evolvability
 HSquared.legendre_basis
+HSquared.legendre_design
+HSquared.random_regression_mme
 HSquared.standardize_covariate
 HSquared.rr_genetic_variance
 HSquared.rr_genetic_covariance_surface

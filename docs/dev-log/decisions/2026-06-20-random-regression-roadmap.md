@@ -22,9 +22,10 @@ state this in any future comparator slice.
   `rr_genetic_covariance_surface` / `rr_genetic_correlation_surface` /
   `rr_heritability`. Descriptive, supplied-covariance, no MME, no estimation.
 
-- **Slice 2 — supplied-covariance RR MME (Henderson design).** `random_regression_mme(y,
-  X, Phi, Z, Ainv, K_g, sigma_e2)`: the Henderson MME for the polynomial RR animal
-  model with homogeneous residual. Random-effect design `W = face-splitting(Z, Phi)`
+- **Slice 2 — supplied-covariance RR MME (DONE).** `random_regression_mme(y,
+  X, Phi, Z, Ainv, K_g, sigma_e2)` + `legendre_design`: the Henderson MME for the
+  polynomial RR animal model with homogeneous residual. Random-effect design
+  `W = face-splitting(Z, Phi)`
   (row `r` scatters `Phi[r,:]` into animal `a(r)`'s `k`-column block — **NOT**
   `kron(Z, I_k)`); genetic precision `kron(Ainv, inv(K_g))` (reuse the multivariate
   Kronecker assembly); level-major / coefficient-fastest `vec` ordering (pin with an
