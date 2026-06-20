@@ -72,8 +72,9 @@ function _rr_design(ts::AbstractVector, order::Integer)
     return Φ
 end
 
-# Validate the coefficient genetic covariance: square, symmetric, PSD, finite, and
-# matching the basis order. Reuses the evolvability scale-relative PSD guard.
+# Validate the coefficient genetic covariance: square, symmetric, finite, PSD
+# (reuses the evolvability scale-relative PSD guard). The basis order is DERIVED
+# from size(K_g, 1), so there is no separate order to match.
 function _check_kg(K_g::AbstractMatrix)
     return _check_symmetric_psd_G(K_g)   # square + symmetric + finite + scale-relative PSD
 end
@@ -99,7 +100,9 @@ end
 Genetic covariance surface `G(t_i, t_j) = φ(t_i)ᵀ K_g φ(t_j)` across the
 standardized covariate points `ts`, i.e. `Φ K_g Φᵀ` (`m×m`, symmetric, PSD whenever
 `K_g` is PSD). Returns `(covariate = ts, values)`. Its diagonal is
-[`rr_genetic_variance`](@ref).
+[`rr_genetic_variance`](@ref) — exactly for a positive-definite `K_g`; for a
+reduced-rank (PSD) `K_g` the surface diagonal may carry a tiny negative roundoff at
+a near-zero-variance point, whereas `rr_genetic_variance` clamps such values to 0.
 """
 function rr_genetic_covariance_surface(K_g::AbstractMatrix, ts::AbstractVector)
     S = _check_kg(K_g)
@@ -129,6 +132,12 @@ coefficient genetic covariance `K_g` and supplied residual variance `residual` �
 either a positive scalar (homoscedastic) or a length-`m` positive vector
 (heteroscedastic across the covariate). `K_g` and `σ²_e` are SUPPLIED, not estimated.
 Returns `(covariate = ts, values)`.
+
+The supplied `residual` is treated as the TOTAL non-additive-genetic phenotypic
+variance at each covariate point. In the canonical repeated-records random-regression
+model (test-day, growth curves) a permanent-environment effect is essentially always
+present, so to avoid OVERSTATING `h²(t)` you must supply `v_pe(t) + σ²_e(t)` here, not
+the residual alone (the permanent-environment term is a later slice).
 """
 function rr_heritability(K_g::AbstractMatrix, residual, ts::AbstractVector)
     vg = rr_genetic_variance(K_g, ts)

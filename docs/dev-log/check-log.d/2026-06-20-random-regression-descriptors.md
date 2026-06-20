@@ -29,8 +29,9 @@
 ## Commands / results
 
 - `~/.juliaup/bin/julia --project=. -e 'using Pkg; Pkg.test()'` → **passed (exit 0)**
-  (RR testset 31/31; convention-lock fixture numbers match → Legendre normalization
-  agrees with ASReml/WOMBAT).
+  (RR testset 31/31; the convention-lock fixture numbers match the DOCUMENTED
+  ASReml/WOMBAT normalized-Legendre convention — convention-identity only, NOT a
+  numerical comparator run, which stays deferred per V3-RR-DESC).
 - `~/.juliaup/bin/julia --project=docs docs/make.jl` → **passed (exit 0)** (incl.
   the new api.md entries). NOTE: CI on a clean checkout is the authoritative gate
   (Dropbox can transiently desync the working tree).

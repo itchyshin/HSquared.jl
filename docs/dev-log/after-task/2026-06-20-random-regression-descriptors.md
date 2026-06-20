@@ -14,7 +14,9 @@ A parallel design workflow (Henderson MME · Falconer interpretation · Curie te
 scoped it; the designs converged on supplied-covariance-first sequencing. Falconer's
 descriptive layer is slice 1; Henderson's MME is slice 2 (recorded in the roadmap
 note). Falconer supplied hand-checked fixture numbers, which the tests reproduce —
-confirming the Legendre normalization matches ASReml/WOMBAT.
+confirming the implemented basis matches the **documented** ASReml/WOMBAT
+normalized-Legendre convention. (Numerical comparator PARITY against ASReml/WOMBAT
+is NOT done — no such run was performed — and remains deferred per V3-RR-DESC.)
 
 ## What landed
 
