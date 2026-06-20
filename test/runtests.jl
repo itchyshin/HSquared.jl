@@ -5643,3 +5643,55 @@ end
     @test_throws ArgumentError genetic_gllvm_descriptors(zeros(3, 2))                        # zero common variance
     @test_throws ArgumentError genetic_gllvm_descriptors(zeros(3, 0))                        # no latent factors
 end
+
+@testset "Genetic-GLLVM Gaussian latent solve (#50 slice 2, supplied G_lat)" begin
+    # 4-animal pedigree, 2 traits, one balanced record per animal (mirrors the
+    # multivariate fixture) — the Gaussian genetic GLLVM == multivariate model at G0 = G_lat
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    n = 4; q = 4; t = 2
+    Z = Matrix(1.0I, n, q)
+    X = ones(n, 1)
+    Y = [10.0 50.0; 12.0 47.0; 9.0 53.0; 11.0 49.0]
+    R0 = [2.0 0.3; 0.3 1.0]
+
+    # --- factor-analytic G_lat (PD via Ψ): K = 1 < t, defining identity ---
+    Λ1 = reshape([0.8, 0.5], 2, 1)
+    Ψ = [0.3, 0.5]
+    glat = factor_analytic_covariance(Λ1, Ψ)
+    g = genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, Λ1, R0; uniqueness = Ψ)
+    mv = multivariate_mme(Y, X, Z, Ainv, glat, R0)
+    @test g.beta ≈ mv.beta                                             # defining identity (exact)
+    @test g.breeding_values.values ≈ mv.breeding_values.values
+    @test g.genetic_covariance ≈ glat
+    @test g.n_latent_factors == 1
+    @test g.latent_structure.communality ≈ genetic_gllvm_descriptors(Λ1; uniqueness = Ψ).communality
+    @test propertynames(g) == (:beta, :breeding_values, :genetic_covariance, :residual_covariance,
+                               :genetic_correlation, :residual_correlation, :traits,
+                               :latent_structure, :n_latent_factors)
+
+    # --- full-rank low-rank G_lat (K = t, PD without uniqueness) ---
+    Λ2 = [1.2 0.2; 0.3 1.1]
+    g2 = genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, Λ2, R0)
+    @test g2.beta ≈ multivariate_mme(Y, X, Z, Ainv, lowrank_covariance(Λ2), R0).beta
+    @test g2.n_latent_factors == 2
+
+    # --- rotation invariance: Λ → ΛQ (orthogonal Q) leaves the solve invariant ---
+    θ = 0.6; Q = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+    gR = genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, Λ2 * Q, R0)
+    @test gR.beta ≈ g2.beta
+    @test gR.breeding_values.values ≈ g2.breeding_values.values
+    @test gR.genetic_covariance ≈ g2.genetic_covariance
+
+    # --- t = 1, K = 1 reduction to the univariate animal model (henderson_mme) ---
+    y1 = reshape(Y[:, 1], n, 1)
+    λ = 0.9
+    spec = animal_model_spec(Y[:, 1], X, sparse(Z), Ainv; ids = [1, 2, 3, 4], method = :REML)
+    hm = henderson_mme(spec, λ^2, R0[1, 1])
+    g1 = genetic_gllvm_gaussian_mme(y1, X, Z, Ainv, reshape([λ], 1, 1), reshape([R0[1, 1]], 1, 1))
+    @test vec(g1.beta) ≈ hm.beta
+    @test vec(g1.breeding_values.values) ≈ hm.animal_effects.values
+
+    # --- guards ---
+    @test_throws ArgumentError genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, reshape([1.0, 1.0, 1.0], 3, 1), R0; uniqueness = [0.2, 0.3, 0.4])  # 3 traits vs Y's 2
+    @test_throws ArgumentError genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, Λ1, R0)  # K=1<t low-rank, no Ψ ⇒ singular G_lat
+end
