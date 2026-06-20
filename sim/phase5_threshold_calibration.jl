@@ -18,6 +18,22 @@ should be LOWER when markers are correlated — fewer effective tests), and reco
 a loose type-I smoke (the fraction of independent no-signal scans whose maximum
 exceeds the threshold should be approximately `alpha`).
 
+Honest caveats on the null scheme (review #48, Curie/Fisher):
+
+- The committed default runs intercept-only `X = ones(n, 1)`, where residual
+  permutation is numerically identical to permuting `y` directly (the conditioning
+  on `X` is then a no-op). The "conditional on `X`" framing matters only for a
+  non-trivial fixed-effect design.
+- For a non-trivial `X`, the naive "permute residuals, add `Xβ̂` back" scheme is
+  only APPROXIMATELY exchangeable; the exact permutation nulls are Freedman–Lane /
+  ter Braak. Those are the upgrade path for covariate-adjusted GWAS and are not
+  implemented here.
+- The type-I smoke draws FRESH correlated marker matrices per replicate and
+  evaluates the permutation-derived threshold against PARAMETRICALLY resimulated
+  no-signal datasets; the two nulls coincide here only because the model is
+  intercept-only Gaussian with no signal, so the smoke is a parametric-vs-
+  permutation cross-check, not a self-referential permutation check.
+
 This is validation-scale evidence-gathering, NOT a production
 genome-wide-significance claim: a production claim needs a realistic LD/design
 calibration and is the #48 gate that holds the R `gwas()` significance wording.
@@ -64,8 +80,9 @@ end
 
 quantile_sorted(v, q) = sort(v)[clamp(round(Int, q * length(v)), 1, length(v))]
 
-function _max_chisq_under_null(rng, n, X, markers, sigma_e2)
-    y = X * [2.0] .+ sqrt(sigma_e2) .* randn(rng, n)      # no marker signal
+function _max_chisq_under_null(rng, n, m, X, sigma_e2)
+    markers = _simulate_markers(rng, n, m)               # FRESH correlated markers per replicate
+    y = X * [2.0] .+ sqrt(sigma_e2) .* randn(rng, n)     # no marker signal
     scan = single_marker_scan(y, X, markers; sigma_e2 = sigma_e2)
     return HSquared._scan_max_statistic(scan; statistic = :chisq)
 end
@@ -102,7 +119,7 @@ function main(args)
     # type-I smoke: independent no-signal datasets, fraction exceeding the threshold
     exceed = 0
     for _ in 1:type1_reps
-        mc = _max_chisq_under_null(rng, n, X, markers, sigma_e2)
+        mc = _max_chisq_under_null(rng, n, m, X, sigma_e2)
         mc >= thr.threshold && (exceed += 1)
     end
     empirical_type1 = exceed / type1_reps

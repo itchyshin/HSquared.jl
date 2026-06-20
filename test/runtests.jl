@@ -3128,8 +3128,18 @@ end
     @test genome_wide_pvalue(1.0e9, nulls2) > 0            # never zero
     @test_throws ArgumentError genome_wide_pvalue(1.0, Float64[])
 
-    # consistency: a statistic AT the (1-alpha) threshold has empirical p ~ alpha
-    @test genome_wide_pvalue(thr5.threshold, nulls) ≈ 0.05 atol = 0.02
+    # The type-7 quantile threshold and the add-one p are DIFFERENT estimators that
+    # agree only asymptotically; at small n_null the quantile is mildly anti-
+    # conservative. Pin the ACTUAL add-one p at the threshold (not a hidden atol):
+    @test genome_wide_pvalue(thr5.threshold, nulls) ≈ 6 / 101   # n=100 -> 0.0594, not 0.05
+    big = collect(1.0:1000.0)
+    thr_big = genome_wide_threshold_from_null(big; alpha = 0.05)
+    @test genome_wide_pvalue(thr_big.threshold, big) ≈ 0.05 atol = 0.002   # converges to alpha
+
+    # finite guards (review #48, Gauss): non-finite scan stats / observed throw
+    @test_throws ArgumentError HSquared._scan_max_statistic((chisq = [1.0, NaN],); statistic = :chisq)
+    @test_throws ArgumentError genome_wide_pvalue(NaN, nulls)
+    @test_throws ArgumentError genome_wide_pvalue(1.0, [1.0, Inf])
 
     # validation_status carries the new V5-MARKER-THRESHOLD row
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
