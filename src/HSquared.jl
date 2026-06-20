@@ -86,6 +86,12 @@ export AMDGPUBackend,
     genetic_pca,
     g_max,
     mean_evolvability,
+    legendre_basis,
+    standardize_covariate,
+    rr_genetic_variance,
+    rr_genetic_covariance_surface,
+    rr_genetic_correlation_surface,
+    rr_heritability,
     multivariate_covariance_standard_errors,
     genome_wide_pvalue,
     genome_wide_threshold_from_null,
@@ -167,6 +173,7 @@ include("likelihood.jl")
 include("postfit.jl")
 include("multivariate.jl")
 include("evolvability.jl")
+include("random_regression.jl")
 include("nongaussian.jl")
 include("planned_terms.jl")
 include("validation_status.jl")
