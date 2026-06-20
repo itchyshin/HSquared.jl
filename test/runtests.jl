@@ -2096,6 +2096,34 @@ end
     @test pcg3.beta ≈ fixed_effects(mme3) atol = 1e-9
     @test pcg3.breeding_values.values ≈ breeding_values(mme3).values atol = 1e-9
 
+    # LARGER deterministic fixture: 110-animal 4-generation pedigree (disjoint sire/dam
+    # pools per generation → off-diagonal Ainv), nfixed = 2. iterative == direct at scale.
+    nf = 20
+    bids = String[]; bsire = String[]; bdam = String[]
+    for i in 1:nf
+        push!(bids, "f$i"); push!(bsire, "0"); push!(bdam, "0")
+    end
+    gens = [["f$i" for i in 1:nf]]
+    for g in 1:3
+        prev = gens[end]; half = length(prev) ÷ 2
+        spool = prev[1:half]; dpool = prev[(half + 1):end]; cur = String[]
+        for k in 1:30
+            push!(bids, "g$(g)_$(k)"); push!(bsire, spool[1 + (k % length(spool))])
+            push!(bdam, dpool[1 + (k % length(dpool))]); push!(cur, "g$(g)_$(k)")
+        end
+        push!(gens, cur)
+    end
+    pedL = normalize_pedigree(bids, bsire, bdam); qL = length(pedL)
+    @test qL == 110
+    yL = [2.0 + 0.5 * sin(Float64(i)) for i in 1:qL]
+    XL = hcat(ones(qL), [Float64(i % 3) for i in 1:qL])
+    specL = animal_model_spec(yL, XL, sparse(1.0I, qL, qL), pedigree_inverse(pedL); ids = pedL.ids, method = :REML)
+    mmeL = henderson_mme(specL, 1.3, 0.9)
+    pcgL = solve_animal_model_pcg(specL, 1.3, 0.9; tol = 1e-11)
+    @test pcgL.converged
+    @test pcgL.beta ≈ fixed_effects(mmeL) atol = 1e-7
+    @test pcgL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
+
     # deterministic non-convergence flag when the iteration budget is too small
     starved = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-14, maxiter = 1)
     @test !starved.converged

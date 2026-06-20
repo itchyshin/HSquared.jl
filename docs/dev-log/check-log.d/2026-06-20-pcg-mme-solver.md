@@ -14,7 +14,9 @@
   `_pcg_solve`), splitting the solution into β + EBVs. Jacobi preconditioner `M⁻¹ =
   1/diag(C)`; non-positive-curvature guard.
 - Deterministic testset "Phase 1 PCG MME solver (iterative == direct, V1-PCG)": PCG β/EBVs
-  equal `henderson_mme` to atol 1e-8 (Mrode9-shaped 8-animal + tiny 3-animal); plain CG
+  equal `henderson_mme` to atol 1e-7/1e-8 (tiny 3-animal + Mrode9-shaped 8-animal + a
+  larger 110-animal 4-generation pedigree); the reported `relative_residual` is the TRUE
+  residual recomputed at the returned solution (review fix); plain CG
   reaches the same solution; Jacobi iters ≤ plain-CG iters; relative residual ≤ tol;
   starved `maxiter` ⇒ `converged = false`; σ/tol/maxiter/preconditioner guards.
 - Honest status: `V1-PCG` (`partial`) in `validation_status()` (37 → 38);

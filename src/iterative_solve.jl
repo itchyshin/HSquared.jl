@@ -1,4 +1,4 @@
-# Iterative (matrix-free-style) solve of the animal-model MME — the ITERATIVE companion
+# Iterative (conjugate-gradient) solve of the animal-model MME — the ITERATIVE companion
 # of the direct `henderson_mme` factorization. PCG solves the IDENTICAL sparse SPD system
 # `C·[β; u] = rhs` (from `_sparse_mme_system`) without forming a Cholesky factor; it is the
 # algorithmic primitive the production large-pedigree path needs. Correctness-validated
@@ -35,6 +35,10 @@ function _pcg_solve(C, b::Vector{Float64}; tol::Float64, maxiter::Int,
         @. p = z + beta * p
         rz = rz_new
     end
+    # Report the TRUE residual at the returned x (one extra matvec), not the
+    # recursively-accumulated `r` — so `relative_residual`/`converged` are exactly
+    # ‖b − Cx‖/‖b‖ regardless of any recursive-residual drift on ill-conditioned input.
+    relres = norm(b - C * x) / bnorm
     return x, iters, relres
 end
 
