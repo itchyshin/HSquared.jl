@@ -54,6 +54,28 @@ struct BinomialResponse <: ResponseFamily
     end
 end
 
+# Marginal-method dispatch (architecture mirrors the MIT DRM.jl :LA/:VA idea).
+# The engine keeps the `marginal::Symbol` keyword/field (:laplace / :variational);
+# this dispatch type is the canonical mapping the bridge payload uses to emit the
+# R-facing method name ("laplace" / "va"), and it also accepts the DRM-style
+# :LA / :VA spellings. Value-preserving: it does NOT change fit_laplace_reml
+# numerics or the stored NonGaussianFit.marginal symbol.
+abstract type MarginalMethod end
+struct Laplace <: MarginalMethod end
+struct Variational <: MarginalMethod end
+
+_marginal_method(m::MarginalMethod) = m
+function _marginal_method(s::Symbol)
+    t = Symbol(uppercase(String(s)))
+    (t === :LAPLACE || t === :LA) && return Laplace()
+    (t === :VARIATIONAL || t === :VA) && return Variational()
+    throw(ArgumentError("marginal must be :laplace/:LA or :variational/:VA, got :$s"))
+end
+_marginal_method_symbol(::Laplace) = :laplace
+_marginal_method_symbol(::Variational) = :variational
+_marginal_method_string(::Laplace) = "laplace"
+_marginal_method_string(::Variational) = "va"
+
 # numerically stable logistic and log(1 + exp η)
 _logistic(η) = η >= 0 ? 1.0 / (1.0 + exp(-η)) : (e = exp(η); e / (1.0 + e))
 _log1pexp(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
@@ -358,6 +380,42 @@ variance_components(fit::NonGaussianFit) = fit.variance_components
 fixed_effects(fit::NonGaussianFit) = fit.beta
 breeding_values(fit::NonGaussianFit) = BreedingValues(fit.ids, fit.breeding_values)
 EBV(fit::NonGaussianFit) = breeding_values(fit)
+
+"""
+    nongaussian_result_payload(fit::NonGaussianFit)
+
+Bridge-ready, "boring" result payload (a `NamedTuple` of scalars / arrays /
+nested `NamedTuple`s — Julia structs stay Julia-side) for a non-Gaussian
+animal-model fit from [`fit_laplace_reml`](@ref). It mirrors
+[`result_payload`](@ref) / [`multivariate_result_payload`](@ref) so the R twin
+can marshal one shape and the R non-Gaussian family-acceptance can fire.
+
+Fields: `engine`, `target = "nongaussian_reml"`, `family`
+(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `method`
+(`"laplace"`/`"va"`, resolved through the [`MarginalMethod`](@ref) dispatch from
+the stored marginal symbol), `variance_components`, `fixed_effects`,
+`breeding_values = (ids, values)`, `loglik`, and `converged`.
+
+It deliberately carries NO `heritability`: a `NonGaussianFit` does not compute a
+heritability for any family — the logit/log-link families have no
+residual-variance scale on which a liability-scale `h²` is defined here — so
+surfacing one would be an unbacked claim. EXPERIMENTAL: the fitter is not the
+public default, not wired into the R formula path, and has no external comparator;
+the Bernoulli single-trial variance is downward-biased (an information effect).
+"""
+function nongaussian_result_payload(fit::NonGaussianFit)
+    return (
+        engine = "HSquared.jl",
+        target = "nongaussian_reml",
+        family = String(fit.family),
+        method = _marginal_method_string(_marginal_method(fit.marginal)),
+        variance_components = fit.variance_components,
+        fixed_effects = copy(fit.beta),
+        breeding_values = (ids = fit.ids, values = copy(fit.breeding_values)),
+        loglik = fit.marginal_loglik,
+        converged = fit.converged,
+    )
+end
 
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
