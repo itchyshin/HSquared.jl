@@ -212,3 +212,56 @@ function mean_evolvability(G)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     return tr(S) / size(S, 1)
 end
+
+# ── Plot-data preparers (G-geometry figure set, rotation-invariant) ──────────────
+# Backend-free `*_plot_data` NamedTuples (marker_*_data convention) for the R
+# ggplot2 + Julia Makie drawing layers. HARD CONTRACT: the input is a genetic
+# covariance `G`; only its rotation-INVARIANT functionals are returned, NEVER raw
+# factor-analytic loadings (the FA rotation convention,
+# `docs/dev-log/decisions/2026-06-19-fa-rotation-convention.md`). No drawing, no
+# estimation.
+
+"""
+    genetic_pca_plot_data(G; n_axes = nothing)
+
+Plot-ready data for the rotation-invariant G-geometry figure (scree + biplot):
+delegates to [`genetic_pca`](@ref) and returns `(eigenvalues, variance_explained,
+eigenvectors, loadings_scaled, axis_labels, rotation_invariant = true,
+is_eigenstructure_not_loadings = true)`. HARD CONTRACT: only the rotation-INVARIANT
+eigenstructure of `G` — eigenvalues, sign-canonicalized principal axes, and
+`loadings_scaled = eigenvectors · √eigenvalue` (biplot vector length) — is returned,
+NEVER raw factor-analytic loadings `Λ`. `n_axes` (≤ `size(G,1)`) limits the axes.
+"""
+function genetic_pca_plot_data(G; n_axes = nothing)
+    pca = genetic_pca(G)
+    p = length(pca.values)
+    k = n_axes === nothing ? p : Int(n_axes)
+    (1 <= k <= p) || throw(ArgumentError("n_axes must be in 1:$p"))
+    total = sum(pca.values)
+    ve = total > 0 ? pca.values ./ total : zeros(p)
+    V = Matrix{Float64}(pca.vectors[:, 1:k])
+    scaled = V .* sqrt.(max.(pca.values[1:k], 0.0))'
+    return (eigenvalues = pca.values, variance_explained = ve, eigenvectors = V,
+            loadings_scaled = Matrix{Float64}(scaled), axis_labels = ["PC$(j)" for j in 1:k],
+            rotation_invariant = true, is_eigenstructure_not_loadings = true)
+end
+
+"""
+    genetic_correlation_plot_data(G; traits = nothing, heritabilities = nothing)
+
+Plot-ready data for the genetic-correlation heatmap: delegates to
+[`genetic_correlation`](@ref) and returns `(traits, genetic_correlations,
+heritabilities, rotation_invariant = true)`. Rotation-invariant (`D⁻¹ G D⁻¹`, unit
+diagonal, off-diagonals in `[-1,1]`). Optional `heritabilities` lets the drawing
+layer flag low-h² / imprecise cells.
+"""
+function genetic_correlation_plot_data(G; traits = nothing, heritabilities = nothing)
+    R = genetic_correlation(G)
+    p = size(R, 1)
+    labels = traits === nothing ? ["trait_$(i)" for i in 1:p] : collect(String, traits)
+    length(labels) == p || throw(ArgumentError("traits length must match G dimension ($p)"))
+    h2 = heritabilities === nothing ? nothing : Float64.(collect(heritabilities))
+    h2 === nothing || length(h2) == p ||
+        throw(ArgumentError("heritabilities length must match G dimension ($p)"))
+    return (traits = labels, genetic_correlations = R, heritabilities = h2, rotation_invariant = true)
+end
