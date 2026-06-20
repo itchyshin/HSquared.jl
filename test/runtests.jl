@@ -2246,6 +2246,53 @@ end
     @test ai.variance_components.sigma_e2 ≈ sr.variance_components.sigma_e2 rtol = 2e-2
 end
 
+@testset "Variance-component forest plot-data (#54 set B, R hs_gg_forest)" begin
+    # REML fit (interior 8-animal pedigree) -> estimated VC + h2 forest data
+    ids8 = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped8 = normalize_pedigree(ids8,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    spec8 = animal_model_spec([2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5], ones(8, 1),
+        sparse(1.0I, 8, 8), pedigree_inverse(ped8); ids = ped8.ids, method = :REML)
+    rfit = fit_ai_reml(spec8; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    vc = variance_components(rfit)
+    pd = variance_components_plot_data(rfit)
+    @test pd.term == ["sigma_a2", "sigma_e2", "h2"]
+    @test pd.estimate ≈ [vc.sigma_a2, vc.sigma_e2, heritability(rfit)]
+    @test pd.panel == ["variance components", "variance components", "heritability"]
+    @test pd.supplied === false                                   # ESTIMATED, not supplied
+    @test pd.level == 0.95
+    @test propertynames(pd) ==
+          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status, :supplied)
+    # interval consistency: matches the extractors when available, else NaN / "none"
+    local h2ci
+    try
+        h2ci = heritability_interval(rfit; level = 0.95)
+    catch
+        h2ci = nothing
+    end
+    if h2ci === nothing
+        @test pd.interval_status == "none" && all(isnan, pd.lo) && all(isnan, pd.hi)
+    else
+        @test pd.interval_status == "experimental_asymptotic"
+        @test pd.lo[3] ≈ h2ci.lower && pd.hi[3] ≈ h2ci.upper
+        @test 0 <= pd.lo[3] <= 1 && 0 <= pd.hi[3] <= 1            # h2 row in (0,1)
+    end
+
+    # ML fit -> SE machinery is REML-only: graceful degrade to points-only (no whiskers)
+    mlspec = animal_model_spec([1.0, 2.0, 3.0], ones(3, 1), sparse(1.0I, 3, 3),
+        sparse(1.0I, 3, 3); ids = ["a", "b", "c"], method = :ML)
+    mlfit = AnimalModelFit(mlspec, gaussian_loglik(mlspec, 1.0, 1.0; method = :ML),
+        (sigma_a2 = 1.0, sigma_e2 = 1.0), true, "test", 0)
+    pdml = variance_components_plot_data(mlfit)
+    @test pdml.estimate ≈ [1.0, 1.0, 0.5]
+    @test pdml.interval_status == "none"
+    @test all(isnan, pdml.lo) && all(isnan, pdml.hi)
+    @test pdml.supplied === false
+
+    @test_throws ArgumentError variance_components_plot_data(rfit; level = 1.5)
+end
+
 @testset "Phase 1 REML optimizer recovery (dense vs sparse)" begin
     # Interior REML optimum (8-animal pedigree, one record each). The dense
     # `fit_variance_components(:REML)` and sparse `fit_sparse_reml` optimize the
