@@ -1,24 +1,27 @@
-# Random regression / reaction norms — covariance-function descriptors (Phase 3, #54).
+# Random regression / reaction norms (Phase 3, #54). All SUPPLIED-covariance,
+# EXPERIMENTAL, validation-scale — `K_g` and `σ²e` are SUPPLIED, never estimated.
 #
-# DESCRIPTIVE, SUPPLIED-covariance layer (slice 1). Given a SUPPLIED k×k genetic
-# covariance matrix `K_g` among an animal's random-regression coefficients over a
-# normalized-Legendre basis on a standardized covariate t ∈ [-1, 1], this reports
-# the quantitative-genetic interpretation a breeder/evolutionary user reads off a
-# reaction norm: the per-covariate additive genetic variance trajectory
-# v_g(t) = φ(t)ᵀ K_g φ(t), the genetic covariance/correlation SURFACE across
-# covariate points G(t,t') = φ(t)ᵀ K_g φ(t'), and (only when a residual variance is
-# supplied) the heritability trajectory h²(t). This mirrors how the multivariate
-# lane began — descriptive transforms on a supplied G (`genetic_correlation`,
-# `evolvability`) BEFORE any estimation.
+# Slice 1 (DESCRIPTORS). Given a SUPPLIED k×k genetic covariance matrix `K_g` among
+# an animal's random-regression coefficients over a normalized-Legendre basis on a
+# standardized covariate t ∈ [-1, 1], the descriptors report the quantitative-genetic
+# interpretation a breeder/evolutionary user reads off a reaction norm: the
+# per-covariate additive genetic variance trajectory v_g(t) = φ(t)ᵀ K_g φ(t), the
+# genetic covariance/correlation SURFACE G(t,t') = φ(t)ᵀ K_g φ(t'), and (only when a
+# residual variance is supplied) the heritability trajectory h²(t). These build NO
+# mixed-model equations and make NO selection-response prediction (descriptive
+# transforms on a supplied K_g, like `genetic_correlation`/`evolvability` on a G).
 #
-# EXPERIMENTAL, validation-scale, descriptive only. It does NOT estimate `K_g`,
-# builds NO mixed-model equations, makes NO selection-response prediction, and has
-# NO R-facing model-spec or bridge payload. The supplied-covariance random-regression
-# MME solve (Henderson Kronecker `A⁻¹ ⊗ K_g⁻¹`), REML estimation of `K_g`, the
-# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, and
-# any WOMBAT/ASReml comparator are DEFERRED to later slices. Basis convention is
-# FIXED to normalized Legendre on standardized t ∈ [-1, 1] (Kirkpatrick/Meyer/
-# Schaeffer); `K_g` values are not comparable across normalization conventions.
+# Slice 2 (SUPPLIED-COVARIANCE MME). `random_regression_mme` solves the Henderson MME
+# for the polynomial RR animal model at a SUPPLIED `K_g`/`σ²e` (genetic precision
+# `Ainv ⊗ inv(K_g)`, i.e. coefficient covariance `A ⊗ K_g`), returning per-animal
+# coefficient vectors. Still supplied-covariance — no estimation.
+#
+# DEFERRED to later slices: REML estimation of `K_g`/residual function (slice 3), the
+# eigen-function (covariance-function) decomposition, PEV of curve-valued EBVs, the
+# R-facing model-spec / bridge payload, and any WOMBAT/ASReml comparator. Basis
+# convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
+# (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
+# conventions.
 
 """
     legendre_basis(t, order)
@@ -147,4 +150,102 @@ function rr_heritability(K_g::AbstractMatrix, residual, ts::AbstractVector)
         throw(ArgumentError("residual must be a scalar or a length-$(m) vector"))
     all(>(0), σe2) || throw(ArgumentError("residual variance(s) must be positive"))
     return (covariate = vg.covariate, values = vg.values ./ (vg.values .+ σe2))
+end
+
+"""
+    legendre_design(ts, order)
+
+Build the `n × order` random-regression design matrix `Φ` whose row `i` is
+`legendre_basis(ts[i], order)` for standardized covariate points `ts ∈ [-1, 1]`
+(use [`standardize_covariate`](@ref) first). The columns are the normalized
+Legendre basis functions.
+"""
+legendre_design(ts::AbstractVector, order::Integer) = _rr_design(ts, order)
+
+# Random-regression random-effect incidence W (n × q·k): record r contributes
+# Phi[r,:] (scaled by Z[r,a]) into animal a's k-column block. This is the row-wise
+# Khatri–Rao (face-splitting) product of Z and Phi — NOT kron(Z, I_k). Column
+# (a-1)k + c ↔ animal a, coefficient c (coefficient-fastest, animal-outer), matching
+# the kron(Ainv, inv(K_g)) genetic precision ordering.
+function _rr_random_design(Phi::AbstractMatrix, Z::AbstractMatrix)
+    n, k = size(Phi)
+    q = size(Z, 2)
+    W = zeros(Float64, n, q * k)
+    @inbounds for r in 1:n, a in 1:q
+        z = Z[r, a]
+        z == 0 && continue
+        for c in 1:k
+            W[r, (a - 1) * k + c] = z * Phi[r, c]
+        end
+    end
+    return W
+end
+
+"""
+    random_regression_mme(y, X, Phi, Z, Ainv, K_g, sigma_e2; ids = nothing)
+
+Solve the SUPPLIED-covariance Henderson mixed-model equations for the polynomial
+random-regression animal model with a homogeneous scalar residual variance:
+
+    y_r = x_rᵀ β + φ(s_r)ᵀ a_{a(r)} + e_r,  e_r ~ N(0, sigma_e2),
+    vec(a) ~ N(0, A ⊗ K_g),  A = Ainv⁻¹,
+
+where `Phi` (`n × k`) holds the per-record basis rows `φ(s_r)ᵀ` (see
+[`legendre_design`](@ref)), `Z` (`n × q`) is the record→animal incidence, `Ainv`
+(`q × q`) the relationship precision, `K_g` (`k × k`, positive definite) the
+supplied genetic covariance among the `k` random-regression coefficients, and
+`sigma_e2 > 0`. The genetic precision block is `Ainv ⊗ inv(K_g)` (animal-outer,
+coefficient-fastest ordering, matching the random design `W = face-splitting(Z, Phi)`).
+
+Returns `(beta, random_coefficients = (ids, values), variance_components =
+(K_g, sigma_e2), basis = (ncoef,))`, where `values` is the `q × k` matrix of
+per-animal coefficient vectors (row = animal, column = Legendre coefficient `0..k-1`).
+
+EXPERIMENTAL, dense/validation-scale, SUPPLIED-covariance: `K_g`/`sigma_e2` are NOT
+estimated (RR REML is a later slice — see the roadmap note), there is no R-facing
+model-spec or bridge payload, and homogeneous residual variance only.
+"""
+function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
+                               Z::AbstractMatrix, Ainv::AbstractMatrix, K_g::AbstractMatrix,
+                               sigma_e2::Real; ids = nothing)
+    n = length(y)
+    k = size(Phi, 2)
+    q = size(Ainv, 1)
+    size(Phi, 1) == n || throw(ArgumentError("Phi must have one row per record (n = $n)"))
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record (n = $n)"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record (n = $n)"))
+    size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimension (q = $q)"))
+    size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square (q × q)"))
+    size(K_g, 1) == k && size(K_g, 2) == k ||
+        throw(ArgumentError("K_g must be $k×$k (k = number of basis columns in Phi)"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    Ksym = Symmetric(Matrix{Float64}(K_g))
+    isposdef(Ksym) || throw(ArgumentError("K_g must be positive definite"))
+    yv = Float64.(y)
+    Xm = Matrix{Float64}(X)
+    all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
+    all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
+    all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
+    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
+
+    W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
+    Ginv = kron(sparse(Float64.(Matrix(Ainv))), sparse(inv(Ksym)))   # q·k × q·k precision
+    p = size(Xm, 2)
+    # MME scaled by sigma_e2 (residual precision I/sigma_e2):
+    #   [X'X  X'W;  W'X  W'W + sigma_e2·(Ainv⊗K_g⁻¹)] [β; a] = [X'y; W'y]
+    Wt = transpose(W)
+    lhs = [Xm' * Xm      Xm' * W
+           Wt * Xm       Wt * W + sigma_e2 .* Matrix(Ginv)]
+    rhs = vcat(Xm' * yv, Wt * yv)
+    solution = Symmetric(lhs) \ rhs
+    beta = Vector{Float64}(solution[1:p])
+    avec = Vector{Float64}(solution[(p + 1):(p + q * k)])
+    coeffs = permutedims(reshape(avec, k, q))                         # q × k (animal × coefficient)
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    return (
+        beta = beta,
+        random_coefficients = (ids = aids, values = coeffs),
+        variance_components = (K_g = Matrix(Ksym), sigma_e2 = Float64(sigma_e2)),
+        basis = (ncoef = k,),
+    )
 end
