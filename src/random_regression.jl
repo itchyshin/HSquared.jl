@@ -204,6 +204,60 @@ function rr_eigenfunctions(K_g::AbstractMatrix, ts::AbstractVector)
             variance_explained = prop)
 end
 
+# ── Plot-data preparers (random-regression figure set) ──────────────────────────
+# Thin, deterministic, RNG-free wrappers that re-shape the existing RR descriptors
+# into the `*_plot_data` NamedTuple convention (mirroring `marker_manhattan_data` /
+# `marker_qq_data`) consumed by the R ggplot2 + Julia Makie drawing layers. They make
+# NO backend/drawing claim and NO estimation claim — `K_g`/residual are SUPPLIED — and
+# carry honest-status flags (`supplied`, `rotation_invariant`) so a figure cannot
+# silently overstate. Guards are delegated to the underlying descriptors.
+
+"""
+    rr_eigenfunctions_plot_data(K_g, ts)
+
+Plot-ready data for the Kirkpatrick eigenfunction figure: delegates to
+[`rr_eigenfunctions`](@ref) and returns `(covariate, eigenvalues, eigenfunctions,
+variance_explained, basis_order, rotation_invariant = true, supplied = true)`.
+DESCRIPTIVE, supplied-`K_g`, rotation-invariant — each curve carries its genetic
+variance share `λ_j/Σλ`; eigenfunction signs are arbitrary (do not over-read).
+"""
+function rr_eigenfunctions_plot_data(K_g::AbstractMatrix, ts::AbstractVector)
+    out = rr_eigenfunctions(K_g, ts)
+    return (covariate = out.covariate, eigenvalues = out.eigenvalues,
+            eigenfunctions = out.eigenfunctions, variance_explained = out.variance_explained,
+            basis_order = length(out.eigenvalues), rotation_invariant = true, supplied = true)
+end
+
+"""
+    rr_genetic_variance_plot_data(K_g, ts; residual = nothing)
+
+Plot-ready data for the genetic-variance trajectory `v_g(t)` (and the heritability
+trajectory `h²(t)` when `residual` is supplied): delegates to
+[`rr_genetic_variance`](@ref) / [`rr_heritability`](@ref). Returns `(covariate,
+genetic_variance, heritability, basis_order, supplied = true)`. DESCRIPTIVE from a
+SUPPLIED `K_g`/residual — not a REML estimate, not a phenotypic variance.
+"""
+function rr_genetic_variance_plot_data(K_g::AbstractMatrix, ts::AbstractVector; residual = nothing)
+    vg = rr_genetic_variance(K_g, ts)
+    h2 = residual === nothing ? nothing : rr_heritability(K_g, residual, ts).values
+    return (covariate = vg.covariate, genetic_variance = vg.values, heritability = h2,
+            basis_order = size(K_g, 1), supplied = true)
+end
+
+"""
+    rr_covariance_surface_plot_data(K_g, ts; correlation = false)
+
+Plot-ready data for the genetic covariance (or correlation) surface heatmap:
+delegates to [`rr_genetic_covariance_surface`](@ref) (or
+[`rr_genetic_correlation_surface`](@ref) when `correlation = true`). Returns
+`(covariate, surface, is_correlation, supplied = true)`. DESCRIPTIVE, supplied-`K_g`;
+genetic, not phenotypic.
+"""
+function rr_covariance_surface_plot_data(K_g::AbstractMatrix, ts::AbstractVector; correlation::Bool = false)
+    s = correlation ? rr_genetic_correlation_surface(K_g, ts) : rr_genetic_covariance_surface(K_g, ts)
+    return (covariate = s.covariate, surface = s.values, is_correlation = correlation, supplied = true)
+end
+
 """
     legendre_design(ts, order)
 

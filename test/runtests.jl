@@ -5314,6 +5314,45 @@ end
     @test_throws ArgumentError rr_eigenfunctions(Kg, [1.5])                # |t| > 1
 end
 
+@testset "Phase 3 random-regression plot-data preparers (#54, plotting layer)" begin
+    # Thin *_plot_data wrappers (marker_*_data convention): delegate to the existing
+    # tested RR descriptors + carry honest-status flags (supplied, rotation_invariant)
+    # for the R ggplot2 / Julia Makie drawing layer. No backend, no estimation.
+    Kg = [1.0 0.3 0.0; 0.3 0.5 0.1; 0.0 0.1 0.2]
+    ts = [-1.0, -0.5, 0.0, 0.5, 1.0]
+
+    ef = rr_eigenfunctions(Kg, ts)
+    pd = rr_eigenfunctions_plot_data(Kg, ts)
+    @test pd.covariate == ef.covariate
+    @test pd.eigenvalues == ef.eigenvalues
+    @test pd.eigenfunctions == ef.eigenfunctions
+    @test pd.variance_explained == ef.variance_explained
+    @test pd.basis_order == 3
+    @test pd.rotation_invariant === true && pd.supplied === true
+    @test propertynames(pd) ==
+          (:covariate, :eigenvalues, :eigenfunctions, :variance_explained, :basis_order, :rotation_invariant, :supplied)
+
+    vg = rr_genetic_variance(Kg, ts)
+    pv = rr_genetic_variance_plot_data(Kg, ts)
+    @test pv.covariate == vg.covariate
+    @test pv.genetic_variance == vg.values
+    @test pv.heritability === nothing
+    @test pv.basis_order == 3 && pv.supplied === true
+    @test rr_genetic_variance_plot_data(Kg, ts; residual = 0.4).heritability ==
+          rr_heritability(Kg, 0.4, ts).values
+
+    ps = rr_covariance_surface_plot_data(Kg, ts)
+    @test ps.surface == rr_genetic_covariance_surface(Kg, ts).values
+    @test ps.is_correlation === false && ps.supplied === true
+    pc = rr_covariance_surface_plot_data(Kg, ts; correlation = true)
+    @test pc.surface == rr_genetic_correlation_surface(Kg, ts).values
+    @test pc.is_correlation === true
+
+    # guards delegate to the underlying descriptors
+    @test_throws ArgumentError rr_eigenfunctions_plot_data([1.0 0.0; 0.0 -1.0], ts)  # non-PSD
+    @test_throws ArgumentError rr_covariance_surface_plot_data(Kg, [1.5])            # |t| > 1
+end
+
 @testset "Phase 3 supplied-covariance random-regression MME (#54 slice 2)" begin
     # 5-animal pedigree, 2 records each at distinct covariates (n = 10), k = 2
     # (linear reaction norm: intercept + slope).
