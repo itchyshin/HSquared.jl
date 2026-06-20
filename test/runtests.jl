@@ -5189,6 +5189,42 @@ end
     @test variance_along_gradient(Gpsd_eps, [0.0, 1.0]; normalize = false) ≥ 0.0
 end
 
+@testset "G-geometry plot-data preparers (#54 plotting, rotation-invariant)" begin
+    # genetic_pca_plot_data: rotation-invariant eigenstructure ONLY, never raw loadings
+    G = [3.0 1.0; 1.0 3.0]
+    pca = genetic_pca(G)
+    pd = genetic_pca_plot_data(G)
+    @test pd.eigenvalues == pca.values
+    @test pd.eigenvectors == pca.vectors
+    @test pd.variance_explained ≈ pca.values ./ sum(pca.values)
+    @test sum(pd.variance_explained) ≈ 1.0
+    @test pd.loadings_scaled ≈ pca.vectors .* sqrt.(pca.values)'
+    @test pd.axis_labels == ["PC1", "PC2"]
+    @test pd.rotation_invariant === true && pd.is_eigenstructure_not_loadings === true
+    @test !(:loadings in propertynames(pd))                       # never raw FA loadings
+    pd1 = genetic_pca_plot_data(G; n_axes = 1)
+    @test size(pd1.eigenvectors) == (2, 1) && pd1.axis_labels == ["PC1"]
+
+    # HARD rotation-invariance: low-rank G = ΛΛᵀ and rotated (ΛQ) give the SAME G → same data
+    Λ = [0.8 0.2; 0.3 0.9; 0.5 0.1]
+    Q = [cos(0.7) -sin(0.7); sin(0.7) cos(0.7)]
+    @test genetic_pca_plot_data(lowrank_covariance(Λ)).eigenvalues ≈
+          genetic_pca_plot_data(lowrank_covariance(Λ * Q)).eigenvalues
+
+    # genetic_correlation_plot_data
+    cd = genetic_correlation_plot_data(G; traits = ["a", "b"])
+    @test cd.genetic_correlations == genetic_correlation(G)
+    @test cd.traits == ["a", "b"] && cd.rotation_invariant === true
+    @test diag(cd.genetic_correlations) ≈ ones(2)
+    @test genetic_correlation_plot_data(G).traits == ["trait_1", "trait_2"]
+    @test genetic_correlation_plot_data(G; heritabilities = [0.3, 0.5]).heritabilities == [0.3, 0.5]
+
+    # guards
+    @test_throws ArgumentError genetic_pca_plot_data([1.0 0.0; 0.0 -1.0])         # indefinite
+    @test_throws ArgumentError genetic_pca_plot_data(G; n_axes = 3)               # n_axes > p
+    @test_throws ArgumentError genetic_correlation_plot_data(G; traits = ["a"])   # label length
+end
+
 @testset "Phase 3 random-regression covariance-function descriptors (#54)" begin
     # --- normalized Legendre basis: exact closed forms at t = -1, 0, 1 ---
     @test legendre_basis(0.0, 3) ≈ [sqrt(1 / 2), 0.0, sqrt(5 / 2) * (-1 / 2)]

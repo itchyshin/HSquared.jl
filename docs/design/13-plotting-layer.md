@@ -1,8 +1,8 @@
 # Plotting / visualization layer — design + cross-lane contract
 
 Status: **design note + ratified architecture**, 2026-06-20 (Florence + Hopper +
-Rose, ultracode design pass). The first engine slice (RR plot-data preparers) is
-landing; the rest is the agreed runway. No capability is claimed here; the
+Rose, ultracode design pass). Set A (RR plot-data preparers, PR #91) and set C
+(G-geometry preparers) are landed; the rest is the agreed runway. No capability is claimed here; the
 honest-status figure contract (§4) is binding.
 
 ## 1. Ratified architecture (user-confirmed)
@@ -37,10 +37,10 @@ honest-status flags (`supplied`, `rotation_invariant`, `interval_status`, …).
 
 | Set | Preparer(s) | Status | Source |
 | --- | --- | --- | --- |
-| **A** Random regression | `rr_eigenfunctions_plot_data`, `rr_genetic_variance_plot_data`, `rr_covariance_surface_plot_data` | **landing** (this slice) | `rr_eigenfunctions`/`rr_genetic_variance`/`rr_genetic_covariance_surface` (PR #88) |
+| **A** Random regression | `rr_eigenfunctions_plot_data`, `rr_genetic_variance_plot_data`, `rr_covariance_surface_plot_data` | **landed** (PR #91) | `rr_eigenfunctions`/`rr_genetic_variance`/`rr_genetic_covariance_surface` (PR #88) |
 | **B** Variance components + h² | `variance_components_plot_data(fit; level)` | planned | `variance_components` / `heritability_interval` / `multivariate_covariance_standard_errors` |
-| **C** Genetic correlations | `genetic_correlation_plot_data(fit; traits)` | planned | `genetic_correlation` |
-| **C** G geometry (rotation-invariant) | `genetic_pca_plot_data(G; n_axes)` | planned | `genetic_pca` / `g_max` / `evolvability` |
+| **C** Genetic correlations | `genetic_correlation_plot_data(G; traits, heritabilities)` | **landed** | `genetic_correlation` |
+| **C** G geometry (rotation-invariant) | `genetic_pca_plot_data(G; n_axes)` | **landed** | `genetic_pca` / `g_max` / `evolvability` |
 | **D** GWAS | `marker_manhattan_data`, `marker_qq_data`, `marker_genomic_inflation` | **already exists** (`src/genomic.jl`) | — |
 
 **HARD CONTRACT (set C):** `genetic_pca_plot_data` accepts a covariance `G` and
