@@ -1,5 +1,11 @@
 # 2026-06-14 Loading Rotation And Identifiability
 
+> **Update 2026-06-19:** the deferred rotation/interpretation question is now
+> decided in `docs/dev-log/decisions/2026-06-19-fa-rotation-convention.md` —
+> bridge/inference uses rotation-INVARIANT functionals of `G` (eigenstructure /
+> evolvability / `Ψ`), never raw loadings. The sign-only convention below remains
+> the local metadata convention for returned loadings.
+
 ## Decision
 
 For Phase 4B structured multivariate genetic covariance fits, HSquared.jl uses a
