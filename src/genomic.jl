@@ -2195,14 +2195,17 @@ function _scan_max_statistic(scan; statistic::Symbol = :chisq)
     if statistic === :chisq
         hasproperty(scan, :chisq) ||
             throw(ArgumentError("scan must have a :chisq field for statistic = :chisq"))
-        return maximum(Float64.(scan.chisq))
+        m = maximum(Float64.(scan.chisq))
     elseif statistic === :neglog10p
         hasproperty(scan, :p_values) ||
             throw(ArgumentError("scan must have a :p_values field for statistic = :neglog10p"))
-        return maximum(-log10.(max.(Float64.(scan.p_values), floatmin(Float64))))
+        m = maximum(-log10.(max.(Float64.(scan.p_values), floatmin(Float64))))
     else
         throw(ArgumentError("statistic must be :chisq or :neglog10p"))
     end
+    isfinite(m) ||
+        throw(ArgumentError("scan statistic contained non-finite values (NaN/Inf)"))
+    return m
 end
 
 # Deterministic empirical quantile (type-7 / linear interpolation, the R default),
@@ -2236,6 +2239,14 @@ marker scan, so the maximum is correlation/LD-aware). Because it uses the
 distribution of the MAXIMUM over the jointly-scanned markers, the threshold is
 correlation-aware (less conservative than Bonferroni when markers are in LD).
 
+The `(1 - alpha)` type-7 quantile threshold and the add-one [`genome_wide_pvalue`](@ref)
+are two DIFFERENT estimators of the same level: they agree asymptotically, but at
+small `n_null` the quantile threshold is mildly anti-conservative (e.g. for
+`n_null = 100`, `alpha = 0.05`, an observed value exactly at the threshold has an
+add-one p of `6/101 ≈ 0.059`, not `0.05`). `genome_wide_pvalue` is the exact /
+conservative decision rule; use the quantile `threshold` for display and the
+add-one p-value for the formal accept/reject.
+
 EXPERIMENTAL, validation-scale: this calibrates a threshold FROM a supplied null;
 it is not itself a production genome-wide-significance claim (that needs a
 realistic-design calibration — the #48 gate) and has no external comparator yet.
@@ -2268,6 +2279,9 @@ validation-scale; not a production genome-wide-significance claim.
 function genome_wide_pvalue(observed::Real, null_max_statistics::AbstractVector{<:Real})
     isempty(null_max_statistics) &&
         throw(ArgumentError("null_max_statistics must be non-empty"))
+    isfinite(observed) || throw(ArgumentError("observed must be finite"))
     nulls = Float64.(collect(null_max_statistics))
+    all(isfinite, nulls) ||
+        throw(ArgumentError("null_max_statistics must be finite"))
     return (1 + count(>=(Float64(observed)), nulls)) / (length(nulls) + 1)
 end

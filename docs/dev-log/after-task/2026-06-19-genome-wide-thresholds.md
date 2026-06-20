@@ -27,9 +27,27 @@ jointly-scanned markers (less conservative than Bonferroni under LD).
 - Deterministic CI testset; capability-status + validation-debt + `validation_status`
   `V5-MARKER-THRESHOLD` rows (count 34 → 35).
 
-## Review (adversarial workflow)
+## Review (adversarial workflow) + fast-follow (PR #69 merged, then a follow-up)
 
-(Recorded after the workflow returns — Curie/Fisher, Gauss, Rose.)
+Curie/Fisher + Gauss both **pass_with_nits** (no blocker; Curie confirmed the
+max(T) permutation methodology and the Phipson–Smyth add-one p are statistically
+sound). PR #69 was merged on the user's "merge them" directive; the should_fix
+items were then addressed in a **fast-follow** (branch `julia/s48b-threshold-followup`):
+
+- **Honesty (Curie+Gauss should_fix):** the `(1-alpha)` type-7 quantile threshold
+  and the add-one `genome_wide_pvalue` are DIFFERENT estimators that agree only
+  asymptotically — the quantile threshold is mildly anti-conservative at small
+  `n_null` (add-one p `6/101 ≈ 0.059` at the `n=100` threshold). Replaced the
+  "consistency" claim (docstring + capability-status + validation-debt +
+  validation_status) with the honest asymptotic framing; the test now pins the
+  ACTUAL add-one p at the threshold and adds an `n=1000` convergence case.
+- **Finite guards (Gauss should_fix + nit):** `_scan_max_statistic` and
+  `genome_wide_pvalue` now throw on non-finite inputs instead of silently
+  propagating NaN; tests added.
+- **Harness honesty (Curie should_fix + Gauss nit):** documented that residual
+  permutation is a no-op under the committed intercept-only `X` (and only
+  approximately exchangeable under a non-trivial design — Freedman–Lane/ter Braak
+  are exact), and the type-I smoke now draws fresh markers per replicate.
 
 ## Local checks
 
