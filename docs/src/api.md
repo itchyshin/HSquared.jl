@@ -63,6 +63,10 @@ HSquared.mendelian_sampling_variances
 HSquared.additive_relationship
 HSquared.dominance_relationship
 HSquared.epistatic_relationship
+HSquared.metafounder_relationship
+HSquared.metafounder_relationship_inverse
+HSquared.metafounder_inverse
+HSquared.metafounder_inbreeding
 HSquared.cytoplasmic_relationship
 HSquared.clonal_relationship
 HSquared.maternal_lineage

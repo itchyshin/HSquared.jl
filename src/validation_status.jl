@@ -90,6 +90,15 @@ const VALIDATION_STATUS_DATA = (
         "Experimental sparse PEV path; exact at the L+Lᵀ pattern (diagonal/PEV exact); the default extractor path remains dense.",
     ),
     (
+        "V1-METAFOUNDER",
+        "supplied-Γ metafounder relationship/inverse",
+        "Phase 1",
+        "partial",
+        "`metafounder_relationship`/`metafounder_relationship_inverse`/`metafounder_inverse`/`metafounder_inbreeding` (Legarra et al. 2015) build the metafounder-augmented relationship `A^Γ` from a SUPPLIED `m×m` metafounder covariance `Γ` and an `id→founder-group` assignment (`group_of`, aligned to `pedigree.ids` like `clone_of`): the existing tabular recursion with the leading `Γ` block seeded and unknown parents remapped to metafounder columns; `metafounder_inverse` is the combined `[metafounders; animals]` Henderson inverse (`inv(Γ)` block + the existing `[1,-½,-½]/d_k` outer products), `metafounder_relationship_inverse` the SEPARATE descriptive animal-only `inv(A^Γ)`. Deterministic gates (`test/runtests.jl`): REDUCTION to `additive_relationship`/`pedigree_inverse`/`inbreeding_coefficients` at `Γ=0`, an INDEPENDENT dense tabular oracle (two-group `Γ`), `A_combined·metafounder_inverse=I` round-trip (~1e-8), shared-metafounder relatedness (off-diag `γ`, diag `1+γ/2`), two-inverse distinctness, `Γ` symmetry/PSD/PD + group-label + remap guards, and positive `d_k` (which may exceed ½, metafounder `F=γ−1` allowed negative). No external numbers typed from memory.",
+        "external comparator (Legarra 2015 / García-Baccino 2017; opt-in BLUPF90 preGSf90/GAMMAF90) NOT run — AGHmatrix/nadiv do not implement metafounder Γ; Γ ESTIMATION not implemented (separate Fst/base-allele-frequency problem); production-scale sparse d_k path absent (still forms dense A^Γ); no R model-spec/bridge payload; single-step H^Γ and wiring into henderson_mme deferred",
+        "Descriptive supplied-Γ relationship construction only; Γ is an INPUT, never estimated; dense/validation-scale; no fitted, single-step, external-comparator, or covered claim.",
+    ),
+    (
         "V1-AI-REML",
         "average-information REML estimator",
         "Phase 1",
