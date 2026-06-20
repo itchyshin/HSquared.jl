@@ -56,3 +56,45 @@ function genetic_gllvm_descriptors(loadings::AbstractMatrix; uniqueness = nothin
             rank = K,
             n_latent_factors = K)
 end
+
+"""
+    genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, loadings, R0; uniqueness = nothing, ids = nothing)
+
+Supplied-covariance **Gaussian** genetic-GLLVM latent solve (#50 slice 2). With a
+Gaussian response, the genetic-GLLVM latent layer `η[i,t] = Σ_k Λ[t,k] g[i,k]`,
+`g[·,k] ~ N(0, A)` makes the among-trait genetic covariance `G_lat = ΛΛ' (+ diag Ψ)`
+and the trait-level breeding values `u[i,·] = Λ g[i,·]` satisfy
+`Cov(vec(U)) = G_lat ⊗ A` — i.e. the Gaussian genetic GLLVM is EXACTLY the
+multivariate animal model at `G0 = G_lat`. This convenience builds `G_lat` from the
+SUPPLIED `traits × K` loadings `Λ` (+ optional positive uniqueness `Ψ`) and solves
+it through [`multivariate_mme`](@ref), returning that solve (`beta`,
+`breeding_values`, `genetic_covariance = G_lat`, `residual_covariance`,
+`genetic_correlation`, `residual_correlation`, `traits`) augmented with the
+rotation-invariant `latent_structure` ([`genetic_gllvm_descriptors`](@ref)) and
+`n_latent_factors = K`.
+
+`G_lat` must be positive definite for the multivariate genetic precision `G0⁻¹` to
+exist: supply a positive uniqueness `Ψ`, or full-rank loadings (`K ≥ traits`). A
+pure low-rank `G_lat` (`K < traits`, no `Ψ`) is singular and is rejected by the
+solve. SUPPLIED-covariance only — `Λ`/`Ψ`/`R0` are NOT estimated (that is slice 3),
+and only rotation-INVARIANT functionals of the latent structure are reported (never
+raw loadings). No R model-spec or bridge payload.
+"""
+function genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, loadings, R0;
+                                    uniqueness = nothing, ids = nothing)
+    G_lat = uniqueness === nothing ?
+        lowrank_covariance(loadings) :
+        factor_analytic_covariance(loadings, uniqueness)
+    size(G_lat, 1) == size(Y, 2) || throw(ArgumentError(
+        "loadings imply $(size(G_lat, 1)) traits but Y has $(size(Y, 2)) columns"))
+    solve = multivariate_mme(Y, X, Z, Ainv, G_lat, R0; ids = ids)
+    return (beta = solve.beta,
+            breeding_values = solve.breeding_values,
+            genetic_covariance = solve.genetic_covariance,
+            residual_covariance = solve.residual_covariance,
+            genetic_correlation = solve.genetic_correlation,
+            residual_correlation = solve.residual_correlation,
+            traits = solve.traits,
+            latent_structure = genetic_gllvm_descriptors(loadings; uniqueness = uniqueness),
+            n_latent_factors = size(loadings, 2))
+end
