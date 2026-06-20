@@ -23,4 +23,10 @@
   traits, balanced/fully-observed, internal/not-exported, no R model-spec/bridge.
   Nothing covered.
 - **Ultracode verification:** bounded 3-lens Workflow (Gauss/Noether/Curie) + Rose
-  synthesis — verdict [FILLED ON COMPLETION].
+  synthesis — **`confirmed_correct` (all 3 lenses), MERGE.** Math verified vs
+  first-principles + independent FD Hessian + the 3 reductions; Curie recomputed the
+  Bernoulli K=2 Laplace value (== 0.0) and verified K>T/singular-`G_lat`. Two MEDIUM
+  TEST GAPS closed in-PR: (1) non-Gaussian K>1 VALUE anchored (block-diagonal Λ ⇒ K=2
+  Poisson == sum of 2 single-factor); (2) K>T + singular-`ΛΛ'` pinned vs
+  `_multivariate_reml_loglik`. LOW findings documented (docstring `maxiter≥2`; honest
+  NaN on missing-Y; dense/canonical-link scope) — no code change.

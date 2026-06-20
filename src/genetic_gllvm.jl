@@ -157,10 +157,15 @@ design (per-trait coefficients; default per-trait intercept). Returns
 Generalizes [`laplace_marginal_loglik`](@ref) (the `K = 1` single-factor case, to
 which it reduces EXACTLY, the Laplace approximation being invariant under the affine
 latent reparameterization). For a `GaussianResponse` it is EXACT and equals the
-multivariate REML marginal at `G0 = ΛΛ'`, `R0 = σ²e·I`. EXPERIMENTAL, dense /
-validation-scale, SUPPLIED loadings (NOT estimated — slice 3 REML), one family for
-all traits, balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the
-single-factor kernel), no R model-spec.
+multivariate REML marginal at `G0 = ΛΛ'`, `R0 = σ²e·I`. `G_lat = ΛΛ'` need NOT be
+positive definite (`P = I_K ⊗ Ainv` is full-rank regardless), so `K < T` /
+`K > T` / a singular `ΛΛ'` are all handled — unlike the Gaussian-MME path
+([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The convergence
+flag lags the mode by one Newton step (as in the single-factor kernel), so an exact
+Gaussian solve needs `maxiter ≥ 2`. EXPERIMENTAL, dense / validation-scale, SUPPLIED
+loadings (NOT estimated — slice 3 REML), one family for all traits,
+balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the single-factor
+kernel), no R model-spec.
 """
 function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                        loadings::AbstractMatrix, family::ResponseFamily;

@@ -5783,6 +5783,30 @@ end
     gbin = gl(ybin, Ainv, Λ2, HSquared.BinomialResponse(10); X = X)
     @test gbin.converged && gbin.gradient_norm < 1e-8 && isfinite(gbin.loglik)
 
+    # --- non-Gaussian K>1 VALUE anchor (not just stationarity): a block-diagonal Λ
+    #     makes the traits INDEPENDENT, so the K=2 Poisson marginal must equal the SUM
+    #     of two single-factor laplace marginals (σ²a = a²/b²). Pins the constant term
+    #     (e.g. the 0.5·K·logdet(Ainv) factor) against the trusted single-factor kernel.
+    a = 0.7; b = 1.1
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    gK2 = gl(Yp2, Ainv, [a 0.0; 0.0 b], HSquared.PoissonResponse(); X = X)
+    s_a = lap(Yp2[:, 1], X, Z, Ainv, a^2, HSquared.PoissonResponse())
+    s_b = lap(Yp2[:, 2], X, Z, Ainv, b^2, HSquared.PoissonResponse())
+    @test gK2.loglik ≈ s_a.loglik + s_b.loglik rtol = 1e-7
+
+    # --- singular G_lat (K<T, no Ψ) and K>T both work — P = I_K⊗Ainv is full-rank
+    #     regardless of rank(ΛΛ'), unlike the Gaussian-MME path which rejects a singular
+    #     G_lat — and equal the multivariate REML marginal at the same (possibly singular) ΛΛ'.
+    Λsing = reshape([1.0, 2.0], 2, 1)               # T=2, K=1 ⇒ ΛΛ' rank-1 (singular)
+    gsing = gl(Y2, Ainv, Λsing, HSquared.GaussianResponse(σe2); X = X)
+    @test gsing.loglik ≈ HSquared._multivariate_reml_loglik(Y2, X, Z, Ainv,
+        Λsing * transpose(Λsing), σe2 * Matrix(1.0I, 2, 2)) rtol = 1e-7
+    Λwide = [1.1 0.3 0.2; 0.4 1.2 0.5]              # T=2, K=3 (K>T)
+    gwide = gl(Y2, Ainv, Λwide, HSquared.GaussianResponse(σe2); X = X)
+    @test gwide.loglik ≈ HSquared._multivariate_reml_loglik(Y2, X, Z, Ainv,
+        Λwide * transpose(Λwide), σe2 * Matrix(1.0I, 2, 2)) rtol = 1e-7
+    @test size(gwide.g) == (q, 3)
+
     # --- guards ---
     @test_throws ArgumentError gl(Y2, Ainv, reshape([1.0], 1, 1), HSquared.GaussianResponse(1.0); X = X)  # Λ rows ≠ T
     @test_throws ArgumentError gl(Y2, Matrix(1.0I, 7, 7), Λ2, HSquared.GaussianResponse(1.0); X = X)        # Ainv ≠ q×q

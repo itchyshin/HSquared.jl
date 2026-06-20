@@ -52,7 +52,24 @@ factor) nor `multivariate.jl` (Gaussian) provided alone.
 A bounded adversarial-verification Workflow ran (3 independent lenses — Gauss
 [numerics + Laplace formula], Noether [design-matrix/ordering], Curie [test soundness
 + untested failure modes] — then a Rose claim-vs-evidence synthesis). **Verdict:
-[FILLED ON COMPLETION].**
+`confirmed_correct` (all 3 lenses) — MERGE.** Rose verified the math against a
+first-principles re-derivation, an independent finite-difference Hessian, and the
+three machine-precision reductions; Curie independently recomputed the Bernoulli
+K=2 Laplace value (matched to 0.0) and verified K>T + singular-`G_lat` work. Every
+finding was a test-coverage gap or a documented scope limit — none undermined
+correctness. **The two MEDIUM test gaps were closed in-PR before merge:**
+
+1. The non-Gaussian K>1 loglik VALUE is now pinned (not just stationarity) via a
+   block-diagonal-`Λ` anchor: independent traits ⇒ the K=2 Poisson marginal equals
+   the SUM of two single-factor `laplace_marginal_loglik` calls (machine precision).
+2. K>T and singular-`ΛΛ'` (K<T, no Ψ) are now tested against `_multivariate_reml_loglik`
+   (the `P = I_K ⊗ Ainv` full-rank property that distinguishes the Laplace path from
+   the Gaussian-MME path, which rejects a singular `G_lat`).
+
+LOW findings (convergence-flag off-by-one → `maxiter ≥ 2` for an exact Gaussian solve;
+missing-Y → honest NaN; non-convergence partial-result contract; dense/canonical-link
+scope) are documented (docstring) or are inherited documented scope limits — no code
+change needed.
 
 ## Claim boundary
 
