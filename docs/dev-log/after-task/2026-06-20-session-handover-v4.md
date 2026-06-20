@@ -66,8 +66,19 @@ Each = full-DoD PR with a 3-lens adversarial review (findings addressed):
 - **#46/#49 (PR #72)** — Julia-native FITTED univariate target fixture
   (`test/fixtures/animal_model_fitted_target/`, the engine fits + serializes its own
   output) + opt-in `comparator/` JWAS.jl scaffold (separate env, never a package dep).
+- **#54 random regression / reaction norms — slices 1+2 (PR #74, #75)** — beyond the
+  committed runway: slice 1 = supplied-`K_g` covariance-function DESCRIPTORS
+  (`legendre_basis`/`standardize_covariate`/`rr_genetic_variance`/`…_covariance_surface`/
+  `…_correlation_surface`/`rr_heritability`); slice 2 = supplied-covariance RR MME
+  (`random_regression_mme`/`legendre_design`, `W = face-splitting(Z, Φ)`, precision
+  `Ainv ⊗ inv(K_g)`, pinned by an independent dense oracle + degree-0 reduction to
+  `henderson_mme`). DESCRIPTIVE/SUPPLIED-covariance — `K_g` NOT estimated. Roadmap:
+  `docs/dev-log/decisions/2026-06-20-random-regression-roadmap.md` (slice 3 = REML).
 - **Cross-lane:** consolidated coordination note + closeout on **#61** with R-lane
   action items + fixture paths.
+- **Verification:** integrated `main` confirmed green on a **clean `git archive HEAD`
+  checkout outside Dropbox** (authoritative — Dropbox can transiently desync the
+  working tree; CI on a clean checkout is the gate).
 
 ## Decisions locked (carry forward)
 
@@ -111,8 +122,11 @@ Each = full-DoD PR with a 3-lens adversarial review (findings addressed):
    lane ratifies the FA convention: widen `multivariate_result_payload` to expose
    `genetic_pca`/`g_max`/`Ψ`/eigenvalues for structured fits + structured-fit SEs on
    invariants only. (solo engine half; R ratification first.)
-2. **#54 random regression / reaction-norm models** — a substantial new engine
-   capability (innovation backlog), solo-able.
+2. **#54 random regression — slice 3 (REML).** Slices 1 (descriptors) + 2
+   (supplied-covariance MME) landed this session. Slice 3 = `fit_random_regression_reml`
+   estimating `K_g`/residual by dense log-Cholesky REML (the direct analogue of
+   `fit_multivariate_reml`; reuse `_chol_params_to_cov`), gated by the degree-0
+   reduction to `fit_sparse_reml`. Full design in the roadmap note.
 3. **Run + record the opt-in evidence:** `comparator/` JWAS run (#49), the recovery
    harnesses (`sim/phase4*`, `sim/phase6_*`, `sim/phase5_threshold_calibration.jl`),
    and the multivariate recovery calibration (#4 — still NOT passed). These produce
