@@ -427,6 +427,231 @@ end
 epistatic_relationship(ids, sire, dam; kwargs...) =
     epistatic_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
 
+# --- Metafounders (supplied Γ, descriptive, validation-scale) — Legarra et al. 2015 -----
+#
+# `A^Γ` generalizes the numerator relationship to UNKNOWN-PARENT GROUPS ("metafounders")
+# carrying a supplied `m×m` covariance `Γ`. Each unknown parent slot is remapped to a
+# metafounder column before the SAME tabular recursion runs; metafounders are seeded by
+# `Γ` (metafounder self = `Γ[i,i]`, so metafounder inbreeding `F = Γ[i,i] − 1` may be
+# negative) and inject founder relatedness. `Γ` is SUPPLIED, never estimated. At `Γ = 0`
+# the metafounders become classical unrelated, non-inbred founders and `A^Γ` collapses to
+# the standard `A` (the primary correctness anchor). Validation-scale and dense.
+
+# Resolve the metafounder assignment into combined parent-index arrays over the augmented
+# index `[metafounders 1..m; animals m+1..m+n]`. `group_of` is aligned to `pedigree.ids`
+# (like `clone_of`): entry `i` is the metafounder-group label for animal `i`'s unknown
+# parent slot(s); animals with both parents known carry an unknown-parent marker. Distinct
+# labels resolve to columns `1..m` in stable first-appearance order. Every real animal's
+# unknown parent is remapped to its metafounder column, so no literal `0` survives for an
+# animal (a leftover unknown without a group label is a hard error, not a silent fallback).
+function _metafounder_combined_indices(pedigree::Pedigree, group_of)
+    n = length(pedigree)
+    length(group_of) == n ||
+        throw(ArgumentError("group_of must have one entry per pedigree individual"))
+    label_to_col = Dict{Any,Int}()
+    group_labels = Vector{Any}()
+    needs = [pedigree.sire[i] == 0 || pedigree.dam[i] == 0 for i in 1:n]
+    for i in 1:n
+        needs[i] || continue
+        label = group_of[i]
+        _is_unknown_parent(label, DEFAULT_UNKNOWN_PARENT_VALUES) &&
+            throw(ArgumentError("animal $(_repr(pedigree.ids[i])) has an unknown parent but no metafounder group label in group_of"))
+        if !haskey(label_to_col, label)
+            push!(group_labels, label)
+            label_to_col[label] = length(group_labels)
+        end
+    end
+    m = length(group_labels)
+    sire_c = zeros(Int, m + n)
+    dam_c = zeros(Int, m + n)
+    for i in 1:n
+        s = pedigree.sire[i]
+        d = pedigree.dam[i]
+        sire_c[m + i] = s == 0 ? label_to_col[group_of[i]] : m + s
+        dam_c[m + i] = d == 0 ? label_to_col[group_of[i]] : m + d
+    end
+    return sire_c, dam_c, m, group_labels
+end
+
+# Validate the supplied metafounder covariance. `require_pd` for the inverse path (needs
+# `Γ⁻¹`); PSD for the relationship path. Returns the symmetrized `Symmetric` view.
+function _validate_gamma(Gamma::AbstractMatrix, m::Int; require_pd::Bool)
+    size(Gamma, 1) == m && size(Gamma, 2) == m ||
+        throw(ArgumentError("Gamma must be $(m)×$(m) (one row/column per resolved metafounder group); got $(size(Gamma))"))
+    G = Matrix{Float64}(Gamma)
+    all(isfinite, G) || throw(ArgumentError("Gamma must contain only finite values"))
+    scale = max(1.0, maximum(abs, G; init = 1.0))
+    maximum(abs.(G .- transpose(G)); init = 0.0) <= 1e-10 * scale ||
+        throw(ArgumentError("Gamma must be symmetric"))
+    Gsym = Symmetric(0.5 .* (G .+ transpose(G)))
+    if m >= 1
+        evmin = eigmin(Gsym)
+        if require_pd
+            evmin > 1e-12 * scale ||
+                throw(ArgumentError("Gamma must be positive definite for the inverse path (eigmin = $(evmin))"))
+        else
+            evmin >= -1e-10 * scale ||
+                throw(ArgumentError("Gamma must be positive semidefinite (eigmin = $(evmin))"))
+        end
+    end
+    return Gsym
+end
+
+# Dense combined relationship over `[metafounders 1..m; animals m+1..m+n]`: seed the `Γ`
+# block, then the EXISTING tabular off-diagonal/diagonal rules over the animal rows
+# (metafounder parents inject founder relatedness; metafounders are pre-seeded, not
+# recursed). Animals are already topologically sorted, so `m+1..N` respects dependencies.
+function _metafounder_combined_A(m::Int, Gamma::AbstractMatrix, sire_c::Vector{Int}, dam_c::Vector{Int})
+    N = length(sire_c)
+    A = zeros(Float64, N, N)
+    @inbounds for j in 1:m, i in 1:m
+        A[i, j] = Gamma[i, j]
+    end
+    @inbounds for k in (m + 1):N
+        s = sire_c[k]
+        d = dam_c[k]
+        for j in 1:(k - 1)
+            val = 0.5 * (A[s, j] + A[d, j])
+            A[k, j] = val
+            A[j, k] = val
+        end
+        A[k, k] = 1.0 + 0.5 * A[s, d]
+    end
+    return A
+end
+
+"""
+    metafounder_relationship(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
+    metafounder_relationship(ids, sire, dam, group_of, Gamma; ...)
+
+Dense metafounder-augmented additive relationship matrix `A^Γ` (animal × animal, in
+`pedigree.ids` order) for a SUPPLIED `m×m` symmetric positive-semidefinite metafounder
+covariance `Γ` and a metafounder assignment `group_of`. `group_of` is aligned to
+`pedigree.ids` like [`clonal_relationship`](@ref)'s `clone_of`: entry `i` is the
+metafounder-group label of animal `i`'s unknown parent slot(s) (both unknown parents of
+an animal share one group this slice); animals with both parents known carry an
+unknown-parent marker. Distinct labels resolve to `Γ`'s rows `1..m` in stable
+first-appearance order.
+
+`A^Γ` is the existing tabular recursion with the leading `Γ` block seeded: a metafounder's
+self-relationship is `Γ[i,i]` (so its inbreeding `F = Γ[i,i] − 1`, which is NEGATIVE for
+`Γ[i,i] < 1`), and an animal's two unknown parents drawn from the same group `m` make it
+inbred with `A_ii = 1 + Γ[m,m]/2` and two such founders related by `Γ[m,m]`. At `Γ = 0`
+the result equals [`additive_relationship`](@ref) exactly.
+
+`Γ` is SUPPLIED, NOT estimated. EXPERIMENTAL, validation-scale and dense (bounded by
+`max_relationship_cache`); no external (BLUPF90) comparator, no R-facing metafounder
+model-spec, no single-step `H^Γ`. Scale convention: `Γ[m,m]` is on the relationship scale
+(`Γ[m,m] = 0` ⇒ classical founder), not an allele-frequency parameterization.
+"""
+function metafounder_relationship(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
+                                  max_relationship_cache::Integer = 10_000)
+    n = length(pedigree)
+    n <= max_relationship_cache ||
+        throw(ArgumentError("metafounder_relationship uses a bounded relationship cache; got $(n) rows and max_relationship_cache = $(max_relationship_cache)"))
+    sire_c, dam_c, m, _ = _metafounder_combined_indices(pedigree, group_of)
+    Gsym = _validate_gamma(Gamma, m; require_pd = false)
+    A = _metafounder_combined_A(m, Matrix(Gsym), sire_c, dam_c)
+    return A[(m + 1):(m + n), (m + 1):(m + n)]
+end
+
+metafounder_relationship(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
+    metafounder_relationship(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+
+"""
+    metafounder_relationship_inverse(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
+    metafounder_relationship_inverse(ids, sire, dam, group_of, Gamma; ...)
+
+DESCRIPTIVE dense inverse of the ANIMAL block of `A^Γ`, i.e. `inv(A^Γ_animals)`. This is
+**distinct** from [`metafounder_inverse`](@ref): it is NOT the animal sub-block of the
+combined `[metafounders; animals]` precision (conflating the two corrupts either the MME
+or the descriptive inverse). At `Γ = 0` it equals `Matrix(pedigree_inverse(pedigree))`.
+Validation-scale and dense; `Γ` supplied, not estimated.
+"""
+function metafounder_relationship_inverse(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
+                                          max_relationship_cache::Integer = 10_000)
+    A = metafounder_relationship(pedigree, group_of, Gamma; max_relationship_cache = max_relationship_cache)
+    return inv(Symmetric(A))
+end
+
+metafounder_relationship_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
+    metafounder_relationship_inverse(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+
+"""
+    metafounder_inbreeding(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
+    metafounder_inbreeding(ids, sire, dam, group_of, Gamma; ...)
+
+Metafounder-aware inbreeding coefficient `F_i = A^Γ[i,i] − 1` for each animal (in
+`pedigree.ids` order). Under metafounders an animal can have `F < 0` (heterozygote excess)
+when its metafounder self-relationship `Γ < 1`. `Γ` supplied, not estimated.
+"""
+function metafounder_inbreeding(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
+                                max_relationship_cache::Integer = 10_000)
+    A = metafounder_relationship(pedigree, group_of, Gamma; max_relationship_cache = max_relationship_cache)
+    return [A[i, i] - 1.0 for i in 1:length(pedigree)]
+end
+
+metafounder_inbreeding(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
+    metafounder_inbreeding(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+
+"""
+    metafounder_inverse(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
+    metafounder_inverse(ids, sire, dam, group_of, Gamma; ...)
+
+MME-ready sparse inverse of the COMBINED metafounder-augmented relationship over
+`[metafounders 1..m; animals m+1..m+n]` (dimension `(m+n)×(m+n)`): the metafounder block
+is seeded with `inv(Γ)` and each animal adds the existing Henderson `[1, −½, −½]/d_k`
+outer product over its (animal, sire, dam) combined indices, where a parent index may be a
+metafounder column. The Mendelian sampling variance `d_k = ½ − ¼(F_s + F_d)` uses the
+combined inbreeding (metafounder `F = Γ − 1`), so `d_k` may EXCEED ½ (heterozygote excess)
+— this is correct and not clamped.
+
+Requires `Γ` symmetric POSITIVE DEFINITE (it inverts `Γ`). The leading `m` rows/columns
+are the metafounder solutions; the animal block of this combined inverse is **not**
+`inv(A^Γ_animals)` (see [`metafounder_relationship_inverse`](@ref)). `A_combined · this ≈
+I` is the round-trip correctness anchor. Returned as a `SparseMatrixCSC{Float64,Int}`,
+mirroring [`pedigree_inverse`](@ref). EXPERIMENTAL, validation-scale (still forms the dense
+`A^Γ` to get `d_k`, bounded by `max_relationship_cache`); not wired into `henderson_mme`
+this slice (the extra metafounder levels need the R bridge contract). `Γ` supplied.
+"""
+function metafounder_inverse(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
+                             max_relationship_cache::Integer = 10_000)
+    n = length(pedigree)
+    n <= max_relationship_cache ||
+        throw(ArgumentError("metafounder_inverse uses a bounded relationship cache; got $(n) rows and max_relationship_cache = $(max_relationship_cache)"))
+    sire_c, dam_c, m, _ = _metafounder_combined_indices(pedigree, group_of)
+    Gsym = _validate_gamma(Gamma, m; require_pd = true)
+    A = _metafounder_combined_A(m, Matrix(Gsym), sire_c, dam_c)
+    N = m + n
+    F = [A[x, x] - 1.0 for x in 1:N]
+
+    rows = Int[]
+    cols = Int[]
+    vals = Float64[]
+    Ginv = inv(Gsym)
+    for j in 1:m, i in 1:m
+        push!(rows, i); push!(cols, j); push!(vals, Ginv[i, j])
+    end
+    for k in (m + 1):N
+        s = sire_c[k]
+        d = dam_c[k]
+        variance = _mendelian_sampling_variance(s, d, F)   # s,d ≥ 1 ⇒ both-known branch
+        variance > 0 ||
+            throw(ArgumentError("non-positive Mendelian sampling variance for $(_repr(pedigree.ids[k - m]))"))
+        scale = inv(variance)
+        entries = ((k, 1.0), (s, -0.5), (d, -0.5))
+        for (row, row_weight) in entries
+            for (col, col_weight) in entries
+                push!(rows, row); push!(cols, col); push!(vals, scale * row_weight * col_weight)
+            end
+        end
+    end
+    return sparse(rows, cols, vals, N, N)
+end
+
+metafounder_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
+    metafounder_inverse(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0
     haskey(id_to_index, parent) &&

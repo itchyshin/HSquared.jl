@@ -168,12 +168,13 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 36
+    @test length(validation) == 37
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
+    @test "V1-METAFOUNDER" in [row.id for row in validation]
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -742,6 +743,93 @@ end
 
     @test HSquared.epistatic_relationship(ids, sire, dam; kind = :additive_additive) == AA
     @test_throws ArgumentError HSquared.epistatic_relationship(ped; kind = :bogus)
+end
+
+@testset "Phase 1 metafounder relationship / inverse (supplied Γ, #53)" begin
+    # 3 founders + 3 descendants (o3 = s2 × o1, an inbreeding-creating mating).
+    ids = ["s1", "s2", "d1", "o1", "o2", "o3"]
+    sire = ["0", "0", "0", "s1", "s1", "s2"]
+    dam = ["0", "0", "0", "d1", "d1", "o1"]
+    ped = normalize_pedigree(ids, sire, dam)
+    n = length(ped)
+    idx(id) = findfirst(==(id), ped.ids)
+    needs = [ped.sire[i] == 0 || ped.dam[i] == 0 for i in 1:n]
+    group = [needs[i] ? "base" : "0" for i in 1:n]   # all founders share one metafounder
+
+    # REDUCTION GATE (Γ=0 ⇒ classical founders): A^Γ == standard A, descriptive
+    # inverse == pedigree_inverse, metafounder F == standard inbreeding.
+    A0 = metafounder_relationship(ped, group, zeros(1, 1))
+    @test A0 ≈ additive_relationship(ped) atol = 1e-10
+    @test metafounder_relationship_inverse(ped, group, zeros(1, 1)) ≈
+          Matrix(pedigree_inverse(ped)) atol = 1e-10
+    @test metafounder_inbreeding(ped, group, zeros(1, 1)) ≈
+          inbreeding_coefficients(ped) atol = 1e-10
+
+    # SHARED-METAFOUNDER RELATEDNESS GATE (m=1, Γ=[γ]): two founders related by γ,
+    # diagonal 1+γ/2 (pins the sign against a γ → −γ flip).
+    γ = 0.4
+    A = metafounder_relationship(ped, group, fill(γ, 1, 1))
+    @test A[idx("s1"), idx("s2")] ≈ γ atol = 1e-12
+    @test A[idx("s1"), idx("s1")] ≈ 1 + γ / 2 atol = 1e-12
+    @test issymmetric(A)
+    # metafounder F = γ − 1 < 0 (the BASE), and a founder's Mendelian sampling
+    # variance d = 1 − γ/2 EXCEEDS ½ (heterozygote excess) — directly asserted via
+    # the internal combined helpers so the no-clamp / negative-F behaviour is a real
+    # tested gate, not just an implicit consequence of the round-trip.
+    sc1, dc1, m1, _ = HSquared._metafounder_combined_indices(ped, group)
+    Acomb1 = HSquared._metafounder_combined_A(m1, fill(0.4, 1, 1), sc1, dc1)
+    Fcomb = [Acomb1[x, x] - 1.0 for x in 1:(m1 + n)]
+    @test Fcomb[1] ≈ 0.4 - 1.0 atol = 1e-12                                       # metafounder F = γ−1 = −0.6 < 0
+    s1c = m1 + idx("s1")
+    @test HSquared._mendelian_sampling_variance(sc1[s1c], dc1[s1c], Fcomb) ≈ 0.8 atol = 1e-12  # d = 1−γ/2 = 0.8 > ½ (un-clamped)
+    # animal F stays ≥ 0 in this single-group-per-animal slice (self = 1 + γ/2)
+    @test all(metafounder_inbreeding(ped, group, fill(0.1, 1, 1)) .>= -1e-12)
+
+    # INDEPENDENT DENSE TABULAR ORACLE (written here, not calling production), with a
+    # two-group Γ so the off-diagonal coupling is exercised. Groups: s1,s2 → A; d1 → B.
+    g2 = [group[i] for i in 1:n]
+    g2[idx("s1")] = "A"; g2[idx("s2")] = "A"; g2[idx("d1")] = "B"
+    Γ2 = [0.5 0.2; 0.2 0.3]
+    # oracle over [mf A=1, mf B=2; animals 3..]: map each animal to combined idx
+    m = 2
+    col = Dict("A" => 1, "B" => 2)
+    sc = zeros(Int, m + n); dc = zeros(Int, m + n)
+    for i in 1:n
+        s = ped.sire[i]; d = ped.dam[i]
+        sc[m + i] = s == 0 ? col[g2[i]] : m + s
+        dc[m + i] = d == 0 ? col[g2[i]] : m + d
+    end
+    Ao = zeros(m + n, m + n)
+    Ao[1:m, 1:m] = Γ2
+    for k in (m + 1):(m + n)
+        for j in 1:(k - 1)
+            v = 0.5 * (Ao[sc[k], j] + Ao[dc[k], j]); Ao[k, j] = v; Ao[j, k] = v
+        end
+        Ao[k, k] = 1 + 0.5 * Ao[sc[k], dc[k]]
+    end
+    @test metafounder_relationship(ped, g2, Γ2) ≈ Ao[(m + 1):end, (m + 1):end] atol = 1e-10
+
+    # ROUND-TRIP GATE (combined sparse inverse): A_combined · metafounder_inverse == I.
+    Minv = metafounder_inverse(ped, g2, Γ2)
+    @test size(Minv) == (m + n, m + n)
+    @test Matrix(Ao) * Matrix(Minv) ≈ Matrix(1.0I, m + n, m + n) atol = 1e-8
+
+    # TWO-INVERSE-DISTINCTNESS GATE: the combined-inverse animal block is NOT the
+    # descriptive animal-only inverse (deliberate; guards against conflation).
+    animblock = Matrix(Minv)[(m + 1):end, (m + 1):end]
+    desc = metafounder_relationship_inverse(ped, g2, Γ2)
+    @test maximum(abs.(animblock - desc)) > 1e-6
+
+    # GUARDS
+    @test_throws ArgumentError metafounder_inverse(ped, group, zeros(1, 1))           # Γ singular on inverse path
+    @test_throws ArgumentError metafounder_relationship(ped, group, [1.0 0.0; 0.0 1.0]) # wrong Γ dimension
+    @test_throws ArgumentError metafounder_relationship(ped, group, fill(-1.0, 1, 1))  # Γ not PSD
+    badgroup = copy(group); badgroup[idx("s1")] = "0"                                  # founder lost its group label
+    @test_throws ArgumentError metafounder_relationship(ped, badgroup, zeros(1, 1))
+    @test_throws ArgumentError metafounder_relationship(ped, group[1:5], zeros(1, 1))  # group_of length mismatch
+
+    # convenience (ids, sire, dam, ...) wrappers agree with the Pedigree methods
+    @test metafounder_relationship(ids, sire, dam, group, fill(γ, 1, 1)) ≈ A atol = 1e-12
 end
 
 @testset "Phase 1 HSData ID container" begin
