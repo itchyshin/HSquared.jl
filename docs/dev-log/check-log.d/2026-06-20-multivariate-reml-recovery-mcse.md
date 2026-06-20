@@ -13,10 +13,11 @@
   2·MCSE (G[1,1]/G[1,2]/G[2,2]/R[1,1]/R[1,2]/R[2,2]), per-trait EBV accuracy
   (correlation of EBV-hat with the true simulated breeding values), and a Wilson 95%
   CI on the pass proportion. Dependency-free `_pearson`/`_wilson` helpers.
-- Ran 12 seeds (20260616–20260627). Result: estimator UNBIASED at this design —
-  all six covariance params |bias| ≤ 2·MCSE (largest 0.84·MCSE), EBV accuracy ≈
-  0.90 both traits, 12/12 converged. Per-seed gate 7/12 (Wilson 95% [0.32, 0.81]),
-  failures G-dominated (4 G-only + 1 marginal G+R; R exceeds its gate once at 0.206).
+- Ran 12 seeds (20260616–20260627). Result: NO DETECTABLE bias at this
+  (truth-warm-started) design — all six covariance params |bias| ≤ 2·MCSE (largest
+  0.84·MCSE, a low-power non-rejection at m=12), EBV accuracy ≈ 0.90 both traits,
+  12/12 converged. Per-seed gate 7/12 (Wilson 95% [0.32, 0.81]), failures
+  G-dominated (4 G-only + 1 marginal G+R; R exceeds its gate once at 0.206).
 - Recorded `docs/dev-log/recovery-checkpoints/2026-06-20-multivariate-reml-recovery-mcse.md`
   (question, setup, reproduce command, full table, honest conclusion, follow-ups).
 - Updated the V4-MV-REML honest status in `src/validation_status.jl` and

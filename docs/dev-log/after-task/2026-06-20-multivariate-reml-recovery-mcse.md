@@ -8,12 +8,13 @@ Date: 2026-06-20. Lane: Julia engine (`HSquared.jl`). Branch:
 Enhanced the opt-in multivariate REML recovery harness to report per-parameter
 Monte Carlo bias ± 2·MCSE, per-trait EBV accuracy, and a Wilson CI on the pass
 proportion, then ran 12 seeds and recorded the result. The bare "6/10 failed" line
-overstated the gap: the dense unstructured multivariate REML estimator is
-**unbiased** at this design (all six covariance parameters |bias| ≤ 2·MCSE; EBV
-accuracy ≈ 0.90 both traits; 12/12 converged). The per-seed Frobenius relative-error
-gate fails ~40% of the time (7/12; Wilson 95% [0.32, 0.81]) because the genetic
-covariance `G` has high sampling variance at q=80/n=240 — not because the estimator
-is biased. This is the highest-leverage solo engine action identified by the
+overstated the gap: the dense unstructured multivariate REML estimator shows **no
+detectable bias** at this design (all six covariance parameters |bias| ≤ 2·MCSE — a
+low-power non-rejection at m=12, consistent with an unbiased estimator; EBV accuracy
+≈ 0.90 both traits; 12/12 converged; optimizer warm-started at the true G0/R0). The
+per-seed Frobenius relative-error gate fails ~40% of the time (7/12; Wilson 95%
+[0.32, 0.81]) because the estimated genetic covariance `G` has high sampling variance
+at q=80/n=240 — not a detectable estimator bias. This is the highest-leverage solo engine action identified by the
 ultracode synthesis: it advances the V4-MV-REML evidence without the R lane or
 external software.
 
@@ -22,8 +23,11 @@ external software.
 - implementation — `sim/phase4_multivariate_reml_recovery.jl` aggregate reporting
   (`_pearson`, `_wilson`, bias/MCSE table, EBV accuracy, Wilson CI); opt-in, RNG-
   isolated, outside CI.
-- tests — none added (the harness is deliberately outside the RNG-free test suite,
-  consistent with all other `sim/` harnesses); `Pkg.test()` re-run green (36 rows).
+- tests — none added; the bias/MCSE/Wilson math (`_pearson`/`_wilson`) lives only in
+  the opt-in `sim/` harness, deliberately outside the RNG-free test suite (consistent
+  with all other `sim/` harnesses), so it is UNTESTED in CI — the formulas were
+  verified independently (Rose re-derived the Wilson interval; MCSE = sd/√m standard).
+  `Pkg.test()` re-run green (36 rows).
 - documentation — recovery checkpoint
   `docs/dev-log/recovery-checkpoints/2026-06-20-multivariate-reml-recovery-mcse.md`.
 - honest-status update — V4-MV-REML evidence updated in `src/validation_status.jl`
@@ -50,9 +54,11 @@ EBV accuracy: trait 1 = 0.902, trait 2 = 0.910. Converged 12/12. Pass 7/12
 
 ## Claim boundary
 
-Estimator unbiased + accurate EBVs at this validation-scale design. NOT promoted to
-covered — still needs external-comparator parity (sommer/ASReml/JWAS) and a
-passing/re-declared recovery gate. Recovery study is opt-in (outside CI).
+No detectable bias (low-power non-rejection at m=12) + accurate EBVs at this
+truth-warm-started validation-scale design — cold-start basin behaviour is
+uncharacterised. NOT promoted to covered — still needs external-comparator parity
+(sommer/ASReml/JWAS) and a passing/re-declared recovery gate. Recovery study is
+opt-in (outside CI).
 
 ## Next
 

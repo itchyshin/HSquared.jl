@@ -51,23 +51,29 @@ Reproduce:
 
 ## Conclusion (honest, evidence-based)
 
-- **The estimator is unbiased at this design.** Every one of the six covariance
+- **No detectable bias at this design.** Every one of the six covariance
   parameters has `|bias| ≤ 2·MCSE`; the largest standardised bias is G[2,2] at
-  0.84·MCSE. The mean estimates track truth (G[1,1] to 0.1%, the off-diagonal and
-  G[2,2] within MCSE). EBV accuracy is high (~0.90) and stable.
+  0.84·MCSE. This is a *low-power non-rejection* of zero bias at m=12 (MCSE ≈
+  0.05–0.08 on G entries, so a systematic bias below ~0.10–0.16 would pass
+  undetected) — consistent with an unbiased estimator, not a proof of one. The mean
+  estimates track truth (G[1,1] to 0.1%, the off-diagonal and G[2,2] within MCSE).
+  EBV accuracy is high (~0.90) and stable. NOTE: the optimizer is warm-started at the
+  true `G0`/`R0`, so this characterises sampling behaviour in the basin around truth;
+  cold-start basin behaviour is a deferred follow-up.
 - **The per-seed gate failure is sampling variance, not a defect.** The genetic
   covariance `G` has high per-replicate sampling variance at `q = 80`/`n = 240`
   (MCSE ≈ 0.05–0.08 on G entries vs ≈ 0.01–0.03 on R), so a strict per-seed
-  Frobenius relative-error gate on `G` fails ~40% of the time even though the
-  estimator is unbiased on average. `G` is the hard axis; `R` is essentially always
+  Frobenius relative-error gate on `G` fails ~40% of the time even though no bias is
+  detectable in the across-seed mean. `G` is the hard axis; `R` is essentially always
   recovered.
 - **Status implication: stays `partial`, not promoted.** This evidence does NOT
   promote V4-MV-REML to covered — promotion still requires an external-comparator
   parity check (sommer/ASReml/JWAS) and, for a recovery *claim*, either a larger /
   relatedness-richer design that passes a pre-declared gate or a gate re-stated in
   bias/MCSE terms. What it DOES establish, durably, is that the dense multivariate
-  REML estimator is unbiased with accurate EBVs at this design — the prior bare
-  "6/10 failed" line understated the estimator's correctness.
+  REML estimator shows no detectable bias and accurate EBVs at this (truth-warm-
+  started) design — the prior bare "6/10 failed" line understated the estimator's
+  correctness.
 
 ## Follow-ups (not done here)
 
