@@ -13,12 +13,12 @@ engine reality.
   Phase-4B/5/6 engine work (PR #36) plus multivariate covariance SEs/LRTs (#47, PR
   #59). BT2/BT3 relaunched against the R-lane joint critical path (#61):
   **S1 honesty closeout** (#47 `validation_status()` rows + #38 doc + #44
-  V6-LAPLACE row) merged via PR #62; **S2 `:diagonal` multivariate bridge payload**
+  V6-LAPLACE row, PR #62) and **S2 `:diagonal` multivariate bridge payload**
   (#42 scoped — `multivariate_result_payload`, rotation-free, unblocks the R-lane
-  diagonal LRT) in flight via PR. `Pkg.test()` + Documenter green;
-  `validation_status()` has 33 rows. Read
-  `docs/dev-log/after-task/2026-06-19-session-handover-v2.md` then
-  `docs/dev-log/after-task/2026-06-19-diagonal-bridge-payload.md`.
+  diagonal LRT, PR #63) both merged to `main` (`c30fca0`). `Pkg.test()` +
+  Documenter green; `validation_status()` has 33 rows. **Next:** #43 PEV/reliability
+  into `result_payload`, then the FA rotation-convention note (#42/#37/#55). Read
+  `docs/dev-log/after-task/2026-06-19-session-handover-v3.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial`.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 = engine
