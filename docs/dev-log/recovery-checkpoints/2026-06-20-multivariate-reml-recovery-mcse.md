@@ -75,6 +75,27 @@ Reproduce:
   started) design — the prior bare "6/10 failed" line understated the estimator's
   correctness.
 
+## Cold-start replication (follow-up, same day)
+
+The bias/MCSE result above warm-starts the optimizer at the true `G0`/`R0`. To test
+whether that conditioned the finding, the harness gained a `--cold-start=true` flag
+(uses the fitter's phenotypic-scale default start instead) and the identical 12-seed
+set was re-run cold:
+
+    julia --project=. sim/phase4_multivariate_reml_recovery.jl --cold-start=true --seeds=20260616,...,20260627
+
+- **Cold-start reaches the same optimum as warm-start on all 12 seeds.** The
+  per-seed relative errors agree to optimizer tolerance (max `|Δ rel_G|` = 2.7e-5
+  over the 12 seeds; e.g. seed 20260616 `rel_G` 0.174489 cold vs 0.174500 warm —
+  same optimum, different optimizer path / iteration count). 12/12 converged.
+- The aggregate is unchanged: all six covariance params `|bias| ≤ 2·MCSE`, EBV
+  accuracy 0.902 / 0.910, pass 7/12 (Wilson 95% [0.32, 0.81]).
+- **Conclusion:** at this design the REML surface has a single dominant basin the
+  optimizer finds WITHOUT being warm-started at truth — so the "no detectable bias /
+  accurate EBV" finding is not an artifact of warm-starting, and the warm-start
+  caveat is resolved. (This characterises basin behaviour at this design only; it is
+  not a global convergence guarantee for arbitrary multi-trait problems.)
+
 ## Follow-ups (not done here)
 
 - A larger / full-sib design (more relatedness contrast, larger `n`) to drive the
@@ -82,4 +103,3 @@ Reproduce:
   identifiability study).
 - External-comparator parity against `test/fixtures/phase4_multitrait_parity/`
   (R-lane: sommer/ASReml/BLUPF90) — the remaining covered-blocker.
-- A cold-start (not warm-started-at-truth) variant to characterise basin behaviour.

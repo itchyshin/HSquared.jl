@@ -28,9 +28,14 @@ Optional arguments:
     --iterations=N
     --threshold-g=X
     --threshold-r=X
+    --cold-start=true
 
 Use `--seed` for a single historical-style run and `--seeds` for an explicit
-seed list. The options are mutually exclusive.
+seed list. The options are mutually exclusive. By default the optimizer is
+warm-started at the true `G0`/`R0` (characterising sampling behaviour in the
+basin around truth); `--cold-start=true` instead uses the fitter's
+phenotypic-scale default start, testing whether the optimizer finds that basin
+without help.
 """
 
 struct MultivariateRecoveryConfig
@@ -42,6 +47,7 @@ struct MultivariateRecoveryConfig
     iterations::Int
     threshold_g::Float64
     threshold_r::Float64
+    cold_start::Bool
 end
 
 function _parse_args(args)
@@ -75,7 +81,11 @@ function _parse_args(args)
     threshold_r = parse(Float64, get(opts, "threshold-r", "0.20"))
     threshold_g > 0 || throw(ArgumentError("--threshold-g must be positive"))
     threshold_r > 0 || throw(ArgumentError("--threshold-r must be positive"))
-    return seeds, iterations, threshold_g, threshold_r
+    cold_raw = get(opts, "cold-start", "false")
+    cold_start = cold_raw in ("true", "1", "")
+    cold_start || cold_raw == "false" ||
+        throw(ArgumentError("--cold-start takes no value or true/false, got $cold_raw"))
+    return seeds, iterations, threshold_g, threshold_r, cold_start
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -135,14 +145,15 @@ end
 
 function _run(config::MultivariateRecoveryConfig)
     Y, X, Z, Ainv, Gtrue, Rtrue, Utrue = _simulate_repeated_records(config)
-    fit = fit_multivariate_reml(
-        Y,
-        X,
-        Z,
-        Ainv;
-        initial = (G0 = Gtrue, R0 = Rtrue),
-        iterations = config.iterations,
-    )
+    # Warm-start at truth (default) characterises sampling behaviour in the basin
+    # around truth; cold-start (no `initial`) uses the fitter's phenotypic-scale
+    # default and tests whether the optimizer FINDS that basin without help.
+    fit = if config.cold_start
+        fit_multivariate_reml(Y, X, Z, Ainv; iterations = config.iterations)
+    else
+        fit_multivariate_reml(Y, X, Z, Ainv;
+            initial = (G0 = Gtrue, R0 = Rtrue), iterations = config.iterations)
+    end
     rel_g = norm(fit.genetic_covariance - Gtrue) / norm(Gtrue)
     rel_r = norm(fit.residual_covariance - Rtrue) / norm(Rtrue)
     pass = fit.converged && rel_g <= config.threshold_g && rel_r <= config.threshold_r
@@ -249,10 +260,11 @@ function _print_aggregate(results)
 end
 
 function main(args = ARGS)
-    seeds, iterations, threshold_g, threshold_r = _parse_args(args)
+    seeds, iterations, threshold_g, threshold_r, cold_start = _parse_args(args)
+    @printf("START multivariate REML recovery (%s)\n", cold_start ? "COLD-START (default init)" : "warm-start at truth")
     results = Any[]
     for seed in seeds
-        result = _run(MultivariateRecoveryConfig(seed, 8, 16, 56, 3, iterations, threshold_g, threshold_r))
+        result = _run(MultivariateRecoveryConfig(seed, 8, 16, 56, 3, iterations, threshold_g, threshold_r, cold_start))
         _print_result(result)
         push!(results, result)
         flush(stdout)
