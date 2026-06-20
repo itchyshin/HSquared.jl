@@ -4909,3 +4909,67 @@ end
     @test evolvability(Gpsd_eps, [0.0, 1.0]) == 0.0
     @test variance_along_gradient(Gpsd_eps, [0.0, 1.0]; normalize = false) ≥ 0.0
 end
+
+@testset "Phase 3 random-regression covariance-function descriptors (#54)" begin
+    # --- normalized Legendre basis: exact closed forms at t = -1, 0, 1 ---
+    @test legendre_basis(0.0, 3) ≈ [sqrt(1 / 2), 0.0, sqrt(5 / 2) * (-1 / 2)]
+    @test legendre_basis(1.0, 3) ≈ [sqrt(1 / 2), sqrt(3 / 2) * 1.0, sqrt(5 / 2) * 1.0]
+    @test legendre_basis(-1.0, 3) ≈ [sqrt(1 / 2), sqrt(3 / 2) * -1.0, sqrt(5 / 2) * 1.0]
+    @test length(legendre_basis(0.3, 4)) == 4
+    @test legendre_basis(0.5, 1) ≈ [sqrt(1 / 2)]                      # degree 0 is the constant
+
+    # orthonormality on [-1,1] by trapezoid quadrature: ∫ φ_m φ_n ≈ δ_mn
+    grid = range(-1, 1; length = 4001)
+    Φg = reduce(vcat, transpose(legendre_basis(t, 4)) for t in grid)  # 4001 × 4
+    gram = zeros(4, 4)
+    for j in 1:4, k in 1:4
+        gram[j, k] = sum((Φg[i, j] * Φg[i, k] + Φg[i + 1, j] * Φg[i + 1, k]) / 2 *
+                         (grid[i + 1] - grid[i]) for i in 1:(length(grid) - 1))
+    end
+    @test gram ≈ Matrix(I, 4, 4) atol = 1e-3
+
+    # standardize_covariate: endpoints -> ∓1, midpoint -> 0
+    @test standardize_covariate([10.0, 20.0, 30.0]) ≈ [-1.0, 0.0, 1.0]
+    @test standardize_covariate([2.0, 6.0]; lower = 0.0, upper = 8.0) ≈ [-0.5, 0.5]
+    @test_throws ArgumentError standardize_covariate([5.0, 5.0])
+
+    # --- supplied-K_g descriptors on the documented fixture (convention lock) ---
+    Kg = [1.0 0.3 0.0; 0.3 0.5 0.1; 0.0 0.1 0.2]
+    ts = [-1.0, -0.5, 0.0, 0.5, 1.0]
+    vg = rr_genetic_variance(Kg, ts)
+    @test vg.covariate == ts
+    @test vg.values ≈ [0.8431, 0.4597, 0.625, 0.9309, 2.6569] atol = 1e-3   # Kirkpatrick/Meyer Legendre convention
+    @test all(vg.values .>= 0)
+
+    surf = rr_genetic_covariance_surface(Kg, ts)
+    @test surf.values ≈ transpose(surf.values)                              # symmetric
+    @test diag(surf.values) ≈ vg.values                                     # diagonal == variance trajectory
+    @test eigmin(Symmetric(surf.values)) >= -1e-8                           # PSD inherited from K_g
+
+    cor = rr_genetic_correlation_surface(Kg, ts)
+    @test diag(cor.values) ≈ ones(5)
+    @test all(abs.(cor.values) .<= 1 + 1e-10)
+    @test cor.values ≈ genetic_correlation(surf.values)
+    @test cor.values[1, 5] ≈ 0.167 atol = 1e-3                              # ρ_g(-1, +1)
+
+    h2 = rr_heritability(Kg, 0.4, ts)
+    @test h2.values ≈ [0.678, 0.535, 0.610, 0.700, 0.869] atol = 1e-3
+    @test all(0 .< h2.values .< 1)
+    # heteroscedastic residual vector; constant vector reduces to the scalar case
+    @test rr_heritability(Kg, fill(0.4, 5), ts).values ≈ h2.values
+    @test rr_heritability(Kg, [0.4, 0.5, 0.6, 0.5, 0.4], ts).values[1] ≈
+          vg.values[1] / (vg.values[1] + 0.4)
+
+    # K_g = I gives v_g(t) = ‖φ(t)‖²
+    @test rr_genetic_variance(Matrix(1.0I, 3, 3), ts).values ≈
+          [sum(legendre_basis(t, 3) .^ 2) for t in ts]
+
+    # --- guards ---
+    @test_throws ArgumentError legendre_basis(1.5, 3)                       # |t| > 1
+    @test_throws ArgumentError legendre_basis(0.0, 0)                       # order < 1
+    @test_throws ArgumentError rr_genetic_variance([1.0 0.0; 0.0 -1.0], [0.0])  # indefinite K_g
+    @test_throws ArgumentError rr_genetic_variance(ones(2, 3), [0.0])          # non-square
+    @test_throws ArgumentError rr_heritability(Kg, -0.1, ts)               # non-positive residual
+    @test_throws ArgumentError rr_heritability(Kg, [0.4, 0.5], ts)         # residual length mismatch
+    @test_throws ArgumentError rr_genetic_correlation_surface([0.0 0.0; 0.0 1.0], [0.0])  # zero-variance point
+end

@@ -128,6 +128,12 @@ HSquared.variance_along_gradient
 HSquared.genetic_pca
 HSquared.g_max
 HSquared.mean_evolvability
+HSquared.legendre_basis
+HSquared.standardize_covariate
+HSquared.rr_genetic_variance
+HSquared.rr_genetic_covariance_surface
+HSquared.rr_genetic_correlation_surface
+HSquared.rr_heritability
 HSquared.diagonal_covariance
 HSquared.lowrank_covariance
 HSquared.factor_analytic_covariance
