@@ -5215,6 +5215,67 @@ end
     @test_throws ArgumentError rr_genetic_correlation_surface([0.0 0.0; 0.0 1.0], [0.0])  # zero-variance point
 end
 
+@testset "Phase 3 random-regression eigen-function decomposition (#54 slice 4)" begin
+    # Kirkpatrick covariance-function eigen-analysis of a supplied coefficient
+    # genetic covariance K_g: eigen-decompose K_g, evaluate the eigenfunctions
+    # ψ_j(t) = φ(t)ᵀ v_j over the Legendre basis. Rotation-invariant (reuses
+    # genetic_pca), descriptive, supplied-covariance only.
+    Kg = [1.0 0.3 0.0; 0.3 0.5 0.1; 0.0 0.1 0.2]
+    k = size(Kg, 1)
+    ts = [-1.0, -0.5, 0.0, 0.5, 1.0]
+    ef = rr_eigenfunctions(Kg, ts)
+
+    # eigenvalues / eigen-coefficients ARE the genetic_pca of K_g (the
+    # rotation-invariant representation), descending
+    pca = genetic_pca(Kg)
+    @test ef.eigenvalues ≈ pca.values
+    @test ef.eigen_coefficients ≈ pca.vectors
+    @test issorted(ef.eigenvalues; rev = true)
+    @test ef.covariate == ts
+
+    # eigenfunctions evaluated at ts == Φ * eigen_coefficients
+    Φ = legendre_design(ts, k)
+    @test size(ef.eigenfunctions) == (length(ts), k)
+    @test ef.eigenfunctions ≈ Φ * ef.eigen_coefficients
+
+    # spectral reconstruction of the covariance surface:
+    # Φ K_g Φᵀ = Σ_j λ_j ψ_j ψ_jᵀ = Ψ diag(λ) Ψᵀ
+    surf = rr_genetic_covariance_surface(Kg, ts)
+    @test ef.eigenfunctions * Diagonal(ef.eigenvalues) * transpose(ef.eigenfunctions) ≈
+          surf.values atol = 1e-10
+
+    # variance explained: descending, sums to 1, == λ / Σλ
+    @test ef.variance_explained ≈ ef.eigenvalues ./ sum(ef.eigenvalues)
+    @test sum(ef.variance_explained) ≈ 1.0
+    @test issorted(ef.variance_explained; rev = true)
+
+    # eigenfunction ORTHONORMALITY on [-1,1] (Kirkpatrick): ∫ ψ_i ψ_j ≈ δ_ij,
+    # since the eigen-coefficients and the Legendre basis are both orthonormal
+    grid = range(-1, 1; length = 4001)
+    Ψg = rr_eigenfunctions(Kg, collect(grid)).eigenfunctions
+    gram = zeros(k, k)
+    for a in 1:k, b in 1:k
+        gram[a, b] = sum((Ψg[i, a] * Ψg[i, b] + Ψg[i + 1, a] * Ψg[i + 1, b]) / 2 *
+                         (grid[i + 1] - grid[i]) for i in 1:(length(grid) - 1))
+    end
+    @test gram ≈ Matrix(I, k, k) atol = 1e-3
+
+    # diagonal K_g = diag(d): eigenvalues are sorted(d) descending
+    d = [0.2, 0.9, 0.4]
+    @test rr_eigenfunctions(Matrix(Diagonal(d)), ts).eigenvalues ≈ sort(d; rev = true)
+
+    # rank-1 K_g = λ v vᵀ (unit v): one nonzero eigenvalue, all variance on axis 1
+    v = [0.6, -0.8, 0.0]
+    ef1 = rr_eigenfunctions(2.5 .* (v * transpose(v)), ts)
+    @test ef1.variance_explained[1] ≈ 1.0 atol = 1e-8
+    @test all(ef1.variance_explained[2:end] .< 1e-8)
+
+    # guards (reuse the K_g PSD/shape guard and the |t| ≤ 1 basis guard)
+    @test_throws ArgumentError rr_eigenfunctions([1.0 0.0; 0.0 -1.0], ts)   # indefinite K_g
+    @test_throws ArgumentError rr_eigenfunctions(ones(2, 3), ts)           # non-square
+    @test_throws ArgumentError rr_eigenfunctions(Kg, [1.5])                # |t| > 1
+end
+
 @testset "Phase 3 supplied-covariance random-regression MME (#54 slice 2)" begin
     # 5-animal pedigree, 2 records each at distinct covariates (n = 10), k = 2
     # (linear reaction norm: intercept + slope).

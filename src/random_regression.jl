@@ -20,9 +20,15 @@
 # log-Cholesky REML on the marginal `V = W(A⊗K_g)Wᵀ + σ²e I` (analogue of
 # `fit_multivariate_reml`). Still dense/validation-scale, homogeneous residual.
 #
-# DEFERRED to later slices: the eigen-function (covariance-function) decomposition,
-# PEV of curve-valued EBVs, heterogeneous residual + permanent-environment term, the
-# R-facing model-spec / bridge payload, and any WOMBAT/ASReml/JWAS comparator. Basis
+# Slice 4 (EIGEN-FUNCTIONS). `rr_eigenfunctions` decomposes a SUPPLIED `K_g` into the
+# Kirkpatrick (Lofsvold & Bulmer 1990) covariance-function eigenfunctions
+# ψ_j(t) = φ(t)ᵀ v_j (eigenvectors v_j of `K_g` via `genetic_pca`), reporting the
+# eigenvalues, eigen-coefficients, evaluated eigenfunctions, and variance explained.
+# Rotation-invariant and DESCRIPTIVE — still supplied-covariance, no estimation.
+#
+# DEFERRED to later slices: PEV of curve-valued EBVs, heterogeneous residual +
+# permanent-environment term, the R-facing model-spec / bridge payload, and any
+# WOMBAT/ASReml/JWAS comparator. Basis
 # convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
 # (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
 # conventions.
@@ -154,6 +160,48 @@ function rr_heritability(K_g::AbstractMatrix, residual, ts::AbstractVector)
         throw(ArgumentError("residual must be a scalar or a length-$(m) vector"))
     all(>(0), σe2) || throw(ArgumentError("residual variance(s) must be positive"))
     return (covariate = vg.covariate, values = vg.values ./ (vg.values .+ σe2))
+end
+
+"""
+    rr_eigenfunctions(K_g, ts)
+
+Eigen-function (covariance-function) decomposition of a supplied `k×k`
+random-regression coefficient genetic covariance `K_g` (Kirkpatrick, Lofsvold &
+Bulmer 1990). Eigen-decomposes `K_g = Σ_j λ_j v_j v_jᵀ` (descending `λ_j ≥ 0`, via
+[`genetic_pca`](@ref)) and evaluates the corresponding eigenFUNCTIONS
+`ψ_j(t) = φ(t)ᵀ v_j` — the orthonormal genetic principal curves of the reaction
+norm — at the standardized covariate points `ts ∈ [-1, 1]` (`k = size(K_g, 1)`).
+
+Returns `(covariate, eigenvalues, eigen_coefficients, eigenfunctions,
+variance_explained)`:
+- `eigenvalues` — `λ_j` descending (the genetic variance carried by each
+  eigenfunction);
+- `eigen_coefficients` — `k×k`, column `j` is the Legendre-coefficient eigenvector
+  `v_j`, sign-canonicalized as in [`genetic_pca`](@ref);
+- `eigenfunctions` — `length(ts)×k`, column `j` is `ψ_j` evaluated at `ts`
+  (`= Φ v_j`, `Φ = legendre_design(ts, k)`);
+- `variance_explained` — `λ_j / Σλ` (zeros if `K_g` is the zero matrix).
+
+The eigenfunctions are orthonormal on `[-1, 1]` (`∫ ψ_i ψ_j = δ_ij`) and the
+covariance surface reconstructs spectrally as `Φ K_g Φᵀ = Σ_j λ_j ψ_j ψ_jᵀ`.
+Rotation-invariant and DESCRIPTIVE — `K_g` is SUPPLIED, not estimated (like
+[`genetic_pca`](@ref) / [`evolvability`](@ref) on a `G`). Under repeated
+eigenvalues the individual eigenfunctions are span-ambiguous (as in
+[`genetic_pca`](@ref)); the eigenvalues, variance explained, and the spectral
+reconstruction remain well-defined.
+"""
+function rr_eigenfunctions(K_g::AbstractMatrix, ts::AbstractVector)
+    pca = genetic_pca(_check_kg(K_g))
+    k = length(pca.values)
+    Φ = _rr_design(ts, k)
+    Ψ = Φ * pca.vectors
+    total = sum(pca.values)
+    prop = total > 0 ? pca.values ./ total : zeros(k)
+    return (covariate = collect(Float64, ts),
+            eigenvalues = pca.values,
+            eigen_coefficients = pca.vectors,
+            eigenfunctions = Ψ,
+            variance_explained = prop)
 end
 
 """
