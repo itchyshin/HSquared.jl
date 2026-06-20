@@ -168,11 +168,12 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 35
+    @test length(validation) == 36
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
+    @test "V3-RR-REML" in [row.id for row in validation]
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -5036,4 +5037,92 @@ end
     @test_throws ArgumentError random_regression_mme(y, X, Phi, Zinc, Ainv, Kg, -0.1)                  # σe2 ≤ 0
     @test_throws ArgumentError random_regression_mme(y, X, Phi[:, 1:1], Zinc, Ainv, Kg, σe2)           # Phi cols ≠ K_g dim
     @test_throws ArgumentError random_regression_mme(y[1:9], X, Phi, Zinc, Ainv, Kg, σe2)              # row mismatch
+end
+
+@testset "Phase 3 random-regression REML (#54 slice 3)" begin
+    # Same 5-animal pedigree / 10 records (2 per animal at distinct covariates),
+    # k = 2 (intercept + slope reaction norm). REML now ESTIMATES K_g (2×2) + σ²e.
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5"],
+        ["0", "0", "a1", "a1", "a2"], ["0", "0", "a2", "a2", "a3"])
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    rec = ["a1", "a1", "a2", "a2", "a3", "a3", "a4", "a4", "a5", "a5"]
+    ts = standardize_covariate([1.0, 4.0, 2.0, 5.0, 1.5, 6.0, 3.0, 4.5, 2.5, 5.5])
+    n = length(ts)
+    Zinc = zeros(n, q)
+    idx = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for r in 1:n
+        Zinc[r, idx[rec[r]]] = 1.0
+    end
+    # strong within-animal / family signal so the degree-0 reduction lands at an
+    # INTERIOR σ²a (not the zero-variance boundary), making K_g[1,1] = 2σ²a a
+    # non-vacuous check. Deterministic (the test suite is RNG-free).
+    y = [4.5, 4.4, 1.5, 1.4, 3.8, 3.7, 3.9, 4.0, 2.3, 2.2]
+    X = ones(n, 1)
+    A = inv(Matrix(Ainv))
+
+    # INDEPENDENT marginal-REML oracle log-likelihood at supplied (K_g, σ²e). W is
+    # built here from scratch (NOT via the implementation), so a design/ordering or
+    # likelihood-scale bug cannot pass. Full (n − p)·log(2π) constant included.
+    function rr_oracle_loglik(Kg, σe2, order)
+        Phi = legendre_design(ts, order)
+        W = zeros(n, q * order)
+        for r in 1:n
+            a = idx[rec[r]]
+            for c in 1:order
+                W[r, (a - 1) * order + c] = Phi[r, c]
+            end
+        end
+        V = W * kron(A, Kg) * transpose(W) + σe2 * Matrix(I, n, n)
+        Vi = inv(V)
+        XtViX = transpose(X) * Vi * X
+        β = XtViX \ (transpose(X) * Vi * y)
+        resid = y - X * β
+        return -0.5 * ((n - size(X, 2)) * log(2π) + logdet(V) + logdet(XtViX) +
+                       dot(resid, Vi * resid))
+    end
+
+    # --- k = 2 REML fit ---
+    fit = fit_random_regression_reml(y, X, legendre_design(ts, 2), Zinc, Ainv; ids = ped.ids)
+    @test fit.converged
+    @test fit.basis.ncoef == 2
+    @test size(fit.variance_components.K_g) == (2, 2)
+    @test issymmetric(Symmetric(fit.variance_components.K_g))
+    @test isposdef(Symmetric(fit.variance_components.K_g))
+    @test fit.variance_components.sigma_e2 > 0
+    @test fit.random_coefficients.ids == ped.ids
+    @test size(fit.random_coefficients.values) == (q, 2)
+
+    Khat = fit.variance_components.K_g
+    σe2hat = fit.variance_components.sigma_e2
+
+    # reported log-likelihood matches the independent oracle at the estimate
+    @test fit.loglik ≈ rr_oracle_loglik(Khat, σe2hat, 2) atol = 1e-6
+    # the estimate is a genuine maximum: it beats deliberately-wrong points
+    @test fit.loglik >= rr_oracle_loglik([1.0 0.2; 0.2 0.5], 0.4, 2) - 1e-8
+    @test fit.loglik >= rr_oracle_loglik(2.0 .* Khat, σe2hat, 2) - 1e-8
+    @test fit.loglik >= rr_oracle_loglik(Khat, 4.0 * σe2hat, 2) - 1e-8
+    @test fit.loglik >= rr_oracle_loglik(Matrix(0.25 * I, 2, 2), 1.0, 2) - 1e-8
+
+    # EBV/coefficient consistency: the supplied-covariance MME at the estimate
+    # reproduces the fit's BLUP coefficients and β (GLS BLUP == MME for a PD K_g).
+    mme = random_regression_mme(y, X, legendre_design(ts, 2), Zinc, Ainv, Khat, σe2hat; ids = ped.ids)
+    @test fit.beta ≈ mme.beta atol = 1e-7
+    @test fit.random_coefficients.values ≈ mme.random_coefficients.values atol = 1e-7
+
+    # --- degree-0 reduction (order = 1) to the scalar animal-model REML ---
+    # at k = 1, V = (1/2)·K_g[1,1]·ZAZ' + σ²e·I, so the RR REML optimum maps to the
+    # univariate REML optimum via K_g[1,1] = 2σ²a (φ_0² = 1/2): equal σ²e, equal loglik.
+    spec = animal_model_spec(y, X, sparse(Zinc), Ainv; ids = ped.ids, method = :REML)
+    uni = fit_sparse_reml(spec)
+    rr1 = fit_random_regression_reml(y, X, legendre_design(ts, 1), Zinc, Ainv; ids = ped.ids)
+    @test rr1.variance_components.K_g[1, 1] / 2 ≈ uni.variance_components.sigma_a2 rtol = 1e-3
+    @test rr1.variance_components.sigma_e2 ≈ uni.variance_components.sigma_e2 rtol = 1e-3
+    @test rr1.loglik ≈ uni.likelihood.loglik atol = 1e-4
+
+    # guards
+    @test_throws ArgumentError fit_random_regression_reml(y[1:9], X, legendre_design(ts, 2), Zinc, Ainv)  # row mismatch
+    @test_throws ArgumentError fit_random_regression_reml(y, X, legendre_design(ts, 2), Zinc[:, 1:4], Ainv)  # Z cols ≠ q
+    @test_throws ArgumentError fit_random_regression_reml(y, X, legendre_design(ts, 2), Zinc, Ainv;
+                                                          initial = (sigma_e2 = -0.5,))  # bad initial
 end

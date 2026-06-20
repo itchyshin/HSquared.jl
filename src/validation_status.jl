@@ -216,6 +216,15 @@ const VALIDATION_STATUS_DATA = (
         "Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec.",
     ),
     (
+        "V3-RR-REML",
+        "random-regression REML (coefficient covariance K_g + residual estimation)",
+        "Phase 3",
+        "partial",
+        "`fit_random_regression_reml(y, X, Phi, Z, Ainv)` estimates the random-regression coefficient genetic covariance `K_g` (`k×k`) and the homogeneous residual variance `σ²e` of the polynomial reaction-norm animal model by dense REML (log-Cholesky-parameterized NelderMead on the marginal `V = W(A⊗K_g)Wᵀ + σ²e I`, `W = face-splitting(Z, Phi)`). Correctness is pinned by deterministic checks in `test/runtests.jl`: the reported REML log-likelihood (full `(n−p)·log(2π)` constant, package-wide scale) matches an INDEPENDENT dense marginal oracle at the estimate (~1e-6) and beats deliberately off-optimum `(K_g, σ²e)` points; the degree-0 (`k=1`) reduction recovers the univariate `fit_sparse_reml` optimum via `K_g[1,1] = 2σ²a` (φ_0² = 1/2) — equal `σ²e` (rtol 1e-3) and equal log-likelihood (~1e-8) at an interior-σ²a fixture; and the fitted coefficient BLUPs / β equal `random_regression_mme` at the estimate (GLS BLUP == MME for a PD `K_g`, ~1e-7).",
+        "a committed known-truth `K_g` recovery harness, curve-valued EBV-trajectory PEV/reliability, heterogeneous residual + permanent-environment structure, the R-facing `rr()` model-spec / bridge payload, and WOMBAT/ASReml/JWAS comparator parity",
+        "Experimental dense/validation-scale random-regression REML; correctness is self-consistency + univariate-reduction + independent-oracle validated, but `K_g` known-truth recovery is not exercised, there is no external comparator, no permanent-environment term, homogeneous residual only, and no R-facing model-spec or bridge payload. Not a public claim.",
+    ),
+    (
         "V4-MULTIVARIATE",
         "multivariate (multi-trait) animal model (supplied covariance)",
         "Phase 4",

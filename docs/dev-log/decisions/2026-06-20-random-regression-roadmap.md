@@ -34,10 +34,17 @@ state this in any future comparator slice.
   marginal-GLS oracle `V = W (A ⊗ K_g) Wᵀ + σ²e I`. Returns per-animal coefficient
   vectors + curve metadata. Effort M.
 
-- **Slice 3 — RR REML.** `fit_random_regression_reml`: estimate `K_g`
-  (log-Cholesky, reuse `_chol_params_to_cov`) and the residual by dense REML —
-  direct analogue of `fit_multivariate_reml`. Only here do estimation caveats +
-  comparator parity (WOMBAT/ASReml) apply.
+- **Slice 3 — RR REML (DONE).** `fit_random_regression_reml(y, X, Phi, Z, Ainv)`
+  estimates `K_g` (log-Cholesky, reuses `_chol_params_to_cov`/`_cov_to_chol_params`)
+  and the homogeneous residual `σ²e` by dense REML (NelderMead on the marginal
+  `V = W(A⊗K_g)Wᵀ + σ²e I`) — the direct analogue of `fit_multivariate_reml`. EBVs/β
+  via the GLS BLUP form at the estimate. Validated by an INDEPENDENT dense marginal
+  oracle (loglik at the estimate + beats-off-optimum), the degree-0 (`k=1`) reduction
+  to `fit_sparse_reml` via `K_g[1,1] = 2σ²a` (equal `σ²e`, equal loglik at an
+  interior-σ²a fixture), and BLUP/β agreement with `random_regression_mme` at the
+  estimate (`V3-RR-REML` in `validation_status()`). Estimation caveats apply; `K_g`
+  known-truth recovery + comparator parity (WOMBAT/ASReml/JWAS) remain deferred. No
+  permanent-environment term; homogeneous residual only.
 
 - **Later.** Eigen-function (covariance-function) decomposition of `K_g`
   (Kirkpatrick & Heckman — carries the same rotation/interpretation gate as the FA
