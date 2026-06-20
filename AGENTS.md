@@ -36,7 +36,10 @@ engine reality.
   matrix-free PCG operator (→ large-scale, edges into performance-claim territory), the
   genetic-GLLVM build (#50), or — highest-leverage but cross-lane — the R-lane external
   comparator runs. Read
-  `docs/dev-log/after-task/2026-06-20-session-handover-v6.md` (START HERE).
+  `docs/dev-log/after-task/2026-06-20-session-handover-v7.md` (START HERE). **Also
+  landed post-v6: PCG matrix-free operator (#85, V1-PCG extension). NEXT BIG BUILD:
+  genetic GLLVM (#50) — REUSE GLLVM.jl + gllvmTMB `animal-keyword` + HSquared Phase-6,
+  do NOT reinvent; a scout/design pass was in flight at handover (see v7).**
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
