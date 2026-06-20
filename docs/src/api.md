@@ -144,6 +144,9 @@ HSquared.rr_genetic_covariance_surface
 HSquared.rr_genetic_correlation_surface
 HSquared.rr_heritability
 HSquared.rr_eigenfunctions
+HSquared.rr_eigenfunctions_plot_data
+HSquared.rr_genetic_variance_plot_data
+HSquared.rr_covariance_surface_plot_data
 HSquared.diagonal_covariance
 HSquared.lowrank_covariance
 HSquared.factor_analytic_covariance
