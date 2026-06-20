@@ -52,13 +52,23 @@ external software.
 EBV accuracy: trait 1 = 0.902, trait 2 = 0.910. Converged 12/12. Pass 7/12
 (Wilson 95% [0.32, 0.81]).
 
+## Cold-start follow-up (same day)
+
+The bias/MCSE result above warm-started the optimizer at truth. A `--cold-start=true`
+flag was added to the harness and the identical 12-seed set was re-run from the
+fitter's phenotypic-scale default start: **cold-start reaches the same optimum on all
+12 seeds** (max |Δrel_G| 2.7e-5, 12/12 converged; identical aggregate). So the
+optimizer finds the basin unaided at this design and the bias/EBV finding is not a
+warm-start artifact — the warm-start caveat is resolved (basin behaviour at this
+design only; not a global convergence guarantee). Recorded in the recovery checkpoint
+("Cold-start replication") + `docs/dev-log/check-log.d/2026-06-20-multivariate-reml-coldstart.md`.
+
 ## Claim boundary
 
 No detectable bias (low-power non-rejection at m=12) + accurate EBVs at this
-truth-warm-started validation-scale design — cold-start basin behaviour is
-uncharacterised. NOT promoted to covered — still needs external-comparator parity
-(sommer/ASReml/JWAS) and a passing/re-declared recovery gate. Recovery study is
-opt-in (outside CI).
+validation-scale design, robust to cold vs warm start. NOT promoted to covered —
+still needs external-comparator parity (sommer/ASReml/JWAS) and a passing/re-declared
+recovery gate. Recovery study is opt-in (outside CI).
 
 ## Next
 
@@ -66,4 +76,4 @@ opt-in (outside CI).
   `test/fixtures/phase4_multitrait_parity/` (the existing serialized Julia target) —
   the remaining covered-blocker (#10/#49 on #61).
 - Engine follow-ups (deferred): a relatedness-richer / larger design to drive G MCSE
-  down under a pre-declared gate; a cold-start basin variant.
+  down under a pre-declared gate.
