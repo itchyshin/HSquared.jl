@@ -168,12 +168,13 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 40
+    @test length(validation) == 41
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-MARGINAL"
+    @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
+    @test "V6-GGLLVM-REML" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -5811,4 +5812,44 @@ end
     @test_throws ArgumentError gl(Y2, Ainv, reshape([1.0], 1, 1), HSquared.GaussianResponse(1.0); X = X)  # Λ rows ≠ T
     @test_throws ArgumentError gl(Y2, Matrix(1.0I, 7, 7), Λ2, HSquared.GaussianResponse(1.0); X = X)        # Ainv ≠ q×q
     @test_throws ArgumentError gl(Y2, Ainv, Λ2, HSquared.PoissonResponse(); X = X)                          # non-count Y
+end
+
+@testset "Genetic-GLLVM REML over G_lat (#50 slice 3)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    Z = Matrix(1.0I, q, q); X = ones(q, 1)
+    fitr = HSquared.fit_gllvm_laplace_reml
+    gl = HSquared.gllvm_laplace_marginal_loglik
+
+    # --- K=1, T=1 Poisson REML reduces to the single-factor fit_laplace_reml (σ²a = λ̂²) ---
+    yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
+    gr = fitr(yp, Ainv, HSquared.PoissonResponse(); rank = 1, initial = reshape([1.0], 1, 1))
+    fl = fit_laplace_reml(vec(yp), X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    @test gr.genetic_covariance[1, 1] ≈ variance_components(fl).sigma_a2 rtol = 2e-3
+    @test gr.converged
+    @test size(gr.genetic_covariance) == (1, 1) && gr.n_latent_factors == 1
+
+    # --- multi-trait Poisson rank-1: the optimum improves over the start (objective maximized) ---
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    Λ0 = reshape([0.6, 0.5], 2, 1)
+    gr2 = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, initial = Λ0)
+    @test gr2.converged
+    @test gr2.loglik ≥ gl(Yp2, Ainv, Λ0, HSquared.PoissonResponse(); X = X).loglik - 1e-6
+    @test size(gr2.genetic_covariance) == (2, 2)
+    @test size(gr2.breeding_values) == (q, 1)
+    @test haskey(gr2.latent_structure, :communality)
+
+    # --- Gaussian self-consistency: the marginal at the optimum equals the multivariate
+    #     REML marginal at Λ̂Λ̂' (R0 = σ²e·I), confirming the reported G_lat ---
+    Yg = [2.0 5.0; 3.0 4.5; 2.5 5.2; 3.5 4.0; 4.0 6.0; 1.5 3.5; 3.0 5.0; 4.5 6.2]; σe = 0.9
+    gg = fitr(Yg, Ainv, HSquared.GaussianResponse(σe); rank = 1, initial = reshape([0.8, 0.6], 2, 1))
+    @test gg.converged
+    @test gg.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
+        gg.genetic_covariance, σe * Matrix(1.0I, 2, 2)) rtol = 1e-7
+
+    # --- guards ---
+    @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 0)
+    @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 1, initial = reshape([1.0], 1, 1))
 end

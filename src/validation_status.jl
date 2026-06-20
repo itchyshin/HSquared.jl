@@ -359,6 +359,15 @@ const VALIDATION_STATUS_DATA = (
         "the genetic-GLLVM REML estimation of structured `G_lat` over this marginal (slice 3), a fitted-object/EBV extractor surface, per-trait families, unbalanced / missing-record support, and external GLLVM.jl/gllvmTMB comparator parity",
         "Experimental, dense/validation-scale, SUPPLIED loadings (NOT estimated), one family for all traits, balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the single-factor kernel's visibility), no R model-spec or bridge payload. The genuinely new genetic-GLLVM capability (a `K>1` latent field carrying a genetic relationship under a non-Gaussian response), validated by independent reductions but not by an external comparator; `GLLVM-style animal models` stays `planned`. Nothing promoted to covered.",
     ),
+    (
+        "V6-GGLLVM-REML",
+        "genetic-GLLVM REML — estimate the latent G_lat over the Laplace marginal (#50 slice 3)",
+        "Phase 6",
+        "partial",
+        "`fit_gllvm_laplace_reml(Y, Ainv, family; rank, X)` (internal) ESTIMATES the rank-`K` latent loadings `Λ` (`G_lat = ΛΛ'`) by maximizing the K-factor Laplace marginal (`gllvm_laplace_marginal_loglik`) over `vec(Λ)` (NelderMead). The marginal depends on `Λ` only through `G_lat = ΛΛ'`, so it is rotation-invariant; the result reports the rotation-INVARIANT `genetic_covariance`/`latent_structure` (never the raw `Λ̂`). Validated (`test/runtests.jl`): the `K=1, T=1` Poisson case reduces to the single-factor `fit_laplace_reml` (`σ²a = λ̂²`, rtol 2e-3); a multi-trait Poisson rank-1 fit converges and its optimum improves over the start (objective maximized); and the Gaussian optimum's marginal equals `_multivariate_reml_loglik` at the estimated `Λ̂Λ̂'` (`R0 = σ²e·I`, rtol 1e-7) — self-consistency of the reported `G_lat`. For `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not estimated); the non-Gaussian families have no residual.",
+        "a known-truth recovery study (structured non-Gaussian REML recovery — the multivariate FA recovery has not passed, so recovery is NOT claimed), a factor-analytic (`+Ψ`) structure, a fitted-object/EBV extractor surface, per-trait families, unbalanced/missing-record support, and external GLLVM.jl/gllvmTMB comparator parity",
+        "Experimental, dense/validation-scale, low-rank `G_lat` only, one family for all traits, balanced/fully-observed `Y`; INTERNAL (not exported). A correctness-validated ESTIMATOR (reductions + optimum-improvement + Gaussian self-consistency) — NOT a known-truth recovery claim; `GLLVM-style animal models` stays `planned`. Nothing promoted to covered.",
+    ),
 )
 
 """
