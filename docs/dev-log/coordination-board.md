@@ -25,6 +25,14 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Coordinator/Julia lane / #48 issue-ledger hygiene. After #134
+  landed, the fixed-panel threshold-calibration after-task report correctly
+  recorded that #48 remained open, but the GitHub issue had been closed by the
+  PR linkage. Reopened #48 and recorded this as state hygiene only. Boundary:
+  no new threshold calibration evidence, no realistic-LD/external-comparator
+  evidence, no `marker_scan_table()` threshold wiring, no R `gwas()` wording
+  activation, and no covered-status promotion.
+
 - 2026-06-21: Julia lane / #48 fixed-panel threshold calibration smoke. After
   #133 landed and post-merge `main` CI/Documenter/Pages were green, started a
   narrow genome-wide-threshold evidence slice. Scope: harden the opt-in
