@@ -9,34 +9,38 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-20 (overnight autonomous run — ULTRACODE pass; 7 PRs).**
-  Building on the committed BT2/BT3 runway (PRs #65–#72) + RR slices 1+2 (#74/#75),
-  this ultracode pass landed **7 full-DoD PRs (#77–#83)**: **#54 slice 3 — RR REML**
-  (`fit_random_regression_reml`, PR #77; 4-lens review); **V4-MV-REML recovery
-  EVIDENCE** (PR #78; bias±2·MCSE + EBV accuracy + Wilson — 12-seed run shows **no
-  detectable bias** + EBV accuracy ≈0.90, so the old "6/10 failed" is **G sampling
-  variance at q=80/n=240, not bias**; Rose-hedged); **cold-start replication** (PR #79;
-  same optimum unaided, max |Δrel_G| 2.7e-5 — **warm-start caveat closed**); **handover
-  v5** (PR #80); **V1-SELINV-PEV larger pedigree** (PR #81; selinv==dense on a 110-animal
-  4-gen pedigree); **#53 metafounders** (PR #82; supplied-Γ `A^Γ` + combined/descriptive
-  inverses + inbreeding — Legarra 2015; the existing tabular/Henderson machinery with Γ
-  seeded; reduction-to-`A` at Γ=0; Henderson+Rose reviewed); and the **PCG MME solver**
-  (PR #83; `solve_animal_model_pcg` — iterative CG == direct `henderson_mme`, the
-  production-sparse-path primitive, Gauss+Rose reviewed; correctness only, no perf claim).
-  Two ultracode **Workflows** (verify-slice-3 + map-the-plan; metafounder design+scout)
-  drove the design/review; cross-lane notes on **#61** (R-lane action items, the
-  multivariate-comparator handoff, and metafounder Q1–Q4 gating the bridge — R already
-  reserves the `metafounder()`/`unknown_parent_group()` vocab). `Pkg.test()` + Documenter
-  green — **CI on a clean checkout is the authoritative gate** (Dropbox can transiently
-  desync the working tree / re-touch files mid-edit; a no-op push re-triggers Actions when
-  a rapid push fails to); `validation_status()` has **38 rows** (`V3-RR-REML`,
-  `V1-METAFOUNDER`, `V1-PCG` added); **nothing promoted to covered**. **Next:** the
-  metafounder R-bridge (gated on #61 Q1–Q4), the eigenbasis bridge for
-  `:lowrank`/`:factor_analytic` (#42, after R ratifies the FA convention on #42↔R#7), a
-  matrix-free PCG operator (→ large-scale, edges into performance-claim territory), the
-  genetic-GLLVM build (#50), or — highest-leverage but cross-lane — the R-lane external
-  comparator runs. Read
-  `docs/dev-log/after-task/2026-06-20-session-handover-v6.md` (START HERE).
+- **As of 2026-06-20 (autonomous segment — ULTRACODE; 3 PRs, main at `a2bbfd3`/#119).**
+  On top of the committed plotting-layer runway (`*_plot_data` preparers #91/#92/#94/#95/#116,
+  CPU benchmark #115, threshold calibration #112, GLLVM consumability #113), this segment
+  landed **3 full-DoD PRs**, each adversarially verified before merge:
+  **(1) `HSquaredMakieExt`** (PR #117) — the Julia **drawing** half of the plotting layer:
+  a `Makie` weak-dep package extension (`/src` stays dependency-free; stub `hsquared_figure`
+  throws `MethodError` until a backend loads) that draws sets B/C (`variance_components` forest,
+  EBV caterpillar, G-scree) with the #93 honest-status behaviors rendered ON the figure
+  (raw whiskers no-clamp, `[0,1]` on the h² panel only, scree-not-biplot guard, non-PD-G
+  %-suppression). Makie is deliberately OUT of CI (cost discipline) — CI gates the stub, the
+  full draw is local-verified (CairoMakie, PNG). Rose: CLEAN.
+  **(2) Binomial per-record `n_trials`** (PR #118) — generalized the Binomial family from a
+  common scalar to a per-record `n_trials[i]` (the general `cbind(successes, failures)` GLMM
+  the R lane flagged on **#61**), via `BinomialVectorResponse` + a `_fam_record` resolver
+  threaded through all 10 kernel sites; constant-vector==scalar to ~1e-12, an independent
+  per-record Gauss–Hermite oracle gate, mixed-regime recovery (n∈1..30, q=345: 5/5, rel≤0.062).
+  5-agent Gauss/Noether/Curie+Rose Workflow: code clean, fixed a stale-negative register claim.
+  **(3) Binomial/Bernoulli profile-LRT σ²a interval** (PR #119) — extended `laplace_reml_interval`
+  to all single-component families with self-describing `lower_clamped`/`upper_clamped`/`converged`
+  flags; `:variational` rejected (ELBO≠LRT). Fisher+Rose review corrected an over-generalized
+  "two-sided" claim and caught two stale "Poisson-only" doc claims — all fixed before landing.
+  `Pkg.test()` + Documenter green on each; all 3 CI-green on clean checkout (**CI on a clean
+  checkout is the authoritative gate**); `validation_status()` has **41 rows** (4 covered);
+  **nothing promoted to covered**. Cross-lane **#61 engine side is now resolved** (per-record
+  `n_trials` built) — draft answers for #38/#61/#93 are prepared but **NOT posted** (outward
+  posting is the user's call; the auto-mode classifier blocks issue comments without explicit
+  per-issue authorization). **Next:** the metafounder R-bridge (gated on #61 Q1–Q4), the
+  eigenbasis bridge for `:lowrank`/`:factor_analytic` (#42, after R ratifies the FA convention),
+  HSquaredMakieExt follow-on figure kinds (genetic-correlation heatmap, Manhattan/QQ, RR
+  reaction-norm/surface), the Gaussian two-component interval (nuisance profiling), or —
+  highest-leverage but cross-lane — the R-lane external comparator runs.
+  Read `docs/dev-log/after-task/2026-06-20-session-handover-v13.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
