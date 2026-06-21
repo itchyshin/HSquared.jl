@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #38 AI-matrix claim hygiene. After #132 landed and
+  post-merge CI/Documenter were green, started the R-lane-requested doc cleanup
+  in `docs/design/03-engine-contract.md`. Scope: replace any lingering
+  uncommitted 250-animal/0.99 AI-matrix implication with the committed
+  finite-difference REML Hessian gate (`test/runtests.jl`, `rtol = 0.12`) and
+  confirm no stale `eigen-G` wording remains in that design doc. Boundary:
+  doc-only claim hygiene, no code/test change, no new validation evidence, and
+  no R repo edit.
+
 - 2026-06-21: Julia lane / #49 BLUPF90 second-comparator readiness. After the
   Codex handover landed on `main`, started a narrow BLUPF90/AIREMLF90 preflight
   hardening slice for the existing two-trait REML fixture. Scope: make

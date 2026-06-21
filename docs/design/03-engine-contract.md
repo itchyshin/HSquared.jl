@@ -486,8 +486,10 @@ true`, and `variance_components_source = :estimated_ai_reml`.
 
 It is REML-only, two-component, and Gaussian. It is validated to recover the same
 optimum as the dense and sparse NelderMead optimizers, and its AI matrix matches
-an independent finite-difference REML Hessian to ~8% on the committed tiny
-fixture (see `V1-HERIT-CI`), so it is a valid Newton metric for this model. The AI form is exact only for the Gaussian
+an independent finite-difference REML Hessian of the same log-likelihood
+(observed information) to within ~8% on the committed tiny fixture
+(`test/runtests.jl`, tolerance gate `rtol = 0.12`; see `V1-HERIT-CI`), so it is
+a valid Newton metric for this model. The AI form is exact only for the Gaussian
 linear mixed model; non-Gaussian / Laplace-approximated models require
 observed-information Newton instead. It is experimental: not externally
 comparator-validated, not large-pedigree or boundary hardened, and not the public
