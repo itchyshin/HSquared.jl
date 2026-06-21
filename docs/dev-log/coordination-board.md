@@ -224,6 +224,14 @@ support beyond the recorded evidence.
   define the R-lane comparator protocol: same bivariate Gaussian animal model,
   REML target, likelihood-scale caveat, version/control reporting, and no row
   promotion until a comparator run records a tolerance and evidence chain.
+- On 2026-06-21 the R-lane `sommer` comparator script was reproduced locally
+  from the sibling `hsquared` repo against
+  `test/fixtures/phase4_multitrait_parity/`. It rebuilt `A` independently with
+  `nadiv::makeA` and matched the Julia target tightly (`sommer` 4.4.5:
+  max abs(dG0)=7.529e-05, max abs(dR0)=7.626e-06, max abs(dh2)=6.821e-05,
+  EBV correlations 1.000/1.000; loglik not compared because additive constants
+  differ). This records one external comparator leg only; `V4-MV-REML` remains
+  partial pending the broader recovery gate and additional independent parity.
 - Julia now has opt-in unstructured multivariate REML recovery evidence at
   `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
   a repeated-record half-sib design outside CI, and the harness now accepts
