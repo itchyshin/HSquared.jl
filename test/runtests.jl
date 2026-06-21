@@ -6376,4 +6376,6 @@ end
     @test isempty(methods(hsquared_figure))          # stub: no methods without Makie
     @test_throws MethodError hsquared_figure((term = ["x"], panel = ["heritability"]))
     @test_throws MethodError hsquared_figure((value = [1.0], pev = [0.1], pev_scale = "validation"))
+    @test_throws MethodError hsquared_figure((traits = ["a"], genetic_correlations = [1.0;;],
+                                              heritabilities = nothing, rotation_invariant = true))
 end

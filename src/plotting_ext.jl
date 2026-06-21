@@ -24,6 +24,10 @@ honest-status drawing behaviors ON the figure — #93):
   a loadings biplot (gated on `is_eigenstructure_not_loadings`); on a non-PD `G` a
   negative eigenvalue bar is drawn but the %-variance labels are suppressed and a
   "non-positive-definite G" note is added (a ">100% variance share" is the trap).
+- `:genetic_correlation` ← [`genetic_correlation_plot_data`](@ref) — the rotation-invariant
+  `D⁻¹GD⁻¹` correlation **heatmap** (unit diagonal, off-diagonals in `[-1,1]`), NEVER raw
+  loadings (gated on `rotation_invariant`); when `heritabilities` are supplied, low-h²
+  (imprecise) traits are flagged in the subtitle.
 
 The honest-status caveat is always rendered on the figure (subtitle), sourced from the
 SAME flags the preparer carries — this is the drawing-layer half of the plotting
