@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #48 threshold validation-status sync. After
+  HSquared.jl #142 closed #45 and R reported validation-canon/PEV closeouts
+  (#77/#78), noticed the human-facing `docs/src/validation-status.md` table
+  omitted the existing `V5-MARKER-THRESHOLD` row even though
+  `validation_status()`, the API docs, capability status, validation debt, and
+  threshold check logs already describe it. Scope: source-doc/status sync and
+  issue-body retarget only; no threshold activation, no new calibration run, no
+  R significance wording, no comparator evidence, and no status promotion.
+
 - 2026-06-21: Julia lane / #45 marker-scan bridge payload fixture. After
   HSquared.jl #141 closed #43 and R reported hsquared PR #75 merged at
   `e9633c0` (R issue #23 body sync), started the Julia artifact slice R had
