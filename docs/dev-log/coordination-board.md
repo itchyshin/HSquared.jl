@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia/coordinator lane / #93 plotting contract closure. After
+  the #48 ledger fix landed, started a narrow sync slice to reconcile
+  `docs/design/13-plotting-layer.md` with the later R-lane evidence: all seven
+  engine `*_plot_data` preparers are consumed with R parity guards, R PR #35
+  attaches available payloads at fit time, and Julia has landed the preparers
+  plus the set B/C Makie drawing extension. Boundary: close the plot-data
+  contract only; do not claim CI-gated Makie drawing, future plot kinds,
+  calibrated marker-scan significance, or any covered statistical capability.
+
 - 2026-06-21: Coordinator/Julia lane / #48 issue-ledger hygiene. After #134
   landed, the fixed-panel threshold-calibration after-task report correctly
   recorded that #48 remained open, but the GitHub issue had been closed by the
