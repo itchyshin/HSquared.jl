@@ -159,6 +159,7 @@ the carried fields (override with `kind = :variance_components | :breeding_value
 | `:variance_components` | `variance_components_plot_data` (B) | VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
 | `:breeding_values` | `breeding_values_plot_data` (B) | EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
 | `:g_geometry` | `genetic_pca_plot_data` (C) | eigenvalue **scree** | gated on `is_eigenstructure_not_loadings` — a loadings biplot is **rejected** (`ArgumentError`, FA rotation convention); a non-PD `G` (negative eigenvalue) draws the bar but **suppresses** %-variance labels; rotation-invariant caveat in the subtitle |
+| `:genetic_correlation` | `genetic_correlation_plot_data` (C) | `D⁻¹GD⁻¹` **heatmap** | gated on `rotation_invariant` — raw loadings **rejected** (`ArgumentError`); diverging colormap centred at 0, unit diagonal; when `heritabilities` are supplied, low-h² (imprecise) traits are **flagged in the subtitle** |
 
 The subtitle caveat is sourced from the SAME honest-status flags the preparer
 carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only

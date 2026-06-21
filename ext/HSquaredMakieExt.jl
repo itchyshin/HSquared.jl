@@ -14,14 +14,16 @@ function _infer_kind(d::NamedTuple)
     (hasproperty(d, :term) && hasproperty(d, :panel)) && return :variance_components
     hasproperty(d, :pev_scale) && return :breeding_values
     hasproperty(d, :is_eigenstructure_not_loadings) && return :g_geometry
-    throw(ArgumentError("hsquared_figure: cannot infer the figure kind from this data; pass `kind = :variance_components | :breeding_values | :g_geometry`"))
+    hasproperty(d, :genetic_correlations) && return :genetic_correlation
+    throw(ArgumentError("hsquared_figure: cannot infer the figure kind from this data; pass `kind = :variance_components | :breeding_values | :g_geometry | :genetic_correlation`"))
 end
 
 function hsquared_figure(data::NamedTuple; kind::Symbol = _infer_kind(data), kwargs...)
     kind === :variance_components && return _forest(data; kwargs...)
     kind === :breeding_values && return _caterpillar(data; kwargs...)
     kind === :g_geometry && return _scree(data; kwargs...)
-    throw(ArgumentError("hsquared_figure: unknown kind :$kind (supported: :variance_components, :breeding_values, :g_geometry)"))
+    kind === :genetic_correlation && return _heatmap(data; kwargs...)
+    throw(ArgumentError("hsquared_figure: unknown kind :$kind (supported: :variance_components, :breeding_values, :g_geometry, :genetic_correlation)"))
 end
 
 # ── set B: variance-component + heritability forest ──────────────────────────────
@@ -96,6 +98,38 @@ function _scree(d::NamedTuple; title = "Genetic eigenstructure (scree)", kwargs.
                   align = (:center, :bottom), fontsize = 10)
         end
     end
+    return fig
+end
+
+# ── set C: genetic-correlation heatmap ───────────────────────────────────────────
+# The rotation-INVARIANT genetic correlation `D⁻¹GD⁻¹` (unit diagonal, off-diagonals
+# in [-1,1]) — NEVER raw loadings. Cells involving a low-h² trait are imprecise; if
+# heritabilities are supplied the low-h² traits are flagged in the subtitle (the #93
+# set-C honest-status behavior). Diverging colormap centred at 0.
+function _heatmap(d::NamedTuple; title = "Genetic correlations", low_h2 = 0.1, kwargs...)
+    d.rotation_invariant ||
+        throw(ArgumentError("genetic_correlation requires the rotation-invariant correlation (D⁻¹GD⁻¹); raw loadings are forbidden by the FA rotation convention"))
+    R = Matrix{Float64}(d.genetic_correlations)
+    labels = collect(string.(d.traits))
+    p = length(labels)
+    # flag low OR non-finite h² — a missing/NaN h² is maximally imprecise, so it must
+    # be flagged too (NaN < low_h2 is false, which would silently drop it otherwise).
+    flagged = d.heritabilities === nothing ? String[] :
+        labels[findall(h -> !isfinite(h) || h < low_h2, Float64.(d.heritabilities))]
+    caveat = isempty(flagged) ?
+        "rotation-invariant D⁻¹GD⁻¹ (unit diagonal); NOT raw loadings" :
+        "rotation-invariant D⁻¹GD⁻¹; ⚠ low-h² (<$(low_h2), imprecise) trait(s): $(join(flagged, ", "))"
+    fig = Figure()
+    ax = Axis(fig[1, 1]; title = title, subtitle = caveat,
+              xticks = (collect(1:p), labels), yticks = (collect(1:p), labels),
+              yreversed = true, xticklabelrotation = π / 4)
+    hm = heatmap!(ax, 1:p, 1:p, R; colormap = :RdBu, colorrange = (-1.0, 1.0))
+    for i in 1:p, j in 1:p
+        text!(ax, i, j; text = string(round(R[i, j]; digits = 2)),
+              align = (:center, :center), fontsize = 10,
+              color = abs(R[i, j]) > 0.6 ? :white : :black)
+    end
+    Colorbar(fig[1, 2], hm; label = "genetic correlation")
     return fig
 end
 
