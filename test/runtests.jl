@@ -5239,6 +5239,143 @@ end
     @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :binomial)  # missing n_trials
 end
 
+@testset "Phase 6 Binomial per-record n_trials (cbind GLMM)" begin
+    # Per-record trials `n_trials[i]` — the general cbind(successes, failures) GLMM
+    # where the denominator varies by observation. Resolved per record to the scalar
+    # BinomialResponse via `_fam_record`, so the scalar family math is shared.
+    BVR = HSquared.BinomialVectorResponse
+    BR = HSquared.BinomialResponse
+
+    # --- _fam_record: scalar families are identity; the vector form returns the
+    #     scalar BinomialResponse for record i (allocation-free bitstype)
+    bv = BVR([3, 5, 8])
+    @test HSquared._fam_record(bv, 1) === BR(3) || HSquared._fam_record(bv, 1).n_trials == 3
+    @test HSquared._fam_record(bv, 2).n_trials == 5
+    @test HSquared._fam_record(bv, 3).n_trials == 8
+    @test HSquared._fam_record(HSquared.PoissonResponse(), 7) === HSquared.PoissonResponse()
+    @test HSquared._fam_record(BR(10), 4) === BR(10)              # scalar Binomial unchanged
+
+    # --- constructor guards
+    @test_throws ArgumentError BVR(Int[])                         # empty
+    @test_throws ArgumentError BVR([3, 0, 5])                     # a zero entry
+    @test_throws ArgumentError BVR([3, -1, 5])                    # a negative entry
+
+    # --- pedigree / design fixture (interior 8-animal)
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ai = pedigree_inverse(ped)
+    Z = sparse(1.0I, 8, 8)
+    X0 = zeros(8, 0)
+    sa2 = 1.0
+    yv = [6.0, 2.0, 5.0, 7.0, 3.0, 1.0, 4.0, 8.0]
+
+    # === REDUCTION INVARIANT 1: constant per-record vector == scalar (machine prec)
+    m = 9
+    @test all(0 .<= yv .<= m)
+    lap_scalar = HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BR(m))
+    lap_vector = HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BVR(fill(m, 8)))
+    @test lap_vector.converged
+    @test lap_vector.loglik ≈ lap_scalar.loglik atol = 1e-12
+    @test lap_vector.beta ≈ lap_scalar.beta atol = 1e-10
+    @test lap_vector.u ≈ lap_scalar.u atol = 1e-10
+    va_scalar = HSquared.variational_marginal_loglik(yv, X0, Z, Ai, sa2, BR(m))
+    va_vector = HSquared.variational_marginal_loglik(yv, X0, Z, Ai, sa2, BVR(fill(m, 8)))
+    @test va_vector.elbo ≈ va_scalar.elbo atol = 1e-10           # VA path also reduces
+
+    # === REDUCTION INVARIANT 2: all-ones per-record vector == Bernoulli
+    yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    lap_ones = HSquared.laplace_marginal_loglik(yb, X0, Z, Ai, sa2, BVR(ones(Int, 8)))
+    lap_bern = HSquared.laplace_marginal_loglik(yb, X0, Z, Ai, sa2, HSquared.BernoulliResponse())
+    @test lap_ones.loglik ≈ lap_bern.loglik atol = 1e-12
+    @test lap_ones.u ≈ lap_bern.u atol = 1e-10
+
+    # === HETEROGENEOUS n_trials: finite, converged, and NOT equal to any scalar
+    nt = [10, 4, 6, 12, 5, 3, 8, 15]
+    @test all(0 .<= yv .<= nt)
+    lap_het = HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BVR(nt))
+    @test lap_het.converged && isfinite(lap_het.loglik)
+    # differs from the closest constant-denominator fits (the heterogeneity matters)
+    @test !isapprox(lap_het.loglik, HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BR(10)).loglik; atol = 1e-6)
+    @test !isapprox(lap_het.loglik, HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BR(15)).loglik; atol = 1e-6)
+
+    # === score/weight ARE the η-derivatives at a heterogeneous record (record 4, n=12)
+    f4 = HSquared._fam_record(BVR(nt), 4)
+    @test f4.n_trials == 12
+    η0 = 0.31; h = 1e-6; h2 = 1e-4
+    @test HSquared._fam_score(f4, yv[4], η0) ≈
+          (HSquared._fam_loglik(f4, yv[4], η0 + h) - HSquared._fam_loglik(f4, yv[4], η0 - h)) / (2h) rtol = 1e-5
+    @test HSquared._fam_weight(f4, yv[4], η0) ≈
+          -(HSquared._fam_loglik(f4, yv[4], η0 + h2) - 2 * HSquared._fam_loglik(f4, yv[4], η0) +
+            HSquared._fam_loglik(f4, yv[4], η0 - h2)) / h2^2 rtol = 1e-3
+
+    # === value gate vs an independent PER-RECORD tensor Gauss–Hermite oracle (β-fixed)
+    peds = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ais = pedigree_inverse(peds)
+    Zs = sparse(1.0I, 3, 3)
+    X0s = zeros(3, 0)
+    nts = [8, 5, 11]
+    ys = [6.0, 2.0, 9.0]
+    @test all(0 .<= ys .<= nts)
+    _gh(k) = (E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _l1pe(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
+    _lbin(mm, yy) = HSquared._logfactorial(mm) - HSquared._logfactorial(yy) -
+                    HSquared._logfactorial(mm - yy)
+    function _binom_marginal_perrec(y, Zd, G, mm, k)   # mm is a PER-RECORD vector
+        x, w = _gh(k)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> k, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = sum(y[i] * η[i] - mm[i] * _l1pe(η[i]) + _lbin(mm[i], Int(y[i])) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    Gs = inv(Symmetric(Matrix(Ais))) .* sa2
+    Roracle = _binom_marginal_perrec(ys, Matrix(Zs), Gs, nts, 32)
+    lap_s = HSquared.laplace_marginal_loglik(ys, X0s, Zs, Ais, sa2, BVR(nts))
+    va_s = HSquared.variational_marginal_loglik(ys, X0s, Zs, Ais, sa2, BVR(nts))
+    @test lap_s.converged && va_s.converged
+    @test va_s.elbo <= Roracle + 1e-6                            # ELBO valid lower bound
+    @test abs(lap_s.loglik - Roracle) < 0.2                      # Laplace close to truth
+
+    # === _check_counts rejections
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik(yv, X0, Z, Ai, sa2, BVR([10, 4, 6, 12, 5, 3, 8]))      # length mismatch (7 vs 8)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([11.0, 2.0, 5.0, 7.0, 3.0, 1.0, 4.0, 8.0], X0, Z, Ai, sa2, BVR(nt))  # y[1]=11 > n[1]=10
+
+    # === fitted path: vector n_trials converges; fit + payload carry the vector
+    fbv = HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai; family = :binomial,
+                                    n_trials = nt, initial = (sigma_a2 = 1.0,))
+    @test fbv.family === :binomial
+    @test fbv.converged && fbv.variance_components.sigma_a2 > 0
+    @test fbv.n_trials == nt
+    pbv = HSquared.nongaussian_result_payload(fbv)
+    @test pbv.n_trials == nt
+    @test pbv.n_trials !== fbv.n_trials                          # payload copies, no alias
+    # a constant vector fit equals the scalar fit (sigma_a2 to high precision)
+    fconst_v = HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai; family = :binomial,
+                                         n_trials = fill(9, 8), initial = (sigma_a2 = 1.0,))
+    fconst_s = HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai; family = :binomial,
+                                         n_trials = 9, initial = (sigma_a2 = 1.0,))
+    @test fconst_v.variance_components.sigma_a2 ≈ fconst_s.variance_components.sigma_a2 rtol = 1e-6
+    # length-mismatch vector at the fitter throws
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai;
+                                    family = :binomial, n_trials = [10, 4, 6])
+    # bridge realism: R marshals doubles, so an INTEGER-VALUED Float64 vector is
+    # accepted (== the Int vector); a genuinely non-integer vector gets a clean error
+    ffloat = HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai; family = :binomial,
+                                       n_trials = Float64.(nt), initial = (sigma_a2 = 1.0,))
+    @test ffloat.n_trials == nt && ffloat.n_trials isa Vector{Int}
+    @test ffloat.variance_components.sigma_a2 ≈ fbv.variance_components.sigma_a2 rtol = 1e-8
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yv, ones(8, 1), Z, Ai;
+                                    family = :binomial, n_trials = [10.0, 4.5, 6.0, 12.0, 5.0, 3.0, 8.0, 15.0])
+end
+
 @testset "Phase 4 multivariate covariance SEs + LRTs" begin
     ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],

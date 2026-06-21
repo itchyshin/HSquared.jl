@@ -23,8 +23,12 @@ Run from the repository root:
     env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 nice -n 15 julia --project=. sim/phase6_binomial_recovery.jl
 
 Predeclared: seeds 20260618..20260622; truth σ²a = 1.0 (logit scale), μ = 0.0;
-m = 20 trials/record; half-sib design with 15 sires, 30 dams, 300 offspring
-(q = 345). Gate: converged AND rel(σ̂²a) ≤ 0.30 AND cor(û, u) ≥ 0.80.
+half-sib design with 15 sires, 30 dams, 300 offspring (q = 345). TWO scenarios:
+(1) a COMMON m = 20 trials/record (`BinomialResponse(m)`), and (2) PER-RECORD
+trials nₐ ~ Uniform{1..30} (`BinomialVectorResponse` — the general
+cbind(successes, failures) GLMM; the range includes n=1, so each draw MIXES
+binary Bernoulli records with multi-trial Binomial ones). Gate (both): converged
+AND rel(σ̂²a) ≤ 0.30 AND cor(û, u) ≥ 0.80.
 """
 
 const SEEDS = [20260618, 20260619, 20260620, 20260621, 20260622]
@@ -73,6 +77,37 @@ function _run(seed; nsire = 15, ndam = 30, noffspring = 300)
             rel = rel, cor = cor, pass = pass)
 end
 
+# Per-record (heterogeneous) n_trials: the general cbind(successes, failures) GLMM.
+# Each record draws its OWN trial count nₐ ∈ NT_RANGE, then yₐ ~ Binomial(nₐ, p).
+# This exercises the BinomialVectorResponse path end-to-end at recovery scale — the
+# recovery-level counterpart to the reduction-to-scalar and tensor-GH unit tests.
+const NT_RANGE = 1:30   # includes n=1, so the draw MIXES Bernoulli and Binomial records
+
+function _run_perrecord(seed; nsire = 15, ndam = 30, noffspring = 300)
+    rng = MersenneTwister(seed)
+    ped = _halfsib_pedigree(nsire, ndam, noffspring)
+    Ainv = pedigree_inverse(ped)
+    A = Matrix(inv(Symmetric(Matrix(Ainv))))
+    q = length(ped.ids)
+    LA = cholesky(Symmetric(A)).L
+    u = (LA * randn(rng, q)) .* sqrt(SIGMA_A2)
+    X = ones(q, 1)
+    Z = Matrix(1.0I, q, q)
+    nt = [rand(rng, NT_RANGE) for _ in 1:q]                       # per-record trials
+    y = Float64[_rand_binomial(rng, nt[a], _logistic(MU + u[a])) for a in 1:q]
+    fit = HSquared.fit_laplace_reml(y, X, Z, Ainv; family = :binomial, n_trials = nt,
+                                    initial = (sigma_a2 = 1.0,))
+    sa2 = fit.variance_components.sigma_a2
+    rel = abs(sa2 - SIGMA_A2) / SIGMA_A2
+    uhat = fit.breeding_values
+    ubar = sum(u) / q; uhbar = sum(uhat) / q
+    cu = sum((u .- ubar) .* (uhat .- uhbar))
+    cor = cu / sqrt(sum(abs2, u .- ubar) * sum(abs2, uhat .- uhbar))
+    pass = fit.converged && rel <= REL_MAX && cor >= COR_FLOOR
+    return (seed = seed, q = q, nt_mean = sum(nt) / q, converged = fit.converged,
+            sigma_a2 = sa2, rel = rel, cor = cor, pass = pass)
+end
+
 function main()
     results = [_run(seed) for seed in SEEDS]
     for r in results
@@ -80,10 +115,21 @@ function main()
             r.pass ? "PASS" : "FAIL", r.seed, r.q, NTRIALS, r.converged, r.sigma_a2, SIGMA_A2, r.rel, r.cor)
     end
     npass = count(r -> r.pass, results)
-    @printf("SUMMARY binomial-recovery seeds=%d passed=%d (gate: rel≤%.2f AND cor≥%.2f)  max_rel=%.3f  min_cor=%.3f\n",
-        length(results), npass, REL_MAX, COR_FLOOR,
+    @printf("SUMMARY binomial-recovery (common m=%d) seeds=%d passed=%d (gate: rel≤%.2f AND cor≥%.2f)  max_rel=%.3f  min_cor=%.3f\n",
+        NTRIALS, length(results), npass, REL_MAX, COR_FLOOR,
         maximum(r.rel for r in results), minimum(r.cor for r in results))
-    all(r -> r.pass, results) || exit(1)
+
+    pr = [_run_perrecord(seed) for seed in SEEDS]
+    for r in pr
+        @printf("[%s] seed=%d animals=%d trials~U%s (mean %.1f) converged=%s  σ̂²a=%.3f (truth %.2f, rel %.3f)  cor(û,u)=%.3f\n",
+            r.pass ? "PASS" : "FAIL", r.seed, r.q, NT_RANGE, r.nt_mean, r.converged, r.sigma_a2, SIGMA_A2, r.rel, r.cor)
+    end
+    nprpass = count(r -> r.pass, pr)
+    @printf("SUMMARY binomial-recovery (per-record n∈%s) seeds=%d passed=%d (gate: rel≤%.2f AND cor≥%.2f)  max_rel=%.3f  min_cor=%.3f\n",
+        NT_RANGE, length(pr), nprpass, REL_MAX, COR_FLOOR,
+        maximum(r.rel for r in pr), minimum(r.cor for r in pr))
+
+    (all(r -> r.pass, results) && all(r -> r.pass, pr)) || exit(1)
 end
 
 main()

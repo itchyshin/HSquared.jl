@@ -14,7 +14,8 @@
 # link, exact), Poisson (log link, closed-form VA via the log-normal MGF),
 # Bernoulli (logit link; the VA expected kernels use Gauss–Hermite quadrature
 # because the logistic log-partition has no closed-form Gaussian expectation),
-# and Binomial (logit link, `n_trials` successes; Bernoulli is `n_trials = 1`).
+# and Binomial (logit link, `n_trials` successes — a common scalar denominator or a
+# per-record vector; Bernoulli is `n_trials = 1`).
 #
 # The fitters `fit_laplace_reml` / `laplace_reml_interval` are exported
 # (experimental); the marginal-loglik kernels and `ResponseFamily` types stay
@@ -53,6 +54,32 @@ struct BinomialResponse <: ResponseFamily
         return new(Int(n_trials))
     end
 end
+
+"""
+Binomial family with logit link and a PER-RECORD number of trials `n_trials[i]`
+(`y[i] ∈ 0:n_trials[i]`). The general `cbind(successes, failures)` GLMM where the
+trial denominator varies by observation; `BinomialResponse(m::Int)` is the common-
+denominator special case. Internal: the fitter / bridge accept a scalar or vector
+`n_trials` and construct the right type. The per-record kernels are resolved to the
+matching scalar `BinomialResponse(n_trials[i])` via `_fam_record`, so the family
+math is shared and the scalar path is untouched.
+"""
+struct BinomialVectorResponse <: ResponseFamily
+    n_trials::Vector{Int}
+    function BinomialVectorResponse(n_trials::AbstractVector{<:Integer})
+        isempty(n_trials) && throw(ArgumentError("n_trials must be non-empty"))
+        all(n -> n >= 1, n_trials) || throw(ArgumentError("every n_trials[i] must be >= 1"))
+        return new(Vector{Int}(n_trials))
+    end
+end
+
+# Per-record family resolution. For every family without per-record state this is
+# the identity (compiles away; zero overhead in the per-observation comprehensions).
+# For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
+# `i` — a bitstype (one `Int` field), so this is allocation-free, and it reuses the
+# existing scalar Binomial kernels unchanged.
+@inline _fam_record(f::ResponseFamily, ::Integer) = f
+@inline _fam_record(f::BinomialVectorResponse, i::Integer) = BinomialResponse(f.n_trials[i])
 
 # Marginal-method dispatch (architecture mirrors the MIT DRM.jl :LA/:VA idea).
 # The engine keeps the `marginal::Symbol` keyword/field (:laplace / :variational);
@@ -129,6 +156,13 @@ function _check_counts(f::BinomialResponse, yv)
         throw(ArgumentError("BinomialResponse requires integer counts in 0:n_trials"))
     return nothing
 end
+function _check_counts(f::BinomialVectorResponse, yv)
+    length(f.n_trials) == length(yv) ||
+        throw(ArgumentError("n_trials must have one entry per record (length(n_trials) == length(y))"))
+    all(i -> isinteger(yv[i]) && 0 <= yv[i] <= f.n_trials[i], eachindex(yv)) ||
+        throw(ArgumentError("BinomialVectorResponse requires integer counts with 0 <= y[i] <= n_trials[i]"))
+    return nothing
+end
 
 """
     laplace_marginal_loglik(y, X, Z, Ainv, sigma_a2, family; tol = 1e-10, maxiter = 100)
@@ -166,8 +200,8 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     for it in 1:maxiter
         iters = it
         η = Xd * beta .+ Zd * u
-        s = [_fam_score(family, yv[i], η[i]) for i in 1:n]
-        w = [_fam_weight(family, yv[i], η[i]) for i in 1:n]
+        s = [_fam_score(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+        w = [_fam_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
         grad = vcat(transpose(Xd) * s, transpose(Zd) * s .- (Ai * u) ./ sigma_a2)
         gnorm = norm(grad)
         WX = w .* Xd
@@ -184,12 +218,12 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     end
 
     η = Xd * beta .+ Zd * u
-    w = [_fam_weight(family, yv[i], η[i]) for i in 1:n]
+    w = [_fam_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
     WX = w .* Xd
     WZ = w .* Zd
     H = [transpose(Xd)*WX transpose(Xd)*WZ
          transpose(Zd)*WX (transpose(Zd)*WZ .+ Ai ./ sigma_a2)]
-    cond = sum(_fam_loglik(family, yv[i], η[i]) for i in 1:n)
+    cond = sum(_fam_loglik(_fam_record(family, i), yv[i], η[i]) for i in 1:n)
     quad_u = dot(u, Ai * u) / sigma_a2
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
     logdet_H = logdet(cholesky(Symmetric(H)))
@@ -247,7 +281,7 @@ function _va_covariance(family, Zd, P0, ηbar, v0, n, tol, covariance)
     v = copy(v0)
     local S
     for _ in 1:200
-        w = [_fam_expected_weight(family, ηbar[i], v[i]) for i in 1:n]
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
         Huu = transpose(Zd) * (w .* Zd) .+ P0
         S = covariance === :diagonal ? Diagonal(1.0 ./ diag(Huu)) : inv(Symmetric(Huu))
         ZS = Zd * S
@@ -314,8 +348,8 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
         iters = outer_it
         ηbar = Xd * beta .+ Zd * m
         S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol, covariance)
-        w = [_fam_expected_weight(family, ηbar[i], v[i]) for i in 1:n]
-        g = [_fam_expected_score(family, yv[i], ηbar[i], v[i]) for i in 1:n]
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
+        g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
         grad = vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m)
         gnorm = norm(grad)
         WX = w .* Xd
@@ -334,9 +368,9 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     # ELBO and gradient at the returned mode
     ηbar = Xd * beta .+ Zd * m
     S, v = _va_covariance(family, Zd, P0, ηbar, v, n, tol, covariance)
-    g = [_fam_expected_score(family, yv[i], ηbar[i], v[i]) for i in 1:n]
+    g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
     gnorm = norm(vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m))
-    Ell = sum(_fam_expected_loglik(family, yv[i], ηbar[i], v[i]) for i in 1:n)
+    Ell = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n)
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
     logdet_S = covariance === :diagonal ? sum(log, diag(S)) : logdet(cholesky(Symmetric(S)))
     kl = 0.5 * ((dot(m, Ai * m) + tr(Ai * S)) / sigma_a2 + q * log(sigma_a2) -
@@ -346,7 +380,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     # correction that makes the Gaussian ELBO tight (== sparse_reml_loglik).
     beta_term = 0.0
     if p > 0
-        w = [_fam_expected_weight(family, ηbar[i], v[i]) for i in 1:n]
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
         XtWZ = transpose(Xd) * (w .* Zd)
         schur = Symmetric(transpose(Xd) * (w .* Xd) .- XtWZ * S * transpose(XtWZ))
         beta_term = 0.5 * p * log(2π) - 0.5 * logdet(cholesky(schur))
@@ -362,8 +396,9 @@ end
 Experimental fitted-object container for the non-Gaussian animal model returned by
 [`fit_laplace_reml`](@ref). Fields: `variance_components`, `marginal_loglik`,
 `beta`, `breeding_values` (the posterior-mode random effect), `ids`, `converged`,
-`family`, `marginal`, and `n_trials` (the common Binomial trials denominator for
-`family = :binomial`, `nothing` for every other family). Use the extractor
+`family`, `marginal`, and `n_trials` (the Binomial trials denominator for
+`family = :binomial` — a scalar common denominator or a per-record `Vector{Int}`;
+`nothing` for every other family). Use the extractor
 functions [`breeding_values`](@ref) (→ `BreedingValues(ids, values)`),
 [`variance_components`](@ref), and [`fixed_effects`](@ref) for the same access
 contract as [`AnimalModelFit`](@ref); this is a distinct type so its extractors do
@@ -378,7 +413,7 @@ struct NonGaussianFit
     converged::Bool
     family::Symbol
     marginal::Symbol
-    n_trials::Union{Int,Nothing}
+    n_trials::Union{Int,Vector{Int},Nothing}
 end
 
 variance_components(fit::NonGaussianFit) = fit.variance_components
@@ -397,9 +432,10 @@ predates this convention and nests `method`/diagnostics differently) so the R tw
 can marshal one shape and the R non-Gaussian family-acceptance can fire.
 
 Fields: `engine`, `target = "nongaussian_reml"`, `family`
-(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `n_trials` (the common
-Binomial trials denominator, `nothing` for other families — so a binomial payload
-is self-describing on the data scale), `method` (`"laplace"`/`"variational"`,
+(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `n_trials` (the Binomial
+trials denominator — a scalar common denominator or a per-record integer vector;
+`nothing` for other families — so a binomial payload is self-describing on the data
+scale), `method` (`"laplace"`/`"variational"`,
 resolved through the internal `MarginalMethod` dispatch from the stored marginal
 symbol), `variance_components`, `fixed_effects`, `breeding_values = (ids, values)`,
 `loglik`, and `converged`.
@@ -420,7 +456,7 @@ function nongaussian_result_payload(fit::NonGaussianFit)
         engine = "HSquared.jl",
         target = "nongaussian_reml",
         family = String(fit.family),
-        n_trials = fit.n_trials,
+        n_trials = fit.n_trials isa AbstractVector ? copy(fit.n_trials) : fit.n_trials,
         method = _marginal_method_string(_marginal_method(fit.marginal)),
         variance_components = fit.variance_components,
         fixed_effects = copy(fit.beta),
@@ -439,7 +475,9 @@ the marginal log-likelihood (`marginal = :laplace`) or the ELBO
 (`marginal = :variational`) over the variance components. `family = :gaussian`
 estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
 `family = :bernoulli`, and `family = :binomial` (which requires the `n_trials`
-keyword) estimate the single `sigma_a2` (Brent). Returns a [`NonGaussianFit`](@ref)
+keyword — a common scalar denominator OR a per-record integer vector of length
+`length(y)`, the general `cbind(successes, failures)` GLMM) estimate the single
+`sigma_a2` (Brent). Returns a [`NonGaussianFit`](@ref)
 with fields `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
 `ids`, `converged`, `family`, `marginal`, and the extractor methods
 `breeding_values(fit)` / `variance_components(fit)` / `fixed_effects(fit)`.
@@ -463,6 +501,16 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, or :binomial"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
+    # `n_trials` may be a common scalar denominator OR a per-record integer vector
+    # (the general cbind(successes, failures) GLMM). A vector must match the data and
+    # carry integer counts; integer-valued reals are accepted (the R bridge marshals
+    # doubles) but genuinely non-integer entries get a clean error, not a MethodError.
+    if family === :binomial && n_trials isa AbstractVector
+        length(n_trials) == length(y) ||
+            throw(ArgumentError("a per-record n_trials vector must have length(n_trials) == length(y)"))
+        all(isinteger, n_trials) ||
+            throw(ArgumentError("a per-record n_trials vector must contain integer trial counts"))
+    end
     # Resolve the marginal through the MarginalMethod dispatch (accepts the engine
     # :laplace/:variational and the DRM-style :LA/:VA spellings; throws otherwise),
     # then store the canonical symbol. Value-preserving for :laplace/:variational.
@@ -485,17 +533,20 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
         fam = family === :poisson ? PoissonResponse() :
-              family === :bernoulli ? BernoulliResponse() : BinomialResponse(n_trials)
+              family === :bernoulli ? BernoulliResponse() :
+              n_trials isa AbstractVector ? BinomialVectorResponse(Int.(n_trials)) : BinomialResponse(n_trials)
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
         res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),
                        log(sa0) - 6.0, log(sa0) + 6.0)
         sa2 = exp(Optim.minimizer(res))
         fit = margfun(y, X, Z, Ainv, sa2, fam)
+        stored_n = family !== :binomial ? nothing :
+                   n_trials isa AbstractVector ? Vector{Int}(n_trials) : Int(n_trials)
         return NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
                               Optim.converged(res) && fit.converged, family, marginal,
-                              family === :binomial ? Int(n_trials) : nothing)
+                              stored_n)
     end
 end
 
