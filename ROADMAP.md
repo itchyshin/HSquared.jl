@@ -120,7 +120,9 @@ unimplemented.
   `sim/phase5_marker_scan_recovery.jl` harness records marker-signal recovery
   outside CI for the fixed, supplied-variance mixed, and supplied LOCO helpers.
   `test/fixtures/genomic_gblup_snpblup_target/` serializes a #49
-  Julia-native GBLUP/SNP-BLUP comparator target for future external parity runs.
+  Julia-native GBLUP/SNP-BLUP comparator target for future external parity runs;
+  hsquared PR #84 (`52507da`) mirrors and consumes that fixture with a
+  Julia-free R recomputation, still without external comparator evidence.
   These remain experimental supplied-variance / validation-scale engine utilities.
   No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
   the public default.
@@ -279,8 +281,10 @@ leave-one-group-out relationship precisions from marker groups, and
 `loco_mixed_model_marker_scan` selects among relationship precisions by marker
 group for a direct leave-one-group-out scan. A #49 fixture now serializes a
 positive-definite supplied-frequency VanRaden `G`, `Ginv`, beta, GEBVs, and
-SNP-BLUP marker effects as a Julia-native comparator target. These are
-engine-internal;
+SNP-BLUP marker effects as a Julia-native comparator target. The R twin mirrors
+and consumes that target in hsquared PR #84 (`52507da`), which is internal route
+evidence rather than an AGHmatrix/rrBLUP/sommer/JWAS/BLUPF90 comparator. These
+are engine-internal;
 production genotype-ID matching at scale, formula-driven mixed-model marker
 scans, public LOCO workflow defaults, QTL/eQTL scans, a public genomic
 model-spec, and external comparator parity remain open.

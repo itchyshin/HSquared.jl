@@ -115,6 +115,9 @@ Covered now (self-consistent, comparator-free):
   dense diagonal;
 - genomic REML: AI-REML and NelderMead reach the same optimum, and a seeded
   simulation recovers the variance components;
+- the #49 genomic GBLUP/SNP-BLUP target is mirrored and consumed in the R twin
+  (hsquared PR #84) by recomputing supplied-frequency `G`, `Ginv`, GBLUP MME,
+  and SNP-BLUP route agreement without live Julia;
 - single-step `H⁻¹` reduction (`H⁻¹ = A⁻¹` when `G = A₂₂`), locality, symmetry,
   and the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard;
 - supplied-Γ `H^Γ` construction: reduction to ordinary single-step at `Γ = 0`

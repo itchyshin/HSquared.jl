@@ -353,8 +353,10 @@ Mathematical links:
 Current Julia validation note: `test/fixtures/genomic_gblup_snpblup_target/`
 serializes a tiny supplied-variance GBLUP/SNP-BLUP comparator target with
 positive-definite supplied-frequency VanRaden `G`, `Ginv`, GEBVs, and marker
-effects. This is a target for future external comparator runs, not an external
-validation claim.
+effects. hsquared PR #84 (`52507da`) mirrors and consumes the fixture with a
+Julia-free R recomputation of supplied-frequency `G`, `Ginv`, GBLUP MME, and
+SNP-BLUP route agreement. This is internal route evidence for future external
+comparator runs, not an external validation claim.
 
 ## 8. QTL, GWAS, And eQTL Modules
 
