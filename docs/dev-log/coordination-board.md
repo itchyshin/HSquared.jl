@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / Big-3 single-step validation hardening. After #130
+  landed and post-merge `main` CI/Documenter/Pages were green, started a
+  dense-H oracle fixture for the ordinary single-step H-matrix path. Scope is
+  test-only: build the full dense single-step relationship `H` from the
+  Schur-style `A`/`A22`/`G` block update, then verify
+  `_single_step_Hinv * H ≈ I`, `H * _single_step_Hinv ≈ I`, and
+  `inv(H) ≈ _single_step_Hinv` for trailing and scattered genotyped rows.
+  Boundary: internal algebra hardening only; not a published Mrode Ch.11 target,
+  not external comparator evidence, not sparse/APY scaling, not a covered-status
+  promotion. R lane untouched.
+
 - 2026-06-21: Julia lane / Big-3 bridge hardening continuation. After #129
   landed and post-merge `main` CI was green, started the supplied-Γ H^Γ bridge
   payload hardening slice. Scope is a nonzero-Γ REML fixture that proves
