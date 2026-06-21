@@ -122,9 +122,13 @@ An ultracode R-twin alignment pass (read `hsquared/R/autoplot.R` +
   returns tidy parallel vectors `(term, estimate, lo, hi, panel, level,
   interval_method, interval_status, supplied = false)` that drop straight into
   `hs_gg_forest` — VC rows NOT clamped (asymptotic CI may cross 0, surfaced not
-  hidden), h² rows clamped to `[0,1]`; `supplied = false` is the honest-status hinge
-  vs sets A/C (descriptive). The `heritability_interval` (0,1)-boundary throw
-  propagates, never silently clamped.
+  hidden), and the h² row is the logit-delta `heritability_interval` which is in
+  `(0,1)` BY CONSTRUCTION (raw + annotate, NOT clamped — per the #93 resolution);
+  `supplied = false` is the honest-status hinge vs sets A/C (descriptive). The
+  `heritability_interval` (0,1)-boundary throw propagates, never silently clamped.
+  `breeding_values_plot_data(fit)` → `(id, trait, value, pev, pev_scale = "validation")`
+  is the EBV-caterpillar preparer (EBV as `value`, validation-scale PEV) — the last
+  live-parity preparer R requested (#93).
 - **Discipline:** a live parity test (R `hs_rr_variance_values` == Julia
   `rr_genetic_variance` on a seeded `K_g`/`ts` fixture, re-fired on any
   Legendre/standardization change) is the guardrail wherever R recomputes.

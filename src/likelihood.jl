@@ -1449,6 +1449,31 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
 end
 
 """
+    breeding_values_plot_data(fit::AnimalModelFit; trait = 1)
+
+Plot-ready data for the EBV "caterpillar" figure (plotting set B): tidy parallel
+vectors `(id, trait, value, pev, pev_scale)` shaped to drop directly into the R
+`autoplot.R` breeding-value plot (per the #93 R-twin alignment — this closes the last
+live-parity gap R flagged). `value` is the EBV ([`breeding_values`](@ref)), `pev` the
+prediction error variance ([`prediction_error_variance`](@ref), dense path), and
+`pev_scale = "validation"` is the honest-status flag: the PEV denominator forms the
+dense `inv(Ainv)`, so it is VALIDATION-scale, NOT a production large-pedigree
+reliability claim. The R column convention is followed exactly (EBV as `value`).
+Univariate `AnimalModelFit`; `trait` is the (single) trait label. Plot-DATA only —
+no drawing backend, no estimation.
+"""
+function breeding_values_plot_data(fit::AnimalModelFit; trait = 1)
+    bv = breeding_values(fit)
+    pev = prediction_error_variance(fit)
+    n = length(bv.values)
+    return (id = collect(bv.ids),
+            trait = fill(trait, n),
+            value = collect(bv.values),
+            pev = collect(pev.values),
+            pev_scale = "validation")
+end
+
+"""
     result_payload(fit)
 
 Return a bridge-facing result payload with field names aligned to the R

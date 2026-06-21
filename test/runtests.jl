@@ -6140,3 +6140,23 @@ end
     @test gr.n_latent_factors == 1
     @test gr.uniqueness === nothing          # low-rank carries no Ψ
 end
+
+@testset "breeding_values_plot_data (#54 set B, EBV caterpillar, #93 parity)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    spec = animal_model_spec([2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5], ones(8, 1),
+        sparse(1.0I, 8, 8), Ainv; ids = ped.ids, method = :REML)
+    fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    pd = breeding_values_plot_data(fit)
+    @test propertynames(pd) == (:id, :trait, :value, :pev, :pev_scale)
+    @test pd.id == collect(breeding_values(fit).ids)
+    @test pd.value ≈ breeding_values(fit).values                       # value == EBV (R column)
+    @test pd.pev ≈ prediction_error_variance(fit).values               # pev == validation-scale PEV
+    @test pd.pev_scale == "validation"                                 # honest-status flag
+    @test all(pd.trait .== 1) && length(pd.value) == 8 && length(pd.pev) == 8
+    # trait-label kwarg
+    pd2 = breeding_values_plot_data(fit; trait = "weight")
+    @test all(pd2.trait .== "weight")
+end
