@@ -6160,3 +6160,18 @@ end
     pd2 = breeding_values_plot_data(fit; trait = "weight")
     @test all(pd2.trait .== "weight")
 end
+
+@testset "hsquared_figure drawing stub (HSquaredMakieExt weak-dep, #93)" begin
+    # `hsquared_figure` is a STUB in /src: the drawing METHOD lives in the
+    # `HSquaredMakieExt` package extension, which loads only when a Makie backend
+    # is in scope (`using CairoMakie`). Makie is deliberately kept OUT of the
+    # default test/CI environment (heavy GL/Cairo stack — cost discipline), so in
+    # CI the stub must be a method-less generic function: any call throws
+    # `MethodError` until a backend activates the extension. The full draw of all
+    # three figure kinds is verified locally with CairoMakie (see the after-task
+    # report 2026-06-20 + check-log), not in CI.
+    @test hsquared_figure isa Function
+    @test isempty(methods(hsquared_figure))          # stub: no methods without Makie
+    @test_throws MethodError hsquared_figure((term = ["x"], panel = ["heritability"]))
+    @test_throws MethodError hsquared_figure((value = [1.0], pev = [0.1], pev_scale = "validation"))
+end

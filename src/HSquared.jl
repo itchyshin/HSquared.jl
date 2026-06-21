@@ -92,6 +92,7 @@ export AMDGPUBackend,
     genetic_correlation_plot_data,
     variance_components_plot_data,
     breeding_values_plot_data,
+    hsquared_figure,
     legendre_basis,
     legendre_design,
     random_regression_mme,
@@ -199,5 +200,6 @@ include("genetic_gllvm.jl")
 include("planned_terms.jl")
 include("validation_status.jl")
 include("placeholders.jl")
+include("plotting_ext.jl")
 
 end

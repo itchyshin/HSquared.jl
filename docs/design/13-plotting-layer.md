@@ -1,9 +1,12 @@
 # Plotting / visualization layer — design + cross-lane contract
 
 Status: **design note + ratified architecture**, 2026-06-20 (Florence + Hopper +
-Rose, ultracode design pass). Set A (RR plot-data preparers, PR #91) and set C
-(G-geometry preparers) are landed; the rest is the agreed runway. No capability is claimed here; the
-honest-status figure contract (§4) is binding.
+Rose, ultracode design pass). Set A (RR plot-data preparers, PR #91), set B
+(VC/h² forest + EBV caterpillar), and set C (G-geometry preparers) are landed, and
+the **Julia drawing half — the `HSquaredMakieExt` weak-dep extension (§8)** — is now
+landed for sets B and C; the rest is the agreed runway. No capability is claimed
+here; the honest-status figure contract (§4) is binding, and the drawing layer
+renders those caveats ON the figure.
 
 ## 1. Ratified architecture (user-confirmed)
 
@@ -138,3 +141,33 @@ meta sourcing, bridge-vs-fallback, parity-test home, biplot scaling, a
 `breeding_values` preparer). The engine will shape payloads to whatever lands
 cleanest in `autoplot.R` — this is a proposal, R pushes back. Outward posting was
 authorized by the user.
+
+## 8. Julia drawing extension — `HSquaredMakieExt` (LANDED)
+
+The Julia drawing half of §1. A single exported stub `hsquared_figure(data; kind,
+…)` lives in `src/plotting_ext.jl` (method-less); the drawing METHODS live in the
+`ext/HSquaredMakieExt.jl` package extension, which Julia loads **only** when a Makie
+backend is in scope (`using CairoMakie` / `GLMakie`). `Makie` is in
+`[weakdeps]`/`[extensions]` and pinned in `[compat]` (`0.24`); `/src` stays
+dependency-free. Without a backend the stub throws `MethodError` (a CI test asserts
+this). One dispatcher consumes the `*_plot_data` NamedTuples and infers `kind` from
+the carried fields (override with `kind = :variance_components | :breeding_values |
+:g_geometry`):
+
+| `kind` | Preparer (set) | Draw | Honest-status behavior rendered ON the figure |
+| --- | --- | --- | --- |
+| `:variance_components` | `variance_components_plot_data` (B) | VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
+| `:breeding_values` | `breeding_values_plot_data` (B) | EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
+| `:g_geometry` | `genetic_pca_plot_data` (C) | eigenvalue **scree** | gated on `is_eigenstructure_not_loadings` — a loadings biplot is **rejected** (`ArgumentError`, FA rotation convention); a non-PD `G` (negative eigenvalue) draws the bar but **suppresses** %-variance labels; rotation-invariant caveat in the subtitle |
+
+The subtitle caveat is sourced from the SAME honest-status flags the preparer
+carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
+guardrail"). Drawing only: no estimation, no engine computation in the extension.
+
+**Verification (local-only; Makie is deliberately OUT of default CI — cost
+discipline):** all three kinds draw a `Makie.Figure` (inferred + explicit `kind`),
+the stub throws `MethodError` before a backend loads, the supplied/NaN/[0,1]-boundary
+forest branches and the loadings-biplot / non-PD-`G` guards all fire, and one figure
+rasterizes to PNG with CairoMakie. Evidence: `docs/dev-log/check-log.md` +
+after-task report `2026-06-20-…makie-ext…`. This is a **drawing capability only** —
+no statistical claim is promoted by it.
