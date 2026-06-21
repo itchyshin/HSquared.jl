@@ -38,6 +38,11 @@
   prior, `σ²_marker = σ²_g/k`). `gebv = W·â` equals GBLUP to machine precision
   (the GBLUP↔SNP-BLUP equivalence, validated via the marginal `V`); experimental,
   supplied-variance only, unweighted VanRaden method-1.
+- Added `test/fixtures/genomic_gblup_snpblup_target/` — a Julia-native #49
+  comparator target for supplied-variance GBLUP/SNP-BLUP with a
+  positive-definite supplied-frequency VanRaden `G`, `Ginv`, beta, GEBVs,
+  marker effects, metadata, and a generator. This pins a future external
+  comparator target; it is not external comparator evidence.
 - Added `single_marker_scan()` — a Phase-5 fixed-effect single-marker screening
   utility that residualizes `y` and centered marker dosages against `X`, then
   reports marker effects, supplied-variance standard errors, Wald z-scores, and
