@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / parent issue ledger sync. After R reported
+  hsquared PR #88 (`df04e0d`) and #89 (`2dd19ec`), audited the open Julia
+  parent issues whose bodies still held generic 2026-06-19 placeholders.
+  Scope: live GitHub issue-body sync plus audit artifacts only. Updated Julia
+  #6 (engine result object / diagnostics parent), #7 (validation canon parent),
+  and #49 (external comparator target parent) to reflect the banked bridge,
+  genomic-target, marker-scan payload, and comparator-blocker status while
+  preserving partial/open gates. No Julia behavior change, no source
+  capability-status promotion, no R files, no external comparator evidence, and
+  no calibrated threshold activation.
+
 - 2026-06-21: Julia lane / R #85-#87 status sync. After the R twin merged
   hsquared PR #85 (`80734b3`), #86 (`5bbc453`), and #87 (`6206b7b`), audited
   Julia's public-claim and extractor wording for stale cross-lane status.
