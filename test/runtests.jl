@@ -347,6 +347,16 @@ end
     @test occursin("Dense validation-scale LOCO construction and supplied-matrix selection helpers only", loco_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", loco_marker_row.claim_boundary)
     @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
+    threshold_row = only(row for row in validation if row.id == "V5-MARKER-THRESHOLD")
+    @test threshold_row.phase == "Phase 5"
+    @test threshold_row.status == "partial"
+    @test occursin("fixed-marker-panel type-I smoke", threshold_row.evidence)
+    @test occursin("machine-readable TSV evidence", threshold_row.evidence)
+    @test occursin("0.015/0.065/0.050", threshold_row.evidence)
+    @test occursin("threshold-vs-Bonferroni was mixed", threshold_row.evidence)
+    @test occursin("realistic-LD/design calibration", threshold_row.missing)
+    @test occursin("#48 gate", threshold_row.claim_boundary)
+    @test occursin("no external comparator parity", threshold_row.claim_boundary)
     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
     @test isfile(marker_recovery_script)
     marker_recovery_source = read(marker_recovery_script, String)
@@ -3668,6 +3678,56 @@ end
     # This pins the documented anti-conservative gap: quantile p > alpha at n=20.
     @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) == 2 / 21
     @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) > thr_cal_05.alpha
+
+    # (d) The opt-in RNG harness is outside CI for calibration runs, but its
+    # command-line/output contract is deterministic and unit-testable.
+    include(joinpath(@__DIR__, "..", "sim", "phase5_threshold_calibration.jl"))
+    @test _parse_seed_list("1, 2,3") == [1, 2, 3]
+    @test_throws ArgumentError _parse_seed_list("")
+    @test _checked_type1_marker_mode("fixed") === :fixed
+    @test _checked_type1_marker_mode("fresh") === :fresh
+    @test_throws ArgumentError _checked_type1_marker_mode("panel")
+
+    fake_threshold_result = (
+        seed = 1,
+        n = 10,
+        markers = 4,
+        permutations = 5,
+        alpha = 0.05,
+        type1_reps = 20,
+        type1_marker_mode = :fixed,
+        threshold = 3.0,
+        bonferroni_chisq = 4.0,
+        threshold_less_than_bonferroni = true,
+        exceed = 1,
+        empirical_type1 = 0.05,
+    )
+    fake_threshold_result2 = merge(fake_threshold_result, (
+        seed = 2,
+        threshold = 3.5,
+        exceed = 2,
+        empirical_type1 = 0.10,
+    ))
+    summary = _summarize_threshold_calibration_results([
+        fake_threshold_result,
+        fake_threshold_result2,
+    ])
+    @test summary.n_seeds == 2
+    @test summary.mean_threshold == 3.25
+    @test summary.mean_empirical_type1 ≈ 0.075
+    @test summary.max_abs_type1_error == 0.05
+    @test summary.all_thresholds_below_bonferroni
+    @test_throws ArgumentError _summarize_threshold_calibration_results([])
+
+    mktempdir() do dir
+        path = joinpath(dir, "threshold.tsv")
+        _write_threshold_calibration_tsv(path, [fake_threshold_result])
+        lines = readlines(path)
+        @test lines[1] == _threshold_calibration_tsv_header()
+        @test lines[2] == _threshold_calibration_tsv_row(fake_threshold_result)
+        @test occursin("type1_marker_mode", lines[1])
+        @test occursin("\tfixed\t", lines[2])
+    end
 
     # -----------------------------------------------------------------------
 
