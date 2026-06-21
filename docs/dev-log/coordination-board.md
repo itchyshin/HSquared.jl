@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #49 genomic comparator target fixture. After #139
+  landed, started the next user-approved comparator-gate slice that does not
+  require BLUPF90-family executables on the local machine. Scope: serialize
+  `test/fixtures/genomic_gblup_snpblup_target/` with phenotype, marker, supplied
+  allele-frequency, positive-definite VanRaden `G`, `Ginv`, beta, GEBV,
+  marker-effect, metadata, and generator files; add a CI test that recomputes
+  the fixture and pins GBLUP/SNP-BLUP route agreement. Boundary: Julia-native
+  target only, not external comparator evidence, not public R genomic
+  model-spec activation, not sparse/APY scaling, not weighted/Bayesian marker
+  priors, not a covered-status promotion, and not an R-lane file edit.
+
 - 2026-06-21: Julia lane / #46 Mrode Example 3.1 published animal-model
   anchor. After #138 landed, started the next user-approved validation slice:
   consume the R lane's source-recorded Mrode (2014) Example 3.1 constants as a

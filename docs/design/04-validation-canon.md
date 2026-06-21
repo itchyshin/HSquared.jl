@@ -42,6 +42,11 @@ capabilities.
   published EBVs for animals 1-8, and the invariant male-minus-female
   fixed-effect contrast. This is a supplied-variance textbook anchor, not
   variance-component estimation.
+- A Julia-native genomic GBLUP/SNP-BLUP #49 target fixture serializes a small
+  marker panel, supplied allele frequencies, positive-definite VanRaden `G`,
+  `Ginv`, beta, GEBVs, marker effects, and metadata. The bundled test
+  recomputes the target and pins route agreement, but this is not external
+  comparator evidence.
 - Pedigree inverse construction has optional external comparator coverage
   through the R twin's `nadiv::Mrode9` / `nadiv::makeAinv()` live test.
 

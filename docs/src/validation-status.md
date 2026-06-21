@@ -35,8 +35,8 @@ length(status)
 | `V1-HERIT-CI` | variance-component covariance and heritability interval | Phase 1 | partial | Asymptotic, REML-only; unreliable at small n (wide interval, ill-conditioned AI matrix); not a coverage-calibrated interval. |
 | `V2-GRM` | genomic relationship matrix (VanRaden G) | Phase 2 | partial | Experimental construction utility only; no genomic prediction, fitting, single-step, or marker-effect claim. |
 | `V2-GINV` | regularized genomic inverse (Ginv) | Phase 2 | partial | Construction utility only; not wired into model fitting, and no single-step or genomic-prediction claim. |
-| `V2-GBLUP` | genomic BLUP supplied-variance solve | Phase 2 | partial | Supplied-variance genomic solve only; no genomic variance-component estimation, no single-step, no external comparator parity. |
-| `V2-SNPBLUP` | SNP-BLUP / GBLUP equivalence | Phase 2 | partial | Supplied-variance VanRaden method-1 marker model only; no variance-component estimation, no external comparator, no weighted/Bayesian marker priors. |
+| `V2-GBLUP` | genomic BLUP supplied-variance solve | Phase 2 | partial | Supplied-variance genomic solve plus a Julia-native comparator target only; no genomic variance-component estimation, no single-step, no external comparator parity. |
+| `V2-SNPBLUP` | SNP-BLUP / GBLUP equivalence | Phase 2 | partial | Supplied-variance VanRaden method-1 marker model plus a Julia-native comparator target only; no external comparator, no weighted/Bayesian marker priors. |
 | `V2-SSHINV` | single-step H-inverse construction | Phase 2 | partial | Dense validation-scale single-step and supplied-Gamma H^Gamma primitives; dense-H oracle round-trip and nonzero-Gamma REML bridge payload/diagnostics smoke are tested; Gamma and blending controls are inputs, not estimated or comparator-validated; no external-comparator or covered single-step prediction claim. |
 | `V2-GREML` | genomic REML variance-component estimation | Phase 2 | partial | Reuses the Phase-1 REML optimizers on a genomic spec; no external comparator parity and no production sparse-G scaling. |
 | `V3-REPEAT` | repeatability / permanent-environment supplied-variance solve | Phase 3 | partial | Supplied-variance two-random-effect solve only; no R-facing model-spec, engine-internal. |
@@ -89,6 +89,13 @@ single-trait fitted target as a Bayesian/MCMC model (`chain_length = 50000`,
 REML target (`cor = 0.999`, max absolute difference `0.1103`). This is an
 agreement probe only. JWAS and REML are different estimators, so the row remains
 `partial` pending same-estimand fitted-output comparator evidence.
+
+Julia now also bundles `test/fixtures/genomic_gblup_snpblup_target/` as a #49
+genomic comparator target: a positive-definite supplied-frequency VanRaden `G`,
+its `Ginv`, intercept-only phenotype data, supplied variance components, GBLUP
+GEBVs, and SNP-BLUP marker effects/GEBVs. The CI test recomputes the fixture and
+pins GBLUP/SNP-BLUP agreement, but this is still a Julia-native target bundle,
+not an external comparator run.
 
 The Phase 4 multivariate rows are Julia-engine rows only. The accessor helpers
 wrap existing result fields locally and do not change the R bridge payload. The

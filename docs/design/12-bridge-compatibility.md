@@ -28,7 +28,7 @@ engine version each R surface is validated against.
 | Capability | Engine status | Bridge target | R surface | Engine ver. tested | Parity fixture |
 | --- | --- | --- | --- | --- | --- |
 | Gaussian animal model (v0.1) | covered | `fit_animal_model`/`fit_ai_reml` | `hsquared()` default | (current `main`) | existing v0.1 |
-| Genomic GBLUP/SNP-BLUP/single-step | experimental | `genomic`/`single_step`/`snp_blup` | opt-in `target=` | current `main` | — (BT3 #49) |
+| Genomic GBLUP/SNP-BLUP/single-step | experimental | `genomic`/`single_step`/`snp_blup` | opt-in `target=` | current `main` | `genomic_gblup_snpblup_target` for GBLUP/SNP-BLUP only; single-step still pending |
 | Supplied-Γ metafounder single-step | experimental | `metafounder_single_step` (candidate: `metafounder_single_step_inverse` / `fit_metafounder_single_step[_reml]`) | planned R metafounder/single-step payload | current `main` | nonzero-Γ REML payload smoke |
 | Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |

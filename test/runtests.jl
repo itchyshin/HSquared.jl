@@ -213,6 +213,15 @@ end
     @test aireml_row.status == "covered"
     @test occursin("gryphon", aireml_row.evidence)
     @test !occursin("250-animal", aireml_row.evidence)
+    gblup_row = only(row for row in validation if row.id == "V2-GBLUP")
+    @test gblup_row.status == "partial"
+    @test occursin("genomic_gblup_snpblup_target", gblup_row.evidence)
+    @test occursin("Julia-native comparator target only", gblup_row.claim_boundary)
+    @test occursin("external AGHmatrix/sommer/BLUPF90/JWAS same-estimand comparator parity", gblup_row.missing)
+    snpblup_row = only(row for row in validation if row.id == "V2-SNPBLUP")
+    @test snpblup_row.status == "partial"
+    @test occursin("serialized #49 target fixture", snpblup_row.evidence)
+    @test occursin("comparator parity against the serialized target", snpblup_row.missing)
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
     @test mv_row.status == "partial"
@@ -4849,6 +4858,67 @@ end
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
     @test sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik ≈ parse(Float64, metadata["loglik"]) atol = 1e-6
     @test parse(Float64, metadata["h2"]) ≈ sigma_a2 / (sigma_a2 + sigma_e2) atol = 1e-8
+end
+
+@testset "Phase 2 genomic GBLUP/SNP-BLUP target fixture (#49)" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "genomic_gblup_snpblup_target")
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    ids = vec(pheno[:, 1])
+    y = parse.(Float64, pheno[:, 2])
+
+    marker_header, marker_rows = _csv_strings_for_test(joinpath(fixture_dir, "markers.csv"))
+    marker_ids = marker_header[2:end]
+    @test marker_rows[:, 1] == ids
+    M = parse.(Float64, marker_rows[:, 2:end])
+
+    freq_ids, freq_values = _named_matrix_csv_for_test(joinpath(fixture_dir, "allele_frequencies.csv"))
+    g_ids, G_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_genomic_relationship.csv"))
+    ginv_ids, Ginv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_genomic_precision.csv"))
+    effects, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    gebv_ids, gebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_gebv.csv"))
+    marker_effect_ids, marker_effects_expected =
+        _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_marker_effects.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test freq_ids == marker_ids
+    @test g_ids == ids
+    @test ginv_ids == ids
+    @test effects == ["Intercept"]
+    @test gebv_ids == ids
+    @test marker_effect_ids == marker_ids
+    @test metadata["method"] == "vanraden1_supplied_frequencies"
+    @test metadata["g_positive_definite"] == "true"
+
+    p = vec(freq_values)
+    sigma_g2 = parse(Float64, metadata["sigma_g2"])
+    sigma_e2 = parse(Float64, metadata["sigma_e2"])
+    X = ones(length(y), 1)
+    Z = Matrix{Float64}(I, length(y), length(y))
+
+    G = genomic_relationship_matrix(M; allele_frequencies = p)
+    @test isposdef(Symmetric(G))
+    @test G ≈ G_expected atol = 1e-12
+    Ginv = inv(Symmetric(G))
+    @test Ginv ≈ Ginv_expected atol = 1e-12
+
+    gblup = fit_gblup(y, X, Z, Ginv, sigma_g2, sigma_e2; ids = ids)
+    snp = fit_snp_blup(y, X, M, sigma_g2, sigma_e2; allele_frequencies = p, ids = marker_ids)
+    @test fixed_effects(gblup) ≈ vec(beta_expected) atol = 1e-12
+    @test snp.beta ≈ vec(beta_expected) atol = 1e-12
+    @test breeding_values(gblup).ids == ids
+    @test breeding_values(gblup).values ≈ gebv_expected[:, 1] atol = 1e-12
+    @test snp.gebv ≈ gebv_expected[:, 2] atol = 1e-12
+    @test snp.marker_effects ≈ vec(marker_effects_expected) atol = 1e-12
+    @test snp.k ≈ parse(Float64, metadata["k"]) atol = 1e-12
+
+    max_route_diff = maximum(abs.(breeding_values(gblup).values .- snp.gebv))
+    @test max_route_diff ≈ parse(Float64, metadata["gblup_snp_blup_max_abs_gebv_diff"]) atol = 1e-15
+    @test max_route_diff < 5e-12
+
+    corrupted_gebv = copy(gebv_expected[:, 1])
+    corrupted_gebv[1] += 0.1
+    @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin

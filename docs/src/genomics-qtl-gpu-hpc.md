@@ -350,6 +350,12 @@ Mathematical links:
   `Hinv`.
 - Bayesian marker models can remain future work or interoperate with JWAS.jl.
 
+Current Julia validation note: `test/fixtures/genomic_gblup_snpblup_target/`
+serializes a tiny supplied-variance GBLUP/SNP-BLUP comparator target with
+positive-definite supplied-frequency VanRaden `G`, `Ginv`, GEBVs, and marker
+effects. This is a target for future external comparator runs, not an external
+validation claim.
+
 ## 8. QTL, GWAS, And eQTL Modules
 
 Levels:
