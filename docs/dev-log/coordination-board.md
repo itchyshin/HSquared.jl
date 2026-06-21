@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #46 Mrode Example 3.1 published animal-model
+  anchor. After #138 landed, started the next user-approved validation slice:
+  consume the R lane's source-recorded Mrode (2014) Example 3.1 constants as a
+  Julia-native supplied-variance Henderson MME anchor. Scope: pin the published
+  EBVs for animals 1-8 and the invariant male-minus-female sex contrast at
+  `sigma_a2 = 20`, `sigma_e2 = 40`, with a perturbation test-of-test and
+  status/debt wording updates. Boundary: this is published supplied-variance
+  animal-model evidence, not estimated variance components, not same-estimand
+  REML comparator parity, not a sire-model implementation, not a covered-status
+  promotion, and not an R-lane file edit.
+
 - 2026-06-21: Julia/coordinator lane / V4 R-lane Mrode anchor sync. After
   #47 closed, reconciled Julia's V4 multivariate validation ledger with later
   R-lane evidence: `hsquared` `6a1065e` adds a published Mrode Example 5.1

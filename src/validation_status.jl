@@ -67,9 +67,9 @@ const VALIDATION_STATUS_DATA = (
         "Henderson MME supplied-variance solve",
         "Phase 1",
         "partial",
-        "`henderson_mme()` matches the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and h2; R head ca8bce1 also compares Julia against an independent R MME reference when available; Julia also has a Mrode9-shaped supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, PEV, reliability, accuracy, and h2; the opt-in JWAS 2.3.6 Bayesian/MCMC probe ran against the serialized fitted target with 20 aligned animals, EBV correlation 0.999, and max abs EBV difference 0.1103 versus the REML target.",
-        "same-estimand REML fitted-output comparators, variance-component estimation evidence beyond the existing engine/R-lane anchors, and production sparse solve validation",
-        "Supplied variance components plus one cross-estimator JWAS agreement probe; JWAS is Bayesian/MCMC, so this is agreement only, not REML parity or a fitted Mrode claim.",
+        "`henderson_mme()` matches the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and h2; R head ca8bce1 also compares Julia against an independent R MME reference when available; Julia also has a Mrode9-shaped supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, PEV, reliability, accuracy, and h2; Julia now pins the published Mrode Example 3.1 animal-model EBVs and male-minus-female fixed-effect contrast at sigma_a2 = 20 and sigma_e2 = 40; the opt-in JWAS 2.3.6 Bayesian/MCMC probe ran against the serialized fitted target with 20 aligned animals, EBV correlation 0.999, and max abs EBV difference 0.1103 versus the REML target.",
+        "same-estimand REML fitted-output comparators, estimated-variance-component published Mrode targets beyond the R-lane/gryphon anchor, and production sparse solve validation",
+        "Supplied variance components plus a published Mrode Example 3.1 animal-model anchor and one cross-estimator JWAS agreement probe; JWAS is Bayesian/MCMC, so this is agreement only, not REML parity, and Example 3.1 is not variance-component estimation.",
     ),
     (
         "V1-DENSE-OUT",
@@ -77,7 +77,7 @@ const VALIDATION_STATUS_DATA = (
         "Phase 1",
         "partial",
         "breeding_values(fit), EBV(fit), BLUP(fit), and fitted_values(fit) are MME-backed at the fit's variance components; heritability, PEV, reliability, and checked accuracy tests match hand checks, MME inverse blocks, and a Mrode9-shaped supplied-variance fixture; variance components, heritability, PEV, reliability, and range-checked accuracy also cover supplied-variance HendersonMMEResult objects.",
-        "fitted textbook Mrode outputs, independent accuracy validation, and external comparator checks for fitted outputs",
+        "estimated-variance-component textbook/comparator checks, independent accuracy validation, and external comparator checks for fitted outputs",
         "Experimental dense low-level outputs only; accuracy is derived from reliability.",
     ),
     (

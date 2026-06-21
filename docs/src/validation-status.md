@@ -26,7 +26,7 @@ length(status)
 | `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
 | `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
 | `V1-SPARSE-REML-OPT` | sparse REML validation optimizer | Phase 1 | partial | Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting. |
-| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components plus one cross-estimator JWAS agreement probe; no same-estimand REML parity or fitted Mrode claim. |
+| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components plus a published Mrode Example 3.1 animal-model anchor and one cross-estimator JWAS agreement probe; JWAS is Bayesian/MCMC, so this is agreement only, not REML parity, and Example 3.1 is not variance-component estimation. |
 | `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability. |
 | `V1-SELINV-PEV` | sparse selected-inversion PEV/reliability | Phase 1 | partial | Experimental sparse PEV path; exact at the L+L^T pattern (diagonal/PEV exact); the default extractor path remains dense. |
 | `V1-AI-REML` | average-information REML estimator | Phase 1 | covered | Experimental Gaussian-only REML estimator; the AI form is exact for the Gaussian linear mixed model but not for non-Gaussian/Laplace models (which need observed-information Newton); known-truth recovery and the published-anchor match are validated in the R lane via the bridge. |
@@ -65,8 +65,13 @@ external ASReml/BLUPF90/DMU/WOMBAT/sommer/MCMCglmm fitted-model parity.
 The `V1-MME` row records the shared supplied-variance Henderson MME fixture
 mirrored from the R twin at head `ca8bce1`. The fixture pins the pedigree
 inverse, fixed effects, EBVs, fitted values, and simple `h2 = 0.6` for supplied
-variance components `sigma_a2 = 1.2` and `sigma_e2 = 0.8`. It is still not
-variance-component estimation, AI-REML, fitted Mrode validation, or fitted
+variance components `sigma_a2 = 1.2` and `sigma_e2 = 0.8`.
+
+Julia now also bundles a published Mrode (2014) Example 3.1 animal-model anchor
+at the stated variance ratio (`sigma_a2 = 20`, `sigma_e2 = 40`). The test pins
+the published EBVs for animals 1-8 and the invariant male-minus-female sex
+contrast. This is supplied-variance textbook evidence: it does not estimate
+variance components and does not by itself establish same-estimand REML
 comparator parity.
 
 Julia also bundles a Mrode9-shaped supplied-variance fixture using the 12-animal

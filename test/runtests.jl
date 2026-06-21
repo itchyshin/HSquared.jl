@@ -191,6 +191,8 @@ end
     @test mme_row.status == "partial"
     @test occursin("ca8bce1", mme_row.evidence)
     @test occursin("Mrode9-shaped supplied-variance fixture", mme_row.evidence)
+    @test occursin("Mrode Example 3.1", mme_row.evidence)
+    @test occursin("not variance-component estimation", mme_row.claim_boundary)
     @test occursin("JWAS 2.3.6", mme_row.evidence)
     @test occursin("agreement only", mme_row.claim_boundary)
     lik_row = only(row for row in validation if row.id == "V1-LIK")
@@ -2015,6 +2017,70 @@ end
     @test reliability(mme).ids == ped.ids
     @test reliability(mme).values ≈ expected_reliability
     @test accuracy(mme).values ≈ sqrt.(expected_reliability)
+end
+
+@testset "Phase 1 Mrode Example 3.1 published animal-model anchor (#46)" begin
+    # Published external canon: Mrode (2014), "Linear Models for the Prediction of
+    # Animal Breeding Values", 3rd ed., Example 3.1 (p.39). Inputs and expected
+    # solutions are source-recorded in the R lane and independently re-solved there.
+    ids = string.(1:8)
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "0", "1", "3", "1", "4", "3"],
+        ["0", "0", "0", "0", "2", "2", "5", "6"],
+    )
+    Ainv = pedigree_inverse(ped)
+
+    y = [4.5, 2.9, 3.9, 3.5, 5.0]
+    sex = ["male", "female", "female", "male", "male"]
+    X = hcat(ones(length(y)), [s == "female" ? 1.0 : 0.0 for s in sex])
+    Z = spzeros(length(y), length(ids))
+    for (i, animal) in enumerate(4:8)
+        Z[i, animal] = 1.0
+    end
+    sigma_a2 = 20.0
+    sigma_e2 = 40.0
+
+    published_ebv = [
+        0.09844458,
+        -0.01877010,
+        -0.04108420,
+        -0.00866312,
+        -0.18573210,
+        0.17687209,
+        -0.24945855,
+        0.18261469,
+    ]
+    published_sex_contrast_male_minus_female = 0.95407223
+
+    @test ped.ids == ids
+    @test Matrix(Ainv) ≈ inv(Symmetric(HSquared._numerator_relationship(ped))) atol = 1e-10
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    mme = fit_animal_model(
+        y,
+        X,
+        Z,
+        Ainv;
+        target = :henderson_mme,
+        variance_components = (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        ids = ped.ids,
+    )
+    direct = henderson_mme(spec, sigma_a2, sigma_e2)
+
+    @test mme isa HendersonMMEResult
+    @test fixed_effects(mme) ≈ fixed_effects(direct)
+    @test breeding_values(mme).ids == ids
+    @test breeding_values(mme).values ≈ published_ebv atol = 1e-6
+    @test breeding_values(direct).values ≈ published_ebv atol = 1e-6
+
+    male_row = X[findfirst(==("male"), sex), :]
+    female_row = X[findfirst(==("female"), sex), :]
+    contrast = dot(male_row .- female_row, fixed_effects(mme))
+    @test contrast ≈ published_sex_contrast_male_minus_female atol = 1e-6
+
+    # Test of test: a material transcription/sign/scale error must be rejected.
+    @test !isapprox(breeding_values(mme).values, published_ebv .+ 0.1; atol = 1e-6)
 end
 
 @testset "Phase 1 sparse selected-inversion PEV/reliability" begin

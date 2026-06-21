@@ -37,20 +37,25 @@ capabilities.
   values, fixed effects, EBVs, fitted values, PEV, reliability, derived
   accuracy, and `h2` at supplied variance components. This is equation and
   extractor validation only.
+- A Julia-native Mrode (2014) Example 3.1 published animal-model anchor pins
+  the stated response/pedigree/design, `sigma_a2 = 20`, `sigma_e2 = 40`, the
+  published EBVs for animals 1-8, and the invariant male-minus-female
+  fixed-effect contrast. This is a supplied-variance textbook anchor, not
+  variance-component estimation.
 - Pedigree inverse construction has optional external comparator coverage
   through the R twin's `nadiv::Mrode9` / `nadiv::makeAinv()` live test.
 
 Still missing from the Mrode lane:
 
-- fitted Mrode animal-model response data;
-- estimator target;
-- expected variance components;
-- EBVs/BLUPs;
-- heritability;
-- comparator versions and tolerances for fitted outputs.
+- an estimated-variance-component Mrode animal-model target beyond the R-lane
+  gryphon/published-anchor bridge evidence;
+- same-estimand REML comparator versions and tolerances for fitted outputs;
+- broader fitted-output evidence for heritability, reliability, PEV, and
+  accuracy at estimated variance components.
 
 The supplied-variance Henderson and Mrode9-shaped fixtures are not fitted Mrode
-models and do not estimate variance components.
+models and do not estimate variance components. The Mrode Example 3.1 published
+anchor is also supplied-variance evidence.
 
 ## Status Words
 
