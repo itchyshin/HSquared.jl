@@ -2325,7 +2325,9 @@ maxima (the internal `_scan_max_statistic` extracts the max chi-square / max
 `sim/phase5_threshold_calibration.jl` harness (phenotype permutation re-runs the
 marker scan, so the maximum is correlation/LD-aware). Because it uses the
 distribution of the MAXIMUM over the jointly-scanned markers, the threshold is
-correlation-aware (less conservative than Bonferroni when markers are in LD).
+correlation-aware; it may be less conservative than Bonferroni when markers are
+strongly redundant, but a finite empirical threshold is not guaranteed to sit
+below Bonferroni.
 
 The `(1 - alpha)` type-7 quantile threshold and the add-one [`genome_wide_pvalue`](@ref)
 are two DIFFERENT estimators of the same level: they agree asymptotically, but at

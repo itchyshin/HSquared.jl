@@ -413,6 +413,15 @@ recovery smoke evidence only; it is not broad calibration, a calibrated
 genome-wide threshold workflow, public QTL/eQTL validation, or comparator
 parity.
 
+`sim/phase5_threshold_calibration.jl` is the separate opt-in calibration harness
+for `genome_wide_threshold_from_null()` / `genome_wide_pvalue()`. It now defaults
+to a fixed-marker-panel type-I smoke, supports multi-seed TSV output, and keeps a
+fresh-panel sensitivity mode. The current recorded mini-smoke (`n = 240`, 120
+correlated markers, 300 permutations, 200 type-I replicates, three seeds) gives
+empirical type-I 0.015/0.065/0.050 at alpha 0.05. That is useful harness
+evidence, not a realistic-LD production calibration or an R-facing significance
+claim.
+
 ```julia
 y = [1.0, 2.0, 4.0, 2.0, 3.0]
 X = ones(5, 1)

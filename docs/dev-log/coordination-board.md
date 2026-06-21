@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #48 fixed-panel threshold calibration smoke. After
+  #133 landed and post-merge `main` CI/Documenter/Pages were green, started a
+  narrow genome-wide-threshold evidence slice. Scope: harden the opt-in
+  `sim/phase5_threshold_calibration.jl` harness so it defaults to fixed-marker-
+  panel type-I smoke, supports multi-seed runs and TSV output, and records a
+  three-seed correlated-marker mini-smoke under `docs/dev-log/recovery-
+  checkpoints/`. Boundary: validation-scale evidence only; no public
+  genome-wide-significance claim, no R `gwas()` wording activation, no external
+  PLINK/GenABEL comparator, and no covered-status promotion.
+
 - 2026-06-21: Julia lane / #38 AI-matrix claim hygiene. After #132 landed and
   post-merge CI/Documenter were green, started the R-lane-requested doc cleanup
   in `docs/design/03-engine-contract.md`. Scope: replace any lingering

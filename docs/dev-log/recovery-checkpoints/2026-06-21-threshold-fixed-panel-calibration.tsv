@@ -1,0 +1,4 @@
+seed	n	markers	permutations	alpha	type1_reps	type1_marker_mode	threshold	bonferroni_chisq	threshold_less_than_bonferroni	exceed	empirical_type1
+20260621	240	120	300	0.05	200	fixed	13.36861753	12.45593086	false	3	0.015
+20260622	240	120	300	0.05	200	fixed	11.26567575	12.45593086	true	13	0.065
+20260623	240	120	300	0.05	200	fixed	12.64819044	12.45593086	false	10	0.05
