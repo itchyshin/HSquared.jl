@@ -32,10 +32,27 @@ Generated files are intentionally git-ignored:
 
 - `blupf90_multitrait.dat`
 - `blupf90_multitrait.ped`
+- `animal_id_map.csv`
 - `hsquared_targets.csv`
 - `renumf90.par`
 - BLUPF90-family outputs such as `renf90.par`, `renf90.dat`, `solutions`, and
   `airemlf90.log`
+
+The BLUPF90 data file is numeric and uses the same column convention as the
+R-lane executable handoff:
+
+```text
+trait1 trait2 intercept x animal_code
+```
+
+The pedigree file is integer-coded:
+
+```text
+animal_code sire_code dam_code
+```
+
+Use `animal_id_map.csv` to align BLUPF90 output back to the original fixture
+animal IDs before comparing EBVs.
 
 Generate the packet from the repo root:
 
@@ -72,7 +89,8 @@ evidence record still needs:
 - the exact generated `renf90.par`;
 - optimizer settings and convergence status;
 - estimated `G0`, `R0`, fixed effects, EBVs, and any likelihood-scale caveat;
-- alignment rules and tolerance against `test/fixtures/phase4_multitrait_parity`;
+- alignment rules via `animal_id_map.csv` and tolerance against
+  `test/fixtures/phase4_multitrait_parity`;
 - a Rose claim audit confirming this is a second independent comparator leg.
 
 ## Source Notes

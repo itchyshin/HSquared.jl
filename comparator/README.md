@@ -65,10 +65,23 @@ julia comparator/prepare_blupf90_multitrait.jl
 ```
 
 The generated packet contains machine-oriented whitespace-delimited
-data/pedigree files (no header/comment rows), a target-covariance CSV, and a
-conservative starter `renumf90.par` template for a future RENUMF90/AIREMLF90
-run. The generator also validates the packet shape and probes for local
-BLUPF90-family executables.
+data/pedigree files (no header/comment rows), an `animal_id_map.csv` file for
+aligning integer BLUPF90 animal codes back to fixture IDs, a target-covariance
+CSV, and a conservative starter `renumf90.par` template for a future
+RENUMF90/AIREMLF90 run. The BLUPF90 data columns are:
+
+```text
+trait1 trait2 intercept x animal_code
+```
+
+The pedigree columns are:
+
+```text
+animal_code sire_code dam_code
+```
+
+The generator validates this packet shape, pins the target covariance matrices,
+and probes for local BLUPF90-family executables.
 
 ```sh
 cd comparator/blupf90_multitrait
@@ -89,5 +102,6 @@ software.
 
 Generated BLUPF90 input/output files are git-ignored. This is **not** comparator
 evidence until BLUPF90-family executables are actually run, versions and
-generated `renf90.par` are recorded, outputs are aligned to the fixture targets,
-and a Rose audit confirms the claim boundary.
+generated `renf90.par` are recorded, outputs are aligned through
+`animal_id_map.csv` to the fixture targets, and a Rose audit confirms the claim
+boundary.

@@ -6905,11 +6905,30 @@ end
 
         dat = readlines(joinpath(dir, "blupf90_multitrait.dat"))
         ped = readlines(joinpath(dir, "blupf90_multitrait.ped"))
+        id_map = readlines(joinpath(dir, "animal_id_map.csv"))
         renum = readlines(joinpath(dir, "renumf90.par"))
         @test length(dat) == packet.n_records
         @test length(ped) == packet.n_pedigree
+        @test length(id_map) == packet.n_pedigree + 1
+        @test id_map[1] == "animal,code"
         @test all(length(split(line)) == 5 for line in dat)
         @test all(length(split(line)) == 3 for line in ped)
+        @test split(dat[1]) == ["4.67680263095412", "7.83574837591004", "1", "-1.5", "1"]
+        @test split(ped[1]) == ["1", "0", "0"]
+        @test split(ped[7]) == ["7", "1", "4"]
+        @test id_map[2] == "f1,1"
+        @test id_map[end] == "a14,20"
+        @test all(row -> row[3] == "1", split.(dat))
+        @test all(row -> all(!isnothing(tryparse(Float64, value)) for value in row), split.(dat))
+        @test all(row -> all(!isnothing(tryparse(Int, value)) for value in row), split.(ped))
+        @test "TRAITS" in renum
+        @test renum[findfirst(==("TRAITS"), renum) + 1] == "1 2"
+        @test "FIELDS_PASSED TO OUTPUT" in renum
+        @test renum[findfirst(==("FIELDS_PASSED TO OUTPUT"), renum) + 1] == "3 4 5"
+        @test "3 3 cross numer" in renum
+        @test "4 4 cov" in renum
+        @test "5 5 cross numer" in renum
+        @test "OPTION method VCE" in renum
         @test !any(startswith(strip(line), "#") for line in dat)
         @test !any(startswith(strip(line), "#") for line in ped)
         @test !any(isempty(strip(line)) for line in renum)
