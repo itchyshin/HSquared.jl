@@ -3731,6 +3731,22 @@ end
     Ainv = Matrix(pedigree_inverse(ids, sire, dam))
     g = [3, 4, 5]
 
+    function dense_single_step_H_oracle(A, G, rows)
+        idx = collect(rows)
+        other = setdiff(1:size(A, 1), idx)
+        A22 = Matrix{Float64}(A[idx, idx])
+        A22inv = inv(Symmetric(A22))
+        Gmat = Matrix{Float64}(G)
+        Δ = Gmat .- A22
+        H = Matrix{Float64}(A)
+        H[other, other] = A[other, other] .+
+                          A[other, idx] * A22inv * Δ * A22inv * A[idx, other]
+        H[other, idx] = A[other, idx] * A22inv * Gmat
+        H[idx, other] = Gmat * A22inv * A[idx, other]
+        H[idx, idx] = Gmat
+        return H
+    end
+
     # the critical distinction: A22^-1 = inv(A[g,g]) is NOT the submatrix (A^-1)[g,g]
     A22inv = inv(Symmetric(A[g, g]))
     @test A22inv[1, 1] ≈ 11 / 6 atol = 1e-10
@@ -3748,11 +3764,21 @@ end
     @test maximum(abs.(H2[nong, :] .- Ainv[nong, :])) < 1e-12
     @test maximum(abs.(H2[:, nong] .- Ainv[:, nong])) < 1e-12
     @test maximum(abs.(H2 .- transpose(H2))) < 1e-12              # symmetry
+    H_oracle = dense_single_step_H_oracle(A, Gtest, g)
+    @test maximum(abs.(H_oracle .- transpose(H_oracle))) < 1e-12
+    @test H_oracle[g, g] ≈ Gtest atol = 1e-12
+    @test H2 * H_oracle ≈ Matrix(1.0I, 5, 5) atol = 1e-10
+    @test H_oracle * H2 ≈ Matrix(1.0I, 5, 5) atol = 1e-10
+    @test H2 ≈ inv(Symmetric(H_oracle)) atol = 1e-10
 
     # scattered (non-trailing) genotyped rows
     gs = [1, 3, 5]; nongs = setdiff(1:5, gs)
-    Hs = HSquared._single_step_Hinv(Ainv, A, A[gs, gs] + 0.1 * I, gs)
+    Gs = A[gs, gs] + 0.1 * I
+    Hs = HSquared._single_step_Hinv(Ainv, A, Gs, gs)
     @test maximum(abs.(Hs[nongs, :] .- Ainv[nongs, :])) < 1e-12
+    Hs_oracle = dense_single_step_H_oracle(A, Gs, gs)
+    @test Hs * Hs_oracle ≈ Matrix(1.0I, 5, 5) atol = 1e-10
+    @test Hs_oracle * Hs ≈ Matrix(1.0I, 5, 5) atol = 1e-10
 
     # singular raw genomic G throws unless blended/ridged
     G3 = genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1])     # 3x3, rank-deficient
