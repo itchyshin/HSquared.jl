@@ -231,7 +231,15 @@ support beyond the recorded evidence.
   max abs(dG0)=7.529e-05, max abs(dR0)=7.626e-06, max abs(dh2)=6.821e-05,
   EBV correlations 1.000/1.000; loglik not compared because additive constants
   differ). This records one external comparator leg only; `V4-MV-REML` remains
-  partial pending the broader recovery gate and additional independent parity.
+  partial pending a published/textbook multivariate target and additional
+  independent parity.
+- The R lane also records a 100-rep cold-start known-truth multivariate study
+  (`hsquared/data-raw/multivariate-recovery-study.R`, 2026-06-20) on a
+  420-animal two-trait pedigree: 100/100 converged, all 9 reported G0/R0/rg/h2
+  targets had 0 inside bias +/- 2*MCSE, and EBV accuracy was 0.790/0.742. Julia
+  mirrors this as validation-scale recovery evidence only; it corroborates the
+  Julia 12-seed bias/MCSE result but does not promote `V4-MV-REML` or replace
+  independent comparator parity.
 - Julia now has opt-in unstructured multivariate REML recovery evidence at
   `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
   a repeated-record half-sib design outside CI, and the harness now accepts
