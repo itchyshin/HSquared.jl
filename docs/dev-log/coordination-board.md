@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / BLUPF90 numeric packet hardening. After R mirrored
+  Julia #150 via hsquared PR #93 (`ce47ec6`), audited the next evidence gate
+  and found Julia's BLUPF90 starter packet used a less explicit alphanumeric
+  column convention than the R-lane executable handoff. Scope: Julia comparator
+  packet hardening only. `prepare_blupf90_multitrait.jl` now emits numeric
+  `trait1 trait2 intercept x animal_code` data, integer-coded pedigree rows,
+  `animal_id_map.csv`, and matching RENUMF90 records; the test suite pins the
+  exact column contract. No BLUPF90-family executable was run, no R files were
+  edited, no second comparator evidence is claimed, and `V4-MV-REML` remains
+  partial.
+
 - 2026-06-21: Julia lane / innovation gate issue sync. After R reported
   hsquared PR #91 (`87fa0b9`), mirrored the planned-only innovation gates into
   live Julia issue #58. Scope: issue-body sync plus audit artifacts only.

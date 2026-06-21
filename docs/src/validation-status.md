@@ -108,9 +108,10 @@ fixture. The R lane also records a published Mrode Example 5.1
 supplied-covariance BLUP/MME anchor and a `MCMCglmm` Bayesian agreement probe.
 Those are useful evidence, but only the `sommer` leg is same-estimand REML
 parity; ASReml, BLUPF90, DMU/WOMBAT, or equivalent same-estimand parity remains
-open. The BLUPF90/AIREMLF90 packet has a tested preflight and skip-safe opt-in
-runner, but that is setup hygiene only until an executable run and aligned
-estimates are recorded. The
+open. The BLUPF90/AIREMLF90 packet has a tested preflight for numeric
+BLUPF90-ready files, an animal ID map, and a skip-safe opt-in runner, but that
+is setup hygiene only until an executable run and aligned estimates are
+recorded. The
 structured covariance row covers diag/low-rank/factor-analytic engine metadata,
 local copy-returning metadata accessors, and opt-in recovery checks with
 explicit seed-list reporting. The rotation-free diagonal payload and
