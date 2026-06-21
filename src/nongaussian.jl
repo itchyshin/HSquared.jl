@@ -81,6 +81,24 @@ end
 @inline _fam_record(f::ResponseFamily, ::Integer) = f
 @inline _fam_record(f::BinomialVectorResponse, i::Integer) = BinomialResponse(f.n_trials[i])
 
+# Resolve a single-variance-component family (:poisson / :bernoulli / :binomial) and
+# its `n_trials` (scalar OR per-record vector; integer-valued reals already validated
+# by the caller) to the `ResponseFamily` object the kernels consume. Shared by
+# `fit_laplace_reml` and `laplace_reml_interval` so the two never drift.
+function _resolve_single_family(family::Symbol, n_trials)
+    family === :poisson && return PoissonResponse()
+    family === :bernoulli && return BernoulliResponse()
+    if family === :binomial
+        n_trials isa AbstractVector && return BinomialVectorResponse(Int.(n_trials))
+        # scalar: accept an integer-valued real (the R bridge marshals doubles) with a
+        # clean error on a genuinely non-integer count, mirroring the vector contract.
+        (n_trials isa Real && isinteger(n_trials)) ||
+            throw(ArgumentError("n_trials must be an integer trial count (or a per-record integer vector)"))
+        return BinomialResponse(Int(n_trials))
+    end
+    throw(ArgumentError("unsupported single-component family :$family"))
+end
+
 # Marginal-method dispatch (architecture mirrors the MIT DRM.jl :LA/:VA idea).
 # The engine keeps the `marginal::Symbol` keyword/field (:laplace / :variational);
 # this dispatch type is the canonical mapping the bridge payload uses to emit the
@@ -532,9 +550,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                               Optim.converged(res) && fit.converged, :gaussian, marginal, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
-        fam = family === :poisson ? PoissonResponse() :
-              family === :bernoulli ? BernoulliResponse() :
-              n_trials isa AbstractVector ? BinomialVectorResponse(Int.(n_trials)) : BinomialResponse(n_trials)
+        fam = _resolve_single_family(family, n_trials)
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
         res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),
@@ -552,31 +568,71 @@ end
 
 """
     laplace_reml_interval(y, X, Z, Ainv; family = :poisson, marginal = :laplace,
-                          level = 0.95, initial = nothing)
+                          level = 0.95, initial = nothing, n_trials = nothing)
 
-Profile likelihood-ratio confidence interval for the Poisson animal-model
-variance component `sigma_a2`, by inverting the marginal LRT
-`2·(ℓ̂ − ℓ(sigma_a2)) ≤ χ²₁,level`. Returns `(sigma_a2, lower, upper, level)`;
-endpoints that reach the search bounds are clamped. EXPERIMENTAL, asymptotic,
-Poisson only (a single variance component — the Gaussian two-component case needs
-nuisance profiling and is future work). Reuses `_profile_root`.
+Profile likelihood-ratio confidence interval for the single-variance-component
+non-Gaussian animal-model `sigma_a2`, by inverting the marginal LRT
+`2·(ℓ̂ − ℓ(sigma_a2)) ≤ χ²₁,level`. Returns
+`(sigma_a2, lower, upper, level, lower_clamped, upper_clamped, converged)` — the
+`*_clamped` flags report whether an endpoint reached the search bound (the profile
+did not cross the χ² threshold within range) so a non-crossing endpoint is NOT a
+confidence limit, and `converged` echoes the point-fit convergence; both make a
+degenerate interval self-describing rather than a silent finite triple.
+
+Supports the single-variance-component families `family = :poisson`,
+`family = :bernoulli`, and `family = :binomial` (which requires `n_trials` — a
+scalar common denominator or a per-record integer vector, the same contract as
+[`fit_laplace_reml`](@ref)). The Gaussian two-component case needs nuisance
+profiling and is future work.
+
+This is a profile-LIKELIHOOD-ratio interval, so `marginal = :laplace` is required:
+the variational `:VA` objective is the ELBO (a lower bound), not the marginal
+log-likelihood, so `2·(ELBÔ − ELBO(σ²a))` is not χ²₁-calibrated — `:variational`
+throws rather than return an uncalibrated quantity dressed as a CI.
+
+EXPERIMENTAL, asymptotic, single-component only, NO coverage calibration. Whether
+the interval is two-sided depends on where `σ̂²a` sits relative to the flat
+near-zero region of the profile, NOT on the family alone: a Binomial fit whose
+`σ̂²a` is clear of zero gives two interior LRT roots, but a small `σ̂²a` (or binary
+`:bernoulli` data, which is uninformative about the latent variance) leaves a flat
+profile so an endpoint reaches the search bound (flagged via `*_clamped`) — honest
+but not a confidence limit (the same information effect that biases binary
+`sigma_a2`). Reuses `_profile_root`.
 """
 function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                                Ainv::AbstractMatrix; family::Symbol = :poisson,
-                               marginal::Symbol = :laplace, level::Real = 0.95, initial = nothing)
-    family === :poisson ||
-        throw(ArgumentError("laplace_reml_interval currently supports family = :poisson only"))
+                               marginal::Symbol = :laplace, level::Real = 0.95,
+                               initial = nothing, n_trials = nothing)
+    family in (:poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("laplace_reml_interval supports family = :poisson, :bernoulli, or :binomial"))
+    family === :binomial && n_trials === nothing &&
+        throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    mm = _marginal_method(marginal)
-    margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
-    val(r) = mm isa Variational ? r.elbo : r.loglik
-    fit = fit_laplace_reml(y, X, Z, Ainv; family = :poisson, marginal = marginal, initial = initial)
+    _marginal_method(marginal) isa Laplace ||
+        throw(ArgumentError("laplace_reml_interval is a profile-LIKELIHOOD-ratio interval and requires marginal = :laplace; the variational ELBO is a lower bound, not a χ²₁-calibrated LRT statistic"))
+    if family === :binomial && n_trials isa AbstractVector
+        length(n_trials) == length(y) ||
+            throw(ArgumentError("a per-record n_trials vector must have length(n_trials) == length(y)"))
+        all(isinteger, n_trials) ||
+            throw(ArgumentError("a per-record n_trials vector must contain integer trial counts"))
+    end
+    fam = _resolve_single_family(family, n_trials)
+    fit = fit_laplace_reml(y, X, Z, Ainv; family = family, marginal = :laplace,
+                           initial = initial, n_trials = n_trials)
     sa2hat = fit.variance_components.sigma_a2
     llhat = fit.marginal_loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(sa2) = 2 * (llhat - val(margfun(y, X, Z, Ainv, sa2, PoissonResponse()))) - q
-    lower = _profile_root(target, sa2hat * 1e-4, sa2hat)
-    upper = _profile_root(target, sa2hat * 1e4, sa2hat)
-    return (sigma_a2 = sa2hat, lower = lower, upper = upper, level = level)
+    target(sa2) = 2 * (llhat - laplace_marginal_loglik(y, X, Z, Ainv, sa2, fam).loglik) - q
+    lo_bound = sa2hat * 1e-4
+    up_bound = sa2hat * 1e4
+    lower = _profile_root(target, lo_bound, sa2hat)
+    upper = _profile_root(target, up_bound, sa2hat)
+    # a clamp is exactly `_profile_root`'s non-crossing condition: the deviance never
+    # reached the χ² threshold within the search range (so the endpoint is the bound).
+    lower_clamped = target(lo_bound) <= 0
+    upper_clamped = target(up_bound) <= 0
+    return (sigma_a2 = sa2hat, lower = lower, upper = upper, level = level,
+            lower_clamped = lower_clamped, upper_clamped = upper_clamped,
+            converged = fit.converged)
 end

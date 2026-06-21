@@ -5067,6 +5067,71 @@ end
     @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; marginal = :bogus)
 end
 
+@testset "Phase 6 Binomial/Bernoulli profile-LRT interval (σ²a)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    m = 20
+    yb = [8.0, 2.0, 9.0, 3.0, 7.0, 1.0, 6.0, 9.0]        # successes out of m
+    fb = HSquared.fit_laplace_reml(yb, X, Z, Ainv; family = :binomial, n_trials = m,
+                                   initial = (sigma_a2 = 1.0,))
+    sa2hat = fb.variance_components.sigma_a2
+    llhat = fb.marginal_loglik
+    devb(s) = 2 * (llhat - HSquared.laplace_marginal_loglik(yb, X, Z, Ainv, s,
+                                                            HSquared.BinomialResponse(m)).loglik)
+
+    ci = HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :binomial, n_trials = m, level = 0.95)
+    @test ci.level == 0.95
+    @test ci.sigma_a2 == sa2hat                          # point estimate is the REML optimum
+    @test devb(sa2hat) ≈ 0.0 atol = 1e-8                 # deviance vanishes at the MLE
+    @test 0 < ci.lower < ci.sigma_a2 < ci.upper          # interval brackets the estimate, σ²a > 0
+    # For THIS fixture (σ̂²a ≈ 0.98, clear of zero) the profile is two-sided: each
+    # endpoint is an INTERIOR χ²₁,₀.₉₅ = 3.841459 LRT root. The `*_clamped` flags
+    # report this honestly — two-sidedness depends on where σ̂²a sits, not on the
+    # family (see the per-record fixture below, which is lower-clamped).
+    @test !ci.lower_clamped && !ci.upper_clamped && ci.converged
+    @test devb(ci.upper) ≈ 3.841459 atol = 1e-4
+    @test devb(ci.lower) ≈ 3.841459 atol = 1e-4
+
+    # Higher confidence ⇒ wider interval (nesting on both interior endpoints).
+    ci90 = HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :binomial, n_trials = m, level = 0.90)
+    @test ci90.lower > ci.lower && ci90.upper < ci.upper
+    @test devb(ci90.upper) ≈ 2.705543 atol = 1e-4        # χ²₁,₀.₉₀
+    @test devb(ci90.lower) ≈ 2.705543 atol = 1e-4
+
+    # Per-record n_trials vector is accepted; HERE σ̂²a ≈ 0.37 is small, so the LOWER
+    # endpoint clamps (flagged) while the upper is interior — witnessing that
+    # two-sidedness is fixture-dependent, not a property of "adequate trials".
+    ntv = [20, 18, 22, 16, 24, 15, 19, 21]
+    @test all(0 .<= yb .<= ntv)
+    civ = HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :binomial, n_trials = ntv)
+    @test 0 < civ.lower < civ.sigma_a2 < civ.upper
+    @test civ.lower_clamped && !civ.upper_clamped        # lower clamps, upper interior
+
+    # Bernoulli is supported but binary data is uninformative — the profile is flat so
+    # BOTH endpoints clamp (the `*_clamped` flags make the degeneracy machine-readable,
+    # not a silent finite CI). The converged flag does NOT catch this; the clamps do.
+    yb01 = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    cib = HSquared.laplace_reml_interval(yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
+    @test cib.level == 0.95
+    @test cib.lower_clamped && cib.upper_clamped         # degenerate: both endpoints are bounds
+
+    # marginal = :variational is REJECTED (the ELBO is a lower bound, not a χ²₁ LRT).
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
+                                    family = :binomial, n_trials = m, marginal = :variational)
+
+    # Guards.
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :gaussian)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :binomial)  # missing n_trials
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
+                                    family = :binomial, n_trials = [20, 18, 22])  # length mismatch
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
+                                    family = :binomial, n_trials = 20.5)          # non-integer scalar
+end
+
 @testset "Phase 6 Bernoulli (logit) family (Laplace + VA)" begin
     # Binary/threshold traits (disease, survival, reproductive success) are a
     # major real-world quantitative-genetic case. The logistic log-partition has
