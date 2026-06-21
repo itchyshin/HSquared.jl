@@ -3511,6 +3511,58 @@ end
     @test_throws ArgumentError genome_wide_pvalue(NaN, nulls)
     @test_throws ArgumentError genome_wide_pvalue(1.0, [1.0, Inf])
 
+    # -----------------------------------------------------------------------
+    # Calibration-property tests (#7): verify the threshold machinery
+    # returns the KNOWN analytic (1-alpha) type-7 quantile on a hand-
+    # constructed null, and that the add-one p-value is exactly the formula
+    # and strictly monotone.  ALL deterministic — no RNG.
+    # -----------------------------------------------------------------------
+
+    # (a) genome_wide_threshold_from_null matches the hand-computed type-7
+    # quantile for alpha=0.05 and alpha=0.01 on a small known null.
+    # nulls_cal = [10, 20, ..., 200] (n=20).
+    # Type-7: h = (n-1)*p + 1 (1-based); lo = floor(h); frac = h - lo;
+    #         q = v[lo] + frac*(v[lo+1] - v[lo])   (v sorted ascending)
+    # alpha=0.05 -> p=0.95: h = 19*0.95+1 = 19.05, lo=19, frac=0.05
+    #   q = 190 + 0.05*(200-190) = 190 + 0.5 = 190.5
+    # alpha=0.01 -> p=0.99: h = 19*0.99+1 = 19.81, lo=19, frac=0.81
+    #   q = 190 + 0.81*(200-190) = 190 + 8.1 = 198.1
+    nulls_cal = collect(10.0:10.0:200.0)        # [10,20,...,200], n=20
+    thr_cal_05 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.05)
+    thr_cal_01 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.01)
+    @test thr_cal_05.threshold == 190.5          # exact arithmetic, no atol needed
+    @test thr_cal_01.threshold == 198.1
+    @test thr_cal_05.n_null == 20
+    @test thr_cal_01.n_null == 20
+    # monotonicity: alpha=0.01 threshold is more stringent (higher) than alpha=0.05
+    @test thr_cal_01.threshold > thr_cal_05.threshold
+
+    # (b) genome_wide_pvalue is exactly (1 + #{null >= obs}) / (n+1), hand cases.
+    # null_cal2 = [1,2,3,4,5] (n=5).
+    # observed=5.0: #{null>=5} = 1 -> p = (1+1)/6 = 2/6
+    # observed=2.5: #{null>=2.5} = 3 (3,4,5) -> p = (1+3)/6 = 4/6
+    # observed=6.0: #{null>=6} = 0 -> p = (1+0)/6 = 1/6  (never zero)
+    null_cal2 = [1.0, 2.0, 3.0, 4.0, 5.0]
+    @test genome_wide_pvalue(5.0, null_cal2) == 2 / 6   # obs == max element
+    @test genome_wide_pvalue(2.5, null_cal2) == 4 / 6   # obs in interior
+    @test genome_wide_pvalue(6.0, null_cal2) == 1 / 6   # obs exceeds all
+    @test genome_wide_pvalue(0.5, null_cal2) == 6 / 6   # obs below all = 1.0
+    # strict monotonicity in observed (increasing obs -> decreasing add-one p)
+    obs_seq = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]
+    p_seq = [genome_wide_pvalue(o, null_cal2) for o in obs_seq]
+    @test issorted(p_seq; rev = true)           # strictly decreasing (all steps distinct here)
+
+    # (c) threshold-p consistency: at the exact type-7 threshold, the add-one
+    # p equals (1 + #{null >= threshold}) / (n+1), NOT necessarily == alpha
+    # (they converge only asymptotically).  Pin the exact relationship for the
+    # 20-element null at alpha=0.05: threshold = 190.5; #{null >= 190.5} = 1
+    # (only 200 >= 190.5) -> p = (1+1)/21 = 2/21 ≈ 0.0952, not 0.05.
+    # This pins the documented anti-conservative gap: quantile p > alpha at n=20.
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) == 2 / 21
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) > thr_cal_05.alpha
+
+    # -----------------------------------------------------------------------
+
     # validation_status carries the new V5-MARKER-THRESHOLD row
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
 end
