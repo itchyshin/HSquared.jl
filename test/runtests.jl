@@ -2457,6 +2457,94 @@ end
           reliability(fit; method = :dense).values atol = 1e-8
 end
 
+@testset "Phase 1 sparse AI-REML / selinv boundary hardening (#6)" begin
+    # Deterministic (RNG-free) boundary / stress cases for the sparse AI-REML + selinv
+    # PEV path. CORRECTNESS ONLY — no timing or performance is asserted.
+    #
+    # Pedigree: two founders (f1, f2) + a 3-generation selfing chain (s1, s2, s3) from f1,
+    # then three offspring that cross back to f2 or f1. This produces inbreeding
+    # coefficients F ∈ {0, 0.5, 0.75, 0.875} in the same pedigree, exercising the
+    # Henderson Ainv rule and the AI-REML / selinv paths under high inbreeding.
+
+    ib_ids   = ["f1", "f2", "s1",  "s2",  "s3",  "c1",  "c2",  "c3"]
+    ib_sires = ["0",  "0",  "f1",  "s1",  "s2",  "s3",  "s3",  "f1"]
+    ib_dams  = ["0",  "0",  "f1",  "s1",  "s2",  "f2",  "f2",  "f2"]
+    ib_ped = normalize_pedigree(ib_ids, ib_sires, ib_dams; allow_selfing = true)
+    ib_q   = length(ib_ped.ids)
+
+    # --- Case 1: highly-inbred pedigree: Ainv == inv(A), convergence, self-consistency ---
+
+    ib_F = inbreeding_coefficients(ib_ped)
+    @test any(ib_F .>= 0.5)                  # at least one animal with high F
+    @test any(ib_F .>= 0.875)                # selfing chain reaches deep inbreeding
+
+    ib_A    = additive_relationship(ib_ped)
+    ib_Ainv = pedigree_inverse(ib_ped)
+    # pedigree_inverse == inv(additive_relationship) holds even under high inbreeding
+    @test Matrix(ib_Ainv) ≈ inv(Symmetric(ib_A)) atol = 1e-8
+
+    # Structured deterministic y: groups high-value animals (founders f2, offspring c1/c2)
+    # and low-value animals (inbred selfing chain). Provides interior REML optimum.
+    ib_y = [1.0, 3.5, 1.5, 1.2, 1.0, 3.2, 3.8, 2.5]
+    ib_X = ones(ib_q, 1)
+    ib_Z = sparse(1.0I, ib_q, ib_q)
+    ib_spec = animal_model_spec(ib_y, ib_X, ib_Z, ib_Ainv; ids = ib_ped.ids, method = :REML)
+
+    ib_fit = fit_ai_reml(ib_spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ib_fit.converged                                        # converges on inbred pedigree
+    @test ib_fit.variance_components.sigma_a2 > 0
+    @test ib_fit.variance_components.sigma_e2 > 0
+
+    # self-consistency at the inbred optimum: henderson_mme reproduces β + EBVs EXACTLY
+    ib_hm = henderson_mme(ib_spec,
+                          ib_fit.variance_components.sigma_a2,
+                          ib_fit.variance_components.sigma_e2)
+    @test fixed_effects(ib_fit) ≈ ib_hm.beta atol = 1e-8
+    @test breeding_values(ib_fit).values ≈ ib_hm.animal_effects.values atol = 1e-7
+
+    # --- Case 2: near-boundary σ²a (low heritability, near-zero optimum) ---
+    # A near-constant y drives σ²a toward zero. At this boundary `fit_ai_reml` either
+    # (a) reaches a small POSITIVE optimum, or (b) throws its DOCUMENTED "could not keep
+    # variance components positive" error (the AI-Newton line search refuses a
+    # non-positive step). Both are HONEST boundary behaviors; the engine never returns
+    # NaN garbage. Which one occurs is environment-sensitive (BLAS / Julia version), so
+    # the test accepts EITHER and pins the honest contract.
+    low_y    = [3.01, 2.99, 3.00, 3.01, 2.99, 3.00, 3.01, 2.99]
+    low_spec = animal_model_spec(low_y, ib_X, ib_Z, ib_Ainv; ids = ib_ped.ids, method = :REML)
+    low_fit = nothing
+    low_err = nothing
+    try
+        low_fit = fit_ai_reml(low_spec; initial = (sigma_a2 = 0.1, sigma_e2 = 0.5))
+    catch e
+        low_err = e
+    end
+    if low_err === nothing
+        # (a) reached a finite, positive optimum: VCs finite/positive + self-consistency
+        @test isfinite(low_fit.variance_components.sigma_a2) && low_fit.variance_components.sigma_a2 > 0
+        @test isfinite(low_fit.variance_components.sigma_e2) && low_fit.variance_components.sigma_e2 > 0
+        low_hm = henderson_mme(low_spec,
+                               low_fit.variance_components.sigma_a2,
+                               low_fit.variance_components.sigma_e2)
+        @test fixed_effects(low_fit) ≈ low_hm.beta atol = 1e-8
+        @test breeding_values(low_fit).values ≈ low_hm.animal_effects.values atol = 1e-7
+    else
+        # (b) the DOCUMENTED boundary failure — a clear error, never NaN garbage
+        @test low_err isa ErrorException || low_err isa LinearAlgebra.PosDefException
+    end
+
+    # Note: low_fit.converged may be false on a boundary optimum — that is correct
+    # behavior and is NOT asserted either way; no @test on low_fit.converged.
+
+    # --- Case 3: selinv exact at the boundary — inbred pedigree, high-F animals ---
+    # On ib_fit (highly-inbred pedigree), the Takahashi selected inverse must equal
+    # the dense MME-inverse diagonal at the same machine precision as non-inbred cases.
+
+    @test prediction_error_variance(ib_fit; method = :selinv).values ≈
+          prediction_error_variance(ib_fit; method = :dense).values atol = 1e-8
+    @test reliability(ib_fit; method = :selinv).values ≈
+          reliability(ib_fit; method = :dense).values atol = 1e-8
+end
+
 @testset "Phase 2 genomic relationship matrix (VanRaden)" begin
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 biallelic markers
     G = genomic_relationship_matrix(M)
@@ -3510,6 +3598,58 @@ end
     @test_throws ArgumentError HSquared._scan_max_statistic((chisq = [1.0, NaN],); statistic = :chisq)
     @test_throws ArgumentError genome_wide_pvalue(NaN, nulls)
     @test_throws ArgumentError genome_wide_pvalue(1.0, [1.0, Inf])
+
+    # -----------------------------------------------------------------------
+    # Calibration-property tests (#7): verify the threshold machinery
+    # returns the KNOWN analytic (1-alpha) type-7 quantile on a hand-
+    # constructed null, and that the add-one p-value is exactly the formula
+    # and strictly monotone.  ALL deterministic — no RNG.
+    # -----------------------------------------------------------------------
+
+    # (a) genome_wide_threshold_from_null matches the hand-computed type-7
+    # quantile for alpha=0.05 and alpha=0.01 on a small known null.
+    # nulls_cal = [10, 20, ..., 200] (n=20).
+    # Type-7: h = (n-1)*p + 1 (1-based); lo = floor(h); frac = h - lo;
+    #         q = v[lo] + frac*(v[lo+1] - v[lo])   (v sorted ascending)
+    # alpha=0.05 -> p=0.95: h = 19*0.95+1 = 19.05, lo=19, frac=0.05
+    #   q = 190 + 0.05*(200-190) = 190 + 0.5 = 190.5
+    # alpha=0.01 -> p=0.99: h = 19*0.99+1 = 19.81, lo=19, frac=0.81
+    #   q = 190 + 0.81*(200-190) = 190 + 8.1 = 198.1
+    nulls_cal = collect(10.0:10.0:200.0)        # [10,20,...,200], n=20
+    thr_cal_05 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.05)
+    thr_cal_01 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.01)
+    @test thr_cal_05.threshold == 190.5          # exact arithmetic, no atol needed
+    @test thr_cal_01.threshold == 198.1
+    @test thr_cal_05.n_null == 20
+    @test thr_cal_01.n_null == 20
+    # monotonicity: alpha=0.01 threshold is more stringent (higher) than alpha=0.05
+    @test thr_cal_01.threshold > thr_cal_05.threshold
+
+    # (b) genome_wide_pvalue is exactly (1 + #{null >= obs}) / (n+1), hand cases.
+    # null_cal2 = [1,2,3,4,5] (n=5).
+    # observed=5.0: #{null>=5} = 1 -> p = (1+1)/6 = 2/6
+    # observed=2.5: #{null>=2.5} = 3 (3,4,5) -> p = (1+3)/6 = 4/6
+    # observed=6.0: #{null>=6} = 0 -> p = (1+0)/6 = 1/6  (never zero)
+    null_cal2 = [1.0, 2.0, 3.0, 4.0, 5.0]
+    @test genome_wide_pvalue(5.0, null_cal2) == 2 / 6   # obs == max element
+    @test genome_wide_pvalue(2.5, null_cal2) == 4 / 6   # obs in interior
+    @test genome_wide_pvalue(6.0, null_cal2) == 1 / 6   # obs exceeds all
+    @test genome_wide_pvalue(0.5, null_cal2) == 6 / 6   # obs below all = 1.0
+    # strict monotonicity in observed (increasing obs -> decreasing add-one p)
+    obs_seq = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]
+    p_seq = [genome_wide_pvalue(o, null_cal2) for o in obs_seq]
+    @test issorted(p_seq; rev = true)           # strictly decreasing (all steps distinct here)
+
+    # (c) threshold-p consistency: at the exact type-7 threshold, the add-one
+    # p equals (1 + #{null >= threshold}) / (n+1), NOT necessarily == alpha
+    # (they converge only asymptotically).  Pin the exact relationship for the
+    # 20-element null at alpha=0.05: threshold = 190.5; #{null >= 190.5} = 1
+    # (only 200 >= 190.5) -> p = (1+1)/21 = 2/21 ≈ 0.0952, not 0.05.
+    # This pins the documented anti-conservative gap: quantile p > alpha at n=20.
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) == 2 / 21
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) > thr_cal_05.alpha
+
+    # -----------------------------------------------------------------------
 
     # validation_status carries the new V5-MARKER-THRESHOLD row
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
@@ -5938,4 +6078,65 @@ end
     @test_throws ArgumentError gl(Yp2, Ainv, Λ2,
         [HSquared.PoissonResponse(), HSquared.PoissonResponse(), HSquared.PoissonResponse()];
         X = X)    # length 3 ≠ T=2
+end
+
+@testset "Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50)" begin
+    # Shared 8-animal pedigree fixture (same as the other GLLVM REML testsets above).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    X = ones(q, 1)
+    fitr = HSquared.fit_gllvm_laplace_reml
+
+    # Mixed-family response: trait 1 = Poisson counts, trait 2 = Gaussian continuous.
+    Ymix = hcat(Float64[2, 1, 3, 0, 4, 2, 1, 5],
+                Float64[2.1, 3.4, 2.8, 3.1, 4.2, 1.9, 3.0, 4.7])
+    σe = 1.0
+    families_mix = [HSquared.PoissonResponse(), HSquared.GaussianResponse(σe)]
+
+    # (a) Per-trait [Poisson, Gaussian] REML fit converges.
+    fit_mix = fitr(Ymix, Ainv, families_mix; rank = 1,
+                   initial = reshape([0.6, 0.5], 2, 1))
+    @test fit_mix.converged
+    @test isfinite(fit_mix.loglik)
+    @test size(fit_mix.genetic_covariance) == (2, 2)
+    @test size(fit_mix.breeding_values) == (q, 1)
+
+    # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    Λ0 = reshape([0.6, 0.5], 2, 1)
+    fit_scalar = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, initial = Λ0)
+    fit_vec    = fitr(Yp2, Ainv, [HSquared.PoissonResponse(), HSquared.PoissonResponse()];
+                     rank = 1, initial = Λ0)
+    @test fit_scalar.genetic_covariance == fit_vec.genetic_covariance   # exact: same optimizer path
+
+    # (c) GeneticGLLVMFit extractor methods return the expected fields.
+    #   genetic_covariance: K×K PSD (rank-1 outer product ⟹ PSD with one positive eigenvalue)
+    G = HSquared.genetic_covariance(fit_scalar)
+    @test G isa Matrix{Float64}
+    @test size(G) == (2, 2)
+    @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
+    #   breeding_values: q × K matrix
+    bv = HSquared.breeding_values(fit_scalar)
+    @test bv isa Matrix{Float64}
+    @test size(bv) == (q, 1)
+    #   latent_structure: NamedTuple with communality field
+    ls = HSquared.latent_structure(fit_scalar)
+    @test haskey(ls, :communality)
+    @test all(ls.communality .≈ 1.0)                 # low-rank (no Ψ) ⟹ communality = 1
+    #   loglik: finite scalar
+    ll = HSquared.loglik(fit_scalar)
+    @test isfinite(ll)
+    @test ll ≈ fit_scalar.loglik
+
+    # (d) All existing GLLVM REML tests still produce GeneticGLLVMFit (not NamedTuple).
+    #     Spot-check the K=1,T=1 Poisson reduction fit (same fixture as slice-3 testset).
+    yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
+    gr = fitr(yp, Ainv, HSquared.PoissonResponse(); rank = 1, initial = reshape([1.0], 1, 1))
+    @test gr isa HSquared.GeneticGLLVMFit
+    @test gr.converged
+    @test size(gr.genetic_covariance) == (1, 1)
+    @test gr.n_latent_factors == 1
+    @test gr.uniqueness === nothing          # low-rank carries no Ψ
 end

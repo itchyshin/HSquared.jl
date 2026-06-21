@@ -289,6 +289,80 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
             converged = converged, gradient_norm = gnorm, iterations = iters)
 end
 
+# ── GeneticGLLVMFit fitted-object wrapper (#50 consumability) ─────────────────
+#
+# Wraps the result of `fit_gllvm_laplace_reml` in a named struct so that
+# accessor methods can dispatch on it (avoiding collision with the multivariate
+# NamedTuple extractors in multivariate.jl and the AnimalModelFit extractors in
+# likelihood.jl). All original field names remain accessible via the struct
+# fields. INTERNAL — not exported, mirroring `fit_gllvm_laplace_reml` itself.
+
+"""
+    GeneticGLLVMFit
+
+Internal fitted-object wrapper for [`fit_gllvm_laplace_reml`](@ref). Stores
+the same nine fields as the former bare `NamedTuple` return and exposes typed
+extractor methods:
+
+- `genetic_covariance(fit)` — the rotation-invariant `G_lat` matrix
+- `breeding_values(fit)`    — `q × K` common-factor EBV scores
+- `latent_structure(fit)`   — the `genetic_gllvm_descriptors` NamedTuple
+- `loglik(fit)`             — the Laplace marginal log-likelihood at the optimum
+
+All other fields (`uniqueness`, `beta`, `n_latent_factors`, `converged`,
+`iterations`) are accessible via `fit.fieldname`. INTERNAL (not exported).
+EXPERIMENTAL — dense/validation-scale, supplied Gaussian/non-Gaussian families,
+balanced/fully-observed `Y`, no R model-spec or bridge payload.
+"""
+struct GeneticGLLVMFit
+    loglik::Float64
+    genetic_covariance::Matrix{Float64}
+    latent_structure::NamedTuple
+    uniqueness::Union{Vector{Float64}, Nothing}
+    beta::Matrix{Float64}
+    breeding_values::Matrix{Float64}
+    n_latent_factors::Int
+    converged::Bool
+    iterations::Int
+end
+
+# Typed extractor methods — dispatch on GeneticGLLVMFit, distinct from the
+# NamedTuple overloads in multivariate.jl and the AnimalModelFit overloads in
+# likelihood.jl.
+
+"""
+    genetic_covariance(fit::GeneticGLLVMFit)
+
+Return the estimated rotation-invariant among-trait genetic covariance `G_lat`
+from a `GeneticGLLVMFit` (internal struct).
+"""
+genetic_covariance(fit::GeneticGLLVMFit) = fit.genetic_covariance
+
+"""
+    breeding_values(fit::GeneticGLLVMFit)
+
+Return the `q × K` matrix of common-factor breeding-value scores (the Newton
+mode of `vec(g)`, reshaped) from a `GeneticGLLVMFit` (internal struct).
+"""
+breeding_values(fit::GeneticGLLVMFit) = fit.breeding_values
+
+"""
+    latent_structure(fit::GeneticGLLVMFit)
+
+Return the `genetic_gllvm_descriptors` NamedTuple (rotation-invariant latent-
+structure descriptors including `communality`, `genetic_pca`, `g_max`, etc.)
+from a `GeneticGLLVMFit` (internal struct).
+"""
+latent_structure(fit::GeneticGLLVMFit) = fit.latent_structure
+
+"""
+    loglik(fit::GeneticGLLVMFit)
+
+Return the Laplace-approximate marginal log-likelihood at the REML optimum
+from a `GeneticGLLVMFit` (internal struct).
+"""
+loglik(fit::GeneticGLLVMFit) = fit.loglik
+
 """
     fit_gllvm_laplace_reml(Y, Ainv, family; rank, structure = :lowrank, X = ones(size(Y,1), 1),
                            initial = nothing, initial_uniqueness = nothing, ...)
@@ -303,20 +377,30 @@ FA structure is fitted by augmenting the loadings to `[Λ | diag(√Ψ)]` (so
 the loadings only through `G_lat`, so it is ROTATION-INVARIANT; the returned
 `genetic_covariance` / `latent_structure` / `uniqueness` are the rotation-invariant
 functionals (the raw `Λ̂` is an arbitrary point on the rotation manifold, NOT reported
-as identified). Returns `(loglik, genetic_covariance, latent_structure, uniqueness,
-beta (p×T), breeding_values (q×K common-factor scores), n_latent_factors, converged,
-iterations)`.
+as identified). Returns a `GeneticGLLVMFit` (internal struct) with fields `loglik`,
+`genetic_covariance`, `latent_structure`, `uniqueness`, `beta (p×T)`,
+`breeding_values (q×K common-factor scores)`, `n_latent_factors`, `converged`,
+`iterations`; typed extractor methods `genetic_covariance(fit)`,
+`breeding_values(fit)`, `latent_structure(fit)`, and `loglik(fit)` are
+defined on `GeneticGLLVMFit`.
+
+**Per-trait families:** `family` may be a single `ResponseFamily` (applied uniformly
+to all trait columns) or a length-`T` `Vector` of `ResponseFamily`s (one per trait
+column of `Y`) — e.g. `[PoissonResponse(), GaussianResponse(1.0)]` for a count first
+trait and a continuous second trait. The scalar path is numerically unchanged: a
+uniform vector of `T` identical families gives the same objective value as the
+corresponding scalar family. The vector length must equal `T = size(Y, 2)`; a
+mismatch is detected at the marginal call.
 
 For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not estimated);
 the non-Gaussian families have no residual. The `K = 1, T = 1` Poisson `:lowrank` case
 reduces to the single-factor [`fit_laplace_reml`](@ref) (`σ²a = λ̂²`). EXPERIMENTAL,
-dense/validation-scale, one family for all traits, balanced/fully-observed `Y`;
-INTERNAL (not exported). NOT a known-truth recovery claim (structured non-Gaussian REML
-recovery is a separate opt-in study, and the multivariate FA recovery has not passed);
-no R model-spec or bridge payload.
+dense/validation-scale, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a
+known-truth recovery claim (structured non-Gaussian REML recovery is a separate opt-in
+study, and the multivariate FA recovery has not passed); no R model-spec or bridge payload.
 """
 function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
-                                family::ResponseFamily; rank::Integer,
+                                family::Union{ResponseFamily, AbstractVector}; rank::Integer,
                                 structure::Symbol = :lowrank,
                                 X::AbstractMatrix = ones(size(Y, 1), 1),
                                 initial = nothing, initial_uniqueness = nothing,
@@ -365,13 +449,15 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
     Glat = ψhat === nothing ? Λhat * transpose(Λhat) : Λhat * transpose(Λhat) + Diagonal(ψhat)
     descr = ψhat === nothing ? genetic_gllvm_descriptors(Λhat) :
         genetic_gllvm_descriptors(Λhat; uniqueness = ψhat)
-    return (loglik = mhat.loglik,
-            genetic_covariance = Matrix(Glat),
-            latent_structure = descr,
-            uniqueness = ψhat,
-            beta = mhat.beta,
-            breeding_values = mhat.g[:, 1:K],   # the K common-factor scores
-            n_latent_factors = K,
-            converged = Optim.converged(res) && mhat.converged,
-            iterations = Optim.iterations(res))
+    return GeneticGLLVMFit(
+        mhat.loglik,
+        Matrix(Glat),
+        descr,
+        ψhat,
+        mhat.beta,
+        mhat.g[:, 1:K],   # the K common-factor scores
+        K,
+        Optim.converged(res) && mhat.converged,
+        Optim.iterations(res),
+    )
 end
