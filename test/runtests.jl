@@ -189,7 +189,8 @@ end
     @test mme_row.status == "partial"
     @test occursin("ca8bce1", mme_row.evidence)
     @test occursin("Mrode9-shaped supplied-variance fixture", mme_row.evidence)
-    @test occursin("no variance-component estimation", mme_row.claim_boundary)
+    @test occursin("JWAS 2.3.6", mme_row.evidence)
+    @test occursin("agreement only", mme_row.claim_boundary)
     lik_row = only(row for row in validation if row.id == "V1-LIK")
     @test occursin("Mrode9-shaped supplied-variance fixture", lik_row.evidence)
     sparse_reml_row = only(row for row in validation if row.id == "V1-SPARSE-REML")

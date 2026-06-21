@@ -67,9 +67,9 @@ const VALIDATION_STATUS_DATA = (
         "Henderson MME supplied-variance solve",
         "Phase 1",
         "partial",
-        "`henderson_mme()` matches the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and h2; R head ca8bce1 also compares Julia against an independent R MME reference when available; Julia also has a Mrode9-shaped supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, PEV, reliability, accuracy, and h2.",
-        "Mrode fitted-output fixture, external fitted-model comparators, variance-component estimation, and production sparse solve validation",
-        "Supplied variance components only; no variance-component estimation or fitted Mrode claim.",
+        "`henderson_mme()` matches the shared R/Julia supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, and h2; R head ca8bce1 also compares Julia against an independent R MME reference when available; Julia also has a Mrode9-shaped supplied-variance fixture for Ainv, fixed effects, EBVs, fitted values, PEV, reliability, accuracy, and h2; the opt-in JWAS 2.3.6 Bayesian/MCMC probe ran against the serialized fitted target with 20 aligned animals, EBV correlation 0.999, and max abs EBV difference 0.1103 versus the REML target.",
+        "same-estimand REML fitted-output comparators, variance-component estimation evidence beyond the existing engine/R-lane anchors, and production sparse solve validation",
+        "Supplied variance components plus one cross-estimator JWAS agreement probe; JWAS is Bayesian/MCMC, so this is agreement only, not REML parity or a fitted Mrode claim.",
     ),
     (
         "V1-DENSE-OUT",
