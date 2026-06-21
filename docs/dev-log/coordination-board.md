@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / Big-3 continuation checkpoint. Banked the paired
+  validation gate on main through #126 and the BLUPF90 multivariate starter
+  through #127 (`6cdf739`). The packet generator runs, but the local machine has
+  no `renumf90`, `airemlf90`, `blupf90`, `remlf90`, or `gibbsf90` on `PATH`, so
+  the real second-comparator execution is blocked locally rather than failed.
+  Current Julia slice adds the supplied-Γ single-step `H^Γ` engine primitive
+  (`metafounder_single_step_inverse` plus supplied-variance/REML wrappers) and
+  records it as engine-side bridge readiness only: no R-facing formula payload,
+  no BLUPF90 comparator, and no covered-status promotion.
+
 - 2026-06-19: Julia lane / next-phase programme plan, **Big Thing 1 (clean
   base)** done. Ada/Shannon/Rose/Grace/Jason lenses. Landed Phase-4B/5/6 engine
   work to `main` via PR #36 (`c4fb442`, CI green); closed the #16–#35 PR stack and

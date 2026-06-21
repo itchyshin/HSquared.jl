@@ -29,6 +29,7 @@ engine version each R surface is validated against.
 | --- | --- | --- | --- | --- | --- |
 | Gaussian animal model (v0.1) | covered | `fit_animal_model`/`fit_ai_reml` | `hsquared()` default | (current `main`) | existing v0.1 |
 | Genomic GBLUP/SNP-BLUP/single-step | experimental | `genomic`/`single_step`/`snp_blup` | opt-in `target=` | current `main` | — (BT3 #49) |
+| Supplied-Γ metafounder single-step | experimental | `metafounder_single_step` (candidate: `metafounder_single_step_inverse` / `fit_metafounder_single_step[_reml]`) | planned R metafounder/single-step payload | current `main` | planned |
 | Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
 | PEV / reliability standard fields | experimental | #43 | (R #43 / #15) | — | planned (#43) |
@@ -36,3 +37,6 @@ engine version each R surface is validated against.
 | Post-fit marker scans | experimental | #45 | (R `gwas()` #45 / #15) | — | planned (#45) |
 
 Rows update as each BT2 bridge target lands its engine-side payload + fixture.
+The metafounder single-step row is engine-side only: `Γ`, `group_of`,
+`G`, and `genotyped_rows` are plain payload candidates, but no R formula syntax
+or bridge fixture is claimed until the R twin ratifies the shape and tests it.

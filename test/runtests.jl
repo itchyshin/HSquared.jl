@@ -3802,6 +3802,46 @@ end
     @test_throws ArgumentError fit_single_step(y, X, Z, Ainv, A, genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1]), g, 1.0, 1.5)  # singular raw G
 end
 
+@testset "Phase 2 metafounder single-step H^Gamma bridge primitive" begin
+    ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]
+    ped = normalize_pedigree(ids, sire, dam)
+    needs = [ped.sire[i] == 0 || ped.dam[i] == 0 for i in 1:length(ped)]
+    group = [needs[i] ? "base" : "0" for i in 1:length(ped)]
+    A = additive_relationship(ped)
+    Ainv = Matrix(pedigree_inverse(ped))
+    g = [3, 4, 5]
+    y = [10.0, 12.0, 11.0, 9.0, 13.0]; X = ones(5, 1); Z = Matrix(1.0I, 5, 5)
+
+    # Gamma = 0 reduction: H^Gamma is the ordinary pedigree single-step H.
+    @test metafounder_single_step_inverse(ped, group, zeros(1, 1), A[g, g], g) ≈
+          single_step_inverse(Ainv, A, A[g, g], g) atol = 1e-10
+
+    Γ = fill(0.35, 1, 1)
+    Aγ = metafounder_relationship(ped, group, Γ)
+    Aγinv = metafounder_relationship_inverse(ped, group, Γ)
+    Gγ = Aγ[g, g] + 0.1 * I
+    Hγ = metafounder_single_step_inverse(ped, group, Γ, Gγ, g)
+    @test Hγ ≈ single_step_inverse(Aγinv, Aγ, Gγ, g) atol = 1e-10
+    @test maximum(abs.(Hγ .- transpose(Hγ))) < 1e-12
+    @test !isapprox(Hγ, single_step_inverse(Ainv, A, Gγ, g); atol = 1e-6)
+
+    # Supplied-variance and REML wrappers delegate to the H^Gamma precision path.
+    fit = fit_metafounder_single_step(y, X, Z, ped, group, Γ, Gγ, g, 1.0, 1.5)
+    direct = fit_gblup(y, X, Z, Hγ, 1.0, 1.5; ids = ped.ids)
+    @test breeding_values(fit).values ≈ breeding_values(direct).values atol = 1e-10
+
+    reml = fit_metafounder_single_step_reml(y, X, Z, ped, group, zeros(1, 1), A[g, g], g;
+                                            initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    ordinary = fit_single_step_reml(y, X, Z, Ainv, A, A[g, g], g;
+                                    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test reml.likelihood.loglik ≈ ordinary.likelihood.loglik rtol = 1e-6
+    @test reml.variance_components.sigma_a2 ≈ ordinary.variance_components.sigma_a2 rtol = 1e-5 atol = 1e-7
+    @test reml.variance_components.sigma_e2 ≈ ordinary.variance_components.sigma_e2 rtol = 1e-5
+
+    @test_throws ArgumentError metafounder_single_step_inverse(ped, group, zeros(1, 1), A[g, g], [3, 4])
+    @test_throws ArgumentError metafounder_single_step_inverse(ped, group, Γ, genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1]), g)
+end
+
 @testset "Phase 2 GBLUP REML variance-component estimation" begin
     # the existing REML optimizers estimate genomic variance components on a Ginv spec
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 animals x 3 markers
