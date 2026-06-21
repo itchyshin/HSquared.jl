@@ -3591,6 +3591,58 @@ end
     @test_throws ArgumentError genome_wide_pvalue(NaN, nulls)
     @test_throws ArgumentError genome_wide_pvalue(1.0, [1.0, Inf])
 
+    # -----------------------------------------------------------------------
+    # Calibration-property tests (#7): verify the threshold machinery
+    # returns the KNOWN analytic (1-alpha) type-7 quantile on a hand-
+    # constructed null, and that the add-one p-value is exactly the formula
+    # and strictly monotone.  ALL deterministic — no RNG.
+    # -----------------------------------------------------------------------
+
+    # (a) genome_wide_threshold_from_null matches the hand-computed type-7
+    # quantile for alpha=0.05 and alpha=0.01 on a small known null.
+    # nulls_cal = [10, 20, ..., 200] (n=20).
+    # Type-7: h = (n-1)*p + 1 (1-based); lo = floor(h); frac = h - lo;
+    #         q = v[lo] + frac*(v[lo+1] - v[lo])   (v sorted ascending)
+    # alpha=0.05 -> p=0.95: h = 19*0.95+1 = 19.05, lo=19, frac=0.05
+    #   q = 190 + 0.05*(200-190) = 190 + 0.5 = 190.5
+    # alpha=0.01 -> p=0.99: h = 19*0.99+1 = 19.81, lo=19, frac=0.81
+    #   q = 190 + 0.81*(200-190) = 190 + 8.1 = 198.1
+    nulls_cal = collect(10.0:10.0:200.0)        # [10,20,...,200], n=20
+    thr_cal_05 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.05)
+    thr_cal_01 = genome_wide_threshold_from_null(nulls_cal; alpha = 0.01)
+    @test thr_cal_05.threshold == 190.5          # exact arithmetic, no atol needed
+    @test thr_cal_01.threshold == 198.1
+    @test thr_cal_05.n_null == 20
+    @test thr_cal_01.n_null == 20
+    # monotonicity: alpha=0.01 threshold is more stringent (higher) than alpha=0.05
+    @test thr_cal_01.threshold > thr_cal_05.threshold
+
+    # (b) genome_wide_pvalue is exactly (1 + #{null >= obs}) / (n+1), hand cases.
+    # null_cal2 = [1,2,3,4,5] (n=5).
+    # observed=5.0: #{null>=5} = 1 -> p = (1+1)/6 = 2/6
+    # observed=2.5: #{null>=2.5} = 3 (3,4,5) -> p = (1+3)/6 = 4/6
+    # observed=6.0: #{null>=6} = 0 -> p = (1+0)/6 = 1/6  (never zero)
+    null_cal2 = [1.0, 2.0, 3.0, 4.0, 5.0]
+    @test genome_wide_pvalue(5.0, null_cal2) == 2 / 6   # obs == max element
+    @test genome_wide_pvalue(2.5, null_cal2) == 4 / 6   # obs in interior
+    @test genome_wide_pvalue(6.0, null_cal2) == 1 / 6   # obs exceeds all
+    @test genome_wide_pvalue(0.5, null_cal2) == 6 / 6   # obs below all = 1.0
+    # strict monotonicity in observed (increasing obs -> decreasing add-one p)
+    obs_seq = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]
+    p_seq = [genome_wide_pvalue(o, null_cal2) for o in obs_seq]
+    @test issorted(p_seq; rev = true)           # strictly decreasing (all steps distinct here)
+
+    # (c) threshold-p consistency: at the exact type-7 threshold, the add-one
+    # p equals (1 + #{null >= threshold}) / (n+1), NOT necessarily == alpha
+    # (they converge only asymptotically).  Pin the exact relationship for the
+    # 20-element null at alpha=0.05: threshold = 190.5; #{null >= 190.5} = 1
+    # (only 200 >= 190.5) -> p = (1+1)/21 = 2/21 ≈ 0.0952, not 0.05.
+    # This pins the documented anti-conservative gap: quantile p > alpha at n=20.
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) == 2 / 21
+    @test genome_wide_pvalue(thr_cal_05.threshold, nulls_cal) > thr_cal_05.alpha
+
+    # -----------------------------------------------------------------------
+
     # validation_status carries the new V5-MARKER-THRESHOLD row
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
 end
@@ -6018,4 +6070,65 @@ end
     @test_throws ArgumentError gl(Yp2, Ainv, Λ2,
         [HSquared.PoissonResponse(), HSquared.PoissonResponse(), HSquared.PoissonResponse()];
         X = X)    # length 3 ≠ T=2
+end
+
+@testset "Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50)" begin
+    # Shared 8-animal pedigree fixture (same as the other GLLVM REML testsets above).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    X = ones(q, 1)
+    fitr = HSquared.fit_gllvm_laplace_reml
+
+    # Mixed-family response: trait 1 = Poisson counts, trait 2 = Gaussian continuous.
+    Ymix = hcat(Float64[2, 1, 3, 0, 4, 2, 1, 5],
+                Float64[2.1, 3.4, 2.8, 3.1, 4.2, 1.9, 3.0, 4.7])
+    σe = 1.0
+    families_mix = [HSquared.PoissonResponse(), HSquared.GaussianResponse(σe)]
+
+    # (a) Per-trait [Poisson, Gaussian] REML fit converges.
+    fit_mix = fitr(Ymix, Ainv, families_mix; rank = 1,
+                   initial = reshape([0.6, 0.5], 2, 1))
+    @test fit_mix.converged
+    @test isfinite(fit_mix.loglik)
+    @test size(fit_mix.genetic_covariance) == (2, 2)
+    @test size(fit_mix.breeding_values) == (q, 1)
+
+    # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    Λ0 = reshape([0.6, 0.5], 2, 1)
+    fit_scalar = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, initial = Λ0)
+    fit_vec    = fitr(Yp2, Ainv, [HSquared.PoissonResponse(), HSquared.PoissonResponse()];
+                     rank = 1, initial = Λ0)
+    @test fit_scalar.genetic_covariance == fit_vec.genetic_covariance   # exact: same optimizer path
+
+    # (c) GeneticGLLVMFit extractor methods return the expected fields.
+    #   genetic_covariance: K×K PSD (rank-1 outer product ⟹ PSD with one positive eigenvalue)
+    G = HSquared.genetic_covariance(fit_scalar)
+    @test G isa Matrix{Float64}
+    @test size(G) == (2, 2)
+    @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
+    #   breeding_values: q × K matrix
+    bv = HSquared.breeding_values(fit_scalar)
+    @test bv isa Matrix{Float64}
+    @test size(bv) == (q, 1)
+    #   latent_structure: NamedTuple with communality field
+    ls = HSquared.latent_structure(fit_scalar)
+    @test haskey(ls, :communality)
+    @test all(ls.communality .≈ 1.0)                 # low-rank (no Ψ) ⟹ communality = 1
+    #   loglik: finite scalar
+    ll = HSquared.loglik(fit_scalar)
+    @test isfinite(ll)
+    @test ll ≈ fit_scalar.loglik
+
+    # (d) All existing GLLVM REML tests still produce GeneticGLLVMFit (not NamedTuple).
+    #     Spot-check the K=1,T=1 Poisson reduction fit (same fixture as slice-3 testset).
+    yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
+    gr = fitr(yp, Ainv, HSquared.PoissonResponse(); rank = 1, initial = reshape([1.0], 1, 1))
+    @test gr isa HSquared.GeneticGLLVMFit
+    @test gr.converged
+    @test size(gr.genetic_covariance) == (1, 1)
+    @test gr.n_latent_factors == 1
+    @test gr.uniqueness === nothing          # low-rank carries no Ψ
 end
