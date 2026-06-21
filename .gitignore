@@ -11,6 +11,8 @@
 /tmp/
 /comparator/Manifest.toml
 /comparator/_jwas_pedigree.csv
+/comparator/IDs_for_individuals_with_pedigree.txt
+/comparator/results/
 /comparator/blupf90_multitrait/blupf90_multitrait.dat
 /comparator/blupf90_multitrait/blupf90_multitrait.ped
 /comparator/blupf90_multitrait/hsquared_targets.csv

@@ -4,7 +4,7 @@
 # is NOT a package dependency. It runs only when HSQUARED_RUN_JWAS=true, in the
 # SEPARATE comparator environment:
 #
-#     julia --project=comparator -e 'using Pkg; Pkg.instantiate()'
+#     julia --project=comparator comparator/setup_jwas_env.jl
 #     HSQUARED_RUN_JWAS=true julia --project=comparator comparator/run_jwas_animal_model.jl
 #
 # It fits the SAME single-trait animal model as the serialized target fixture with
@@ -13,12 +13,13 @@
 # expected only approximately — the report never claims "parity" or "validation".
 
 const FIXTURE = joinpath(@__DIR__, "..", "test", "fixtures", "animal_model_fitted_target")
+const JWAS_OUTPUT_DIR = joinpath(@__DIR__, "results")
 
 if get(ENV, "HSQUARED_RUN_JWAS", "false") != "true"
     println("""
     [skip] JWAS comparator is opt-in. Set HSQUARED_RUN_JWAS=true and run in the
            separate comparator env to execute:
-             julia --project=comparator -e 'using Pkg; Pkg.instantiate()'
+             julia --project=comparator comparator/setup_jwas_env.jl
              HSQUARED_RUN_JWAS=true julia --project=comparator comparator/run_jwas_animal_model.jl
     """)
     exit(0)
@@ -49,14 +50,20 @@ pheno = CSV.read(joinpath(FIXTURE, "phenotypes.csv"), DataFrame)
 # (and adjust the model term + the out[...] EBV key) before runMCMC.
 ped_path = joinpath(@__DIR__, "_jwas_pedigree.csv")
 CSV.write(ped_path, ped_df)
-pedigree = get_pedigree(ped_path, separator = ",", header = true)
+pedigree = cd(@__DIR__) do
+    get_pedigree(ped_path, separator = ",", header = true)
+end
 
 model = build_model("y = intercept + x + animal")
 set_covariate(model, "x")
 set_random(model, "animal", pedigree)
 
-out = runMCMC(model, pheno; chain_length = 50_000, burnin = 10_000,
-              output_samples_frequency = 100, seed = 20260620, outputEBV = true)
+out = cd(@__DIR__) do
+    isdir(JWAS_OUTPUT_DIR) && rm(JWAS_OUTPUT_DIR; recursive = true, force = true)
+    runMCMC(model, pheno; chain_length = 50_000, burnin = 10_000,
+            output_samples_frequency = 100, seed = 20260620, outputEBV = true,
+            output_folder = JWAS_OUTPUT_DIR)
+end
 
 # Extract JWAS posterior-mean variance components + EBVs (key names are
 # version-dependent; adjust to your JWAS output keys if these differ).

@@ -26,7 +26,7 @@ length(status)
 | `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
 | `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
 | `V1-SPARSE-REML-OPT` | sparse REML validation optimizer | Phase 1 | partial | Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting. |
-| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components only; no variance-component estimation or fitted Mrode claim. |
+| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components plus one cross-estimator JWAS agreement probe; no same-estimand REML parity or fitted Mrode claim. |
 | `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability. |
 | `V1-SELINV-PEV` | sparse selected-inversion PEV/reliability | Phase 1 | partial | Experimental sparse PEV path; exact at the L+L^T pattern (diagonal/PEV exact); the default extractor path remains dense. |
 | `V1-AI-REML` | average-information REML estimator | Phase 1 | covered | Experimental Gaussian-only REML estimator; the AI form is exact for the Gaussian linear mixed model but not for non-Gaussian/Laplace models (which need observed-information Newton); known-truth recovery and the published-anchor match are validated in the R lane via the bridge. |
@@ -76,6 +76,14 @@ fixed effects, EBVs, fitted values, PEV, reliability, derived accuracy, and
 equation and extractor checks, but it is still not fitted Mrode output
 validation, variance-component estimation, AI-REML, or external fitted-model
 parity.
+
+The opt-in JWAS runner now executes outside CI from the separate
+`comparator/` environment. On 2026-06-21, JWAS 2.3.6 ran the serialized
+single-trait fitted target as a Bayesian/MCMC model (`chain_length = 50000`,
+`burnin = 10000`, seed `20260620`) and aligned all 20 animal EBVs against the
+REML target (`cor = 0.999`, max absolute difference `0.1103`). This is an
+agreement probe only. JWAS and REML are different estimators, so the row remains
+`partial` pending same-estimand fitted-output comparator evidence.
 
 The Phase 4 multivariate rows are Julia-engine rows only. The accessor helpers
 wrap existing result fields locally and do not change the R bridge payload. The

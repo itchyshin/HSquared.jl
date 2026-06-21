@@ -12,7 +12,7 @@ target fixture (`test/fixtures/animal_model_fitted_target/`) with **JWAS.jl** an
 reports **agreement** with the engine's REML target.
 
 ```sh
-julia --project=comparator -e 'using Pkg; Pkg.instantiate()'
+julia --project=comparator comparator/setup_jwas_env.jl
 HSQUARED_RUN_JWAS=true julia --project=comparator comparator/run_jwas_animal_model.jl
 ```
 
@@ -30,6 +30,9 @@ does not import JWAS).
 - The JWAS public API has shifted across releases; confirm the
   `build_model`/`set_covariate`/`set_random`/`get_pedigree`/`runMCMC` names + output
   keys against your installed JWAS version (the runner flags this inline).
+- JWAS is not registered in Julia General. `setup_jwas_env.jl` adds it from
+  `https://github.com/reworkhow/JWAS.jl` and writes only the local git-ignored
+  `comparator/Manifest.toml`.
 
 `comparator/Manifest.toml` is git-ignored (instantiate locally); only
 `Project.toml` is committed.

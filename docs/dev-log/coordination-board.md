@@ -25,6 +25,18 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / Big-3 evidence continuation. Started with the
+  highest-leverage validation/comparator item. BLUPF90-family executables remain
+  absent from `PATH`, so the multivariate same-estimand second-comparator run is
+  still locally blocked. The univariate fitted-target JWAS scaffold is now a
+  runnable opt-in probe: fixed the comparator environment to install JWAS 2.3.6
+  from the unregistered upstream GitHub source, pinned generated output under
+  ignored `comparator/results/`, and ran the Bayesian/MCMC agreement check
+  against `test/fixtures/animal_model_fitted_target/` (20 aligned animals, EBV
+  correlation 0.999, max abs EBV difference 0.1103). This is agreement only, not
+  REML parity, not fitted-Mrode coverage, and no capability moved to covered.
+  R lane untouched.
+
 - 2026-06-21: Julia lane / Big-3 continuation checkpoint. Banked the paired
   validation gate on main through #126 and the BLUPF90 multivariate starter
   through #127 (`6cdf739`). The packet generator runs, but the local machine has

@@ -1,9 +1,10 @@
 # Opt-in comparator environment — SEPARATE from the HSquared.jl package Project.toml.
 # JWAS is NOT a package dependency and is NEVER imported by HSquared.jl. Instantiate
-# only when running the opt-in comparator (HSQUARED_RUN_JWAS=true):
-#     julia --project=comparator -e 'using Pkg; Pkg.instantiate()'
+# only when running the opt-in comparator (HSQUARED_RUN_JWAS=true). JWAS is not
+# registered in Julia General, so initialize it with:
+#     julia --project=comparator comparator/setup_jwas_env.jl
 [deps]
-JWAS = "c9a035f4-d403-5e8b-b24c-5d8f8f1f9f1e"
+JWAS = "c9a035f4-d403-5e6b-8649-6be755bc4798"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
