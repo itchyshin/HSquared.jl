@@ -4,6 +4,8 @@ using SparseArrays
 using Test
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 
+include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
+
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
 function _csv_strings_for_test(path)
@@ -228,6 +230,9 @@ end
     @test occursin("nadiv::makeA", mvreml_row.evidence)
     @test occursin("max |dG0| = 7.529e-05", mvreml_row.evidence)
     @test occursin("loglik is not compared", mvreml_row.evidence)
+    @test occursin("tested preflight", mvreml_row.evidence)
+    @test occursin("no header/comment records", mvreml_row.evidence)
+    @test occursin("no BLUPF90-family executable has been run as evidence", mvreml_row.evidence)
     @test occursin("explicit `--seeds`", mvreml_row.evidence)
     @test occursin("calibration protocol", mvreml_row.evidence)
     @test occursin("did not pass", mvreml_row.evidence)
@@ -241,10 +246,13 @@ end
     @test occursin("result_payload", mvreml_row.claim_boundary)
     @test occursin("comparator protocol", mvreml_row.claim_boundary)
     @test occursin("one reproduced external `sommer` 4.4.5 comparator leg", mvreml_row.claim_boundary)
+    @test occursin("tested BLUPF90 preflight harness", mvreml_row.claim_boundary)
+    @test occursin("no executed second-comparator run", mvreml_row.claim_boundary)
     @test occursin("not coverage-calibrated", mvreml_row.claim_boundary)
     @test occursin("did not pass", mvreml_row.claim_boundary)
     @test occursin("R-lane cold-start recovery studies", mvreml_row.claim_boundary)
     @test occursin("current external evidence is one `sommer` fixture run", mvreml_row.missing)
+    @test occursin("BLUPF90 is preflighted but not executed", mvreml_row.missing)
     @test occursin("published Mrode multi-trait estimate", mvreml_row.missing)
     # #47 closeout: covariance SEs + LRT are now provided (no longer "missing")
     @test occursin("multivariate_covariance_standard_errors", mvreml_row.evidence)
@@ -6514,4 +6522,39 @@ end
     @test_throws MethodError hsquared_figure((value = [1.0], pev = [0.1], pev_scale = "validation"))
     @test_throws MethodError hsquared_figure((traits = ["a"], genetic_correlations = [1.0;;],
                                               heritabilities = nothing, rotation_invariant = true))
+end
+
+@testset "BLUPF90 multivariate starter packet preflight (#49)" begin
+    mktempdir() do dir
+        packet = HSquaredBLUPF90MultitraitPacket.generate_blupf90_multitrait_packet(out = dir)
+        @test packet.output_dir == dir
+        @test packet.n_records == 80
+        @test packet.n_pedigree == 20
+        @test packet.G0 ≈ [0.603628485824786 0.111950277319089;
+                           0.111950277319089 0.270353350669321]
+        @test packet.R0 ≈ [0.263112353813569 0.000307890389649347;
+                           0.000307890389649347 0.0906582303261327]
+
+        dat = readlines(joinpath(dir, "blupf90_multitrait.dat"))
+        ped = readlines(joinpath(dir, "blupf90_multitrait.ped"))
+        renum = readlines(joinpath(dir, "renumf90.par"))
+        @test length(dat) == packet.n_records
+        @test length(ped) == packet.n_pedigree
+        @test all(length(split(line)) == 5 for line in dat)
+        @test all(length(split(line)) == 3 for line in ped)
+        @test !any(startswith(strip(line), "#") for line in dat)
+        @test !any(startswith(strip(line), "#") for line in ped)
+        @test !any(isempty(strip(line)) for line in renum)
+        @test !any(startswith(strip(line), "#") for line in renum)
+
+        checked = HSquaredBLUPF90MultitraitPacket.validate_blupf90_multitrait_packet(out = dir)
+        @test checked.n_records == packet.n_records
+        @test checked.n_pedigree == packet.n_pedigree
+        @test checked.G0 == packet.G0
+        @test checked.R0 == packet.R0
+    end
+
+    probe = HSquaredBLUPF90MultitraitPacket.probe_blupf90_executables()
+    @test Set(keys(probe)) == Set(HSquaredBLUPF90MultitraitPacket.BLUPF90_EXECUTABLES)
+    @test all(path -> isnothing(path) || path isa String, values(probe))
 end

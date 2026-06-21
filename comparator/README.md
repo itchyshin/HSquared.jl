@@ -47,15 +47,28 @@ packet under `comparator/blupf90_multitrait/`.
 julia comparator/prepare_blupf90_multitrait.jl
 ```
 
-The generated packet contains whitespace-delimited data/pedigree files, a
-target-covariance CSV, and a conservative starter `renumf90.par` template for a
-future RENUMF90/AIREMLF90 run:
+The generated packet contains machine-oriented whitespace-delimited
+data/pedigree files (no header/comment rows), a target-covariance CSV, and a
+conservative starter `renumf90.par` template for a future RENUMF90/AIREMLF90
+run. The generator also validates the packet shape and probes for local
+BLUPF90-family executables.
 
 ```sh
 cd comparator/blupf90_multitrait
 renumf90 renumf90.par
 airemlf90 renf90.par
 ```
+
+There is also a skip-safe runner:
+
+```sh
+julia comparator/run_blupf90_multitrait.jl
+HSQUARED_RUN_BLUPF90=true julia comparator/run_blupf90_multitrait.jl
+```
+
+Without `HSQUARED_RUN_BLUPF90=true`, the runner generates and validates the
+packet, prints the opt-in instructions, and exits 0 without running external
+software.
 
 Generated BLUPF90 input/output files are git-ignored. This is **not** comparator
 evidence until BLUPF90-family executables are actually run, versions and

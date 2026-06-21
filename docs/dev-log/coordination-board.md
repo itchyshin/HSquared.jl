@@ -25,6 +25,18 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #49 BLUPF90 second-comparator readiness. After the
+  Codex handover landed on `main`, started a narrow BLUPF90/AIREMLF90 preflight
+  hardening slice for the existing two-trait REML fixture. Scope: make
+  `comparator/prepare_blupf90_multitrait.jl` reusable/testable, generate
+  machine-oriented data/pedigree/`renumf90.par` files without header/comment
+  records, add a skip-safe `run_blupf90_multitrait.jl` opt-in runner, validate
+  row counts and target covariances in the normal Julia test suite, and record
+  that local `renumf90`/`airemlf90`/`blupf90`/`remlf90`/`gibbsf90` executables
+  are still absent from `PATH`. Boundary: this is comparator setup hygiene, not
+  BLUPF90 evidence, not second-comparator parity, not a covered-status
+  promotion, and not an R-lane edit.
+
 - 2026-06-21: Julia lane / Big-3 single-step validation hardening. After #130
   landed and post-merge `main` CI/Documenter/Pages were green, started a
   dense-H oracle fixture for the ordinary single-step H-matrix path. Scope is

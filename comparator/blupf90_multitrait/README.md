@@ -22,7 +22,11 @@ vec(record residuals) ~ Normal(0, I_record x R0)
 
 - `README.md` — this note.
 - `../prepare_blupf90_multitrait.jl` — rewrites the committed CSV fixture into
-  whitespace-delimited BLUPF90 starter files under this directory.
+  whitespace-delimited BLUPF90 starter files under this directory, validates the
+  generated packet shape, and probes for local BLUPF90-family executables.
+- `../run_blupf90_multitrait.jl` — skip-safe opt-in runner. Without
+  `HSQUARED_RUN_BLUPF90=true`, it validates the packet and exits without
+  running external software.
 
 Generated files are intentionally git-ignored:
 
@@ -39,18 +43,27 @@ Generate the packet from the repo root:
 julia comparator/prepare_blupf90_multitrait.jl
 ```
 
+Or run the skip-safe preflight:
+
+```sh
+julia comparator/run_blupf90_multitrait.jl
+```
+
 Then, only on a machine with BLUPF90 executables available:
 
 ```sh
-cd comparator/blupf90_multitrait
-renumf90 renumf90.par
-airemlf90 renf90.par
+HSQUARED_RUN_BLUPF90=true julia comparator/run_blupf90_multitrait.jl
 ```
 
 ## Evidence Boundary
 
 This packet is **not** BLUPF90 evidence. It is a reproducible input scaffold for
 a future BLUPF90/AIREMLF90 run.
+
+The preflight is evidence hygiene only: it confirms that the packet has the
+expected row counts, target covariances, and no header/comment rows in
+machine-consumed BLUPF90 inputs. It does not verify RENUMF90 syntax for every
+BLUPF90-family release and it does not parse comparator estimates.
 
 Do not promote `V4-MV-REML` from `partial` using this packet alone. A comparator
 evidence record still needs:
