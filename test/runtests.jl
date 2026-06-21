@@ -5871,3 +5871,37 @@ end
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 1,
         structure = :factor_analytic, initial_uniqueness = [0.1])    # wrong Ψ length
 end
+
+@testset "Genetic-GLLVM per-trait response families (#50 slice 2 extension)" begin
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    X = ones(q, 1)
+    gl = HSquared.gllvm_laplace_marginal_loglik
+    Λ2 = [1.1 0.3; 0.4 1.2]    # 2×2 loadings, T=2 traits
+
+    # --- 1. reduction: Vector of T IDENTICAL families == scalar family (exact equality) ---
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    r_scalar = gl(Yp2, Ainv, Λ2, HSquared.PoissonResponse(); X = X)
+    r_vector = gl(Yp2, Ainv, Λ2, [HSquared.PoissonResponse(), HSquared.PoissonResponse()]; X = X)
+    @test r_scalar.loglik == r_vector.loglik          # EXACT: same per-record family dispatch
+    @test r_scalar.converged && r_vector.converged
+    @test size(r_vector.beta) == (1, 2) && size(r_vector.g) == (q, 2)
+
+    # --- 2. mixed families: trait 1 Poisson (counts), trait 2 Gaussian (continuous) ---
+    #    Y[:, 1] = integer counts (≥ 0), Y[:, 2] = continuous measurements
+    Ymix = hcat(Float64[2, 1, 3, 0, 4, 2, 1, 5], Float64[2.1, 3.4, 2.8, 3.1, 4.2, 1.9, 3.0, 4.7])
+    σe = 1.2
+    families_mix = [HSquared.PoissonResponse(), HSquared.GaussianResponse(σe)]
+    r_mix = gl(Ymix, Ainv, Λ2, families_mix; X = X)
+    @test r_mix.converged
+    @test isfinite(r_mix.loglik)
+    @test size(r_mix.beta) == (1, 2) && size(r_mix.g) == (q, 2)
+
+    # --- 3. guard: families vector of wrong length throws ArgumentError ---
+    @test_throws ArgumentError gl(Yp2, Ainv, Λ2, [HSquared.PoissonResponse()]; X = X)         # length 1 ≠ T=2
+    @test_throws ArgumentError gl(Yp2, Ainv, Λ2,
+        [HSquared.PoissonResponse(), HSquared.PoissonResponse(), HSquared.PoissonResponse()];
+        X = X)    # length 3 ≠ T=2
+end
