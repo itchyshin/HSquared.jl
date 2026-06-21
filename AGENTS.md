@@ -9,7 +9,7 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-06-20 (autonomous segment — ULTRACODE; 3 PRs, main at `a2bbfd3`/#119).**
+- **As of 2026-06-20 (autonomous segment — ULTRACODE; 4 substantive PRs, main at `11e9909`/#121).**
   On top of the committed plotting-layer runway (`*_plot_data` preparers #91/#92/#94/#95/#116,
   CPU benchmark #115, threshold calibration #112, GLLVM consumability #113), this segment
   landed **3 full-DoD PRs**, each adversarially verified before merge:
@@ -30,7 +30,10 @@ engine reality.
   to all single-component families with self-describing `lower_clamped`/`upper_clamped`/`converged`
   flags; `:variational` rejected (ELBO≠LRT). Fisher+Rose review corrected an over-generalized
   "two-sided" claim and caught two stale "Poisson-only" doc claims — all fixed before landing.
-  `Pkg.test()` + Documenter green on each; all 3 CI-green on clean checkout (**CI on a clean
+  **(4) HSquaredMakieExt genetic-correlation heatmap** (PR #121, after the v13 closeout) —
+  the set-C `D⁻¹GD⁻¹` heatmap kind (rotation-invariant gated, low-/NaN-h² flagged); a
+  Florence figure-honesty review caught a silent NaN-h² flag gap (fixed). Drawing-only.
+  `Pkg.test()` + Documenter green on each; all 4 CI-green on clean checkout (**CI on a clean
   checkout is the authoritative gate**); `validation_status()` has **41 rows** (4 covered);
   **nothing promoted to covered**. Cross-lane **#61 engine side is now resolved** (per-record
   `n_trials` built) — draft answers for #38/#61/#93 are prepared but **NOT posted** (outward
