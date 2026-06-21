@@ -149,10 +149,20 @@ end
 Laplace-approximate marginal log-likelihood of the **K-factor genetic GLLVM** with
 SUPPLIED `T×K` loadings `Λ`. The latent field `vec(g) ~ N(0, I_K ⊗ A)` (`A⁻¹ = Ainv`)
 enters `η[i,t] = (Xβ)[i,t] + Σ_k Λ[t,k] g[i,k]` and `y[i,t] | η[i,t] ~ family`
-(a `ResponseFamily`); `β` is integrated under a flat prior. `Y` is the `q×T` response
-matrix (balanced, fully observed); `X` is the `q×p` individual-level fixed-effect
-design (per-trait coefficients; default per-trait intercept). Returns
+(a `ResponseFamily` or a length-`T` `Vector` of `ResponseFamily`s — one per trait column
+of `Y`); `β` is integrated under a flat prior. `Y` is the `q×T` response matrix
+(balanced, fully observed); `X` is the `q×p` individual-level fixed-effect design
+(per-trait coefficients; default per-trait intercept). Returns
 `(loglik, beta (p×T), g (q×K), converged, gradient_norm, iterations)`.
+
+**Per-trait families:** pass a `Vector` of `T` `ResponseFamily` objects to apply a
+different family to each trait column of `Y` — e.g.
+`[PoissonResponse(), GaussianResponse(1.0)]` for a count first trait and a continuous
+second trait. Passing a single `ResponseFamily` (the original call form) applies it
+uniformly to all traits; a uniform `Vector` of `T` identical families gives numerically
+IDENTICAL results to the scalar path (the per-record dispatch is the same). The vector
+length must equal `T = size(Y, 2)`; a mismatch throws `ArgumentError`. Per-trait
+`_check_counts` is run per column against its own family before the Newton loop.
 
 Generalizes [`laplace_marginal_loglik`](@ref) (the `K = 1` single-factor case, to
 which it reduces EXACTLY, the Laplace approximation being invariant under the affine
@@ -163,12 +173,12 @@ positive definite (`P = I_K ⊗ Ainv` is full-rank regardless), so `K < T` /
 ([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The convergence
 flag lags the mode by one Newton step (as in the single-factor kernel), so an exact
 Gaussian solve needs `maxiter ≥ 2`. EXPERIMENTAL, dense / validation-scale, SUPPLIED
-loadings (NOT estimated — slice 3 REML), one family for all traits,
-balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the single-factor
-kernel), no R model-spec.
+loadings (NOT estimated — slice 3 REML), balanced/fully-observed `Y` only; INTERNAL
+(not exported, mirroring the single-factor kernel), no R model-spec.
 """
 function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
-                                       loadings::AbstractMatrix, family::ResponseFamily;
+                                       loadings::AbstractMatrix,
+                                       family::Union{ResponseFamily, AbstractVector};
                                        X::AbstractMatrix = ones(size(Y, 1), 1),
                                        tol::Real = 1e-10, maxiter::Integer = 100)
     Yd = Matrix{Float64}(Y)
@@ -179,20 +189,42 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Y,1)"))
     size(Λ, 1) == T || throw(ArgumentError("loadings must have T = size(Y,2) rows"))
     size(Xd, 1) == q || throw(ArgumentError("X must have q = size(Y,1) rows"))
+
+    # Build per-record family lookup: scalar family → same family for every record;
+    # Vector of families → one per trait column (length must equal T).
+    if family isa AbstractVector
+        length(family) == T || throw(ArgumentError(
+            "families vector length ($(length(family))) must equal T = size(Y,2) = $T"))
+        fam_of_t = collect(family)   # Vector{ResponseFamily} (concrete copy, fast indexing)
+    else
+        fam_of_t = nothing           # sentinel: scalar path
+    end
+    # Per-trait _check_counts: each column of Y validated against its own family.
+    if fam_of_t === nothing
+        _check_counts(family, vec(Yd))
+    else
+        for t in 1:T
+            _check_counts(fam_of_t[t], Yd[:, t])
+        end
+    end
+
     K = size(Λ, 2)
     p = size(Xd, 2)
-    _check_counts(family, vec(Yd))
 
     # records r = (i,t): β trait-major (trait t → cols (t-1)p+1:t·p), g factor-major
     # (factor k → cols (k-1)q+1:k·q); W scatters Λ[t,:] into animal i's K factor slots.
     n = q * T
     yv = Vector{Float64}(undef, n)
+    fam_of_r = fam_of_t === nothing ? nothing : Vector{ResponseFamily}(undef, n)
     Xrec = zeros(n, p * T)
     W = zeros(n, q * K)
     r = 0
     for t in 1:T, i in 1:q
         r += 1
         yv[r] = Yd[i, t]
+        if fam_of_r !== nothing
+            fam_of_r[r] = fam_of_t[t]
+        end
         @inbounds for j in 1:p
             Xrec[r, (t - 1) * p + j] = Xd[i, j]
         end
@@ -200,6 +232,11 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
             W[r, (k - 1) * q + i] = Λ[t, k]
         end
     end
+
+    # Convenience closures: dispatch to per-record family (scalar or per-trait).
+    _score(r, y, η) = fam_of_r === nothing ? _fam_score(family, y, η) : _fam_score(fam_of_r[r], y, η)
+    _weight(r, y, η) = fam_of_r === nothing ? _fam_weight(family, y, η) : _fam_weight(fam_of_r[r], y, η)
+    _loglik_r(r, y, η) = fam_of_r === nothing ? _fam_loglik(family, y, η) : _fam_loglik(fam_of_r[r], y, η)
 
     # latent prior precision P = I_K ⊗ Ainv (block diagonal, K blocks of Ainv)
     P = zeros(q * K, q * K)
@@ -218,8 +255,8 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     for it in 1:maxiter
         iters = it
         η = Xrec * β .+ W * g
-        s = [_fam_score(family, yv[i], η[i]) for i in 1:n]
-        w = [_fam_weight(family, yv[i], η[i]) for i in 1:n]
+        s = [_score(i, yv[i], η[i]) for i in 1:n]
+        w = [_weight(i, yv[i], η[i]) for i in 1:n]
         grad = vcat(transpose(Xrec) * s, transpose(W) * s .- P * g)
         gnorm = norm(grad)
         WX = w .* Xrec
@@ -236,12 +273,12 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     end
 
     η = Xrec * β .+ W * g
-    w = [_fam_weight(family, yv[i], η[i]) for i in 1:n]
+    w = [_weight(i, yv[i], η[i]) for i in 1:n]
     WX = w .* Xrec
     WW = w .* W
     H = [transpose(Xrec)*WX  transpose(Xrec)*WW
          transpose(W)*WX     (transpose(W)*WW .+ P)]
-    cond = sum(_fam_loglik(family, yv[i], η[i]) for i in 1:n)
+    cond = sum(_loglik_r(i, yv[i], η[i]) for i in 1:n)
     quad_g = dot(g, P * g)
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
     logdet_H = logdet(cholesky(Symmetric(H)))
