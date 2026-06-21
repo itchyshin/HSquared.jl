@@ -2423,6 +2423,40 @@ end
     )
 end
 
+@testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin
+    # Deterministic ~420-animal half-sib pedigree. The existing AI-REML / selinv tests
+    # use ≤110 animals; this hardens the SPARSE fit path (`fit_ai_reml` → sparse CHOLMOD
+    # Cholesky + Takahashi selected inverse) at a larger scale. CORRECTNESS-at-scale only
+    # — NO timing is asserted (this is not a performance claim).
+    nsire, ndam, noff = 30, 90, 300
+    sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+    ids = vcat(sids, dids, oids)
+    sire = vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff])
+    dam = vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff])
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped); q = length(ped.ids)
+    @test q == nsire + ndam + noff                                  # 420 animals
+    y = [2.0 + sin(0.07 * i) + 0.5 * cos(0.013 * i) for i in 1:q]   # deterministic, structured
+    X = ones(q, 1); Z = sparse(1.0I, q, q)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+
+    fit = fit_ai_reml(spec; initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
+    @test fit.converged
+    @test fit.variance_components.sigma_a2 > 0 && fit.variance_components.sigma_e2 > 0
+
+    # self-consistency at scale: henderson_mme at the fitted VCs reproduces β + EBVs EXACTLY
+    hm = henderson_mme(spec, fit.variance_components.sigma_a2, fit.variance_components.sigma_e2)
+    @test fixed_effects(fit) ≈ hm.beta atol = 1e-8
+    @test breeding_values(fit).values ≈ hm.animal_effects.values atol = 1e-7
+
+    # the O(nnz(L)) Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
+    # diagonal at 420 animals (extends V1-SELINV-PEV from a 110-animal pedigree to 420)
+    @test prediction_error_variance(fit; method = :selinv).values ≈
+          prediction_error_variance(fit; method = :dense).values atol = 1e-8
+    @test reliability(fit; method = :selinv).values ≈
+          reliability(fit; method = :dense).values atol = 1e-8
+end
+
 @testset "Phase 2 genomic relationship matrix (VanRaden)" begin
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 biallelic markers
     G = genomic_relationship_matrix(M)
