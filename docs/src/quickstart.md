@@ -252,10 +252,11 @@ fit_diagnostics(fit)
 These outputs are useful for tiny validation examples. They are not yet sparse
 production EBVs, reliabilities, or prediction error variances.
 
-The R twin may enrich opt-in tiny/local bridge results by calling
-`prediction_error_variance(fit)` and `reliability(fit)` after
-`result_payload(fit)`. Those fields are intentionally not part of the compact
-base payload contract.
+For fitted `AnimalModelFit` objects, `result_payload(fit)` includes
+`prediction_error_variance` and `reliability` as standard `(ids, values)` fields
+computed through the `:selinv` selected-inversion path. The R twin can unpack
+those top-level fields directly. This is still validation-scale bridge evidence,
+not a production large-pedigree reliability claim.
 
 For supplied-variance MME results, `fit_diagnostics(mme)` reports
 `target = :henderson_mme`, supplied-variance status, `nobs`, and
