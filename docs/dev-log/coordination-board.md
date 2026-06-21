@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / Big-3 bridge hardening continuation. After #129
+  landed and post-merge `main` CI was green, started the supplied-Γ H^Γ bridge
+  payload hardening slice. Scope is a nonzero-Γ REML fixture that proves
+  `fit_metafounder_single_step_reml()` travels through the standard
+  `AnimalModelFit` bridge surface (`result_payload()`, `fit_diagnostics()`,
+  PEV/reliability IDs, and selinv-vs-dense parity) without a special H^Γ
+  extractor branch. Boundary: no R formula/model-spec payload, no live R bridge
+  call, no Gamma estimation, no external comparator, no sparse/APY scaling, and
+  no covered-status promotion. R lane untouched.
+
 - 2026-06-21: Julia lane / Big-3 evidence continuation. Started with the
   highest-leverage validation/comparator item. BLUPF90-family executables remain
   absent from `PATH`, so the multivariate same-estimand second-comparator run is
