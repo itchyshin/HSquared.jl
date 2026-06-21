@@ -184,9 +184,9 @@ const VALIDATION_STATUS_DATA = (
         "single-step H-inverse construction",
         "Phase 2",
         "partial",
-        "internal `_single_step_Hinv` assembles `H⁻¹ = A⁻¹ + scatter(τG⁻¹ − ωA₂₂⁻¹)` on sorted genotyped rows; reduces to `A⁻¹` when `G = A₂₂` (~0), locality and symmetry hold, the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard (1.833 vs 2.5) is pinned, scattered genotyped rows are covered, and a singular raw `G` throws in `test/runtests.jl`.",
-        "comparator-validated blending/tuning defaults (AGHmatrix::Hmatrix / BLUPF90), a Mrode Ch.11 worked H/H⁻¹ fixture, fitting wiring, and sparse/APY scaling",
-        "Dense construction utility only; not exported, not wired into fitting, blending/τ/ω defaults not comparator-validated, no single-step prediction claim.",
+        "internal `_single_step_Hinv` assembles `H⁻¹ = A⁻¹ + scatter(τG⁻¹ − ωA₂₂⁻¹)` on sorted genotyped rows; reduces to `A⁻¹` when `G = A₂₂` (~0), locality and symmetry hold, the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard (1.833 vs 2.5) is pinned, scattered genotyped rows are covered, and a singular raw `G` throws in `test/runtests.jl`. The exported `metafounder_single_step_inverse` builds the supplied-Γ `H^Γ` precision by replacing `A` with the animal block of `A^Γ`; `Γ=0` reduces to ordinary single-step, and the nonzero-Γ path equals manually building `A^Γ` + `single_step_inverse`. `fit_metafounder_single_step` and `fit_metafounder_single_step_reml` delegate through that precision path.",
+        "comparator-validated blending/tuning defaults (AGHmatrix::Hmatrix / BLUPF90), a Mrode Ch.11 worked H/H⁻¹ fixture, external metafounder single-step comparator evidence, R-facing metafounder/single-step formula payload, and sparse/APY scaling",
+        "Dense validation-scale single-step and supplied-Γ H^Γ primitives; Γ and blending controls are inputs, not estimated or comparator-validated; no external-comparator or covered single-step prediction claim.",
     ),
     (
         "V2-GREML",

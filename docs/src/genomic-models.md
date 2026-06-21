@@ -69,7 +69,7 @@ The random block is deliberately labelled `marker_effects`, not breeding values:
 on a SNP-BLUP spec the random effects are marker effects, and reusing the
 `breeding_values` / EBV vocabulary there would mislabel them.
 
-## Single-step `H⁻¹` (construction only)
+## Single-step `H⁻¹`
 
 An internal helper `HSquared._single_step_Hinv` assembles the single-step
 relationship inverse
@@ -80,8 +80,24 @@ H^{-1} = A^{-1} + \text{scatter}\big(\tau\,G_w^{-1} - \omega\,A_{22}^{-1}\big)
 
 over the genotyped animals, where `A₂₂⁻¹ = inv(A[g, g])` is the inverse of the
 *submatrix* of `A` (not the submatrix of `A⁻¹` — the two differ). It is a
-**construction utility only**: unexported, not wired into fitting, and its
-blending / `τ` / `ω` / `ridge` knobs are not comparator-validated.
+validation-scale construction helper. The exported `single_step_inverse`,
+`fit_single_step`, and `fit_single_step_reml` wrappers expose the same dense
+relationship-precision path for tests and bridge targets. Its blending / `τ` /
+`ω` / `ridge` knobs are not comparator-validated.
+
+The supplied-Γ metafounder variant uses the same update with `A` replaced by
+the animal block of `A^Γ`:
+
+```math
+H^{Γ^{-1}} = (A^Γ)^{-1} +
+    \text{scatter}\big(\tau\,G_w^{-1} - \omega\,(A^Γ_{22})^{-1}\big)
+```
+
+`metafounder_single_step_inverse`, `fit_metafounder_single_step`, and
+`fit_metafounder_single_step_reml` are dense, validation-scale bridge
+primitives. `Γ` is supplied, not estimated. At `Γ = 0`, the helpers reduce to
+the ordinary pedigree single-step path. They do not add R-facing formula syntax
+or external BLUPF90 evidence by themselves.
 
 ## Validation boundary
 
@@ -100,7 +116,9 @@ Covered now (self-consistent, comparator-free):
 - genomic REML: AI-REML and NelderMead reach the same optimum, and a seeded
   simulation recovers the variance components;
 - single-step `H⁻¹` reduction (`H⁻¹ = A⁻¹` when `G = A₂₂`), locality, symmetry,
-  and the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard.
+  and the `A₂₂⁻¹ ≠ (A⁻¹)[g,g]` distinctness guard;
+- supplied-Γ `H^Γ` construction: reduction to ordinary single-step at `Γ = 0`
+  and equality to the manually built `A^Γ` + ordinary single-step path.
 
 Still planned / coordinated:
 

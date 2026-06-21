@@ -2172,6 +2172,94 @@ function fit_single_step_reml(
     return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target, ids = ids)
 end
 
+"""
+    metafounder_single_step_inverse(pedigree, group_of, Gamma, G, genotyped_rows; ...)
+    metafounder_single_step_inverse(ids, sire, dam, group_of, Gamma, G, genotyped_rows; ...)
+
+Dense validation-scale single-step relationship precision `H^Γ⁻¹`: build the
+animal-only metafounder relationship `A^Γ` from supplied `Gamma`, then apply the
+ordinary single-step update
+
+```math
+H^Γ⁻¹ = (A^Γ)⁻¹ + scatter(τ·G_w⁻¹ - ω·(A^Γ₂₂)⁻¹)
+```
+
+over `genotyped_rows`. `group_of` is aligned to `pedigree.ids`; `Gamma` is
+supplied and not estimated. At `Gamma = 0` this reduces to
+[`single_step_inverse`](@ref) with the classical pedigree relationship.
+
+Experimental and dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
+knobs inherit the ordinary single-step caveat: defaults are not
+comparator-validated.
+"""
+function metafounder_single_step_inverse(
+    pedigree::Pedigree, group_of, Gamma::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer};
+    tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
+    max_relationship_cache::Integer = 10_000,
+)
+    Aγ = metafounder_relationship(pedigree, group_of, Gamma;
+                                  max_relationship_cache = max_relationship_cache)
+    Aγinv = metafounder_relationship_inverse(pedigree, group_of, Gamma;
+                                             max_relationship_cache = max_relationship_cache)
+    return _single_step_Hinv(Aγinv, Aγ, G, genotyped_rows;
+                             tau = tau, omega = omega,
+                             blend_weight = blend_weight, ridge = ridge)
+end
+
+metafounder_single_step_inverse(
+    ids, sire, dam, group_of, Gamma::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer}; kwargs...,
+) = metafounder_single_step_inverse(
+    normalize_pedigree(ids, sire, dam), group_of, Gamma, G, genotyped_rows; kwargs...)
+
+"""
+    fit_metafounder_single_step(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows,
+                                sigma_a2, sigma_e2; ...)
+
+Supplied-variance single-step GBLUP under the supplied-`Γ` metafounder
+relationship. This builds `H^Γ⁻¹` with [`metafounder_single_step_inverse`](@ref)
+and delegates to [`fit_gblup`](@ref). Dense/validation-scale; variance
+components and `Gamma` are inputs, not estimates.
+"""
+function fit_metafounder_single_step(
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+    pedigree::Pedigree, group_of, Gamma::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer}, sigma_a2::Real, sigma_e2::Real;
+    tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
+    max_relationship_cache::Integer = 10_000, ids = pedigree.ids,
+)
+    Hγinv = metafounder_single_step_inverse(pedigree, group_of, Gamma, G, genotyped_rows;
+                                            tau = tau, omega = omega,
+                                            blend_weight = blend_weight, ridge = ridge,
+                                            max_relationship_cache = max_relationship_cache)
+    return fit_gblup(y, X, Z, Hγinv, sigma_a2, sigma_e2; ids = ids)
+end
+
+"""
+    fit_metafounder_single_step_reml(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows; ...)
+
+REML-estimated variance components for the dense validation-scale
+`H^Γ⁻¹` relationship precision. The metafounder covariance `Gamma` is supplied,
+not estimated. External comparator parity and R-facing formula syntax remain
+separate gates.
+"""
+function fit_metafounder_single_step_reml(
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+    pedigree::Pedigree, group_of, Gamma::AbstractMatrix, G::AbstractMatrix,
+    genotyped_rows::AbstractVector{<:Integer};
+    tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
+    max_relationship_cache::Integer = 10_000,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml,
+    ids = pedigree.ids,
+)
+    Hγinv = metafounder_single_step_inverse(pedigree, group_of, Gamma, G, genotyped_rows;
+                                            tau = tau, omega = omega,
+                                            blend_weight = blend_weight, ridge = ridge,
+                                            max_relationship_cache = max_relationship_cache)
+    return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target, ids = ids)
+end
+
 # ---------------------------------------------------------------------------
 # Genome-wide significance threshold machinery (#48).
 #
