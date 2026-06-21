@@ -3839,6 +3839,64 @@ end
     @test reml.variance_components.sigma_a2 ≈ ordinary.variance_components.sigma_a2 rtol = 1e-5 atol = 1e-7
     @test reml.variance_components.sigma_e2 ≈ ordinary.variance_components.sigma_e2 rtol = 1e-5
 
+    # Nonzero-Gamma REML results still use the standard bridge-facing
+    # AnimalModelFit payload: no H^Gamma-specific extractor branch is needed.
+    y_bridge = [8.0, 13.0, 12.0, 7.0, 15.0]
+    reml_hgamma = fit_metafounder_single_step_reml(y_bridge, X, Z, ped, group, Γ, Gγ, g;
+                                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test reml_hgamma.converged
+    @test reml_hgamma.variance_components.sigma_a2 > 0
+    @test reml_hgamma.variance_components.sigma_e2 > 0
+    pev_dense = prediction_error_variance(reml_hgamma; method = :dense)
+    pev_selinv = prediction_error_variance(reml_hgamma; method = :selinv)
+    rel_dense = reliability(reml_hgamma; method = :dense)
+    rel_selinv = reliability(reml_hgamma; method = :selinv)
+    @test pev_dense.ids == ped.ids
+    @test pev_selinv.ids == ped.ids
+    @test pev_selinv.values ≈ pev_dense.values atol = 1e-10
+    @test rel_dense.ids == ped.ids
+    @test rel_selinv.ids == ped.ids
+    @test rel_selinv.values ≈ rel_dense.values atol = 1e-10
+    @test all(isfinite, rel_selinv.values)
+    @test all(0 .<= rel_selinv.values .<= 1)
+
+    payload = result_payload(reml_hgamma)
+    @test propertynames(payload) == (
+        :variance_components,
+        :heritability,
+        :breeding_values,
+        :fixed_effects,
+        :random_effects,
+        :loglik,
+        :df,
+        :nobs,
+        :predictions,
+        :prediction_error_variance,
+        :reliability,
+        :diagnostics,
+        :converged,
+    )
+    @test payload.breeding_values.ids == ped.ids
+    @test payload.random_effects.animal.ids == ped.ids
+    @test payload.prediction_error_variance.ids == ped.ids
+    @test payload.prediction_error_variance.values ≈ pev_selinv.values atol = 1e-10
+    @test payload.reliability.ids == ped.ids
+    @test payload.reliability.values ≈ rel_selinv.values atol = 1e-10
+    @test payload.diagnostics.converged
+    @test payload.diagnostics.method == :REML
+    @test payload.diagnostics.dense_validation_path == false
+    @test payload.converged
+
+    diagnostics = fit_diagnostics(reml_hgamma)
+    @test diagnostics.engine == :julia
+    @test diagnostics.result_type == :animal_model_fit
+    @test diagnostics.target == :ai_reml
+    @test diagnostics.method == :REML
+    @test diagnostics.family == :gaussian
+    @test diagnostics.converged
+    @test diagnostics.sparse_mme_path
+    @test diagnostics.variance_components_source == :estimated_ai_reml
+
     @test_throws ArgumentError metafounder_single_step_inverse(ped, group, zeros(1, 1), A[g, g], [3, 4])
     @test_throws ArgumentError metafounder_single_step_inverse(ped, group, Γ, genomic_relationship_matrix([0.0 1 2; 2 1 0; 1 1 1]), g)
 end
