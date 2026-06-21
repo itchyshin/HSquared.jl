@@ -2,6 +2,7 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using TOML
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
@@ -5023,6 +5024,52 @@ end
     corrupted_gebv = copy(gebv_expected[:, 1])
     corrupted_gebv[1] += 0.1
     @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
+end
+
+@testset "Comparator target manifest (#49 coordination)" begin
+    manifest_path = joinpath(@__DIR__, "fixtures", "comparator_targets.toml")
+    manifest = TOML.parsefile(manifest_path)
+    @test manifest["schema_version"] == 1
+    @test occursin("not add external comparator evidence", manifest["claim_boundary"])
+
+    targets = manifest["target"]
+    ids = [target["id"] for target in targets]
+    @test length(ids) == length(unique(ids))
+    @test Set(ids) == Set([
+        "animal_model_fitted_target",
+        "phase4_multitrait_parity",
+        "genomic_gblup_snpblup_target",
+        "marker_scan_parity",
+        "structured_covariance_parity",
+    ])
+
+    allowed_evidence = Set([
+        "julia_target",
+        "julia_target_r_consumed",
+        "julia_target_external_one_leg",
+        "bridge_payload_fixture",
+    ])
+    for target in targets
+        fixture_dir = joinpath(@__DIR__, "fixtures", target["fixture"])
+        @test isdir(fixture_dir)
+        @test target["evidence_type"] in allowed_evidence
+        @test !isempty(target["capability_rows"])
+        @test occursin("no", lowercase(target["boundary"])) ||
+              occursin("not", lowercase(target["boundary"]))
+        @test !isempty(strip(target["required_comparator"]))
+        for file in target["required_files"]
+            @test isfile(joinpath(fixture_dir, file))
+        end
+    end
+
+    multivariate = only(target for target in targets if target["id"] == "phase4_multitrait_parity")
+    @test multivariate["issue"] == 49
+    @test occursin("sommer", multivariate["external_status"])
+    @test occursin("second independent", multivariate["boundary"])
+
+    genomic = only(target for target in targets if target["id"] == "genomic_gblup_snpblup_target")
+    @test genomic["evidence_type"] == "julia_target"
+    @test occursin("no external genomic comparator", genomic["boundary"])
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin

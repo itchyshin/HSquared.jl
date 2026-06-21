@@ -39,6 +39,12 @@ does not import JWAS).
 
 ## BLUPF90/AIREMLF90 multivariate starter packet
 
+The currently serialized comparator and bridge targets are indexed in
+`test/fixtures/comparator_targets.toml`. That TOML file is the machine-readable
+handoff surface for R/external lanes: it names each target fixture, required
+files, associated issue/status rows, and the claim boundary. It is an index
+only, not comparator evidence.
+
 `prepare_blupf90_multitrait.jl` rewrites the deterministic two-trait fixture
 (`test/fixtures/phase4_multitrait_parity/`) into a BLUPF90-family starter
 packet under `comparator/blupf90_multitrait/`.

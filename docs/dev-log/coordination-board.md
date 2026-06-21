@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #49 comparator target manifest. After R merged
+  hsquared PR #80 consuming the marker-scan payload fixture and reported it
+  would handle the structured-covariance ledger next, started a Julia-only
+  handoff slice: `test/fixtures/comparator_targets.toml` indexes the current
+  comparator/bridge fixtures, associated issue/status rows, required files, and
+  claim boundaries. Scope: machine-readable fixture index + integrity test only;
+  no external comparator run, no R files, no covered promotion, no R genomic or
+  marker-threshold activation.
+
 - 2026-06-21: Julia lane / #42 structured covariance status sync. After R
   reported hsquared PR #74 (`b4b4da5`) retargeted the R #22 issue body to the
   banked diagonal bridge and after Julia #143 synced #48, noticed the Julia
