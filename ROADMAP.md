@@ -147,9 +147,13 @@ unimplemented.
   convention, and no production sparse multivariate fitting.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
-  head `9eabf0d`; R heads `8235289` and `d7e8914` enrich tiny validation
-  bridge paths with PEV/reliability from exported Julia extractors when
-  available while Julia keeps the compact base `result_payload()` unchanged.
+  head `9eabf0d`; earlier R heads `8235289` and `d7e8914` enriched tiny
+  validation bridge paths with PEV/reliability from exported Julia extractors.
+  The fitted `AnimalModelFit` base `result_payload()` now carries
+  `prediction_error_variance` and `reliability` as standard `(ids, values)`
+  fields via the `:selinv` selected-inversion path, so R can unpack those
+  top-level fields directly. This is validation-scale bridge evidence, not a
+  production large-pedigree reliability claim.
 - R head `afa25f1` adds R-side EBV/BLUP/accuracy extractor ergonomics. Julia
   mirrors `EBV()`, `BLUP()`, and checked `accuracy()` locally without changing
   the bridge payload.
@@ -462,15 +466,12 @@ diagnostics, and comparator context.
 
 ## Next Work Queue
 
-1. Decide with the R twin whether PEV/reliability should ever become required
-   base `result_payload()` fields; keep current enrichment optional and
-   tiny/local.
-2. Add live Julia `HSData` object marshalling tests once the bridge contract
+1. Add live Julia `HSData` object marshalling tests once the bridge contract
    deliberately sends data-container objects rather than the current low-level
    payload.
-3. Add fitted Mrode output validation with source-recorded response data,
+2. Add fitted Mrode output validation with source-recorded response data,
    estimator target, expected variance components, EBVs, `h2`, comparator
    versions, and tolerances.
-4. Replace dense covariance equations with sparse production computations.
-5. Add AI-REML or a documented sparse optimizer path.
-6. Keep `hsquared` issue #2 synchronized with this engine contract.
+3. Replace dense covariance equations with sparse production computations.
+4. Add AI-REML or a documented sparse optimizer path.
+5. Keep `hsquared` issue #2 synchronized with this engine contract.

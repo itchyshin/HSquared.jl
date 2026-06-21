@@ -594,14 +594,16 @@ prediction error variance and reliability are available via the `method =
 :selinv` selected-inversion path described below.
 
 `prediction_error_variance(fit)` and `reliability(fit)` use the dense
-mixed-model-equation inverse for tiny validation examples. The same extractor
-names can be used on a supplied-variance `mme` result. `variance_components(mme)`
-returns the supplied values and `heritability(mme)` computes the simple
-univariate ratio from those supplied values. `EBV()` and `BLUP()` are aliases
-for `breeding_values()`. `accuracy()` is a checked square-root transformation
-of `reliability()` and errors if reliability values are non-finite or outside
-`[0, 1]`; it does not add independent accuracy validation. These fields are
-not included in the base `result_payload(fit)` contract.
+mixed-model-equation inverse by default for tiny validation examples. The same
+extractor names can be used on a supplied-variance `mme` result.
+`variance_components(mme)` returns the supplied values and `heritability(mme)`
+computes the simple univariate ratio from those supplied values. `EBV()` and
+`BLUP()` are aliases for `breeding_values()`. `accuracy()` is a checked
+square-root transformation of `reliability()` and errors if reliability values
+are non-finite or outside `[0, 1]`; it does not add independent accuracy
+validation. For `AnimalModelFit`, the base `result_payload(fit)` now includes
+`prediction_error_variance` and `reliability` as standard `(ids, values)` fields,
+computed through the `:selinv` selected-inversion path.
 
 `prediction_error_variance` and `reliability` accept `method = :dense` (default)
 or `method = :selinv`. The `:selinv` path computes the diagonal of the sparse
@@ -610,12 +612,14 @@ Henderson MME coefficient-matrix inverse with a Takahashi selected inverse
 License) in `O(nnz(L))`. The selected inverse is exact only at the `L+Lᵀ`
 sparsity pattern; the diagonal — and therefore PEV — is always in pattern and is
 exact. Both methods use the identical coefficient matrix, so they agree to
-machine precision on tiny and Mrode9-shaped fixtures. The default stays `:dense`
-and `result_payload()` is unchanged; this is an experimental sparse path, not
-large-pedigree or comparator-validated production reliability.
+machine precision on tiny, Mrode9-shaped, 110-animal, 420-animal, and highly
+inbred validation fixtures. The default standalone extractor stays `:dense`;
+`result_payload(::AnimalModelFit)` deliberately uses `:selinv` once and reuses
+that PEV for reliability. This is an experimental validation-scale path, not a
+large-pedigree or comparator-validated production reliability claim.
 
-As of R heads `8235289` and `d7e8914`, the R twin may enrich opt-in tiny/local
-Julia bridge results by calling exported Julia extractors:
+Earlier R heads `8235289` and `d7e8914` enriched opt-in tiny/local Julia bridge
+results by calling exported Julia extractors:
 
 ```julia
 prediction_error_variance(fit)
@@ -625,10 +629,12 @@ reliability(mme)
 ```
 
 and merging `(ids = ..., values = ...)` fields on the R side when those
-functions are available and applicable. This preserves the compact base
-`result_payload()` contract. It is bridge validation for tiny dense fits and
-supplied-variance MME results, not production sparse PEV or production sparse
-reliability.
+functions are available and applicable. That fallback remains useful for
+supplied-variance `HendersonMMEResult` objects. For fitted `AnimalModelFit`
+payloads, the R twin can now read the standard top-level
+`prediction_error_variance` and `reliability` fields directly. This is bridge
+validation for fitted validation-scale results and supplied-variance MME
+results, not production sparse PEV or production sparse reliability.
 
 R head `afa25f1` adds R-side `EBV()`, `BLUP()`, and `accuracy()` extractor
 ergonomics. Julia mirrors the vocabulary locally as aliases and derived output
@@ -668,6 +674,8 @@ these result names:
 - `df`
 - `nobs`
 - `predictions`
+- `prediction_error_variance`
+- `reliability`
 - `diagnostics`
 - `converged`
 
@@ -688,6 +696,10 @@ these field names stable for the R bridge:
 - `fixed_effects`
 - `random_effects.animal.ids`
 - `random_effects.animal.values`
+- `prediction_error_variance.ids`
+- `prediction_error_variance.values`
+- `reliability.ids`
+- `reliability.values`
 - `loglik`
 - `df`
 - `nobs`
@@ -775,12 +787,13 @@ builds the payload, and stops. Julia-specific controls stay inside
 `max_dense_cells`.
 
 R head `78ba5ff` adds R-side `prediction_error_variance()` and `reliability()`
-extractor contracts and future-compatible bridge normalization. R head
-`8235289` enriches the opt-in tiny/local Julia bridge result by calling the
-exported Julia extractors when available and merging `(ids = ..., values = ...)`
-fields on the R side. Julia deliberately keeps `result_payload()` compact.
-Future changes to required base payload fields still need lockstep R and Julia
-tests.
+extractor contracts and future-compatible bridge normalization. R heads
+`8235289` and `d7e8914` first consumed those values as opportunistic
+post-payload enrichment. Julia now carries `prediction_error_variance` and
+`reliability` as required top-level fields for `AnimalModelFit`
+`result_payload()`; the coordinated R landing (`hsquared#21`) reads them through
+the ordinary `hs_julia_id_values()` unpack path. Future payload additions still
+need lockstep R and Julia tests.
 
 R head `d7e8914` extends the same opportunistic enrichment to the explicit
 supplied-variance `target = "henderson_mme"` bridge path when
@@ -837,8 +850,7 @@ for this target. This is supplied-variance validation-scale bridge execution,
 not variance-component estimation, AI-REML, Mrode fitted-output validation, or
 production sparse fitting.
 
-The next bridge tasks are relationship-object marshalling beyond `Z`, deciding
-whether PEV/reliability should ever become required base payload fields, Mrode
+The next bridge tasks are relationship-object marshalling beyond `Z`, Mrode
 validation, and live Julia `HSData` object marshalling parity. The Julia tests
 cover parent-index semantics, `ids` order, sparse `Z` dimensions, Julia-side
 `Ainv`, CSC slot reconstruction, parity between spec dispatch and direct

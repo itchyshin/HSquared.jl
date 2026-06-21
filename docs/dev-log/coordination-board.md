@@ -244,7 +244,11 @@ support beyond the recorded evidence.
   results from exported Julia extractors when available. At head `d7e8914`, it
   also enriches supplied-variance `target = "henderson_mme"` bridge results
   from `prediction_error_variance(mme)` and `reliability(mme)` when applicable.
-  Julia keeps those fields out of the compact base `result_payload()`.
+  The fitted `AnimalModelFit` base `result_payload()` now carries
+  `prediction_error_variance` and `reliability` as standard `(ids, values)`
+  fields via `:selinv`, so R can unpack those top-level fields directly;
+  supplied-variance `HendersonMMEResult` paths may still use extractor
+  enrichment.
 - The R twin added EBV/BLUP/accuracy extractor ergonomics at `hsquared` head
   `afa25f1`; Julia mirrors `EBV()`, `BLUP()`, and checked `accuracy()` as local
   extractor vocabulary only, with no bridge payload change.
@@ -322,9 +326,10 @@ support beyond the recorded evidence.
   `prediction_error_variance`/`reliability` accept `method = :selinv`, a
   Takahashi selected inverse (kernel adapted from DRM.jl, MIT) of the sparse MME
   coefficient matrix. The selinv diagonal matches the dense MME inverse diagonal
-  to machine precision on tiny + Mrode9 fixtures. The default extractor path
-  stays dense and `result_payload()` is unchanged (no R bridge change required);
-  R can opt in via its existing PEV/reliability extractor enrichment. Posted to
+  to machine precision on tiny + Mrode9 fixtures. The default standalone
+  extractor path stays dense, and fitted `AnimalModelFit` payloads now use
+  `:selinv` for their standard PEV/reliability top-level fields; R can still
+  opt in via extractor enrichment for supplied-variance MME results. Posted to
   `HSquared.jl` issue #6.
 - Julia now has experimental Phase-4B structured multivariate genetic covariance
   support: `diagonal_covariance`, `lowrank_covariance`,
@@ -594,13 +599,15 @@ support beyond the recorded evidence.
   - the opt-in local Julia bridge enriches tiny validation-path results with
     PEV/reliability if sibling Julia exports `prediction_error_variance(fit)`
     and `reliability(fit)`;
-  - R still starts from `result_payload(fit)` and merges those two fields if
-    available, preserving the compact base Julia payload contract;
+  - superseded for fitted `AnimalModelFit` payloads: Julia now carries
+    `prediction_error_variance` and `reliability` as standard top-level fields,
+    so R can unpack them directly; extractor enrichment remains relevant for
+    supplied-variance MME results;
   - reported remote evidence: R-CMD-check `27459709156`, pkgdown
     `27459709148`, and Pages `27459742852` success;
   - boundary: bridge-available for tiny local validation path only. No
     production sparse PEV/reliability, general animal-model fitting, Mrode
-    fitted-output validation, or base `result_payload()` widening claim.
+    fitted-output validation, or production reliability claim.
 - R lane handoff from `itchyshin/hsquared` head `bacef9c`:
   - added exported `model_spec()`;
   - validates the same v0.1 grammar as `hsquared()` and builds the same
@@ -722,10 +729,9 @@ support beyond the recorded evidence.
   - boundary: roadmap/design only. No genomic fitting, QTL/eQTL scan,
     GLLVM animal model, GPU execution, APY, Takahashi selected inverse,
     AI-REML, HPC, or performance claim.
-- Next shared seam: deciding whether PEV/reliability should ever become
-  required base payload fields, relationship marshalling beyond `Z`, Mrode
-  validation, live Julia `HSData` object marshalling parity, the first real
-  genomic/QTL model-spec contract, and the first real standard
+- Next shared seam: relationship marshalling beyond `Z`, Mrode validation,
+  live Julia `HSData` object marshalling parity, the first real genomic/QTL
+  model-spec contract, and the first real standard
   quantitative-genetic model-spec contract.
 
 ## 2026-06-18 (overnight) — Julia lane status handoff to the R twin

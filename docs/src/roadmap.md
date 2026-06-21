@@ -55,8 +55,12 @@ Implemented:
   expression status, annotation-feature status, and environment-key status;
 - external opt-in R bridge evidence from `hsquared` head `9eabf0d`;
 - external R PEV/reliability bridge enrichment evidence from `hsquared` head
-  `8235289`; R can merge those fields from exported Julia extractors for
-  tiny/local validation fits while Julia keeps base `result_payload()` compact.
+  `8235289`; R first merged those fields from exported Julia extractors for
+  tiny/local validation fits. The fitted `AnimalModelFit` base
+  `result_payload()` now carries `prediction_error_variance` and `reliability`
+  as standard `(ids, values)` fields via the `:selinv` selected-inversion path,
+  so R can unpack those top-level fields directly. This is validation-scale
+  bridge evidence, not a production large-pedigree reliability claim.
 - external R EBV/BLUP/accuracy extractor ergonomics evidence from `hsquared`
   head `afa25f1`; Julia mirrors the names locally without adding payload
   fields.
@@ -139,14 +143,12 @@ Not implemented:
 Next engine targets:
 
 1. Mrode-style validation and comparator checks;
-2. R/Julia decision on whether PEV/reliability should ever become required
-   base bridge payload fields;
-3. live Julia `HSData` object marshalling, relationship-object marshalling
+2. live Julia `HSData` object marshalling, relationship-object marshalling
    beyond sparse `Z`, and stable production
    engine controls;
-4. production sparse covariance/precision computations;
-5. production hardening for sparse REML / AI-REML;
-6. production sparse reliability and prediction error variance.
+3. production sparse covariance/precision computations;
+4. production hardening for sparse REML / AI-REML;
+5. production sparse reliability and prediction error variance.
 
 ## Later Phases
 

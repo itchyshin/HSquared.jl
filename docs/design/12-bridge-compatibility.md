@@ -32,7 +32,7 @@ engine version each R surface is validated against.
 | Supplied-Γ metafounder single-step | experimental | `metafounder_single_step` (candidate: `metafounder_single_step_inverse` / `fit_metafounder_single_step[_reml]`) | planned R metafounder/single-step payload | current `main` | nonzero-Γ REML payload smoke |
 | Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
-| PEV / reliability standard fields | experimental | #43 | (R #43 / #15) | — | planned (#43) |
+| PEV / reliability standard fields | experimental | `result_payload(::AnimalModelFit)` | `hs_julia_id_values()` top-level fields (R #21) | current `main` | standard payload tests (`:selinv` vs dense parity) |
 | Non-Gaussian Laplace/VA | experimental | #44 | (R #18) | — | planned (#44) |
 | Post-fit marker scans | experimental | #45 | (R `gwas()` #45 / #15) | — | planned (#45) |
 
@@ -43,3 +43,11 @@ fixture proves that a nonzero-`Γ` REML fit travels through the standard
 `AnimalModelFit` result payload, `fit_diagnostics()`, PEV, and reliability
 extractors without a special H^Γ extractor branch. No R formula syntax or live
 R bridge fixture is claimed until the R twin ratifies the shape and tests it.
+
+The PEV/reliability row is a standard fitted `AnimalModelFit` payload surface,
+not a production large-pedigree reliability claim. The fields are
+`prediction_error_variance = (ids, values)` and `reliability = (ids, values)`,
+computed once through the `:selinv` selected-inversion path and parity-tested
+against the dense MME diagonal on validation-scale fixtures. Supplied-variance
+`HendersonMMEResult` bridge paths may still use explicit extractors rather than
+`result_payload()`.
