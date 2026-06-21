@@ -1,0 +1,113 @@
+schema_version = 1
+updated = "2026-06-21"
+claim_boundary = "Machine-readable fixture index only. These entries do not add external comparator evidence or promote validation status."
+
+[[target]]
+id = "animal_model_fitted_target"
+issue = 46
+fixture = "animal_model_fitted_target"
+capability_rows = ["V1-MME", "V1-MRODE-FIT", "V1-COMPARATORS"]
+estimator_target = "univariate Gaussian animal model with REML-estimated variance components"
+evidence_type = "julia_target_r_consumed"
+external_status = "R lane live bridge consumed the fixture; same-estimand fitted-output comparator remains open."
+required_comparator = "same-estimand REML fitted-output comparator or published fitted-output target with versions and tolerances"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "phenotypes.csv",
+    "expected_variance_components.csv",
+    "expected_beta.csv",
+    "expected_ebv.csv",
+    "expected_reliability.csv",
+    "expected_metadata.csv",
+    "generate.jl",
+]
+boundary = "Serialized Julia fitted target plus R bridge verification; not a bundled external comparator and not a new covered-status claim."
+
+[[target]]
+id = "phase4_multitrait_parity"
+issue = 49
+fixture = "phase4_multitrait_parity"
+capability_rows = ["V4-MV", "V4-MV-REML"]
+estimator_target = "two-trait Gaussian animal model with full unstructured G0 and R0"
+evidence_type = "julia_target_external_one_leg"
+external_status = "R lane reproduced one same-estimand sommer comparator leg; second independent same-estimand comparator remains open."
+required_comparator = "BLUPF90, ASReml, DMU, WOMBAT, JWAS-equivalent REML, or another independent same-estimand comparator"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "phenotypes.csv",
+    "expected_genetic_covariance.csv",
+    "expected_residual_covariance.csv",
+    "expected_beta.csv",
+    "expected_ebv.csv",
+    "expected_heritability.csv",
+    "expected_metadata.csv",
+]
+boundary = "One external sommer leg exists; no second independent same-estimand comparator and no covered V4-MV-REML promotion."
+
+[[target]]
+id = "genomic_gblup_snpblup_target"
+issue = 49
+fixture = "genomic_gblup_snpblup_target"
+capability_rows = ["V2-GBLUP", "V2-SNPBLUP", "V2-GREML"]
+estimator_target = "supplied-variance VanRaden method-1 GBLUP and SNP-BLUP route agreement"
+evidence_type = "julia_target"
+external_status = "Julia-native target only; no external genomic comparator has been run."
+required_comparator = "AGHmatrix, sommer, rrBLUP, BLUPF90, JWAS-equivalent, or another independent same-estimand genomic comparator"
+required_files = [
+    "README.md",
+    "phenotypes.csv",
+    "markers.csv",
+    "allele_frequencies.csv",
+    "expected_genomic_relationship.csv",
+    "expected_genomic_precision.csv",
+    "expected_beta.csv",
+    "expected_gebv.csv",
+    "expected_marker_effects.csv",
+    "expected_metadata.csv",
+    "generate.jl",
+]
+boundary = "Positive-definite supplied-frequency target only; no external genomic comparator, sparse/APY scaling, or public R genomic model-spec activation."
+
+[[target]]
+id = "marker_scan_parity"
+issue = 45
+fixture = "marker_scan_parity"
+capability_rows = ["V5-MARKER-MIXED", "V5-MARKER-LOCO", "V5-MARKER-THRESHOLD"]
+estimator_target = "post-fit supplied-variance mixed-model marker-scan result payload"
+evidence_type = "bridge_payload_fixture"
+external_status = "R lane mirrored the payload fixture and tested Julia-free normalizer parity; threshold activation remains open."
+required_comparator = "external marker-scan calibration/comparator only for calibrated threshold or public significance claims"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "phenotypes.csv",
+    "markers.csv",
+    "expected_marker_scan_payload.csv",
+    "expected_metadata.csv",
+    "generate.jl",
+]
+boundary = "Bridge payload shape only; no calibrated genome-wide threshold, map-annotated GWAS/QTL/eQTL workflow, or comparator evidence."
+
+[[target]]
+id = "structured_covariance_parity"
+issue = 42
+fixture = "structured_covariance_parity"
+capability_rows = ["V4-FA", "V4-BRIDGE"]
+estimator_target = "diagonal structured multivariate covariance bridge target"
+evidence_type = "bridge_payload_fixture"
+external_status = "Diagonal structured payload is banked; lowrank and factor-analytic loading exposure remain blocked."
+required_comparator = "external structured-covariance comparator and a rotation/loading convention before lowrank or factor-analytic bridge claims"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "phenotypes.csv",
+    "expected_genetic_covariance.csv",
+    "expected_residual_covariance.csv",
+    "expected_beta.csv",
+    "expected_ebv.csv",
+    "expected_heritability.csv",
+    "expected_metadata.csv",
+]
+boundary = "Rotation-free diagonal bridge target only; no lowrank/fa bridge exposure, loading interpretation, recovery promotion, or covered status."
