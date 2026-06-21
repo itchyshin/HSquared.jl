@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia/coordinator lane / #47 SE/LRT issue-ledger closure. After
+  #93 closed, started a narrow closure slice for the already-landed
+  multivariate covariance SE + boundary-aware LRT work. Evidence is on main:
+  `multivariate_covariance_standard_errors` and `covariance_structure_lrt`
+  are exported/tested, `validation_status()` rows no longer list SEs/LRTs as
+  missing, and the 2026-06-19 check logs record the math implementation and
+  row refresh. Boundary: issue-state hygiene only; no new inference math, no
+  structured-fit SE claim, no external comparator, no covered-status promotion.
+
 - 2026-06-21: Julia/coordinator lane / #93 plotting contract closure. After
   the #48 ledger fix landed, started a narrow sync slice to reconcile
   `docs/design/13-plotting-layer.md` with the later R-lane evidence: all seven
