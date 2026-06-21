@@ -240,6 +240,13 @@ support beyond the recorded evidence.
   mirrors this as validation-scale recovery evidence only; it corroborates the
   Julia 12-seed bias/MCSE result but does not promote `V4-MV-REML` or replace
   independent comparator parity.
+- Julia now has an opt-in BLUPF90-family starter packet generator at
+  `comparator/prepare_blupf90_multitrait.jl` for the existing
+  `test/fixtures/phase4_multitrait_parity/` target. It writes ignored
+  whitespace-delimited data/pedigree/target files plus a starter `renumf90.par`
+  under `comparator/blupf90_multitrait/`. This is setup for a future
+  BLUPF90/RENUMF90/AIREMLF90 run only; no BLUPF90 executable was run, no
+  comparator evidence is claimed, and `V4-MV-REML` remains partial.
 - Julia now has opt-in unstructured multivariate REML recovery evidence at
   `sim/phase4_multivariate_reml_recovery.jl`. Default seed `20260616` passes on
   a repeated-record half-sib design outside CI, and the harness now accepts

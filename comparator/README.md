@@ -33,3 +33,28 @@ does not import JWAS).
 
 `comparator/Manifest.toml` is git-ignored (instantiate locally); only
 `Project.toml` is committed.
+
+## BLUPF90/AIREMLF90 multivariate starter packet
+
+`prepare_blupf90_multitrait.jl` rewrites the deterministic two-trait fixture
+(`test/fixtures/phase4_multitrait_parity/`) into a BLUPF90-family starter
+packet under `comparator/blupf90_multitrait/`.
+
+```sh
+julia comparator/prepare_blupf90_multitrait.jl
+```
+
+The generated packet contains whitespace-delimited data/pedigree files, a
+target-covariance CSV, and a conservative starter `renumf90.par` template for a
+future RENUMF90/AIREMLF90 run:
+
+```sh
+cd comparator/blupf90_multitrait
+renumf90 renumf90.par
+airemlf90 renf90.par
+```
+
+Generated BLUPF90 input/output files are git-ignored. This is **not** comparator
+evidence until BLUPF90-family executables are actually run, versions and
+generated `renf90.par` are recorded, outputs are aligned to the fixture targets,
+and a Rose audit confirms the claim boundary.
