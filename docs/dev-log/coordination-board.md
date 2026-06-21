@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / innovation gate issue sync. After R reported
+  hsquared PR #91 (`87fa0b9`), mirrored the planned-only innovation gates into
+  live Julia issue #58. Scope: issue-body sync plus audit artifacts only.
+  Julia #58 now requires identical variance components/logLik/AI-step behaviour
+  before any augmented AI-REML benchmark/speed claim, and same fixed point plus
+  guarded/backtracking objective behaviour before any SQUAREM iteration/time
+  claim. No Julia engine implementation, no R files, no performance claim, and
+  no validation/public-claim promotion.
+
 - 2026-06-21: Julia lane / parent issue ledger sync. After R reported
   hsquared PR #88 (`df04e0d`) and #89 (`2dd19ec`), audited the open Julia
   parent issues whose bodies still held generic 2026-06-19 placeholders.
