@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / R #85-#87 status sync. After the R twin merged
+  hsquared PR #85 (`80734b3`), #86 (`5bbc453`), and #87 (`6206b7b`), audited
+  Julia's public-claim and extractor wording for stale cross-lane status.
+  Scope: source-doc/status sync only. The Julia public-claims register now
+  credits the R-consumed genomic GBLUP/SNP-BLUP target fixture from PR #84,
+  while the extractor design note separates banked scan-result table views from
+  planned fit-level/map-annotated GWAS/QTL/eQTL outputs. No Julia behavior
+  change, no R files, no calibrated threshold, no marker-scan comparator
+  evidence, no public R formula activation, and no validation promotion.
+
 - 2026-06-21: Julia lane / R #83/#84 comparator-genomic sync. After the R twin
   merged hsquared PR #83 (`1c239ec`) and #84 (`52507da`), updated Julia
   comparator/status ledgers so `genomic_gblup_snpblup_target` is now a
