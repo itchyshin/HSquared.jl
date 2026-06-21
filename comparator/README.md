@@ -45,6 +45,17 @@ handoff surface for R/external lanes: it names each target fixture, required
 files, associated issue/status rows, and the claim boundary. It is an index
 only, not comparator evidence.
 
+Current cross-lane status:
+
+- hsquared PR #84 (`52507da`) mirrors and consumes the
+  `genomic_gblup_snpblup_target` fixture with a Julia-free R recomputation of
+  supplied-frequency VanRaden `G`, `Ginv`, the supplied-variance GBLUP MME
+  solution, and SNP-BLUP route agreement. This is an internal consumer check,
+  not an AGHmatrix / rrBLUP / sommer / JWAS / BLUPF90 comparator.
+- hsquared PR #83 (`1c239ec`) records local marker-scan comparator and
+  threshold-tool availability blockers. It is blocker evidence only, not a
+  marker-scan comparator run or threshold calibration.
+
 `prepare_blupf90_multitrait.jl` rewrites the deterministic two-trait fixture
 (`test/fixtures/phase4_multitrait_parity/`) into a BLUPF90-family starter
 packet under `comparator/blupf90_multitrait/`.

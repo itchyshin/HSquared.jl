@@ -217,11 +217,14 @@ end
     gblup_row = only(row for row in validation if row.id == "V2-GBLUP")
     @test gblup_row.status == "partial"
     @test occursin("genomic_gblup_snpblup_target", gblup_row.evidence)
-    @test occursin("Julia-native comparator target only", gblup_row.claim_boundary)
+    @test occursin("hsquared PR #84", gblup_row.evidence)
+    @test occursin("Julia-native/R-consumed comparator target only", gblup_row.claim_boundary)
     @test occursin("external AGHmatrix/sommer/BLUPF90/JWAS same-estimand comparator parity", gblup_row.missing)
     snpblup_row = only(row for row in validation if row.id == "V2-SNPBLUP")
     @test snpblup_row.status == "partial"
     @test occursin("serialized #49 target fixture", snpblup_row.evidence)
+    @test occursin("hsquared PR #84", snpblup_row.evidence)
+    @test occursin("Julia-native/R-consumed comparator target", snpblup_row.claim_boundary)
     @test occursin("comparator parity against the serialized target", snpblup_row.missing)
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
@@ -382,6 +385,7 @@ end
     @test occursin("0.015/0.065/0.050", threshold_row.evidence)
     @test occursin("threshold-vs-Bonferroni was mixed", threshold_row.evidence)
     @test occursin("realistic-LD/design calibration", threshold_row.missing)
+    @test occursin("hsquared PR #83", threshold_row.missing)
     @test occursin("#48 gate", threshold_row.claim_boundary)
     @test occursin("no external comparator parity", threshold_row.claim_boundary)
     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
@@ -5071,8 +5075,13 @@ end
     @test occursin("second independent", multivariate["boundary"])
 
     genomic = only(target for target in targets if target["id"] == "genomic_gblup_snpblup_target")
-    @test genomic["evidence_type"] == "julia_target"
+    @test genomic["evidence_type"] == "julia_target_r_consumed"
+    @test occursin("PR #84", genomic["external_status"])
+    @test occursin("R internal consumer check", genomic["boundary"])
     @test occursin("no external genomic comparator", genomic["boundary"])
+
+    marker_scan_target = only(target for target in targets if target["id"] == "marker_scan_parity")
+    @test occursin("PR #83", marker_scan_target["external_status"])
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin

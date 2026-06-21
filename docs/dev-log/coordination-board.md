@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / R #83/#84 comparator-genomic sync. After the R twin
+  merged hsquared PR #83 (`1c239ec`) and #84 (`52507da`), updated Julia
+  comparator/status ledgers so `genomic_gblup_snpblup_target` is now a
+  Julia-native/R-consumed target, while the marker-scan comparator-tool report
+  is recorded as blocker evidence only. Scope: status/docs/manifest/test sync
+  only; no Julia behavior change, no R files, no external genomic or marker-scan
+  comparator evidence, no threshold activation, no public R genomic
+  model-spec/formula activation, and no validation promotion.
+
 - 2026-06-21: Julia lane / R #82 marker-table sync. After the R twin merged
   hsquared PR #82 (`934269a`), recorded that `gwas_table(scan)` /
   `lod_scores(scan)` are banked R-side scan-result views over already-computed
