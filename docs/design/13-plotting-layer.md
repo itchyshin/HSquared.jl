@@ -101,46 +101,33 @@ The engine `*_plot_data` preparers + this contract are the cross-lane proposal f
 the R sister (who already has `autoplot.R`). Mirrors the bridge-payload discipline:
 Julia ships the plot-data shape; R fires the matching `autoplot` type.
 
-## 7. R-twin alignment (2026-06-20, posted to #93)
+## 7. R-twin alignment (#93 resolved)
 
-An ultracode R-twin alignment pass (read `hsquared/R/autoplot.R` +
-`R/extractors.R` end-to-end vs the landed preparers) found:
+The #93 plot-data contract is now consumed on both sides of the twin.
 
-- **R does NOT yet consume the Julia `*_plot_data` payloads for sets A/B/C** — it
-  RECOMPUTES in R (its own `rr_genetic_variance`/`genetic_correlation`/
-  `variance_components` extractors → tidy frames → `hs_gg_forest` /
-  `hs_autoplot_*`). Only set D (GWAS) uses the bridge payload today. The preparers
-  are nonetheless **~90% R-consumable** — the gap is R adopting them, plus a couple
-  of engine field-shape tweaks.
-- **R's tidy contract:** `hs_gg_forest` wants `(term, estimate, lo, hi[, panel])`;
-  `hs_autoplot_g_matrix` melts `(row, col, value, label)`; `hs_autoplot_reaction_norm`
-  builds `(covariate, value, panel)`; honest-status via
-  `attr(p,"hsquared_meta") = list(type, source, interval_status, rotation_status, notes)`.
-- **Engine adaptations (flexible — adapt to R), held pending R's answers on #93:**
-  (1) `rr_genetic_variance_plot_data`: rename `genetic_variance → value` to match R's
-  extractor column (fast-follow PR; no external consumer yet). (2) Sets C/D fields
-  are correct as-is. (3) Optionally emit a parallel `*_meta` NamedTuple so the
-  honest-status enum is engine-sourced.
-- **Set B design (the next build):** `variance_components_plot_data(fit; level)`
-  returns tidy parallel vectors `(term, estimate, lo, hi, panel, level,
-  interval_method, interval_status, supplied = false)` that drop straight into
-  `hs_gg_forest` — VC rows NOT clamped (asymptotic CI may cross 0, surfaced not
-  hidden), and the h² row is the logit-delta `heritability_interval` which is in
-  `(0,1)` BY CONSTRUCTION (raw + annotate, NOT clamped — per the #93 resolution);
-  `supplied = false` is the honest-status hinge vs sets A/C (descriptive). The
-  `heritability_interval` (0,1)-boundary throw propagates, never silently clamped.
-  `breeding_values_plot_data(fit)` → `(id, trait, value, pev, pev_scale = "validation")`
-  is the EBV-caterpillar preparer (EBV as `value`, validation-scale PEV) — the last
-  live-parity preparer R requested (#93).
-- **Discipline:** a live parity test (R `hs_rr_variance_values` == Julia
-  `rr_genetic_variance` on a seeded `K_g`/`ts` fixture, re-fired on any
-  Legendre/standardization change) is the guardrail wherever R recomputes.
-
-**8 open questions to the R twin are on #93** (melt ownership, interval knob,
-meta sourcing, bridge-vs-fallback, parity-test home, biplot scaling, a
-`breeding_values` preparer). The engine will shape payloads to whatever lands
-cleanest in `autoplot.R` — this is a proposal, R pushes back. Outward posting was
-authorized by the user.
+- **R-side consumption is landed.** The R lane consumes all seven landed engine
+  `*_plot_data` preparers with recompute fallbacks and skip-guarded live parity
+  tests in `tests/testthat/test-plot-data-parity.R`: `genetic_correlation`,
+  `genetic_pca`, `variance_components`, `rr_genetic_variance`,
+  `rr_eigenfunctions`, `rr_covariance_surface`, and `breeding_values`. The
+  follow-up fit-time attachment slice landed as `hsquared` PR #35
+  (`6098839`, `codex/a3-fit-time-plot-data`) with R-CMD-check green.
+- **The #93 naming and honesty decisions are ratified.** R accepts
+  `rr_genetic_variance_plot_data` through `value` or the current
+  `genetic_variance` field; wide matrices remain wide and R melts them;
+  `variance_components_plot_data` ships raw interval bounds plus
+  `interval_status` / `interval_method`; `breeding_values_plot_data` ships
+  `(id, trait, value, pev, pev_scale = "validation")`; flat honest-status fields
+  map to R's canonical `hsquared_meta` enum.
+- **Julia-side preparers are landed.** Sets A, B, C, and D are implemented as
+  dependency-free plot-data helpers and tested in `test/runtests.jl`. The Julia
+  drawing extension consumes the set B/C helpers locally through
+  `HSquaredMakieExt`, with Makie deliberately kept out of default CI.
+- **Closure boundary.** Closing #93 means the plot-data bridge contract is
+  ratified, consumed, and parity-guarded. It does not claim production plotting
+  coverage for every future figure, does not make Makie drawing CI-gated, does
+  not calibrate marker-scan p-values (#48), and does not promote any statistical
+  model capability to covered.
 
 ## 8. Julia drawing extension — `HSquaredMakieExt` (LANDED)
 
@@ -166,7 +153,7 @@ carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
 guardrail"). Drawing only: no estimation, no engine computation in the extension.
 
 **Verification (local-only; Makie is deliberately OUT of default CI — cost
-discipline):** all three kinds draw a `Makie.Figure` (inferred + explicit `kind`),
+discipline):** all four kinds draw a `Makie.Figure` (inferred + explicit `kind`),
 the stub throws `MethodError` before a backend loads, the supplied/NaN/[0,1]-boundary
 forest branches and the loadings-biplot / non-PD-`G` guards all fire, and one figure
 rasterizes to PNG with CairoMakie. Evidence: `docs/dev-log/check-log.md` +
