@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia/coordinator lane / V4 R-lane Mrode anchor sync. After
+  #47 closed, reconciled Julia's V4 multivariate validation ledger with later
+  R-lane evidence: `hsquared` `6a1065e` adds a published Mrode Example 5.1
+  supplied-covariance BLUP/MME anchor, and `hsquared` `dbf97a7` records a
+  `MCMCglmm` Bayesian agreement probe. Boundary: credit the Mrode target and
+  agreement probe, but keep `V4-MV-REML` partial; only the `sommer` leg is
+  same-estimand REML parity, and the second same-estimand comparator gate
+  remains open.
+
 - 2026-06-21: Julia/coordinator lane / #47 SE/LRT issue-ledger closure. After
   #93 closed, started a narrow closure slice for the already-landed
   multivariate covariance SE + boundary-aware LRT work. Evidence is on main:
