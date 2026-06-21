@@ -43,7 +43,7 @@ engine reality.
   HSquaredMakieExt follow-on figure kinds (genetic-correlation heatmap, Manhattan/QQ, RR
   reaction-norm/surface), the Gaussian two-component interval (nuisance profiling), or —
   highest-leverage but cross-lane — the R-lane external comparator runs.
-  Read `docs/dev-log/after-task/2026-06-20-session-handover-v13.md` (START HERE).
+  Read `docs/dev-log/after-task/2026-06-21-session-handover-v14.md` (START HERE).
 - **Covered (public):** v0.1 univariate Gaussian animal model only. Everything
   else is `experimental`/`partial` — nothing was promoted to covered this session.
 - **Active programme (next-phase plan):** BT1 clean base = **done**. BT2 engine
