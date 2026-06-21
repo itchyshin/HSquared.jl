@@ -879,16 +879,21 @@ Genomics/QTL:
 - `marker_effects(scan)`;
 - `marker_variance_explained(scan)`;
 - `marker_scan_table(scan)`;
-- `gwas_table(scan)`;
-- `qtl_table(scan)`;
-- `eqtl_table(scan)`;
+- direct Julia scan-table labels: `gwas_table(scan)`, `qtl_table(scan)`,
+  and `eqtl_table(scan)`;
+- R scan-result views: `gwas_table(scan)` and `lod_scores(scan)` for
+  already-computed `hs_gwas` objects;
 - `marker_region_data(scan)`;
 - `marker_significance_summary(scan)`;
-- `lod_scores(fit)`;
-- `manhattan_plot(fit)`;
-- `qq_plot(fit)`;
-- `regional_plot(fit)`;
-- `fine_map(fit)`.
+- planned fit-level / map-annotated outputs:
+  `gwas_table(fit)`, `qtl_table(fit)`, `eqtl_table(fit)`, map-aware
+  `lod_scores(fit)`, `manhattan_plot(fit)`, `qq_plot(fit)`,
+  `regional_plot(fit)`, and `fine_map(fit)`.
+
+The banked `scan` routes are views of already-computed marker-scan results.
+They do not activate formula-level `marker_scan()` syntax, calibrated
+thresholds, map-annotated fit-level GWAS/QTL/eQTL workflows, or external
+marker-scan comparator parity.
 
 GLLVM/multivariate:
 
