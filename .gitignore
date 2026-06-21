@@ -11,4 +11,11 @@
 /tmp/
 /comparator/Manifest.toml
 /comparator/_jwas_pedigree.csv
+/comparator/blupf90_multitrait/blupf90_multitrait.dat
+/comparator/blupf90_multitrait/blupf90_multitrait.ped
+/comparator/blupf90_multitrait/hsquared_targets.csv
+/comparator/blupf90_multitrait/renumf90.par
+/comparator/blupf90_multitrait/renf90.*
+/comparator/blupf90_multitrait/airemlf90.log
+/comparator/blupf90_multitrait/solutions
 .claude/worktrees/
