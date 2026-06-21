@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #42 structured covariance status sync. After R
+  reported hsquared PR #74 (`b4b4da5`) retargeted the R #22 issue body to the
+  banked diagonal bridge and after Julia #143 synced #48, noticed the Julia
+  human-facing `V4-FA` docs and public-claims wording still implied no
+  structured bridge payload existed. Scope: source-doc/status + issue-body
+  sync only; diagonal/unstructured bridge payload and
+  `structured_covariance_parity` are already banked, while lowrank/fa loading
+  exposure remains blocked. No behavior change, no R files, no promotion.
+
 - 2026-06-21: Julia lane / #48 threshold validation-status sync. After
   HSquared.jl #142 closed #45 and R reported validation-canon/PEV closeouts
   (#77/#78), noticed the human-facing `docs/src/validation-status.md` table
