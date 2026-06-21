@@ -2457,6 +2457,86 @@ end
           reliability(fit; method = :dense).values atol = 1e-8
 end
 
+@testset "Phase 1 sparse AI-REML / selinv boundary hardening (#6)" begin
+    # Deterministic (RNG-free) boundary / stress cases for the sparse AI-REML + selinv
+    # PEV path. CORRECTNESS ONLY — no timing or performance is asserted.
+    #
+    # Pedigree: two founders (f1, f2) + a 3-generation selfing chain (s1, s2, s3) from f1,
+    # then three offspring that cross back to f2 or f1. This produces inbreeding
+    # coefficients F ∈ {0, 0.5, 0.75, 0.875} in the same pedigree, exercising the
+    # Henderson Ainv rule and the AI-REML / selinv paths under high inbreeding.
+
+    ib_ids   = ["f1", "f2", "s1",  "s2",  "s3",  "c1",  "c2",  "c3"]
+    ib_sires = ["0",  "0",  "f1",  "s1",  "s2",  "s3",  "s3",  "f1"]
+    ib_dams  = ["0",  "0",  "f1",  "s1",  "s2",  "f2",  "f2",  "f2"]
+    ib_ped = normalize_pedigree(ib_ids, ib_sires, ib_dams; allow_selfing = true)
+    ib_q   = length(ib_ped.ids)
+
+    # --- Case 1: highly-inbred pedigree: Ainv == inv(A), convergence, self-consistency ---
+
+    ib_F = inbreeding_coefficients(ib_ped)
+    @test any(ib_F .>= 0.5)                  # at least one animal with high F
+    @test any(ib_F .>= 0.875)                # selfing chain reaches deep inbreeding
+
+    ib_A    = additive_relationship(ib_ped)
+    ib_Ainv = pedigree_inverse(ib_ped)
+    # pedigree_inverse == inv(additive_relationship) holds even under high inbreeding
+    @test Matrix(ib_Ainv) ≈ inv(Symmetric(ib_A)) atol = 1e-8
+
+    # Structured deterministic y: groups high-value animals (founders f2, offspring c1/c2)
+    # and low-value animals (inbred selfing chain). Provides interior REML optimum.
+    ib_y = [1.0, 3.5, 1.5, 1.2, 1.0, 3.2, 3.8, 2.5]
+    ib_X = ones(ib_q, 1)
+    ib_Z = sparse(1.0I, ib_q, ib_q)
+    ib_spec = animal_model_spec(ib_y, ib_X, ib_Z, ib_Ainv; ids = ib_ped.ids, method = :REML)
+
+    ib_fit = fit_ai_reml(ib_spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test ib_fit.converged                                        # converges on inbred pedigree
+    @test ib_fit.variance_components.sigma_a2 > 0
+    @test ib_fit.variance_components.sigma_e2 > 0
+
+    # self-consistency at the inbred optimum: henderson_mme reproduces β + EBVs EXACTLY
+    ib_hm = henderson_mme(ib_spec,
+                          ib_fit.variance_components.sigma_a2,
+                          ib_fit.variance_components.sigma_e2)
+    @test fixed_effects(ib_fit) ≈ ib_hm.beta atol = 1e-8
+    @test breeding_values(ib_fit).values ≈ ib_hm.animal_effects.values atol = 1e-7
+
+    # --- Case 2: near-boundary σ²a (low heritability, near-zero optimum) ---
+    # A y vector near-constant across animals drives σ²a toward zero. The fit is
+    # allowed to report converged = false (boundary case); self-consistency must
+    # still hold at whatever VCs are returned (no NaN garbage).
+
+    low_y    = [3.01, 2.99, 3.00, 3.01, 2.99, 3.00, 3.01, 2.99]
+    low_spec = animal_model_spec(low_y, ib_X, ib_Z, ib_Ainv; ids = ib_ped.ids, method = :REML)
+    low_fit  = fit_ai_reml(low_spec; initial = (sigma_a2 = 0.1, sigma_e2 = 0.5))
+
+    # Honest reporting: converged or not, VCs are finite and positive
+    @test isfinite(low_fit.variance_components.sigma_a2)
+    @test isfinite(low_fit.variance_components.sigma_e2)
+    @test low_fit.variance_components.sigma_a2 > 0
+    @test low_fit.variance_components.sigma_e2 > 0
+
+    # self-consistency must hold at the returned VCs regardless of convergence status
+    low_hm = henderson_mme(low_spec,
+                           low_fit.variance_components.sigma_a2,
+                           low_fit.variance_components.sigma_e2)
+    @test fixed_effects(low_fit) ≈ low_hm.beta atol = 1e-8
+    @test breeding_values(low_fit).values ≈ low_hm.animal_effects.values atol = 1e-7
+
+    # Note: low_fit.converged may be false on a boundary optimum — that is correct
+    # behavior and is NOT asserted either way; no @test on low_fit.converged.
+
+    # --- Case 3: selinv exact at the boundary — inbred pedigree, high-F animals ---
+    # On ib_fit (highly-inbred pedigree), the Takahashi selected inverse must equal
+    # the dense MME-inverse diagonal at the same machine precision as non-inbred cases.
+
+    @test prediction_error_variance(ib_fit; method = :selinv).values ≈
+          prediction_error_variance(ib_fit; method = :dense).values atol = 1e-8
+    @test reliability(ib_fit; method = :selinv).values ≈
+          reliability(ib_fit; method = :dense).values atol = 1e-8
+end
+
 @testset "Phase 2 genomic relationship matrix (VanRaden)" begin
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 1]   # 4 individuals x 3 biallelic markers
     G = genomic_relationship_matrix(M)
