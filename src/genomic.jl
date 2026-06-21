@@ -686,6 +686,54 @@ function _mixed_marker_scan_result(common, stats, target::Symbol)
     )
 end
 
+"""
+    marker_scan_result_payload(scan)
+
+Return the bridge-facing marker-scan result payload.
+
+This is the stable, boring `NamedTuple` shape for post-fit GWAS/QTL/eQTL bridge
+work. It preserves the row-aligned scan fields returned by
+[`single_marker_scan`](@ref), [`mixed_model_marker_scan`](@ref), or
+[`loco_mixed_model_marker_scan`](@ref): marker IDs, effect estimates, standard
+errors, Wald statistics, chi-square values, nominal p-values,
+Bonferroni/BH-adjusted p-values, LOD-equivalent scores, denominators, allele
+frequencies, VanRaden scale, optional supplied variance components, and optional
+LOCO group metadata.
+
+The payload does not run a scan, calibrate genome-wide thresholds, estimate
+marker-scan variance components, join marker maps, draw figures, or activate the
+R-facing `marker_scan()` formula term.
+"""
+function marker_scan_result_payload(scan)
+    marker_ids = _scan_marker_ids(scan)
+    m = length(marker_ids)
+    payload = (
+        engine = "HSquared.jl",
+        target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan,
+        n_markers = m,
+        marker_ids = marker_ids,
+        effects = _checked_scan_float_field(scan, :effects, m),
+        standard_errors = _checked_scan_float_field(scan, :standard_errors, m; positive = true),
+        z_scores = _checked_scan_float_field(scan, :z_scores, m),
+        chisq = _checked_scan_float_field(scan, :chisq, m; nonnegative = true),
+        p_values = _checked_scan_p_value_field(scan, :p_values, m),
+        bonferroni_p_values = _checked_scan_p_value_field(scan, :bonferroni_p_values, m),
+        bh_q_values = _checked_scan_p_value_field(scan, :bh_q_values, m),
+        lod_scores = _checked_scan_float_field(scan, :lod_scores, m; nonnegative = true),
+        denominators = _checked_scan_float_field(scan, :denominators, m; positive = true),
+        allele_frequencies = _checked_scan_allele_frequencies(scan, m),
+        vanraden_scale = hasproperty(scan, :k) ? _checked_scan_scalar(scan, :k; nonnegative = true) : nothing,
+        variance_components = hasproperty(scan, :variance_components) ? getproperty(scan, :variance_components) : nothing,
+    )
+    if hasproperty(scan, :marker_groups)
+        payload = merge(payload, (marker_groups = _checked_scan_marker_groups(scan, m),))
+    end
+    if hasproperty(scan, :relationship_groups)
+        payload = merge(payload, (relationship_groups = string.(collect(getproperty(scan, :relationship_groups))),))
+    end
+    return payload
+end
+
 function _relationship_precision_lookup(relationship_precisions::AbstractDict)
     lookup = Dict{String,Any}()
     for (key, value) in relationship_precisions

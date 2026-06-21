@@ -398,6 +398,9 @@ direct scan result.
 `mixed_model_marker_scan(y, X, Z, Ainv, markers, sigma_a2, sigma_e2)` is a
 dense supplied-variance GLS helper that accounts for a supplied relationship
 covariance through `V = sigma_a2 * Z * A * Z' + sigma_e2 * I`.
+`marker_scan_result_payload(scan)` returns the stable post-fit bridge shape,
+and `test/fixtures/marker_scan_parity/` pins a deterministic mixed scan payload
+for R-lane parity.
 `loco_relationship_precisions()` constructs dense VanRaden-plus-ridge
 leave-one-group-out relationship precisions from marker groups, and
 `loco_mixed_model_marker_scan()` selects a precision by marker group before

@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / #45 marker-scan bridge payload fixture. After
+  HSquared.jl #141 closed #43 and R reported hsquared PR #75 merged at
+  `e9633c0` (R issue #23 body sync), started the Julia artifact slice R had
+  requested on #45: exported `marker_scan_result_payload(scan)` and
+  `test/fixtures/marker_scan_parity/` for a deterministic post-fit
+  mixed-model scan payload. Boundary: bridge shape + Julia target only; no
+  threshold activation, no map-annotated `gwas_table()`/`qtl_table()`/
+  `eqtl_table()` workflow, no R formula `marker_scan()` syntax, no comparator,
+  and no covered-status promotion.
+
 - 2026-06-21: Julia lane / #49 genomic comparator target fixture. After #139
   landed, started the next user-approved comparator-gate slice that does not
   require BLUPF90-family executables on the local machine. Scope: serialize
@@ -449,11 +459,13 @@ support beyond the recorded evidence.
   supplied-variance GLS marker-screening utility. It forms
   `V = sigma_a2 * Z * A * Z' + sigma_e2 * I` from supplied variance components
   and a supplied relationship precision, then runs marker-by-marker Wald tests
-  conditional on `X`. This is engine-internal / direct-Julia only: no
-  marker-scan variance-component estimation, LOCO, sparse production scan,
+  conditional on `X`. The post-fit bridge shape is now
+  `marker_scan_result_payload(scan)`, with a serialized
+  `test/fixtures/marker_scan_parity/` target for R parity. Boundary:
+  no marker-scan variance-component estimation, sparse production scan,
   calibrated p-values, calibrated PVE/model R² claims, interval-mapping or
   mixed-model LOD workflows, plotting backend, R `marker_scan()` formula
-  activation, bridge payload change, or `result_payload()` change.
+  activation, map-annotated GWAS/QTL/eQTL workflow, or comparator evidence.
 - Julia now has `loco_relationship_precisions` and
   `loco_mixed_model_marker_scan` as direct Phase 5 leave-one-group-out
   marker-screening utilities. The construction helper drops each marker group,

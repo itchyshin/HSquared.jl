@@ -258,6 +258,7 @@ loco_precisions = loco_relationship_precisions(markers, marker_groups; ridge = 0
 loco_scan = loco_mixed_model_marker_scan(
     y, X, Z, loco_precisions, marker_groups, markers, sigma_a2, sigma_e2
 )
+marker_payload = marker_scan_result_payload(mixed_scan)
 manhattan = marker_manhattan_data(scan)
 qq = marker_qq_data(scan)
 inflation = marker_genomic_inflation(scan)
@@ -279,8 +280,9 @@ map_gwas = gwas_table(scan, marker_data; trait = "height")
 map_eqtl = eqtl_table(scan, marker_data; feature = "geneA")
 ```
 
-These are direct Julia engine utilities. They do not change the R bridge
-payload, do not construct formula model specs, and do not activate the
+These are direct Julia engine utilities. `marker_scan_result_payload(scan)` is
+the narrow post-fit bridge payload for already-computed marker scans; the other
+helpers do not construct formula model specs and do not activate the
 R-facing `genomic()`, `markers()`, `single_step()`, `marker_scan()`, or
 `qtl_scan()` terms.
 
@@ -300,14 +302,25 @@ supplied relationship precision, then runs marker-by-marker GLS Wald tests
 conditional on `X`. It is relationship-corrected only through that supplied
 covariance. It does not estimate marker-scan variance components, implement
 LOCO, calibrate genome-wide p-values, draw plots, or
-change bridge payloads.
+activate map-annotated GWAS/QTL/eQTL table workflows.
 
 `loco_relationship_precisions()` constructs dense leave-one-group-out VanRaden
 relationship precisions by dropping each marker group and applying the existing
 ridge-regularized inverse. `loco_mixed_model_marker_scan()` then selects one
 relationship precision for each marker group and runs the same GLS test. These
 helpers do not choose public LOCO defaults, estimate marker-scan variance
-components, calibrate p-values, draw plots, or change bridge payloads.
+components, calibrate p-values, draw plots, or activate formula syntax.
+
+`marker_scan_result_payload()` returns the stable, row-aligned bridge shape for
+an already-computed marker scan: engine, target, marker count, marker IDs,
+effects, standard errors, Wald statistics, chi-square values, nominal p-values,
+Bonferroni/BH values, LOD-equivalent scores, denominators, allele frequencies,
+VanRaden scale, and optional variance-component and LOCO group metadata. The
+serialized fixture `test/fixtures/marker_scan_parity/` pins that payload for a
+post-fit mixed-model scan so the R twin can run a Julia-free parity test. This
+payload does not calibrate genome-wide thresholds, estimate marker-scan
+variance components, join marker maps, or activate the R-facing
+`marker_scan()` formula term.
 
 `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
 diagnostic from the returned chi-square statistics of direct marker scans. It

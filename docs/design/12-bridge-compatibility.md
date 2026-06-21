@@ -34,7 +34,7 @@ engine version each R surface is validated against.
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
 | PEV / reliability standard fields | experimental | `result_payload(::AnimalModelFit)` | `hs_julia_id_values()` top-level fields (R #21) | current `main` | standard payload tests (`:selinv` vs dense parity) |
 | Non-Gaussian Laplace/VA | experimental | #44 | (R #18) | — | planned (#44) |
-| Post-fit marker scans | experimental | #45 | (R `gwas()` #45 / #15) | — | planned (#45) |
+| Post-fit marker scans | experimental | `marker_scan_result_payload` | R `gwas(fit, markers)` (#23) | current `main` | `marker_scan_parity` |
 
 Rows update as each BT2 bridge target lands its engine-side payload + fixture.
 The metafounder single-step row is engine-side only: `Γ`, `group_of`,

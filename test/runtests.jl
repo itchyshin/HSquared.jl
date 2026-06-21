@@ -348,11 +348,14 @@ end
     @test occursin("phase5_marker_scan_recovery.jl", mixed_marker_row.evidence)
     @test occursin("half-sib simulated random-effect design", mixed_marker_row.evidence)
     @test occursin("single_marker_scan", mixed_marker_row.evidence)
-    @test occursin("LOCO", mixed_marker_row.missing)
-    @test occursin("Dense validation-scale supplied-variance Julia utility only", mixed_marker_row.claim_boundary)
+    @test occursin("marker_scan_result_payload", mixed_marker_row.evidence)
+    @test occursin("marker_scan_parity", mixed_marker_row.evidence)
+    @test occursin("post-fit explicit-argument reduction", mixed_marker_row.evidence)
+    @test occursin("map-annotated GWAS/QTL/eQTL table activation", mixed_marker_row.missing)
+    @test occursin("post-fit bridge payload/fixture only", mixed_marker_row.claim_boundary)
     @test occursin("no p-value calibration", mixed_marker_row.claim_boundary)
     @test occursin("no calibrated PVE", mixed_marker_row.claim_boundary)
-    @test occursin("no bridge payload change", mixed_marker_row.claim_boundary)
+    @test occursin("no R formula activation", mixed_marker_row.claim_boundary)
     loco_marker_row = only(row for row in validation if row.id == "V5-MARKER-LOCO")
     @test loco_marker_row.phase == "Phase 5"
     @test loco_marker_row.status == "partial"
@@ -3635,6 +3638,41 @@ end
     @test pf.target == :mixed_model_marker_scan
     @test pf.marker_ids == mids
     @test length(pf.effects) == 3
+    payload = marker_scan_result_payload(pf)
+    @test propertynames(payload) == (
+        :engine,
+        :target,
+        :n_markers,
+        :marker_ids,
+        :effects,
+        :standard_errors,
+        :z_scores,
+        :chisq,
+        :p_values,
+        :bonferroni_p_values,
+        :bh_q_values,
+        :lod_scores,
+        :denominators,
+        :allele_frequencies,
+        :vanraden_scale,
+        :variance_components,
+    )
+    @test payload.engine == "HSquared.jl"
+    @test payload.target == :mixed_model_marker_scan
+    @test payload.n_markers == 3
+    @test payload.marker_ids == mids
+    @test payload.effects ≈ pf.effects
+    @test payload.standard_errors ≈ pf.standard_errors
+    @test payload.z_scores ≈ pf.z_scores
+    @test payload.chisq ≈ pf.chisq
+    @test payload.p_values ≈ pf.p_values
+    @test payload.bonferroni_p_values ≈ pf.bonferroni_p_values
+    @test payload.bh_q_values ≈ pf.bh_q_values
+    @test payload.lod_scores ≈ pf.lod_scores
+    @test payload.denominators ≈ pf.denominators
+    @test payload.allele_frequencies ≈ pf.p
+    @test payload.vanraden_scale ≈ pf.k
+    @test payload.variance_components == (sigma_a2 = 1.2, sigma_e2 = 0.8)
 
     # fixed-effect post-fit == explicit args (uses the fit's residual variance)
     pf2 = single_marker_scan(fit, markers; marker_ids = mids)
@@ -3659,6 +3697,72 @@ end
     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
           single_marker_scan(fit, markers; marker_ids = mids)
+end
+
+@testset "Phase 5 marker-scan parity fixture (#45)" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "marker_scan_parity")
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    ids = vec(pheno[:, 1])
+    y = parse.(Float64, pheno[:, 2])
+    @test ids == ped.ids
+
+    marker_header, marker_rows = _csv_strings_for_test(joinpath(fixture_dir, "markers.csv"))
+    marker_ids = marker_header[2:end]
+    @test marker_rows[:, 1] == ids
+    markers = parse.(Float64, marker_rows[:, 2:end])
+
+    payload_header, payload_rows =
+        _csv_strings_for_test(joinpath(fixture_dir, "expected_marker_scan_payload.csv"))
+    @test payload_header == [
+        "marker_id",
+        "effect",
+        "standard_error",
+        "z_score",
+        "chisq",
+        "p_value",
+        "bonferroni_p_value",
+        "bh_q_value",
+        "lod_score",
+        "denominator",
+        "allele_frequency",
+    ]
+    expected_marker_ids = vec(payload_rows[:, 1])
+    expected_payload = parse.(Float64, payload_rows[:, 2:end])
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    sigma_a2 = parse(Float64, metadata["sigma_a2"])
+    sigma_e2 = parse(Float64, metadata["sigma_e2"])
+    X = ones(length(y), 1)
+    Z = sparse(1.0I, length(y), length(y))
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    lik = gaussian_loglik(spec, sigma_a2, sigma_e2; method = :REML)
+    fit = AnimalModelFit(spec, lik, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2), true, "supplied", 0)
+
+    scan = mixed_model_marker_scan(fit, markers; marker_ids = marker_ids)
+    payload = marker_scan_result_payload(scan)
+    @test metadata["engine"] == payload.engine
+    @test Symbol(metadata["target"]) == payload.target
+    @test parse(Int, metadata["n_markers"]) == payload.n_markers
+    @test parse(Float64, metadata["vanraden_scale"]) ≈ payload.vanraden_scale atol = 1e-12
+    @test expected_marker_ids == payload.marker_ids
+    @test expected_payload[:, 1] ≈ payload.effects atol = 1e-12
+    @test expected_payload[:, 2] ≈ payload.standard_errors atol = 1e-12
+    @test expected_payload[:, 3] ≈ payload.z_scores atol = 1e-12
+    @test expected_payload[:, 4] ≈ payload.chisq atol = 1e-12
+    @test expected_payload[:, 5] ≈ payload.p_values atol = 1e-12
+    @test expected_payload[:, 6] ≈ payload.bonferroni_p_values atol = 1e-12
+    @test expected_payload[:, 7] ≈ payload.bh_q_values atol = 1e-12
+    @test expected_payload[:, 8] ≈ payload.lod_scores atol = 1e-12
+    @test expected_payload[:, 9] ≈ payload.denominators atol = 1e-12
+    @test expected_payload[:, 10] ≈ payload.allele_frequencies atol = 1e-12
+
+    corrupted = copy(expected_payload)
+    corrupted[1, 1] += 0.1
+    @test !isapprox(corrupted[:, 1], payload.effects; atol = 1e-12)
 end
 
 @testset "Phase 5 genome-wide threshold machinery (#48)" begin

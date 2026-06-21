@@ -418,10 +418,13 @@ direct scan output, and `marker_genomic_inflation` reports a
 genomic-control-style lambda_GC diagnostic from returned chi-square values.
 `mixed_model_marker_scan` forms a supplied dense marginal covariance from
 `Z`, `Ainv`, `sigma_a2`, and `sigma_e2`, then runs marker-by-marker GLS Wald
-tests. `loco_mixed_model_marker_scan` selects a supplied relationship precision
-by marker group before running the same GLS test, and
-`loco_relationship_precisions` can construct the dense VanRaden-plus-ridge
-precision dictionary from marker groups. These helpers are not
+tests. The post-fit `mixed_model_marker_scan(fit, markers)` route now has a
+stable `marker_scan_result_payload(scan)` bridge shape plus
+`test/fixtures/marker_scan_parity/` for Julia-free R parity.
+`loco_mixed_model_marker_scan` selects a supplied relationship precision by
+marker group before running the same GLS test, and `loco_relationship_precisions`
+can construct the dense VanRaden-plus-ridge precision dictionary from marker
+groups. These helpers are not
 formula-driven mixed-model GWAS/QTL workflows, do not estimate marker-scan
 variance components, do not choose public LOCO defaults, do not compute
 interval-mapping, expression-wide eQTL, or mixed-model LOD workflows or

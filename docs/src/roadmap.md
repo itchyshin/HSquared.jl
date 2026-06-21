@@ -167,7 +167,9 @@ Next engine targets:
   Manhattan, regional-window, QQ, and lambda_GC diagnostic data. A
   supplied-variance dense GLS
   `mixed_model_marker_scan` exists for direct Julia relationship-corrected
-  screening, `loco_relationship_precisions` constructs dense
+  screening, with `marker_scan_result_payload` and
+  `test/fixtures/marker_scan_parity/` pinning the post-fit bridge shape.
+  `loco_relationship_precisions` constructs dense
   VanRaden-plus-ridge leave-one-group-out precision matrices, and
   `loco_mixed_model_marker_scan` can select among supplied LOCO precision
   matrices. Formula-driven QTL/GWAS/eQTL scans, public LOCO workflow defaults,
