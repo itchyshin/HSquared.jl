@@ -25,6 +25,14 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / R #82 marker-table sync. After the R twin merged
+  hsquared PR #82 (`934269a`), recorded that `gwas_table(scan)` /
+  `lod_scores(scan)` are banked R-side scan-result views over already-computed
+  `hs_gwas` objects. Scope: Julia source-doc/status and closed #45 issue-body
+  sync only; no Julia behavior change, no R files, no threshold activation, no
+  formula-level `marker_scan()` syntax, no map-annotated fit-level
+  GWAS/QTL/eQTL workflow, no comparator evidence, and no validation promotion.
+
 - 2026-06-21: Julia lane / #49 comparator target manifest. After R merged
   hsquared PR #80 consuming the marker-scan payload fixture and reported it
   would handle the structured-covariance ledger next, started a Julia-only

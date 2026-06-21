@@ -322,6 +322,13 @@ payload does not calibrate genome-wide thresholds, estimate marker-scan
 variance components, join marker maps, or activate the R-facing
 `marker_scan()` formula term.
 
+As of hsquared PR #82 (`934269a`), the R twin exposes `gwas_table(scan)` and
+`lod_scores(scan)` for already-computed `hs_gwas` objects returned by
+`gwas(fit, markers)`. Those are R-side scan-result views over this bridge
+surface: they preserve scan metadata and future calibration metadata when
+present, but they do not add calibrated thresholds, map joins, formula-level
+`marker_scan()` syntax, or fit-level GWAS/QTL/eQTL table workflows.
+
 `marker_genomic_inflation()` computes a genomic-control-style lambda_GC
 diagnostic from the returned chi-square statistics of direct marker scans. It
 is a summary diagnostic only and does not correct or calibrate scan statistics,

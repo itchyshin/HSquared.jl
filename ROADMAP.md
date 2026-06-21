@@ -421,6 +421,11 @@ genomic-control-style lambda_GC diagnostic from returned chi-square values.
 tests. The post-fit `mixed_model_marker_scan(fit, markers)` route now has a
 stable `marker_scan_result_payload(scan)` bridge shape plus
 `test/fixtures/marker_scan_parity/` for Julia-free R parity.
+The R twin now consumes that surface through `gwas(fit, markers)` and has
+banked thin `gwas_table(scan)` / `lod_scores(scan)` views for already-computed
+`hs_gwas` objects in hsquared PR #82 (`934269a`); those views preserve scan
+metadata and future calibration metadata but do not activate calibrated
+thresholds or map-annotated fit-level GWAS/QTL/eQTL tables.
 `loco_mixed_model_marker_scan` selects a supplied relationship precision by
 marker group before running the same GLS test, and `loco_relationship_precisions`
 can construct the dense VanRaden-plus-ridge precision dictionary from marker
