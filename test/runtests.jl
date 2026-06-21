@@ -5991,3 +5991,64 @@ end
         [HSquared.PoissonResponse(), HSquared.PoissonResponse(), HSquared.PoissonResponse()];
         X = X)    # length 3 ≠ T=2
 end
+
+@testset "Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50)" begin
+    # Shared 8-animal pedigree fixture (same as the other GLLVM REML testsets above).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 8
+    X = ones(q, 1)
+    fitr = HSquared.fit_gllvm_laplace_reml
+
+    # Mixed-family response: trait 1 = Poisson counts, trait 2 = Gaussian continuous.
+    Ymix = hcat(Float64[2, 1, 3, 0, 4, 2, 1, 5],
+                Float64[2.1, 3.4, 2.8, 3.1, 4.2, 1.9, 3.0, 4.7])
+    σe = 1.0
+    families_mix = [HSquared.PoissonResponse(), HSquared.GaussianResponse(σe)]
+
+    # (a) Per-trait [Poisson, Gaussian] REML fit converges.
+    fit_mix = fitr(Ymix, Ainv, families_mix; rank = 1,
+                   initial = reshape([0.6, 0.5], 2, 1))
+    @test fit_mix.converged
+    @test isfinite(fit_mix.loglik)
+    @test size(fit_mix.genetic_covariance) == (2, 2)
+    @test size(fit_mix.breeding_values) == (q, 1)
+
+    # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
+    Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+    Λ0 = reshape([0.6, 0.5], 2, 1)
+    fit_scalar = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, initial = Λ0)
+    fit_vec    = fitr(Yp2, Ainv, [HSquared.PoissonResponse(), HSquared.PoissonResponse()];
+                     rank = 1, initial = Λ0)
+    @test fit_scalar.genetic_covariance == fit_vec.genetic_covariance   # exact: same optimizer path
+
+    # (c) GeneticGLLVMFit extractor methods return the expected fields.
+    #   genetic_covariance: K×K PSD (rank-1 outer product ⟹ PSD with one positive eigenvalue)
+    G = HSquared.genetic_covariance(fit_scalar)
+    @test G isa Matrix{Float64}
+    @test size(G) == (2, 2)
+    @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
+    #   breeding_values: q × K matrix
+    bv = HSquared.breeding_values(fit_scalar)
+    @test bv isa Matrix{Float64}
+    @test size(bv) == (q, 1)
+    #   latent_structure: NamedTuple with communality field
+    ls = HSquared.latent_structure(fit_scalar)
+    @test haskey(ls, :communality)
+    @test all(ls.communality .≈ 1.0)                 # low-rank (no Ψ) ⟹ communality = 1
+    #   loglik: finite scalar
+    ll = HSquared.loglik(fit_scalar)
+    @test isfinite(ll)
+    @test ll ≈ fit_scalar.loglik
+
+    # (d) All existing GLLVM REML tests still produce GeneticGLLVMFit (not NamedTuple).
+    #     Spot-check the K=1,T=1 Poisson reduction fit (same fixture as slice-3 testset).
+    yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
+    gr = fitr(yp, Ainv, HSquared.PoissonResponse(); rank = 1, initial = reshape([1.0], 1, 1))
+    @test gr isa HSquared.GeneticGLLVMFit
+    @test gr.converged
+    @test size(gr.genetic_covariance) == (1, 1)
+    @test gr.n_latent_factors == 1
+    @test gr.uniqueness === nothing          # low-rank carries no Ψ
+end
