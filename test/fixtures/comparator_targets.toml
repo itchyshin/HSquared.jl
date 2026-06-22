@@ -25,6 +25,28 @@ required_files = [
 boundary = "Serialized Julia fitted target plus R bridge verification; not a bundled external comparator and not a new covered-status claim."
 
 [[target]]
+id = "sire_model_fitted_target"
+issue = 16
+fixture = "sire_model_fitted_target"
+capability_rows = ["V1-SIRE-FIT"]
+estimator_target = "sire model (record->sire incidence, sires-only Ainv) with REML-estimated sire variance"
+evidence_type = "julia_target"
+external_status = "Julia-native fitted sire-model target with a committed self-consistency test; the same-estimand REML sire-model confrontation (R-lane nadiv/pedigreemm fit of the SAME serialized data) is OPEN. The existing R-side published supplied-variance Mrode Example 3.2 anchor (tests/testthat/test-mrode-sire-anchor.R) is a supplied-variance anchor, not estimated-VC corroboration."
+required_comparator = "same-estimand REML sire-model comparator or published estimated-VC sire-model target with versions and tolerances"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "phenotypes.csv",
+    "expected_variance_components.csv",
+    "expected_beta.csv",
+    "expected_ebv.csv",
+    "expected_reliability.csv",
+    "expected_metadata.csv",
+    "generate.jl",
+]
+boundary = "Serialized Julia fitted sire-model target plus a self-consistency pin only; the engine heritability() accessor is mislabelled for sire specs (the fixture stores the corrected h2 = 4 sigma_s2 / (sigma_s2 + sigma_e2)); no external comparator run, no parsed R sire-model formula, and no covered status."
+
+[[target]]
 id = "phase4_multitrait_parity"
 issue = 49
 fixture = "phase4_multitrait_parity"

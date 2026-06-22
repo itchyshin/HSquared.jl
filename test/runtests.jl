@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 41
+    @test length(validation) == 44
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -182,6 +182,26 @@ end
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
     @test "V1-PCG" in [row.id for row in validation]
+    # Deferred-ledger close-out (C10/I1/H1): three new partial rows.
+    c10_row = only(row for row in validation if row.id == "C10-LRT")
+    @test c10_row.status == "partial"
+    @test occursin("nested_lrt", c10_row.evidence)
+    @test occursin("chi-bar", c10_row.evidence)
+    @test occursin("Self & Liang", c10_row.evidence)
+    @test occursin("Asymptotic-theory helper", c10_row.claim_boundary)
+    sire_row = only(row for row in validation if row.id == "V1-SIRE-FIT")
+    @test sire_row.status == "partial"
+    @test occursin("self-consistency", sire_row.evidence)
+    @test occursin("sire", sire_row.evidence)
+    @test occursin("external", sire_row.claim_boundary)
+    @test occursin("sire-model", sire_row.claim_boundary)
+    nbinom_row = only(row for row in validation if row.id == "V6-NBINOM")
+    @test nbinom_row.status == "partial"
+    @test occursin("NB2", nbinom_row.evidence)
+    @test occursin("Poisson limit", nbinom_row.evidence)
+    @test occursin("reported-not-gated", lowercase(nbinom_row.evidence)) ||
+          occursin("REPORTED-NOT-GATED", nbinom_row.evidence)
+    @test occursin("not a covered claim", nbinom_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -580,6 +600,13 @@ end
     fb = fit_laplace_reml(yt, Xt, Zt, Ai; family = :nbinom, initial = (sigma_a2 = 0.5,), theta_init = 5.0)
     @test fb.family === :nbinom
     @test fb.variance_components.sigma_a2 > 0 && fb.variance_components.theta > 0
+    # bridge payload is family-generic and self-describes the nbinom fit (V6-NBINOM row)
+    pay = HSquared.nongaussian_result_payload(fb)
+    @test pay.family == "nbinom"
+    @test pay.n_trials === nothing
+    @test haskey(pay.variance_components, :theta) && pay.variance_components.theta > 0
+    @test pay.method == "laplace"
+    @test !(:heritability in propertynames(pay))
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin
@@ -5241,6 +5268,7 @@ end
     @test length(ids) == length(unique(ids))
     @test Set(ids) == Set([
         "animal_model_fitted_target",
+        "sire_model_fitted_target",
         "phase4_multitrait_parity",
         "genomic_gblup_snpblup_target",
         "marker_scan_parity",
@@ -5285,6 +5313,13 @@ end
     @test nongaussian_target["issue"] == 44
     @test nongaussian_target["evidence_type"] == "bridge_payload_fixture"
     @test occursin("no per-record varying-trial R activation", nongaussian_target["boundary"])
+
+    sire_target = only(target for target in targets if target["id"] == "sire_model_fitted_target")
+    @test sire_target["issue"] == 16
+    @test sire_target["capability_rows"] == ["V1-SIRE-FIT"]
+    @test occursin("sire", lowercase(sire_target["external_status"]))
+    @test occursin("no", lowercase(sire_target["boundary"])) ||
+          occursin("not", lowercase(sire_target["boundary"]))
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin

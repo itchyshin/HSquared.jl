@@ -69,12 +69,12 @@ claim).
 - **C2** Genetic-correlation interval (delta + profile) + bridge. [bridge]
 - **C3** Repeatability interval promotion + coverage calibration (V3-REPEAT). [JL]
 - **C4** Two-component Gaussian σ²a/σ²e joint interval (nuisance profiling). [JL]
-- **C5** Extend `variance_component_interval` profile-LRT to genomic σ²a. [JL]
+- **C5** ✅ Extend `variance_component_interval` profile-LRT to genomic σ²a. [JL] (code merged #162; ledger/V2-GBLUP-cross-ref/.md mirrors closed in the deferred-ledger close-out)
 - **C6** Parametric-bootstrap CIs as a check on delta/profile. [JL]
 - **C7** Scale the coverage harness (#157) to 200-rep per-family runs. [JL]
 - **C8** Publishable h² interval coverage study (Gaussian). [JL]
 - **C9** `summary()`/`print()` surfacing of all intervals with honest clamp flags. [R]
-- **C10** Generalized nested-model LRT (df + boundary correction) machinery. [JL]
+- **C10** ✅ Generalized nested-model LRT (df + boundary correction) machinery. [JL] (`nested_lrt` merged #163; `C10-LRT` validation row + .md mirrors closed in the deferred-ledger close-out)
 
 ## D · Standard QG models (Phase 2/3)
 
@@ -134,7 +134,7 @@ claim).
 > (descriptors, Gaussian + non-Gaussian latent solve, REML over G_lat, per-trait
 > families). H8/H9 build on that.
 
-- **H1** Negative-binomial family + overdispersion (Laplace). [JL]
+- **H1** ✅ Negative-binomial family + overdispersion (Laplace). [JL] (`NegativeBinomialResponse` + joint `(σ²a,θ)` profile + oracle merged #165; `V6-NBINOM` row + recovery sim + .md mirrors closed in the deferred-ledger close-out; partial)
 - **H2** Beta-binomial family. [JL]
 - **H3** Ordinal / threshold (probit) model. [bridge]
 - **H4** Zero-inflated + hurdle families. [JL]
@@ -147,7 +147,7 @@ claim).
 
 ## I · Comparators & validation canon
 
-- **I1** Fitted Mrode Ch.3/4 native fixture (JL#46/#16) + R confrontation. [bridge]
+- **I1** 🟡 Fitted Mrode Ch.3/4 native fixture (JL#46/#16) + R confrontation. [bridge] (Ch.3 #46 existed; Ch.4 sire fixture merged #164; `V1-SIRE-FIT` row + comparator-manifest registration + .md mirrors closed in the deferred-ledger close-out. The R-lane same-estimand REML sire confrontation remains OPEN — standing debt.)
 - **I2** JWAS.jl comparator run (opt-in agreement, JL#49). [JL]
 - **I3** Install + run a free BLUPF90-family REML binary for same-estimand parity. [bridge] *(install/OK)*
 - **I4** ASReml comparison policy doc + (if licensed) runs (R#7). [R]
@@ -155,8 +155,8 @@ claim).
 - **I6** nadiv / pedigreemm Ainv + inbreeding confrontation. [R]
 - **I7** Tiny-example canon expansion (Mrode beyond 3.1; Lynch–Walsh). [bridge]
 - **I8** Recovery-study dashboard (bias ± 2·MCSE per estimand, all models). [JL]
-- **I9** Validation-debt burn-down tracker auto-generated from `validation_status()`. [JL]
-- **I10** Per-capability promotion-gate predicate doc (what `covered` requires). [bridge]
+- **I9** ✅ Validation-debt burn-down tracker auto-generated from `validation_status()`. [JL] (merged #162; `V0-DEBT-TRACKER` covered)
+- **I10** ✅ Per-capability promotion-gate predicate doc (what `covered` requires). [bridge] (merged #162; `docs/design/16-promotion-gate-predicates.md`)
 
 ## J · Non-standard inheritance (Phase 7)
 
