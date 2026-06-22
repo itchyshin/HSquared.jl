@@ -22,14 +22,14 @@ and the status ledgers no longer say the result-normalizer handoff is pending.
   validation-status page, changelog, coordination board, check-log, and this
   report.
 - Retargeted live GitHub issue #44 to mark R normalizer fixture consumption as
-  banked while keeping R formula/family/model-spec activation open.
+  banked while keeping the then-recorded R activation gates open.
 
 ## 3a. Decisions and Rejected Alternatives
 
 - Kept this as a status sync, not a capability change.
-- Did not mark R non-Gaussian formula/family parsing or live Julia bridge
-  fitting as implemented, because R PR #95 intentionally banked only the
-  normalizer fixture path.
+- Did not infer additional R behavior from the fixture-normalizer PR; later
+  hsquared PR #96 clarified that the opt-in R non-Gaussian bridge was already
+  present and the residual was narrower.
 - Did not treat the R normalizer tests as external comparator evidence.
 
 ## 4. Files Touched
@@ -71,8 +71,9 @@ bridge fitting gap, and the partial boundary text.
 ## 7a. Issue Ledger
 
 - #44: R normalizer fixture consumption is now banked via hsquared PR #95.
-  Remaining #44 gates are R non-Gaussian formula/family/model-spec activation
-  and live bridge fitting.
+  After hsquared PR #96, the remaining #44 bridge gate is narrowed to
+  per-record varying-trial formula/bridge activation plus broader
+  validation/comparator/calibration depth.
 - R #18 / R bridge parent #6: R has banked normalizer parity only; broader
   activation remains partial/open on the R side.
 - `V6-LAPLACE`: remains `partial`.
@@ -82,9 +83,9 @@ bridge fitting gap, and the partial boundary text.
 - The bridge matrix and comparator manifest now agree that `non_gaussian_parity`
   is R-consumed for normalizer tests.
 - The public-claims register, capability status, validation debt, and
-  `validation_status()` all keep the same boundaries: no R formula activation,
-  no live bridge fitting, no comparator evidence, no interval calibration, and
-  no covered-status promotion.
+  `validation_status()` all keep the same boundaries: no per-record
+  varying-trial R activation, no comparator evidence, no interval calibration,
+  and no covered-status promotion.
 
 ## 9. What Did Not Go Smoothly
 
@@ -93,8 +94,13 @@ turning into "R non-Gaussian model-spec activated" in the status prose.
 
 ## 10. Known Residuals
 
-- No R non-Gaussian formula/family/model-spec activation.
-- No live R-to-Julia non-Gaussian fitting path.
+- Correction after hsquared PR #96 (`e7c7a4a`): the original residual wording
+  was too broad. The R twin already has the opt-in `target = "nongaussian"`
+  bridge for Poisson/Binomial LA/VA fits, including binary Bernoulli and
+  common-trial `cbind(successes, failures)` Binomial, plus live bridge tests
+  when Julia is available.
+- Remaining R-side bridge gap: per-record varying-trial formula/bridge
+  activation plus broader validation/comparator/calibration depth.
 - No GLLVM.jl/gllvmTMB, ASReml, BLUPF90, MCMCglmm, or other external comparator
   evidence.
 - No calibrated non-Gaussian interval or coverage claim.

@@ -43,7 +43,7 @@
     - passed.
   - `git diff --check` - passed.
 - Rose verdict: clean with limitations. This banks a Julia-side payload shape
-  and deterministic parity target only. It does not activate R non-Gaussian
-  formula/family parsing, does not calibrate intervals, does not add external
+  and deterministic parity target only. It does not activate R per-record
+  varying-trial parsing, does not calibrate intervals, does not add external
   GLLVM.jl/gllvmTMB comparator evidence, and does not promote `V6-LAPLACE` or
   any public capability to covered.
