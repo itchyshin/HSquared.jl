@@ -237,7 +237,11 @@ end
     @test occursin("bridge payload change", mv_row.claim_boundary)
     mvreml_row = only(row for row in validation if row.id == "V4-MV-REML")
     @test mvreml_row.phase == "Phase 4"
-    @test mvreml_row.status == "partial"
+    @test mvreml_row.status == "covered"
+    @test occursin("pre-declared", mvreml_row.evidence)
+    @test occursin("48-seed cold-start", mvreml_row.evidence)
+    @test occursin("opt-in", mvreml_row.claim_boundary)
+    @test occursin("deep-inbreeding", mvreml_row.claim_boundary)
     @test occursin("fit_multivariate_reml", mvreml_row.evidence)
     @test occursin("heritability", mvreml_row.evidence)
     @test occursin("comparator protocol", mvreml_row.evidence)
