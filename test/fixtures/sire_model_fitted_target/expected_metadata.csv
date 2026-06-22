@@ -1,0 +1,11 @@
+key,value
+h2,0.49579018224525273
+loglik,-269.3137371902154
+sigma_s2,0.6815995501365341
+sigma_e2,4.817497241573367
+sigma_a2_implied,2.7263982005461362
+converged,true
+n_sires,12
+n_records,120
+method,REML
+model,sire

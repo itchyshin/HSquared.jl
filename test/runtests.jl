@@ -5131,6 +5131,67 @@ end
     @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
 end
 
+@testset "Sire-model fitted target fixture (#16)" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "sire_model_fitted_target")
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, pheno = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_sires = pheno[:, 2]
+    x = parse.(Float64, pheno[:, 3])
+    y = parse.(Float64, pheno[:, 4])
+    X = hcat(ones(length(x)), x)
+    Z = zeros(length(x), length(ped.ids))               # record -> SIRE incidence
+    sire_index = Dict(id => i for (i, id) in enumerate(ped.ids))
+    for (i, s) in enumerate(record_sires)
+        Z[i, sire_index[s]] = 1.0
+    end
+
+    vc_names, vc_vals = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_variance_components.csv"))
+    effects, beta_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_beta.csv"))
+    ebv_ids, ebv_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_ebv.csv"))
+    _, rel_expected = _named_matrix_csv_for_test(joinpath(fixture_dir, "expected_reliability.csv"))
+    metadata = _metadata_csv_for_test(joinpath(fixture_dir, "expected_metadata.csv"))
+
+    @test vc_names == ["sigma_s2", "sigma_e2"]
+    @test effects == ["Intercept", "x"]
+    @test ebv_ids == ped.ids
+    sigma_s2 = vc_vals[1]; sigma_e2 = vc_vals[2]
+    @test sigma_s2 > 0 && sigma_e2 > 0                   # interior, non-boundary target
+    @test metadata["converged"] == "true"
+    @test metadata["model"] == "sire"
+
+    # Self-consistency: a sire model is an ordinary animal-model spec with a record->sire
+    # Z and a sires-only Ainv; the engine sigma_a2 slot IS the sire variance. Henderson MME
+    # at the stored components reproduces the serialized output (the fixture is the engine's
+    # OWN fitted result via generate.jl); β/loglik/PEV agree across distinct numerical routes.
+    mme = fit_animal_model(y, X, Z, Ainv; target = :henderson_mme,
+                           variance_components = (sigma_a2 = sigma_s2, sigma_e2 = sigma_e2),
+                           ids = ped.ids)
+    @test fixed_effects(mme) ≈ vec(beta_expected) atol = 1e-6
+    @test breeding_values(mme).ids == ped.ids
+    @test breeding_values(mme).values ≈ vec(ebv_expected) atol = 1e-6
+    @test reliability(mme).values ≈ rel_expected[:, 2] atol = 1e-6
+    @test prediction_error_variance(mme).values ≈ rel_expected[:, 1] atol = 1e-6
+
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    @test sparse_reml_loglik(spec, sigma_s2, sigma_e2).loglik ≈ parse(Float64, metadata["loglik"]) atol = 1e-6
+
+    # Heritability mapping (honesty pin): a sire model's narrow-sense h² is
+    # 4·σ²s/(σ²s+σ²e), NOT the engine's generic accessor σ²s/(σ²s+σ²e) (mislabelled for a
+    # sire spec). The fixture stores the corrected h²; pin it AND pin that it differs from
+    # the generic mapping, and the implied σ²a = 4·σ²s.
+    @test parse(Float64, metadata["h2"]) ≈ 4 * sigma_s2 / (sigma_s2 + sigma_e2) atol = 1e-8
+    @test !isapprox(parse(Float64, metadata["h2"]), sigma_s2 / (sigma_s2 + sigma_e2); atol = 1e-3)
+    @test parse(Float64, metadata["sigma_a2_implied"]) ≈ 4 * sigma_s2 atol = 1e-8
+    @test 0 < parse(Float64, metadata["h2"]) < 1        # a sane heritability
+
+    # mutation / test-of-test: a corrupted serialized EBV is rejected
+    corrupted = copy(vec(ebv_expected)); corrupted[1] += 0.1
+    @test !isapprox(breeding_values(mme).values, corrupted; atol = 0.05)
+end
+
 @testset "Comparator target manifest (#49 coordination)" begin
     manifest_path = joinpath(@__DIR__, "fixtures", "comparator_targets.toml")
     manifest = TOML.parsefile(manifest_path)
