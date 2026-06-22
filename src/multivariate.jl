@@ -197,6 +197,66 @@ function multivariate_result_payload(result)
     )
 end
 
+"""
+    structured_genetic_payload(result)
+
+Bridge-ready, rotation-INVARIANT result payload for a `:lowrank` or
+`:factor_analytic` multivariate REML fit from [`fit_multivariate_reml`](@ref) —
+the rotation-gated companion of [`multivariate_result_payload`](@ref) (which serves
+the rotation-free `:unstructured` / `:diagonal` structures).
+
+The factor loadings of a low-rank / factor-analytic `G` are rotation-NONidentified
+(`Λ` and `ΛQ` give the same `G`), so they are NEVER surfaced. Instead this exposes
+only rotation-INVARIANT functionals of the estimated genetic covariance `G` (the FA
+rotation convention, `docs/dev-log/decisions/2026-06-19-fa-rotation-convention.md`):
+the reconstructed `G`, per-trait genetic variances / correlations, the genetic
+eigenstructure ([`genetic_pca`](@ref): descending eigenvalues + sign-canonicalized
+principal axes), `mean_evolvability`, and — for `:factor_analytic` — the specific
+variances `Ψ` (`genetic_uniqueness`, which IS identified). Fixed effects, breeding
+values, per-trait heritabilities, the REML `loglik`, and `converged` are
+rotation-invariant and carried through. It deliberately OMITS `genetic_loadings`;
+`rotation_invariant = true` and `loadings_excluded = true` make that self-describing.
+"""
+function structured_genetic_payload(result)
+    hasproperty(result, :genetic_structure) ||
+        throw(ArgumentError("structured_genetic_payload needs a multivariate REML result"))
+    s = result.genetic_structure
+    s in (:lowrank, :factor_analytic) || throw(ArgumentError(
+        "structured_genetic_payload is for the rotation-gated :lowrank / " *
+        ":factor_analytic structures; use multivariate_result_payload for " *
+        ":unstructured / :diagonal"))
+    r = _require_structured_genetic_metadata(result)
+    G0 = Matrix(r.genetic_covariance)
+    t = size(G0, 1)
+    pca = genetic_pca(G0)
+    ψ = r.genetic_uniqueness
+    bv = r.breeding_values
+    return (
+        engine = "HSquared.jl",
+        target = "multivariate_reml_structured",
+        genetic_structure = String(s),
+        genetic_rank = r.genetic_rank,
+        n_traits = t,
+        traits = collect(r.traits),
+        genetic_covariance = G0,
+        genetic_variances = diag(G0),
+        genetic_correlation = Matrix(r.genetic_correlation),
+        residual_covariance = Matrix(r.residual_covariance),
+        residual_correlation = Matrix(r.residual_correlation),
+        genetic_eigenvalues = pca.values,
+        genetic_principal_axes = pca.vectors,
+        mean_evolvability = mean_evolvability(G0),
+        genetic_uniqueness = isnothing(ψ) ? nothing : copy(collect(ψ)),
+        heritability = copy(collect(r.heritability)),
+        fixed_effects = Matrix(r.beta),
+        breeding_values = (ids = bv.ids, traits = bv.traits, values = Matrix(bv.values)),
+        loglik = r.loglik,
+        converged = r.converged,
+        rotation_invariant = true,
+        loadings_excluded = true,
+    )
+end
+
 function _check_finite_matrix(M, name)
     Mf = Float64.(Matrix(M))
     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))
