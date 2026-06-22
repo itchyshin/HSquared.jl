@@ -491,6 +491,30 @@ include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
     @test occursin("20260619 (R; G=0.422179, R=0.262608)", summary)
 end
 
+include(joinpath(@__DIR__, "..", "sim", "summarize_validation_debt.jl"))
+
+@testset "Validation-debt burn-down tracker (I9)" begin
+    vs = validation_status()
+    nrows = length(vs)
+    counts = ValidationDebtTracker.status_counts(vs)
+    @test [first(p) for p in counts] == ["covered", "covered_external", "partial", "planned"]
+    @test sum(last, counts) == nrows                              # buckets partition the table
+    debts = ValidationDebtTracker.open_debts(vs)
+    @test all(d -> d.status != "covered", debts)
+    cov_ids = [r.id for r in vs if r.status == "covered"]
+    ce_ids = [r.id for r in vs if r.status == "covered_external"]
+    @test length(debts) == nrows - length(cov_ids)               # every non-covered row
+    @test all(id -> !any(d -> d.id == id, debts), cov_ids)       # covered rows excluded
+    @test !isempty(ce_ids) && all(id -> any(d -> d.id == id, debts), ce_ids)  # covered_external kept
+    psc = ValidationDebtTracker.phase_status_counts(vs)
+    @test sum(sum(values(d)) for d in values(psc)) == nrows      # phases partition the table
+    md = ValidationDebtTracker.markdown_summary(vs)
+    @test occursin("# Validation-Debt Burn-Down", md)
+    @test occursin("| **total** | $nrows |", md)
+    @test occursin("## Open debts", md)
+    @test occursin("(covered_external", md)
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],
