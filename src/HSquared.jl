@@ -181,6 +181,7 @@ export AMDGPUBackend,
     two_effect_mme,
     validation_status,
     variance_component_covariance,
+    variance_component_interval,
     variance_component_standard_errors,
     variance_components
 

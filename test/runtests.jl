@@ -4354,6 +4354,27 @@ end
     gfit = fit_ai_reml(gspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
     gci = heritability_interval(gfit)
     @test 0 < gci.lower < gci.upper < 1
+
+    # sigma_a2 profile-LRT interval (variance_component_interval): the
+    # variance-component companion of the h² profile — fixes sigma_a2 and profiles
+    # sigma_e2 (the nuisance). This tiny n=8 fixture has a flat REML surface, so
+    # endpoints may clamp; these assertions hold whether clamped or not.
+    sa2ci95 = variance_component_interval(fit; level = 0.95)
+    sa2ci50 = variance_component_interval(fit; level = 0.50)
+    @test sa2ci95.method == :profile
+    @test sa2ci95.sigma_a2 ≈ sa2
+    @test sa2ci95.lower ≤ sa2 ≤ sa2ci95.upper                              # brackets the estimate
+    @test sa2ci50.lower ≥ sa2ci95.lower && sa2ci50.upper ≤ sa2ci95.upper   # 95% ⊇ 50%
+    @test sa2ci95.lower_clamped isa Bool && sa2ci95.upper_clamped isa Bool
+    # the profile maximum over sigma_e2 at σ̂²a recovers the fitted REML optimum and
+    # is an upper envelope of any fixed-sigma_e2 slice at the same sigma_a2
+    llmax_a = HSquared._profile_reml_loglik_sigma_a2(spec, sa2)
+    @test llmax_a ≈ sparse_reml_loglik(spec, sa2, se2).loglik atol = 1e-4
+    @test llmax_a ≥ sparse_reml_loglik(spec, sa2, se2 * 3.0).loglik - 1e-8
+    # guards: level range, method, and REML-only (ml is the ML fit above)
+    @test_throws ArgumentError variance_component_interval(fit; level = 1.5)
+    @test_throws ArgumentError variance_component_interval(fit; method = :bogus)
+    @test_throws ArgumentError variance_component_interval(ml)
 end
 
 @testset "Phase 3 repeatability / permanent-environment MME (supplied variance)" begin
