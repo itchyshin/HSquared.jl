@@ -544,6 +544,44 @@ end
     @test rneg.statistic < 0 && rneg.pvalue == 1.0 && occursin("negative statistic", rneg.note)
 end
 
+@testset "Phase 6 negative-binomial (NB2, log link) family (H1)" begin
+    f = HSquared.NegativeBinomialResponse(2.0)
+    # kernel oracle: score = dℓ/dη, weight = -d²ℓ/dη² vs central finite differences
+    for (yv, e) in [(3.0, 0.2), (0.0, -0.5), (7.0, 0.8)]
+        ll(x) = HSquared._fam_loglik(f, yv, x)
+        @test HSquared._fam_score(f, yv, e) ≈ (ll(e + 1e-6) - ll(e - 1e-6)) / 2e-6 rtol = 1e-4
+        @test HSquared._fam_weight(f, yv, e) ≈ -(ll(e + 1e-4) - 2ll(e) + ll(e - 1e-4)) / 1e-8 rtol = 1e-3
+    end
+    # Poisson limit (θ→∞) pins the θ-dependent loggamma normalizer an η-only FD cannot catch
+    @test HSquared._fam_loglik(HSquared.NegativeBinomialResponse(1e8), 3.0, 0.2) ≈
+          HSquared._fam_loglik(HSquared.PoissonResponse(), 3.0, 0.2) atol = 1e-3
+    # geometric closed form at θ = 1
+    let yv = 4.0, e = 0.2, mu = exp(0.2)
+        @test HSquared._fam_loglik(HSquared.NegativeBinomialResponse(1.0), yv, e) ≈
+              yv * e - (yv + 1) * log(1 + mu) atol = 1e-9
+    end
+    # constructor + count + fitter guards
+    @test_throws ArgumentError HSquared.NegativeBinomialResponse(0.0)
+    @test_throws ArgumentError HSquared.NegativeBinomialResponse(-1.0)
+    ped = normalize_pedigree([1, 2, 3, 4, 5, 6], [0, 0, 1, 1, 3, 3], [0, 0, 2, 2, 4, 4])
+    Ai = Matrix(pedigree_inverse(ped))
+    na = 6; reps = 4; n = na * reps
+    Zt = zeros(n, na)
+    for i in 1:n
+        Zt[i, ((i - 1) ÷ reps) + 1] = 1.0          # 4 repeated records per animal -> identifiable
+    end
+    Xt = ones(n, 1)
+    yt = Float64[1, 2, 1, 2, 5, 4, 5, 6, 0, 1, 0, 1, 3, 4, 3, 2, 7, 6, 8, 7, 2, 1, 2, 3]
+    @test_throws ArgumentError fit_laplace_reml(yt, Xt, Zt, Ai; family = :nbinom, marginal = :variational)
+    @test_throws ArgumentError fit_laplace_reml(yt, Xt, Zt, Ai; family = :nbinom, theta_init = -1.0)
+    bad = copy(yt); bad[1] = 2.5
+    @test_throws ArgumentError fit_laplace_reml(bad, Xt, Zt, Ai; family = :nbinom)
+    # fit smoke: NB profiles sigma_a2 + theta jointly (repeated records -> non-singular MME)
+    fb = fit_laplace_reml(yt, Xt, Zt, Ai; family = :nbinom, initial = (sigma_a2 = 0.5,), theta_init = 5.0)
+    @test fb.family === :nbinom
+    @test fb.variance_components.sigma_a2 > 0 && fb.variance_components.theta > 0
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],
