@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added `test/fixtures/non_gaussian_parity/`, a Julia-native #44 bridge
+  payload target for `nongaussian_result_payload(::NonGaussianFit)`. The
+  fixture pins Poisson Laplace and per-record Binomial variational payloads for
+  future R normalizer tests; it is not R non-Gaussian formula activation,
+  interval calibration, or external comparator evidence.
 - Added pedigree normalization and sparse `Ainv` construction utilities.
 - Added low-level animal-model specification validation.
 - Added dense Gaussian ML/REML log-likelihood evaluation at supplied variance

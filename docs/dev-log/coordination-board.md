@@ -25,6 +25,17 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / non-Gaussian bridge payload fixture. After the R
+  twin mirrored Julia #151 via hsquared PR #94 (`1d8565f`), audited the next
+  Julia-owned bridge gate and took #44's remaining payload-fixture checkbox.
+  Scope: Julia fixture/status only. Added `test/fixtures/non_gaussian_parity/`
+  for Poisson Laplace and per-record Binomial variational
+  `nongaussian_result_payload(::NonGaussianFit)` outputs, registered it in the
+  comparator-target manifest, and updated the bridge/status/public-claim
+  ledgers. No R files were edited, no R non-Gaussian family syntax or
+  model-spec was activated, no external GLLVM/gllvmTMB comparator was run, no
+  interval-calibration claim was made, and `V6-LAPLACE` remains partial.
+
 - 2026-06-21: Julia lane / BLUPF90 numeric packet hardening. After R mirrored
   Julia #150 via hsquared PR #93 (`ce47ec6`), audited the next evidence gate
   and found Julia's BLUPF90 starter packet used a less explicit alphanumeric

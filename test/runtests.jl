@@ -5048,6 +5048,7 @@ end
         "genomic_gblup_snpblup_target",
         "marker_scan_parity",
         "structured_covariance_parity",
+        "non_gaussian_parity",
     ])
 
     allowed_evidence = Set([
@@ -5082,6 +5083,11 @@ end
 
     marker_scan_target = only(target for target in targets if target["id"] == "marker_scan_parity")
     @test occursin("PR #83", marker_scan_target["external_status"])
+
+    nongaussian_target = only(target for target in targets if target["id"] == "non_gaussian_parity")
+    @test nongaussian_target["issue"] == 44
+    @test nongaussian_target["evidence_type"] == "bridge_payload_fixture"
+    @test occursin("no R non-Gaussian formula activation", nongaussian_target["boundary"])
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
@@ -5494,6 +5500,120 @@ end
     @test !isnan(fp.breeding_values[1])
     pp.breeding_values.ids[1] = "MUT"
     @test fp.ids[1] != "MUT"               # ids are copied too (symmetry with values)
+end
+
+@testset "Phase 6 non-Gaussian parity fixture (#44)" begin
+    fixture_dir = joinpath(@__DIR__, "fixtures", "non_gaussian_parity")
+
+    _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
+    ped = normalize_pedigree(ped_rows[:, 1], ped_rows[:, 2], ped_rows[:, 3])
+    Ainv = pedigree_inverse(ped)
+
+    _, poisson_rows = _csv_strings_for_test(joinpath(fixture_dir, "poisson_phenotypes.csv"))
+    _, binomial_rows = _csv_strings_for_test(joinpath(fixture_dir, "binomial_phenotypes.csv"))
+    @test vec(poisson_rows[:, 1]) == ped.ids
+    @test vec(binomial_rows[:, 1]) == ped.ids
+
+    X = [ones(length(ped.ids)) parse.(Float64, poisson_rows[:, 3])]
+    @test X[:, 2] == parse.(Float64, binomial_rows[:, 4])
+    Z = sparse(1.0I, length(ped.ids), length(ped.ids))
+
+    metadata_header, metadata_rows =
+        _csv_strings_for_test(joinpath(fixture_dir, "expected_payload_metadata.csv"))
+    @test metadata_header == ["case", "field", "value"]
+    metadata = Dict((metadata_rows[i, 1], metadata_rows[i, 2]) => metadata_rows[i, 3]
+                    for i in axes(metadata_rows, 1))
+
+    _, vc_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_variance_components.csv"))
+    variance_components_expected =
+        Dict((vc_rows[i, 1], vc_rows[i, 2]) => parse(Float64, vc_rows[i, 3])
+             for i in axes(vc_rows, 1))
+    _, fixed_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_fixed_effects.csv"))
+    fixed_expected = Dict((fixed_rows[i, 1], fixed_rows[i, 2]) => parse(Float64, fixed_rows[i, 3])
+                          for i in axes(fixed_rows, 1))
+    _, ebv_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_breeding_values.csv"))
+    ebv_expected = Dict((ebv_rows[i, 1], ebv_rows[i, 2]) => parse(Float64, ebv_rows[i, 3])
+                        for i in axes(ebv_rows, 1))
+
+    cases = [
+        (
+            id = "poisson_laplace",
+            fit = fit_laplace_reml(
+                parse.(Float64, poisson_rows[:, 2]),
+                X,
+                Z,
+                Ainv;
+                family = :poisson,
+                marginal = :LA,
+                ids = ped.ids,
+                initial = (sigma_a2 = 1.0,),
+                iterations = 500,
+            ),
+        ),
+        (
+            id = "binomial_vector_variational",
+            fit = fit_laplace_reml(
+                parse.(Float64, binomial_rows[:, 2]),
+                X,
+                Z,
+                Ainv;
+                family = :binomial,
+                n_trials = parse.(Int, binomial_rows[:, 3]),
+                marginal = :VA,
+                ids = ped.ids,
+                initial = (sigma_a2 = 1.0,),
+                iterations = 500,
+            ),
+        ),
+    ]
+
+    for case in cases
+        payload = nongaussian_result_payload(case.fit)
+        @test propertynames(payload) == (
+            :engine,
+            :target,
+            :family,
+            :n_trials,
+            :method,
+            :variance_components,
+            :fixed_effects,
+            :breeding_values,
+            :loglik,
+            :converged,
+        )
+        @test !hasproperty(payload, :heritability)
+        @test payload.engine == metadata[(case.id, "engine")]
+        @test payload.target == metadata[(case.id, "target")]
+        @test payload.family == metadata[(case.id, "family")]
+        @test payload.method == metadata[(case.id, "method")]
+        @test payload.converged == (metadata[(case.id, "converged")] == "true")
+        @test payload.converged
+        @test payload.loglik ≈ parse(Float64, metadata[(case.id, "loglik")]) atol = 1e-8
+        @test length(payload.fixed_effects) == parse(Int, metadata[(case.id, "n_fixed_effects")])
+        @test length(payload.breeding_values.values) == parse(Int, metadata[(case.id, "n_breeding_values")])
+        @test payload.breeding_values.ids == ped.ids
+        @test payload.variance_components.sigma_a2 ≈
+              variance_components_expected[(case.id, "sigma_a2")] atol = 1e-8
+        @test payload.fixed_effects[1] ≈ fixed_expected[(case.id, "Intercept")] atol = 1e-8
+        @test payload.fixed_effects[2] ≈ fixed_expected[(case.id, "x")] atol = 1e-8
+        expected_ebv = [ebv_expected[(case.id, id)] for id in ped.ids]
+        @test payload.breeding_values.values ≈ expected_ebv atol = 1e-8
+
+        if case.id == "poisson_laplace"
+            @test payload.n_trials === nothing
+            @test metadata[(case.id, "n_trials")] == "nothing"
+            @test case.fit.marginal === :laplace
+        else
+            expected_trials = parse.(Int, split(metadata[(case.id, "n_trials")], ";"))
+            @test payload.n_trials == expected_trials
+            @test payload.n_trials == parse.(Int, binomial_rows[:, 3])
+            @test case.fit.marginal === :variational
+        end
+
+        corrupted_ebv = copy(expected_ebv)
+        corrupted_ebv[1] += 0.1
+        @test maximum(abs.(payload.breeding_values.values .- corrupted_ebv)) > 0.05
+    end
 end
 
 @testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin

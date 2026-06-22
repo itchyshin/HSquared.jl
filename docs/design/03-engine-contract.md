@@ -680,6 +680,42 @@ or `nothing`, degrees of freedom or `nothing`, observation count, path flags,
 and variance-component source. It does not refit, solve equations, compute
 PEV/reliability, probe backends, or widen `result_payload()`.
 
+## Implemented Non-Gaussian Bridge Payload
+
+```julia
+fit = fit_laplace_reml(y, X, Z, Ainv; family = :poisson, marginal = :LA)
+payload = nongaussian_result_payload(fit)
+```
+
+`nongaussian_result_payload(fit)` is the narrow bridge payload for
+`NonGaussianFit` results. It returns a plain `NamedTuple` with exactly these
+top-level fields:
+
+- `engine`
+- `target`
+- `family`
+- `n_trials`
+- `method`
+- `variance_components`
+- `fixed_effects`
+- `breeding_values`
+- `loglik`
+- `converged`
+
+The serialized fixture `test/fixtures/non_gaussian_parity/` pins this shape for
+two deterministic validation-scale fits: a Poisson Laplace fit and a per-record
+Binomial variational fit. The fixture also pins the canonical R-facing method
+strings (`"laplace"` and `"variational"`), the `n_trials = nothing` convention
+for non-Binomial payloads, and the integer-vector trial denominator for
+per-record Binomial payloads.
+
+This is a payload/fixture contract only. It does not activate R-side
+non-Gaussian formula syntax, does not provide a public R `family = poisson()` or
+`binomial()` fitting path, does not calibrate intervals, and does not provide
+external GLLVM.jl/gllvmTMB or other comparator evidence. `heritability` is
+deliberately absent from this payload because no family-uniform non-Gaussian
+heritability quantity is computed.
+
 ## R Result Payload Contract
 
 R head `e543cd7` defines an `hsquared_fit` contract with extractors looking for

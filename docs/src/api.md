@@ -122,8 +122,10 @@ HSquared.fit_two_effect_reml
 HSquared.NonGaussianFit
 HSquared.fit_laplace_reml
 HSquared.laplace_reml_interval
+HSquared.nongaussian_result_payload
 HSquared.multivariate_mme
 HSquared.fit_multivariate_reml
+HSquared.multivariate_result_payload
 HSquared.multivariate_covariance_standard_errors
 HSquared.covariance_structure_lrt
 HSquared.genetic_correlation
