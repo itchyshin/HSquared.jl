@@ -28,6 +28,26 @@ honest-status drawing behaviors ON the figure — #93):
   `D⁻¹GD⁻¹` correlation **heatmap** (unit diagonal, off-diagonals in `[-1,1]`), NEVER raw
   loadings (gated on `rotation_invariant`); when `heritabilities` are supplied, low-h²
   (imprecise) traits are flagged in the subtitle.
+- `:manhattan` ← [`marker_manhattan_data`](@ref) — chromosome-coloured scatter of
+  cumulative `plot_positions` vs `-log10(p)`, with a VISUAL-ONLY Bonferroni guide line;
+  the subtitle states the p-values are nominal Wald and **NOT genome-wide calibrated**
+  (#48), so the line is guidance only.
+- `:qq` ← [`marker_qq_data`](@ref) — observed vs expected `-log10(p)` with the `y = x`
+  uniform-null line; the subtitle carries the same NOT-genome-wide-calibrated caveat.
+  λGC is **intentionally not** recomputed in the drawing layer (the preparer carries no
+  χ²; recomputing would duplicate `/src` numerics and risk an uncalibrated read).
+- `:rr_variance` ← [`rr_genetic_variance_plot_data`](@ref) — the genetic-variance
+  trajectory `v_g(t)`, plus an `h²(t)` panel ONLY when a residual was supplied; the
+  subtitle flags it as supplied-`K_g` descriptive and that `h²(t)` can overstate without
+  a permanent-environment term.
+- `:rr_surface` ← [`rr_covariance_surface_plot_data`](@ref) — the genetic
+  covariance/correlation surface heatmap (diverging RdBu centred at 0); the correlation
+  surface uses a fixed `(-1, 1)` colorrange, the covariance surface a data-driven
+  symmetric-about-0 range (a fixed `(-1, 1)` would clip).
+- `:rr_eigenfunctions` ← [`rr_eigenfunctions_plot_data`](@ref) — one covariance-function
+  eigenfunction per line with a per-axis variance-explained legend; the subtitle states
+  it is rotation-invariant, signs are arbitrary, and the span is ambiguous under repeated
+  eigenvalues.
 
 The honest-status caveat is always rendered on the figure (subtitle), sourced from the
 SAME flags the preparer carries — this is the drawing-layer half of the plotting

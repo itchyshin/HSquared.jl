@@ -139,7 +139,8 @@ backend is in scope (`using CairoMakie` / `GLMakie`). `Makie` is in
 dependency-free. Without a backend the stub throws `MethodError` (a CI test asserts
 this). One dispatcher consumes the `*_plot_data` NamedTuples and infers `kind` from
 the carried fields (override with `kind = :variance_components | :breeding_values |
-:g_geometry`):
+:g_geometry | :genetic_correlation | :manhattan | :qq | :rr_variance | :rr_surface |
+:rr_eigenfunctions`):
 
 | `kind` | Preparer (set) | Draw | Honest-status behavior rendered ON the figure |
 | --- | --- | --- | --- |
@@ -147,15 +148,27 @@ the carried fields (override with `kind = :variance_components | :breeding_value
 | `:breeding_values` | `breeding_values_plot_data` (B) | EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
 | `:g_geometry` | `genetic_pca_plot_data` (C) | eigenvalue **scree** | gated on `is_eigenstructure_not_loadings` — a loadings biplot is **rejected** (`ArgumentError`, FA rotation convention); a non-PD `G` (negative eigenvalue) draws the bar but **suppresses** %-variance labels; rotation-invariant caveat in the subtitle |
 | `:genetic_correlation` | `genetic_correlation_plot_data` (C) | `D⁻¹GD⁻¹` **heatmap** | gated on `rotation_invariant` — raw loadings **rejected** (`ArgumentError`); diverging colormap centred at 0, unit diagonal; when `heritabilities` are supplied, low-h² (imprecise) traits are **flagged in the subtitle** |
+| `:manhattan` | `marker_manhattan_data` (D) | chromosome-coloured **scatter** of cumulative `plot_positions` vs `-log10(p)` | a **VISUAL-ONLY** Bonferroni guide line at `-log10(0.05/m)`; subtitle: "nominal Wald p-values, **NOT genome-wide calibrated** (#48); threshold line is visual guidance only" |
+| `:qq` | `marker_qq_data` (D) | observed vs expected `-log10(p)` **scatter** | the `y = x` uniform-null line; subtitle: "nominal Wald p-values, **NOT genome-wide calibrated** (#48); y=x is the uniform null". λGC is **intentionally NOT** recomputed (the preparer carries no χ²; keep numerics in `/src`) |
+| `:rr_variance` | `rr_genetic_variance_plot_data` (A) | genetic-variance `v_g(t)` (+ optional `h²(t)`) panels | the `h²(t)` panel is drawn **only** when a residual was supplied (else a single panel + note); subtitle: "supplied-`K_g` descriptive (not REML, not phenotypic); h²(t) can overstate without a permanent-environment term" |
+| `:rr_surface` | `rr_covariance_surface_plot_data` (A) | covariance/correlation **surface heatmap** | diverging RdBu centred at 0; the **correlation** surface uses a fixed `(-1, 1)` colorrange, the **covariance** surface a data-driven symmetric-about-0 range (a fixed `(-1,1)` would clip); subtitle: "supplied-`K_g` descriptive; rotation-invariant; genetic, not phenotypic" |
+| `:rr_eigenfunctions` | `rr_eigenfunctions_plot_data` (A) | one **eigenfunction per line** | per-axis variance-explained legend; subtitle: "rotation-invariant; supplied-`K_g` descriptive; **signs arbitrary**; span-ambiguous under repeated eigenvalues" |
 
 The subtitle caveat is sourced from the SAME honest-status flags the preparer
 carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
 guardrail"). Drawing only: no estimation, no engine computation in the extension.
 
 **Verification (local-only; Makie is deliberately OUT of default CI — cost
-discipline):** all four kinds draw a `Makie.Figure` (inferred + explicit `kind`),
-the stub throws `MethodError` before a backend loads, the supplied/NaN/[0,1]-boundary
-forest branches and the loadings-biplot / non-PD-`G` guards all fire, and one figure
-rasterizes to PNG with CairoMakie. Evidence: `docs/dev-log/check-log.md` +
-after-task report `2026-06-20-…makie-ext…`. This is a **drawing capability only** —
-no statistical claim is promoted by it.
+discipline):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),
+the stub throws `MethodError` before a backend loads (a CI test asserts this across
+all **nine** payload shapes — one per kind — in 11 total assertions), the
+`_infer_kind` eigenvalues-collision guard holds
+(`genetic_pca_plot_data` still infers `:g_geometry`, `rr_eigenfunctions_plot_data`
+infers `:rr_eigenfunctions`), the honest-status branches all fire (supplied/NaN/[0,1]
+forest; loadings-biplot / non-PD-`G` guards; the Manhattan/QQ NOT-calibrated subtitles;
+the reaction-norm single-vs-two-panel split; the correlation-`(-1,1)` vs
+covariance-data-driven surface colorrange; the eigenfunction signs-arbitrary subtitle),
+and all figures rasterize to PNG with CairoMakie 0.15.11 / Makie 0.24.x. Evidence:
+`docs/dev-log/check-log.d/2026-06-22-l1-makie-figures.md` + after-task report
+`2026-06-22-l1-makie-figures.md`. This is a **drawing capability only** — no
+statistical claim is promoted by it.

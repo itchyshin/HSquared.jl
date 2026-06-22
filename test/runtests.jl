@@ -7264,14 +7264,31 @@ end
     # default test/CI environment (heavy GL/Cairo stack — cost discipline), so in
     # CI the stub must be a method-less generic function: any call throws
     # `MethodError` until a backend activates the extension. The full draw of all
-    # three figure kinds is verified locally with CairoMakie (see the after-task
-    # report 2026-06-20 + check-log), not in CI.
+    # NINE figure kinds is verified locally with CairoMakie (see the after-task
+    # report 2026-06-22 + check-log), not in CI.
     @test hsquared_figure isa Function
     @test isempty(methods(hsquared_figure))          # stub: no methods without Makie
     @test_throws MethodError hsquared_figure((term = ["x"], panel = ["heritability"]))
     @test_throws MethodError hsquared_figure((value = [1.0], pev = [0.1], pev_scale = "validation"))
     @test_throws MethodError hsquared_figure((traits = ["a"], genetic_correlations = [1.0;;],
                                               heritabilities = nothing, rotation_invariant = true))
+    @test_throws MethodError hsquared_figure((is_eigenstructure_not_loadings = true,
+                                              eigenvalues = [1.0], variance_explained = [1.0],
+                                              axis_labels = ["PC1"]))
+    # set D (markers) + set A (random regression): one representative payload each;
+    # all must still throw MethodError in the dependency-free build (no method leaked).
+    @test_throws MethodError hsquared_figure((marker_ids = ["m1"], chromosomes = ["1"],
+                                              positions = [1.0], plot_positions = [1.0],
+                                              p_values = [0.1], neglog10_p_values = [1.0]))
+    @test_throws MethodError hsquared_figure((expected_neglog10_p_values = [1.0],
+                                              observed_neglog10_p_values = [1.0]))
+    @test_throws MethodError hsquared_figure((covariate = [0.0], genetic_variance = [1.0],
+                                              heritability = nothing, supplied = true))
+    @test_throws MethodError hsquared_figure((covariate = [0.0], surface = [1.0;;],
+                                              is_correlation = true, supplied = true))
+    @test_throws MethodError hsquared_figure((covariate = [0.0], eigenvalues = [1.0],
+                                              eigenfunctions = [1.0;;], variance_explained = [1.0],
+                                              rotation_invariant = true, supplied = true))
 end
 
 @testset "BLUPF90 multivariate starter packet preflight (#49)" begin
