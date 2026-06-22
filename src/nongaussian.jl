@@ -73,6 +73,21 @@ struct BinomialVectorResponse <: ResponseFamily
     end
 end
 
+"""
+Negative-binomial family (NB2) with log link (`μ = exp(η)`) and overdispersion /
+size parameter `theta > 0`: `Var(y|μ) = μ + μ²/theta`. As `theta → ∞` the family
+→ Poisson. `theta` is an EXTRA estimable scalar (unlike the single-parameter
+Poisson/Bernoulli/Binomial), so `fit_laplace_reml` profiles it jointly with
+`sigma_a2`. Laplace-only at this slice (the NB variational ELBO has no closed form).
+"""
+struct NegativeBinomialResponse <: ResponseFamily
+    theta::Float64
+    function NegativeBinomialResponse(theta::Real)
+        theta > 0 || throw(ArgumentError("theta (overdispersion) must be positive"))
+        return new(Float64(theta))
+    end
+end
+
 # Per-record family resolution. For every family without per-record state this is
 # the identity (compiles away; zero overhead in the per-observation comprehensions).
 # For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
@@ -146,6 +161,17 @@ _fam_loglik(f::BinomialResponse, y, η) = y * η - f.n_trials * _log1pexp(η) + 
 _fam_score(f::BinomialResponse, y, η) = y - f.n_trials * _logistic(η)
 _fam_weight(f::BinomialResponse, y, η) = (p = _logistic(η); f.n_trials * p * (1.0 - p))
 
+# Negative-binomial (NB2, log link). θ = f.theta enters the loggamma normalizer (so
+# the OUTER profile over θ is correctly shaped) and the score/weight. score = dℓ/dη;
+# weight = -d²ℓ/dη² = the OBSERVED Hessian (always > 0 here — the correct Laplace curvature).
+_fam_loglik(f::NegativeBinomialResponse, y, η) =
+    (μ = exp(η); θ = f.theta;
+     y * η - (y + θ) * log(θ + μ) + θ * log(θ) +
+     _loggamma(y + θ) - _loggamma(θ) - _logfactorial(y))
+_fam_score(f::NegativeBinomialResponse, y, η) = (μ = exp(η); θ = f.theta; (y - μ) * θ / (θ + μ))
+_fam_weight(f::NegativeBinomialResponse, y, η) = (μ = exp(η); θ = f.theta; θ * μ * (θ + y) / (θ + μ)^2)
+# the NB normalizer reuses the module's existing `_loggamma` (Lanczos, in multivariate.jl).
+
 function _logfactorial(y)
     k = Int(round(y))
     s = 0.0
@@ -179,6 +205,11 @@ function _check_counts(f::BinomialVectorResponse, yv)
         throw(ArgumentError("n_trials must have one entry per record (length(n_trials) == length(y))"))
     all(i -> isinteger(yv[i]) && 0 <= yv[i] <= f.n_trials[i], eachindex(yv)) ||
         throw(ArgumentError("BinomialVectorResponse requires integer counts with 0 <= y[i] <= n_trials[i]"))
+    return nothing
+end
+function _check_counts(::NegativeBinomialResponse, yv)
+    all(y -> isinteger(y) && y >= 0, yv) ||
+        throw(ArgumentError("NegativeBinomialResponse requires non-negative integer counts"))
     return nothing
 end
 
@@ -514,9 +545,10 @@ no R model-spec, no external comparator.
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
-                          n_trials = nothing, ids = nothing, iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli, :binomial) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, or :binomial"))
+                          n_trials = nothing, ids = nothing, theta_init::Real = 1.0,
+                          iterations::Integer = 200)
+    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, or :nbinom"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     # `n_trials` may be a common scalar denominator OR a per-record integer vector
@@ -548,6 +580,20 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         return NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
                               Optim.converged(res) && fit.converged, :gaussian, marginal, nothing)
+    elseif family === :nbinom
+        # negative-binomial: TWO estimable scalars (sigma_a2 + the overdispersion theta),
+        # profiled jointly by NelderMead. Laplace-only (the NB ELBO has no closed form).
+        mm isa Laplace ||
+            throw(ArgumentError("family = :nbinom supports only marginal = :laplace at this slice (the NB variational ELBO has no closed form); got :$(marginal)"))
+        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
+        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
+        objnb(p) = -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), NegativeBinomialResponse(exp(p[2]))).loglik
+        res = optimize(objnb, log.([sa0, Float64(theta_init)]), NelderMead(),
+                       Optim.Options(iterations = iterations))
+        sa2, theta = exp.(Optim.minimizer(res))
+        fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
+        return NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
+                              fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
         fam = _resolve_single_family(family, n_trials)
