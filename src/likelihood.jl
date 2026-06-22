@@ -1325,6 +1325,30 @@ function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
     return -Optim.minimum(result)
 end
 
+# Profile REML log-likelihood at a fixed additive variance `sigma_a2`: maximize
+# over the NUISANCE residual variance `sigma_e2`. The sigma_a2 companion of
+# `_profile_reml_loglik` (which profiles total variance at fixed h²); a 1-D
+# maximization reusing `sparse_reml_loglik`, bracketed on the phenotypic variance
+# of `y`. Used by `variance_component_interval`.
+function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
+    sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
+    y = Float64.(spec.y)
+    n = length(y)
+    ybar = sum(y) / n
+    v0 = max(sum(abs2, y .- ybar) / max(1, n - 1), eps())
+    function objective(logE)
+        sigma_e2 = exp(logE)
+        try
+            return -sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik
+        catch err
+            err isa PosDefException && return Inf
+            rethrow()
+        end
+    end
+    result = optimize(objective, log(v0 * 1e-6), log(v0 * 1e4))
+    return -Optim.minimum(result)
+end
+
 # Root of `target` on the heritability axis for the profile interval. `anchor`
 # is the point-estimate side where `target(anchor) < 0`; `bound` is the search
 # boundary. If `target(bound) <= 0` the interval reaches the search bound and the
@@ -1393,6 +1417,54 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
     lower = 1 / (1 + exp(-(eta - z * se_eta)))
     upper = 1 / (1 + exp(-(eta + z * se_eta)))
     return (heritability = h2, lower = lower, upper = upper, level = level, se = se, method = :delta)
+end
+
+function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
+    fit.spec.method == :REML ||
+        throw(ArgumentError("profile variance-component interval requires a REML fit"))
+    sigma_a2 = fit.variance_components.sigma_a2
+    sigma_a2 > 0 ||
+        throw(ArgumentError("sigma_a2 estimate is on the boundary; interval undefined"))
+    spec = fit.spec
+    llmax = _profile_reml_loglik_sigma_a2(spec, sigma_a2)
+    z = _standard_normal_quantile((1 + level) / 2)
+    q = z * z
+    target(v) = 2 * (llmax - _profile_reml_loglik_sigma_a2(spec, v)) - q
+    lo_bound = sigma_a2 * 1e-4
+    up_bound = sigma_a2 * 1e4
+    lower = _profile_root(target, lo_bound, sigma_a2)
+    upper = _profile_root(target, up_bound, sigma_a2)
+    lower_clamped = target(lo_bound) <= 0
+    upper_clamped = target(up_bound) <= 0
+    return (sigma_a2 = sigma_a2, lower = lower, upper = upper, level = level,
+            lower_clamped = lower_clamped, upper_clamped = upper_clamped,
+            method = :profile)
+end
+
+"""
+    variance_component_interval(fit; level = 0.95, method = :profile)
+
+Profile likelihood-ratio confidence interval for the additive variance component
+`sigma_a2` of a REML [`AnimalModelFit`](@ref). It inverts
+`2·(ℓmax − ℓprofile(sigma_a2)) ≤ χ²₁,level` while profiling the residual variance
+`sigma_e2` as a NUISANCE at each candidate `sigma_a2` — the variance-component
+companion of [`heritability_interval`](@ref) `method = :profile` (which profiles
+the total variance at fixed `h²`).
+
+Returns `(sigma_a2, lower, upper, level, lower_clamped, upper_clamped, method)`.
+The `*_clamped` flags report an endpoint that reached the `(sigma_a2·1e-4,
+sigma_a2·1e4)` search bound (the profile did not cross the χ² threshold within
+range), so a non-crossing endpoint is self-describing — on small samples the REML
+surface is flat and the interval clamps.
+
+Experimental, asymptotic, REML only; no coverage calibration.
+"""
+function variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
+                                     method::Symbol = :profile)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    method === :profile ||
+        throw(ArgumentError("variance_component_interval supports method = :profile only"))
+    return _variance_component_interval_profile(fit; level = level)
 end
 
 """
