@@ -111,3 +111,25 @@ required_files = [
     "expected_metadata.csv",
 ]
 boundary = "Rotation-free diagonal bridge target only; no lowrank/fa bridge exposure, loading interpretation, recovery promotion, or covered status."
+
+[[target]]
+id = "non_gaussian_parity"
+issue = 44
+fixture = "non_gaussian_parity"
+capability_rows = ["V6-FIT", "V6-BINOMIAL", "V6-BERNOULLI"]
+estimator_target = "non-Gaussian NonGaussianFit bridge payload for Poisson Laplace and per-record Binomial variational fits"
+evidence_type = "bridge_payload_fixture"
+external_status = "Julia fixture only; R non-Gaussian family acceptance and result normalization remain planned."
+required_comparator = "GLLVM.jl, gllvmTMB, threshold/probit, or another accepted same-estimand comparator before any V6 covered move"
+required_files = [
+    "README.md",
+    "pedigree.csv",
+    "poisson_phenotypes.csv",
+    "binomial_phenotypes.csv",
+    "expected_payload_metadata.csv",
+    "expected_variance_components.csv",
+    "expected_fixed_effects.csv",
+    "expected_breeding_values.csv",
+    "generate.jl",
+]
+boundary = "Bridge payload shape only; no R non-Gaussian formula activation, no calibrated interval claim, no external comparator evidence, and no covered status."
