@@ -1,0 +1,6 @@
+# Regenerable comparator artifacts (produced by generate.jl / run_mcmcglmm.R)
+pedigree.csv
+phenotypes.csv
+engine_target.csv
+engine_summary.csv
+mcmcglmm_agreement.csv
