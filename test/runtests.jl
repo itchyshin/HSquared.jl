@@ -491,6 +491,30 @@ include(joinpath(@__DIR__, "..", "sim", "summarize_recovery_calibration.jl"))
     @test occursin("20260619 (R; G=0.422179, R=0.262608)", summary)
 end
 
+include(joinpath(@__DIR__, "..", "sim", "summarize_validation_debt.jl"))
+
+@testset "Validation-debt burn-down tracker (I9)" begin
+    vs = validation_status()
+    nrows = length(vs)
+    counts = ValidationDebtTracker.status_counts(vs)
+    @test [first(p) for p in counts] == ["covered", "covered_external", "partial", "planned"]
+    @test sum(last, counts) == nrows                              # buckets partition the table
+    debts = ValidationDebtTracker.open_debts(vs)
+    @test all(d -> d.status != "covered", debts)
+    cov_ids = [r.id for r in vs if r.status == "covered"]
+    ce_ids = [r.id for r in vs if r.status == "covered_external"]
+    @test length(debts) == nrows - length(cov_ids)               # every non-covered row
+    @test all(id -> !any(d -> d.id == id, debts), cov_ids)       # covered rows excluded
+    @test !isempty(ce_ids) && all(id -> any(d -> d.id == id, debts), ce_ids)  # covered_external kept
+    psc = ValidationDebtTracker.phase_status_counts(vs)
+    @test sum(sum(values(d)) for d in values(psc)) == nrows      # phases partition the table
+    md = ValidationDebtTracker.markdown_summary(vs)
+    @test occursin("# Validation-Debt Burn-Down", md)
+    @test occursin("| **total** | $nrows |", md)
+    @test occursin("## Open debts", md)
+    @test occursin("(covered_external", md)
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],
@@ -4359,6 +4383,25 @@ end
     gfit = fit_ai_reml(gspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
     gci = heritability_interval(gfit)
     @test 0 < gci.lower < gci.upper < 1
+
+    # variance_component_interval applies UNCHANGED to a genomic GBLUP / supplied-Ginv
+    # REML fit (the profiler reads only the spec via sparse_reml_loglik); on a genomic
+    # spec sigma_a2 is the GENOMIC additive variance, conditional on the supplied Ginv.
+    gvc = variance_components(gfit)
+    gsa2ci = variance_component_interval(gfit; level = 0.95)
+    gsa2ci50 = variance_component_interval(gfit; level = 0.50)
+    @test gsa2ci.method == :profile
+    @test gsa2ci.sigma_a2 ≈ gvc.sigma_a2
+    @test (gsa2ci.lower ≤ gsa2ci.sigma_a2 ≤ gsa2ci.upper) ||
+          gsa2ci.lower_clamped || gsa2ci.upper_clamped          # brackets or self-describes
+    @test gsa2ci50.lower ≥ gsa2ci.lower && gsa2ci50.upper ≤ gsa2ci.upper   # 95% ⊇ 50%
+    @test gsa2ci.lower_clamped isa Bool && gsa2ci.upper_clamped isa Bool
+    # the profile max over sigma_e2 at σ̂²a recovers the fitted genomic REML optimum
+    @test HSquared._profile_reml_loglik_sigma_a2(gspec, gsa2ci.sigma_a2) ≈
+          sparse_reml_loglik(gspec, gvc.sigma_a2, gvc.sigma_e2).loglik atol = 1e-4
+    # the genomic convenience entry point flows through end-to-end
+    gbci = variance_component_interval(fit_gblup_reml(gspec.y, gspec.X, gspec.Z, Ginv))
+    @test gbci.method == :profile && gbci.lower_clamped isa Bool
 
     # sigma_a2 profile-LRT interval (variance_component_interval): the
     # variance-component companion of the h² profile — fixes sigma_a2 and profiles
