@@ -1457,6 +1457,14 @@ sigma_a2·1e4)` search bound (the profile did not cross the χ² threshold withi
 range), so a non-crossing endpoint is self-describing — on small samples the REML
 surface is flat and the interval clamps.
 
+Applies unchanged to a genomic GBLUP / supplied-`Ginv` REML fit (`fit_gblup_reml`,
+or any `method = :REML` spec with `Ginv` in the `Ainv` slot): the profiler reads
+only the spec's precision through `sparse_reml_loglik`. On a genomic spec `sigma_a2`
+is the GENOMIC additive variance and the interval is CONDITIONAL on the supplied
+`Ginv` (ridge + centering), so the implied `A_ii = diag(inv(Ginv)) ≠ 1` — not a
+pedigree-scale `sigma_a2`. A non-PD `Ginv` degrades to a clamped endpoint (the
+`PosDefException` is caught as `Inf`), never a silent number.
+
 Experimental, asymptotic, REML only; no coverage calibration.
 """
 function variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,

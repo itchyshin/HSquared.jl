@@ -4360,6 +4360,25 @@ end
     gci = heritability_interval(gfit)
     @test 0 < gci.lower < gci.upper < 1
 
+    # variance_component_interval applies UNCHANGED to a genomic GBLUP / supplied-Ginv
+    # REML fit (the profiler reads only the spec via sparse_reml_loglik); on a genomic
+    # spec sigma_a2 is the GENOMIC additive variance, conditional on the supplied Ginv.
+    gvc = variance_components(gfit)
+    gsa2ci = variance_component_interval(gfit; level = 0.95)
+    gsa2ci50 = variance_component_interval(gfit; level = 0.50)
+    @test gsa2ci.method == :profile
+    @test gsa2ci.sigma_a2 ≈ gvc.sigma_a2
+    @test (gsa2ci.lower ≤ gsa2ci.sigma_a2 ≤ gsa2ci.upper) ||
+          gsa2ci.lower_clamped || gsa2ci.upper_clamped          # brackets or self-describes
+    @test gsa2ci50.lower ≥ gsa2ci.lower && gsa2ci50.upper ≤ gsa2ci.upper   # 95% ⊇ 50%
+    @test gsa2ci.lower_clamped isa Bool && gsa2ci.upper_clamped isa Bool
+    # the profile max over sigma_e2 at σ̂²a recovers the fitted genomic REML optimum
+    @test HSquared._profile_reml_loglik_sigma_a2(gspec, gsa2ci.sigma_a2) ≈
+          sparse_reml_loglik(gspec, gvc.sigma_a2, gvc.sigma_e2).loglik atol = 1e-4
+    # the genomic convenience entry point flows through end-to-end
+    gbci = variance_component_interval(fit_gblup_reml(gspec.y, gspec.X, gspec.Z, Ginv))
+    @test gbci.method == :profile && gbci.lower_clamped isa Bool
+
     # sigma_a2 profile-LRT interval (variance_component_interval): the
     # variance-component companion of the h² profile — fixes sigma_a2 and profiles
     # sigma_e2 (the nuisance). This tiny n=8 fixture has a flat REML surface, so
