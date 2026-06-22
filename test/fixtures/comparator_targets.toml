@@ -119,7 +119,7 @@ fixture = "non_gaussian_parity"
 capability_rows = ["V6-FIT", "V6-BINOMIAL", "V6-BERNOULLI"]
 estimator_target = "non-Gaussian NonGaussianFit bridge payload for Poisson Laplace and per-record Binomial variational fits"
 evidence_type = "bridge_payload_fixture"
-external_status = "Julia fixture only; R non-Gaussian family acceptance and result normalization remain planned."
+external_status = "Julia fixture consumed by hsquared PR #95 for R Julia-free result-normalizer tests; R non-Gaussian family/model-spec activation remains planned."
 required_comparator = "GLLVM.jl, gllvmTMB, threshold/probit, or another accepted same-estimand comparator before any V6 covered move"
 required_files = [
     "README.md",
