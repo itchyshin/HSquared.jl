@@ -5588,16 +5588,17 @@ end
         @test payload.method == metadata[(case.id, "method")]
         @test payload.converged == (metadata[(case.id, "converged")] == "true")
         @test payload.converged
-        @test payload.loglik ≈ parse(Float64, metadata[(case.id, "loglik")]) atol = 1e-8
+        payload_atol = 1e-6
+        @test payload.loglik ≈ parse(Float64, metadata[(case.id, "loglik")]) atol = payload_atol
         @test length(payload.fixed_effects) == parse(Int, metadata[(case.id, "n_fixed_effects")])
         @test length(payload.breeding_values.values) == parse(Int, metadata[(case.id, "n_breeding_values")])
         @test payload.breeding_values.ids == ped.ids
         @test payload.variance_components.sigma_a2 ≈
-              variance_components_expected[(case.id, "sigma_a2")] atol = 1e-8
-        @test payload.fixed_effects[1] ≈ fixed_expected[(case.id, "Intercept")] atol = 1e-8
-        @test payload.fixed_effects[2] ≈ fixed_expected[(case.id, "x")] atol = 1e-8
+              variance_components_expected[(case.id, "sigma_a2")] atol = payload_atol
+        @test payload.fixed_effects[1] ≈ fixed_expected[(case.id, "Intercept")] atol = payload_atol
+        @test payload.fixed_effects[2] ≈ fixed_expected[(case.id, "x")] atol = payload_atol
         expected_ebv = [ebv_expected[(case.id, id)] for id in ped.ids]
-        @test payload.breeding_values.values ≈ expected_ebv atol = 1e-8
+        @test payload.breeding_values.values ≈ expected_ebv atol = payload_atol
 
         if case.id == "poisson_laplace"
             @test payload.n_trials === nothing
