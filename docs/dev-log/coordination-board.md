@@ -25,6 +25,16 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-22: Julia lane / deferred ledger close-out (C5/C10/I1/H1). Merged the
+  green PRs #164 (I1 sire fixture) + #165 (H1 negative-binomial), then closed the
+  honest-tracking follow-ups: +3 `partial` `validation_status()` rows (`C10-LRT`,
+  `V1-SIRE-FIT`, `V6-NBINOM`; count 41→44), the C5 genomic-σ²a `.md` mirrors +
+  V2-GBLUP cross-ref, the sire comparator-manifest entry, the opt-in NB recovery
+  sim, and doc-14 ✅ marks. `Pkg.test()` + `docs/make.jl` green; Rose CLEAN.
+  Nothing promoted to covered (public default stays Gaussian-only).
+  **Cross-lane debt (open, do not claim run):** the R-lane same-estimand REML
+  sire-model confrontation (nadiv/pedigreemm fit of the serialized
+  `sire_model_fitted_target` data) — recorded in the `V1-SIRE-FIT` row.
 - 2026-06-21: Julia lane / R #96 non-Gaussian bridge-gap correction. After the
   R twin merged hsquared PR #96 (`e7c7a4a`), corrected the Julia #44/status
   wording that had over-broadened the remaining R gap. Scope: source-doc/status,
