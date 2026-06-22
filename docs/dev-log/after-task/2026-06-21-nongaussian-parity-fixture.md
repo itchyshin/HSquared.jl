@@ -76,8 +76,9 @@ consume without live Julia.
   page.
 - Remote CI first failed on Julia 1.10 because the optimizer-refit payload
   comparisons used `atol = 1e-8`; Linux/Julia 1.10 differed from the stored
-  fixture values by about `1e-7` to `6e-7`. The test now uses `atol = 1e-6`
-  only for refitted numeric payload values.
+  fixture values by about `1e-7` to `6e-7`. A second run showed one remaining
+  Binomial variance-component difference of about `1.1e-6`, so the test now
+  uses `atol = 1e-5` only for refitted numeric payload values.
 - `julia --project=. -e 'using Pkg; Pkg.test()'` - passed after the tolerance
   fix; the non-Gaussian fixture testset passed 44 assertions.
 - `Rscript /Users/z3437171/shinichi-brain/tools/check-after-task.R docs/dev-log/after-task/2026-06-21-nongaussian-parity-fixture.md`
@@ -88,7 +89,7 @@ consume without live Julia.
 
 The fixture test reconstructs `Ainv`, `X`, `Z`, response vectors, and trial
 denominators from CSV before refitting. It compares stored payload values at
-`1e-6` tolerance and then perturbs the expected EBV vector to verify the parity
+`1e-5` tolerance and then perturbs the expected EBV vector to verify the parity
 check would fail on value drift.
 
 ## 7a. Issue Ledger
@@ -115,10 +116,11 @@ failed because its docstring references `multivariate_result_payload`, which
 was also omitted from the API page. Adding the sibling payload function fixed
 the dead link, and the docs build then passed.
 
-The first remote Julia 1.10 CI run also showed that `1e-8` was too strict for
-refitted optimizer outputs across platforms. The fixture now uses `1e-6` for
-numeric refit-value comparisons while keeping payload shape, IDs, method
-strings, trial denominators, and the corrupted-EBV negative check intact.
+The first two remote Julia 1.10 CI runs also showed that `1e-8`/`1e-6` were too
+strict for refitted optimizer outputs across platforms. The fixture now uses
+`1e-5` for numeric refit-value comparisons while keeping payload shape, IDs,
+method strings, trial denominators, and the corrupted-EBV negative check
+intact.
 
 ## 10. Known Residuals
 

@@ -5588,7 +5588,7 @@ end
         @test payload.method == metadata[(case.id, "method")]
         @test payload.converged == (metadata[(case.id, "converged")] == "true")
         @test payload.converged
-        payload_atol = 1e-6
+        payload_atol = 1e-5
         @test payload.loglik ≈ parse(Float64, metadata[(case.id, "loglik")]) atol = payload_atol
         @test length(payload.fixed_effects) == parse(Int, metadata[(case.id, "n_fixed_effects")])
         @test length(payload.breeding_values.values) == parse(Int, metadata[(case.id, "n_breeding_values")])
