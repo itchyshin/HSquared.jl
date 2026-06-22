@@ -2,8 +2,9 @@
 
 Julia-native bridge target for the non-Gaussian `NonGaussianFit` payload
 surface. The fixture pins two tiny deterministic fits and their
-`nongaussian_result_payload(fit)` outputs so the R lane can write Julia-free
-normalizer tests before activating non-Gaussian family syntax.
+`nongaussian_result_payload(fit)` outputs. The R lane consumed this fixture in
+hsquared PR #95 for Julia-free normalizer tests before activating non-Gaussian
+family syntax.
 
 This is a serialized Julia target, not external comparator evidence and not
 public R model-spec activation.

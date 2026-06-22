@@ -33,7 +33,7 @@ engine version each R surface is validated against.
 | Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
 | PEV / reliability standard fields | experimental | `result_payload(::AnimalModelFit)` | `hs_julia_id_values()` top-level fields (R #21) | current `main` | standard payload tests (`:selinv` vs dense parity) |
-| Non-Gaussian Laplace/VA | experimental | `nongaussian_result_payload` | planned R non-Gaussian family/result normalizer (#18) | current `main` | `non_gaussian_parity` |
+| Non-Gaussian Laplace/VA | experimental | `nongaussian_result_payload` | result normalizer fixture tests banked; family/model-spec activation planned (#18) | current `main` | `non_gaussian_parity` |
 | Post-fit marker scans | experimental | `marker_scan_result_payload` | R `gwas(fit, markers)` (#23) | current `main` | `marker_scan_parity` |
 
 Rows update as each BT2 bridge target lands its engine-side payload + fixture.
@@ -52,8 +52,10 @@ against the dense MME diagonal on validation-scale fixtures. Supplied-variance
 `HendersonMMEResult` bridge paths may still use explicit extractors rather than
 `result_payload()`.
 
-The non-Gaussian row is a Julia-side payload target only. The
-`non_gaussian_parity` fixture serializes Poisson Laplace and per-record Binomial
-variational `NonGaussianFit` payloads so the R lane can test normalizers without
-live Julia. It does not activate R non-Gaussian formula syntax, family parsing,
+The non-Gaussian row is a Julia-side payload target with R-side normalizer
+consumption now banked. The `non_gaussian_parity` fixture serializes Poisson
+Laplace and per-record Binomial variational `NonGaussianFit` payloads, and
+hsquared PR #95 (`05fbdd3`) consumes them in Julia-free normalizer tests while
+preserving method aliases and scalar/vector `n_trials` fields. It does not
+activate R non-Gaussian formula syntax, family parsing, live bridge fitting,
 threshold/probit comparators, interval calibration, or covered status.

@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / R #95 non-Gaussian normalizer sync. After the R twin
+  merged hsquared PR #95 (`05fbdd3`), reconciled Julia #44/status surfaces so
+  the R-side Julia-free `NonGaussianFit` normalizer fixture consumption is
+  banked. Scope: source-doc/status, manifest, live issue-body, and audit
+  artifacts only. No Julia behavior change, no R files, no R non-Gaussian
+  formula/family/model-spec activation, no live bridge fitting, no external
+  GLLVM/gllvmTMB comparator evidence, no interval calibration, and no
+  validation/public-claim promotion.
+
 - 2026-06-21: Julia lane / non-Gaussian bridge payload fixture. After the R
   twin mirrored Julia #151 via hsquared PR #94 (`1d8565f`), audited the next
   Julia-owned bridge gate and took #44's remaining payload-fixture checkbox.

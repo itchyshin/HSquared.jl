@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Recorded hsquared PR #95 consumption of the
+  `test/fixtures/non_gaussian_parity/` target in Julia status ledgers. This
+  banks R Julia-free `NonGaussianFit` normalizer parity only; R formula/family
+  activation, live bridge fitting, interval calibration, external comparator
+  evidence, and covered-status promotion remain open.
 - Added `test/fixtures/non_gaussian_parity/`, a Julia-native #44 bridge
   payload target for `nongaussian_result_payload(::NonGaussianFit)`. The
   fixture pins Poisson Laplace and per-record Binomial variational payloads for
