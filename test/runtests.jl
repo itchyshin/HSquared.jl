@@ -515,6 +515,35 @@ include(joinpath(@__DIR__, "..", "sim", "summarize_validation_debt.jl"))
     @test occursin("(covered_external", md)
 end
 
+@testset "nested_lrt helper + chi-bar boundary (C10)" begin
+    sf = HSquared._chisq_sf
+    # 1. interior reduction == plain χ² tail (covariance_structure_lrt's unchanged path)
+    r0 = nested_lrt(-100.0, -97.0; df = 2, boundary_df = 0)       # statistic = 6
+    @test r0.statistic ≈ 6.0
+    @test r0.pvalue ≈ sf(6.0, 2)
+    @test r0.mixture == :chisq && r0.boundary == false
+    # 2. single-boundary 50:50 mixture: textbook s = 2.706 (χ²_1 90th pct) -> p ≈ 0.05 vs naive 0.10
+    s = 2.706
+    r1 = nested_lrt(0.0, s / 2; df = 1, boundary_df = 1)
+    @test r1.mixture == :chibar_5050 && r1.boundary == true
+    @test r1.pvalue ≈ 0.5 * sf(s, 1) atol = 1e-9                  # df-1 = 0 tail is 0
+    @test r1.pvalue < sf(s, 1)                                    # anti-conservative vs naive
+    @test isapprox(r1.pvalue, 0.05; atol = 2e-3)                  # Stram-Lee halving
+    # 3. df >= 2 boundary -> flagged-conservative naive χ² (no false mixture)
+    r2 = nested_lrt(0.0, 3.0; df = 2, boundary_df = 2)
+    @test r2.mixture == :chisq_conservative && r2.pvalue ≈ sf(6.0, 2)
+    # 4. range + monotonicity
+    @test 0 <= r0.pvalue <= 1 && 0 <= r1.pvalue <= 1
+    @test nested_lrt(0.0, 5.0; df = 1, boundary_df = 1).pvalue <
+          nested_lrt(0.0, 1.0; df = 1, boundary_df = 1).pvalue
+    # 5. guards + negative statistic
+    @test_throws ArgumentError nested_lrt(0.0, 1.0; df = 0)
+    @test_throws ArgumentError nested_lrt(0.0, 1.0; df = 1, boundary_df = 2)
+    @test_throws ArgumentError nested_lrt(0.0, 1.0; df = 2, boundary_df = -1)
+    rneg = nested_lrt(0.0, -1.0; df = 1)                          # full < constrained
+    @test rneg.statistic < 0 && rneg.pvalue == 1.0 && occursin("negative statistic", rneg.note)
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],

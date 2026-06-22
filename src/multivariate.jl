@@ -958,6 +958,57 @@ function _chisq_sf(x::Real, k::Real)
     return z < a + 1 ? 1.0 - _reg_gamma_p_series(a, z) : _reg_gamma_q_cf(a, z)
 end
 
+"""
+    nested_lrt(loglik_constrained, loglik_full; df, boundary_df = 0, label = "LRT")
+
+Fit-agnostic likelihood-ratio test helper. The statistic is
+`2·(loglik_full − loglik_constrained)`; the reference distribution depends on
+`boundary_df`, the number of constrained parameters lying ON a boundary of the
+full parameter space under the null:
+
+- `boundary_df = 0` (interior null): plain `χ²_df` tail — exact asymptotics.
+- `boundary_df = 1` (one parameter on its boundary, e.g. a variance fixed at 0):
+  the 50:50 chi-bar-squared mixture `½·χ²_df + ½·χ²_{df−1}` (Self & Liang 1987;
+  Stram & Lee 1994) — anti-conservative relative to the naive `χ²_df`.
+- `boundary_df ≥ 2`: no closed-form chi-bar weights, so the naive `χ²_df` p-value
+  is returned and flagged conservative (`mixture = :chisq_conservative`).
+
+Returns `(statistic, df, boundary_df, pvalue, boundary, mixture, note)`. Asymptotic
+theory only — the single-boundary mixture is textbook, not recovery-calibrated.
+"""
+function nested_lrt(loglik_constrained::Real, loglik_full::Real; df::Integer,
+                    boundary_df::Integer = 0, label::AbstractString = "LRT")
+    df > 0 ||
+        throw(ArgumentError("`full` must have more parameters than `constrained` (df = $df)"))
+    0 <= boundary_df <= df ||
+        throw(ArgumentError("boundary_df must be in 0:df (got boundary_df = $boundary_df, df = $df)"))
+    statistic = 2 * (Float64(loglik_full) - Float64(loglik_constrained))
+    s = max(statistic, 0.0)
+    # χ² tail with the df = 0 edge as a point mass at 0 (tail 0 for s>0, 1 for s==0)
+    chisq_tail(x, k) = k == 0 ? (x > 0 ? 0.0 : 1.0) : _chisq_sf(x, k)
+    if boundary_df == 0
+        pvalue = _chisq_sf(s, df)
+        mixture = :chisq
+    elseif boundary_df == 1
+        pvalue = 0.5 * chisq_tail(s, df) + 0.5 * chisq_tail(s, df - 1)
+        mixture = :chibar_5050
+    else
+        pvalue = _chisq_sf(s, df)
+        mixture = :chisq_conservative
+    end
+    note = if statistic < -1e-6
+        "$label: negative statistic ($(round(statistic, digits = 6))): `full` did not dominate `constrained` — check nesting and convergence"
+    elseif boundary_df == 0
+        "$label: interior null; χ²_$df asymptotics apply"
+    elseif boundary_df == 1
+        "$label: one boundary parameter; 50:50 chi-bar-squared mixture (Self & Liang 1987; Stram & Lee 1994)"
+    else
+        "$label: $boundary_df-parameter boundary null has no closed-form chi-bar weights; reported χ²_$df p-value is conservative"
+    end
+    return (statistic = statistic, df = df, boundary_df = boundary_df, pvalue = pvalue,
+            boundary = boundary_df > 0, mixture = mixture, note = note)
+end
+
 # Central finite-difference Hessian of a scalar function.
 function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
     n = length(x)
@@ -1112,11 +1163,17 @@ function covariance_structure_lrt(constrained, full)
     df = npf - npc
     df > 0 ||
         throw(ArgumentError("`full` must have more covariance parameters than `constrained` (df = $df); call as covariance_structure_lrt(constrained, full)"))
-    stat = 2 * (Float64(full.loglik) - Float64(constrained.loglik))
     sc = getproperty(constrained, :genetic_structure)
     sf = getproperty(full, :genetic_structure)
-    boundary = !(sc == :diagonal && sf == :unstructured)
-    p = _chisq_sf(max(stat, 0.0), df)
+    interior = sc == :diagonal && sf == :unstructured
+    # interior (:diagonal in :unstructured) -> χ²_df; rank/PSD boundary
+    # (:lowrank/:factor_analytic) -> flagged-conservative naive χ² (multi-parameter
+    # boundary, no closed-form chi-bar weights). Delegates the statistic + tail to
+    # `nested_lrt`; both arms reproduce the previous output bit-for-bit.
+    res = nested_lrt(constrained.loglik, full.loglik; df = df,
+                     boundary_df = interior ? 0 : df, label = "covariance_structure_lrt")
+    stat = res.statistic
+    boundary = !interior
     note = if stat < -1e-6
         "negative statistic ($(round(stat, digits = 6))): `full` did not dominate `constrained` — check they are nested and both converged"
     elseif boundary
@@ -1124,5 +1181,5 @@ function covariance_structure_lrt(constrained, full)
     else
         "interior null (off-diagonal genetic covariances = 0): χ²_$df asymptotics apply"
     end
-    return (statistic = stat, df = df, pvalue = p, boundary = boundary, note = note)
+    return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary, note = note)
 end
