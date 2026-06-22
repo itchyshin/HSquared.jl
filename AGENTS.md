@@ -9,6 +9,21 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-22 (one-owner consolidation; main at `964448a5`).** The R lane
+  CLOSED; one owner now develops BOTH repos (`hsquared` + `HSquared.jl`) from a single
+  lane (one cross-repo DoD; review lenses kept, Rose mandatory). Landed: the R stack
+  `hsquared#98→#108` merged + live-verified (1445 pure-R + 116 live-bridge); the engine
+  PRs `#155→#159` merged (`Pkg.test` green); the 100-slice cross-repo program backlog
+  (`docs/design/14-program-backlog.md`, #160); and — the first NEW covered model beyond
+  v0.1 Gaussian — **`V4-MV-REML` promoted `partial→covered`** (experimental,
+  validation-scale, OPT-IN; NOT the public default) on the doc-33 substitutable gate: a
+  PRE-REGISTERED bias/MCSE recovery gate (`a7b1f9ad`) + a fresh 48-seed cold-start run
+  that PASSED (`24ee2d9c`) + a real Rose audit (PROMOTE-WITH-CHANGES) + B1/B2 honesty
+  fixes + maintainer sign-off (`#161`, merge-commit `964448a5`). Public-default covered
+  count UNCHANGED (1 = Gaussian); `validation_status()` covered 7→8; nothing else
+  promoted. Retained debts: a 2nd same-estimand REML comparator, the in-suite
+  unstructured-`sommer` test, broader-DGP recovery, the deep-inbreeding boundary. START
+  HERE: `docs/dev-log/after-task/2026-06-22-mv-reml-covered-promotion.md`.
 - **As of 2026-06-20 (autonomous segment — ULTRACODE; 4 substantive PRs, main at `11e9909`/#121).**
   On top of the committed plotting-layer runway (`*_plot_data` preparers #91/#92/#94/#95/#116,
   CPU benchmark #115, threshold calibration #112, GLLVM consumability #113), this segment

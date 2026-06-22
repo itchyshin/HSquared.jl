@@ -4878,3 +4878,18 @@ Newest entries go at the top.
   - `git diff --check` passed.
   - unsupported-claim scan found only audit/register text, not public claims
     of implemented fitting or speed.
+
+## 2026-06-22 — one-owner consolidation + V4-MV-REML covered promotion
+
+- Merged R stack `hsquared#98→#108` (in order; merge-commits / chained-retarget).
+  Local `hsquared` main live-verified: pure-R `devtools::test()` **1445 pass / 0 fail**
+  (55 live-skip), then the live bridge (binomial-counts + nongaussian) **116/116** with
+  `PATH=$HOME/.juliaup/bin` + `HSQUARED_JULIA_PROJECT=../HSquared.jl` (thread-capped).
+- Merged engine PRs `HSquared.jl#155→#159`; `julia --project=. -e 'using Pkg; Pkg.test()'`
+  on combined main → **"Testing HSquared tests passed"** (thread-capped).
+- V4-MV-REML covered promotion: pre-declared gate (`a7b1f9ad`); 48-seed cold-start
+  recovery `julia --project=. sim/phase4_multivariate_reml_recovery.jl --cold-start=true
+  --seeds=$(seq -f "%.0f" 20260616 20260663 | paste -sd, -)` → **PASSED** (48/48 conv;
+  all six |bias| ≤ 2·MCSE; EBV 0.893/0.906; G-MCSE ≤ 0.045). `Pkg.test()` after the
+  status flip → green. Real Rose audit → PROMOTE-WITH-CHANGES (B1/B2 applied). CI on
+  `#161` all SUCCESS; `#109` R-CMD-check SUCCESS.
