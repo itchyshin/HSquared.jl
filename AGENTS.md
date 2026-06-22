@@ -9,6 +9,27 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-22 (backlog grind, session 2; main at `4d4c0f4a`).** Continued the
+  100-slice program. Merged the two green PRs the prior handover flagged — **#164**
+  (I1 fitted sire-model fixture; honest self-consistency target, not external parity)
+  and **#165** (H1 negative-binomial NB2 Laplace family; NB2 loglik/score/weight
+  independently re-derived). Then **#166** closed the prior session's DEFERRED
+  ledger/evidence follow-ups (C5/C10/I1/H1): +3 `partial` `validation_status()` rows
+  (`C10-LRT`, `V1-SIRE-FIT`, `V6-NBINOM`; count 41→44), the C5 genomic-σ²a `.md`
+  mirrors + V2-GBLUP cross-ref, the sire comparator-manifest entry, a NEW opt-in NB
+  recovery sim (σ²a magnitude honestly REPORTED-NOT-GATED — the Bernoulli information
+  effect, NO gate relaxation), and doc-14 ✅ marks. Then **#167** landed **L1**
+  (HSquaredMakieExt drawing-only): 5 new Makie `kind`s (`:manhattan`, `:qq`,
+  `:rr_variance`, `:rr_surface`, `:rr_eigenfunctions`) consuming existing `*_plot_data`
+  preparers; Makie stays OUT of CI, the stub testset is 11 assertions, the LOAD-BEARING
+  local CairoMakie draw passed ALL 30 checks (Florence figure-honesty CLEAN). **Two
+  real Rose audits CLEAN.** `Pkg.test()` + `docs/make.jl` green on each; CI green on
+  each merged PR. **Nothing promoted to covered; public-default covered count UNCHANGED
+  (1 = Gaussian); Julia `validation_status()` 41→44 (all new rows `partial`).** START
+  HERE: `docs/dev-log/handover/2026-06-22-backlog-grind-session2-handover.md` — the
+  complete session-2 handover with the H2 (beta-binomial) spec digested (incl. its two
+  correctness traps: the Fisher-vs-observed information weight, and the `NonGaussianFit`
+  field blast radius) and the remaining 7 slices (H2 → H3 → H6 → H7 → C2 → C6 → J1-last).
 - **As of 2026-06-22 (one-owner consolidation; main at `964448a5`).** The R lane
   CLOSED; one owner now develops BOTH repos (`hsquared` + `HSquared.jl`) from a single
   lane (one cross-repo DoD; review lenses kept, Rose mandatory). Landed: the R stack
