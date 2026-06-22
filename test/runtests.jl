@@ -312,7 +312,8 @@ end
     @test occursin("multivariate_result_payload", bridge_row.evidence)
     @test occursin("rotation-nonidentified", bridge_row.evidence)
     @test occursin("structured_covariance_parity", bridge_row.evidence)
-    @test occursin("rotation convention pending", bridge_row.missing)
+    @test occursin("external comparator parity", bridge_row.missing)
+    @test occursin("structured-payload", bridge_row.missing)   # lowrank/fa now bridged via structured_genetic_payload
     fixed_marker_row = only(row for row in validation if row.id == "V5-MARKER-FIXED")
     @test fixed_marker_row.phase == "Phase 5"
     @test fixed_marker_row.status == "partial"
@@ -5218,6 +5219,35 @@ end
     # lowrank/fa are gated at the engine boundary — payload refuses them (rotation-nonidentified)
     @test_throws ArgumentError multivariate_result_payload(low)
     @test_throws ArgumentError multivariate_result_payload(fa)
+
+    # structured_genetic_payload — the rotation-gated companion: bridges :lowrank /
+    # :factor_analytic via rotation-INVARIANT functionals of G (eigenstructure + Ψ),
+    # NEVER the rotation-nonidentified loadings (#42 / FA convention).
+    for (sfit, sname) in ((low, "lowrank"), (fa, "factor_analytic"))
+        sp = structured_genetic_payload(sfit)
+        @test sp.engine == "HSquared.jl"
+        @test sp.target == "multivariate_reml_structured"
+        @test sp.genetic_structure == sname
+        @test sp.genetic_rank == 1
+        @test sp.rotation_invariant && sp.loadings_excluded
+        @test !(:genetic_loadings in keys(sp))              # hard contract: no raw loadings
+        @test sp.genetic_covariance ≈ Matrix(sfit.genetic_covariance) atol = 1e-10
+        @test sp.genetic_variances ≈ diag(sfit.genetic_covariance)
+        spca = genetic_pca(sfit.genetic_covariance)         # eigenstructure is rotation-invariant
+        @test sp.genetic_eigenvalues ≈ spca.values
+        @test sp.genetic_principal_axes ≈ spca.vectors
+        @test sp.mean_evolvability ≈ mean_evolvability(sfit.genetic_covariance)
+        @test sp.heritability ≈ sfit.heritability
+        @test sp.fixed_effects ≈ sfit.beta
+        @test sp.breeding_values.values == sfit.breeding_values.values
+        @test sp.loglik ≈ sfit.loglik
+    end
+    @test structured_genetic_payload(low).genetic_uniqueness === nothing  # pure low-rank: no Ψ
+    @test all(structured_genetic_payload(fa).genetic_uniqueness .> 0)     # FA: positive Ψ
+    # rotation-free structures route to multivariate_result_payload, not here
+    @test_throws ArgumentError structured_genetic_payload(diagfit)
+    @test_throws ArgumentError structured_genetic_payload(full)
+    @test_throws ArgumentError structured_genetic_payload((foo = 1,))
 end
 
 @testset "Phase 6 non-Gaussian Laplace marginal (foundation)" begin
