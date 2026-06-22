@@ -25,13 +25,25 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-21: Julia lane / R #96 non-Gaussian bridge-gap correction. After the
+  R twin merged hsquared PR #96 (`e7c7a4a`), corrected the Julia #44/status
+  wording that had over-broadened the remaining R gap. Scope: source-doc/status,
+  manifest/test, live issue-body, and audit artifacts only. The corrected
+  state is: R already has the opt-in `target = "nongaussian"` bridge for
+  Poisson/Binomial LA/VA fits plus PR #95 normalizer fixture consumption; the
+  remaining bridge gap is per-record varying-trial formula/bridge activation
+  plus broader validation/comparator/calibration depth. No Julia behavior
+  change, no R files, no external GLLVM/gllvmTMB comparator evidence, no
+  interval calibration, and no validation/public-claim promotion.
+
 - 2026-06-21: Julia lane / R #95 non-Gaussian normalizer sync. After the R twin
   merged hsquared PR #95 (`05fbdd3`), reconciled Julia #44/status surfaces so
   the R-side Julia-free `NonGaussianFit` normalizer fixture consumption is
   banked. Scope: source-doc/status, manifest, live issue-body, and audit
-  artifacts only. No Julia behavior change, no R files, no R non-Gaussian
-  formula/family/model-spec activation, no live bridge fitting, no external
-  GLLVM/gllvmTMB comparator evidence, no interval calibration, and no
+  artifacts only. Later R PR #96 (`e7c7a4a`) clarified that this did not mean
+  the opt-in R non-Gaussian bridge was absent; the remaining gap is narrower
+  and recorded in the row above. No Julia behavior change, no R files, no
+  external GLLVM/gllvmTMB comparator evidence, no interval calibration, and no
   validation/public-claim promotion.
 
 - 2026-06-21: Julia lane / non-Gaussian bridge payload fixture. After the R

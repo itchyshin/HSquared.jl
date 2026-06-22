@@ -4,7 +4,7 @@ Julia-native bridge target for the non-Gaussian `NonGaussianFit` payload
 surface. The fixture pins two tiny deterministic fits and their
 `nongaussian_result_payload(fit)` outputs. The R lane consumed this fixture in
 hsquared PR #95 for Julia-free normalizer tests before activating non-Gaussian
-family syntax.
+per-record varying-trial syntax.
 
 This is a serialized Julia target, not external comparator evidence and not
 public R model-spec activation.
@@ -43,8 +43,10 @@ julia --project=. test/fixtures/non_gaussian_parity/generate.jl
 ## Boundary
 
 The fixture records the bridge payload shape only. It does not activate
-non-Gaussian R formula parsing, does not add a public R `family = poisson()` or
-`binomial()` path, does not calibrate Bernoulli/binomial intervals, and does not
-provide GLLVM/gllvmTMB, ASReml, BLUPF90, MCMCglmm, or other external comparator
-parity. The Bernoulli single-trial variance-bias caveat from the validation
-ledger still applies outside this fixture.
+per-record varying-trial R formula parsing, does not calibrate
+Bernoulli/binomial intervals, and does not provide GLLVM/gllvmTMB, ASReml,
+BLUPF90, MCMCglmm, or other external comparator parity. hsquared PR #96 records
+that the R twin already has an opt-in `target = "nongaussian"` bridge for
+Poisson/Binomial LA/VA fits; this fixture is not a production/default or
+covered-status claim. The Bernoulli single-trial variance-bias caveat from the
+validation ledger still applies outside this fixture.

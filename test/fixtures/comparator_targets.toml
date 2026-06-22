@@ -119,7 +119,7 @@ fixture = "non_gaussian_parity"
 capability_rows = ["V6-FIT", "V6-BINOMIAL", "V6-BERNOULLI"]
 estimator_target = "non-Gaussian NonGaussianFit bridge payload for Poisson Laplace and per-record Binomial variational fits"
 evidence_type = "bridge_payload_fixture"
-external_status = "Julia fixture consumed by hsquared PR #95 for R Julia-free result-normalizer tests; R non-Gaussian family/model-spec activation remains planned."
+external_status = "Julia fixture consumed by hsquared PR #95 for R Julia-free result-normalizer tests; hsquared PR #96 records the existing opt-in R nongaussian bridge for Poisson/Binomial LA/VA fits; per-record varying-trial formula/bridge activation remains open."
 required_comparator = "GLLVM.jl, gllvmTMB, threshold/probit, or another accepted same-estimand comparator before any V6 covered move"
 required_files = [
     "README.md",
@@ -132,4 +132,4 @@ required_files = [
     "expected_breeding_values.csv",
     "generate.jl",
 ]
-boundary = "Bridge payload shape only; no R non-Gaussian formula activation, no calibrated interval claim, no external comparator evidence, and no covered status."
+boundary = "Bridge payload and opt-in R normalizer/bridge status only; no per-record varying-trial R activation, no calibrated interval claim, no external comparator evidence, and no covered status."

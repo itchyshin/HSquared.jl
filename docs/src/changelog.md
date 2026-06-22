@@ -2,16 +2,22 @@
 
 ## Unreleased
 
+- Corrected the Julia #44/R-bridge status wording after hsquared PR #96. The R
+  twin already has an opt-in `target = "nongaussian"` bridge for Poisson and
+  Binomial LA/VA fits plus the PR #95 normalizer fixture; the remaining bridge
+  gap is per-record varying-trial formula/bridge activation and deeper
+  validation/comparator/calibration evidence, not wholesale absence of R
+  non-Gaussian bridge fitting.
 - Recorded hsquared PR #95 consumption of the
   `test/fixtures/non_gaussian_parity/` target in Julia status ledgers. This
-  banks R Julia-free `NonGaussianFit` normalizer parity only; R formula/family
-  activation, live bridge fitting, interval calibration, external comparator
-  evidence, and covered-status promotion remain open.
+  banks R Julia-free `NonGaussianFit` normalizer parity only; per-record
+  varying-trial activation, interval calibration, external comparator evidence,
+  and covered-status promotion remain open.
 - Added `test/fixtures/non_gaussian_parity/`, a Julia-native #44 bridge
   payload target for `nongaussian_result_payload(::NonGaussianFit)`. The
   fixture pins Poisson Laplace and per-record Binomial variational payloads for
-  future R normalizer tests; it is not R non-Gaussian formula activation,
-  interval calibration, or external comparator evidence.
+  R normalizer tests; it is not per-record varying-trial R activation, interval
+  calibration, or external comparator evidence.
 - Added pedigree normalization and sparse `Ainv` construction utilities.
 - Added low-level animal-model specification validation.
 - Added dense Gaussian ML/REML log-likelihood evaluation at supplied variance

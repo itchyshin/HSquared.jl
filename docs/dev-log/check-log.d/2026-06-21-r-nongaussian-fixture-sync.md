@@ -23,7 +23,7 @@
   - live GitHub issue #44 body (status text only).
 - Scope:
   - record that R normalizer fixture consumption is banked via hsquared PR #95;
-  - keep formula/family/model-spec activation, live R bridge fitting,
+  - keep per-record varying-trial formula/bridge activation,
     GLLVM/gllvmTMB comparator evidence, interval calibration, and promotion
     open.
 - Checks:
@@ -39,6 +39,14 @@
     passed.
   - `git diff --check`: passed.
 - Boundary: status/ledger/issue sync only. No Julia behavior changed, no R
-  files were edited, no R non-Gaussian formula/family/model-spec activation or
-  live bridge fitting was added, no external comparator was run, no interval
-  calibration was claimed, and no validation/public-claim promotion was made.
+  files were edited, no per-record varying-trial R formula/bridge activation
+  was added, no external comparator was run, no interval calibration was
+  claimed, and no validation/public-claim promotion was made.
+
+- Correction after hsquared PR #96 (`e7c7a4a`): the wording above was too broad
+  about the R-side residual. The R twin already had the opt-in
+  `target = "nongaussian"` bridge for Poisson/Binomial LA/VA fits, including
+  binary Bernoulli and common-trial `cbind(successes, failures)` Binomial, plus
+  live bridge tests when Julia is available. The remaining R-side bridge gap is
+  per-record varying-trial formula/bridge activation plus broader
+  validation/comparator/calibration depth.

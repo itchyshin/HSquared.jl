@@ -33,7 +33,7 @@ engine version each R surface is validated against.
 | Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
 | Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
 | PEV / reliability standard fields | experimental | `result_payload(::AnimalModelFit)` | `hs_julia_id_values()` top-level fields (R #21) | current `main` | standard payload tests (`:selinv` vs dense parity) |
-| Non-Gaussian Laplace/VA | experimental | `nongaussian_result_payload` | result normalizer fixture tests banked; family/model-spec activation planned (#18) | current `main` | `non_gaussian_parity` |
+| Non-Gaussian Laplace/VA | experimental | `nongaussian_result_payload` | opt-in `target = "nongaussian"` bridge + result normalizer tests banked; per-record varying-trial activation planned (#18) | current `main` | `non_gaussian_parity` |
 | Post-fit marker scans | experimental | `marker_scan_result_payload` | R `gwas(fit, markers)` (#23) | current `main` | `marker_scan_parity` |
 
 Rows update as each BT2 bridge target lands its engine-side payload + fixture.
@@ -56,6 +56,12 @@ The non-Gaussian row is a Julia-side payload target with R-side normalizer
 consumption now banked. The `non_gaussian_parity` fixture serializes Poisson
 Laplace and per-record Binomial variational `NonGaussianFit` payloads, and
 hsquared PR #95 (`05fbdd3`) consumes them in Julia-free normalizer tests while
-preserving method aliases and scalar/vector `n_trials` fields. It does not
-activate R non-Gaussian formula syntax, family parsing, live bridge fitting,
-threshold/probit comparators, interval calibration, or covered status.
+preserving method aliases and scalar/vector `n_trials` fields. hsquared PR #96
+(`e7c7a4a`) corrects the R status: an opt-in non-Gaussian bridge already exists
+through `target = "nongaussian"` for `poisson(log)` and `binomial(logit)`
+including binary Bernoulli, common-trial `cbind(successes, failures)`
+Binomial, LA/VA marginal control, no-heritability result normalization, and
+live bridge tests when Julia is available. The remaining bridge gap is narrower:
+per-record varying-trial formula/bridge activation plus broader
+validation/comparator/calibration depth. There is still no threshold/probit
+comparator evidence, interval calibration, public default, or covered status.

@@ -124,7 +124,7 @@ intact.
 
 ## 10. Known Residuals
 
-- No R non-Gaussian formula/family/model-spec activation.
+- No R per-record varying-trial formula/bridge activation.
 - No GLLVM.jl/gllvmTMB or other external comparator evidence.
 - No calibrated non-Gaussian interval or coverage claim.
 - No production-scale sparse non-Gaussian fitting claim.

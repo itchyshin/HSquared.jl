@@ -5087,7 +5087,7 @@ end
     nongaussian_target = only(target for target in targets if target["id"] == "non_gaussian_parity")
     @test nongaussian_target["issue"] == 44
     @test nongaussian_target["evidence_type"] == "bridge_payload_fixture"
-    @test occursin("no R non-Gaussian formula activation", nongaussian_target["boundary"])
+    @test occursin("no per-record varying-trial R activation", nongaussian_target["boundary"])
 end
 
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
