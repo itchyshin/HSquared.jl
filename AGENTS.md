@@ -23,7 +23,10 @@ engine reality.
   count UNCHANGED (1 = Gaussian); `validation_status()` covered 7→8; nothing else
   promoted. Retained debts: a 2nd same-estimand REML comparator, the in-suite
   unstructured-`sommer` test, broader-DGP recovery, the deep-inbreeding boundary. START
-  HERE: `docs/dev-log/after-task/2026-06-22-mv-reml-covered-promotion.md`.
+  HERE: `docs/dev-log/handover/2026-06-22-backlog-grind-handover.md` (the complete
+  next-session handover: consolidation, the V4-MV-REML covered close-out, and the
+  100-slice backlog grind — 6 of the first 14 done/PR'd, 8 remaining + deferred
+  ledger follow-ups + correctness caveats).
 - **As of 2026-06-20 (autonomous segment — ULTRACODE; 4 substantive PRs, main at `11e9909`/#121).**
   On top of the committed plotting-layer runway (`*_plot_data` preparers #91/#92/#94/#95/#116,
   CPU benchmark #115, threshold calibration #112, GLLVM consumability #113), this segment
