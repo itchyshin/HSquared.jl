@@ -160,7 +160,7 @@ claim).
 
 ## J · Non-standard inheritance (Phase 7)
 
-- **J1** Haplodiploid relationship kernel + canon. [JL]
+- **J1** 🟡 Haplodiploid relationship kernel + canon. [JL] (convention DERIVED + dual-lens RATIFIED, NOT implemented — `docs/dev-log/decisions/2026-06-22-haplodiploid-relationship-convention.md`: the design spec's anchor set is provably impossible (√2 congruence contradiction); ratified `A = 2θ`, drone diagonal = 2, with Mendel + Falconer sign-off. Kernel GATED on maintainer ratification of the scale + the construction-only/not-BLUP-covariance fence. V7-INHERIT updated; no kernel, no capability row.)
 - **J2** Polyploid (auto/allo) kernel. [JL]
 - **J3** Selfing / clonal / partial-selfing kernels (finish + canon). [JL]
 - **J4** Cytoplasmic / maternal-effect relationship. [JL]
