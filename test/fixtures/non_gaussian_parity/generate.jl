@@ -104,6 +104,7 @@ for case in cases
         :target,
         :family,
         :n_trials,
+        :dispersion,
         :method,
         :variance_components,
         :fixed_effects,

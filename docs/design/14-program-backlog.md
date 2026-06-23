@@ -135,7 +135,7 @@ claim).
 > families). H8/H9 build on that.
 
 - **H1** ✅ Negative-binomial family + overdispersion (Laplace). [JL] (`NegativeBinomialResponse` + joint `(σ²a,θ)` profile + oracle merged #165; `V6-NBINOM` row + recovery sim + .md mirrors closed in the deferred-ledger close-out; partial)
-- **H2** Beta-binomial family. [JL]
+- **H2** ✅ Beta-binomial family (overdispersed logit, Laplace). [JL] (`BetaBinomialResponse(n_trials, rho)` + Fisher-information IRLS weight + σ²a-at-fixed-ρ Brent; oracle = ρ→0 Binomial reduction + score-vs-FD + Fisher-weight-positive (incl. negative-observed regime, confirmed m=20) + independent GHQ marginal; `V6-BETABINOMIAL` row + recovery sim + .md mirrors; partial; PR `claude/h2-betabinomial`)
 - **H3** Ordinal / threshold (probit) model. [bridge]
 - **H4** Zero-inflated + hurdle families. [JL]
 - **H5** Variational (VA) method end-to-end (reuse DRM.jl/gllvmTMB, JL#44). [JL]
