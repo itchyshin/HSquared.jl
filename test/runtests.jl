@@ -283,6 +283,7 @@ end
     @test occursin("comparator protocol", mvreml_row.evidence)
     @test occursin("external `sommer` 4.4.5", mvreml_row.evidence)
     @test occursin("nadiv::makeA", mvreml_row.evidence)
+    @test occursin("genetic_correlation_interval", mvreml_row.evidence)   # C2 (delta CI, partial)
     @test occursin("max |dG0| = 7.529e-05", mvreml_row.evidence)
     @test occursin("loglik is not compared", mvreml_row.evidence)
     @test occursin("Mrode Example 5.1", mvreml_row.evidence)
@@ -6809,6 +6810,65 @@ end
     # (7) guards
     @test_throws ArgumentError covariance_structure_lrt(mv2, mv2_diag)        # df <= 0 (wrong order)
     @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_diag, Yr, Xr, Zr, Ainv)  # structured unsupported
+end
+
+@testset "Phase 4 genetic-correlation interval (C2)" begin
+    # Fisher-z delta CI for each off-diagonal genetic correlation of an :unstructured
+    # fit, reusing the validated `multivariate_covariance_standard_errors` SE. Same
+    # interior (n=24) + boundary (n=8) fixtures as the SE testset above.
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    y2 = [2.2, 2.8, 3.1, 3.0, 3.6, 2.1, 2.7, 4.1]
+    reps = 3
+    rows = reduce(vcat, [fill(i, reps) for i in 1:8])
+    Zr = zeros(length(rows), 8); for (k, i) in enumerate(rows); Zr[k, i] = 1.0; end
+    Xr = ones(length(rows), 1)
+    off1 = [0.0, 0.3, -0.3]; off2 = [0.2, -0.2, 0.0]
+    yr1 = Float64[]; yr2 = Float64[]
+    for i in 1:8, r in 1:reps
+        push!(yr1, y1[i] + off1[r]); push!(yr2, y2[i] + off2[r])
+    end
+    Yr = hcat(yr1, yr2)
+    mv2 = fit_multivariate_reml(Yr, Xr, Zr, Ainv)
+
+    ci = genetic_correlation_interval(mv2, Yr, Xr, Zr, Ainv; method = :delta)
+    @test length(ci.estimate) == 1                       # t=2 → one strict-lower pair
+    @test ci.trait_i[1] == 2 && ci.trait_j[1] == 1
+    @test ci.estimate[1] ≈ mv2.genetic_correlation[2, 1] atol = 1e-12
+    @test ci.lower[1] < ci.estimate[1] < ci.upper[1]
+    @test -1 < ci.lower[1] && ci.upper[1] < 1            # Fisher-z keeps it in (−1,1)
+    @test ci.level == 0.95 && ci.method === :delta
+    @test !ci.lower_clamped[1] && !ci.upper_clamped[1] && ci.converged
+    @test ci.lower_matrix[2, 1] == ci.lower[1] && ci.lower_matrix[1, 2] == ci.lower[1]
+    @test isnan(ci.lower_matrix[1, 1]) && isnan(ci.upper_matrix[2, 2])   # no fabricated diagonal
+
+    # internal consistency: EXACTLY tanh(atanh(rg) ± z·se_z) from the validated SE path
+    se = multivariate_covariance_standard_errors(mv2, Yr, Xr, Zr, Ainv)
+    r = mv2.genetic_correlation[2, 1]
+    zq = HSquared._standard_normal_quantile(0.975)
+    se_z = se.genetic_correlation[2, 1] / (1 - r^2); zr = atanh(r)
+    @test ci.lower[1] ≈ tanh(zr - zq * se_z) rtol = 1e-8
+    @test ci.upper[1] ≈ tanh(zr + zq * se_z) rtol = 1e-8
+
+    # nesting in level: 0.99 strictly contains 0.90
+    ci90 = genetic_correlation_interval(mv2, Yr, Xr, Zr, Ainv; level = 0.90)
+    ci99 = genetic_correlation_interval(mv2, Yr, Xr, Zr, Ainv; level = 0.99)
+    @test ci99.lower[1] < ci90.lower[1] && ci90.upper[1] < ci99.upper[1]
+
+    # guards
+    @test_throws ArgumentError genetic_correlation_interval(mv2, Yr, Xr, Zr, Ainv; method = :profile)
+    @test_throws ArgumentError genetic_correlation_interval(mv2, Yr, Xr, Zr, Ainv; level = 1.5)
+    mv2_diag = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :diagonal)
+    @test_throws ArgumentError genetic_correlation_interval(mv2_diag, Yr, Xr, Zr, Ainv)  # structured rejected
+
+    # boundary: n=8 single-record → rg on the boundary → SE path throws → :delta throws
+    # (a clear ArgumentError, never a fabricated whisker)
+    X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
+    mv_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
+    @test_throws ArgumentError genetic_correlation_interval(mv_bnd, hcat(y1, y2), X, Z, Ainv)
 end
 
 @testset "Phase 4B evolvability / G-matrix geometry (#55)" begin

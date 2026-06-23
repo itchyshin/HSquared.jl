@@ -1121,6 +1121,82 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     )
 end
 
+"""
+    genetic_correlation_interval(fit, Y, X, Z, Ainv; level = 0.95, method = :delta,
+                                 pairs = nothing, fd_step = 1e-4)
+
+Experimental two-sided confidence interval for each off-diagonal genetic correlation
+`r_g[i,j]` of an `:unstructured` multivariate REML fit. Returns a `NamedTuple` of
+parallel per-pair vectors over the `t(t-1)/2` strict-lower trait pairs —
+`(trait_i, trait_j, estimate, lower, upper, lower_clamped, upper_clamped, level,
+method, converged)` — plus the symmetric `t×t` matrices `lower_matrix`/`upper_matrix`
+(NaN on the diagonal and off the returned pairs; NO fabricated diagonal whiskers,
+mirroring the `seRG` diagonal-zero convention). `pairs` optionally restricts to a
+subset of `(i, j)` index tuples (`i > j`).
+
+`method = :delta` (the only method this slice): reuses the validated observed-
+information + delta-method [`multivariate_covariance_standard_errors`](@ref) `seRG`
+and builds the interval on the **Fisher-z scale** (`z = atanh(r_g)`,
+`se_z = se_rg/(1-r_g²)`, endpoints `tanh(z ∓ q·se_z)`) so it always lands in
+`(-1, 1)`; `lower_clamped`/`upper_clamped` are `false` (delta never clamps). If the
+SE path throws (non-PD observed information / boundary optimum, e.g. `r_g → ±1`), a
+clear `ArgumentError` is propagated rather than a fabricated whisker. (`method =
+:profile`, a profile-LRT inversion with the `(i,j)` correlation pinned, is explicit
+follow-up.)
+
+Structured fits (`:diagonal`/`:lowrank`/`:factor_analytic`) are rejected: off-
+diagonals are 0 by construction under `:diagonal`, and loadings are rotation-
+nonidentified under structured fits.
+
+EXPERIMENTAL, asymptotic, REML-only, and NOT coverage-calibrated — a Wald
+approximation on the Fisher-z scale. It does NOT extend the `V4-MV-REML` covered
+claim (which is the unstructured REML POINT ESTIMATE only); this is a new uncertainty
+surface landing as partial-quality. An opt-in coverage harness is future work.
+"""
+function genetic_correlation_interval(fit, Y, X, Z, Ainv; level::Real = 0.95,
+                                      method::Symbol = :delta, pairs = nothing,
+                                      fd_step::Real = 1e-4)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    getproperty(fit, :genetic_structure) == :unstructured || throw(ArgumentError(
+        "genetic_correlation_interval requires an :unstructured fit: off-diagonal genetic correlations are 0 by construction under :diagonal, and loadings are rotation-nonidentified under :lowrank/:factor_analytic"))
+    method === :delta || throw(ArgumentError(
+        "genetic_correlation_interval: only method = :delta is implemented this slice; :profile (profile-LRT with the (i,j) correlation pinned) is follow-up"))
+    rg = Matrix(Float64.(Matrix(fit.genetic_correlation)))
+    t = size(rg, 1)
+    se = try
+        multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step = fd_step)
+    catch err
+        throw(ArgumentError("genetic_correlation_interval(:delta) needs the delta-method SEs, which are unavailable here ($(err isa ArgumentError ? err.msg : sprint(showerror, err))) — e.g. a flat/boundary optimum with r_g → ±1; no interval is reported (no fabricated whisker)"))
+    end
+    seRG = se.genetic_correlation
+    z = _standard_normal_quantile((1 + level) / 2)
+
+    wanted = pairs === nothing ? [(i, j) for j in 1:t for i in (j + 1):t] :
+             [(Int(p[1]), Int(p[2])) for p in pairs]
+    for (i, j) in wanted
+        (1 <= j < i <= t) ||
+            throw(ArgumentError("pair ($i, $j) must satisfy 1 ≤ j < i ≤ $t (strict-lower)"))
+    end
+
+    n = length(wanted)
+    ti = Vector{Int}(undef, n); tj = Vector{Int}(undef, n)
+    est = Vector{Float64}(undef, n); lo = Vector{Float64}(undef, n); up = Vector{Float64}(undef, n)
+    lc = falses(n); uc = falses(n)
+    LM = fill(NaN, t, t); UM = fill(NaN, t, t)
+    for (k, (i, j)) in enumerate(wanted)
+        r = rg[i, j]
+        zr = atanh(r)
+        se_z = seRG[i, j] / (1 - r^2)
+        l = tanh(zr - z * se_z); u = tanh(zr + z * se_z)
+        ti[k] = i; tj[k] = j; est[k] = r; lo[k] = l; up[k] = u
+        LM[i, j] = l; LM[j, i] = l; UM[i, j] = u; UM[j, i] = u
+    end
+    return (trait_i = ti, trait_j = tj, estimate = est, lower = lo, upper = up,
+            lower_clamped = lc, upper_clamped = uc, level = Float64(level),
+            method = method, converged = fit.converged,
+            lower_matrix = LM, upper_matrix = UM)
+end
+
 function _mv_nparams(fit)
     t = size(Matrix(fit.genetic_covariance), 1)
     s = getproperty(fit, :genetic_structure)
