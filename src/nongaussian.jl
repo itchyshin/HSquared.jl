@@ -114,6 +114,18 @@ struct BetaBinomialResponse <: ResponseFamily
     end
 end
 
+"""
+Bernoulli family with a PROBIT link (`P(y=1|η) = Φ(η)`, the standard-normal CDF) for
+binary 0/1 traits — the threshold / liability-scale animal model: an unobserved
+liability `ℓ = η + e`, `e ~ N(0,1)`, is observed as `y = 1[ℓ > 0]`. With the sign
+trick `s = 2y−1`, `P(y|η) = Φ(sη)`. The conditional is LOG-CONCAVE in η, so the IRLS
+working weight `M(sη)·(M(sη)+sη) ∈ (0,1)` (the inverse-Mills form) is strictly
+positive and the observed and expected information coincide (unlike beta-binomial).
+Latent/liability scale: no observation-scale h² is surfaced here (that is the
+Nakagawa–Schielzeth transform, a separate slice). Internal, Laplace-only.
+"""
+struct BernoulliProbitResponse <: ResponseFamily end
+
 # Per-record family resolution. For every family without per-record state this is
 # the identity (compiles away; zero overhead in the per-observation comprehensions).
 # For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
@@ -133,6 +145,7 @@ end
 function _resolve_single_family(family::Symbol, n_trials; rho = nothing)
     family === :poisson && return PoissonResponse()
     family === :bernoulli && return BernoulliResponse()
+    family === :bernoulli_probit && return BernoulliProbitResponse()
     if family === :binomial
         n_trials isa AbstractVector && return BinomialVectorResponse(Int.(n_trials))
         # scalar: accept an integer-valued real (the R bridge marshals doubles) with a
@@ -205,6 +218,68 @@ function _digamma(x::Real)
          inv2 * (1 / 12 - inv2 * (1 / 120 - inv2 * (1 / 252 - inv2 / 240)))
     return ψ
 end
+
+# --- Dependency-free standard-normal primitives for the probit family (H3) -------
+# Project.toml has no SpecialFunctions/Distributions; the coarse genomic
+# `_standard_normal_cdf_approx` (7.5e-8) is NOT accurate enough for likelihood
+# derivatives, and the tail ratio φ/Φ underflows. These reuse the module's existing,
+# already-validated incomplete-gamma machinery (`_reg_gamma_p_series`/`_reg_gamma_q_cf`,
+# multivariate.jl, in scope) via the identity erfc(z) = Q(1/2, z²), and add a LOG-form
+# tail continued fraction so `_norm_logcdf` stays finite into the deep left tail.
+
+const _LOG2PI = log(2π)
+
+_norm_pdf(x) = exp(-0.5 * x * x) / sqrt(2π)
+_norm_logpdf(x) = -0.5 * (x * x + _LOG2PI)
+
+# erfc(z) for z ≥ 0 via Q(1/2, z²): series form when z² < a+1 = 1.5, else the cf.
+_erfc_nonneg(z) = (zz = z * z; zz < 1.5 ? 1.0 - _reg_gamma_p_series(0.5, zz) :
+                                          _reg_gamma_q_cf(0.5, zz))
+
+# Continued-fraction value h of Q(a, x) (Lentz) — the underflow-free factor of
+# `_reg_gamma_q_cf` (multivariate.jl), reproduced here so `_norm_logcdf` can take
+# log(Q) WITHOUT the exp(-x) prefactor underflowing in the deep tail. (A separate
+# function name, not a redefinition — no precompile conflict; verified against
+# `_reg_gamma_q_cf` in the test suite.)
+function _gamma_q_cf_h(a::Real, x::Real)
+    tiny = 1e-300
+    b = x + 1.0 - a
+    cc = 1.0 / tiny
+    d = 1.0 / b
+    h = d
+    @inbounds for i in 1:1000
+        an = -i * (i - a)
+        b += 2.0
+        d = an * d + b
+        abs(d) < tiny && (d = tiny)
+        cc = b + an / cc
+        abs(cc) < tiny && (cc = tiny)
+        d = 1.0 / d
+        del = d * cc
+        h *= del
+        abs(del - 1.0) < 1e-15 && break
+    end
+    return h
+end
+
+# log Φ(x), numerically stable into the deep left tail (Φ(x) = ½·erfc(−x/√2)).
+# x ≥ 0: log1p(−½·erfc(x/√2)) (Φ near 1, no cancellation). x < 0 with x²/2 < 1.5:
+# log(½·erfc) directly (Q is O(1)). x < 0 deep tail: the LOG-form cf
+# log Q(½,z²) = −z² + log z − logΓ(½) + log h(z²), so logΦ stays finite at x = −40.
+function _norm_logcdf(x::Real)
+    if x >= 0
+        return log1p(-0.5 * _erfc_nonneg(x / sqrt(2.0)))
+    end
+    z = -x / sqrt(2.0)            # > 0
+    zz = z * z                    # = x²/2
+    if zz < 1.5
+        return log(0.5) + log(_erfc_nonneg(z))
+    end
+    return log(0.5) - zz + log(z) - _loggamma(0.5) + log(_gamma_q_cf_h(0.5, zz))
+end
+
+# Inverse Mills ratio φ(x)/Φ(x), via the logs so it stays finite as x → −∞ (→ |x|).
+_norm_mills(x) = exp(_norm_logpdf(x) - _norm_logcdf(x))
 
 # per-observation conditional log-density ℓ(y|η), score dℓ/dη, working weight -d²ℓ/dη²
 _fam_loglik(f::GaussianResponse, y, η) = -0.5 * ((y - η)^2 / f.sigma_e2 + log(2π * f.sigma_e2))
@@ -287,6 +362,24 @@ function _fam_weight(f::BetaBinomialResponse, y, η)
     return info
 end
 
+# Bernoulli probit (threshold / liability). s = 2y−1, P(y|η) = Φ(sη), so
+# ℓ = log Φ(sη); score = s·M(sη) (signed inverse-Mills ratio, via the tail-stable
+# `_norm_mills`); weight = −d²ℓ/dη² = M(sη)·(M(sη)+sη). The logit-binomial uses the
+# observed information because it is canonical/log-concave; the probit is ALSO
+# log-concave, so its observed weight is ≥ 0 (in fact ∈ (0,1)) and equals the
+# expected information — no Fisher-scoring substitution is needed (contrast
+# beta-binomial). `y` enters only through the sign `s`.
+_fam_loglik(::BernoulliProbitResponse, y, η) = _norm_logcdf((2 * y - 1) * η)
+function _fam_score(::BernoulliProbitResponse, y, η)
+    s = 2 * y - 1
+    return s * _norm_mills(s * η)
+end
+function _fam_weight(::BernoulliProbitResponse, y, η)
+    s = 2 * y - 1
+    m = _norm_mills(s * η)
+    return m * (m + s * η)
+end
+
 function _logfactorial(y)
     k = Int(round(y))
     s = 0.0
@@ -330,6 +423,11 @@ end
 function _check_counts(f::BetaBinomialResponse, yv)
     all(y -> isinteger(y) && 0 <= y <= f.n_trials, yv) ||
         throw(ArgumentError("BetaBinomialResponse requires integer counts in 0:n_trials"))
+    return nothing
+end
+function _check_counts(::BernoulliProbitResponse, yv)
+    all(y -> y == 0 || y == 1, yv) ||
+        throw(ArgumentError("BernoulliProbitResponse requires binary 0/1 responses"))
     return nothing
 end
 
@@ -605,7 +703,7 @@ predates this convention and nests `method`/diagnostics differently) so the R tw
 can marshal one shape and the R non-Gaussian family-acceptance can fire.
 
 Fields: `engine`, `target = "nongaussian_reml"`, `family`
-(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`/`"nbinom"`/`"beta_binomial"`),
+(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`/`"nbinom"`/`"beta_binomial"`/`"bernoulli_probit"`),
 `n_trials` (the Binomial/beta-binomial trials denominator — a scalar common
 denominator or a per-record integer vector; `nothing` for other families — so a
 counts payload is self-describing on the data scale), `dispersion` (the FIXED
@@ -657,7 +755,11 @@ keyword — a common scalar denominator OR a per-record integer vector of length
 `sigma_a2` (Brent). `family = :beta_binomial` is the OVERdispersed logit-binomial
 (`BetaBinomialResponse`); it requires BOTH `n_trials` (scalar) and `rho`
 (the fixed overdispersion `ρ ∈ (0,1)`), estimates `sigma_a2` (Brent) at that supplied
-fixed ρ, and is Laplace-only (`marginal = :variational` is rejected). Returns a
+fixed ρ, and is Laplace-only (`marginal = :variational` is rejected).
+`family = :bernoulli_probit` is the binary threshold / liability-scale model
+(`BernoulliProbitResponse`, probit link `Φ(η)`); it estimates the single `sigma_a2`
+(Brent) and is also Laplace-only (its variational expected information is
+response-dependent; `marginal = :variational` is rejected). Returns a
 [`NonGaussianFit`](@ref)
 with fields `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
 `ids`, `converged`, `family`, `marginal`, and the extractor methods
@@ -679,8 +781,14 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
                           theta_init::Real = 1.0, iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, or :beta_binomial"))
+    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, or :bernoulli_probit"))
+    # probit (threshold) is Laplace-only at this slice: its variational expected
+    # information is response-dependent (−E[ℓ″] varies with the sign s = 2y−1), which
+    # the y-free `_fam_expected_weight` signature cannot carry — a VA kernel is
+    # explicit follow-up. Reject `:variational` with a clear error.
+    family === :bernoulli_probit && !(_marginal_method(marginal) isa Laplace) &&
+        throw(ArgumentError("family = :bernoulli_probit supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     # beta-binomial is a TWO-parameter family (σ²a + the overdispersion ρ). This slice
@@ -795,8 +903,8 @@ function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::Abstract
                                Ainv::AbstractMatrix; family::Symbol = :poisson,
                                marginal::Symbol = :laplace, level::Real = 0.95,
                                initial = nothing, n_trials = nothing)
-    family in (:poisson, :bernoulli, :binomial) ||
-        throw(ArgumentError("laplace_reml_interval supports family = :poisson, :bernoulli, or :binomial"))
+    family in (:poisson, :bernoulli, :binomial, :bernoulli_probit) ||
+        throw(ArgumentError("laplace_reml_interval supports family = :poisson, :bernoulli, :binomial, or :bernoulli_probit"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))

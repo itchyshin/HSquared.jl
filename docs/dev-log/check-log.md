@@ -4924,3 +4924,36 @@ Newest entries go at the top.
   estimated), no VA, no interval, no external comparator, not the public default, not
   covered. `[JL]` engine-only; no R repo edit (the `dispersion` payload field is a
   recorded cross-lane note for the R twin).
+
+## 2026-06-22 — Backlog H3: Bernoulli probit / threshold (liability-scale) family
+
+- New internal `BernoulliProbitResponse` (probit link `Φ(η)`, binary threshold) on
+  the non-Gaussian Laplace path (`src/nongaussian.jl`). Conditional `ℓ = log Φ(sη)`,
+  `s = 2y−1`; score = signed inverse-Mills `s·φ(sη)/Φ(sη)`; weight =
+  `M(sη)(M(sη)+sη) ∈ (0,1)` — probit is LOG-CONCAVE so observed == expected info
+  (positive; no Fisher-scoring substitution, unlike beta-binomial).
+- Dependency-free standard-normal primitives (`_norm_pdf`/`_norm_logpdf`/
+  `_norm_logcdf`/`_norm_mills`): `Φ`/`erfc` reuse the validated incomplete-gamma
+  (`erfc(z)=Q(½,z²)`); a LOG-form continued fraction (`_gamma_q_cf_h`) keeps
+  `_norm_logcdf` FINITE at x=−40. Coarse `_standard_normal_cdf_approx` NOT reused.
+- Independent oracle (`Pkg.test()`, 66 assertions): `Φ` to 1e-12, deep-tail-finite
+  `logΦ`, `Φ(x)+Φ(−x)=1`, log-form cf == package `Q`, score AND weight == central FD
+  (rtol 1e-5), weight ∈ (0,1) incl. the tail, stationary Laplace mode, and an
+  INDEPENDENT tensor Gauss–Hermite quadrature of the TRUE probit marginal within 0.5
+  of the Laplace value (binary gap, cf. Bernoulli).
+- DERIVED obstruction (spec gap): the probit variational expected information is
+  response-dependent, which the y-free `_fam_expected_weight` signature can't carry →
+  shipped Laplace-only, `:variational` rejected (honest under-promise; VA follow-up).
+- Funnel: +1 `partial` `validation_status` row `V6-PROBIT` (45 → 46, interior;
+  `probit_row` occursin checks); `.md` mirrors; doc-14 H3 ✅.
+- Opt-in recovery (`sim/phase6_threshold_recovery.jl`, capped; checkpoint
+  `2026-06-22-threshold-recovery.md`): pre-declared gate, hard gate **5/5** (EBV cor
+  0.61–0.76); σ̂²a magnitude reported-not-gated and downward-biased as expected for
+  binary (mean 0.633 vs 1.0, ~37% low, 3/5 within rel ≤ 0.45) — the Laplace-for-binary
+  information effect (cf. `V6-BERNOULLI`). No post-hoc gate change.
+- Checks: full `Pkg.test()` (thread-capped) → **"Testing HSquared tests passed"**;
+  `docs/make.jl` → **exit 0**. Real `rose-systems-auditor` → **CLEAN (merge-ready)**;
+  one optional weight-bound tightening applied.
+- Stays `partial`: experimental, internal, binary single-threshold, Laplace-only, no
+  observation-scale h² (liability scale), not the public default, not covered.
+  `[JL]` engine-only; no R repo edit.

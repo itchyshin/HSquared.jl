@@ -136,7 +136,7 @@ claim).
 
 - **H1** ✅ Negative-binomial family + overdispersion (Laplace). [JL] (`NegativeBinomialResponse` + joint `(σ²a,θ)` profile + oracle merged #165; `V6-NBINOM` row + recovery sim + .md mirrors closed in the deferred-ledger close-out; partial)
 - **H2** ✅ Beta-binomial family (overdispersed logit, Laplace). [JL] (`BetaBinomialResponse(n_trials, rho)` + Fisher-information IRLS weight + σ²a-at-fixed-ρ Brent; oracle = ρ→0 Binomial reduction + score-vs-FD + Fisher-weight-positive (incl. negative-observed regime, confirmed m=20) + independent GHQ marginal; `V6-BETABINOMIAL` row + recovery sim + .md mirrors; partial; PR `claude/h2-betabinomial`)
-- **H3** Ordinal / threshold (probit) model. [bridge]
+- **H3** ✅ Binary threshold (probit / liability) model — engine half. [JL] (`BernoulliProbitResponse`, probit link `Φ(η)`; dependency-free tail-stable `_norm_logcdf`/`_norm_mills` reusing the incomplete-gamma `erfc=Q(½,z²)`; log-concave observed=expected weight `M(sη)(M(sη)+sη)`; oracle = known Φ to 1e-12 + deep-tail-finite + score/weight-vs-FD + independent GHQ marginal; Laplace-only, VA rejected — response-dependent expected info; `V6-PROBIT` row + recovery sim + .md mirrors; partial; PR `claude/h3-probit`. Ordinal ≥3-category + R bridge are the remaining `[bridge]` follow-on.)
 - **H4** Zero-inflated + hurdle families. [JL]
 - **H5** Variational (VA) method end-to-end (reuse DRM.jl/gllvmTMB, JL#44). [JL]
 - **H6** Non-Gaussian σ²a interval for all single-component families (extend #119). [JL]
