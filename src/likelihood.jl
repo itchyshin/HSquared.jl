@@ -1768,3 +1768,90 @@ function _selinv_mme_random_pev(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2:
     nfixed = size(spec.X, 2)
     return Vector{Float64}(diag_inv[(nfixed + 1):end])
 end
+
+"""
+    bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
+        n_boot = 1000, estimator = :sparse_reml,
+        rng = Random.MersenneTwister(0x48324352), max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
+
+Parametric (Gaussian) bootstrap percentile confidence intervals for `sigma_a2`,
+`sigma_e2`, and `h² = σ²a/(σ²a+σ²e)` of a fitted univariate Gaussian REML animal
+model — a cross-check on the asymptotic delta / profile-LRT intervals
+([`heritability_interval`](@ref), [`variance_component_interval`](@ref)).
+
+Mechanism: at the fitted `(β, σ²a, σ²e)`, simulate Gaussian responses over the
+SUPPLIED relationship — `a* = chol(inv(Ainv)).L · randn · √σ²a`,
+`e* = randn · √σ²e`, `y* = Xβ + Za* + e*` — refit each replicate with the SAME REML
+estimator (`:sparse_reml` → [`fit_sparse_reml`](@ref); `:ai_reml` →
+[`fit_ai_reml`](@ref)), and take percentile endpoints from the converged replicate
+vectors via the in-package type-7 `_empirical_upper_quantile` (no `Statistics`
+dependency). A replicate whose refit throws (`PosDefException`, etc.) or returns a
+non-finite/boundary variance is DROPPED and counted: `n_converged` reports how many
+of `n_boot` survived (non-convergence is surfaced, not hidden).
+
+Returns a `NamedTuple`: `sigma_a2`, `sigma_e2`, `heritability` (the point estimates
+from `fit`); `sigma_a2_ci`, `sigma_e2_ci`, `heritability_ci` (each `(lower, upper)`);
+`level`, `n_boot`, `n_converged`, `method = :parametric_bootstrap_percentile`; and
+`replicates` (the per-component converged-replicate vectors).
+
+The interval FUNCTION is deterministic: `rng` defaults to a fixed-seed
+`MersenneTwister`, so the result is reproducible at the call site (only opt-in sim
+harnesses vary the seed).
+
+EXPERIMENTAL, REML-only, univariate-Gaussian, dense/validation-scale (it forms
+`inv(Ainv)` + `chol(A)`, guarded by `max_dense_cells`). It is a PERCENTILE bootstrap
+(BCa is out of scope); its OWN coverage is NOT calibrated in CI (an opt-in coverage
+sim is deferred follow-up) — it is the cross-check the delta/profile interval debt
+names, not evidence that those intervals are correct. Rejects non-REML fits;
+multivariate / non-Gaussian bootstrap CIs are separate slices.
+"""
+function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
+                                               n_boot::Integer = 1000,
+                                               estimator::Symbol = :sparse_reml,
+                                               rng::AbstractRNG = Random.MersenneTwister(0x48324352),
+                                               max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    n_boot > 0 || throw(ArgumentError("n_boot must be a positive integer"))
+    estimator in (:sparse_reml, :ai_reml) ||
+        throw(ArgumentError("estimator must be :sparse_reml or :ai_reml"))
+    spec = fit.spec
+    spec.method == :REML ||
+        throw(ArgumentError("bootstrap_variance_component_interval requires a REML fit (spec.method == :REML)"))
+    _check_dense_validation_size(spec, max_dense_cells)
+
+    X = Matrix{Float64}(spec.X)
+    Z = Matrix{Float64}(spec.Z)
+    A = inv(Symmetric(Matrix{Float64}(Matrix(spec.Ainv))))
+    LA = cholesky(Symmetric(A)).L
+    beta = Float64.(fit.likelihood.beta)
+    s2a = fit.variance_components.sigma_a2
+    s2e = fit.variance_components.sigma_e2
+    h2 = s2a / (s2a + s2e)
+    n = length(spec.y); q = size(Z, 2)
+    mu = X * beta
+    refit = estimator === :sparse_reml ? fit_sparse_reml : fit_ai_reml
+
+    sa = Float64[]; se = Float64[]; hh = Float64[]
+    for _ in 1:n_boot
+        ystar = mu .+ Z * (LA * randn(rng, q) .* sqrt(s2a)) .+ randn(rng, n) .* sqrt(s2e)
+        try
+            spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML)
+            fb = refit(spec_b)
+            sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
+            (isfinite(sab) && isfinite(seb) && sab > 0 && seb > 0) || continue
+            push!(sa, sab); push!(se, seb); push!(hh, sab / (sab + seb))
+        catch
+            # PosDefException / non-converged refit → dropped, surfaced via n_converged
+        end
+    end
+    n_conv = length(sa)
+    n_conv > 0 ||
+        throw(ArgumentError("no bootstrap replicate converged to a finite interior optimum; no interval is reported"))
+    plo = (1 - level) / 2; phi = (1 + level) / 2
+    _ci(v) = (lower = _empirical_upper_quantile(v, plo), upper = _empirical_upper_quantile(v, phi))
+    return (sigma_a2 = s2a, sigma_e2 = s2e, heritability = h2,
+            sigma_a2_ci = _ci(sa), sigma_e2_ci = _ci(se), heritability_ci = _ci(hh),
+            level = Float64(level), n_boot = Int(n_boot), n_converged = n_conv,
+            method = :parametric_bootstrap_percentile,
+            replicates = (sigma_a2 = sa, sigma_e2 = se, heritability = hh))
+end

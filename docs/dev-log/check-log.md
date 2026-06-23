@@ -5029,3 +5029,30 @@ Newest entries go at the top.
 - Engine half only; the R bridge/extractor is cross-lane `[bridge]`, deferred (recorded
   cross-lane note). `[JL]` lane; no R repo edit. `:profile` + coverage sim + R bridge
   are follow-up. Stays `partial`-quality; no promotion.
+
+## 2026-06-22 — Backlog C6: parametric-bootstrap variance-component interval
+
+- NEW EXPORT `bootstrap_variance_component_interval(fit; level, n_boot, estimator, rng,
+  max_dense_cells)` in `src/likelihood.jl`: Gaussian REML only — simulate `y*` at the
+  fitted `(β, σ²a, σ²e)` over the supplied relationship, refit each replicate with the
+  same REML estimator (`:sparse_reml`/`:ai_reml`), percentile CIs for σ²a/σ²e/h² via
+  the in-package type-7 `_empirical_upper_quantile` (no `Statistics`/`Distributions`).
+  Dropped/non-converged refits surfaced via `n_converged`. Deterministic fixed-seed `rng`.
+- Spec gap corrected: `Random` was only a TEST dep; promoted to `[deps]` (removed from
+  test extras) + `import Random` in `HSquared.jl` (the engine needs `MersenneTwister`/
+  `randn(rng,…)`).
+- Oracle (`test/runtests.jl`): point passthrough; bracketing (`≤`, flat tiny-n surface);
+  h² CI in CLOSED [0,1] (the n=8 fixture's σ̂²a is on the boundary ≈6e-10, so replicates
+  honestly hit σ²a_b→0 / σ²e_b→0); n_converged accounting; determinism (same seed →
+  byte-identical, different seed → different); level-monotone nesting; `:ai_reml` path;
+  the percentile contract (endpoints == `_empirical_upper_quantile` at `(1±level)/2` —
+  used the exact `(1-level)/2` form, not the `0.025` literal, since `(1-0.95)/2 ≠ 0.025`
+  in Float64); guards (level/n_boot/estimator/REML-only).
+- Funnel: NO new validation_status row — APPENDED the bootstrap clause to V1-HERIT-CI
+  (held apart from C5's genomic edit), updated its "missing" (the bare "parametric-
+  bootstrap alternative" → the three-method coverage-calibration item); status stays
+  `partial`, count UNCHANGED at 47; `.md` mirror appended; doc-14 C6 ✅.
+- Checks: `Pkg.test()` → **"Testing HSquared tests passed"** (after the 2 test-side
+  fixes); `docs/make.jl` → exit 0. Real `rose-systems-auditor` audit before merge.
+- Coverage NOT calibrated (the cross-check the debt names); an opt-in coverage sim is
+  deferred follow-up. Percentile-only (BCa out of scope). `[JL]` engine-only; no R edit.
