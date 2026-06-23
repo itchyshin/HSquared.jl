@@ -171,6 +171,15 @@ const VALIDATION_STATUS_DATA = (
         "Construction utility only; not wired into model fitting, and no single-step or genomic-prediction claim.",
     ),
     (
+        "V2-GRM-GPU",
+        "GPU VanRaden G/Ginv (CUDA extension)",
+        "Wave F (G1)",
+        "partial",
+        "`gpu_genomic_relationship_matrix` / `gpu_genomic_relationship_inverse` are EXPORTED method-less stubs in `src/gpu_ext.jl`; the GPU methods live in `ext/HSquaredCUDAExt.jl` (`CUDA` in `[weakdeps]`/`[extensions]`, compat `CUDA = 5`), loading only when a CUDA backend is in scope (`using CUDA`) — so `/src` stays GPU-free and CI never touches a GPU (the same posture as `HSquaredMakieExt`). The methods REUSE the validated CPU `centered_markers` verbatim (identical allele frequencies, VanRaden scale `k`, and input guards), so the device result is the SAME estimand: only the dense `W·Wᵀ/k` GEMM (plus the `:vanraden2`/weighted variants) and the ridge-regularized Cholesky inverse `inv(G + ridge·I)` (CUSOLVER, same non-PD → `ArgumentError` contract) run on-device, then copy back to a CPU `Matrix{Float64}` (a drop-in for the CPU twin). CI gates ONLY the stubs: both are method-less `Function`s that throw `MethodError` without CUDA (7 assertions, `test/runtests.jl`).",
+        "the EXECUTED CPU↔GPU agreement (to tolerance) and the honest GPU benchmark — both AUTHORED as opt-in cluster scripts (`sim/drac/g1_gpu_genomic.jl` + `sim/drac/g1_tamia.sbatch`) but NOT YET RUN on a GPU; pending a committed tamia run + its ingested `.tsv` (Wave F execution model, doc 17); then device-resident chaining (G2 GBLUP solve), a Float32 path, and a real-marker-panel benchmark",
+        "Code + harness authored; NO agreement or performance evidence yet (the GPU run is pending). A numerical ACCELERATION of the CPU genomic ops, NOT a new estimand and NOT the general backend dispatcher (`backend_info()` `:cuda` stays `:planned`); nothing promoted to `covered`.",
+    ),
+    (
         "V2-GBLUP",
         "genomic BLUP supplied-variance solve",
         "Phase 2",

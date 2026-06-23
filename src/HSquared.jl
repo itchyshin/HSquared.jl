@@ -119,6 +119,8 @@ export AMDGPUBackend,
     genomic,
     genomic_relationship_inverse,
     genomic_relationship_matrix,
+    gpu_genomic_relationship_inverse,
+    gpu_genomic_relationship_matrix,
     gwas_table,
     henderson_mme,
     solve_animal_model_pcg,
@@ -212,5 +214,6 @@ include("planned_terms.jl")
 include("validation_status.jl")
 include("placeholders.jl")
 include("plotting_ext.jl")
+include("gpu_ext.jl")
 
 end
