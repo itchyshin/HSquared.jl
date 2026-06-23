@@ -953,9 +953,10 @@ const _VAR_LOGISTIC = (π^2) / 3
 #    logit, 0 for the log link (Poisson has NO latent residual → h²_lat = NaN, the
 #    exact reason the payload refuses a single h²), σ²e for Gaussian.
 #  • Observation/data scale: the additive genetic variance is V_A,obs = Ψ²·V_A with
-#    Ψ = E[g⁻¹′(η)] the AVERAGE inverse-link derivative — by Stein's lemma this is
-#    exactly the variance of the linear regression of the mean on the breeding value,
-#    so V_A,obs ≤ Var(mean) and h²_obs ∈ (0,1) by construction. The expectation is
+#    Ψ = E[g⁻¹′(η)] the AVERAGE inverse-link derivative — under the model's
+#    joint-Gaussian latent assumption, by Stein's lemma this is the variance of the
+#    linear regression of the mean on the breeding value, so V_A,obs ≤ Var(mean) and
+#    h²_obs ∈ (0,1) (verified numerically in the tests, not assumed). The expectation is
 #    over the LINEAR-PREDICTOR distribution η ~ N(μ, V_A + V_fixed) — the π²/3 logit
 #    residual is NOT added to this integration variance (it is an observation-process
 #    term, not predictor spread; matching de Villemereuil's QGglmm `binom1.logit`).
