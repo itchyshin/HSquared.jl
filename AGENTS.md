@@ -9,6 +9,28 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-23 (Wave F kickoff on DRAC; main at `d5d2b9b1`/#180).** Stood up DRAC HPC
+  (Fir CPU `def-snakagaw_cpu`; tamia GPU `aip-snakagaw`, 4× H100 verified) and opened **Wave F**
+  (production sparse foundation + genomic GPU, two co-equal tracks,
+  `docs/design/17-wave-F-foundation-and-genomic-gpu.md`) by **measure-first** on real q=10⁵–10⁶
+  pedigrees. **Two engine slices landed:** **F1** (#179) Meuwissen–Luo O(n) inbreeding —
+  `_meuwissen_luo_inbreeding` replaces the dense O(n²) inbreeding that capped `pedigree_inverse`
+  at q=10⁴; exact vs the dense oracle; Ainv build at q=300k = 0.337 s (was impossible past 10⁴).
+  **F3** (#180) scale-invariant AI-REML convergence — the q=300k wall was NOT factorization
+  (measured 0.15 s; METIS gives ~1% fill, **not implemented**) but `fit_ai_reml` running to its
+  100-iter cap on a non-scale-invariant `hypot(score)<tol` check (the score scales with n);
+  fixed by also stopping on the relative VC change → **q=300k 35.6 s/non-converged → 2.3 s/
+  converged (15.5×)**. **Track B G0 verified** (tamia 4× H100 `functional=true`, matmul OK);
+  genomic-GPU slices unblocked. **Real Rose audits on both** (F1 PROMOTE-WITH-CHANGES → fixed a
+  vacuous test fixture; F3 CLEAN on the core fix — but its "green suite" claim was wrong for a
+  guarded variant, caught by CI + verify). Two F3 mis-steps (a boundary guard, an `iterations<50`
+  assertion) broke CI and were removed; the core convergence fix was correct throughout.
+  **Nothing promoted to `covered`** (public default still v0.1 Gaussian). Banked: the Wave F
+  spec, the citation-backed algorithm scout doc (`docs/dev-log/scout/2026-06-23-production-sparse-algorithms.md`;
+  **METIS overturned by measurement**), the DRAC harness (`sim/drac/`), and the cross-project
+  DRAC runbook (`shinichi-brain/tools/drac-setup.md`, incl. the verified CUDA-binding fix).
+  **START HERE:** `docs/dev-log/handover/2026-06-23-wave-f-session-handover.md`.
+
 - **As of 2026-06-23 (backlog grind, session 3; main at `a33e50f3`/#176).** Finished the
   six planned backlog slices + resolved the J1 landmine, each full-DoD, one PR per slice,
   self-merged on green CI under pre-authorization. **Six engine slices merged:** **H2**
