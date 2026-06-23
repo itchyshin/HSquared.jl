@@ -402,13 +402,13 @@ function fit_ai_reml(
         information = 0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)]
         step = _ai_newton_step(information, [score_a, score_e])
 
-        # If the AI information matrix is degenerate (a weakly-identified spec, or σ²a
-        # driven to the σ²→0 boundary), the Newton step is non-finite (NaN/Inf). Stop at
-        # the current finite, positive variance components with `converged = false` — the
-        # V1-REML boundary contract ("finite positive ... never NaN") — rather than letting
-        # a NaN step fall through to the misleading "could not keep variance components
-        # positive" throw below (a *finite* step can never trigger that throw, since the
-        # halving loop always recovers σ > 0).
+        # Defense-in-depth for a genuinely NON-FINITE Newton step (NaN/Inf) from a degenerate
+        # AI information matrix: stop at the current finite, positive variance components with
+        # `converged = false` — the V1-REML boundary contract ("finite positive ... never
+        # NaN") — rather than letting a non-finite step propagate. The SEPARATE case of a
+        # *finite* step at the σ²→0 boundary (a step large relative to a tiny σ²a that even 60
+        # halvings cannot bring back positive) is NOT handled here — it is caught by the
+        # halving-exhaustion `break` just below.
         all(isfinite, step) || break
 
         a_new = sigma_a2 + step[1]
