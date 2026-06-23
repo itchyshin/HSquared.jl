@@ -38,3 +38,23 @@ the selfing / deep-inbreeding fixtures (the dense method is retained as the
 validation oracle). Only after F1 can the next measure-first run reveal whether
 the sparse factorization fill-in becomes the next wall (→ F2 fill-reducing
 ordering).
+
+## F1 after — inbreeding wall removed; next wall is the fit
+
+Post-F1 (Meuwissen–Luo) scale run on fir (`f0_scale2_45510086`, julia 1.10.10,
+single-thread, mem 128G):
+
+| q | nnz(Ainv) | Ainv build | fit_ai_reml | PCG | selinv PEV | peak RSS | converged |
+|---|---|---|---|---|---|---|---|
+| 30,000 | 140,400 | 0.021 s | 0.51 s | 0.030 s | 0.026 s | 546 MB | yes |
+| 100,000 | 468,000 | 0.054 s | 2.82 s | 0.061 s | 0.072 s | 923 MB | yes |
+| 300,000 | 1,404,000 | 0.337 s | 35.6 s | 0.193 s | 0.361 s | 1,399 MB | **no** |
+
+- **Inbreeding wall gone.** Ainv build is now O(n) and negligible (0.021 → 0.337 s
+  from q=30k → 300k; the dense path was 0.412 s at q=10⁴ and impossible beyond).
+  Peak RSS ≈1.4 GB at 300k (no dense matrix).
+- **Next wall = `fit_ai_reml`**: 0.51 → 2.82 → 35.6 s (100k→300k is 3× size but
+  12.6× time → super-linear), and it **fails to converge at q=300k** within the
+  default iterations/tol. This is the **F2 (fill-reducing ordering) + F3 (AI-REML
+  convergence hardening)** target. `fit_ai_reml` is unchanged by F1, so this is the
+  next measure-first finding, not an F1 regression.
