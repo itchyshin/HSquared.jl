@@ -45,6 +45,10 @@ the first of the correctness-critical GLMM/inference half. Spec digested below.
 
 ## Remaining slices (the prior handover's 8, now 7)
 
+> **Execution playbook:** `2026-06-22-remaining-slices-execution-plan.md` — the
+> per-slice plan (API + correctness traps + oracle/gate + funnel impact + risk
+> register + the rigid derive→oracle→Rose recipe). This section is the summary.
+
 Order: **H2 → H3 → H6 → H7 → C2 → C6 → J1** (J1 LAST — needs a derived convention +
 sign-off). Each GLMM/inference slice is one careful **derive → oracle → Rose** pass.
 Full specs: `docs/design/15-backlog-wave-execution-plan.md` + `/tmp/backlog_specs.md`
