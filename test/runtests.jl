@@ -3214,12 +3214,13 @@ end
     @test breeding_values(ib_fit).values ≈ ib_hm.animal_effects.values atol = 1e-7
 
     # --- Case 2: near-boundary σ²a (low heritability, near-zero optimum) ---
-    # A near-constant y drives σ²a toward zero. At this boundary `fit_ai_reml` either
-    # (a) reaches a small POSITIVE optimum, or (b) throws its DOCUMENTED "could not keep
-    # variance components positive" error (the AI-Newton line search refuses a
-    # non-positive step). Both are HONEST boundary behaviors; the engine never returns
-    # NaN garbage. Which one occurs is environment-sensitive (BLAS / Julia version), so
-    # the test accepts EITHER and pins the honest contract.
+    # A near-constant y drives σ²a toward zero. Since PR #182 `fit_ai_reml` STOPS GRACEFULLY
+    # at this boundary: it returns a finite, POSITIVE optimum with `converged = false` rather
+    # than throwing (the σ²→0 boundary `throw` was replaced by a graceful `break`; see
+    # `src/likelihood.jl`). The engine never returns NaN garbage. The try/catch below is now
+    # defense-in-depth only — the boundary `ErrorException` is gone, so the sole error still
+    # theoretically reachable is a `PosDefException` from an indefinite MME factorization
+    # (`cholesky(...; check = true)`); in practice the graceful path (a) is taken.
     low_y    = [3.01, 2.99, 3.00, 3.01, 2.99, 3.00, 3.01, 2.99]
     low_spec = animal_model_spec(low_y, ib_X, ib_Z, ib_Ainv; ids = ib_ped.ids, method = :REML)
     low_fit = nothing
@@ -3239,7 +3240,9 @@ end
         @test fixed_effects(low_fit) ≈ low_hm.beta atol = 1e-8
         @test breeding_values(low_fit).values ≈ low_hm.animal_effects.values atol = 1e-7
     else
-        # (b) the DOCUMENTED boundary failure — a clear error, never NaN garbage
+        # (b) defensive only: the boundary `ErrorException` was removed in PR #182, so the
+        # sole error still reachable here is a `PosDefException` (indefinite factorization),
+        # never NaN garbage. The `ErrorException` disjunct is kept as harmless belt-and-braces.
         @test low_err isa ErrorException || low_err isa LinearAlgebra.PosDefException
     end
 
