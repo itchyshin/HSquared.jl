@@ -2,6 +2,7 @@ module HSquared
 
 using LinearAlgebra
 using Optim
+using Random
 using SparseArrays
 
 export AMDGPUBackend,
@@ -43,6 +44,7 @@ export AMDGPUBackend,
     accuracy,
     animal_model_spec,
     backend_info,
+    bootstrap_variance_component_interval,
     breeding_values,
     centered_markers,
     common_env,

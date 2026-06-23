@@ -70,7 +70,7 @@ claim).
 - **C3** Repeatability interval promotion + coverage calibration (V3-REPEAT). [JL]
 - **C4** Two-component Gaussian σ²a/σ²e joint interval (nuisance profiling). [JL]
 - **C5** ✅ Extend `variance_component_interval` profile-LRT to genomic σ²a. [JL] (code merged #162; ledger/V2-GBLUP-cross-ref/.md mirrors closed in the deferred-ledger close-out)
-- **C6** Parametric-bootstrap CIs as a check on delta/profile. [JL]
+- **C6** ✅ Parametric-bootstrap VC CIs as a check on delta/profile. [JL] (NEW EXPORT `bootstrap_variance_component_interval(fit; n_boot, estimator, rng)`: Gaussian REML only, simulate-at-fit → refit → percentile CIs for σ²a/σ²e/h² via the in-package `_empirical_upper_quantile`; deterministic fixed-seed `rng`; `n_converged` surfaces dropped refits; `Random` promoted to `[deps]`; oracle = bracketing + point passthrough + level-nesting + byte-identical determinism + percentile contract + guards; extends V1-HERIT-CI (stays partial); PR `claude/c6-bootstrap-vc-interval`. Coverage NOT calibrated (the cross-check the debt names); an opt-in coverage sim is follow-up.)
 - **C7** Scale the coverage harness (#157) to 200-rep per-family runs. [JL]
 - **C8** Publishable h² interval coverage study (Gaussian). [JL]
 - **C9** `summary()`/`print()` surfacing of all intervals with honest clamp flags. [R]

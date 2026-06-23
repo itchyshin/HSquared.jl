@@ -4907,6 +4907,65 @@ end
     @test_throws ArgumentError variance_component_interval(ml)
 end
 
+@testset "Phase 1 parametric-bootstrap variance-component interval (C6)" begin
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1); Z = sparse(1.0I, 8, 8)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    fit = fit_sparse_reml(spec)
+    sa2 = fit.variance_components.sigma_a2; se2 = fit.variance_components.sigma_e2
+    h2 = sa2 / (sa2 + se2)
+
+    bs = bootstrap_variance_component_interval(fit; n_boot = 200, rng = MersenneTwister(20260622))
+    # point passthrough + shape
+    @test bs.sigma_a2 == sa2 && bs.sigma_e2 == se2 && bs.heritability == h2
+    @test bs.method === :parametric_bootstrap_percentile && bs.level == 0.95 && bs.n_boot == 200
+    # bracketing (≤: the tiny-n REML surface is flat, so an endpoint may sit at the
+    # estimate) + non-degenerate + h² CI in (0,1)
+    @test bs.sigma_a2_ci.lower ≤ sa2 ≤ bs.sigma_a2_ci.upper && bs.sigma_a2_ci.lower < bs.sigma_a2_ci.upper
+    @test bs.sigma_e2_ci.lower ≤ se2 ≤ bs.sigma_e2_ci.upper && bs.sigma_e2_ci.lower < bs.sigma_e2_ci.upper
+    @test bs.heritability_ci.lower ≤ h2 ≤ bs.heritability_ci.upper
+    # h² CI lies in the CLOSED [0,1]: this tiny-n fixture has σ̂²a on the boundary
+    # (≈6e-10), so bootstrap replicates legitimately hit σ²a_b→0 (h²→0) and σ²e_b→0
+    # (h²→1) — an honest reflection of boundary uncertainty, not a fabricated range.
+    @test 0 ≤ bs.heritability_ci.lower ≤ bs.heritability_ci.upper ≤ 1
+    # n_converged accounting (dropped refits surfaced, not hidden)
+    @test 0 < bs.n_converged ≤ 200
+    @test length(bs.replicates.sigma_a2) == bs.n_converged
+    @test length(bs.replicates.sigma_e2) == bs.n_converged
+    @test length(bs.replicates.heritability) == bs.n_converged
+    # determinism: same seed → byte-identical; different seed → different draws
+    bs2 = bootstrap_variance_component_interval(fit; n_boot = 200, rng = MersenneTwister(20260622))
+    @test bs.sigma_a2_ci == bs2.sigma_a2_ci && bs.replicates.sigma_a2 == bs2.replicates.sigma_a2
+    bs3 = bootstrap_variance_component_interval(fit; n_boot = 200, rng = MersenneTwister(99))
+    @test bs.replicates.sigma_a2 != bs3.replicates.sigma_a2
+    # monotone in level (same seed ⇒ same replicates, wider percentile): 0.80 ⊆ 0.99
+    lo80 = bootstrap_variance_component_interval(fit; n_boot = 200, level = 0.80, rng = MersenneTwister(20260622))
+    hi99 = bootstrap_variance_component_interval(fit; n_boot = 200, level = 0.99, rng = MersenneTwister(20260622))
+    @test hi99.sigma_a2_ci.lower ≤ lo80.sigma_a2_ci.lower && lo80.sigma_a2_ci.upper ≤ hi99.sigma_a2_ci.upper
+    @test hi99.heritability_ci.lower ≤ lo80.heritability_ci.lower && lo80.heritability_ci.upper ≤ hi99.heritability_ci.upper
+    # estimator = :ai_reml path runs + brackets
+    bsa = bootstrap_variance_component_interval(fit; n_boot = 120, estimator = :ai_reml, rng = MersenneTwister(7))
+    @test bsa.sigma_a2_ci.lower ≤ sa2 ≤ bsa.sigma_a2_ci.upper && bsa.n_converged > 0
+    # percentile contract: endpoints == the in-package type-7 `_empirical_upper_quantile`
+    @test bs.sigma_a2_ci.lower == HSquared._empirical_upper_quantile(bs.replicates.sigma_a2, (1 - bs.level) / 2)
+    @test bs.sigma_a2_ci.upper == HSquared._empirical_upper_quantile(bs.replicates.sigma_a2, (1 + bs.level) / 2)
+    # guards
+    @test_throws ArgumentError bootstrap_variance_component_interval(fit; level = 1.5)
+    @test_throws ArgumentError bootstrap_variance_component_interval(fit; n_boot = 0)
+    @test_throws ArgumentError bootstrap_variance_component_interval(fit; estimator = :bogus)
+    ml = fit_variance_components(animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ML))
+    @test_throws ArgumentError bootstrap_variance_component_interval(ml)   # REML-only
+
+    # V1-HERIT-CI row now records the bootstrap cross-check
+    hci = only(r for r in validation_status() if r.id == "V1-HERIT-CI")
+    @test occursin("bootstrap_variance_component_interval", hci.evidence)
+end
+
 @testset "Phase 3 repeatability / permanent-environment MME (supplied variance)" begin
     Ainv = pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2])
     Z = [1.0 0 0; 1 0 0; 0 1 0; 0 1 0; 0 0 1]   # 5 records; animals 1 & 2 repeated
