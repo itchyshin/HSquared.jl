@@ -3069,6 +3069,12 @@ end
     @test ai isa AnimalModelFit
     @test ai.target == :ai_reml
     @test ai.converged
+    # F3: converges by the scale-invariant relative-VC-change criterion (the absolute REML
+    # score scales with n, so `hypot(score) < tol` is unreachable at large q). Pin efficient
+    # convergence — it must not run to the iteration cap. Scale demonstration (out of CI):
+    # q=300k went 36 s/non-converged -> 2.3 s/converged on DRAC
+    # (docs/dev-log/recovery-checkpoints/2026-06-23-f0-scale-baseline.md).
+    @test ai.iterations < 50
     # AI-REML recovers the same REML optimum as the NelderMead optimizer: the
     # log-likelihood matches tightly; the variance components agree (looser, the
     # surface is flat for this tiny fixture).

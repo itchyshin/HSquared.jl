@@ -1,0 +1,3 @@
+q	nnz_Ainv	ainv_s	fit_s	pcg_s	selinvPEV_s	peakRSS_MB	sigma_a2	sigma_e2	converged	host	julia
+100000	468000	0.0734	0.8749	0.0551	0.0784	698.5	0.985010	1.016661	true	fb21808	1.10.10
+300000	1404000	0.2973	2.2987	0.2896	0.3590	1197.1	0.998987	1.001114	true	fb21808	1.10.10

@@ -1,0 +1,2 @@
+q=100000  AMD nnz(L)=388001 t=0.17s  |  METIS nnz(L)=384001 t=0.04s  |  fill x1.01  speed x4.65
+q=300000  AMD nnz(L)=1164001 t=0.15s  |  METIS nnz(L)=1152001 t=0.12s  |  fill x1.01  speed x1.22

@@ -81,3 +81,18 @@ AMD (Amestoy/Davis/Duff 1996 *SIMAX* 17:886); METIS (Karypis & Kumar); CHOLMOD (
 YAMS (Masuda et al. 2014 *JABG* 131:227); WOMBAT (Meyer 2007); Misztal et al. 2017 *animal*
 11(5); Hadfield & Nakagawa 2010 *JEB* 23:494 (10.1111/j.1420-9101.2009.01915.x);
 de Villemereuil et al. 2016 *Genetics* 204:1281 (10.1534/genetics.115.186536); QGglmm.
+
+## Postscript — measured outcome (2026-06-23)
+
+The F2/METIS recommendation above was **tested and overturned by experiment** on the real
+MME (`sim/drac/f2_ordering_experiment.jl`, fir). At q=100k/300k the factorization is
+**~0.15 s** and METIS reduces fill by only **~1%** (`nnz(L)` ×1.01) — the half-sib MME has
+near-zero fill-in, so AMD is already near-optimal. **METIS was NOT implemented** (it would
+optimize a non-bottleneck and add a dependency for ~0 gain). The real q=300k bottleneck was
+`fit_ai_reml` running to its 100-iteration cap because the convergence check
+(`hypot(score) < 1e-8`) is **not scale-invariant** (the REML score scales with n). **F3**
+fixed it with a relative-VC-change criterion: q=300k **36 s/non-converged → 2.3 s/converged**
+(15.5×), q=100k 2.8 → 0.88 s. Lesson: the literature correctly describes production practice,
+but the *measured* bottleneck here was convergence, not ordering. METIS stays a candidate
+ONLY if a deep multi-generation pedigree (real fill-in) re-measures as factorization-bound —
+**re-measure before adopting.**
