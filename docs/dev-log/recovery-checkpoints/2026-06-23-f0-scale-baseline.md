@@ -58,3 +58,20 @@ single-thread, mem 128G):
   default iterations/tol. This is the **F2 (fill-reducing ordering) + F3 (AI-REML
   convergence hardening)** target. `fit_ai_reml` is unchanged by F1, so this is the
   next measure-first finding, not an F1 regression.
+
+## F3 resolution — the "fit" wall was convergence, not factorization
+
+The q=300k `fit_ai_reml` wall (35.6 s, non-converged) was **not** the factorization.
+Measured (`sim/drac/f2_ordering_experiment.jl`): the sparse Cholesky is **0.15 s** at q=300k
+and METIS ordering gives only ~1% fill improvement (`nnz(L)` ×1.01) — the half-sib MME barely
+fills in, so ordering is not the lever (**METIS dropped, not implemented**). The cost was
+`fit_ai_reml` iterating to its 100-cap because `hypot(score) < tol` is not scale-invariant
+(the REML score scales with n; σ̂² was already at truth). **F3** adds a relative-VC-change
+criterion:
+
+| q | before (fit_s / conv) | after F3 (fit_s / conv) |
+|---|---|---|
+| 100,000 | 2.82 s / yes | **0.875 s / yes** |
+| 300,000 | 35.64 s / **no** | **2.30 s / yes** |
+
+→ 15.5× at q=300k and a correctness fix (the non-convergence was a false negative).

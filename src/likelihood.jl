@@ -416,7 +416,16 @@ function fit_ai_reml(
                 "fit_ai_reml could not keep variance components positive; try a different start",
             ),
         )
+        # Scale-invariant convergence. The absolute REML score scales with n, so the
+        # `hypot(score) < tol` check above becomes unreachable at large q (measured:
+        # q=300k ran to the 100-iter cap with σ̂² already at truth). Also stop on the
+        # RELATIVE change in the variance components, which is scale-free.
+        rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
         sigma_a2, sigma_e2 = a_new, e_new
+        if rel_change < tol
+            converged = true
+            break
+        end
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
