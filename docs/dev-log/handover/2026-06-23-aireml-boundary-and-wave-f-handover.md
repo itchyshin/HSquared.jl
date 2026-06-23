@@ -9,14 +9,18 @@
 
 ---
 
-## 0. DO THIS FIRST — land PR #182 (in flight)
+## 0. ALREADY DONE — PR #182 is MERGED (start at §3)
 
-**PR [#182](https://github.com/itchyshin/HSquared.jl/pull/182)** on branch
-`claude/aireml-boundary-graceful` — fixes the flaky CI failure in the single-step fitting
-test (`fit_ai_reml could not keep variance components positive`). **State at handover:** docs
-✅ + Documenter ✅ pass; **Julia 1.10 + Julia 1 (ubuntu) PENDING**; `MERGEABLE`/`UNSTABLE`
-(pending checks). A **real Rose audit was running** (`rose-systems-auditor`) — check its
-verdict before merging.
+**PR [#182](https://github.com/itchyshin/HSquared.jl/pull/182) MERGED** to `main` as squash
+commit `4b5e000e` (all four checks green: Julia 1, Julia 1.10, docs, documenter). This
+section is kept for the record; **there is nothing to do here — begin at §3.** One loose
+thread: a **real Rose audit** (`rose-systems-auditor`) was still running at merge time
+(merge was on green CI + explicit maintainer authorization, this being a bugfix with no new
+public claim); **check its verdict in the chat log / after-task and open a follow-up only if
+it flagged something real.**
+
+It fixed the flaky CI failure in the single-step fitting test (`fit_ai_reml could not keep
+variance components positive`).
 
 - **What the fix is:** the σ²a→0 boundary `throw` → graceful `break` (`converged=false`,
   finite positive σ) + an `isfinite(step)` guard. **Root cause** (systematic debugging): the
@@ -29,9 +33,8 @@ verdict before merging.
   capability-status + validation-debt boundary clauses updated to "always finite positive,
   `converged=false`, never throws". Funnel: `docs/dev-log/check-log.d/` +
   `docs/dev-log/after-task/2026-06-23-aireml-boundary-graceful.md`.
-- **Next action:** when **Julia CI goes green AND Rose is clean** → self-merge (`gh pr merge
-  182 --squash`). If Rose flags something real, address on the branch first. Authoritative
-  gate is CI on the clean checkout, not the local Mac run.
+- **Status:** merged on green CI (squash `4b5e000e`); branch deleted; `main` synced. No
+  action needed.
 - **If Rose returned findings you haven't seen:** the audit asked it to check the key risk —
   *can the graceful `break` stop a HEALTHY (interior-optimum) fit prematurely?* The argument
   is no: 60-halving exhaustion only happens at tiny σ + large step (the boundary); a fit with
@@ -175,6 +178,7 @@ In rough priority — all DoD-clean, one PR per slice, real Rose audit each:
   chat — is the source of truth.**
 
 ## Smallest safe next action
-Rehydrate (`git log --oneline -8`, `gh pr list`, `gh pr checks 182`); check the Rose verdict
-on #182; **merge #182 on green CI + Rose clean**. Then pick move #1 (Track B G1, trio idle) or
-#2 (deep-pedigree re-measure) from §3 — both use DRAC, the env is stood up.
+Rehydrate (`git log --oneline -8`, `gh pr list`); confirm `main` is at `4b5e000e`+ (#182
+merged). Then pick move #1 (Track B G1, trio idle + verified) or #2 (deep-pedigree re-measure)
+from §3 — both use DRAC, the env is stood up. Confirm the Rose verdict on #182 was clean (or
+open a follow-up) before treating the boundary fix as fully banked.
