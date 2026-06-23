@@ -3108,6 +3108,32 @@ end
     )
 end
 
+@testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
+    # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
+    # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
+    # relative to the tiny σ and 60 step-halvings can no longer keep σ positive. The old
+    # code THREW "could not keep variance components positive" — intermittently on CI
+    # (FP/environment-sensitive: a Mac grinds to the iteration cap, Linux CI reaches the
+    # boundary in fewer iters and threw). It must instead STOP at the current finite,
+    # positive σ with converged=false (the V1-REML boundary contract: finite positive OR
+    # documented error, never NaN garbage). Both fixtures below threw deterministically
+    # pre-fix.
+    bAinv = Matrix(pedigree_inverse([1, 2, 3], [0, 0, 1], [0, 0, 2]))
+    bspec = animal_model_spec([5.0, 5.0, 5.0], ones(3, 1), Matrix(1.0I, 3, 3), bAinv; method = :REML)
+    bfit = fit_ai_reml(bspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), iterations = 1000)  # must NOT throw
+    @test bfit isa AnimalModelFit
+    @test !bfit.converged                                          # boundary: did not converge
+    @test bfit.variance_components.sigma_a2 > 0 && isfinite(bfit.variance_components.sigma_a2)
+    @test bfit.variance_components.sigma_e2 > 0 && isfinite(bfit.variance_components.sigma_e2)
+    # the single-step fixture (y has no genetic signal) pushed to the boundary — threw at
+    # 5000 iters pre-fix; must now return finite positive σ.
+    sAinv = Matrix(pedigree_inverse([1, 2, 3, 4, 5], [0, 0, 1, 1, 3], [0, 0, 2, 2, 4]))
+    sspec = animal_model_spec([10.0, 12, 11, 9, 13], ones(5, 1), Matrix(1.0I, 5, 5), sAinv; method = :REML)
+    sfit = fit_ai_reml(sspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), iterations = 5000)
+    @test sfit.variance_components.sigma_a2 > 0 && isfinite(sfit.variance_components.sigma_a2)
+    @test sfit.variance_components.sigma_e2 > 0 && isfinite(sfit.variance_components.sigma_e2)
+end
+
 @testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin
     # Deterministic ~420-animal half-sib pedigree. The existing AI-REML / selinv tests
     # use ≤110 animals; this hardens the SPARSE fit path (`fit_ai_reml` → sparse CHOLMOD

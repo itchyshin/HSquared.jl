@@ -402,6 +402,15 @@ function fit_ai_reml(
         information = 0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)]
         step = _ai_newton_step(information, [score_a, score_e])
 
+        # If the AI information matrix is degenerate (a weakly-identified spec, or σ²a
+        # driven to the σ²→0 boundary), the Newton step is non-finite (NaN/Inf). Stop at
+        # the current finite, positive variance components with `converged = false` — the
+        # V1-REML boundary contract ("finite positive ... never NaN") — rather than letting
+        # a NaN step fall through to the misleading "could not keep variance components
+        # positive" throw below (a *finite* step can never trigger that throw, since the
+        # halving loop always recovers σ > 0).
+        all(isfinite, step) || break
+
         a_new = sigma_a2 + step[1]
         e_new = sigma_e2 + step[2]
         halvings = 0
@@ -411,11 +420,13 @@ function fit_ai_reml(
             e_new = sigma_e2 + step[2]
             halvings += 1
         end
-        (a_new > 0 && e_new > 0) || throw(
-            ErrorException(
-                "fit_ai_reml could not keep variance components positive; try a different start",
-            ),
-        )
+        # Step-halving cannot keep the variance components positive: σ has been driven to
+        # the σ²→0 boundary on a weakly-identified spec (the finite Newton step is large
+        # relative to a tiny σ²a, so even 60 halvings cannot recover a positive a_new). Stop
+        # at the current finite, positive σ with converged=false — the V1-REML boundary
+        # contract ("finite positive ... never NaN") — rather than throwing, which was an
+        # intermittent CI failure on degenerate single-step fixtures.
+        (a_new > 0 && e_new > 0) || break
         # Scale-invariant convergence. The absolute REML score scales with n, so the
         # `hypot(score) < tol` check above becomes unreachable at large q (measured:
         # q=300k ran to the 100-iter cap with σ̂² already at truth). Also stop on the
