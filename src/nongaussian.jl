@@ -88,6 +88,32 @@ struct NegativeBinomialResponse <: ResponseFamily
     end
 end
 
+"""
+Beta-binomial family (logit link): `y` successes out of `n_trials`, with the success
+probability itself Beta-distributed across records to capture OVERdispersion relative
+to the Binomial. Parameterised by the mean `p = logistic(η)` and an overdispersion
+parameter `ρ ∈ (0,1)` (intra-class correlation; `ρ → 0` is the Binomial limit). The
+conditional log-density marginalises the Beta latent in closed form:
+
+    ℓ(y|η,ρ) = lbeta(α+y, β+n−y) − lbeta(α,β) + log C(n,y),
+
+with `α = p(1−ρ)/ρ`, `β = (1−p)(1−ρ)/ρ` (so `α + β = (1−ρ)/ρ` is constant in η).
+`n_trials` is a common scalar denominator (the per-record vector form is future work,
+mirroring `BinomialVectorResponse`). `ρ` is a FIXED field — supplied/estimated outside
+the per-η kernel, not per-record. Unlike the logit Binomial, the beta-binomial is NOT
+log-concave in η, so the IRLS working weight uses the Fisher (expected) information
+(see `_fam_weight`); the conditional kernel reuses the module's existing `_loggamma`.
+"""
+struct BetaBinomialResponse <: ResponseFamily
+    n_trials::Int
+    rho::Float64           # overdispersion ρ ∈ (0,1)
+    function BetaBinomialResponse(n_trials::Integer, rho::Real)
+        n_trials >= 1 || throw(ArgumentError("n_trials must be >= 1"))
+        (0 < rho < 1) || throw(ArgumentError("rho (overdispersion) must be in (0,1)"))
+        return new(Int(n_trials), Float64(rho))
+    end
+end
+
 # Per-record family resolution. For every family without per-record state this is
 # the identity (compiles away; zero overhead in the per-observation comprehensions).
 # For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
@@ -96,11 +122,15 @@ end
 @inline _fam_record(f::ResponseFamily, ::Integer) = f
 @inline _fam_record(f::BinomialVectorResponse, i::Integer) = BinomialResponse(f.n_trials[i])
 
-# Resolve a single-variance-component family (:poisson / :bernoulli / :binomial) and
-# its `n_trials` (scalar OR per-record vector; integer-valued reals already validated
-# by the caller) to the `ResponseFamily` object the kernels consume. Shared by
-# `fit_laplace_reml` and `laplace_reml_interval` so the two never drift.
-function _resolve_single_family(family::Symbol, n_trials)
+# Resolve a single-variance-component family (:poisson / :bernoulli / :binomial /
+# :beta_binomial) and its `n_trials` (scalar OR per-record vector; integer-valued reals
+# already validated by the caller) to the `ResponseFamily` object the kernels consume.
+# Shared by `fit_laplace_reml` and `laplace_reml_interval` so the two never drift.
+# `:beta_binomial` additionally takes the FIXED overdispersion `rho` (its second
+# parameter); σ²a is profiled at that supplied ρ. Only `fit_laplace_reml` passes
+# `rho` — `laplace_reml_interval` rejects `:beta_binomial` in its own family guard
+# before this call, so its `rho = nothing` default is never exercised for it.
+function _resolve_single_family(family::Symbol, n_trials; rho = nothing)
     family === :poisson && return PoissonResponse()
     family === :bernoulli && return BernoulliResponse()
     if family === :binomial
@@ -110,6 +140,14 @@ function _resolve_single_family(family::Symbol, n_trials)
         (n_trials isa Real && isinteger(n_trials)) ||
             throw(ArgumentError("n_trials must be an integer trial count (or a per-record integer vector)"))
         return BinomialResponse(Int(n_trials))
+    end
+    if family === :beta_binomial
+        rho === nothing &&
+            throw(ArgumentError("family = :beta_binomial requires the rho keyword"))
+        # scalar common denominator only at this slice (per-record is future work)
+        (n_trials isa Real && isinteger(n_trials)) ||
+            throw(ArgumentError("beta_binomial n_trials must be a scalar integer trial count"))
+        return BetaBinomialResponse(Int(n_trials), Float64(rho))
     end
     throw(ArgumentError("unsupported single-component family :$family"))
 end
@@ -144,6 +182,30 @@ _logistic(η) = η >= 0 ? 1.0 / (1.0 + exp(-η)) : (e = exp(η); e / (1.0 + e))
 _log1pexp(η) = η > 0 ? η + log1p(exp(-η)) : log1p(exp(η))
 _logbinom(m, y) = _logfactorial(m) - _logfactorial(y) - _logfactorial(m - y)
 
+# Log-beta from the module's existing Lanczos `_loggamma` (multivariate.jl, in scope —
+# included before nongaussian.jl). No `SpecialFunctions` dependency; valid for a,b > 0.
+_lbeta(a, b) = _loggamma(a) + _loggamma(b) - _loggamma(a + b)
+
+# Digamma ψ(x) = d/dx logΓ(x) for x > 0, by the standard recurrence-to-asymptotic
+# series (the BetaBinomial score needs ψ; a finite-difference ψ is fragile, so this
+# is a proper series). Push the argument to x ≥ 6 with ψ(x) = ψ(x+1) − 1/x, then use
+# the asymptotic ψ(x) ≈ ln x − 1/(2x) − 1/(12x²) + 1/(120x⁴) − 1/(252x⁶) + 1/(240x⁸).
+# Accurate to ~1e-10 for x > 0 (we only ever call it at α+y, β+n−y, α, β — all > 0),
+# comfortably inside the rtol-1e-5 score-vs-finite-difference kernel gate.
+function _digamma(x::Real)
+    z = Float64(x)
+    ψ = 0.0
+    while z < 6.0
+        ψ -= 1.0 / z
+        z += 1.0
+    end
+    inv = 1.0 / z
+    inv2 = inv * inv
+    ψ += log(z) - 0.5 * inv -
+         inv2 * (1 / 12 - inv2 * (1 / 120 - inv2 * (1 / 252 - inv2 / 240)))
+    return ψ
+end
+
 # per-observation conditional log-density ℓ(y|η), score dℓ/dη, working weight -d²ℓ/dη²
 _fam_loglik(f::GaussianResponse, y, η) = -0.5 * ((y - η)^2 / f.sigma_e2 + log(2π * f.sigma_e2))
 _fam_score(f::GaussianResponse, y, η) = (y - η) / f.sigma_e2
@@ -171,6 +233,59 @@ _fam_loglik(f::NegativeBinomialResponse, y, η) =
 _fam_score(f::NegativeBinomialResponse, y, η) = (μ = exp(η); θ = f.theta; (y - μ) * θ / (θ + μ))
 _fam_weight(f::NegativeBinomialResponse, y, η) = (μ = exp(η); θ = f.theta; θ * μ * (θ + y) / (θ + μ)^2)
 # the NB normalizer reuses the module's existing `_loggamma` (Lanczos, in multivariate.jl).
+
+# Beta-binomial (logit link, overdispersion ρ ∈ (0,1)). p = logistic(η), s = (1−ρ)/ρ,
+# α = p·s, β = (1−p)·s (α + β = s, constant in η). Returns (p, s, α, β).
+@inline function _betabin_params(f::BetaBinomialResponse, η)
+    p = _logistic(η)
+    s = (1.0 - f.rho) / f.rho
+    return p, s, p * s, (1.0 - p) * s
+end
+
+# Conditional log-density: the Beta latent is marginalised in closed form. The
+# η-dependent terms are lgamma(α+y) + lgamma(β+n−y) − lgamma(α) − lgamma(β) (the
+# lgamma(α+β±·) terms are η-constant and cancel in the score).
+function _fam_loglik(f::BetaBinomialResponse, y, η)
+    n = f.n_trials
+    _, _, α, β = _betabin_params(f, η)
+    return _lbeta(α + y, β + (n - y)) - _lbeta(α, β) + _logbinom(n, Int(round(y)))
+end
+
+# score dℓ/dη = (dp/dη)·s·[ψ(α+y) − ψ(β+n−y) − ψ(α) + ψ(β)], with dp/dη = p(1−p).
+function _fam_score(f::BetaBinomialResponse, y, η)
+    n = f.n_trials
+    p, s, α, β = _betabin_params(f, η)
+    return p * (1.0 - p) * s *
+           (_digamma(α + y) - _digamma(β + (n - y)) - _digamma(α) + _digamma(β))
+end
+
+# working weight = FISHER (expected) information −E[d²ℓ/dη²] = E[(dℓ/dη)²], NOT the raw
+# observed −d²ℓ/dη². The beta-binomial is NOT log-concave in η (the observed second
+# derivative ℓ_ηη = ℓ_pp·(p′)² + ℓ_p·p(1−p)(1−2p) has a sign-indefinite second term),
+# so the OBSERVED information can be NEGATIVE and would break the
+# `cholesky(Symmetric(H))` PD assumption in `laplace_marginal_loglik`'s IRLS Newton
+# loop. The expected information is ≥ 0 by construction (Fisher scoring — the standard
+# non-canonical-link Laplace choice), keeping H PD. (Contrast: the logit Binomial
+# weight IS the observed information, because the canonical/log-concave logit link
+# makes observed == expected.) Computed as Σ_{k=0}^n score(k,η)²·P(k|η,ρ) over the
+# exact beta-binomial pmf — needs only ψ (no trigamma) and is strictly positive (the
+# k = 0 bracket is ψ(β) − ψ(β+n) < 0, so the score is not identically zero). Ignores
+# `y`: the expected information does not depend on the realised count.
+function _fam_weight(f::BetaBinomialResponse, y, η)
+    n = f.n_trials
+    p, s, α, β = _betabin_params(f, η)
+    lbαβ = _lbeta(α, β)
+    ψα = _digamma(α)
+    ψβ = _digamma(β)
+    pre = p * (1.0 - p) * s
+    info = 0.0
+    @inbounds for k in 0:n
+        logpk = _logbinom(n, k) + _lbeta(α + k, β + (n - k)) - lbαβ
+        sc = pre * (_digamma(α + k) - _digamma(β + (n - k)) - ψα + ψβ)
+        info += sc * sc * exp(logpk)
+    end
+    return info
+end
 
 function _logfactorial(y)
     k = Int(round(y))
@@ -210,6 +325,11 @@ end
 function _check_counts(::NegativeBinomialResponse, yv)
     all(y -> isinteger(y) && y >= 0, yv) ||
         throw(ArgumentError("NegativeBinomialResponse requires non-negative integer counts"))
+    return nothing
+end
+function _check_counts(f::BetaBinomialResponse, yv)
+    all(y -> isinteger(y) && 0 <= y <= f.n_trials, yv) ||
+        throw(ArgumentError("BetaBinomialResponse requires integer counts in 0:n_trials"))
     return nothing
 end
 
@@ -445,9 +565,12 @@ end
 Experimental fitted-object container for the non-Gaussian animal model returned by
 [`fit_laplace_reml`](@ref). Fields: `variance_components`, `marginal_loglik`,
 `beta`, `breeding_values` (the posterior-mode random effect), `ids`, `converged`,
-`family`, `marginal`, and `n_trials` (the Binomial trials denominator for
+`family`, `marginal`, `n_trials` (the Binomial trials denominator for
 `family = :binomial` — a scalar common denominator or a per-record `Vector{Int}`;
-`nothing` for every other family). Use the extractor
+`nothing` for every other family), and `dispersion` (the FIXED supplied
+overdispersion `ρ` for `family = :beta_binomial`; `nothing` for every other family —
+the negative-binomial `theta` is ESTIMATED and lives in `variance_components`, not
+here). Use the extractor
 functions [`breeding_values`](@ref) (→ `BreedingValues(ids, values)`),
 [`variance_components`](@ref), and [`fixed_effects`](@ref) for the same access
 contract as [`AnimalModelFit`](@ref); this is a distinct type so its extractors do
@@ -463,6 +586,7 @@ struct NonGaussianFit
     family::Symbol
     marginal::Symbol
     n_trials::Union{Int,Vector{Int},Nothing}
+    dispersion::Union{Float64,Nothing}
 end
 
 variance_components(fit::NonGaussianFit) = fit.variance_components
@@ -481,10 +605,13 @@ predates this convention and nests `method`/diagnostics differently) so the R tw
 can marshal one shape and the R non-Gaussian family-acceptance can fire.
 
 Fields: `engine`, `target = "nongaussian_reml"`, `family`
-(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`), `n_trials` (the Binomial
-trials denominator — a scalar common denominator or a per-record integer vector;
-`nothing` for other families — so a binomial payload is self-describing on the data
-scale), `method` (`"laplace"`/`"variational"`,
+(`"gaussian"`/`"poisson"`/`"bernoulli"`/`"binomial"`/`"nbinom"`/`"beta_binomial"`),
+`n_trials` (the Binomial/beta-binomial trials denominator — a scalar common
+denominator or a per-record integer vector; `nothing` for other families — so a
+counts payload is self-describing on the data scale), `dispersion` (the FIXED
+overdispersion `ρ` for `family = "beta_binomial"`; `nothing` for every other family —
+the negative-binomial `theta` is ESTIMATED and rides in `variance_components`),
+`method` (`"laplace"`/`"variational"`,
 resolved through the internal `MarginalMethod` dispatch from the stored marginal
 symbol), `variance_components`, `fixed_effects`, `breeding_values = (ids, values)`,
 `loglik`, and `converged`.
@@ -506,6 +633,7 @@ function nongaussian_result_payload(fit::NonGaussianFit)
         target = "nongaussian_reml",
         family = String(fit.family),
         n_trials = fit.n_trials isa AbstractVector ? copy(fit.n_trials) : fit.n_trials,
+        dispersion = fit.dispersion,
         method = _marginal_method_string(_marginal_method(fit.marginal)),
         variance_components = fit.variance_components,
         fixed_effects = copy(fit.beta),
@@ -526,7 +654,11 @@ estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
 `family = :bernoulli`, and `family = :binomial` (which requires the `n_trials`
 keyword — a common scalar denominator OR a per-record integer vector of length
 `length(y)`, the general `cbind(successes, failures)` GLMM) estimate the single
-`sigma_a2` (Brent). Returns a [`NonGaussianFit`](@ref)
+`sigma_a2` (Brent). `family = :beta_binomial` is the OVERdispersed logit-binomial
+(`BetaBinomialResponse`); it requires BOTH `n_trials` (scalar) and `rho`
+(the fixed overdispersion `ρ ∈ (0,1)`), estimates `sigma_a2` (Brent) at that supplied
+fixed ρ, and is Laplace-only (`marginal = :variational` is rejected). Returns a
+[`NonGaussianFit`](@ref)
 with fields `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
 `ids`, `converged`, `family`, `marginal`, and the extractor methods
 `breeding_values(fit)` / `variance_components(fit)` / `fixed_effects(fit)`.
@@ -545,12 +677,23 @@ no R model-spec, no external comparator.
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
-                          n_trials = nothing, ids = nothing, theta_init::Real = 1.0,
-                          iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, or :nbinom"))
+                          n_trials = nothing, rho = nothing, ids = nothing,
+                          theta_init::Real = 1.0, iterations::Integer = 200)
+    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, or :beta_binomial"))
     family === :binomial && n_trials === nothing &&
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
+    # beta-binomial is a TWO-parameter family (σ²a + the overdispersion ρ). This slice
+    # estimates σ²a (Brent) at a SUPPLIED FIXED ρ, so BOTH keywords are required; joint
+    # (σ²a, ρ) estimation is explicit follow-up. Laplace-only (no VA kernel for it).
+    if family === :beta_binomial
+        n_trials === nothing &&
+            throw(ArgumentError("family = :beta_binomial requires the n_trials keyword"))
+        rho === nothing &&
+            throw(ArgumentError("family = :beta_binomial requires the rho keyword (the fixed overdispersion)"))
+        _marginal_method(marginal) isa Laplace ||
+            throw(ArgumentError("family = :beta_binomial supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
+    end
     # `n_trials` may be a common scalar denominator OR a per-record integer vector
     # (the general cbind(successes, failures) GLMM). A vector must match the data and
     # carry integer counts; integer-valued reals are accepted (the R bridge marshals
@@ -579,7 +722,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
         return NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
-                              Optim.converged(res) && fit.converged, :gaussian, marginal, nothing)
+                              Optim.converged(res) && fit.converged, :gaussian, marginal, nothing, nothing)
     elseif family === :nbinom
         # negative-binomial: TWO estimable scalars (sigma_a2 + the overdispersion theta),
         # profiled jointly by NelderMead. Laplace-only (the NB ELBO has no closed form).
@@ -593,22 +736,25 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         sa2, theta = exp.(Optim.minimizer(res))
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
         return NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
-                              fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing)
+                              fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing)
     else
-        # single-variance-component families: Poisson (log link), Bernoulli/Binomial (logit)
-        fam = _resolve_single_family(family, n_trials)
+        # single-variance-component families: Poisson (log link), Bernoulli/Binomial
+        # (logit), and beta-binomial (logit, σ²a estimated at the supplied fixed ρ)
+        fam = _resolve_single_family(family, n_trials; rho = rho)
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
         res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),
                        log(sa0) - 6.0, log(sa0) + 6.0)
         sa2 = exp(Optim.minimizer(res))
         fit = margfun(y, X, Z, Ainv, sa2, fam)
-        stored_n = family !== :binomial ? nothing :
-                   n_trials isa AbstractVector ? Vector{Int}(n_trials) : Int(n_trials)
+        stored_n = family === :binomial ?
+                   (n_trials isa AbstractVector ? Vector{Int}(n_trials) : Int(n_trials)) :
+                   family === :beta_binomial ? Int(n_trials) : nothing
+        stored_disp = family === :beta_binomial ? Float64(rho) : nothing
         return NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
                               marginal === :variational ? fit.m : fit.u, aids,
                               Optim.converged(res) && fit.converged, family, marginal,
-                              stored_n)
+                              stored_n, stored_disp)
     end
 end
 

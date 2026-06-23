@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 44
+    @test length(validation) == 45
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -202,6 +202,14 @@ end
     @test occursin("reported-not-gated", lowercase(nbinom_row.evidence)) ||
           occursin("REPORTED-NOT-GATED", nbinom_row.evidence)
     @test occursin("not a covered claim", nbinom_row.claim_boundary)
+    # H2: beta-binomial overdispersed-logit family row.
+    betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
+    @test betabin_row.status == "partial"
+    @test occursin("BetaBinomialResponse", betabin_row.evidence)
+    @test occursin("Fisher", betabin_row.evidence)
+    @test occursin("BinomialResponse", betabin_row.evidence)   # the ρ→0 trusted-path anchor
+    @test occursin("not a covered claim", betabin_row.claim_boundary) ||
+          occursin("nor a covered claim", betabin_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -605,6 +613,140 @@ end
     @test pay.family == "nbinom"
     @test pay.n_trials === nothing
     @test haskey(pay.variance_components, :theta) && pay.variance_components.theta > 0
+    @test pay.method == "laplace"
+    @test !(:heritability in propertynames(pay))
+end
+
+@testset "Phase 6 beta-binomial (logit, overdispersion) family (H2)" begin
+    # Beta-binomial: an OVERdispersed logit-binomial (the success probability is
+    # Beta-distributed across records; intra-class correlation ρ ∈ (0,1); ρ → 0 is the
+    # Binomial limit). Laplace-only; the IRLS working weight is the FISHER (expected)
+    # information because the family is NOT log-concave in η at larger n.
+
+    # --- (a) BINDING ANCHOR: ρ → 0 reduces to BinomialResponse(m) (trusted path).
+    m = 10
+    for η in (-1.3, 0.0, 0.7), y in (0.0, 3.0, Float64(m))
+        bb = HSquared.BetaBinomialResponse(m, 1e-6)
+        bn = HSquared.BinomialResponse(m)
+        @test HSquared._fam_loglik(bb, y, η) ≈ HSquared._fam_loglik(bn, y, η) atol = 1e-3
+    end
+    # weight → Binomial Fisher info n·p(1−p) as ρ → 0
+    let η = 0.4, p = HSquared._logistic(η)
+        @test HSquared._fam_weight(HSquared.BetaBinomialResponse(m, 1e-6), 0.0, η) ≈
+              m * p * (1 - p) rtol = 1e-3
+    end
+
+    # --- (b) KERNEL GATE: score == central finite difference of _fam_loglik.
+    f = HSquared.BetaBinomialResponse(10, 0.2)
+    η0 = 0.37; h = 1e-6
+    @test HSquared._fam_score(f, 6.0, η0) ≈
+          (HSquared._fam_loglik(f, 6.0, η0 + h) - HSquared._fam_loglik(f, 6.0, η0 - h)) / (2h) rtol = 1e-5
+
+    # --- (b′) PMF/SCORE/WEIGHT internal consistency (independent moment checks):
+    #     the beta-binomial pmf integrates to 1, its mean is n·p and its variance is
+    #     the closed-form n·p(1−p)·(1+(n−1)ρ) (> binomial variance — overdispersed);
+    #     the score is zero-mean; and the Fisher weight equals E[score²].
+    let n = f.n_trials, p = HSquared._logistic(η0), ρ = f.rho, s = (1 - ρ) / ρ,
+        α = p * s, β = (1 - p) * s
+        pk = [exp(HSquared._logbinom(n, k) + HSquared._lbeta(α + k, β + (n - k)) -
+                  HSquared._lbeta(α, β)) for k in 0:n]
+        @test sum(pk) ≈ 1.0 atol = 1e-10
+        mean_bb = sum(k * pk[k + 1] for k in 0:n)
+        var_bb = sum((k - mean_bb)^2 * pk[k + 1] for k in 0:n)
+        @test mean_bb ≈ n * p atol = 1e-8
+        @test var_bb ≈ n * p * (1 - p) * (1 + (n - 1) * ρ) rtol = 1e-6   # overdispersion closed form
+        @test var_bb > n * p * (1 - p)
+        sc = [HSquared._fam_score(f, Float64(k), η0) for k in 0:n]
+        @test sum(sc .* pk) ≈ 0.0 atol = 1e-7                            # zero-mean score
+        @test HSquared._fam_weight(f, 0.0, η0) ≈ sum((sc .^ 2) .* pk) atol = 1e-10  # Fisher = E[score²]
+    end
+
+    # --- (c) THE LOAD-BEARING TRAP: at larger n the OBSERVED information −d²ℓ/dη²
+    #     goes NEGATIVE in the surprising tail (here m=20, ρ=0.5, y=0, η=3 →
+    #     ℓ_ηη ≈ +0.099 > 0), which would break cholesky(Symmetric(H)). The Fisher
+    #     (expected) information stays > 0, so the Newton Hessian stays PD.
+    let fneg = HSquared.BetaBinomialResponse(20, 0.5), y = 0.0, η = 3.0, h2 = 1e-4
+        obs = -(HSquared._fam_loglik(fneg, y, η + h2) - 2 * HSquared._fam_loglik(fneg, y, η) +
+                HSquared._fam_loglik(fneg, y, η - h2)) / h2^2
+        @test obs < 0                               # observed information IS negative here
+        @test HSquared._fam_weight(fneg, y, η) > 0  # Fisher information stays positive
+    end
+    # Fisher weight strictly positive across a wide (ρ, y, η) grid (the PD guarantee).
+    for ρ in (0.2, 0.5, 0.8), yy in (0.0, 4.0, 10.0, 20.0), ηη in (-3.0, -0.5, 0.5, 3.0)
+        @test HSquared._fam_weight(HSquared.BetaBinomialResponse(20, ρ), yy, ηη) > 0
+    end
+
+    # --- (d) VALUE GATE: Laplace marginal vs an INDEPENDENT tensor Gauss–Hermite
+    #     quadrature of the TRUE beta-binomial marginal (β-fixed), 3-animal fixture.
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    sa2 = 1.0
+    mm = 8
+    ρ = 0.25
+    yb = [6.0, 2.0, 5.0]
+    X0 = zeros(3, 0)
+    _gh(k) = (E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    _lbin(M, yy) = HSquared._logfactorial(M) - HSquared._logfactorial(yy) -
+                   HSquared._logfactorial(M - yy)
+    function _betabin_marginal(y, Zd, G, M, rr, k)
+        x, w = _gh(k)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        s = (1 - rr) / rr
+        for idx in CartesianIndices(ntuple(_ -> k, qd))
+            z = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * z)
+            ll = 0.0
+            for i in 1:n
+                p = HSquared._logistic(η[i]); α = p * s; β = (1 - p) * s
+                ll += HSquared._lbeta(α + y[i], β + (M - y[i])) - HSquared._lbeta(α, β) +
+                      _lbin(M, Int(y[i]))
+            end
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* sa2
+    R = _betabin_marginal(yb, Matrix(Z), G, mm, ρ, 32)
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, sa2, HSquared.BetaBinomialResponse(mm, ρ))
+    @test lap.converged
+    @test abs(lap.loglik - R) < 0.2                 # Laplace close to the true marginal
+
+    # --- guards
+    @test_throws ArgumentError HSquared.BetaBinomialResponse(0, 0.2)
+    @test_throws ArgumentError HSquared.BetaBinomialResponse(10, 0.0)
+    @test_throws ArgumentError HSquared.BetaBinomialResponse(10, 1.0)
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([9.0, 2.0, 5.0], X0, Z, Ainv, sa2,
+                                                                HSquared.BetaBinomialResponse(mm, ρ))  # y > m
+
+    # --- fitted path: σ²a at a SUPPLIED FIXED ρ (both keywords required; VA rejected)
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]   # successes in 0..10
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fbb = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :beta_binomial,
+                                    n_trials = 10, rho = 0.2, initial = (sigma_a2 = 1.0,))
+    @test fbb.family === :beta_binomial
+    @test fbb.converged && fbb.variance_components.sigma_a2 > 0
+    @test length(fbb.breeding_values) == 8
+    @test fbb.dispersion == 0.2
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :beta_binomial, rho = 0.2)     # no n_trials
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :beta_binomial, n_trials = 10) # no rho
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :beta_binomial,
+                                                         n_trials = 10, rho = 0.2, marginal = :variational)
+
+    # --- payload self-describes family + the fixed ρ (dispersion)
+    pay = HSquared.nongaussian_result_payload(fbb)
+    @test pay.family == "beta_binomial"
+    @test pay.dispersion == 0.2
+    @test pay.n_trials == 10
     @test pay.method == "laplace"
     @test !(:heritability in propertynames(pay))
 end
@@ -5704,9 +5846,10 @@ end
                           initial = (sigma_a2 = 1.0,))
     pp = nongaussian_result_payload(fp)
     @test propertynames(pp) == (
-        :engine, :target, :family, :n_trials, :method, :variance_components,
+        :engine, :target, :family, :n_trials, :dispersion, :method, :variance_components,
         :fixed_effects, :breeding_values, :loglik, :converged,
     )
+    @test pp.dispersion === nothing   # ρ only set for the beta-binomial family
     @test pp.engine == "HSquared.jl"
     @test pp.target == "nongaussian_reml"
     @test pp.family == "poisson"
@@ -5835,6 +5978,7 @@ end
             :target,
             :family,
             :n_trials,
+            :dispersion,
             :method,
             :variance_components,
             :fixed_effects,
@@ -5843,6 +5987,7 @@ end
             :converged,
         )
         @test !hasproperty(payload, :heritability)
+        @test payload.dispersion === nothing   # ρ only set for the beta-binomial family
         @test payload.engine == metadata[(case.id, "engine")]
         @test payload.target == metadata[(case.id, "target")]
         @test payload.family == metadata[(case.id, "family")]
