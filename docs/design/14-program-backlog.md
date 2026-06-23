@@ -66,7 +66,7 @@ claim).
 ## C · Inference — SEs / intervals / LRTs / coverage
 
 - **C1** Multivariate variance-component SEs (incl. genetic-correlation SE). [JL]
-- **C2** Genetic-correlation interval (delta + profile) + bridge. [bridge]
+- **C2** 🟡 Genetic-correlation interval — engine `:delta` half. [JL] (NEW EXPORT `genetic_correlation_interval(fit, Y, X, Z, Ainv; method = :delta)`: Fisher-z delta CI per off-diagonal r_g of an `:unstructured` fit, reusing the validated `multivariate_covariance_standard_errors` SE; endpoints in (−1,1); oracle = exact cross-check vs the SE path + tanh form + level-nesting + structured-fit rejection + boundary-throw; extends the V4-MV-REML row (status unchanged — point estimate stays covered); partial, NOT coverage-calibrated; PR `claude/c2-genetic-correlation-interval`. The `:profile`-LRT method, an opt-in coverage harness, and the R bridge/extractor are the remaining `[bridge]` follow-on.)
 - **C3** Repeatability interval promotion + coverage calibration (V3-REPEAT). [JL]
 - **C4** Two-component Gaussian σ²a/σ²e joint interval (nuisance profiling). [JL]
 - **C5** ✅ Extend `variance_component_interval` profile-LRT to genomic σ²a. [JL] (code merged #162; ledger/V2-GBLUP-cross-ref/.md mirrors closed in the deferred-ledger close-out)

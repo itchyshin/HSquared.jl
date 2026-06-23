@@ -5008,3 +5008,24 @@ Newest entries go at the top.
   Real `rose-systems-auditor` audit before merge.
 - Stays `partial`; no comparator/Fisher-Falconer sign-off yet → not the public default,
   not covered. `[JL]` engine-only; no R repo edit.
+
+## 2026-06-22 — Backlog C2: genetic-correlation interval (engine :delta)
+
+- NEW EXPORT `genetic_correlation_interval(fit, Y, X, Z, Ainv; method = :delta)` in
+  `src/multivariate.jl`: a Fisher-z delta CI per off-diagonal genetic correlation of
+  an `:unstructured` fit, reusing the validated `multivariate_covariance_standard_errors`
+  SE (`tanh(atanh(rg) ± z·se_rg/(1−rg²))`, endpoints in (−1,1)). `:profile` throws a
+  clear "follow-up" error (the heavy constrained-REML leg is deferred, not rushed).
+- Oracle (`Pkg.test()`, 16 assertions): exact cross-check vs the SE path + tanh form
+  (rtol 1e-8, proves reuse-not-rederive), level-nesting, symmetric matrices with NaN
+  diagonal/off-pair (no fabricated whisker), structured-fit rejection, and the boundary
+  case (n=8 → SE path throws → `:delta` throws).
+- Funnel: NO new validation_status row — APPENDED a clause to the V4-MV-REML evidence
+  (status stays `covered`, count UNCHANGED at 47); export in `HSquared.jl`; `.md`
+  mirrors appended; doc-14 C2 🟡. The interval is fenced as a Wald approximation, NOT
+  coverage-calibrated, and does NOT extend the covered point-estimate claim.
+- Checks: `Pkg.test()` → **"Testing HSquared tests passed"**; `docs/make.jl` → exit 0.
+  Real `rose-systems-auditor` → **CLEAN to merge** (no V4-MV-REML status drift).
+- Engine half only; the R bridge/extractor is cross-lane `[bridge]`, deferred (recorded
+  cross-lane note). `[JL]` lane; no R repo edit. `:profile` + coverage sim + R bridge
+  are follow-up. Stays `partial`-quality; no promotion.
