@@ -1,44 +1,74 @@
-# Recovery checkpoint — non-Gaussian sigma_a2 interval coverage (#44 gate 2, PRELIMINARY)
+# Coverage checkpoint — non-Gaussian σ²a profile-LRT interval (#44 gate 2 / H6)
 
-Date: 2026-06-22 · lane: Julia engine (`HSquared.jl`) · status: **preliminary
+Date: 2026-06-22 · lane: Julia engine (`HSquared.jl`) · status: **descriptive
 characterization, `partial` — no promotion**
 
 ## What
 
-A coverage-calibration harness for the non-Gaussian `sigma_a2` profile-LRT
-interval (`laplace_reml_interval`, family = :poisson / :binomial), which is
-documented as asymptotic with **no coverage calibration**. This records a
-*preliminary* empirical-coverage signal; a fuller calibrated run is future work
-(see CPU note below).
+Empirical coverage of the non-Gaussian `sigma_a2` profile-LRT interval
+(`laplace_reml_interval`), which is documented as asymptotic with no calibrated
+coverage. The interval covers `:poisson` / `:bernoulli` / `:binomial` /
+`:bernoulli_probit` UNIFORMLY through one shared `_resolve_single_family` +
+`target`/`_profile_root` path (the uniform return-field contract is locked by a
+CI test, `test/runtests.jl`); its shape/clamping is already deterministically
+pinned (V6-FIT). This records the EMPIRICAL coverage signal — read as conservative
+/ over-covering, NEVER a calibrated coverage guarantee.
 
-Tool: `sim/phase6_nongaussian_interval_coverage.jl` (opt-in, outside CI; not a
-gate). Design: half-sib q=345, σ²a=1.0 (latent), μ=0; Poisson `y ~ Poisson(exp(η))`;
-Binomial `y ~ Binomial(m=20, logistic(η))`; level 0.95.
+Tool: `sim/phase6_nongaussian_interval_coverage.jl` (opt-in, outside CI; not a gate).
 
-## Result (PRELIMINARY — 10-rep smoke)
+## H6 run — multi-cell sweep (15 reps/cell, capped BLAS)
 
-| family | reps | converged | covered (95%) | lower_clamped | upper_clamped | mean width |
-| --- | --- | --- | --- | --- | --- | --- |
-| poisson | 10 | 10 | 10/10 | 0.00 | 0.00 | 0.652 |
-| binomial (m=20) | 10 | 10 | 10/10 | 0.00 | 0.00 | 0.467 |
+This supersedes the earlier #157 10-rep smoke (below): the H6 slice added the
+**Bernoulli leg**, a **level × truth-σ²a sweep**, a TSV emit, and a smaller design
+(q=165) so the BLAS-heavy two-root-find interval runs under capped threads (the prior
+50-rep multithreaded run was killed for pegging cores — that is now resolved).
 
-## Interpretation (with the honest caveat)
+Design: half-sib q=165, μ=0, Binomial m=20; coverage over NON-DEGENERATE reps
+(converged, not double-clamped); clamp rates reported SEPARATELY.
 
-- At this scale the interval is **two-sided with no endpoint clamping** for both
-  families (σ̂²a is clear of zero, so the profile crosses χ²₁ on both sides — as
-  the V6-FIT note predicts), and the truth was inside the interval in **all 10**
-  reps → consistent with a **conservative (over-covering)** interval.
-- **This is a 10-rep smoke, NOT a calibrated coverage estimate** (10 reps cannot
-  distinguish 0.95 from 1.00). The planned 50-rep run was **killed to free CPU**
-  at the maintainer's request — the profile interval is BLAS-heavy (~10s/rep, a
-  point fit + two root-finds), so it pegged the machine when multithreaded.
-- **Future work (gentle):** a fuller coverage run with capped BLAS threads (or a
-  smaller design / more reps over time), to turn "looks conservative" into a
-  calibrated coverage number.
+```
+family      σ²a   level  conv  nondeg  coverage  lower_clamped  upper_clamped  mean_width
+poisson     0.25  0.90   15    15      0.933     0.07           0.00           0.412
+poisson     0.25  0.95   15    15      0.933     0.07           0.00           0.496
+poisson     1.00  0.90   14    14      0.714     0.00           0.00           0.779
+poisson     1.00  0.95   14    14      0.857     0.00           0.00           0.938
+bernoulli   0.25  0.90   15    15      1.000     0.93           0.00           1.054
+bernoulli   0.25  0.95   15    15      1.000     1.00           0.00           1.349
+bernoulli   1.00  0.90   15    15      0.800     0.67           0.00           1.743
+bernoulli   1.00  0.95   15    15      0.867     0.73           0.00           2.202
+binomial    0.25  0.90   15    15      0.933     0.00           0.00           0.219
+binomial    0.25  0.95   15    15      0.933     0.00           0.00           0.262
+binomial    1.00  0.90   15    15      0.933     0.00           0.00           0.565
+binomial    1.00  0.95   15    15      1.000     0.00           0.00           0.677
+```
+
+## Honest reading
+
+- **Coverage is in the right ballpark (~0.71–1.00) and looks conservative, not
+  calibrated.** With 15 reps a cell's coverage SE is ~0.06–0.13, so single low cells
+  (Poisson σ²a=1.0, 0.90 → 0.714) are NOISE-dominated, not a precise miscoverage.
+- **Binomial (m=20, informative): clean** — never clamps, coverage 0.93–1.00, narrow.
+  The informative-data regime where the asymptotic LRT behaves.
+- **Bernoulli (binary): predominantly LOWER-CLAMPED (one-sided).** At σ²a=0.25 the
+  lower endpoint is the search bound in 93–100% of reps, so "coverage = 1.000" is
+  INFLATED by the clamped (wide) lower bound — NOT a clean two-sided coverage. The
+  clamp-rate column is the honest signal here, not the coverage number (the documented
+  binary information-poverty / flat-profile degeneracy).
+- **Poisson:** mostly two-sided (low clamp rates), coverage 0.71–0.93 across noisy cells.
+
+## Prior smoke (#157, superseded) — 10-rep, q=345, σ²a=1.0, level 0.95
+
+| family | reps | covered (95%) | clamped | mean width |
+| --- | --- | --- | --- | --- |
+| poisson | 10 | 10/10 | none | 0.652 |
+| binomial (m=20) | 10 | 10/10 | none | 0.467 |
+
+Consistent with the H6 run (two-sided, conservative for the informative families).
 
 ## Boundary
 
-Preliminary coverage characterization. NOT a CI gate, NOT a coverage-calibration
-*claim*, NOT a covered-status promotion. The interval's shape/bracketing/clamping
-remains validated in `test/runtests.jl` (V6-FIT); this only adds a preliminary
-coverage signal. Non-Gaussian stays `partial` (`V6-LAPLACE`/`VA`).
+Descriptive, asymptotic, single-component, validation-scale, small-rep. NOT a
+calibrated coverage guarantee, NOT a CI gate, NOT a covered-status promotion. Still
+needs a larger-rep calibrated estimate at multiple designs, a parametric-bootstrap
+alternative, the Gaussian/multi-component case (nuisance profiling), and external
+GLLVM.jl/gllvmTMB comparators. V6-FIT / V6-LAPLACE stay `partial`.

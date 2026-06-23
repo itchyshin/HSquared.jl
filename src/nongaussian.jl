@@ -890,7 +890,10 @@ the variational `:VA` objective is the ELBO (a lower bound), not the marginal
 log-likelihood, so `2·(ELBÔ − ELBO(σ²a))` is not χ²₁-calibrated — `:variational`
 throws rather than return an uncalibrated quantity dressed as a CI.
 
-EXPERIMENTAL, asymptotic, single-component only, NO coverage calibration. Whether
+EXPERIMENTAL, asymptotic, single-component only — preliminary coverage
+CHARACTERIZATION only (`sim/phase6_nongaussian_interval_coverage.jl`, opt-in,
+validation-scale; read as conservative/over-covering), NOT a calibrated coverage
+guarantee. Whether
 the interval is two-sided depends on where `σ̂²a` sits relative to the flat
 near-zero region of the profile, NOT on the family alone: a Binomial fit whose
 `σ̂²a` is clear of zero gives two interior LRT roots, but a small `σ̂²a` (or binary
