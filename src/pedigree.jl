@@ -181,19 +181,108 @@ additive_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_0
 additive_relationship(ids, sire, dam; kwargs...) =
     additive_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
 
+# --- Meuwissen & Luo (1992) O(n·ancestors) inbreeding ---------------------------
+# Minimal binary max-heap over ancestor row indices (no external dependency) so the
+# ancestor traversal visits indices in strictly descending order.
+
+@inline function _ml_heappush!(h::Vector{Int}, x::Int)
+    push!(h, x)
+    i = length(h)
+    @inbounds while i > 1
+        p = i >> 1
+        h[p] >= h[i] && break
+        h[p], h[i] = h[i], h[p]
+        i = p
+    end
+    return h
+end
+
+@inline function _ml_heappop_max!(h::Vector{Int})
+    @inbounds begin
+        top = h[1]
+        last = pop!(h)
+        if !isempty(h)
+            h[1] = last
+            n = length(h); i = 1
+            while true
+                l = 2i; r = l + 1; m = i
+                (l <= n && h[l] > h[m]) && (m = l)
+                (r <= n && h[r] > h[m]) && (m = r)
+                m == i && break
+                h[i], h[m] = h[m], h[i]
+                i = m
+            end
+        end
+        return top
+    end
+end
+
+"""
+    _meuwissen_luo_inbreeding(pedigree) -> Vector{Float64}
+
+Inbreeding coefficient `F_i` for every animal by the Meuwissen & Luo (1992)
+method. Accumulate the `T`-row of `A = T·D·Tᵀ` for animal `i` over its ancestors
+(processed youngest-first via a max-heap): `A_ii = Σ_j L_ij² d_j`, so
+`F_i = A_ii − 1`, where `d_j = 0.5 − 0.25(F_sire(j) + F_dam(j))` is the Mendelian
+sampling variance (unknown-parent sentinel `F_0 = −1`). Runs in ~O(n·ancestors)
+and never forms the dense `A`; the dense `_numerator_relationship`
+diagonal is the validation oracle. Requires a topologically sorted pedigree
+(parents before offspring), as produced by [`normalize_pedigree`](@ref).
+"""
+function _meuwissen_luo_inbreeding(pedigree::Pedigree)
+    n = length(pedigree)
+    sire = pedigree.sire
+    dam = pedigree.dam
+    F = zeros(Float64, n)
+    L = zeros(Float64, n)          # working T-row (ancestor contributions)
+    heap = Int[]
+    sizehint!(heap, 64)
+    f0(k) = k == 0 ? -1.0 : F[k]   # unknown-parent inbreeding sentinel
+    @inbounds for i in 1:n
+        s = sire[i]; d = dam[i]
+        if s == 0 || d == 0
+            F[i] = 0.0             # at least one unknown parent ⇒ not inbred
+            continue
+        end
+        L[i] = 1.0
+        _ml_heappush!(heap, i)
+        fi = 0.0
+        while !isempty(heap)
+            j = _ml_heappop_max!(heap)
+            lj = L[j]; L[j] = 0.0
+            dj = 0.5 - 0.25 * (f0(sire[j]) + f0(dam[j]))
+            fi += lj * lj * dj
+            sj = sire[j]
+            if sj != 0
+                (L[sj] == 0.0) && _ml_heappush!(heap, sj)
+                L[sj] += 0.5 * lj
+            end
+            dmj = dam[j]
+            if dmj != 0
+                (L[dmj] == 0.0) && _ml_heappush!(heap, dmj)
+                L[dmj] += 0.5 * lj
+            end
+        end
+        F[i] = fi - 1.0
+    end
+    return F
+end
+
 """
     inbreeding_coefficients(pedigree; max_relationship_cache = 10_000)
     inbreeding_coefficients(ids, sire, dam; max_relationship_cache = 10_000)
 
 Return the inbreeding coefficient for each row of a normalized pedigree.
 
-This Phase 1 utility uses a bounded numerator-relationship cache to compute the
-parental inbreeding values needed by Henderson's direct inverse rules. It is
-intended for validation and initial engine work, not for huge-scale claims.
+Inbreeding is computed by the Meuwissen & Luo (1992) method
+(`_meuwissen_luo_inbreeding`) in ~O(n·ancestors) without forming the dense
+relationship matrix, so it scales to large pedigrees. `max_relationship_cache` is
+accepted for signature compatibility but no longer bounds this path (it still
+governs the dense `_numerator_relationship` used by `additive_relationship`
+and single-step A₂₂, and as the inbreeding validation oracle).
 """
 function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
-    relationship = _numerator_relationship(pedigree; max_relationship_cache = max_relationship_cache)
-    return [relationship[i, i] - 1.0 for i in 1:length(pedigree)]
+    return _meuwissen_luo_inbreeding(pedigree)
 end
 
 """

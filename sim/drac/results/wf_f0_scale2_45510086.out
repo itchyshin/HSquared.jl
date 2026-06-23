@@ -1,0 +1,16 @@
+node=fb21808 start=Tue Jun 23 06:35:08 PDT 2026
+# HSquared.jl Wave-F F0 scale benchmark  2026-06-23T06:35:43.189
+# host=fb21808  julia=1.10.10  JULIA_NUM_THREADS=1
+# LBTConfig([ILP64] libopenblas64_.so)
+# OPT-IN measurement; NO performance claim, NO CI gate.
+# benchmarking q≈30000 ...
+# benchmarking q≈100000 ...
+# benchmarking q≈300000 ...
+
+q             nnz_Ainv     ainv_s      fit_s      pcg_s  selinvPEV_s  peakRSS_MB  conv
+30000           140400      0.021      0.513      0.030        0.026         546  true
+100000          468000      0.054      2.821      0.061        0.072         923  true
+300000         1404000      0.337     35.641      0.193        0.361        1399 false
+
+# wrote sim/drac/results/f0_scale2_45510086.tsv
+end=Tue Jun 23 06:36:27 PDT 2026

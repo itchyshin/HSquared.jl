@@ -1042,7 +1042,49 @@ end
     @test_throws ArgumentError normalize_pedigree(["a"], ["a"], ["0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["b", "a"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
-    @test_throws ArgumentError inbreeding_coefficients(ped; max_relationship_cache = 2)
+    # F1: inbreeding now uses Meuwissen-Luo (O(n)); max_relationship_cache no longer
+    # bounds it (it previously threw). The kwarg is ignored and the result is unchanged.
+    @test inbreeding_coefficients(ped; max_relationship_cache = 2) ≈
+          [HSquared._numerator_relationship(ped)[i, i] - 1.0 for i in 1:length(ped)]
+end
+
+@testset "F1 Meuwissen-Luo inbreeding (O(n), no dense cap)" begin
+    oracleF(p) = (A = HSquared._numerator_relationship(p); [A[i, i] - 1.0 for i in 1:length(p)])
+    # deterministic well-mixed mating (multiplicative hash) so two parents share
+    # ancestry -> GENUINE bounded inbreeding (no RNG; q=2000 -> ~1870/2000 inbred,
+    # meanF≈0.08, maxF≈0.56). A naive modular rule collapses to constant parents
+    # (zero inbreeding), so the inbred-count guard below is load-bearing.
+    function det_inbred(q; nf = 20)
+        ids = string.(1:q)
+        s = fill("0", q); d = fill("0", q)
+        for i in (nf + 1):q
+            s[i] = string(1 + ((i * 2654435761) % (i - 1)))
+            d[i] = string(1 + (((i + 7) * 2246822519) % (i - 1)))
+        end
+        return normalize_pedigree(ids, s, d; allow_selfing = true)
+    end
+    # exact match to the dense oracle on small + moderate GENUINELY-INBRED pedigrees
+    for q in (200, 2000)
+        p = det_inbred(q)
+        F = inbreeding_coefficients(p)
+        @test count(f -> f > 1e-9, F) > q ÷ 2          # fixture is genuinely inbred (not vacuous)
+        @test F ≈ oracleF(p)
+        @test inbreeding_coefficients(p; max_relationship_cache = 2) ≈ oracleF(p)  # cache ignored
+    end
+    # selfing chain: exact match (canonical F = 0, 0.5, 0.75, 0.875)
+    selfing = normalize_pedigree(["p", "s1", "s2", "s3"], ["0", "p", "s1", "s2"],
+                                 ["0", "p", "s1", "s2"]; allow_selfing = true)
+    @test inbreeding_coefficients(selfing) ≈ oracleF(selfing)
+    @test inbreeding_coefficients(selfing) ≈ [0.0, 0.5, 0.75, 0.875]
+    # scales PAST the old 1e4 dense cap without throwing (the F1 unblock; the dense
+    # oracle is infeasible here). pedigree_inverse is unblocked too.
+    big = det_inbred(12_000)
+    Fbig = inbreeding_coefficients(big)
+    @test length(Fbig) == 12_000
+    @test count(f -> f > 1e-9, Fbig) > 6_000           # genuinely inbred at scale
+    @test all(f -> 0.0 <= f <= 1.0, Fbig)
+    @test all(isfinite, Fbig)
+    @test nnz(pedigree_inverse(big)) > 0               # pedigree_inverse unblocked at scale
 end
 
 @testset "Phase 3 cytoplasmic (maternal-lineage) relationship" begin
