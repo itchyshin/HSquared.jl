@@ -4983,3 +4983,28 @@ Newest entries go at the top.
 - Checks: full `Pkg.test()` (thread-capped) → **"Testing HSquared tests passed"**;
   `docs/make.jl` → **exit 0**. Real `rose-systems-auditor` audit before merge.
 - Stays `partial`; no promotion. `[JL]` engine-only; no R repo edit.
+
+## 2026-06-22 — Backlog H7: latent/observation-scale non-Gaussian heritability (V6-NS-H2)
+
+- NEW EXPORT `nongaussian_heritability` (fit method + `(sigma_a2, mu, family)` free
+  function) — the Nakagawa–Schielzeth (2017) / de Villemereuil (QGglmm) transform.
+  Latent h² = V_A/(V_A+V_link+V_fixed) (V_link = π²/3 logit / σ²e Gaussian / 0 Poisson
+  → Poisson latent NaN, degenerate). Observation h² = Ψ²·V_A/V_P,obs (Ψ = average
+  inverse-link derivative; Stein's lemma ⇒ 0<h²_obs<1) via the existing 20-node GH
+  (logit, proportion) / log-normal closed form (Poisson, count).
+- DERIVED + corrected TWO spec errors: (1) π²/3 is NOT added to the observation-scale
+  integration variance N(μ, V_A+V_fixed) — it's the latent residual, not predictor
+  spread (matches QGglmm `binom1.logit`); (2) the spec's "Poisson h²_obs monotone in
+  σ²a" is false (it peaks: 0.566 at σ²a=0.5 > 0.526 at 1.0, μ=1.2) — dropped, kept the
+  valid binomial n_trials gradient.
+- Oracle (`Pkg.test()`, 25 assertions): Gaussian reduction (machine precision), logit
+  latent closed form (1e-12), logit observation vs an INDEPENDENT 64-node quadrature
+  (rtol 1e-3, 0<h²<1), Poisson degeneracy + closed form vs integration (rtol 1e-6),
+  the n_trials gradient (1→5→20), guards (non-converged refused, per-record →
+  NaN+caveat, ambiguous μ throws, Bernoulli information_limited, unsupported throw).
+- Funnel: +1 `partial` `validation_status` row V6-NS-H2 (46 → 47, interior); export in
+  `HSquared.jl`; `.md` mirrors; doc-14 H7 ✅. NOT added to `nongaussian_result_payload`.
+- Checks: `Pkg.test()` → **"Testing HSquared tests passed"**; `docs/make.jl` → exit 0.
+  Real `rose-systems-auditor` audit before merge.
+- Stays `partial`; no comparator/Fisher-Falconer sign-off yet → not the public default,
+  not covered. `[JL]` engine-only; no R repo edit.
