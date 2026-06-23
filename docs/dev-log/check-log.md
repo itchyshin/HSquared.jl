@@ -4893,3 +4893,34 @@ Newest entries go at the top.
   all six |bias| ≤ 2·MCSE; EBV 0.893/0.906; G-MCSE ≤ 0.045). `Pkg.test()` after the
   status flip → green. Real Rose audit → PROMOTE-WITH-CHANGES (B1/B2 applied). CI on
   `#161` all SUCCESS; `#109` R-CMD-check SUCCESS.
+
+## 2026-06-22 — Backlog H2: beta-binomial (overdispersed-logit) Laplace family
+
+- New internal `BetaBinomialResponse(n_trials, rho)` on the non-Gaussian Laplace path
+  (`src/nongaussian.jl`); reuses `_loggamma` via new `_lbeta` + series `_digamma` (no
+  `SpecialFunctions`). IRLS weight = FISHER (expected) information `Σ_k score(k)²P(k)`,
+  NOT observed — independently derived; I confirmed the observed `−d²ℓ/dη²` goes
+  NEGATIVE at m=20, ρ=0.5, y=0, η=3 (the spec's claim, true only at larger n), so
+  Fisher scoring is load-bearing for `cholesky(Symmetric(H))` PD.
+- Independent oracle (in `Pkg.test()`): ρ→0 reduction of loglik + Fisher weight to
+  `BinomialResponse(m)`; score == central FD (rtol 1e-5); pmf sums to 1, mean `n·p`,
+  variance `n·p(1−p)(1+(n−1)ρ)`; zero-mean score; Fisher weight == E[score²]; weight
+  > 0 across a wide grid incl. the negative-observed point; independent tensor
+  Gauss–Hermite quadrature of the TRUE marginal within 0.2 of the Laplace value.
+- Funnel: +1 `partial` `validation_status` row `V6-BETABINOMIAL` (44 → 45, interior;
+  `betabin_row` occursin checks); `.md` mirrors; doc-14 H2 ✅. `NonGaussianFit` +
+  `dispersion` field (3 call sites); payload carries it (3 payload-shape assertions
+  updated, incl. the `pp` one).
+- Opt-in recovery (`sim/phase6_betabinomial_recovery.jl`, capped, outside CI;
+  checkpoint `2026-06-22-h2-betabinomial-recovery.md`): pre-declared gate, hard gate
+  **5/5** (converged ∧ interior σ̂²a ∧ EBV cor 0.74–0.82); σ̂²a magnitude recovered
+  well (mean 0.949 vs 1.0, mean rel 0.153, 5/5 within rel ≤ 0.45, reported-not-gated;
+  conditional on ρ supplied at truth). No post-hoc gate change.
+- Checks: full `Pkg.test()` (thread-capped) → **"Testing HSquared tests passed"**;
+  `docs/make.jl` → initially exit 1 (vitepress dead link from an `@ref` to the
+  internal `BetaBinomialResponse`), fixed (plain code span) → **exit 0**. Real
+  `rose-systems-auditor` → **CLEAN (merge-ready)**; 2 non-blocking polish items applied.
+- Stays `partial`: experimental, internal (not exported), Laplace-only, ρ fixed (not
+  estimated), no VA, no interval, no external comparator, not the public default, not
+  covered. `[JL]` engine-only; no R repo edit (the `dispersion` payload field is a
+  recorded cross-lane note for the R twin).

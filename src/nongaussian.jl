@@ -127,7 +127,9 @@ end
 # already validated by the caller) to the `ResponseFamily` object the kernels consume.
 # Shared by `fit_laplace_reml` and `laplace_reml_interval` so the two never drift.
 # `:beta_binomial` additionally takes the FIXED overdispersion `rho` (its second
-# parameter); σ²a is profiled at that supplied ρ.
+# parameter); σ²a is profiled at that supplied ρ. Only `fit_laplace_reml` passes
+# `rho` — `laplace_reml_interval` rejects `:beta_binomial` in its own family guard
+# before this call, so its `rho = nothing` default is never exercised for it.
 function _resolve_single_family(family::Symbol, n_trials; rho = nothing)
     family === :poisson && return PoissonResponse()
     family === :bernoulli && return BernoulliResponse()
@@ -653,7 +655,7 @@ estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
 keyword — a common scalar denominator OR a per-record integer vector of length
 `length(y)`, the general `cbind(successes, failures)` GLMM) estimate the single
 `sigma_a2` (Brent). `family = :beta_binomial` is the OVERdispersed logit-binomial
-([`BetaBinomialResponse`](@ref)); it requires BOTH `n_trials` (scalar) and `rho`
+(`BetaBinomialResponse`); it requires BOTH `n_trials` (scalar) and `rho`
 (the fixed overdispersion `ρ ∈ (0,1)`), estimates `sigma_a2` (Brent) at that supplied
 fixed ρ, and is Laplace-only (`marginal = :variational` is rejected). Returns a
 [`NonGaussianFit`](@ref)
