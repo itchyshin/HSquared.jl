@@ -9,6 +9,38 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-23 (backlog grind, session 3; main at `a33e50f3`/#176).** Finished the
+  six planned backlog slices + resolved the J1 landmine, each full-DoD, one PR per slice,
+  self-merged on green CI under pre-authorization. **Six engine slices merged:** **H2**
+  (#170) beta-binomial overdispersed-logit Laplace family (added `_lbeta`/`_digamma`,
+  `BetaBinomialResponse`, Fisher-information weight `Σ_k score(k)²P(k|η,ρ)`, `dispersion`
+  field on `NonGaussianFit`); **H3** (#171) Bernoulli probit / liability-threshold family
+  (`BernoulliProbitResponse`, tail-stable `_norm_logcdf`/Mills-ratio weight); **H6** (#172)
+  non-Gaussian interval coverage characterization (generalized `laplace_reml_interval`
+  cross-family contract test + opt-in uniform-family coverage sim); **H7** (#173) NEW EXPORT
+  `nongaussian_heritability` (latent vs observation-scale h², integrating over `N(μ, V_A+
+  V_fixed)` — corrected TWO spec errors: the integration variance must NOT include π²/3, and
+  Poisson h²_obs is NOT monotone in σ²a); **C2** (#174) NEW EXPORT
+  `genetic_correlation_interval` (`:delta` Fisher-z, reuses the MV SE path; extends
+  V4-MV-REML, stays `covered`); **C6** (#175) NEW EXPORT `bootstrap_variance_component_interval`
+  (parametric-bootstrap percentile CI for σ²a/σ²e/h², `n_converged` honesty hinge; promoted
+  `Random` to `[deps]`; extends V1-HERIT-CI). **`validation_status()` 44→47** (3 NEW `partial`
+  rows: V6-BETABINOMIAL, V6-PROBIT, V6-NS-H2; C2/C6/H6 APPENDED clauses to existing rows).
+  **J1** (#176, LANDMINE) resolved as **docs-only "derived + dual-lens ratified, kernel
+  awaiting maintainer ratification"** — the design spec's haplodiploid anchor set is provably
+  IMPOSSIBLE (√2 positive-diagonal-congruence contradiction; non-PSD); Mendel + Falconer
+  ratified `A = 2θ` with haploid-drone self = 2 (`docs/dev-log/decisions/2026-06-22-
+  haplodiploid-relationship-convention.md`); NO kernel shipped, NO capability row.
+  **SEVEN real Rose audits** (one per slice; H6/C6/J1 PROMOTE-WITH-CHANGES → addressed;
+  J1's one factual Rose flag was itself wrong — a 46-vs-47 count — and was rejected after
+  verification). `Pkg.test()` + `docs/make.jl` green locally per slice; CI green on every
+  merge. **Public-default covered count UNCHANGED (1 = Gaussian); nothing promoted to
+  covered this session** — all new non-Gaussian/interval rows are `partial`
+  (coverage/recovery NOT calibrated to a gate). **MAINTAINER DECISION PENDING:** ratify (or
+  revise) the J1 `A = 2θ`/drone-diagonal-2 scale + construction-only fence before the
+  haplodiploid kernel can land. START HERE: the per-slice after-task reports
+  `docs/dev-log/after-task/2026-06-22-{h2,h3,h6,h7,c2,c6,j1}-*.md` and check-log entries
+  (H2–C6 in `check-log.md`; J1 in `check-log.d/`).
 - **As of 2026-06-22 (backlog grind, session 2; main at `4d4c0f4a`).** Continued the
   100-slice program. Merged the two green PRs the prior handover flagged — **#164**
   (I1 fitted sire-model fixture; honest self-consistency target, not external parity)
