@@ -9,6 +9,22 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-23 (Wave F Track B G1 authored; main at `627ab754`/#183).** Closed the #182
+  loose thread (real Rose audit on the merged boundary fix → **CLEAN**, fully banked) and merged
+  **#183** (docs-only handover correction). Then authored **Track B G1** — GPU VanRaden `G`/`Ginv`
+  as a `CUDA` weak-dep extension (`HSquaredCUDAExt`, the same OUT-of-CI posture as the Makie
+  extension): EXPORTED stubs `gpu_genomic_relationship_matrix` / `gpu_genomic_relationship_inverse`,
+  the device `W·Wᵀ/k` GEMM + ridge Cholesky inverse reusing the validated CPU `centered_markers`
+  (SAME estimand by construction), an opt-in CPU↔GPU agreement + benchmark script
+  (`sim/drac/g1_gpu_genomic.jl`) + a tamia sbatch (`g1_tamia.sbatch`), a 7-assertion CI stub test,
+  and three honest status rows (`V2-GRM-GPU` partial; `validation_status()` 47→48). **Full
+  `Pkg.test()` + `docs/make.jl` green; real Rose audit CLEAN.** HONESTY FENCE: the CUDA code is
+  **authored but NOT yet run on a GPU** (no NVIDIA GPU on the dev Mac) — the CPU↔GPU agreement +
+  benchmark are OWED, pending a committed tamia run + ingested `.tsv`; NO agreement/performance
+  claim; nothing `covered`. NEXT: push/PR + the tamia run handoff (then flip the rows to
+  "GPU-agreed + benchmarked"), then G2/G3/G4 (independent) + G5. START HERE:
+  `docs/dev-log/after-task/2026-06-23-g1-gpu-genomic.md`.
+
 - **As of 2026-06-23 (Wave F kickoff on DRAC; main at `d5d2b9b1`/#180).** Stood up DRAC HPC
   (Fir CPU `def-snakagaw_cpu`; tamia GPU `aip-snakagaw`, 4× H100 verified) and opened **Wave F**
   (production sparse foundation + genomic GPU, two co-equal tracks,

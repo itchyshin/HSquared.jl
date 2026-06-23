@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 47
+    @test length(validation) == 48
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -7873,6 +7873,24 @@ end
     @test_throws MethodError hsquared_figure((covariate = [0.0], eigenvalues = [1.0],
                                               eigenfunctions = [1.0;;], variance_explained = [1.0],
                                               rotation_invariant = true, supplied = true))
+end
+
+@testset "gpu genomic relationship stubs (HSquaredCUDAExt weak-dep, Wave F G1)" begin
+    # `gpu_genomic_relationship_matrix` / `gpu_genomic_relationship_inverse` are STUBS in
+    # /src: the GPU METHODS live in the `HSquaredCUDAExt` package extension, which loads
+    # only when CUDA is in scope (`using CUDA`). CUDA is deliberately OUT of the default
+    # test/CI environment (no GPU on CI — cost discipline, the same posture as Makie), so
+    # in CI the stubs must be method-less generic functions: any call throws `MethodError`
+    # until the extension activates. The CPU↔GPU agreement + benchmark are verified on a
+    # CUDA device via the opt-in cluster script sim/drac/g1_gpu_genomic.jl, never in CI.
+    @test gpu_genomic_relationship_matrix isa Function
+    @test gpu_genomic_relationship_inverse isa Function
+    @test isempty(methods(gpu_genomic_relationship_matrix))   # stub: no methods without CUDA
+    @test isempty(methods(gpu_genomic_relationship_inverse))
+    markers = [0.0 1.0 2.0; 1.0 1.0 0.0; 2.0 0.0 1.0]
+    @test_throws MethodError gpu_genomic_relationship_matrix(markers)
+    @test_throws MethodError gpu_genomic_relationship_matrix(markers; method = :vanraden2)
+    @test_throws MethodError gpu_genomic_relationship_inverse([1.0 0.0; 0.0 1.0])
 end
 
 @testset "BLUPF90 multivariate starter packet preflight (#49)" begin
