@@ -40,6 +40,9 @@ Mirrors the proven `HSquaredMakieExt` weak-dep pattern (GPU is OUT of CI, like M
 - **Full `Pkg.test()` green** (julia 1.10.0, thread-capped, "Testing HSquared tests passed");
   the new GPU stub testset is 7/7; **CUDA never loaded** (not in the test env).
 - **`docs/make.jl` green** (DocumenterVitepress build complete).
+- **CI (PR #184) green**: all four checks pass (Julia 1, Julia 1.10, docs, documenter/deploy)
+  — after fixing a stale row-count assertion (see "What did not go smoothly"). CUDA is OUT of
+  CI, so the GPU agreement is deliberately NOT exercised by CI.
 - CPU side of the agreement script verified locally (no monomorphic columns; all CPU G
   variants + the ridge inverse + the `(G+rI)·Ginv ≈ I` identity run/hold). The GPU path is
   the only untested variable — by design, it runs on the cluster.
@@ -69,6 +72,13 @@ backend dispatcher (`backend_info()` `:cuda` stays `:planned`). Nothing promoted
   would force disallowed scalar indexing on the diagonal); (2) use a broadcast column-scale
   for the weighted/`:vanraden2` variants (algebraically identical to `Diagonal`, device-safe).
   These are unverified on hardware until the tamia run.
+- **A stale `validation_status()` row-count assertion broke CI on the first push.**
+  `test/runtests.jl:174` pinned `length(validation) == 47`; the new `V2-GRM-GPU` row made it
+  48. Root cause: I added that row AFTER the last full `Pkg.test()` and did not re-run before
+  pushing — the exact "run the FULL suite on the committed state before pushing" discipline.
+  A pre-edit grep also missed the assertion (it reads a local `validation` variable, not
+  `validation_status` on that line). Fixed to `== 48`, re-ran the FULL suite green, amended +
+  force-pushed → CI green. Lesson reinforced: re-run after the LAST edit, not the last code edit.
 
 ## Next actions
 
