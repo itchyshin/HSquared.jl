@@ -939,3 +939,153 @@ function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::Abstract
             lower_clamped = lower_clamped, upper_clamped = upper_clamped,
             converged = fit.converged)
 end
+
+# Logistic distribution variance — the latent-scale residual variance the logit link
+# implies (the variance of a standard logistic). Used ONLY for the latent-scale h²
+# (the "distribution-specific variance" of Nakagawa & Schielzeth 2017), NOT for the
+# observation-scale integration (see `_nongaussian_h2_core`).
+const _VAR_LOGISTIC = (π^2) / 3
+
+# Core latent-/observation-scale heritability (Nakagawa–Schielzeth 2017 / de
+# Villemereuil QGglmm transform). ESTIMAND CONVENTIONS (documented because the spec
+# is delicate here and this is validation-only):
+#  • Latent/link scale: h²_lat = V_A / (V_A + V_link + V_fixed), V_link = π²/3 for
+#    logit, 0 for the log link (Poisson has NO latent residual → h²_lat = NaN, the
+#    exact reason the payload refuses a single h²), σ²e for Gaussian.
+#  • Observation/data scale: the additive genetic variance is V_A,obs = Ψ²·V_A with
+#    Ψ = E[g⁻¹′(η)] the AVERAGE inverse-link derivative — by Stein's lemma this is
+#    exactly the variance of the linear regression of the mean on the breeding value,
+#    so V_A,obs ≤ Var(mean) and h²_obs ∈ (0,1) by construction. The expectation is
+#    over the LINEAR-PREDICTOR distribution η ~ N(μ, V_A + V_fixed) — the π²/3 logit
+#    residual is NOT added to this integration variance (it is an observation-process
+#    term, not predictor spread; matching de Villemereuil's QGglmm `binom1.logit`).
+#  • Estimand per family: PROPORTION for Bernoulli/Binomial, COUNT for Poisson.
+# This is asymptotic/validation-scale; the exact decomposition awaits a same-estimand
+# QGglmm/MCMCglmm comparator + a Fisher/Falconer review before any promotion.
+function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e2::Float64,
+                              n_trials::Int, V_fixed::Float64, converged::Bool)
+    if family === :gaussian
+        h2 = V_A / (V_A + sigma_e2)
+        return (family = :gaussian, sigma_a2 = V_A, mu = mu,
+                latent_total_variance = V_A + sigma_e2, h2_latent = h2, h2_observation = h2,
+                var_distribution = sigma_e2, var_link = sigma_e2, converged = converged,
+                information_limited = false,
+                caveat = "Gaussian identity link: latent and observation scales coincide.",
+                method = :gaussian_identity)
+    elseif family === :poisson
+        V_pred = V_A + V_fixed                       # linear-predictor variance
+        λ = exp(mu + V_pred / 2)                      # E[exp η]; Ψ = λ for the log link
+        V_A_obs = λ^2 * V_A                           # Ψ²·V_A (Stein)
+        V_P_obs = λ^2 * (exp(V_pred) - 1) + λ         # Var(exp η) + E[Poisson var]
+        return (family = :poisson, sigma_a2 = V_A, mu = mu, latent_total_variance = V_pred,
+                h2_latent = NaN, h2_observation = V_A_obs / V_P_obs,
+                var_distribution = λ, var_link = 0.0, converged = converged,
+                information_limited = false,
+                caveat = "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation/count scale via the log-normal–Poisson closed form (NS 2017).",
+                method = :lognormal_poisson)
+    elseif family === :bernoulli || family === :binomial
+        V_pred = V_A + V_fixed
+        latent_total = V_A + _VAR_LOGISTIC + V_fixed
+        p̄ = _gh_expect(_logistic, mu, V_pred)
+        Ψ = _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), mu, V_pred)
+        Ep2 = _gh_expect(η -> (p = _logistic(η); p * p), mu, V_pred)
+        var_p = Ep2 - p̄^2                             # Var of the mean proportion
+        V_A_obs = Ψ^2 * V_A                           # Ψ²·V_A (Stein) ≤ var_p
+        var_dist = Ψ / n_trials                       # proportion-scale sampling variance
+        info_lim = n_trials == 1
+        return (family = family, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                h2_latent = V_A / latent_total, h2_observation = V_A_obs / (var_p + var_dist),
+                var_distribution = var_dist, var_link = _VAR_LOGISTIC, converged = converged,
+                information_limited = info_lim,
+                caveat = info_lim ?
+                    "Single-trial Bernoulli: the latent σ²a is downward-biased (information effect), so the observation-scale h² inherits that bias — never present it as clean." :
+                    "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.",
+                method = :logit_quadrature)
+    else
+        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial; family :$family is follow-up (probit V_link = 1, beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
+    end
+end
+
+_h2_family_params(f::GaussianResponse) = (:gaussian, 1, f.sigma_e2)
+_h2_family_params(::PoissonResponse) = (:poisson, 1, NaN)
+_h2_family_params(::BernoulliResponse) = (:bernoulli, 1, NaN)
+_h2_family_params(f::BinomialResponse) = (:binomial, f.n_trials, NaN)
+_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: probit, beta-binomial, negative-binomial)"))
+
+"""
+    nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing, predictor_variance = 0.0)
+    nongaussian_heritability(sigma_a2, mu, family::ResponseFamily; predictor_variance = 0.0)
+
+Latent- and observation-scale heritability for a non-Gaussian animal model — the
+Nakagawa–Schielzeth (2017) / de Villemereuil (QGglmm) transform that fills the gap
+the family-uniform `nongaussian_result_payload` deliberately leaves (it carries NO
+`heritability`, since "reuse the Gaussian ratio" is wrong off the identity link).
+
+Returns a self-describing `NamedTuple`:
+`(family, sigma_a2, mu, latent_total_variance, h2_latent, h2_observation,
+var_distribution, var_link, converged, information_limited, caveat, method)`.
+
+**Latent/link scale** `h2_latent = V_A / (V_A + V_link + V_fixed)`: `V_link = π²/3`
+(logit), `σ²e` (Gaussian), and `0` for the Poisson log link — which makes the
+Poisson latent h² DEGENERATE, returned as `NaN` (the precise reason the payload
+refuses a single h²). **Observation/data scale** uses the QGglmm decomposition
+`V_A,obs = Ψ²·V_A` (`Ψ = E[g⁻¹′(η)]`, the average inverse-link derivative; by Stein's
+lemma the exact variance of the regression of the mean on the breeding value, so
+`h2_observation ∈ (0,1)`), integrating over the LINEAR-PREDICTOR distribution
+`η ~ N(μ, V_A + V_fixed)` (the π²/3 logit residual is NOT added to the integration
+variance) via the module's existing 20-node Gauss–Hermite for logit and the
+log-normal closed form for Poisson. Estimand: PROPORTION for Bernoulli/Binomial,
+COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales.
+
+`mu` (link-scale population mean) defaults to the fit's single intercept; with >1
+fixed effect it is REQUIRED (and `predictor_variance`, the fixed-effect linear-
+predictor variance, is the NS "variance explained by fixed effects" term). The
+function REFUSES a non-converged fit; sets `information_limited = true` with the
+downward-bias caveat for single-trial Bernoulli; and returns `h2_observation = NaN`
+with a caveat for a per-record varying `n_trials` (a single data-scale h² is
+ill-defined under varying denominators — not silently averaged).
+
+EXPERIMENTAL, dense/validation-scale; exact in its closed-form limbs and anchored to
+an independent quadrature oracle in `test/runtests.jl`, but it inherits the latent
+σ²a bias (especially single-trial Bernoulli) and has NO same-estimand external
+(QGglmm/MCMCglmm) comparator yet — not the public default, not covered. Deliberately
+NOT added to `nongaussian_result_payload` (that shape stays family-uniform).
+"""
+function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing,
+                                  predictor_variance::Real = 0.0)
+    fit.converged ||
+        throw(ArgumentError("nongaussian_heritability refuses a non-converged fit (converged = false)"))
+    V_A = Float64(fit.variance_components.sigma_a2)
+    μ = if mu !== nothing
+        Float64(mu)
+    elseif length(fit.beta) == 1
+        fit.beta[1]
+    else
+        throw(ArgumentError("mu (link-scale population mean) is required: the fit has $(length(fit.beta)) fixed effects, so the intercept is ambiguous — supply `mu` (and `predictor_variance` for the fixed-effect spread)"))
+    end
+    nt = n_trials === nothing ? fit.n_trials : n_trials
+    if fit.family === :binomial && nt isa AbstractVector
+        lt = V_A + _VAR_LOGISTIC + Float64(predictor_variance)
+        return (family = :binomial, sigma_a2 = V_A, mu = μ, latent_total_variance = lt,
+                h2_latent = V_A / lt, h2_observation = NaN, var_distribution = NaN,
+                var_link = _VAR_LOGISTIC, converged = fit.converged, information_limited = false,
+                caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged).",
+                method = :logit_quadrature)
+    end
+    nt_int = if fit.family === :binomial
+        nt === nothing && throw(ArgumentError("family = :binomial needs n_trials (from the fit or the keyword)"))
+        Int(nt)
+    else
+        1
+    end
+    σ²e = fit.family === :gaussian ? Float64(fit.variance_components.sigma_e2) : NaN
+    return _nongaussian_h2_core(fit.family, V_A, μ, σ²e, nt_int, Float64(predictor_variance),
+                                fit.converged)
+end
+
+function nongaussian_heritability(sigma_a2::Real, mu::Real, family::ResponseFamily;
+                                  predictor_variance::Real = 0.0)
+    fam_sym, nt, σ²e = _h2_family_params(family)
+    return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
+                                Float64(predictor_variance), true)
+end

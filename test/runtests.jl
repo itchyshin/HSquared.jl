@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 46
+    @test length(validation) == 47
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -899,6 +899,101 @@ end
     # the V6-LAPLACE validation row records the coverage characterization (H6)
     vrow = only(r for r in validation_status() if r.id == "V6-LAPLACE")
     @test occursin("coverage", vrow.evidence)
+end
+
+@testset "Phase 6 non-Gaussian latent/observation-scale heritability (H7)" begin
+    # Nakagawa–Schielzeth / de Villemereuil (QGglmm) transform. Latent h² =
+    # V_A/(V_A+V_link+V_fixed); observation h² = Ψ²·V_A / V_P,obs integrated over the
+    # LINEAR-PREDICTOR distribution N(μ, V_A+V_fixed) (NO π²/3 in the integration var).
+    lg(η) = 1.0 / (1.0 + exp(-η))
+    # independent 64-node Gauss–Hermite expectation of g over N(μ, v) (NOT the 20-node
+    # _gh_expect under test) — the oracle for the observation-scale integrals.
+    function _fine(g, μ, v)
+        k = 64
+        E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]))
+        x = E.values; w = sqrt(π) .* (E.vectors[1, :] .^ 2); s = sqrt(2v)
+        return sum(w[i] * g(μ + s * x[i]) for i in eachindex(x)) / sqrt(π)
+    end
+
+    # (1) Gaussian reduction: latent == observation == V_A/(V_A+σ²e), machine precision.
+    g = HSquared.nongaussian_heritability(2.0, 0.0, HSquared.GaussianResponse(3.0))
+    @test g.h2_latent ≈ 2.0 / 5.0 atol = 1e-12
+    @test g.h2_observation ≈ 2.0 / 5.0 atol = 1e-12
+    @test g.family === :gaussian
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped); X = ones(8, 1); Z = sparse(1.0I, 8, 8)
+    yg = [1.2, -0.4, 0.8, 1.5, -0.2, 0.1, 0.9, 1.1]
+    fg = HSquared.fit_laplace_reml(yg, X, Z, Ainv; family = :gaussian,
+                                   initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    hg = HSquared.nongaussian_heritability(fg)
+    @test hg.h2_latent ≈ fg.variance_components.sigma_a2 /
+          (fg.variance_components.sigma_a2 + fg.variance_components.sigma_e2) atol = 1e-12
+    @test hg.h2_latent == hg.h2_observation
+
+    # (2) Logit latent-scale closed form V_A/(V_A+π²/3), exact; Bernoulli info-limited.
+    let V_A = 0.8, μ = 0.3
+        b = HSquared.nongaussian_heritability(V_A, μ, HSquared.BernoulliResponse())
+        @test b.h2_latent ≈ V_A / (V_A + (π^2) / 3) atol = 1e-12
+        @test b.var_link ≈ (π^2) / 3 atol = 1e-12
+        @test b.information_limited
+        @test 0 < b.h2_observation < 1
+    end
+
+    # (3) Logit observation-scale vs the INDEPENDENT 64-node quadrature of the same integrals.
+    let V_A = 0.8, μ = 0.3, n = 5
+        bb = HSquared.nongaussian_heritability(V_A, μ, HSquared.BinomialResponse(n))
+        p̄ = _fine(lg, μ, V_A)
+        Ψ = _fine(η -> (p = lg(η); p * (1 - p)), μ, V_A)
+        var_p = _fine(η -> lg(η)^2, μ, V_A) - p̄^2
+        @test bb.h2_observation ≈ (Ψ^2 * V_A) / (var_p + Ψ / n) rtol = 1e-3
+        @test 0 < bb.h2_observation < 1
+    end
+
+    # (4) Poisson: latent NaN; observation closed form vs independent integration.
+    let V_A = 0.5, μ = 1.2
+        po = HSquared.nongaussian_heritability(V_A, μ, HSquared.PoissonResponse())
+        @test isnan(po.h2_latent)
+        λ = _fine(exp, μ, V_A); var_λ = _fine(η -> exp(2η), μ, V_A) - λ^2
+        @test po.h2_observation ≈ (λ^2 * V_A) / (var_λ + λ) rtol = 1e-6
+        @test 0 < po.h2_observation < 1
+        @test po.var_link == 0.0
+    end
+
+    # (5) Binomial information gradient: h²_obs RISES with n_trials (1 → 5 → 20) at
+    #     fixed (V_A, μ) — the same information effect the engine already documents.
+    let V_A = 0.8, μ = 0.0
+        h1 = HSquared.nongaussian_heritability(V_A, μ, HSquared.BinomialResponse(1)).h2_observation
+        h5 = HSquared.nongaussian_heritability(V_A, μ, HSquared.BinomialResponse(5)).h2_observation
+        h20 = HSquared.nongaussian_heritability(V_A, μ, HSquared.BinomialResponse(20)).h2_observation
+        @test h1 < h5 < h20 < 1
+    end
+
+    # (6) Guards / honesty.
+    yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    fb = HSquared.fit_laplace_reml(yb, X, Z, Ainv; family = :bernoulli, initial = (sigma_a2 = 1.0,))
+    @test HSquared.nongaussian_heritability(fb).information_limited
+    nts = [2, 4, 5, 6, 10, 12, 3, 8]
+    yv = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 2.0, 7.0]
+    fv = HSquared.fit_laplace_reml(yv, X, Z, Ainv; family = :binomial, n_trials = nts,
+                                   initial = (sigma_a2 = 1.0,))
+    hv = HSquared.nongaussian_heritability(fv)
+    @test isnan(hv.h2_observation) && occursin("varying", hv.caveat)
+    X2 = [ones(8) [0.1, 0.2, -0.1, 0.3, 0.0, 0.4, -0.2, 0.1]]
+    fp2 = HSquared.fit_laplace_reml(yb, X2, Z, Ainv; family = :bernoulli, initial = (sigma_a2 = 1.0,))
+    @test_throws ArgumentError HSquared.nongaussian_heritability(fp2)            # ambiguous μ
+    @test HSquared.nongaussian_heritability(fp2; mu = 0.0).family === :bernoulli # works with μ
+    nf = HSquared.NonGaussianFit((sigma_a2 = 1.0,), -3.0, [0.0], zeros(8), collect(1:8),
+                                 false, :poisson, :laplace, nothing, nothing)
+    @test_throws ArgumentError HSquared.nongaussian_heritability(nf)             # non-converged refused
+    @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.NegativeBinomialResponse(2.0))
+
+    # (7) validation row present + partial; NOT added to the family-uniform payload.
+    nsh2 = only(r for r in validation_status() if r.id == "V6-NS-H2")
+    @test nsh2.status == "partial"
+    @test occursin("Nakagawa", nsh2.evidence) || occursin("observation", nsh2.evidence)
+    @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin
