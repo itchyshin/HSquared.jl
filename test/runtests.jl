@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 45
+    @test length(validation) == 46
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -210,6 +210,14 @@ end
     @test occursin("BinomialResponse", betabin_row.evidence)   # the ρ→0 trusted-path anchor
     @test occursin("not a covered claim", betabin_row.claim_boundary) ||
           occursin("nor a covered claim", betabin_row.claim_boundary)
+    # H3: probit / threshold (liability-scale) family row.
+    probit_row = only(row for row in validation if row.id == "V6-PROBIT")
+    @test probit_row.status == "partial"
+    @test occursin("BernoulliProbitResponse", probit_row.evidence)
+    @test occursin("probit", probit_row.evidence)
+    @test occursin("LAPLACE ONLY", probit_row.evidence) || occursin("Laplace", probit_row.evidence)
+    @test occursin("not a covered claim", probit_row.claim_boundary) ||
+          occursin("nor a covered claim", probit_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -749,6 +757,114 @@ end
     @test pay.n_trials == 10
     @test pay.method == "laplace"
     @test !(:heritability in propertynames(pay))
+end
+
+@testset "Phase 6 Bernoulli probit (threshold/liability) family (H3)" begin
+    # Probit threshold model P(y=1|η) = Φ(η). Laplace-only; the conditional is
+    # log-concave, so the IRLS weight M(sη)(M(sη)+sη) ∈ (0,1) is the observed ==
+    # expected information (no Fisher-scoring substitution, unlike beta-binomial).
+    f = HSquared.BernoulliProbitResponse()
+    Φ(x) = exp(HSquared._norm_logcdf(x))
+
+    # --- (a) dependency-free normal primitives: known values + DEEP-TAIL stability
+    @test HSquared._norm_pdf(0.0) ≈ 1 / sqrt(2π) atol = 1e-14
+    @test HSquared._norm_pdf(1.0) ≈ exp(-0.5) / sqrt(2π) atol = 1e-14
+    @test HSquared._norm_logpdf(0.7) ≈ log(HSquared._norm_pdf(0.7)) atol = 1e-12
+    @test Φ(0.0) ≈ 0.5 atol = 1e-12
+    @test Φ(1.96) ≈ 0.9750021048517795 atol = 1e-12        # standard-normal CDF
+    @test Φ(-1.96) ≈ 0.024997895148220428 atol = 1e-12
+    @test Φ(3.0) ≈ 0.9986501019683699 atol = 1e-12
+    # tail STABILITY: logΦ stays FINITE deep in the left tail (a naive log(Φ)
+    # underflows to -Inf around x ≈ -39) — the whole reason for the custom log-cdf.
+    for x in (-10.0, -20.0, -40.0)
+        @test isfinite(HSquared._norm_logcdf(x)) && HSquared._norm_logcdf(x) < 0
+    end
+    for x in (-40.0, -5.0, -0.3, 0.0, 1.2, 6.0)              # Φ(x) + Φ(−x) = 1
+        @test exp(HSquared._norm_logcdf(x)) + exp(HSquared._norm_logcdf(-x)) ≈ 1.0 atol = 1e-12
+    end
+    # the LOG-form tail cf matches the package's incomplete-gamma Q where both valid
+    for z in (1.5, 2.5, 4.0)
+        @test exp(-z * z + log(z) - HSquared._loggamma(0.5) +
+                  log(HSquared._gamma_q_cf_h(0.5, z * z))) ≈
+              HSquared._reg_gamma_q_cf(0.5, z * z) rtol = 1e-10
+    end
+
+    # --- (b) conditional score/weight == central finite differences (kernel gate)
+    h = 1e-6; h2 = 1e-4
+    for y in (0.0, 1.0), η in (-2.0, -0.3, 0.0, 0.3, 2.0)
+        ll(x) = HSquared._fam_loglik(f, y, x)
+        @test HSquared._fam_score(f, y, η) ≈ (ll(η + h) - ll(η - h)) / (2h) rtol = 1e-5 atol = 1e-9
+        @test HSquared._fam_weight(f, y, η) ≈
+              -(ll(η + h2) - 2ll(η) + ll(η - h2)) / h2^2 rtol = 1e-3 atol = 1e-6
+        @test HSquared._fam_weight(f, y, η) > 0              # log-concave ⇒ weight > 0
+    end
+    @test HSquared._fam_weight(f, 1.0, -6.0) > 0             # deep-tail weight stays positive
+    @test HSquared._fam_weight(f, 0.0, 6.0) > 0
+
+    # --- (c) marginal sanity on the 3-animal fixture: converged + mode-stationary
+    ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
+    Ainv = pedigree_inverse(ped)
+    Z = sparse(1.0I, 3, 3)
+    X0 = zeros(3, 0)
+    yb = [1.0, 0.0, 1.0]
+    lap = HSquared.laplace_marginal_loglik(yb, X0, Z, Ainv, 1.0, f)
+    @test lap.converged && lap.gradient_norm < 1e-8
+
+    # --- (d) value gate vs an INDEPENDENT tensor Gauss–Hermite quadrature of the
+    #     TRUE probit marginal (β-fixed). Binary, so a documented wider gap (cf. Bernoulli).
+    _gh(k) = (E = eigen(SymTridiagonal(zeros(k), [sqrt(j / 2) for j in 1:k-1]));
+              (E.values, sqrt(π) .* (E.vectors[1, :] .^ 2)))
+    function _probit_marginal(y, Zd, G, k)
+        x, w = _gh(k)
+        L = cholesky(Symmetric(G)).L
+        n = length(y); qd = size(Zd, 2); tot = 0.0
+        for idx in CartesianIndices(ntuple(_ -> k, qd))
+            zz = [sqrt(2) * x[idx[j]] for j in 1:qd]
+            wt = prod(w[idx[j]] / sqrt(π) for j in 1:qd)
+            η = Zd * (L * zz)
+            ll = sum(HSquared._norm_logcdf((2 * y[i] - 1) * η[i]) for i in 1:n)
+            tot += wt * exp(ll)
+        end
+        return log(tot)
+    end
+    G = inv(Symmetric(Matrix(Ainv))) .* 1.0
+    R = _probit_marginal(yb, Matrix(Z), G, 32)
+    @test abs(lap.loglik - R) < 0.5             # binary Laplace gap documented (cf. Bernoulli)
+
+    # --- (e) fitted path: σ²a estimated (Brent), Laplace-only
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    pedf = normalize_pedigree(ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Aif = pedigree_inverse(pedf)
+    yf = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    Xf = ones(8, 1)
+    Zf = sparse(1.0I, 8, 8)
+    fp = HSquared.fit_laplace_reml(yf, Xf, Zf, Aif; family = :bernoulli_probit,
+                                   initial = (sigma_a2 = 1.0,))
+    @test fp.family === :bernoulli_probit
+    @test fp.converged && fp.variance_components.sigma_a2 > 0
+    @test fp.n_trials === nothing && fp.dispersion === nothing
+    @test length(fp.breeding_values) == 8
+    @test_throws ArgumentError HSquared.fit_laplace_reml(yf, Xf, Zf, Aif;
+                                                         family = :bernoulli_probit, marginal = :variational)
+
+    # --- (f) payload: liability scale ⇒ no heritability; family flows
+    pay = HSquared.nongaussian_result_payload(fp)
+    @test pay.family == "bernoulli_probit"
+    @test pay.dispersion === nothing && pay.n_trials === nothing
+    @test pay.method == "laplace"
+    @test !(:heritability in propertynames(pay))
+
+    # --- (g) interval: clamp-flagged single-component tuple; :variational rejected
+    ci = HSquared.laplace_reml_interval(yf, Xf, Zf, Aif; family = :bernoulli_probit, level = 0.95)
+    @test ci.level == 0.95 && ci.sigma_a2 == fp.variance_components.sigma_a2
+    @test hasproperty(ci, :lower_clamped) && hasproperty(ci, :upper_clamped) && hasproperty(ci, :converged)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yf, Xf, Zf, Aif;
+                                                              family = :bernoulli_probit, marginal = :variational)
+
+    # --- (h) guards: non-binary response throws
+    @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, 1.0, f)
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin
