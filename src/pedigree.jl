@@ -225,7 +225,7 @@ method. Accumulate the `T`-row of `A = T·D·Tᵀ` for animal `i` over its ances
 (processed youngest-first via a max-heap): `A_ii = Σ_j L_ij² d_j`, so
 `F_i = A_ii − 1`, where `d_j = 0.5 − 0.25(F_sire(j) + F_dam(j))` is the Mendelian
 sampling variance (unknown-parent sentinel `F_0 = −1`). Runs in ~O(n·ancestors)
-and never forms the dense `A`; the dense [`_numerator_relationship`](@ref)
+and never forms the dense `A`; the dense `_numerator_relationship`
 diagonal is the validation oracle. Requires a topologically sorted pedigree
 (parents before offspring), as produced by [`normalize_pedigree`](@ref).
 """
@@ -275,10 +275,10 @@ end
 Return the inbreeding coefficient for each row of a normalized pedigree.
 
 Inbreeding is computed by the Meuwissen & Luo (1992) method
-([`_meuwissen_luo_inbreeding`](@ref)) in ~O(n·ancestors) without forming the dense
+(`_meuwissen_luo_inbreeding`) in ~O(n·ancestors) without forming the dense
 relationship matrix, so it scales to large pedigrees. `max_relationship_cache` is
 accepted for signature compatibility but no longer bounds this path (it still
-governs the dense [`_numerator_relationship`](@ref) used by `additive_relationship`
+governs the dense `_numerator_relationship` used by `additive_relationship`
 and single-step A₂₂, and as the inbreeding validation oracle).
 """
 function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)

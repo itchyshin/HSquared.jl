@@ -1050,20 +1050,25 @@ end
 
 @testset "F1 Meuwissen-Luo inbreeding (O(n), no dense cap)" begin
     oracleF(p) = (A = HSquared._numerator_relationship(p); [A[i, i] - 1.0 for i in 1:length(p)])
-    # deterministic structured pedigree with overlapping ancestry (real inbreeding), no RNG
-    function det_inbred(q; nf = 50)
+    # deterministic well-mixed mating (multiplicative hash) so two parents share
+    # ancestry -> GENUINE bounded inbreeding (no RNG; q=2000 -> ~1870/2000 inbred,
+    # meanF≈0.08, maxF≈0.56). A naive modular rule collapses to constant parents
+    # (zero inbreeding), so the inbred-count guard below is load-bearing.
+    function det_inbred(q; nf = 20)
         ids = string.(1:q)
         s = fill("0", q); d = fill("0", q)
         for i in (nf + 1):q
-            s[i] = string(((7i) % (i - 1)) + 1)
-            d[i] = string(((13i + 3) % (i - 1)) + 1)
+            s[i] = string(1 + ((i * 2654435761) % (i - 1)))
+            d[i] = string(1 + (((i + 7) * 2246822519) % (i - 1)))
         end
         return normalize_pedigree(ids, s, d; allow_selfing = true)
     end
-    # exact match to the dense oracle on small + moderate pedigrees
+    # exact match to the dense oracle on small + moderate GENUINELY-INBRED pedigrees
     for q in (200, 2000)
         p = det_inbred(q)
-        @test inbreeding_coefficients(p) ≈ oracleF(p)
+        F = inbreeding_coefficients(p)
+        @test count(f -> f > 1e-9, F) > q ÷ 2          # fixture is genuinely inbred (not vacuous)
+        @test F ≈ oracleF(p)
         @test inbreeding_coefficients(p; max_relationship_cache = 2) ≈ oracleF(p)  # cache ignored
     end
     # selfing chain: exact match (canonical F = 0, 0.5, 0.75, 0.875)
@@ -1076,9 +1081,10 @@ end
     big = det_inbred(12_000)
     Fbig = inbreeding_coefficients(big)
     @test length(Fbig) == 12_000
+    @test count(f -> f > 1e-9, Fbig) > 6_000           # genuinely inbred at scale
     @test all(f -> 0.0 <= f <= 1.0, Fbig)
     @test all(isfinite, Fbig)
-    @test nnz(pedigree_inverse(big)) > 0
+    @test nnz(pedigree_inverse(big)) > 0               # pedigree_inverse unblocked at scale
 end
 
 @testset "Phase 3 cytoplasmic (maternal-lineage) relationship" begin
