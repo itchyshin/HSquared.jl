@@ -796,10 +796,10 @@ end
         @test HSquared._fam_score(f, y, η) ≈ (ll(η + h) - ll(η - h)) / (2h) rtol = 1e-5 atol = 1e-9
         @test HSquared._fam_weight(f, y, η) ≈
               -(ll(η + h2) - 2ll(η) + ll(η - h2)) / h2^2 rtol = 1e-3 atol = 1e-6
-        @test HSquared._fam_weight(f, y, η) > 0              # log-concave ⇒ weight > 0
+        @test 0 < HSquared._fam_weight(f, y, η) < 1          # log-concave ⇒ weight ∈ (0,1)
     end
-    @test HSquared._fam_weight(f, 1.0, -6.0) > 0             # deep-tail weight stays positive
-    @test HSquared._fam_weight(f, 0.0, 6.0) > 0
+    @test 0 < HSquared._fam_weight(f, 1.0, -6.0) < 1         # deep-tail weight stays in (0,1)
+    @test 0 < HSquared._fam_weight(f, 0.0, 6.0) < 1
 
     # --- (c) marginal sanity on the 3-animal fixture: converged + mode-stationary
     ped = normalize_pedigree(["sire", "dam", "calf"], ["0", "0", "sire"], ["0", "0", "dam"])
