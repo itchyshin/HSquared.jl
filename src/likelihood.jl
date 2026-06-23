@@ -422,7 +422,10 @@ function fit_ai_reml(
         # RELATIVE change in the variance components, which is scale-free.
         rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
         sigma_a2, sigma_e2 = a_new, e_new
-        if rel_change < tol
+        # Accept VC-change convergence only on a FULL (un-halved) Newton step: a step
+        # halved near the σ²→0 boundary also makes the relative change tiny without being
+        # at the optimum, so require `halvings == 0` to avoid a premature stop there.
+        if halvings == 0 && rel_change < tol
             converged = true
             break
         end
