@@ -10,8 +10,8 @@ of Done; review-lens roster kept (Rose mandatory).
 - **User-facing covered:** 1 model — the v0.1 univariate Gaussian animal model
   (REML), in `hsquared`.
 - **R `capability-status.md`:** 8 covered / 34 partial / 4 planned (46 rows).
-- **Julia `validation_status()`:** 4 covered + 3 covered-external / 33 partial /
-  1 planned (41 rows).
+- **Julia `validation_status()`:** 5 covered + 3 covered-external / 38 partial /
+  1 planned (47 rows).
 - **Done in the consolidation session:** R stack #98→#108 merged to hsquared
   `main` (live-verified 1445 pure-R + 116 live-bridge, 0 fail); engine PRs
   #155→#159 merged to HSquared.jl `main` (full `Pkg.test()` green); unified
