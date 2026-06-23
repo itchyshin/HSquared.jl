@@ -23,7 +23,11 @@ which scales with n and is unreachable at q=300k — even though σ̂² had reac
 - `src/likelihood.jl` (`fit_ai_reml`): added a scale-invariant convergence path — also stop
   when `max(|Δσ²a|/σ²a, |Δσ²e|/σ²e) < tol` (relative VC change). The absolute-score check is
   retained (it fires first on small fits). 6 lines.
-- `test/runtests.jl` ("Phase 1 AI-REML estimator"): `@test ai.iterations < 50`.
+- `test/runtests.jl` ("Phase 1 AI-REML estimator"): kept `@test ai.converged` as the
+  regression guard + a comment that F3's scale behavior is not CI-reproducible on the tiny
+  flat fixture. (An `@test ai.iterations < 50` assertion was tried and **removed** — it was
+  false on Linux CI: the flat 8-animal ridge takes ~69 iterations, and Rose had already
+  flagged it as not exercising the F3 path.)
 - `sim/drac/f2_ordering_experiment.jl`: the AMD-vs-METIS experiment (committed — it's the
   evidence that METIS was correctly NOT adopted).
 - `docs/design/validation-debt-register.md` (V1-REML) + `docs/design/capability-status.md`

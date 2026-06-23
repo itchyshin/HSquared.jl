@@ -23,8 +23,10 @@ for ~0 gain. The 35.6 s was `fit_ai_reml` iterating to its 100-cap.
   stop when the RELATIVE change in the variance components `max(|Δσ²|/σ²) < tol`. The
   existing `hypot(score) < tol` (absolute REML score) is unreachable at large q because the
   score scales with n. 6 lines, no other behavior change.
-- `test/runtests.jl` ("Phase 1 AI-REML estimator"): `@test ai.iterations < 50` (pins
-  efficient convergence; was implicitly ~100 at scale).
+- `test/runtests.jl` ("Phase 1 AI-REML estimator"): kept `@test ai.converged` (regression
+  guard) + a comment that the F3 scale behavior is not CI-reproducible on the tiny flat
+  fixture. (An `iterations < 50` assertion was tried and removed — false on Linux CI: the
+  flat 8-animal ridge takes ~69 iters; Rose had flagged it as not exercising the F3 path.)
 
 ## Evidence
 
