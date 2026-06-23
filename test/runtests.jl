@@ -867,6 +867,40 @@ end
     @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, 1.0, f)
 end
 
+@testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
+    # The σ²a profile-LRT interval covers ALL single-component families through ONE
+    # shared `_resolve_single_family` + `target`/`_profile_root` path. Lock that
+    # uniform return-field contract (incl. BOTH clamp flags) across the families — the
+    # CI-safe half of H6; the empirical coverage characterization is the opt-in
+    # `sim/phase6_nongaussian_interval_coverage.jl` (capped, outside CI).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+    yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+    ym = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]
+    cis = (
+        HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson),
+        HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli),
+        HSquared.laplace_reml_interval(ym, X, Z, Ainv; family = :binomial, n_trials = 10),
+        HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli_probit),
+    )
+    fields = (:sigma_a2, :lower, :upper, :level, :lower_clamped, :upper_clamped, :converged)
+    for ci in cis
+        @test propertynames(ci) == fields                       # uniform return contract
+        @test ci.lower_clamped isa Bool && ci.upper_clamped isa Bool && ci.converged isa Bool
+        @test ci.level == 0.95
+    end
+    @test all(propertynames(ci) == propertynames(cis[1]) for ci in cis)   # identical across families
+
+    # the V6-LAPLACE validation row records the coverage characterization (H6)
+    vrow = only(r for r in validation_status() if r.id == "V6-LAPLACE")
+    @test occursin("coverage", vrow.evidence)
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],

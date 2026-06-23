@@ -139,7 +139,7 @@ claim).
 - **H3** ✅ Binary threshold (probit / liability) model — engine half. [JL] (`BernoulliProbitResponse`, probit link `Φ(η)`; dependency-free tail-stable `_norm_logcdf`/`_norm_mills` reusing the incomplete-gamma `erfc=Q(½,z²)`; log-concave observed=expected weight `M(sη)(M(sη)+sη)`; oracle = known Φ to 1e-12 + deep-tail-finite + score/weight-vs-FD + independent GHQ marginal; Laplace-only, VA rejected — response-dependent expected info; `V6-PROBIT` row + recovery sim + .md mirrors; partial; PR `claude/h3-probit`. Ordinal ≥3-category + R bridge are the remaining `[bridge]` follow-on.)
 - **H4** Zero-inflated + hurdle families. [JL]
 - **H5** Variational (VA) method end-to-end (reuse DRM.jl/gllvmTMB, JL#44). [JL]
-- **H6** Non-Gaussian σ²a interval for all single-component families (extend #119). [JL]
+- **H6** ✅ Non-Gaussian σ²a interval — uniform across all single-component families + coverage characterization. [JL] (the uniform `:poisson`/`:bernoulli`/`:binomial`/`:bernoulli_probit` profile-LRT interval already existed; H6 added the CI cross-family return-field-contract test + the empirical coverage sweep `sim/phase6_nongaussian_interval_coverage.jl` with the Bernoulli leg + level×σ²a cells → checkpoint `2026-06-22-nongaussian-interval-coverage.md`; V6-FIT/V6-LAPLACE updated in place, no new row, no promotion; conservative/over-covering ~0.71–1.00, NOT calibrated; partial; PR `claude/h6-interval-coverage`)
 - **H7** Latent-scale / Nakagawa–Schielzeth non-Gaussian h² + bridge. [bridge]
 - **H8** Genetic GLLVM: R-side bridge + ordination consumability (engine slices landed). [bridge]
 - **H9** GLLVM ordination + latent-axis figures. [bridge]

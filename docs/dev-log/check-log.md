@@ -4957,3 +4957,29 @@ Newest entries go at the top.
 - Stays `partial`: experimental, internal, binary single-threshold, Laplace-only, no
   observation-scale h² (liability scale), not the public default, not covered.
   `[JL]` engine-only; no R repo edit.
+
+## 2026-06-22 — Backlog H6: non-Gaussian interval coverage characterization
+
+- SCOPE CORRECTION (verified vs code): the uniform `:poisson`/`:bernoulli`/`:binomial`/
+  `:bernoulli_probit` σ²a profile-LRT interval ALREADY existed (one shared
+  `_resolve_single_family` + `target`/`_profile_root` path, ~20 passing assertions).
+  H6's honest residual = the "NO coverage calibration" disclaimer. NO new API, NO new
+  `validation_status` row (count stays 46), NO promotion.
+- CI-safe: new "Phase 6 non-Gaussian interval cross-family contract (H6)" testset —
+  all four families return the IDENTICAL `laplace_reml_interval` field tuple (incl. both
+  clamp flags) + `occursin("coverage", V6-LAPLACE.evidence)`.
+- Coverage harness `sim/phase6_nongaussian_interval_coverage.jl` generalized: added the
+  Bernoulli leg + level∈{0.90,0.95} × σ²a∈{0.25,1.0} sweep + TSV; coverage over
+  NON-DEGENERATE reps, clamp rates reported separately; q=165, capped BLAS (the prior
+  50-rep multithreaded run was killed for pegging cores — resolved).
+- Coverage run (15 reps/cell, capped): ~0.71–1.00, CONSERVATIVE/over-covering. Binomial
+  m=20 clean (0.93–1.00, no clamps); Bernoulli predominantly LOWER-clamped one-sided
+  (coverage inflated by the clamped bound — flat-profile degeneracy, reported via the
+  clamp-rate column); Poisson mostly two-sided (small-rep noise). Checkpoint
+  `2026-06-22-nongaussian-interval-coverage.md` (supersedes the #157 10-rep smoke).
+  Characterization, NOT calibrated (15 reps can't distinguish 0.90 from 1.00).
+- V6-LAPLACE (validation_status) + V6-FIT (debt-register) updated in place; interval
+  docstring softened "NO coverage calibration" → "preliminary characterization only".
+- Checks: full `Pkg.test()` (thread-capped) → **"Testing HSquared tests passed"**;
+  `docs/make.jl` → **exit 0**. Real `rose-systems-auditor` audit before merge.
+- Stays `partial`; no promotion. `[JL]` engine-only; no R repo edit.
