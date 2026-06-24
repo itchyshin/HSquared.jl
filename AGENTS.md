@@ -9,6 +9,25 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-24 (the A→D "stop-today" list CLOSED + R-twin parity; HSquared.jl `main` `95c82b1a`/#188; hsquared `main` `4fa4b16`/#111).**
+  Landed the full NotebookLM-scout improvement sequence and its R-twin parity. **A** (#186) — opt-in
+  EM-REML warm-start in `fit_ai_reml` (`em_warmup`, default 0 = byte-identical; **optimum-INVARIANT** on
+  identified fits + **rescues bad-start convergence**; NOT a #182 fix). **B** (log-variance reparam)
+  **TRIED → REVERTED** — naive log-reparam of the AI step is numerically unstable AND #182 is already
+  correct (non-identified → `converged=false` is right, not a bug); honest negative banked. **C** (#187) —
+  Wave F G1 GPU VanRaden `G`/`Ginv` **RAN on tamia** (4× H100, job 352612): CPU↔GPU agreement ~1e-14 across
+  all variants; benchmark GEMM 1.3×→~5× (m 2k→40k) / ridge Ginv ~2.7–2.9×; `V2-GRM-GPU` rows flipped to
+  "GPU-agreed + benchmarked". **D** (#188) — `preconditioner=:ichol` for `solve_animal_model_pcg` (right-
+  looking IC(0) + Manteuffel shift): CORRECTNESS primitive (matches direct solve ~1e-15; ≤ plain-CG iters,
+  21→19 Jacobi→16 IC(0)); no performance claim. **R-twin parity for A** merged (hsquared **#111**):
+  `em_warmup` exposed via `hs_control(engine_control=…)` → bridge → `fit_ai_reml`; live-verified well-formed
+  call + optimum-invariant (VC diff 5.3e-9). B/C/D need no R parity (reverted / experimental-engine-GPU-not-
+  covered / internal-no-surface). **Five real Rose audits this session, all CLEAN.** **NOTHING promoted to
+  covered** (public default still v0.1 univariate Gaussian; `validation_status()` = 48 rows). KNOWN: hsquared
+  R CI is red ONLY on a PRE-EXISTING `R/validation-status.R` non-ASCII WARNING (`0 errors | 1 warning |
+  0 notes`; NOT this work — a background-task chip captures the `\uxxxx`-escape fix). START HERE:
+  `docs/dev-log/handover/2026-06-24-session-handover.md`.
+
 - **As of 2026-06-23 (EM-REML warm-start authored; main at `f3635d66`/#185; this slice = next PR).**
   Merged **#184** (Wave F G1 GPU genomic `G`/`Ginv`; now RUN on tamia — CPU↔GPU agreed to ~1e-14 +
   benchmarked, GEMM 1.3×→~5×, job 352612) and
