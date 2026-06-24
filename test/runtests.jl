@@ -2806,6 +2806,17 @@ end
     @test cg.breeding_values.values ≈ breeding_values(mme).values atol = 1e-8
     @test pcg.iterations <= cg.iterations
 
+    # IC(0) preconditioner reaches the SAME direct solution, and (being a real preconditioner)
+    # in no more iterations than plain CG. :ichol requires the assembled C (not matrix-free).
+    ic = solve_animal_model_pcg(spec, 1.5, 0.7; tol = 1e-12, preconditioner = :ichol)
+    @test ic.converged
+    @test ic.preconditioner == :ichol
+    @test ic.beta ≈ fixed_effects(mme) atol = 1e-8                        # IC(0) == direct
+    @test ic.breeding_values.values ≈ breeding_values(mme).values atol = 1e-8
+    @test ic.iterations <= cg.iterations
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; preconditioner = :ichol, matrix_free = true)
+    @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; preconditioner = :bogus)
+
     # also matches on a tiny 3-animal pedigree (intercept only)
     ped3 = normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"])
     spec3 = animal_model_spec([1.0, 2.5, 4.0], ones(3, 1), sparse(1.0I, 3, 3),
@@ -2842,6 +2853,13 @@ end
     @test pcgL.converged
     @test pcgL.beta ≈ fixed_effects(mmeL) atol = 1e-7
     @test pcgL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
+    # IC(0) also recovers the direct solve at the 110-animal scale, in ≤ plain-CG iterations.
+    cgL = solve_animal_model_pcg(specL, 1.3, 0.9; tol = 1e-11, preconditioner = :none)
+    icL = solve_animal_model_pcg(specL, 1.3, 0.9; tol = 1e-11, preconditioner = :ichol)
+    @test icL.converged
+    @test icL.beta ≈ fixed_effects(mmeL) atol = 1e-7
+    @test icL.breeding_values.values ≈ breeding_values(mmeL).values atol = 1e-7
+    @test icL.iterations <= cgL.iterations
 
     # MATRIX-FREE path: the operator applies C·v from X/Z/Ainv without assembling C.
     # (a) operator == assembled C column-by-column (exact), and the matrix-free Jacobi
