@@ -10,7 +10,8 @@ engine reality.
 > is truth; this is the at-a-glance pointer.
 
 - **As of 2026-06-23 (EM-REML warm-start authored; main at `f3635d66`/#185; this slice = next PR).**
-  Merged **#184** (Wave F G1 GPU genomic `G`/`Ginv`, authored — tamia CPU↔GPU run still owed) and
+  Merged **#184** (Wave F G1 GPU genomic `G`/`Ginv`; now RUN on tamia — CPU↔GPU agreed to ~1e-14 +
+  benchmarked, GEMM 1.3×→~5×, job 352612) and
   **#185** (the two stale #182 boundary comments); combined `main` re-verified green. A NotebookLM
   methods scout (cross-project KB; leads banked in `shinichi-brain/memory/LEARNINGS.md`) surfaced
   **PX-AI** as the top fastest-REML lead → implemented its base: an **opt-in EM-REML warm-start** in
