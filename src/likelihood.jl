@@ -352,12 +352,24 @@ for the *Gaussian* linear mixed model (the information matrix uses the data
 directly, so it matches the observed information); it does NOT transfer to
 Laplace-approximated / non-Gaussian models, where observed-information Newton is
 required instead.
+
+An optional **EM-REML warm-start** (`em_warmup`, default `0`) runs that many
+EM-REML iterations before the AI/Newton loop. The EM update is the closed form
+that zeroes the REML score, so it is monotone and stays strictly inside the
+parameter space — a few iterations hand the AI step a good, in-bounds start. On
+an *identified* problem this is **optimum-invariant** (the converged estimates are
+unchanged) and improves robustness to poor starting values; `em_warmup = 0` is
+byte-identical to the pre-warm-start path. It does NOT change the σ²→0 /
+non-identified boundary behaviour (there the fit still returns `converged = false`),
+and on a non-identified surface the warm-start can shift the non-converged
+estimate — read the `converged` flag, not the value.
 """
 function fit_ai_reml(
     spec::AnimalModelSpec;
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     iterations::Integer = 100,
     tol::Real = 1e-8,
+    em_warmup::Integer = 0,
 )
     spec.method == :REML ||
         throw(ArgumentError("fit_ai_reml requires spec.method == :REML"))
@@ -372,6 +384,35 @@ function fit_ai_reml(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+
+    # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
+    # REML score: σ²a = (u'A⁻¹u + tr(A⁻¹C^uu))/q and σ²e = e'e/(n − p − q + tr(A⁻¹C^uu)/σ²a).
+    # Both are positive and the step is monotone (it never overshoots), so a few iterations from
+    # any start walk safely toward the optimum and hand the AI/Newton loop a good, IN-BOUNDS
+    # start — the robustness the AI step alone lacks near the σ²→0 boundary (cf. #182). Each EM
+    # iteration reuses the same sparse MME solve the AI loop uses. Opt-in (`em_warmup`, default 0
+    # → byte-identical to the pre-warm-start path); the step is taken only while it stays finite
+    # and positive, otherwise we stop warming up and let the AI step run.
+    for _ in 1:max(0, em_warmup)
+        lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException && break
+            rethrow(err)
+        end
+        solution = factor \ rhs
+        u = solution[(nfixed + 1):end]
+        e = y .- X * solution[1:nfixed] .- Z * u
+        trace_AC = selinv_trace_against(factor, Ainv, nfixed)
+        uAu = dot(u, Ainv * u)
+        a_em = (uAu + trace_AC) / nrandom
+        e_em = dot(e, e) / (nobs - nfixed - nrandom + trace_AC / sigma_a2)
+        (isfinite(a_em) && isfinite(e_em) && a_em > 0 && e_em > 0) || break
+        rel = max(abs(a_em - sigma_a2) / sigma_a2, abs(e_em - sigma_e2) / sigma_e2)
+        sigma_a2, sigma_e2 = a_em, e_em
+        rel < tol && break
+    end
 
     converged = false
     iters = 0

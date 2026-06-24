@@ -9,6 +9,20 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-23 (EM-REML warm-start authored; main at `f3635d66`/#185; this slice = next PR).**
+  Merged **#184** (Wave F G1 GPU genomic `G`/`Ginv`, authored — tamia CPU↔GPU run still owed) and
+  **#185** (the two stale #182 boundary comments); combined `main` re-verified green. A NotebookLM
+  methods scout (cross-project KB; leads banked in `shinichi-brain/memory/LEARNINGS.md`) surfaced
+  **PX-AI** as the top fastest-REML lead → implemented its base: an **opt-in EM-REML warm-start** in
+  `fit_ai_reml` (`em_warmup`, default 0 = byte-identical; the EM update is the closed form that zeroes
+  the REML score, monotone + in-bounds). HONEST result: **optimum-INVARIANT** on identified fits +
+  **rescues convergence from extreme starts** (a (1e4,1e-2) start non-converged at em=0 → converges at
+  em≥3; `sim/em_warmstart_benchmark.jl`), but it does **NOT** fix the σ²→0 / non-identified #182
+  boundary (still `converged=false` — that's **B = log-Cholesky reparam**, next). `Pkg.test()` 23/23
+  new + full suite green; `docs/make.jl` green; real Rose **CLEAN** (no overclaim). NEXT: PR this → B
+  (log-Cholesky reparam, the actual #182 fix) → C (G1 tamia run) → D. START HERE:
+  `docs/dev-log/after-task/2026-06-23-px-em-warmstart.md`.
+
 - **As of 2026-06-23 (Wave F Track B G1 authored; main at `627ab754`/#183).** Closed the #182
   loose thread (real Rose audit on the merged boundary fix → **CLEAN**, fully banked) and merged
   **#183** (docs-only handover correction). Then authored **Track B G1** — GPU VanRaden `G`/`Ginv`
