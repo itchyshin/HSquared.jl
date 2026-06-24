@@ -5,16 +5,16 @@
 # (matches the direct solve to a tight tolerance); NOT a production-scale performance claim.
 
 # Preconditioned conjugate gradient for a symmetric positive-definite operator. `applyC`
-# is a callable `v ↦ C·v` (a matrix's `*`, or a matrix-free operator). `Minv` is the Jacobi
-# (diagonal) preconditioner as a vector of `1/diag(C)`, or `nothing` for plain CG. `x0 = 0`,
-# so the initial residual is `b`. Returns `(x, iterations, relative_residual)`.
-function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int,
-                    Minv::Union{Nothing,Vector{Float64}})
+# is a callable `v ↦ C·v` (a matrix's `*`, or a matrix-free operator). `applyMinv` is a
+# callable `r ↦ M⁻¹·r` (the preconditioner solve): `identity` for plain CG, `r ↦ Minv .* r`
+# for Jacobi, or the IC(0) back/forward triangular solve for `:ichol`. `x0 = 0`, so the
+# initial residual is `b`. Returns `(x, iterations, relative_residual)`.
+function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, applyMinv)
     x = zeros(length(b))
     r = copy(b)
     bnorm = norm(b)
     bnorm == 0 && return x, 0, 0.0
-    z = Minv === nothing ? copy(r) : Minv .* r
+    z = applyMinv(r)
     p = copy(z)
     rz = dot(r, z)
     iters = 0
@@ -30,7 +30,7 @@ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int,
         iters = k
         relres = norm(r) / bnorm
         relres <= tol && break
-        z = Minv === nothing ? r : Minv .* r
+        z = applyMinv(r)
         rz_new = dot(r, z)
         beta = rz_new / rz
         @. p = z + beta * p
@@ -41,6 +41,41 @@ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int,
     # ‖b − Cx‖/‖b‖ regardless of any recursive-residual drift on ill-conditioned input.
     relres = norm(b - applyC(x)) / bnorm
     return x, iters, relres
+end
+
+# Incomplete Cholesky IC(0): the lower factor `L` with the SAME sparsity pattern as
+# `tril(A)` such that `L·Lᵀ ≈ A`, computed by right-looking Cholesky that DROPS any fill
+# outside that pattern. Returns `L` (lower-triangular `SparseMatrixCSC`), or `nothing` on a
+# non-positive pivot (breakdown) so the caller can retry with a diagonal shift. `A` must be
+# SPD with every diagonal entry stored (true for the Henderson MME coefficient matrix). A
+# cheaper, often stronger preconditioner than Jacobi for the sparse MME.
+function _ichol0_factor(A::SparseMatrixCSC{Float64})
+    L = copy(tril(A))
+    n = size(L, 1)
+    cp, rv, nz = L.colptr, L.rowval, L.nzval
+    rowpos = zeros(Int, n)                                # row → position-in-column-j map
+    for j in 1:n
+        d = cp[j]
+        (d < cp[j + 1] && rv[d] == j) ||
+            throw(ArgumentError("IC(0): missing stored diagonal at column $j"))
+        nz[d] > 0 || return nothing                       # non-positive pivot → breakdown
+        Ljj = sqrt(nz[d]); nz[d] = Ljj
+        for q in (d + 1):(cp[j + 1] - 1)                  # scale + index column j's sub-diagonal
+            nz[q] /= Ljj
+            rowpos[rv[q]] = q
+        end
+        for q in (d + 1):(cp[j + 1] - 1)                  # right-looking rank-1 update,
+            k = rv[q]; Lkj = nz[q]                         # restricted to the existing pattern
+            for t in cp[k]:(cp[k + 1] - 1)
+                rp = rowpos[rv[t]]
+                rp == 0 || (nz[t] -= nz[rp] * Lkj)
+            end
+        end
+        for q in (d + 1):(cp[j + 1] - 1)                  # clear the map for the next column
+            rowpos[rv[q]] = 0
+        end
+    end
+    return L
 end
 
 # Matrix-free apply of the animal-model MME coefficient matrix `C·v` WITHOUT forming `C`:
@@ -76,7 +111,9 @@ Solve the supplied-variance Gaussian animal-model mixed-model equations by
 [`henderson_mme`](@ref) factorization. It solves the SAME sparse symmetric
 positive-definite system `C·[β; u] = rhs` as `henderson_mme` iteratively, never forming a
 Cholesky factor. `preconditioner = :jacobi` (default) uses the diagonal preconditioner
-`M⁻¹ = 1/diag(C)`; `:none` is plain CG.
+`M⁻¹ = 1/diag(C)`; `:ichol` uses an incomplete-Cholesky IC(0) factor of the assembled `C`
+(a stronger, still-sparse preconditioner, with a diagonal-shift fallback on breakdown —
+requires `matrix_free = false`); `:none` is plain CG.
 
 `matrix_free = false` (default) assembles `C` once (`_sparse_mme_system`) and applies it.
 `matrix_free = true` applies `C·v` directly from the sparse `X`, `Z`, `Ainv` matvecs
@@ -110,8 +147,10 @@ function solve_animal_model_pcg(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2:
     sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
     tol > 0 || throw(ArgumentError("tol must be positive"))
     maxiter >= 1 || throw(ArgumentError("maxiter must be >= 1"))
-    preconditioner in (:jacobi, :none) ||
-        throw(ArgumentError("preconditioner must be :jacobi or :none"))
+    preconditioner in (:jacobi, :none, :ichol) ||
+        throw(ArgumentError("preconditioner must be :jacobi, :ichol, or :none"))
+    (preconditioner === :ichol && matrix_free) &&
+        throw(ArgumentError(":ichol preconditioner requires matrix_free = false (it factorizes the assembled C)"))
     nfixed = size(spec.X, 2)
 
     if matrix_free
@@ -133,10 +172,31 @@ function solve_animal_model_pcg(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2:
     end
     all(>(0), d) ||
         throw(ArgumentError("MME diagonal has a non-positive entry; system is not positive definite"))
-    Minv = preconditioner === :jacobi ? (1.0 ./ d) : nothing
+    applyMinv = if preconditioner === :jacobi
+        invd = 1.0 ./ d
+        r -> invd .* r
+    elseif preconditioner === :ichol
+        # IC(0) of the assembled C (matrix_free = false is enforced above). On a non-positive
+        # pivot, retry with an increasing Manteuffel diagonal shift — IC(0)(C + s·I) is still a
+        # valid SPD preconditioner for C (it never changes the system PCG solves).
+        L = _ichol0_factor(lhs)
+        if L === nothing
+            base = maximum(d)
+            for s in (1e-4, 1e-3, 1e-2, 1e-1, 1.0)
+                L = _ichol0_factor(lhs + (s * base) * I)
+                L === nothing || break
+            end
+            L === nothing &&
+                throw(ArgumentError(":ichol IC(0) broke down even with a diagonal shift; use :jacobi"))
+        end
+        Lt = sparse(transpose(L))
+        r -> UpperTriangular(Lt) \ (LowerTriangular(L) \ r)
+    else
+        identity
+    end
 
     x, iters, relres = _pcg_solve(applyC, Vector{Float64}(rhs);
-                                  tol = Float64(tol), maxiter = Int(maxiter), Minv = Minv)
+                                  tol = Float64(tol), maxiter = Int(maxiter), applyMinv = applyMinv)
     return (
         beta = Vector{Float64}(x[1:nfixed]),
         breeding_values = (ids = collect(spec.ids), values = Vector{Float64}(x[(nfixed + 1):end])),
