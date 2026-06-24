@@ -3134,6 +3134,73 @@ end
     @test sfit.variance_components.sigma_e2 > 0 && isfinite(sfit.variance_components.sigma_e2)
 end
 
+@testset "fit_ai_reml EM-REML warm-start (em_warmup, opt-in robustness)" begin
+    # EM-REML warm-start: a few monotone, in-bounds EM iterations (the closed form that zeroes
+    # the REML score) before the AI/Newton step. OPT-IN — default `em_warmup = 0` is byte-
+    # identical to the pre-warm-start path. CI-gated here: OPTIMUM-INVARIANCE on an identified
+    # fixture + extreme-start correctness; it does NOT change the σ²→0 / non-identified boundary
+    # contract (finite positive + never throws). The measured iteration reduction is in
+    # `sim/em_warmstart_benchmark.jl` + the 2026-06-23 after-task report, not pinned here.
+
+    # ── identified interior fixture: seeded gene-dropping (real genetic signal → σ²a > 0) ──
+    let
+        nsire, ndam, noff = 10, 30, 100
+        sids = ["ws$i" for i in 1:nsire]; dids = ["wd$i" for i in 1:ndam]; oids = ["wo$i" for i in 1:noff]
+        ids = vcat(sids, dids, oids)
+        sire = vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff])
+        dam = vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff])
+        ped = normalize_pedigree(ids, sire, dam); q = length(ped.ids)
+        Ainv = pedigree_inverse(ped)
+        rng = MersenneTwister(20260623); u = zeros(q)            # gene-dropping BVs (σ²a = 1)
+        @inbounds for i in 1:q
+            s = ped.sire[i]; d = ped.dam[i]
+            pa = s > 0 ? u[s] : 0.0; pb = d > 0 ? u[d] : 0.0
+            nk = (s > 0) + (d > 0); msv = nk == 0 ? 1.0 : (nk == 1 ? 0.75 : 0.5)
+            u[i] = 0.5 * (pa + pb) + sqrt(msv) * randn(rng)
+        end
+        y = 5.0 .+ u .+ randn(rng, q)                            # σ²e = 1
+        spec = animal_model_spec(y, ones(q, 1), sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
+
+        # default == em_warmup = 0 (the opt-in default is byte-identical to the pre-warm-start path)
+        f_default = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+        f_zero = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), em_warmup = 0)
+        @test f_default.converged
+        @test f_default.variance_components.sigma_a2 > 0                       # interior, not boundary
+        @test f_default.variance_components.sigma_a2 == f_zero.variance_components.sigma_a2
+        @test f_default.variance_components.sigma_e2 == f_zero.variance_components.sigma_e2
+        @test f_default.iterations == f_zero.iterations
+
+        # OPTIMUM-INVARIANT: the warm-start never changes the converged estimates
+        for ew in (3, 5, 15)
+            fw = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), em_warmup = ew)
+            @test fw.converged
+            @test fw.variance_components.sigma_a2 ≈ f_default.variance_components.sigma_a2 rtol = 1e-6
+            @test fw.variance_components.sigma_e2 ≈ f_default.variance_components.sigma_e2 rtol = 1e-6
+        end
+
+        # EXTREME-START correctness: from a terrible start the warm-start still reaches the SAME optimum
+        f_bad = fit_ai_reml(spec; initial = (sigma_a2 = 1e4, sigma_e2 = 1e-2), em_warmup = 5)
+        @test f_bad.converged
+        @test f_bad.variance_components.sigma_a2 ≈ f_default.variance_components.sigma_a2 rtol = 1e-6
+        @test f_bad.variance_components.sigma_e2 ≈ f_default.variance_components.sigma_e2 rtol = 1e-6
+    end
+
+    # ── boundary contract preserved on the non-identified #182 single-step fixture ──
+    # σ²a is genuinely unidentified here, so the fit does NOT converge regardless of warm-up; the
+    # warm-start must still return FINITE POSITIVE σ and never throw. It does NOT fix the boundary
+    # and may shift the non-converged estimate — by design `converged = false` is the honest
+    # signal, not the value (so we assert the contract, not optimum-invariance).
+    let
+        sAinv = Matrix(pedigree_inverse([1, 2, 3, 4, 5], [0, 0, 1, 1, 3], [0, 0, 2, 2, 4]))
+        sspec = animal_model_spec([10.0, 12, 11, 9, 13], ones(5, 1), Matrix(1.0I, 5, 5), sAinv; method = :REML)
+        for ew in (0, 5, 25)
+            f = fit_ai_reml(sspec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), em_warmup = ew)  # must NOT throw
+            @test isfinite(f.variance_components.sigma_a2) && f.variance_components.sigma_a2 > 0
+            @test isfinite(f.variance_components.sigma_e2) && f.variance_components.sigma_e2 > 0
+        end
+    end
+end
+
 @testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin
     # Deterministic ~420-animal half-sib pedigree. The existing AI-REML / selinv tests
     # use ≤110 animals; this hardens the SPARSE fit path (`fit_ai_reml` → sparse CHOLMOD
