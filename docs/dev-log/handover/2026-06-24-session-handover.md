@@ -1,7 +1,13 @@
 # Session handover — 2026-06-24 (the A→D "stop-today" list CLOSED + R-twin parity)
 
-**Audience: the next session, whether Claude Code _or_ Codex.** This file is the
-"START HERE." Repository state is the source of truth; this is the at-a-glance map.
+**Audience: the next session, whether Claude Code _or_ Codex.** Repository state is the
+source of truth; this is the at-a-glance map.
+
+> **UPDATE (later 2026-06-24):** §4.1's "next step #1 — green the R CI" is **DONE**
+> (hsquared #112: the `R/validation-status.R` non-ASCII em-dash → `—`; merged on
+> the first green hsquared CI; `devtools::check` 0/0/0). The current entry point is now
+> `docs/dev-log/handover/2026-06-24-codex-handover.md` — read that for the up-to-date
+> plan; this file remains the full A–D detail reference.
 
 ---
 
