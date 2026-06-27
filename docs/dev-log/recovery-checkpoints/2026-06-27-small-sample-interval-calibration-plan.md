@@ -157,6 +157,37 @@ julia --project=. sim/phase1_small_sample_interval_calibration.jl \
   --out=docs/dev-log/recovery-checkpoints/2026-06-27-small-sample-interval-calibration-bootstrap-subset.tsv
 ```
 
+## Resumable Harness Update
+
+The harness now writes a replicate-level detail TSV next to the summary TSV by
+default (`OUT` with `-replicates.tsv` appended), or to an explicit
+`--detail-out=PATH`. With `--resume=true` (default), completed
+design/h2/level/replicate/target/method rows are reused and only missing rows are
+appended. With `--resume=false`, the detail file is overwritten and the run
+starts fresh.
+
+Replicate seeds are deterministic by `(master seed, design index, h2 index,
+replicate)`, so skipped rows do not change later simulated data. Summary TSVs
+are regenerated from the deduplicated detail rows and include `n_boot` to keep
+bootstrap depths separate.
+
+The committed focused bootstrap subset was intentionally smaller than the
+predeclared promotion-style sketch above:
+
+```sh
+julia --project=. sim/phase1_small_sample_interval_calibration.jl \
+  --reps=10 \
+  --nboot=9 \
+  --resume=false \
+  --designs=small:8:16:96,medium:16:32:192 \
+  --h2=0.4,0.7 \
+  --levels=0.95 \
+  --out=docs/dev-log/recovery-checkpoints/2026-06-27-small-sample-interval-calibration-bootstrap-subset.tsv
+```
+
+That subset checks bootstrap wiring and resumability only. It is not a coverage
+calibration run.
+
 Promotion-grade evidence would need a predeclared larger run, likely on DRAC,
 with at least 500 replicates per cell and enough bootstrap replicates that
 bootstrap Monte Carlo noise is not mistaken for interval-calibration behaviour.
@@ -171,6 +202,11 @@ For every target, method, truth point, and confidence level, the harness reports
 - empirical coverage;
 - observed and nominal Monte Carlo standard errors;
 - mean interval width.
+
+The detail TSV additionally records the cell id, seed, replicate, `n_boot`, fit
+status, near-boundary flag, failure reason, interval bounds/width, fitted
+variance components, `h2_hat`, variance-component SE, Satterthwaite `df_eff`,
+and bootstrap convergence count.
 
 Promotion-grade interpretation must compare empirical coverage to the
 predeclared nominal target with MCSE, inspect interval-failure and convergence

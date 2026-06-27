@@ -52,6 +52,25 @@ support beyond the recorded evidence.
   --check` passed. Next: make the harness resumable and only continue SW after a
   better effective-df derivation.
 
+- 2026-06-27: Julia lane / small-sample interval harness resumability + bootstrap
+  subset. Refactored `sim/phase1_small_sample_interval_calibration.jl` to write
+  a replicate-level detail TSV alongside the summary TSV, with deterministic
+  per-replicate seeds and `--resume=true|false` skip/reuse behavior. Detail rows
+  now record fit status, near-boundary flags, failure reasons, interval
+  bounds/width, `df_eff` for the SW probe, `n_boot`, and bootstrap convergence
+  counts; summary rows now include `n_boot`. Verified resume by rerunning the
+  same smoke/subset commands and checking that detail files did not grow. Ran a
+  focused bootstrap subset (`reps=10`, `nboot=9`, small/medium, `h2=0.4/0.7`,
+  95%). Result: bootstrap path wired and resumable, but MCSE is far too large
+  for calibration claims. DRAC aliases responded for Vulcan, Trillium, Rorqual,
+  Nibi, Narval, and Fir; `mibi` did not resolve; no cluster compute was run
+  because no existing HSquared.jl checkout was found by shallow Vulcan/Fir
+  searches and login-node compute is disallowed. Scope unchanged: no interval
+  method, no API, no R files, no default change, no `validation_status()` row,
+  and no covered/public-claim promotion. Decision checkpoint says do not expose
+  t/Satterthwaite calibration yet; next credible run should be a SLURM-array
+  DRAC grid from a staged `/project` checkout.
+
 - 2026-06-22: Julia lane / deferred ledger close-out (C5/C10/I1/H1). Merged the
   green PRs #164 (I1 sire fixture) + #165 (H1 negative-binomial), then closed the
   honest-tracking follow-ups: +3 `partial` `validation_status()` rows (`C10-LRT`,
