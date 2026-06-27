@@ -9,6 +9,17 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-24 (R CI greened + handover to Codex; hsquared `main` `8c5c886`/#112; HSquared.jl `main` `06c7e71b`/#189).**
+  The pre-existing `R/validation-status.R` non-ASCII WARNING that kept hsquared CI red is **FIXED** — it was a single
+  em-dash → `—` (runtime output identical, verified); **hsquared #112 merged on the FIRST green hsquared CI** (clean,
+  no admin). Also banked an evidence-based finding: **HSquared.jl intervals are ALL asymptotic** — normal-z Wald/delta
+  (`_standard_normal_quantile`; the default `heritability_interval(:delta)`) + χ²₁ profile-LRT (`q = z*z`,
+  `src/likelihood.jl:1491`); **no small-sample t-calibration (`qt`/df) anywhere** (`interval_method="asymptotic_reml"`);
+  the parametric **bootstrap** (`bootstrap_variance_component_interval`, C6) is the only finite-sample-aware path (opt-in,
+  uncalibrated). A small-sample t-calibration (design-based df, validated by coverage sim) is a cross-repo candidate, NOT
+  yet a debt row. **Codex now active in the same repo** — wrote a Codex-addressed handover. NOTHING promoted to covered
+  (still v0.1 Gaussian; `validation_status()` = 48). **START HERE:** `docs/dev-log/handover/2026-06-24-codex-handover.md`.
+
 - **As of 2026-06-24 (the A→D "stop-today" list CLOSED + R-twin parity; HSquared.jl `main` `95c82b1a`/#188; hsquared `main` `4fa4b16`/#111).**
   Landed the full NotebookLM-scout improvement sequence and its R-twin parity. **A** (#186) — opt-in
   EM-REML warm-start in `fit_ai_reml` (`em_warmup`, default 0 = byte-identical; **optimum-INVARIANT** on
