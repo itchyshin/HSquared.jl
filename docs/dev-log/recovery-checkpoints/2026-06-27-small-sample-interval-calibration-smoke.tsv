@@ -1,0 +1,12 @@
+target	method	design	n_animals	residual_df	family_df	h2_true	level	reps	fit_success	interval_success	covered	coverage	mcse_observed	mcse_nominal	mean_width
+h2	h2_bootstrap_percentile	default	36	33	9	0.4	0.95	2	2	2	0	0	0	0.15411035	0.15032837
+h2	h2_delta_t_family_df_probe	default	36	33	9	0.4	0.95	2	2	2	2	1	0	0.15411035	0.96426457
+h2	h2_delta_t_residual_df_probe	default	36	33	9	0.4	0.95	2	2	2	2	1	0	0.15411035	0.95083741
+h2	h2_delta_z	default	36	33	9	0.4	0.95	2	2	2	2	1	0	0.15411035	0.94547683
+h2	h2_profile_chisq	default	36	33	9	0.4	0.95	2	2	2	2	1	0	0.15411035	0.82662917
+sigma_a2	sigma_a2_bootstrap_percentile	default	36	33	9	0.4	0.95	2	2	2	0	0	0	0.15411035	0.13089635
+sigma_a2	sigma_a2_delta_t_family_df_probe	default	36	33	9	0.4	0.95	2	2	2	1	0.5	0.35355339	0.15411035	0.76867856
+sigma_a2	sigma_a2_delta_t_residual_df_probe	default	36	33	9	0.4	0.95	2	2	2	1	0.5	0.35355339	0.15411035	0.71040628
+sigma_a2	sigma_a2_delta_z	default	36	33	9	0.4	0.95	2	2	2	1	0.5	0.35355339	0.15411035	0.69130146
+sigma_a2	sigma_a2_profile_chisq	default	36	33	9	0.4	0.95	2	2	2	2	1	0	0.15411035	1.2412583
+sigma_a2	sigma_a2_satterthwaite_chisq_probe	default	36	33	9	0.4	0.95	2	2	1	1	1	0	0.21794495	13.061139

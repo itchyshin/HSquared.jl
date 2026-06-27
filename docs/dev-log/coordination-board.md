@@ -25,6 +25,33 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-27: Julia lane / small-sample interval calibration debt + smoke harness.
+  Added planned validation-debt row `V1-HERIT-TCAL` to record that current Gaussian
+  interval helpers are asymptotic (normal-z delta/Wald and chi-square profile
+  LRT), with no design-based t/df path and no coverage-calibrated finite-sample
+  default. Added an ADEMP checkpoint and an opt-in smoke harness
+  (`sim/phase1_small_sample_interval_calibration.jl`) comparing current z/delta,
+  profile-LRT, bootstrap, and labelled t-probe intervals for `h2` and `sigma_a2`.
+  Extended the harness with named half-sib designs and recorded a df/grid
+  checkpoint for `residual_df_probe`, `family_df_probe`, and the tiny/small/medium
+  triage grid. Local `freqTLS` t-calibration was inspected as a precedent: the
+  cutoff form and coverage-evidence standard transfer, but its `n_obs - length(par)`
+  df rule does not transfer to integrated-BLUP animal models. NotebookLM algorithm
+  scout then separated fixed-effect KR/Satterthwaite denominator-df machinery from
+  variance-component Satterthwaite-style scaled-chi-square probes. Added the
+  prototype-only `sigma_a2_satterthwaite_chisq_probe` to the harness and ran the
+  200-rep no-bootstrap triage grid. Result: no clear h2 win for residual/family
+  t probes; SW scaled-chi-square is unstable in low-h2 small designs and not a
+  promotion candidate. Scope: validation scaffold only. No interval-method
+  implementation, no API, no `validation_status()` row, no R files, no interval
+  default change, and no covered/public-claim promotion. Checks: smoke harness
+  passed with and without bootstrap (`reps=2`, `n_boot=3` output committed as
+  shape-only evidence); a multi-design no-bootstrap smoke passed; 200-rep
+  no-bootstrap triage passed; full `Pkg.test()` passed; `validation_status()` still
+  loads 48 rows with one planned diagnostic row; `docs/make.jl` passed; `git diff
+  --check` passed. Next: make the harness resumable and only continue SW after a
+  better effective-df derivation.
+
 - 2026-06-22: Julia lane / deferred ledger close-out (C5/C10/I1/H1). Merged the
   green PRs #164 (I1 sire fixture) + #165 (H1 negative-binomial), then closed the
   honest-tracking follow-ups: +3 `partial` `validation_status()` rows (`C10-LRT`,
