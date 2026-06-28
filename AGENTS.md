@@ -9,6 +9,18 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-28 (session-handover tooling + autonomous-resume + permissions; HSquared.jl `main` `5f378a8d`/#190; hsquared `main` `8c5c886`/#112).**
+  Mostly META work — the **program is UNCHANGED** since #190/#112. **Codex is live on `codex/small-sample-interval-calibration`**
+  (+2 commits) implementing the small-sample t-calibration this session surfaced — do NOT disturb that branch; coordinate.
+  Built **4 session-handover skills + 1 shared protocol** (`~/.agents/skills/handover-to-{claude,codex}`,
+  `~/.codex/prompts/handover-to-{claude,codex}.md`, `~/shinichi-brain/protocols/handover-skill.md`; this snapshot + the
+  START-HERE doc were produced by the `handover-to-claude` skill — first dogfood). Added a **one-command resume** + a
+  tested **scheduled autonomous resume** (fires/auths/reads the doc but PAUSES on permissions unattended → fixed via a
+  scoped `~/.claude/settings.json` allow-list: Read/Edit/Write + read-only git allowed; push/merge/rm denied; GLOBAL).
+  Codex-prompt discovery is UNVERIFIED (couldn't launch `codex` here). The evidence-based interval finding (all-asymptotic,
+  no `qt`/df; `src/likelihood.jl:1491`) is what Codex is now implementing. NOTHING promoted to covered. **START HERE:**
+  `docs/dev-log/handover/2026-06-28-claude-handover.md`.
+
 - **As of 2026-06-24 (R CI greened + handover to Codex; hsquared `main` `8c5c886`/#112; HSquared.jl `main` `06c7e71b`/#189).**
   The pre-existing `R/validation-status.R` non-ASCII WARNING that kept hsquared CI red is **FIXED** — it was a single
   em-dash → `—` (runtime output identical, verified); **hsquared #112 merged on the FIRST green hsquared CI** (clean,
