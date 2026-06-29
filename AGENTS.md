@@ -9,6 +9,9 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-29 (Codex small-sample interval calibration branch + Claude handover; HSquared.jl branch `codex/small-sample-interval-calibration`, commits `d7effc79` + `6581828f`, hsquared R twin clean `main` `8c5c886`/#112, PR pending/opened from branch).**
+  Banked `V1-HERIT-TCAL` as a **planned** validation-debt row for Gaussian small-sample interval calibration and added the opt-in ADEMP/freqTLS/NotebookLM evidence chain plus a resumable harness (`sim/phase1_small_sample_interval_calibration.jl`). The harness now writes replicate-level detail TSVs with deterministic per-replicate seeds, `--detail-out`, `--resume`, `n_boot`, SW `df_eff`, failure reasons, boundary flags, and bootstrap convergence counts. Evidence remains TRIAGE ONLY: smoke output, a 200-rep no-bootstrap grid, and a 10-rep/9-bootstrap subset prove wiring/resumability and record negative/unstable SW behavior; they do **not** calibrate coverage. Decision checkpoint: do NOT expose t/Satterthwaite calibration, do NOT change interval defaults/API/R wording, do NOT move `validation_status()` (still 48 rows, planned=1, covered=5). DRAC aliases responded for Vulcan/Trillium/Rorqual/Nibi/Narval/Fir, but no cluster checkout was found and no login-node compute was run; next credible run needs a staged `/project` checkout + SLURM arrays. Two foreign untracked files remain never-stage. **START HERE:** `docs/dev-log/handover/2026-06-29-claude-handover.md`.
+
 - **As of 2026-06-24 (R CI greened + handover to Codex; hsquared `main` `8c5c886`/#112; HSquared.jl `main` `06c7e71b`/#189).**
   The pre-existing `R/validation-status.R` non-ASCII WARNING that kept hsquared CI red is **FIXED** — it was a single
   em-dash → `—` (runtime output identical, verified); **hsquared #112 merged on the FIRST green hsquared CI** (clean,
