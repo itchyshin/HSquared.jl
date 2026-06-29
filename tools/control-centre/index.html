@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HSquared twin — mission control</title>
+<style>
+  :root{ --bg:#16161a; --card:#1e1e24; --bd:#2c2c36; --fg:#e8e8ea; --mut:#9a9aa6;
+         --ok:#5bbf7a; --warn:#e0b34d; --bad:#e06c6c; --acc:#7f87e6; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  @media (prefers-color-scheme:light){ :root{ --bg:#faf9f5; --card:#fff; --bd:#e3e1d8; --fg:#1a1a18; --mut:#6a6a64; } }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+  h1{font-size:18px;font-weight:600;margin:0} .sub{color:var(--mut);font:12px/1.4 var(--mono);margin-top:3px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:.85rem 1rem;margin-top:.9rem}
+  .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 .5rem}
+  .pin{display:flex;align-items:baseline;gap:.6rem} .pin b{font-size:30px;color:var(--ok)} .pin span{color:var(--mut);font-size:13px}
+  .kpis{display:flex;flex-wrap:wrap;gap:1.2rem} .kpi b{font-size:20px} .kpi .k{color:var(--mut);font-size:12px;display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px} td,th{text-align:left;padding:.35rem .5rem;border-bottom:1px solid var(--bd);vertical-align:top}
+  th{color:var(--mut);font-weight:500;font-size:11px;text-transform:uppercase}
+  .mono{font-family:var(--mono);font-size:12px} .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .mut{color:var(--mut)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;background:var(--bd);color:var(--fg)}
+  .banner{background:#3a1a1a;color:#e8a;border:1px solid #6a2a2a;border-radius:8px;padding:.6rem .9rem;margin-top:.9rem;font-size:13px;display:none}
+  ul{margin:.3rem 0 0;padding-left:1.1rem} li{margin:.15rem 0}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.5rem">
+    <div><h1>HSquared twin · mission control</h1><div class="sub" id="gen">loading…</div></div>
+    <div class="sub" id="slice"></div>
+  </div>
+  <div class="banner" id="stale"></div>
+
+  <div class="card">
+    <p class="lbl">Public honesty pin</p>
+    <div class="pin"><b id="covered">—</b><span id="assert"></span></div>
+  </div>
+
+  <div class="card">
+    <p class="lbl">validation_status()</p>
+    <div class="kpis" id="val"></div>
+  </div>
+
+  <div class="card">
+    <p class="lbl">Repos</p>
+    <table id="repos"><thead><tr><th>repo</th><th>branch</th><th>head</th><th>ci</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <p class="lbl">Open PRs · DRAC · next</p>
+    <div id="meta"></div>
+  </div>
+
+  <div class="card" id="blockcard" style="display:none">
+    <p class="lbl">Blockers / never-stage</p>
+    <div id="blockers"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function ciClass(c){ c=(c||'').toLowerCase(); return c==='success'?'ok':(c==='failure'?'bad':'mut'); }
+function render(d){
+  $('gen').textContent = 'generated ' + (d.generated_at||'?') + ' · ' + (d.generator_version||'');
+  $('slice').textContent = d.current_slice ? ('▶ ' + d.current_slice) : '';
+  $('covered').textContent = (d.public_covered_count!=null? d.public_covered_count : '—');
+  $('assert').textContent = d.honesty_assert||'';
+  const v = d.validation||{};
+  $('val').innerHTML = [['rows',v.rows],['covered',v.covered],['covered_external',v.covered_external],['partial',v.partial],['planned',v.planned]]
+    .map(([k,x])=>`<div class="kpi"><span class="k">${k}</span><b>${x==null?'—':x}</b></div>`).join('');
+  $('repos').querySelector('tbody').innerHTML = (d.repos||[]).map(r=>
+    `<tr><td>${esc(r.name)}</td><td class="mono">${esc(r.branch)}</td><td class="mono">${esc(r.head)}</td><td class="${ciClass(r.ci)}">${esc(r.ci||'—')}</td></tr>`).join('');
+  const prs = (d.open_prs||[]).map(p=>`<span class="pill">#${esc(p.num)} ${esc(p.branch||p.title||'')}</span>`).join(' ') || '<span class="mut">none</span>';
+  const dr = d.drac||{};
+  const drs = dr.job_id ? `${esc(dr.cluster)} · job ${esc(dr.job_id)} · ${esc(dr.state)} · ${esc(dr.seeds_done||'')}` : '<span class="mut">no active job</span>';
+  $('meta').innerHTML = `<div style="margin-bottom:.4rem"><span class="mut">PRs:</span> ${prs}</div>`
+    + `<div style="margin-bottom:.4rem"><span class="mut">DRAC:</span> ${drs}</div>`
+    + `<div><span class="mut">next:</span> ${esc(d.next_safe_action||'—')}</div>`;
+  const blk = (d.blockers||[]); const fns = (d.foreign_never_stage||[]);
+  if(blk.length||fns.length){ $('blockcard').style.display='';
+    $('blockers').innerHTML = (blk.length?`<div class="warn">${blk.map(esc).join('<br>')}</div>`:'')
+      + (fns.length?`<div class="mut" style="margin-top:.4rem">never stage:<ul>${fns.map(f=>`<li class="mono">${esc(f)}</li>`).join('')}</ul></div>`:''); }
+  // stale guard: warn if generated_at older than ~6h
+  try{ const age=(Date.now()-Date.parse(d.generated_at))/3.6e6;
+    if(isFinite(age)&&age>6){ $('stale').style.display='';
+      $('stale').textContent='⚠ status is '+age.toFixed(1)+'h old — regenerate with tools/gen_status_json.jl'; } }catch(e){}
+}
+let BUILD=null;
+async function tick(){
+  try{ const ver=(await (await fetch('version.txt?_='+Date.now())).text()).trim();
+    if(BUILD===null) BUILD=ver; else if(ver!==BUILD) location.reload(); }catch(e){}
+  try{ render(await (await fetch('status.json?_='+Date.now())).json()); }
+  catch(e){ $('gen').textContent='status.json unavailable'; }
+}
+tick(); setInterval(tick, 8000);
+</script>
+</body>
+</html>
