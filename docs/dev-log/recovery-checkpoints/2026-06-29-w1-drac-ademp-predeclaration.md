@@ -26,6 +26,13 @@ Both campaigns produce TRIAGE evidence until a gate clears; nothing is promoted 
 - **Gate (characterization, no promotion):** report-only ±2pp descriptive band; a method is flagged
   mis-calibrated where `|empirical − nominal| > 2·MCSE` in interpretable cells. No pass/fail promotion.
 
+> **RE-SIZE (2026-06-29, pre-launch, R4):** the grid above (medium design + n_boot=199 × 2000 reps) made
+> the bootstrap arm infeasible (many hours/task at q=240, per the smoke-timing estimate). Feasible launch:
+> **tiny + small only** (the genuine small-sample regime), **20 tasks × 50 reps = 1000 reps/cell**
+> (95% MCSE ~0.7pp), **n_boot=99**. Medium-design coverage and the larger n_boot are deferred to a
+> follow-up. This refinement is **pre-launch** (no results seen) and **narrows scope** — it does not
+> relax a gate on observed data.
+
 ## Campaign 2 — broader-DGP V4-MV-REML recovery (doc-33 path-b)
 
 - **Aim:** discharge the retained `V4-MV-REML` broader-DGP recovery debt via a pre-declared cold-start
