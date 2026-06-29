@@ -19,9 +19,12 @@ julia 1.10.10. `sim/drac/phase4_sigma_a2_bias.sbatch`. **TRIAGE; informs the V4 
 1. **The bias shrinks monotonically toward 0 as n grows:** −9.7% (q=80) → −6.9% (q=160) → −3.5%
    (q=400) → −1.0% (q=800). It roughly halves as n doubles — the signature of a small-sample REML
    bias in the additive variance, not a fixed systematic underestimate.
-2. **Not a convergence/iteration-cap artifact:** every run reports `converged=true` at ~240–360
-   iterations (far below the 5000 cap), and running q=400 at **20000** iterations gives essentially
-   the same bias (−0.043 vs −0.035 at 5000, within MCSE). More iterations do not move it.
+2. **Not a convergence/iteration-cap artifact (scoped):** every run reports `converged=true` at ~240–360
+   iterations (far below the 5000 cap). The high-iterations check (it=20000) was run **only at q=400**,
+   where it gives essentially the same bias as it=5000 (−0.043 vs −0.035, within MCSE) — so iteration
+   stability is **directly established at moderate-n** and **inferred at small-n** (q=80/160, the largest
+   bias, were not re-run at high iters) via the clean monotone decay + fast convergence. Not directly
+   tested at q=80.
 3. This is **expected REML behavior** — REML reduces but does not fully eliminate variance-component
    bias at very small n; the additive component is mildly underestimated and the bias decays with n.
 
