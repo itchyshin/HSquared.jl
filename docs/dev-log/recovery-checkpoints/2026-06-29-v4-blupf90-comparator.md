@@ -27,6 +27,16 @@ The committed `prepare_blupf90_multitrait.jl` writes `renumf90.par` with the dat
 its own line, `cross alpha`, `FILE_POS 1 2 3 0 0`). **FOLLOW-UP: fix the prepare script's `renumf90.par`
 emitter** (separate-line keyword/value; `cross alpha`; FILE_POS). Independent of this comparator result.
 
+**RESOLVED 2026-06-30:** the emitter now writes the correct format directly (`DATAFILE` keyword/value on
+separate lines; blank `FIELDS_PASSED TO OUTPUT`/`WEIGHT(S)` value-lines; `cross alpha`; `FILE_POS 1 2 3 0 0`),
+byte-identical to `renumf90_fixed.par` and to the sibling `prepare_blupf90_two_effect.jl`. The `#49` preflight
+was updated to the new tokens and `Pkg.test()` passes (preflight 42/42). CONFIRMED end-to-end: `renumf90`
+1.166 + `blupf90+` 2.60 (re-downloaded from UGA this session, Mac x86_64/Rosetta, MKL-free) were RUN on the
+regenerated packet — `renumf90` accepts the emitted `renumf90.par` directly (exit 0; the `Data file is not
+found. file=TRAITS` failure is gone), with NO manual `renumf90_fixed.par`, and `blupf90+` AI-REML converges
+from a neutral start in 7 rounds to the fixture optimum (G0/R0 ~1e-5). See
+`docs/dev-log/check-log.d/2026-06-30-blupf90-multitrait-emitter-fix.md`.
+
 ## Independent convergence (the key check)
 
 A degenerate start with the off-diagonals at exactly 0 makes AI-REML keep them at 0 → it fits a CONSTRAINED
