@@ -68,7 +68,36 @@ right here.)
 - A PASS confirms level CONTROL, not POWER. The add-one rule's power vs. the quantile threshold (and vs. an
   external comparator) is a separate, owed question.
 
-## RESULT (run AFTER the predeclaration commit) — **PENDING**
+## RESULT (run 2026-06-30, AFTER the predeclaration commit `d26896c9`) — **GATE: PASS**
 
-To be filled in by `sim/phase5_qtl_addone_gate.jl` after this file is committed. Until then this gate has no
-result and nothing is promoted.
+`sim/phase5_qtl_addone_gate.jl`, 20 seeds 20260920..20260939, julia 1.10.0, single-threaded:
+
+| quantity | value |
+|---|---|
+| mean empirical type-I | **0.0543** |
+| target α | 0.050 |
+| excess (mean − α) | **+0.0043** |
+| MCSE | 0.0085 |
+| 2·MCSE | 0.0170 |
+| per-seed type-I range | [0.0140, 0.1790] |
+
+20/20 runs completed AND `mean type-I − α = +0.0043 ≤ 2·MCSE = 0.0170` → **GATE PASS** on the one-sided
+upper (not-anti-conservative) criterion. The conservative add-one permutation rule controls family-wise
+type-I at α, as its exact-permutation-test construction predicts — and exactly where the #202 `(1−α)`
+quantile threshold failed (0.069, 2.42·MCSE) on the byte-identical DGP/design, the add-one rule on the SAME
+null distributions lands at 0.054 (well within noise of α). This is the constructive recovery the #202
+negative named.
+
+**Honest reading.** This is a low-power non-rejection of "type-I ≤ α", read as "consistent with valid level
+control," not "exactly calibrated." The per-seed range is wide (one seed at 0.179) — the gate is on the
+20-seed MEAN with its MCSE, which is the pre-declared estimand; the spread reflects single-seed sampling of a
+1000-rep type-I and does not bear on the mean-level verdict. A mean materially below α would also have been a
+PASS (conservative is the designed behaviour).
+
+**Consequence — the CALIBRATION leg of V5 is discharged (one decision rule, one design); NOTHING promoted to
+covered.** V5 covered STILL owes (a) an external comparator (PLINK `max(T)` / GenABEL), (b) broader
+n/m/LD-architecture designs, and (c) the R `gwas()`/`marker_scan()` activation. The add-one rule's status
+moves from "named as the calibrated path (untested)" to "type-I-control verified at this design"; the
+`genome_wide_pvalue`/`marker_scan` machinery stays `experimental`/`partial`, the R `gwas()` significance
+wording stays HELD, `validation_status()` count and public-covered fitting = 1 are unchanged. NO relaxation
+of α, nperm, or the tolerance occurred (the criterion was fixed at commit `d26896c9` before any seed ran).
