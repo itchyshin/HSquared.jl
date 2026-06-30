@@ -9,6 +9,22 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (V2-GREML genomic REML → covered, validation-scale; branch `feat/2026-06-30-v2-genomic-recovery-gate`, PR pending for G10; `main` @ `6acd451c`/#200).**
+  The 24-hour goal's headline. Genomic REML (`fit_gblup_reml`) cleared the doc-16 **G11** covered bar on
+  BOTH owed legs: (1) a **PRE-DECLARED bias/MCSE recovery gate** (`sim/phase2_genomic_reml_recovery.jl`;
+  predeclaration committed `cb22e679` BEFORE the run, harness byte-identical pre/post → no relaxation) —
+  48 cold-start seeds (N=300/M=1000, fresh VanRaden `G` per seed, exact-model `u ~ N(0, K·σ²g)`, `K =
+  inv(Ginv)`), **48/48 converged, `|bias| ≤ 2·MCSE` for σ²g/σ²e/h²** (no detectable across-seed bias,
+  never "unbiased"); (2) the executed **`blupf90+` 2.60 same-estimand comparator** (PR #200, neutral start →
+  optimum ~1e-5, same-`Ginv` isolation). **Real Rose audit → PROMOTE** (both legs verified independently
+  incl. the predeclaration-before-result commit ordering + a harness re-run). **Atomic flip** across all 3
+  surfaces (`validation_status()` covered **6→7**, capability-status, debt-register); `validation_status()`
+  = **48 rows UNCHANGED**; **public-covered FITTING = 1** (v0.1 Gaussian). SCOPE: supplied-`Ginv` REML
+  ESTIMATOR / exact-model / N=300 single design — G-construction (`V2-GRM`) stays experimental, no
+  production sparse-`G`, no R surface, NOT the public default. The flip + merge is the maintainer's atomic
+  **G10** (PR staged, not self-merged). **NEXT: v0.5 (QTL null-DGP thresholds) or v0.4 (broader-DGP MV).**
+  START HERE: `docs/dev-log/after-task/2026-06-30-v2-genomic-covered-close.md`.
+
 - **As of 2026-06-30 (session resume: #198 merge + h² scale contract + genomic BLUPF90 comparator — Claude solo; branch `docs/2026-06-30-h2-contract-genomic-comparator`, PR pending; `main` @ `948527cd`/#198).**
   Resumed a frozen session; three maintainer asks. (a) **#198 MERGED** (`948527cd`, CI green; RR k=2 covered
   aim + non-Gaussian family plan); local `main` ff'd; the mission-control board (`:8791`) had died with the
