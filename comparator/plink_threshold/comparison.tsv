@@ -1,0 +1,6 @@
+config	beta	our_top	our_gw_addone_p	plink_top	plink_emp2	same_top	cor_permarker_chisq
+cfg_null	0.00	marker_156	0.716642	marker_156	0.725600	true	0.999975
+cfg_weak	0.25	marker_172	0.401799	marker_172	0.396800	true	0.999962
+cfg_mod	0.40	marker_100	0.000500	marker_100	0.000500	true	0.999163
+cfg_strong	0.60	marker_100	0.000500	marker_100	0.000500	true	0.998608
+cfg_vstrong	0.80	marker_100	0.000500	marker_100	0.000500	true	0.997939
