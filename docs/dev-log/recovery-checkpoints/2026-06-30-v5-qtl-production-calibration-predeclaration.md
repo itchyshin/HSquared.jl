@@ -59,6 +59,47 @@ hypothesis at larger scale.
 - Run on Totoro (his own server), ≤100 cores, `OPENBLAS_NUM_THREADS=1`; the result TSV
   (`sim/phase5_production_calibration.tsv`) is banked.
 
-## RESULT (run AFTER the predeclaration commit) — **PENDING**
+## RESULT (run 2026-06-30 on Totoro, AFTER the predeclaration commit `807f3d8a`) — **GATE: FAIL (1 of 3) — banked NEGATIVE**
 
-To be filled in by `sim/phase5_qtl_production_calibration.jl` (Totoro run) after this file is committed.
+`sim/phase5_qtl_production_calibration.jl`, 96 workers, 150 cells, 41.2 min:
+
+| design (n, m) | seeds | mean type-I | excess (mean − α) | 2·MCSE | per-seed range | verdict |
+|---|---|---|---|---|---|---|
+| (500, 2000)   | 50 | 0.0576 | +0.0076 | 0.0107 | [0.013, 0.185] | PASS |
+| (1000, 5000)  | 50 | 0.0606 | +0.0106 | 0.0077 | [0.014, 0.119] | **FAIL** |
+| (2000, 10000) | 50 | 0.0559 | +0.0059 | 0.0064 | [0.022, 0.122] | PASS |
+
+**Overall GATE FAIL** — the (1000, 5000) excess (+0.0106) exceeds 2·MCSE (0.0077) at 50 seeds. All three means
+sit CONSISTENTLY above α (0.0559–0.0606); the tighter 50-seed MCSE makes the small anti-conservatism detectable
+where the 20-seed validation gates could not resolve it. Banked NEGATIVE.
+
+### Diagnosis (verified, not hand-waved) — the FAIL is a SIMULATION null-REUSE artifact, NOT the add-one rule
+
+The calibration harness (this campaign AND #203/#204) builds ONE permutation null from a single calibration
+phenotype and REUSES it across many fresh type-I phenotypes (a standard efficiency shortcut — rebuilding the
+null per replicate is ~`type1_reps`× more expensive). The add-one rule's exact `≤ α` guarantee (Phipson–Smyth)
+holds only when the null draws and the test statistic are EXCHANGEABLE; a null built from one phenotype's
+residual multiset is NOT exactly exchangeable with a FRESH phenotype, giving a small finite-sample
+anti-conservatism. A confirmatory check on Totoro (`reuse_vs_rebuild.jl`, n=600, m=300, 12 seeds, nperm=400,
+K=300) isolates this:
+
+| procedure | mean type-I |
+|---|---|
+| **REUSE** (one null → many fresh phenotypes; what the gate does) | **0.0642** |
+| **REBUILD** (fresh null per phenotype; what real `gwas()` does — the EXACT add-one test) | **0.0478** |
+
+reuse − rebuild = **+0.0164**: the REUSE shortcut is the anti-conservatism source. The EXACT per-dataset rule
+(rebuild) is CONSERVATIVE (0.0478 ≤ α), exactly as the Phipson–Smyth construction predicts (and as the
+deterministic add-one CI unit tests already pin).
+
+### Consequence — banked NEGATIVE, with an honest REFINEMENT (not an overturning)
+
+- The production REUSE gate does NOT pass; the production genome-wide-significance claim does NOT proceed on
+  the reuse-shortcut calibration; `gwas()` wording stays held. Nothing promoted.
+- This REFINES the #203/#204 validation-scale PASSes: those were "no DETECTABLE inflation at 20 seeds" —
+  accurate, but the reuse shortcut's small anti-conservatism (~0.006–0.016) IS real and detectable at
+  production scale. The honest claim is therefore "the EXACT per-dataset add-one rule controls type-I at α
+  (theorem + verified); the type-I-simulation's fixed-null-reuse shortcut is mildly anti-conservative."
+- The CONSTRUCTIVE follow-up is a production REBUILD gate (the exact rule) — see the companion predeclaration
+  `2026-06-30-v5-qtl-rebuild-production-gate-predeclaration.md`.
+- NO post-hoc relaxation: the criterion was fixed at `807f3d8a` before the run; the FAIL is reported as a FAIL.
