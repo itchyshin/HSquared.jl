@@ -20,5 +20,11 @@
 /comparator/blupf90_multitrait/renumf90.par
 /comparator/blupf90_multitrait/renf90.*
 /comparator/blupf90_multitrait/airemlf90.log
+/comparator/blupf90_multitrait/blupf90.log
 /comparator/blupf90_multitrait/solutions
+/comparator/blupf90_multitrait/renadd*.ped
+/comparator/blupf90_multitrait/AI_inv.*
+/comparator/blupf90_multitrait/fspak90.ord
+/comparator/blupf90_multitrait/renumf90_fixed.par
+/comparator/blupf90_multitrait/renf90_neutral*.par
 .claude/worktrees/

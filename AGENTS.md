@@ -19,11 +19,13 @@ engine reality.
   VALIDATION-scale surfaces now agree; `06-public-claims-register.md` stays `partial` (correct public-vs-
   validation layering). Honesty pins INTACT: `validation_status()` = 48 (5/3/39/1) UNCHANGED, **public-covered
   FITTING = 1** (v0.1 Gaussian), no API/default/R-wording change. BLUPF90 (the owed 2nd same-estimand
-  comparator) was pursued — UGA dir reachable, MKL-free path found (`Linux/Test_static/`; Mac x86_64 via
-  Rosetta; modern suite uses `blupf90+ … OPTION method VCE`) — but **download+execute was classifier-blocked**
-  (needs explicit user OK); it stays OWED hardening, NOT a v0.4 blocker. PENDING (human-only): maintainer
-  **G10** to ratify the scoped claim; BLUPF90 download authorization; push + merge PR #194; D2 interval-default
-  (profile-LRT, needs Codex + G10). **START HERE:** `docs/dev-log/after-task/2026-06-29-v04-mv-scoped-finish.md`.
+  comparator) was then **RUN** (user-authorized): `blupf90+` 2.60 AI-REML (Mac x86_64, MKL-free, Rosetta) from
+  an independent NEUTRAL start converges (7 rounds) to the fixture optimum — G0/R0 ~1e-5, β ~1e-7, EBV corr
+  1.000; a 2nd real Rose audit (PROMOTE-WITH-CHANGES → scope tag applied) → the 2nd-comparator owed item is
+  **DISCHARGED (point-estimate, single fixture)** across all three validation-scale surfaces (a packet
+  `renumf90.par` emitter bug was found + worked around; prepare-script fix is a follow-up). PENDING
+  (human-only): maintainer **G10** to ratify the scoped claim + the BLUPF90 discharge; push + merge PR #194;
+  D2 interval-default (profile-LRT, needs Codex + G10). **START HERE:** `docs/dev-log/after-task/2026-06-29-v04-mv-scoped-finish.md`.
 
 - **As of 2026-06-29 (Codex small-sample interval calibration branch + Claude handover; HSquared.jl branch `codex/small-sample-interval-calibration`, commits `d7effc79` + `6581828f`, hsquared R twin clean `main` `8c5c886`/#112, PR pending/opened from branch).**
   Banked `V1-HERIT-TCAL` as a **planned** validation-debt row for Gaussian small-sample interval calibration and added the opt-in ADEMP/freqTLS/NotebookLM evidence chain plus a resumable harness (`sim/phase1_small_sample_interval_calibration.jl`). The harness now writes replicate-level detail TSVs with deterministic per-replicate seeds, `--detail-out`, `--resume`, `n_boot`, SW `df_eff`, failure reasons, boundary flags, and bootstrap convergence counts. Evidence remains TRIAGE ONLY: smoke output, a 200-rep no-bootstrap grid, and a 10-rep/9-bootstrap subset prove wiring/resumability and record negative/unstable SW behavior; they do **not** calibrate coverage. Decision checkpoint: do NOT expose t/Satterthwaite calibration, do NOT change interval defaults/API/R wording, do NOT move `validation_status()` (still 48 rows, planned=1, covered=5). DRAC aliases responded for Vulcan/Trillium/Rorqual/Nibi/Narval/Fir, but no cluster checkout was found and no login-node compute was run; next credible run needs a staged `/project` checkout + SLURM arrays. Two foreign untracked files remain never-stage. **START HERE:** `docs/dev-log/handover/2026-06-29-claude-handover.md`.

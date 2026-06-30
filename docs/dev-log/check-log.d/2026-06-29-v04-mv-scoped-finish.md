@@ -12,6 +12,14 @@
   `validation_status()` function string; Edit B (`experimental`→`covered` + covered framing) to
   `capability-status.md`; optional Edit C (struck the now-characterized "larger-n" from the owed list).
   Left `06-public-claims-register.md` `partial` (Rose finding 3: correct public-vs-validation layering).
+- **BLUPF90 2nd-comparator (added this slice, user-authorized):** ran `renumf90` 1.166 + `blupf90+` 2.60
+  (Mac x86_64, MKL-free static, Rosetta) on the packet; independent NEUTRAL-start AI-REML converged in
+  7 rounds (9.6e-13) to the fixture optimum — G0/R0 ~1e-5 (printout-limited), β ~1e-7, EBV corr 1.000.
+  A 2nd real Rose audit (PROMOTE-WITH-CHANGES) → applied the scope tag "(point-estimate, single fixture)".
+  The 2nd-comparator owed item is DISCHARGED across all three validation-scale surfaces; `test/runtests.jl`
+  V4 honesty-guards updated (5 assertions) to the new wording; evidence
+  `docs/dev-log/recovery-checkpoints/2026-06-29-v4-blupf90-comparator.md`. Found a packet `renumf90.par`
+  format bug (datafile-inline; EFFECT `numer`) → worked around; prepare-script fix is a follow-up.
 
 ## Checks
 

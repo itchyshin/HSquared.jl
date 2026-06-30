@@ -11,9 +11,10 @@ non-delegable maintainer G10. Promote nothing new; public-covered FITTING surfac
 
 ## Active lenses and spawned agents
 
-Lenses: Rose (mandatory), Gauss, Fisher, Curie, Noether, Grace, Ada. Spawned: ONE real
-`rose-systems-auditor` subagent (claim-vs-evidence audit of the V4 scoped finish; verdict
-PROMOTE-WITH-CHANGES; its two required edits were applied verbatim).
+Lenses: Rose (mandatory), Gauss, Fisher, Curie, Noether, Grace, Ada. Spawned: TWO real
+`rose-systems-auditor` subagents — (1) the V4 scoped finish (PROMOTE-WITH-CHANGES → two edits applied
+verbatim); (2) the executed BLUPF90 comparator leg (PROMOTE-WITH-CHANGES → scope tag
+"(point-estimate, single fixture)" + a gitignore-precision fix applied verbatim).
 
 ## Live phase snapshot
 
@@ -33,6 +34,11 @@ not a flip. No API / default / R-wording change.
   string (Edit A mirror); struck "larger-n" from the owed broader-recovery list since W1 characterized it
   (Edit C). No status-code or row-count change.
 - `docs/dev-log/after-task/2026-06-29-v04-mv-scoped-finish.md` (this report) + check-log entry.
+- **BLUPF90 leg (added this slice):** all three validation-scale surfaces also updated to record the
+  executed `blupf90+` 2.60 comparator + the 2nd-comparator discharge (point-estimate, single fixture);
+  `test/runtests.jl` V4 honesty-guards updated to the new wording (5 assertions); `.gitignore` extended for
+  BLUPF90 run artifacts; NEW evidence record
+  `docs/dev-log/recovery-checkpoints/2026-06-29-v4-blupf90-comparator.md`.
 
 ## What changed
 
@@ -47,11 +53,19 @@ not a flip. No API / default / R-wording change.
 - Cross-surface reconciliation: all three VALIDATION-scale surfaces (the `validation_status()` function,
   the debt register, capability-status) now agree on `covered`; the PUBLIC-claims register stays `partial`
   (Rose finding 3: correct public-vs-validation layering — left untouched).
-- BLUPF90 (the owed 2nd same-estimand comparator) was pursued: the UGA binary directory is reachable and
-  an MKL-free path exists (`Linux/Test_static/`; Mac x86_64 under Rosetta; the modern suite uses
-  `blupf90+ … OPTION method VCE`, not a standalone `airemlf90`). Download+execute was BLOCKED by the
-  auto-mode classifier (untrusted third-party binary needs explicit user authorization). Filed as OWED
-  hardening — per doc-18 it is optional, NOT a v0.4 blocker.
+- BLUPF90 2nd same-estimand REML comparator — **EXECUTED** (user-authorized via the AskUserQuestion
+  "Run BLUPF90 first" selection). Downloaded `renumf90` 1.166 + `blupf90+` 2.60 (Mac x86_64, statically
+  linked / MKL-free per `otool -L`, run under Rosetta). `blupf90+` AI-REML from a **non-degenerate neutral
+  start** independently converged (7 rounds, final 9.6e-13) to the same fixture optimum — G0/R0 ~1e-5
+  (BLUPF90 5-sig-fig printout-limited), β ~1e-7, EBV correlation 1.000 both traits. A real Rose audit
+  (PROMOTE-WITH-CHANGES) confirmed it is a genuine INDEPENDENT same-estimand REML leg (not started at the
+  answer) and required the scope tag "(point-estimate, single fixture)". The 2nd-comparator owed item is
+  now **DISCHARGED (point-estimate, single fixture)** across all three validation-scale surfaces. Evidence:
+  `docs/dev-log/recovery-checkpoints/2026-06-29-v4-blupf90-comparator.md`.
+- Found a real packet bug: `comparator/prepare_blupf90_multitrait.jl` writes `renumf90.par` with the
+  datafile name INLINE (renumf90 needs keyword/value on separate lines) and EFFECT type `numer` (should be
+  `alpha`). Worked around with a corrected `renumf90_fixed.par`; **fixing the prepare-script emitter is a
+  noted follow-up** (not done this slice).
 
 ## Checks run and exact outcomes
 
@@ -67,8 +81,9 @@ not a flip. No API / default / R-wording change.
 Clean (Rose-audited). Nothing promoted; public-covered fitting = 1; `validation_status()` = 48 unchanged;
 no public default / API / R-wording change. V4-MV-REML stays validation-scale `covered`, now with an
 explicit scope-of-validity + the two documented boundaries. The public-claims register stays `partial`.
-BLUPF90 + full-sib/3+-trait recovery + in-suite `sommer` test + deep-inbreeding remain OWED (covered does
-not retire them).
+The BLUPF90 2nd-comparator is now executed + DISCHARGED (point-estimate, single fixture; Rose-audited);
+full-sib/3+-trait recovery + in-suite `sommer` test + deep-inbreeding remain OWED (covered does not retire
+them).
 
 ## Tests of the tests
 
@@ -86,8 +101,10 @@ takes D2, a Codex hand-back is owed.
 
 ## What did not go smoothly
 
-- BLUPF90 download+execute was classifier-blocked (correctly — untrusted binary). Surfaced as a user
-  authorization decision rather than worked around. v0.4 finishes without it (optional hardening).
+- BLUPF90 download+execute was first classifier-blocked (correctly — untrusted binary); surfaced as a user
+  authorization decision, the user selected "Run BLUPF90 first", and it then ran successfully.
+- The committed packet's `renumf90.par` did not run as-is (datafile-name-inline format bug + EFFECT `numer`);
+  needed a manual `renumf90_fixed.par`. The prepare-script fix is a follow-up.
 
 ## Known limitations
 
@@ -95,13 +112,18 @@ takes D2, a Codex hand-back is owed.
   sparse multivariate fitting, no R-facing model spec, no `result_payload()` widening.
 - Broader-DGP recovery is characterized (partial), 5/8 — NOT a universal-recovery claim; two real scope
   edges remain (n-vanishing G[1,1] bias; single-record × extreme-r_g).
-- The 2nd same-estimand REML comparator (BLUPF90/ASReml/DMU/WOMBAT) is still owed.
+- The BLUPF90 2nd same-estimand REML comparator is now executed but is ONE fixture / ONE (G,R) truth point
+  (point-estimate, single fixture); broader multi-design comparator parity + full-sib/3+-trait recovery
+  remain owed.
 
 ## Next actions
 
-1. **Maintainer G10 (non-delegable):** ratify the V4-MV-REML scoped covered claim as edited.
-2. **BLUPF90 authorization (your call):** approve downloading + running the UGA `blupf90+`/`renumf90`
-   binaries to discharge the owed 2nd-comparator debt (optional hardening).
-3. Push the branch + merge W1 PR #194 (Rose-clean + local checks green; no auto-merge).
+1. **Maintainer G10 (non-delegable):** ratify the V4-MV-REML scoped covered claim + the executed BLUPF90
+   2nd-comparator discharge (point-estimate, single fixture), as edited.
+2. Push the branch + merge PR #194 (Rose-clean ×2 + local checks green; no auto-merge).
+3. **Follow-up (noted, not done):** fix the `prepare_blupf90_multitrait.jl` `renumf90.par` emitter
+   (separate-line keyword/value; `cross alpha`; add `FILE_POS`) so the committed packet runs without the
+   manual `renumf90_fixed.par`.
 4. D2 — heritability-interval default (profile-LRT) — separate slice, needs Codex + G10.
-5. Still-owed V4 debt: full-sib + 3+-trait recovery; in-suite `sommer` test; deep-inbreeding boundary.
+5. Still-owed V4 debt: full-sib + 3+-trait recovery (incl. broader multi-design comparator parity);
+   in-suite `sommer` test; deep-inbreeding boundary.
