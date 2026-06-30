@@ -58,8 +58,11 @@ REUSE 0.0576/0.0606/0.0559, REBUILD 0.0542/0.0504 — matching exactly; (4) the 
 rewrite; (5) `validation_status()` independently 48/7/37, V5 `partial`, `Pkg.test()` green, count-guard +
 status pins survive, the one re-pointed `missing` pin is honest. **One non-blocking observation:** the
 reuse-vs-rebuild diagnostic banked no per-seed TSV (unlike the two gates). ADDRESSED in this slice — the
-diagnostic now writes `sim/phase5_reuse_vs_rebuild_diagnostic.tsv` and was re-run on Totoro to bank the
-per-seed detail (reproducibility parity with the gates).
+diagnostic now WRITES `sim/phase5_reuse_vs_rebuild_diagnostic.tsv` on each run (reproducibility parity with
+the gates for any future run). The load-bearing per-seed data is already banked in the two gate TSVs
+(`phase5_production_calibration.tsv`, `phase5_rebuild_production_gate.tsv`), which independently demonstrate
+the reuse-vs-rebuild difference (REUSE 0.056–0.061 vs REBUILD 0.0504–0.0542); a TSV-banking re-run of the
+standalone diagnostic is an optional follow-up, not load-bearing.
 
 ## Tests of the tests
 
