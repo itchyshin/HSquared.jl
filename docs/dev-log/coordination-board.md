@@ -1,5 +1,16 @@
 # Coordination Board
 
+## Compute (for opt-in sims / calibration campaigns)
+
+- **Totoro** — Shinichi's own server (`snakagaw@totoro.biology.ualberta.ca`): **384 cores, ~1 TB RAM, no
+  GPU, NO queue/wait**. Default for quick big-CPU calibration/recovery campaigns. **Keep ≤ 100 cores at a
+  time** (shared lab box). Attach over the ControlMaster socket
+  (`ssh -o ControlPath="$HOME/.ssh/cm/snakagaw@totoro.biology.ualberta.ca:22" -o ControlMaster=no totoro …`);
+  set up Julia+repo under `~/hsq_work`; pin `OPENBLAS_NUM_THREADS=1`, `addprocs(96)`. Runbook:
+  `~/shinichi-brain/tools/totoro-setup.md`.
+- **DRAC** clusters — when you need GPUs, >100 cores, multi-node job arrays, or a long queued campaign
+  (`~/shinichi-brain/tools/drac-setup.md`).
+
 ## Active Lane Split
 
 - Julia lane: this repository, `HSquared.jl`.

@@ -426,7 +426,7 @@ end
     @test occursin("machine-readable TSV evidence", threshold_row.evidence)
     @test occursin("0.015/0.065/0.050", threshold_row.evidence)
     @test occursin("threshold-vs-Bonferroni was mixed", threshold_row.evidence)
-    @test occursin("realistic-LD/design calibration", threshold_row.missing)
+    @test occursin("coverage calibration", threshold_row.missing)
     @test occursin("significance-wording activation", threshold_row.missing)
     @test occursin("#48 gate", threshold_row.claim_boundary)
     @test occursin("NOT YET a production genome-wide-significance claim", threshold_row.claim_boundary)
