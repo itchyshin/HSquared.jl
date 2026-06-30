@@ -9,6 +9,27 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (v0.5 QTL genome-wide significance → COVERED, scoped; Claude solo; `HSquared.jl` `main` @
+  `261b52c7`/#209; `hsquared` `main` @ `c4e73ef`/#114; maintainer G10 GIVEN + merged).** Resumed a frozen
+  session and finished v0.5 to covered across both twins, every slice pre-registered + real-Rose-audited.
+  **V5-MARKER-THRESHOLD `partial → covered` (SCOPED, validation-scale, opt-in)** via the doc-16 substitutable
+  gate (the **type-I-control adaptation of G11** — the first NON-point-estimator covered row): the EXACT
+  per-dataset add-one permutation rule (`genome_wide_marker_scan` / R `gwas(genome_wide=TRUE)`), **type-I
+  CONTROL only, fixed-effect/intercept-only**, on the tested LD designs. Legs: validation type-I gates #203/#204
+  + **production REBUILD gate #207** PASS (mean type-I 0.0542/0.0504 at α; the REUSE shortcut FAILED → banked
+  negative + diagnosed; the `(1-α)` quantile rule #202 FAILED → banked) + **PLINK max(T) comparator #205** +
+  R activation **hsquared #113** (live-verified) + engine entry point #208. Real Rose on the flip →
+  PROMOTE-WITH-CHANGES (two DoD docs added: check-log entry + doc-16 exemplar). `validation_status()` = **48
+  rows / covered 7→8 / partial 37→36**; **public-covered FITTING = 1 UNCHANGED** (V5 is opt-in significance,
+  NOT a fitting capability, NOT the public default). The R public `gwas(genome_wide=TRUE)` surface STAYS
+  **experimental** (engine-covered ≠ R-public-covered; V4-MV-REML / Rose-risk-5 pattern). FENCED OUT:
+  mixed-model/LOCO null, power/coverage, broader-LD/covariate-adjusted, the quantile rule + reuse shortcut, the
+  map-annotated formula API — STANDING DEBT retained (2nd external comparator GCTA/statgenGWAS, mixed-model
+  calibration, #45). Infra: **Totoro** (384-core server) set up + persisted to memory; **JuliaCall** installed
+  (live R↔Julia bridge verified). **NEXT: v0.4 broader-DGP MV recovery · V5 standing debt (GCTA 2nd comparator)
+  · v0.6 non-Gaussian (T1 ordinal/threshold, glmmTMB comparator).** The maintainer's `/goal` "finish all of
+  v0.5" is ACHIEVED — `/goal clear` if it lingers. START HERE: `docs/dev-log/handover/2026-06-30-claude-handover.md`.
+
 - **As of 2026-06-30 (V2-GREML genomic REML → covered, validation-scale; branch `feat/2026-06-30-v2-genomic-recovery-gate`, PR pending for G10; `main` @ `6acd451c`/#200).**
   The 24-hour goal's headline. Genomic REML (`fit_gblup_reml`) cleared the doc-16 **G11** covered bar on
   BOTH owed legs: (1) a **PRE-DECLARED bias/MCSE recovery gate** (`sim/phase2_genomic_reml_recovery.jl`;
