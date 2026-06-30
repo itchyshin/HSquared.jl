@@ -8010,17 +8010,22 @@ end
         @test all(row -> row[3] == "1", split.(dat))
         @test all(row -> all(!isnothing(tryparse(Float64, value)) for value in row), split.(dat))
         @test all(row -> all(!isnothing(tryparse(Int, value)) for value in row), split.(ped))
+        @test "DATAFILE" in renum
+        @test renum[findfirst(==("DATAFILE"), renum) + 1] == "blupf90_multitrait.dat"
         @test "TRAITS" in renum
         @test renum[findfirst(==("TRAITS"), renum) + 1] == "1 2"
         @test "FIELDS_PASSED TO OUTPUT" in renum
-        @test renum[findfirst(==("FIELDS_PASSED TO OUTPUT"), renum) + 1] == "3 4 5"
-        @test "3 3 cross numer" in renum
+        @test renum[findfirst(==("FIELDS_PASSED TO OUTPUT"), renum) + 1] == ""
+        @test "WEIGHT(S)" in renum
+        @test renum[findfirst(==("WEIGHT(S)"), renum) + 1] == ""
+        @test "3 3 cross alpha" in renum
         @test "4 4 cov" in renum
-        @test "5 5 cross numer" in renum
+        @test "5 5 cross alpha" in renum
+        @test "FILE_POS" in renum
+        @test renum[findfirst(==("FILE_POS"), renum) + 1] == "1 2 3 0 0"
         @test "OPTION method VCE" in renum
         @test !any(startswith(strip(line), "#") for line in dat)
         @test !any(startswith(strip(line), "#") for line in ped)
-        @test !any(isempty(strip(line)) for line in renum)
         @test !any(startswith(strip(line), "#") for line in renum)
 
         checked = HSquaredBLUPF90MultitraitPacket.validate_blupf90_multitrait_packet(out = dir)

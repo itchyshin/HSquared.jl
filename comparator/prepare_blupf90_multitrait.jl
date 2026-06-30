@@ -125,24 +125,29 @@ function generate_blupf90_multitrait_packet(; fixture = FIXTURE, out = OUT)
     _write_lines(joinpath(out, "hsquared_targets.csv"), target_lines)
 
     renum_lines = [
-        "DATAFILE blupf90_multitrait.dat",
+        "DATAFILE",
+        "blupf90_multitrait.dat",
         "TRAITS",
         "1 2",
         "FIELDS_PASSED TO OUTPUT",
-        "3 4 5",
+        "",
+        "WEIGHT(S)",
+        "",
         "RESIDUAL_VARIANCE",
         @sprintf("%.15g %.15g", R0[1, 1], R0[1, 2]),
         @sprintf("%.15g %.15g", R0[2, 1], R0[2, 2]),
         "EFFECT",
-        "3 3 cross numer",
+        "3 3 cross alpha",
         "EFFECT",
         "4 4 cov",
         "EFFECT",
-        "5 5 cross numer",
+        "5 5 cross alpha",
         "RANDOM",
         "animal",
         "FILE",
         "blupf90_multitrait.ped",
+        "FILE_POS",
+        "1 2 3 0 0",
         "(CO)VARIANCES",
         @sprintf("%.15g %.15g", G0[1, 1], G0[1, 2]),
         @sprintf("%.15g %.15g", G0[2, 1], G0[2, 2]),
@@ -198,18 +203,20 @@ function validate_blupf90_multitrait_packet(; fixture = FIXTURE, out = OUT)
     end
 
     renum = readlines(joinpath(out, "renumf90.par"))
-    any(isempty(strip(line)) for line in renum) &&
-        error("renumf90.par should avoid blank records in the starter template")
+    # Blank records are legitimate: renumf90 reads the line after FIELDS_PASSED TO
+    # OUTPUT and WEIGHT(S) as their (here empty) value, so they are intentionally blank.
     any(startswith(strip(line), "#") for line in renum) &&
         error("renumf90.par should avoid comment records in the starter template")
     required = [
-        "DATAFILE blupf90_multitrait.dat",
+        "DATAFILE",
+        "blupf90_multitrait.dat",
         "TRAITS",
         "RESIDUAL_VARIANCE",
         "EFFECT",
         "RANDOM",
         "animal",
         "FILE",
+        "FILE_POS",
         "blupf90_multitrait.ped",
         "(CO)VARIANCES",
         "OPTION method VCE",
