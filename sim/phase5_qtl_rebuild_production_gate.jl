@@ -15,9 +15,12 @@
 #   - DGP: NULL, correlated markers (`_simulate_markers`), intercept-only X, σ²e=1, α=0.05.
 #   - Per replicate: build a FRESH residual-permutation null (nperm=500) from THAT
 #     replicate's phenotype, then add-one `genome_wide_pvalue ≤ α`. type1_reps=K=120.
-#   - DESIGNS (realistic): (n, m) ∈ {(500, 2000), (1000, 5000)}, 20 cold seeds each:
+#   - DESIGNS (realistic): (n, m) ∈ {(500, 2000), (1000, 2000)}, 20 cold seeds each:
 #       (500, 2000):  20263000..20263019
-#       (1000, 5000): 20263020..20263039
+#       (1000, 2000): 20263020..20263039
+#     (m re-sized 5000→2000 BEFORE any REBUILD result was observed — the per-replicate
+#      null rebuild is type1_reps× costlier than the reuse harness, so m=5000 REBUILD was
+#      computationally impractical; m=2000 is still 10× the validation-gate marker count.)
 #   - PASS (ALL designs): all cells complete AND `mean(type1) − α ≤ 2·MCSE` (one-sided
 #     upper, not anti-conservative). EXPECTED to pass (the exact rule is ≤ α by
 #     construction); a FAIL would itself be a banked NEGATIVE. Criterion fixed BEFORE run.
@@ -59,7 +62,7 @@ end
 const ALPHA = 0.05
 const DESIGNS = (
     (n = 500,  m = 2000, seeds = 20263000:20263019),
-    (n = 1000, m = 5000, seeds = 20263020:20263039),
+    (n = 1000, m = 2000, seeds = 20263020:20263039),
 )
 
 function main()

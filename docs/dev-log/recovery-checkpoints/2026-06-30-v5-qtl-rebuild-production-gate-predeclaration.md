@@ -16,11 +16,18 @@ fresh NULL phenotype, build its OWN residual-permutation null (nperm=500), and a
 
 - **NULL DGP**: correlated markers (`_simulate_markers`: LD via shared latent factors + allele-freq gradient),
   intercept-only `X`, σ²e=1, α=0.05, nperm=500, type1_reps=120.
-- **DESIGNS (realistic):** (n, m) ∈ {(500, 2000), (1000, 5000)}, 20 cold seeds each:
+- **DESIGNS (realistic):** (n, m) ∈ {(500, 2000), (1000, 2000)}, 20 cold seeds each:
   - (500, 2000):  20263000..20263019
-  - (1000, 5000): 20263020..20263039
+  - (1000, 2000): 20263020..20263039
 
   (Disjoint from all prior gate/diagnostic seeds.)
+
+  **Design re-sizing note (transparency):** initially declared as {(500,2000),(1000,5000)}; the (1000,5000)
+  REBUILD cell proved computationally impractical (the per-replicate null rebuild is `type1_reps`× costlier
+  than the reuse harness, so m=5000 × 120 reps × 500 perms did not finish in a reasonable window). The big
+  design's markers were reduced 5000→2000 **BEFORE any REBUILD result was observed** (no result existed to
+  bias the choice — this is a tractability re-sizing, not a post-hoc relaxation of a seen outcome). m=2000 is
+  still 10× the validation-gate marker count and a realistic multi-marker LD design. Seeds unchanged.
 
 ## PASS criteria (ALL required; fixed here, not adjustable after seeing results)
 
