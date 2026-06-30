@@ -51,6 +51,25 @@ design. Fixed before the run, not a post-hoc relaxation.
   GWAS (Freedman–Lane / ter Braak), other LD schemes, or power.
 - This is type-I-CONTROL robustness across (n, m), not an external-comparator parity check.
 
-## RESULT (run AFTER the predeclaration commit) — **PENDING**
+## RESULT (run 2026-06-30, AFTER the predeclaration commit `fa159abc`) — **GATE: PASS (all 3 designs)**
 
-To be filled in by `sim/phase5_qtl_addone_design_sweep.jl` after this file is committed.
+`sim/phase5_qtl_addone_design_sweep.jl`, julia 1.10.0, single-threaded:
+
+| design (n, m) | seeds | mean type-I | excess (mean − α) | 2·MCSE | per-seed range | verdict |
+|---|---|---|---|---|---|---|
+| (200, 100) | 10 | 0.0680 | +0.0180 | 0.0295 | [0.015, 0.182] | PASS |
+| (300, 200) | 10 | 0.0578 | +0.0078 | 0.0170 | [0.028, 0.107] | PASS |
+| (500, 300) | 10 | 0.0606 | +0.0106 | 0.0196 | [0.022, 0.115] | PASS |
+
+All three design points satisfy `mean type-I − α ≤ 2·MCSE` → **overall GATE PASS**. The conservative add-one
+permutation rule controls family-wise type-I at α across small/medium/larger (n, m) — no detectable inflation
+at any design.
+
+**Honest reading.** The per-design means sit slightly ABOVE α (0.058–0.068) but all comfortably within 2·MCSE,
+i.e. consistent with valid level control at Monte-Carlo resolution — NOT "exactly calibrated." The (200, 100)
+point has the widest MCSE (smaller n → more variable per-seed type-I), as expected. This HARDENS the #203
+single-design calibration leg into a design-grid result; it does NOT by itself reach V5 covered, which STILL
+owes an external comparator (PLINK `max(T)` / GCTA / GenABEL) and the R `gwas()`/`marker_scan()` activation
+(NEEDS-R/BRIDGE, the Codex/R-lane leg per doc-18). NOTHING promoted; `validation_status()` count, public-covered
+fitting = 1, and the threshold row's status are unchanged. NO post-hoc relaxation (criterion fixed at
+`fa159abc` before any seed ran).
