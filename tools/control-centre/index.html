@@ -100,7 +100,7 @@
   </div>
 
   <div class="card">
-    <p class="lbl"><i class="ti ti-flag-3"></i> Roadmap to v1.0 <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— release milestones, ordered by distance to the covered gate</span></p>
+    <p class="lbl"><i class="ti ti-flag-3"></i> Roadmap to v1.0 <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— per version: <span style="color:#8a6fe0;font-weight:600">Julia</span> (HSquared.jl engine) &amp; <span style="color:#4a90d9;font-weight:600">R</span> (hsquared public language) — R calls Julia via the <strong>one-way R→Julia bridge</strong> (JuliaCall; v0.9); ordered by distance to the covered gate</span></p>
     <div id="roadmap"></div>
   </div>
 
@@ -160,31 +160,52 @@ function render(d){
   try{const age=(Date.now()-Date.parse(d.generated_at))/3.6e6;
     if(isFinite(age)&&age>6){$('stale').style.display='';$('stale').textContent=`⚠ status is ${age.toFixed(1)}h old — regenerate with tools/gen_status_json.jl`;}else{$('stale').style.display='none';}}catch(e){}
 }
-// Durable programme view (as of 2026-06-29; source: docs/design/18-programme-plan-2026-06.md).
+// Durable programme view (as of 2026-06-30; source: docs/design/18-programme-plan-2026-06.md).
 // Live counts above come from the generated status.json; this is the slow-moving plan layer.
 const stCls=s=>({done:'ok',exp:'warn',near:'ok',mid:'warn',todo:'neu',goal:'acc'}[s]||'neu');
 const PHASES=[
-  {p:'0',n:'Scaffold + constitution',st:'done',note:'public default — complete'},
-  {p:'1',n:'Gaussian animal model',st:'exp',note:'v0.1 covered'},
-  {p:'2',n:'Genomic',st:'exp',note:'G/GBLUP/SNP-BLUP/single-step'},
-  {p:'3',n:'Standard-QG + inheritance',st:'exp',note:'repeatability/two-effect/RR'},
-  {p:'4',n:'Multivariate',st:'exp',note:'V4 covered · broader-DGP characterized',here:1},
+  {p:'0',n:'Scaffold',st:'done',note:'public default — complete'},
+  {p:'1',n:'Gaussian',st:'exp',note:'v0.1 covered (public default)'},
+  {p:'2',n:'Genomic',st:'exp',note:'engine done; BLUPF90 comparator + gate owed',here:1},
+  {p:'3',n:'Standard-QG',st:'exp',note:'two-effect COVERED; repeatability/RR owed',here:1},
+  {p:'4',n:'Multivariate',st:'done',note:'V4 covered + merged'},
   {p:'4B',n:'Factor-analytic G',st:'exp',note:'recovery not passing'},
   {p:'5',n:'QTL / GWAS',st:'exp',note:'uncalibrated thresholds'},
-  {p:'6',n:'Non-Gaussian / GLLVM',st:'todo',note:'engine LA+VA done; latent factors owed'},
+  {p:'6',n:'Non-Gaussian / GLLVM',st:'todo',note:'engine done; latent factors owed'},
   {p:'7',n:'CPU/GPU',st:'todo',note:'G0/G1 GPU landed'},
-  {p:'8',n:'HPC / scale',st:'todo',note:'not started'},
+  {p:'8',n:'HPC / scale',st:'todo',note:'Wave F F1/F3 landed'},
 ];
 const ROADMAP=[
-  {v:'v0.1',n:'Gaussian animal model',st:'done',note:'SHIPPED — the one covered public model'},
-  {v:'v0.4',n:'Multivariate-unstructured',st:'near',note:'closest · V4 covered + broader-DGP characterized · G10 pending',here:1},
-  {v:'v0.3',n:'Standard-QG kernels',st:'near',note:'shortest new hop · recovery + comparator owed'},
-  {v:'v0.2',n:'Genomic',st:'mid',note:'needs an external same-estimand REML comparator (BLUPF90)'},
-  {v:'v0.5',n:'QTL / markers',st:'todo',note:'calibrated genome-wide thresholds owed'},
-  {v:'v0.6',n:'Non-Gaussian / GLLVM',st:'todo',note:'latent-factor covariance + comparator owed'},
-  {v:'v0.7',n:'CPU / GPU',st:'todo',note:'backend dispatch + agreement/benchmarks (hardware)'},
-  {v:'v0.8',n:'HPC / scale',st:'todo',note:'checkpointing, distributed, national-computer'},
-  {v:'v1.0',n:'Release',st:'goal',note:'every phase covered or scoped out + CRAN/JOSS · ~3–4 months'},
+  {v:'v0.1',n:'Gaussian animal model',st:'done',
+   jl:'engine COVERED — Aᵢₙᵥ, AI-REML, EBVs, intervals, sommer/MCMCglmm legs',
+   r:'public animal-model spec + bridge + vignette — COVERED'},
+  {v:'v0.4',n:'Multivariate — unstructured',st:'done',
+   jl:'V4-MV-REML COVERED + merged (48-seed gate + sommer + BLUPF90 legs)',
+   r:'result-payload bridge wired; activate MV + FA-diagonal spec (owed)'},
+  {v:'v0.3',n:'Standard-QG kernels',st:'near',here:1,
+   jl:'two-effect REML COVERED today (gate + BLUPF90); repeatability + RR owed',
+   r:'common_env()/permanent()/rr() mapped; activate end-to-end (owed)'},
+  {v:'v0.2',n:'Genomic',st:'mid',here:1,
+   jl:'G/GBLUP/GREML + GPU GRM done; BLUPF90 GBLUP comparator + gate owed',
+   r:'genomic()/single_step() reserved → activate formula (owed)'},
+  {v:'v0.5',n:'QTL / markers',st:'todo',
+   jl:'marker_scan (uncalibrated); DRAC null-DGP thresholds + GCTA owed',
+   r:'marker_scan()/gwas() reserved → activate (owed)'},
+  {v:'v0.6',n:'Non-Gaussian / GLLVM',st:'todo',
+   jl:'NB/BetaBin/Probit/Poisson + GLLVM engine; calibration + glmmTMB owed',
+   r:'family spec + scale-labelled h² contract (owed)'},
+  {v:'v0.7',n:'CPU / GPU',st:'todo',
+   jl:'G0/G1 GPU done (CPU↔GPU ~1e-14, benchmarked); G2–G5 + benchmarks owed',
+   r:'engine-transparent — no R-facing change'},
+  {v:'v0.8',n:'HPC / scale',st:'todo',
+   jl:'Wave F F1/F3 done; F4–F8 (matrix-free PCG, distributed, checkpointing) owed',
+   r:'engine-transparent'},
+  {v:'v0.9',n:'R↔Julia bridge — the adoption feature',st:'mid',
+   jl:'result-payload contract + engine controls (~15 target paths wired); the production fitting execution path = the master gate',
+   r:'JuliaCall marshalling + per-model parity (R-via-bridge == direct Julia) + install UX + honest error/placeholder wording. Done AS-YOU-GO per covered model; v0.9 consolidates + hardens it'},
+  {v:'v1.0',n:'Release',st:'goal',
+   jl:'JOSS engine paper; reproducibility',
+   r:'CRAN (hsquared) + pkgdown; every phase covered or scoped'},
 ];
 const TEAM=[
   ['Ada','orchestrator · phase planner · integrator'],['Shannon','coordination · lanes · handoffs'],
@@ -201,10 +222,12 @@ const TEAM=[
 ];
 function renderProgramme(){
   $('phases').innerHTML=PHASES.map(p=>`<span class="pill ${stCls(p.st)}" title="${esc(p.note)}" style="${p.here?'outline:2px solid var(--acc);outline-offset:1px':''}">P${p.p} ${esc(p.n)}${p.here?' ◂':''}</span>`).join('');
-  $('roadmap').innerHTML=ROADMAP.map(m=>`<div style="display:flex;align-items:baseline;gap:11px;padding:.4rem 0;border-bottom:1px solid var(--bd)">`
-    +`<span class="pill ${stCls(m.st)}" style="min-width:48px;justify-content:center">${esc(m.v)}</span>`
-    +`<span class="strong" style="min-width:210px">${esc(m.n)}${m.here?' <span class="acc mono" style="font-size:11px">◂ current focus</span>':''}</span>`
-    +`<span class="muted" style="font-size:12.5px">${esc(m.note)}</span></div>`).join('');
+  $('roadmap').innerHTML=ROADMAP.map(m=>`<div style="padding:.5rem 0;border-bottom:1px solid var(--bd)">`
+    +`<div style="display:flex;align-items:baseline;gap:9px"><span class="pill ${stCls(m.st)}" style="min-width:46px;justify-content:center">${esc(m.v)}</span>`
+    +`<span class="strong">${esc(m.n)}</span>${m.here?' <span class="acc mono" style="font-size:11px">◂ current</span>':''}</div>`
+    +`<div style="margin:3px 0 0 55px;font-size:12px;line-height:1.5"><span style="color:#8a6fe0;font-weight:600">Julia</span> <span class="muted">${esc(m.jl)}</span></div>`
+    +`<div style="margin:1px 0 0 55px;font-size:12px;line-height:1.5"><span style="color:#4a90d9;font-weight:600">R</span> <span class="muted">${esc(m.r)}</span></div>`
+    +`</div>`).join('');
   $('team').innerHTML=`<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:5px 18px">`
     +TEAM.filter(t=>t[1]!=='—').map(t=>`<div style="font-size:13px;padding:.15rem 0"><span class="strong">${esc(t[0])}</span> <span class="muted">— ${esc(t[1])}</span></div>`).join('')+`</div>`;
 }
