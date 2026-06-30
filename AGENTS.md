@@ -9,6 +9,24 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (BLUPF90 multitrait `renumf90.par` emitter fix — Claude solo; `main` @ `c43e37c9`/#197; hsquared R twin untouched).**
+  Closed the 2026-06-29 v0.4 next-action #3. `comparator/prepare_blupf90_multitrait.jl` emitted a
+  `renumf90.par` that real `renumf90` 1.166 rejects (datafile name INLINE → renumf90 read `TRAITS` as the
+  datafile; `EFFECT … cross numer` should be `cross alpha`; `FILE_POS` missing). Rewrote `renum_lines` to the
+  verified format (separate-line `DATAFILE`; blank `FIELDS_PASSED`/`WEIGHT(S)` value-lines; `cross alpha`;
+  `FILE_POS 1 2 3 0 0`) — byte-for-byte vs `renumf90_fixed.par`, same format as the sibling
+  `prepare_blupf90_two_effect.jl`; relaxed the validator's incorrect no-blank rule; updated the `#49`
+  preflight (42/42). **Gap closed END-TO-END:** re-downloaded `renumf90` 1.166 + `blupf90+` 2.60 (UGA,
+  MKL-free, Rosetta) and RAN the regenerated packet — renumf90 accepts the emitted par DIRECTLY (no manual
+  `renumf90_fixed.par`) and `blupf90+` AI-REML converges from a NEUTRAL start (7 rounds) to the fixture
+  optimum (~1e-5). `Pkg.test()` green; CI green (Julia 1/1.10/docs/documenter); a real `rose-systems-auditor`
+  audit (**PROMOTE-WITH-CHANGES**) required three evidence-hygiene sweeps (a stale `renumf90_fixed.par`
+  reference in the `validation_status()` runtime string, the stale "follow-up" framing in the 2026-06-29
+  entry below, and the self-claimed close-out) — all applied. **Tooling-only:** `validation_status()` = 48
+  UNCHANGED (one row's evidence string swept; no status/count change), public-covered FITTING = 1, nothing
+  promoted, no API/default/R-wording change; the other lane's v0.3 work (#195/#196) landed concurrently and
+  #197 stacked clean. **START HERE:** `docs/dev-log/after-task/2026-06-30-blupf90-multitrait-emitter-fix.md`.
+
 - **As of 2026-06-29 (v0.4 multivariate-unstructured SCOPED COVERED CLOSE — Claude solo; branch `w1/2026-06-29-evidence-week-setup` @ `406f3100` + this slice, PR #194 open; hsquared R twin clean `main` `8c5c886`/#112).**
   Finished v0.4 following doc-18. `V4-MV-REML` was ALREADY `covered` at validation scale; this slice is the
   scoped RATIFICATION, not a flip. Green foundation re-established (`Pkg.test()` PASS + `docs/make.jl` exit 0 —
