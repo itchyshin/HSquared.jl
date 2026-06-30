@@ -87,6 +87,7 @@ HSquared.loco_mixed_model_marker_scan
 HSquared.marker_scan_result_payload
 HSquared.genome_wide_threshold_from_null
 HSquared.genome_wide_pvalue
+HSquared.genome_wide_marker_scan
 HSquared.gwas_table
 HSquared.qtl_table
 HSquared.eqtl_table
