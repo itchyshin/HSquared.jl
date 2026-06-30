@@ -51,6 +51,34 @@ and the V2/V3 gate seeds. No calibration result is observed before this gate is 
   designs and an external comparator (PLINK `max(T)` / GenABEL). This gate is the FIRST calibrated-type-I
   evidence, not the whole covered close.
 
-## RESULT
+## RESULT (run 2026-06-30, AFTER the predeclaration commit `55acc6ef`) — **GATE: FAIL (anti-conservative)**
 
-**PENDING** — to be filled after the predeclaration commit, then `sim/phase5_qtl_threshold_gate.jl` is run.
+`sim/phase5_qtl_threshold_gate.jl`, 20 seeds 20260900..20260919, julia 1.10.0, single-threaded:
+
+| quantity | value |
+|---|---|
+| mean empirical type-I | **0.0689** |
+| target α | 0.050 |
+| bias | **+0.0189** |
+| MCSE | 0.0078 |
+| \|bias\|/MCSE | **2.42** |
+| per-seed type-I range | [0.0220, 0.1310] |
+| perm threshold < Bonferroni | 12/20 seeds |
+
+20/20 runs completed, but `|mean type-I − α| = 0.0189 > 2·MCSE = 0.0156` → **GATE FAIL** in the
+**anti-conservative** direction: the permutation threshold is too permissive, family-wise type-I ≈ 0.069
+(~38% above the nominal 0.05).
+
+**Diagnosis (the expected failure mode, declared in advance).** The (1−α) type-7 EMPIRICAL quantile of a
+finite `nperm = 2000` permutation null is biased low, so the genome-wide threshold is a touch too small and
+over-rejects. This **confirms and quantifies** the anti-conservatism the capability-status row already
+flagged ("the type-7 quantile threshold is mildly anti-conservative at small `n_null`").
+
+**Consequence — banked NEGATIVE, no relaxation.** The V5 "calibrated genome-wide threshold" covered claim
+does **NOT** proceed on the quantile threshold; the R `gwas()` significance wording **STAYS HELD**. The
+calibrated path is the package's CONSERVATIVE add-one permutation p-value rule (`genome_wide_pvalue`, exact
+by the `(1 + #{null ≥ obs})/(nperm + 1)` construction — a valid exact permutation test controlling type-I
+at ≤ α), and/or a much larger `nperm` to debias the quantile. A future V5 slice should pre-declare a
+calibration gate on the add-one rule **and** add an external comparator (PLINK `max(T)` / GenABEL). Nothing
+promoted; `validation_status()` count, public-covered fitting = 1, and the threshold row's `experimental`
+status are unchanged by this FAIL.
