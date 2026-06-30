@@ -53,6 +53,12 @@ const SEEDS = 20262000:20262011
 function main()
     res = pmap(reuse_vs_rebuild, collect(SEEDS))
     mr = [r.t1_reuse for r in res]; mb = [r.t1_rebuild for r in res]
+    open(joinpath(@__DIR__, "..", "sim", "phase5_reuse_vs_rebuild_diagnostic.tsv"), "w") do io
+        println(io, "seed\tt1_reuse\tt1_rebuild")
+        for r in res
+            @printf(io, "%d\t%.6f\t%.6f\n", r.seed, r.t1_reuse, r.t1_rebuild)
+        end
+    end
     @printf("REUSE   mean type-I = %.4f  (range [%.4f, %.4f], MCSE %.4f)\n",
             mean(mr), minimum(mr), maximum(mr), std(mr) / sqrt(length(mr)))
     @printf("REBUILD mean type-I = %.4f  (range [%.4f, %.4f], MCSE %.4f)\n",

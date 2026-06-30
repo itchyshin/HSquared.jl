@@ -47,12 +47,19 @@ honest result than a simple PASS: the naïve gate **FAILED**, and a verified dia
 
 ## Public claim audit (Rose)
 
-Real `rose-systems-auditor` audit → [verdict folded in]. Key things for Rose to check: (1) the production FAIL
-is reported as a FAIL with no relaxation; (2) the reuse-vs-rebuild diagnosis is correctly characterized (the
-exact rule is conservative; the simulation shortcut is the anti-conservatism source) and not used to dismiss
-the negative; (3) the #203/#204 refinement is honest (the rule is sound, the reuse-shortcut evidence slightly
-overstated empirical control) and does not silently rewrite their pre-declared PASS verdicts; (4) nothing
-promoted; the REBUILD design re-sizing (m 5000→2000) was before any REBUILD result.
+Real `rose-systems-auditor` audit → **PROMOTE** (clean). Verified INDEPENDENTLY: (1) BOTH gates genuinely
+pre-registered — RESULT PENDING at the pre-run commits, criteria + harnesses byte-identical pre/post; the
+m 5000→2000 REBUILD re-size confirmed to PRECEDE any REBUILD result (the TSV did not exist until `5a731399`,
+so the re-size at `f20260cb` is tractability, not post-hoc relaxation); (2) the diagnosis is correct (REUSE =
+one null reused; REBUILD = fresh null per replicate = the exact `genome_wide_pvalue` test) and the negative is
+still BANKED as a FAIL, not explained away; (3) Rose recomputed the per-design means from the banked TSVs —
+REUSE 0.0576/0.0606/0.0559, REBUILD 0.0542/0.0504 — matching exactly; (4) the #203/#204 refinement is ADDITIVE
+(the prior PASS/PLINK sentences are byte-identical; only `missing`/`claim_boundary` changed), not a silent
+rewrite; (5) `validation_status()` independently 48/7/37, V5 `partial`, `Pkg.test()` green, count-guard +
+status pins survive, the one re-pointed `missing` pin is honest. **One non-blocking observation:** the
+reuse-vs-rebuild diagnostic banked no per-seed TSV (unlike the two gates). ADDRESSED in this slice — the
+diagnostic now writes `sim/phase5_reuse_vs_rebuild_diagnostic.tsv` and was re-run on Totoro to bank the
+per-seed detail (reproducibility parity with the gates).
 
 ## Tests of the tests
 
