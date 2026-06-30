@@ -50,6 +50,9 @@ The ~1e-5 floor is the BLUPF90 5-significant-figure stdout printout. All three v
   `V3-TWOEFFECT-REML` covered:** a covered close still needs a PRE-DECLARED bias/MCSE recovery gate (the
   existing `sim/phase3_two_effect_recovery.jl` is a 5-seed rel-threshold harness — a stronger, predeclared
   bias/MCSE gate over more seeds is owed) + a real Rose audit + maintainer G10.
+  **(Update 2026-06-30: that pre-declared bias/MCSE gate now EXISTS and PASSED —
+  `2026-06-30-v3-two-effect-recovery-gate-predeclaration.md`, 48/48 converged, all three `|bias|≤2·MCSE` —
+  so with this comparator `V3-TWOEFFECT-REML` is now COVERED-READY pending Rose [done, CLEAN] + maintainer G10.)**
 - `V3-REPEAT-REML` (repeatability, σa/σpe split ill-conditioned at validation scale) is a separate kernel —
   this leg is for the two-effect / common-environment model only.
 - Binaries + generated `renf90.*`/`renadd*.ped`/`solutions`/logs are git-ignored or untracked — none committed.
