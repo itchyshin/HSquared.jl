@@ -421,15 +421,15 @@ end
     @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
     threshold_row = only(row for row in validation if row.id == "V5-MARKER-THRESHOLD")
     @test threshold_row.phase == "Phase 5"
-    @test threshold_row.status == "partial"
+    @test threshold_row.status == "covered"   # scoped covered (doc-33 substitutable gate, 2026-06-30)
     @test occursin("fixed-marker-panel type-I smoke", threshold_row.evidence)
     @test occursin("machine-readable TSV evidence", threshold_row.evidence)
     @test occursin("0.015/0.065/0.050", threshold_row.evidence)
     @test occursin("threshold-vs-Bonferroni was mixed", threshold_row.evidence)
     @test occursin("coverage calibration", threshold_row.missing)
-    @test occursin("significance-wording activation", threshold_row.missing)
-    @test occursin("#48 gate", threshold_row.claim_boundary)
-    @test occursin("NOT YET a production genome-wide-significance claim", threshold_row.claim_boundary)
+    @test occursin("STANDING DEBT", threshold_row.missing)        # covered does not retire owed work
+    @test occursin("SCOPED", threshold_row.claim_boundary)        # scoped covered claim
+    @test occursin("FITTING = 1", threshold_row.claim_boundary)   # public default unchanged
     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
     @test isfile(marker_recovery_script)
     marker_recovery_source = read(marker_recovery_script, String)
