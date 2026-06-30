@@ -247,9 +247,9 @@ const VALIDATION_STATUS_DATA = (
         "two-effect REML (common-environment / maternal estimation)",
         "Phase 3",
         "partial",
-        "`fit_two_effect_reml` estimates (σ1, σ2, σe²) of the general two-effect model by dense REML; it equals `fit_repeatability_reml` in the `Z2=Z1, A2=I` reduction, the loglik reduces to the animal-model REML at σ2=0, and a common-environment fit converges with valid ratios, in `test/runtests.jl`. A seeded common-env sim recovers σc²/σe² well (σa² underestimated on a small confounded design) (one-off).",
-        "an RNG-based committed recovery harness, ratio intervals, larger/identifiable designs, and external comparator checks",
-        "Dense validation-scale REML; no committed recovery test, no intervals, no correlated maternal genetic, no R-facing model-spec.",
+        "`fit_two_effect_reml` estimates (σ1, σ2, σe²) of the general two-effect model by dense REML; it equals `fit_repeatability_reml` in the `Z2=Z1, A2=I` reduction, the loglik reduces to the animal-model REML at σ2=0, and a common-environment fit converges with valid ratios, in `test/runtests.jl`. The committed opt-in harness `sim/phase3_two_effect_recovery.jl` (q=860 half-sib, 80 common-environment groups assigned INDEPENDENTLY of the pedigree) recovers ALL THREE components on 5/5 predeclared seeds (the earlier σa² underestimate was a confounded-design artifact, now fixed). External same-estimand REML comparator (2026-06-30): `blupf90+` 2.60 AI-REML from a NEUTRAL start independently converges (6 rounds) on the seed-20260618 dataset to the engine (σ1²,σ2²,σe²)=(1.1457,0.4793,0.8867) to ~1e-5 (BLUPF90 printout-limited; `comparator/prepare_blupf90_two_effect.jl`, `docs/dev-log/recovery-checkpoints/2026-06-30-v3-two-effect-blupf90-comparator.md`).",
+        "ratio (σ1/σ2) intervals, a PRE-DECLARED bias/MCSE recovery gate (the 5-seed rel-threshold harness is not yet a substitutable covered gate), correlated direct–maternal genetic (2×2 G), and larger/identifiable designs",
+        "Dense validation-scale REML; the recovery harness + one external `blupf90+` same-estimand comparator leg now exist, but there is no pre-declared bias/MCSE gate, no ratio intervals, no correlated maternal genetic, and no R-facing model-spec — still partial (NOT a covered close).",
     ),
     (
         "V3-RR-REML",
