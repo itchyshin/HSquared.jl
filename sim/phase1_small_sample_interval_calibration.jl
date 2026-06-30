@@ -760,6 +760,17 @@ function _boot_n_converged(boot)
     end
 end
 
+# S1: read a nominal level's percentile CI off an already-drawn bootstrap sample,
+# using the SAME in-package type-7 quantile as bootstrap_variance_component_interval.
+function _boot_level_ci(boot, field::Symbol, level::Float64)
+    boot === nothing && return nothing
+    v = getproperty(getproperty(boot, :replicates), field)
+    isempty(v) && return nothing
+    plo = (1 - level) / 2
+    phi = (1 + level) / 2
+    return (HSquared._empirical_upper_quantile(v, plo), HSquared._empirical_upper_quantile(v, phi))
+end
+
 function _run_condition!(records, config::HarnessConfig, design, design_index::Int, h2_true::Float64, h2_index::Int)
     sigma_a2_true = h2_true
 
@@ -779,6 +790,27 @@ function _run_condition!(records, config::HarnessConfig, design, design_index::I
                 records[_detail_key(row)] = row
             end
             continue
+        end
+
+        # S1: draw the parametric bootstrap ONCE per replicate (level-independent seed),
+        # so every nominal level reads its percentile interval off the SAME draw set —
+        # halves refit cost vs the prior per-level redraw and removes crossed 90/95% intervals.
+        boot = nothing
+        boot_converged = -1
+        if config.include_bootstrap
+            boot = try
+                bootstrap_variance_component_interval(
+                    fit;
+                    level = 0.95,
+                    n_boot = config.n_boot,
+                    estimator = :ai_reml,
+                    rng = MersenneTwister(_boot_seed(rep_seed, 0)),
+                )
+            catch err
+                @warn "bootstrap interval failed" h2_true rep exception = (err, catch_backtrace())
+                nothing
+            end
+            boot_converged = _boot_n_converged(boot)
         end
 
         for (level_index, level) in pairs(config.levels)
@@ -974,20 +1006,8 @@ function _run_condition!(records, config::HarnessConfig, design, design_index::I
             )
 
             if config.include_bootstrap
-                boot_rng = MersenneTwister(_boot_seed(rep_seed, level_index))
-                boot = try
-                    bootstrap_variance_component_interval(
-                        fit;
-                        level = level,
-                        n_boot = config.n_boot,
-                        estimator = :ai_reml,
-                        rng = boot_rng,
-                    )
-                catch err
-                    @warn "bootstrap interval failed" h2_true rep level exception = (err, catch_backtrace())
-                    nothing
-                end
-                boot_converged = _boot_n_converged(boot)
+                h2_boot_ci = _boot_level_ci(boot, :heritability, level)
+                sa_boot_ci = _boot_level_ci(boot, :sigma_a2, level)
 
                 push!(
                     rows,
@@ -1006,7 +1026,7 @@ function _run_condition!(records, config::HarnessConfig, design, design_index::I
                         sigma_e2_hat,
                         vc_se,
                         h2_true,
-                        boot === nothing ? nothing : (Float64(boot.heritability_ci.lower), Float64(boot.heritability_ci.upper));
+                        h2_boot_ci;
                         failure_reason = boot === nothing ? "bootstrap_failed" : "interval_failed",
                         bootstrap_converged = boot_converged,
                     ),
@@ -1028,7 +1048,7 @@ function _run_condition!(records, config::HarnessConfig, design, design_index::I
                         sigma_e2_hat,
                         vc_se,
                         sigma_a2_true,
-                        boot === nothing ? nothing : (Float64(boot.sigma_a2_ci.lower), Float64(boot.sigma_a2_ci.upper));
+                        sa_boot_ci;
                         failure_reason = boot === nothing ? "bootstrap_failed" : "interval_failed",
                         bootstrap_converged = boot_converged,
                     ),

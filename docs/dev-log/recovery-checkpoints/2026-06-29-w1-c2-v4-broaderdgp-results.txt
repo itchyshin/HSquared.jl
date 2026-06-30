@@ -1,0 +1,114 @@
+# Campaign 2 — broader-DGP V4-MV-REML recovery (fir job 46235637, 8 cells x 50 cold-start seeds)
+# branch w1/2026-06-29-evidence-week-setup @ 73bde652 ; julia 1.10.10 ; generated on fir
+
+### cell=base_inside
+CELL base_inside nsire=8 ndam=16 noffspring=56 records=3 G0=[1.0000 0.3500; 0.3500 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=base_inside mode=aggregate aggregate_within_2mcse=true per_seed_all_pass=false gate_pass=true seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.9528   -0.0472   0.0375   yes
+  G[1,2]   0.3500   0.3238   -0.0262   0.0235   yes
+  G[2,2]   0.7000   0.7006    0.0006   0.0199   yes
+  R[1,1]   0.8000   0.7895   -0.0105   0.0130   yes
+  R[1,2]   0.2000   0.2058    0.0058   0.0072   yes
+  R[2,2]   0.5500   0.5494   -0.0006   0.0082   yes
+  EBV accuracy trait 1: mean=0.8915 sd=0.0343 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.9023 sd=0.0295 (corr of EBV-hat with true BV)
+  converged=50/50  passed=23/50  pass-rate=0.460  Wilson95%=[0.330, 0.596]
+
+### cell=rg_low
+CELL rg_low nsire=8 ndam=16 noffspring=56 records=3 G0=[1.0000 0.0837; 0.0837 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=rg_low mode=aggregate aggregate_within_2mcse=true per_seed_all_pass=false gate_pass=true seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.9501   -0.0499   0.0376   yes
+  G[1,2]   0.0837   0.0720   -0.0117   0.0201   yes
+  G[2,2]   0.7000   0.7129    0.0129   0.0205   yes
+  R[1,1]   0.8000   0.7898   -0.0102   0.0130   yes
+  R[1,2]   0.2000   0.2053    0.0053   0.0071   yes
+  R[2,2]   0.5500   0.5487   -0.0013   0.0082   yes
+  EBV accuracy trait 1: mean=0.8923 sd=0.0342 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.9048 sd=0.0274 (corr of EBV-hat with true BV)
+  converged=50/50  passed=21/50  pass-rate=0.420  Wilson95%=[0.294, 0.558]
+
+### cell=rg_high
+CELL rg_high nsire=8 ndam=16 noffspring=56 records=3 G0=[1.0000 0.5857; 0.5857 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=rg_high mode=aggregate aggregate_within_2mcse=true per_seed_all_pass=false gate_pass=true seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.9560   -0.0440   0.0371   yes
+  G[1,2]   0.5857   0.5470   -0.0387   0.0264   yes
+  G[2,2]   0.7000   0.6819   -0.0181   0.0209   yes
+  R[1,1]   0.8000   0.7889   -0.0111   0.0131   yes
+  R[1,2]   0.2000   0.2060    0.0060   0.0074   yes
+  R[2,2]   0.5500   0.5499   -0.0001   0.0080   yes
+  EBV accuracy trait 1: mean=0.8956 sd=0.0327 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.9026 sd=0.0292 (corr of EBV-hat with true BV)
+  converged=50/50  passed=28/50  pass-rate=0.560  Wilson95%=[0.423, 0.688]
+
+### cell=h2_asym
+CELL h2_asym nsire=8 ndam=16 noffspring=56 records=3 G0=[1.2000 0.2078; 0.2078 0.4000] R0=[0.4000 0.1500; 0.1500 1.0000] seeds=50
+GATE cell=h2_asym mode=aggregate aggregate_within_2mcse=true per_seed_all_pass=false gate_pass=true seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.2000   1.1463   -0.0537   0.0357   yes
+  G[1,2]   0.2078   0.1854   -0.0224   0.0204   yes
+  G[2,2]   0.4000   0.4061    0.0061   0.0167   yes
+  R[1,1]   0.4000   0.3947   -0.0053   0.0066   yes
+  R[1,2]   0.1500   0.1551    0.0051   0.0064   yes
+  R[2,2]   1.0000   0.9943   -0.0057   0.0130   yes
+  EBV accuracy trait 1: mean=0.9466 sd=0.0170 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.7925 sd=0.0626 (corr of EBV-hat with true BV)
+  converged=50/50  passed=29/50  pass-rate=0.580  Wilson95%=[0.442, 0.706]
+
+### cell=records_1
+CELL records_1 nsire=8 ndam=16 noffspring=56 records=1 G0=[1.0000 0.3500; 0.3500 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=records_1 mode=aggregate aggregate_within_2mcse=true per_seed_all_pass=false gate_pass=true seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.8818   -0.1182   0.0630   yes
+  G[1,2]   0.3500   0.2763   -0.0737   0.0414   yes
+  G[2,2]   0.7000   0.6669   -0.0331   0.0412   yes
+  R[1,1]   0.8000   0.8156    0.0156   0.0399   yes
+  R[1,2]   0.2000   0.2228    0.0228   0.0283   yes
+  R[2,2]   0.5500   0.5684    0.0184   0.0295   yes
+  EBV accuracy trait 1: mean=0.7296 sd=0.1349 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.7523 sd=0.1200 (corr of EBV-hat with true BV)
+  converged=50/50  passed=1/50  pass-rate=0.020  Wilson95%=[0.004, 0.105]
+
+### cell=size_med
+CELL size_med nsire=16 ndam=32 noffspring=112 records=3 G0=[1.0000 0.3500; 0.3500 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=size_med mode=aggregate aggregate_within_2mcse=false per_seed_all_pass=false gate_pass=false seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.9452   -0.0548   0.0181   NO
+  G[1,2]   0.3500   0.3323   -0.0177   0.0127   yes
+  G[2,2]   0.7000   0.6944   -0.0056   0.0183   yes
+  R[1,1]   0.8000   0.8125    0.0125   0.0075   yes
+  R[1,2]   0.2000   0.2012    0.0012   0.0046   yes
+  R[2,2]   0.5500   0.5414   -0.0086   0.0066   yes
+  EBV accuracy trait 1: mean=0.9010 sd=0.0236 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.9059 sd=0.0191 (corr of EBV-hat with true BV)
+  converged=50/50  passed=45/50  pass-rate=0.900  Wilson95%=[0.786, 0.957]
+
+### cell=rg_low_rec1
+CELL rg_low_rec1 nsire=8 ndam=16 noffspring=56 records=1 G0=[1.0000 0.0837; 0.0837 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=rg_low_rec1 mode=aggregate aggregate_within_2mcse=false per_seed_all_pass=false gate_pass=false seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.8723   -0.1277   0.0600   NO
+  G[1,2]   0.0837   0.0419   -0.0418   0.0374   yes
+  G[2,2]   0.7000   0.6909   -0.0091   0.0429   yes
+  R[1,1]   0.8000   0.8192    0.0192   0.0392   yes
+  R[1,2]   0.2000   0.2128    0.0128   0.0271   yes
+  R[2,2]   0.5500   0.5574    0.0074   0.0323   yes
+  EBV accuracy trait 1: mean=0.7316 sd=0.1378 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.7548 sd=0.1572 (corr of EBV-hat with true BV)
+  converged=50/50  passed=1/50  pass-rate=0.020  Wilson95%=[0.004, 0.105]
+
+### cell=rg_high_rec1
+CELL rg_high_rec1 nsire=8 ndam=16 noffspring=56 records=1 G0=[1.0000 0.5857; 0.5857 0.7000] R0=[0.8000 0.2000; 0.2000 0.5500] seeds=50
+GATE cell=rg_high_rec1 mode=aggregate aggregate_within_2mcse=false per_seed_all_pass=false gate_pass=false seeds=50
+  param    true     mean      bias     MCSE   |bias|<=2MCSE
+  G[1,1]   1.0000   0.8991   -0.1009   0.0640   yes
+  G[1,2]   0.5857   0.4904   -0.0953   0.0457   NO
+  G[2,2]   0.7000   0.6271   -0.0729   0.0415   yes
+  R[1,1]   0.8000   0.8059    0.0059   0.0397   yes
+  R[1,2]   0.2000   0.2276    0.0276   0.0297   yes
+  R[2,2]   0.5500   0.5824    0.0324   0.0262   yes
+  EBV accuracy trait 1: mean=0.7422 sd=0.1239 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.7583 sd=0.0893 (corr of EBV-hat with true BV)
+  converged=50/50  passed=1/50  pass-rate=0.020  Wilson95%=[0.004, 0.105]

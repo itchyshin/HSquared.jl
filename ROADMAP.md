@@ -6,6 +6,11 @@ The roadmap is intentionally evidence-gated. A capability is public only when
 implementation, tests, documentation, validation status, and the R-Julia
 contract agree.
 
+**Programme plan (to completion):** see
+[`docs/design/18-programme-plan-2026-06.md`](docs/design/18-programme-plan-2026-06.md) — the durable
+cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, work-unit estimates).
+Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
+
 ## Current Status
 
 Phase 0 public scaffold is complete. Phases 1-3 have landed as experimental,

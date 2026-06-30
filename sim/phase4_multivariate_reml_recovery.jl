@@ -48,6 +48,11 @@ struct MultivariateRecoveryConfig
     threshold_g::Float64
     threshold_r::Float64
     cold_start::Bool
+    g0::Matrix{Float64}
+    r0::Matrix{Float64}
+    cell::String
+    gate_aggregate::Bool
+    max_cond::Float64
 end
 
 function _parse_args(args)
@@ -85,7 +90,29 @@ function _parse_args(args)
     cold_start = cold_raw in ("true", "1", "")
     cold_start || cold_raw == "false" ||
         throw(ArgumentError("--cold-start takes no value or true/false, got $cold_raw"))
-    return seeds, iterations, threshold_g, threshold_r, cold_start
+    # S2: DGP cell (defaults reproduce the legacy hardcoded cell) + design + gate mode,
+    # so a SLURM array can sweep a pre-declared {r_g, h2-balance, size, records} factorial.
+    nsire = parse(Int, get(opts, "nsire", "8"))
+    ndam = parse(Int, get(opts, "ndam", "16"))
+    noffspring = parse(Int, get(opts, "noffspring", "56"))
+    records = parse(Int, get(opts, "records", "3"))
+    g11 = parse(Float64, get(opts, "g11", "1.0"))
+    g12 = parse(Float64, get(opts, "g12", "0.35"))
+    g22 = parse(Float64, get(opts, "g22", "0.7"))
+    r11 = parse(Float64, get(opts, "r11", "0.8"))
+    r12 = parse(Float64, get(opts, "r12", "0.2"))
+    r22 = parse(Float64, get(opts, "r22", "0.55"))
+    g0 = [g11 g12; g12 g22]
+    r0 = [r11 r12; r12 r22]
+    cell = get(opts, "cell", "default")
+    gate_raw = get(opts, "gate", "aggregate")
+    gate_raw in ("aggregate", "per-seed") ||
+        throw(ArgumentError("--gate must be aggregate or per-seed, got $gate_raw"))
+    max_cond = parse(Float64, get(opts, "max-cond", "1.0e6"))
+    return (seeds = seeds, nsire = nsire, ndam = ndam, noffspring = noffspring,
+            records = records, iterations = iterations, threshold_g = threshold_g,
+            threshold_r = threshold_r, cold_start = cold_start, g0 = g0, r0 = r0,
+            cell = cell, gate_aggregate = (gate_raw == "aggregate"), max_cond = max_cond)
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -112,8 +139,14 @@ function _simulate_repeated_records(config::MultivariateRecoveryConfig)
     q = length(ped.ids)
     t = 2
 
-    Gtrue = [1.0 0.35; 0.35 0.7]
-    Rtrue = [0.8 0.2; 0.2 0.55]
+    Gtrue = config.g0
+    Rtrue = config.r0
+    # S2: reject degenerate / near-singular DGP cells (the out-of-scope vacuous-pass trap,
+    # Rose) — the dense A=inv(Ainv)+Cholesky simulation must stay well-conditioned.
+    isposdef(Symmetric(Gtrue)) || throw(ArgumentError("G0 must be positive definite, got $Gtrue"))
+    isposdef(Symmetric(Rtrue)) || throw(ArgumentError("R0 must be positive definite, got $Rtrue"))
+    cond(Symmetric(Gtrue)) <= config.max_cond ||
+        throw(ArgumentError("cond(G0)=$(round(cond(Symmetric(Gtrue)); digits=1)) exceeds --max-cond=$(config.max_cond) (near-singular cell is out of scope)"))
     LA = cholesky(Symmetric(A)).L
     LG = cholesky(Symmetric(Gtrue)).L
     LR = cholesky(Symmetric(Rtrue)).L
@@ -222,7 +255,8 @@ end
 # EBV accuracy; convergence count; and a Wilson 95% CI on the pass proportion.
 function _print_aggregate(results)
     m = length(results)
-    m >= 2 || return
+    m >= 2 || return missing
+    within_count = 0
     params = (
         ("G[1,1]", r -> r.genetic_covariance[1, 1], r -> r.gtrue[1, 1]),
         ("G[1,2]", r -> r.genetic_covariance[1, 2], r -> r.gtrue[1, 2]),
@@ -241,6 +275,7 @@ function _print_aggregate(results)
         mcse = sd / sqrt(m)
         bias = mean_est - truth
         within = abs(bias) <= 2 * mcse
+        within && (within_count += 1)
         @printf("  %-7s %7.4f %8.4f %9.4f %8.4f   %s\n",
             name, truth, mean_est, bias, mcse, within ? "yes" : "NO")
     end
@@ -257,21 +292,37 @@ function _print_aggregate(results)
     lo, hi = _wilson(passes, m)
     @printf("  converged=%d/%d  passed=%d/%d  pass-rate=%.3f  Wilson95%%=[%.3f, %.3f]\n",
         conv, m, passes, m, passes / m, lo, hi)
+    return within_count == length(params)
 end
 
 function main(args = ARGS)
-    seeds, iterations, threshold_g, threshold_r, cold_start = _parse_args(args)
-    @printf("START multivariate REML recovery (%s)\n", cold_start ? "COLD-START (default init)" : "warm-start at truth")
+    p = _parse_args(args)
+    @printf("START multivariate REML recovery cell=%s (%s)\n",
+        p.cell, p.cold_start ? "COLD-START (default init)" : "warm-start at truth")
+    @printf("CELL %s nsire=%d ndam=%d noffspring=%d records=%d G0=[%.4f %.4f; %.4f %.4f] R0=[%.4f %.4f; %.4f %.4f] seeds=%d\n",
+        p.cell, p.nsire, p.ndam, p.noffspring, p.records,
+        p.g0[1, 1], p.g0[1, 2], p.g0[2, 1], p.g0[2, 2],
+        p.r0[1, 1], p.r0[1, 2], p.r0[2, 1], p.r0[2, 2], length(p.seeds))
     results = Any[]
-    for seed in seeds
-        result = _run(MultivariateRecoveryConfig(seed, 8, 16, 56, 3, iterations, threshold_g, threshold_r, cold_start))
+    for seed in p.seeds
+        result = _run(MultivariateRecoveryConfig(seed, p.nsire, p.ndam, p.noffspring,
+            p.records, p.iterations, p.threshold_g, p.threshold_r, p.cold_start,
+            p.g0, p.r0, p.cell, p.gate_aggregate, p.max_cond))
         _print_result(result)
         push!(results, result)
         flush(stdout)
     end
     _print_summary(results)
-    _print_aggregate(results)
-    all(result.pass for result in results) || exit(1)
+    agg = _print_aggregate(results)
+    # S2: the AUTHORITATIVE gate is the aggregate bias/MCSE block (doc-33), NOT the
+    # per-seed Frobenius pass (which trips exit(1) on a single noisy seed). Emit a
+    # machine-readable GATE line for ingestion; exit reflects the chosen gate.
+    per_seed_pass = all(result.pass for result in results)
+    gate_pass = p.gate_aggregate ? (agg === missing ? per_seed_pass : agg) : per_seed_pass
+    @printf("GATE cell=%s mode=%s aggregate_within_2mcse=%s per_seed_all_pass=%s gate_pass=%s seeds=%d\n",
+        p.cell, p.gate_aggregate ? "aggregate" : "per-seed",
+        agg === missing ? "na" : string(agg), string(per_seed_pass), string(gate_pass), length(p.seeds))
+    gate_pass || exit(1)
     return nothing
 end
 
