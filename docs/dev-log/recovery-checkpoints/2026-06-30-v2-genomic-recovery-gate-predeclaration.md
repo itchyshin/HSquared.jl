@@ -47,6 +47,27 @@ two-effect gate's (20260700..20260747), so no result is observed before this gat
 - Either way: `validation_status()` count, public-covered fitting = 1, and the comparator evidence (PR #200)
   are unaffected by the gate OUTCOME; only a PASS + Rose + G10 would move the row to covered.
 
-## RESULT
+## RESULT (run 2026-06-30, AFTER the predeclaration commit `cb22e679`) — **GATE: PASS**
 
-**PENDING** — to be filled after the predeclaration commit, then `sim/phase2_genomic_reml_recovery.jl` is run.
+`sim/phase2_genomic_reml_recovery.jl`, 48 seeds 20260800..20260847, julia 1.10.0,
+`JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1`:
+
+| component | mean | truth | bias | MCSE | \|bias\|/MCSE | verdict |
+|---|---|---|---|---|---|---|
+| σ²g (genomic additive) | 0.5908 | 0.60 | −0.0092 | 0.0222 | 0.41 | PASS |
+| σ²e (residual) | 0.4061 | 0.40 | +0.0061 | 0.0192 | 0.32 | PASS |
+| h² | 0.5902 | 0.60 | −0.0098 | 0.0195 | 0.50 | PASS |
+
+**48/48 converged; all three `|bias| ≤ 2·MCSE` → GATE PASS.** Read as NO DETECTABLE across-seed bias —
+**never "unbiased"**: σ²g sits −1.5% (0.41·MCSE) below truth and h² −1.6% (0.50·MCSE, the largest
+standardized residual), consistent with small-sample REML behaviour (the same honest reading as
+V3-TWOEFFECT-REML's σ1² and V4-MV-REML's G[1,1]). The downward σ²g tilt is the expected REML
+finite-sample direction, within tolerance.
+
+**Consequence:** `V2-GREML` now has BOTH doc-18-§priority-3-owed pieces — this pre-declared bias/MCSE
+gate (PASS) + the executed `blupf90+` 2.60 same-estimand comparator
+(`2026-06-30-v2-genomic-blupf90-comparator.md`, PR #200). It is **covered-READY**. The
+`partial → covered` promotion is the maintainer's non-delegable, atomic **G10** (a separate promotion PR);
+this run does NOT flip the status. SCOPE OF VALIDITY: supplied-`Ginv` REML estimator, exact-model recovery,
+N=300 single design point — G-construction parity (`V2-GRM`), broader N/M/h² designs, and the `sommer`
+2nd REML leg remain owed even after a covered close.
