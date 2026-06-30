@@ -38,7 +38,16 @@ Claude solo, branch `feat/2026-06-30-v5-addone-design-sweep`.
 
 ## Public claim audit (Rose)
 
-Real `rose-systems-auditor` audit launched on the committed slice. [Verdict folded in once it returns.]
+Real `rose-systems-auditor` audit on the committed slice → **PROMOTE** (clean; one soft non-blocking wording
+caveat, applied). Verified INDEPENDENTLY: (1) `git diff fa159abc 2202d5be -- sim/phase5_qtl_addone_design_sweep.jl`
+is EMPTY and the included `run_addone_calibration` source is unchanged → no post-hoc relaxation; (2) Rose
+**re-ran the sweep** and reproduced GATE PASS to the digit (means 0.068/0.058/0.061); (3) NO status flip —
+`validation_status()` independently 48/covered 7/partial 37, V5 stays `partial`, surfaces frame this as
+hardening "type-I CONTROL," not a covered/calibrated claim, and the means-above-α point is stated honestly not
+hidden; (4) blocker map verified (`which plink plink2 gcta64 gemma` → none; R `gwas()` leg is the Codex/hsquared
+lane), and the report nowhere claims v0.5 "covered/finished"; (5) honest-scope fence intact (one LD scheme,
+intercept-only, type-I only — no power/LD-architecture claim). Rose's soft caveat (leg-1 "✅ DONE" marginally
+stronger than "type-I-control done") was applied verbatim — leg 1 now reads "type-I-control DONE."
 
 ## Tests of the tests
 
@@ -53,8 +62,10 @@ Real `rose-systems-auditor` audit launched on the committed slice. [Verdict fold
 
 v0.5 (QTL) covered requires three legs (doc-18 line 100/120-122). Their true status:
 
-1. **Calibrated genome-wide thresholds (null-DGP sims)** — ✅ DONE in this lane: the #203 single-design add-one
-   gate PASS + this design-grid sweep PASS. Type-I control of the add-one rule is established at four designs.
+1. **Calibrated genome-wide thresholds (null-DGP sims)** — ✅ type-I-control DONE in this lane: the #203
+   single-design add-one gate PASS + this design-grid sweep PASS. Type-I control of the add-one rule is
+   established at four designs. (The FULL "calibrated thresholds" leg also entails the external comparator,
+   below — so this is the type-I-control half, not the whole leg.)
 2. **External comparator (PLINK `max(T)` / GCTA / GenABEL)** — ⛔ BLOCKED in this session. No comparator binary
    is installed (`which plink plink2 gcta64 gemma` → none; matches hsquared #83's recorded blocker). Obtaining
    one requires downloading + running an external binary, which the auto-mode classifier DENIED under the
