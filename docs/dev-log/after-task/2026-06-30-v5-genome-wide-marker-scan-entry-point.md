@@ -40,10 +40,19 @@ validated machinery; the covered flip is the coordinated cross-twin move after t
 
 ## Public claim audit (Rose)
 
-Real `rose-systems-auditor` audit → [verdict folded in]. Check: (1) the entry point uses the EXACT per-dataset
-rule (rebuilt null), not the reuse shortcut or the failed quantile rule; (2) FIXED-effect scope is stated and the
-mixed-model null is explicitly out of scope; (3) nothing promoted, count unchanged, `gwas()` held; (4) the
-fixture is deterministic + reproduced.
+Real `rose-systems-auditor` audit → **PROMOTE** (clean; one optional housekeeping note, applied). Verified
+INDEPENDENTLY: (1) the entry point is byte-for-byte the production-validated REBUILD procedure (permute THIS y's
+residuals conditional on X; add-one `genome_wide_pvalue` decision; the `(1-alpha)` threshold is display-only),
+NOT the reuse shortcut and NOT the failed quantile rule — Rose re-derived the REBUILD type-I (0.0542/0.0504)
+from `sim/phase5_rebuild_production_gate.tsv` and confirmed the pre-registration ordering; (2) FIXED-effect scope
+stated in docstring + status + after-task, mixed-model null explicitly out of scope; (3) `validation_status()`
+independently 48/covered 7/partial 37, V5 stays `partial`, evidence APPENDED (no row/status change), count-guard
+passes, nothing promoted, `gwas()` held; (4) Rose regenerated the fixture with the pinned seed and diffed —
+chisq + genome-wide p max-abs-diff 0.0; (5) no "finishes R activation/v0.5" overclaim (framed as the engine
+foundation; the R activation + covered flip left owed). NOTE: a later CI fix relaxed the fixture's
+genome-wide-p assertion to STRUCTURAL checks (the permutation `MersenneTwister` stream is not stable across Julia
+MAJOR versions — Julia 1.11 produced different p's; the deterministic `chisq` parity is kept exact, and the R
+LIVE bridge checks exact parity within a single Julia version).
 
 ## Tests of the tests
 

@@ -4670,9 +4670,14 @@ end
     @test_throws ArgumentError genome_wide_marker_scan(y, X, M; alpha = 0.0)
     @test_throws ArgumentError genome_wide_marker_scan(y, X, M; sigma_e2 = -1.0)
 
-    # (11) R-bridge parity fixture: regenerating with the fixture's pinned seed
-    # reproduces the committed payload EXACTLY (keeps the cross-twin fixture in sync;
-    # the R `gwas(..., genome_wide = TRUE)` bridge tests against the same CSVs).
+    # (11) R-bridge parity fixture. The scan fields (effects/chisq) are DETERMINISTIC
+    # (no RNG) and pinned EXACTLY against the committed payload. The genome-wide
+    # p-values come from a permutation null, whose MersenneTwister stream is NOT stable
+    # across Julia MAJOR versions — so they are checked STRUCTURALLY (valid add-one p's,
+    # monotone in chisq, the planted causal genome-wide significant), NOT for exact
+    # cross-version byte-identity. The fixture's stored genome_wide_p_value column is the
+    # Julia-1.10 reference; the R `gwas(..., genome_wide = TRUE)` LIVE bridge checks exact
+    # parity against the SAME Julia it calls (a within-version property).
     fdir = joinpath(@__DIR__, "fixtures", "genome_wide_scan_parity")
     _, fph = _csv_strings_for_test(joinpath(fdir, "phenotypes.csv"))
     yf = parse.(Float64, fph[:, 2])
@@ -4685,8 +4690,11 @@ end
                                  n_permutations = 300, alpha = 0.05,
                                  marker_ids = fmids, rng = MersenneTwister(20264200))
     @test sf.marker_ids == vec(pr[:, 1])
-    @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8
-    @test sf.genome_wide_p_values ≈ parse.(Float64, pr[:, end]) rtol = 1e-12
+    @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8          # deterministic
+    @test all(0 .< sf.genome_wide_p_values .<= 1)                    # valid add-one p's
+    ordf = sortperm(sf.chisq)
+    @test issorted(sf.genome_wide_p_values[ordf]; rev = true)        # monotone in chisq
+    @test sf.genome_wide_p_values[argmax(sf.chisq)] < 0.05           # planted causal sig
 end
 
 @testset "Phase 2 dense NRM helper" begin
