@@ -9,6 +9,24 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (session resume: #198 merge + h² scale contract + genomic BLUPF90 comparator — Claude solo; branch `docs/2026-06-30-h2-contract-genomic-comparator`, PR pending; `main` @ `948527cd`/#198).**
+  Resumed a frozen session; three maintainer asks. (a) **#198 MERGED** (`948527cd`, CI green; RR k=2 covered
+  aim + non-Gaussian family plan); local `main` ff'd; the mission-control board (`:8791`) had died with the
+  frozen session → **restored + regenerated** (`public_covered=1` pin intact). (b) The paused **v0.2 genomic
+  comparator is RUN + PASSES**: `blupf90+` 2.60 AI-REML on the same-`Ginv` isolation packet
+  (`comparator/prepare_blupf90_genomic.jl`, N=300/M=1000) converges from a NEUTRAL start (6 rounds) to
+  `fit_gblup_reml`'s optimum — σ²g/σ²e/h² agree to ~1e-5 (BLUPF90 5-sig-fig floor) — the same-estimand REML
+  leg doc-18 §priority-3 flagged owed; banked as a recovery-checkpoint + a `V2-GREML` clause (point-estimate /
+  single fixture / same-`Ginv`; **stays `partial`** — committed recovery study + `sommer`/`rrBLUP` 2nd leg +
+  `V2-GRM` G-construction still owed). (c) The **h² scale contract is pinned** (`docs/design/19-h2-scale-contract.md`)
+  and **literature-verified** against a new trusted-PDF NotebookLM page (de Villemereuil 2016 / NS 2017 /
+  Dempster–Lerner): π²/3-placement, QGglmm-integration vs NS-delta `1/[p(1−p)]`, `h²_obs=h²_liab·z²/[p(1−p)]`,
+  probit-latent=liability, cloglog π²/6 — all confirmed. `Pkg.test()` green (count-guard 48 intact); **real
+  Rose audit → PROMOTE (clean, all pins verified independently)**; nothing promoted; `validation_status()`=48;
+  public-covered FITTING=1. **NEXT (maintainer-directed): code v0.2 (committed recovery study) → v0.4
+  (broader-DGP MV recovery + in-suite `sommer`) → v0.5 (QTL null-DGP thresholds + `marker_scan()`).**
+  START HERE: `docs/dev-log/after-task/2026-06-30-h2-contract-genomic-comparator-resume.md`.
+
 - **As of 2026-06-30 (BLUPF90 multitrait `renumf90.par` emitter fix — Claude solo; `main` @ `c43e37c9`/#197; hsquared R twin untouched).**
   Closed the 2026-06-29 v0.4 next-action #3. `comparator/prepare_blupf90_multitrait.jl` emitted a
   `renumf90.par` that real `renumf90` 1.166 rejects (datafile name INLINE → renumf90 read `TRAITS` as the
