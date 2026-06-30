@@ -58,6 +58,25 @@ NEGATIVE and a genuine surprise.
 - `nperm=500` per replicate (the add-one floor is 1/501 ≈ 0.002; adequate for α=0.05 decisions). The exact
   rule's ≤ α property is `nperm`-independent (Phipson–Smyth); larger nperm only sharpens power.
 
-## RESULT (run AFTER the predeclaration commit) — **PENDING**
+## RESULT (run 2026-06-30 on Totoro, AFTER the predeclaration commits `5b7e9b09`/`f20260cb`) — **GATE: PASS**
 
-To be filled in by `sim/phase5_qtl_rebuild_production_gate.jl` (Totoro run) after this file is committed.
+`sim/phase5_qtl_rebuild_production_gate.jl`, 40 workers, 40 cells, 46.3 min:
+
+| design (n, m) | seeds | mean type-I | excess (mean − α) | 2·MCSE | per-seed range | verdict |
+|---|---|---|---|---|---|---|
+| (500, 2000)  | 20 | 0.0542 | +0.0042 | 0.0098 | [0.017, 0.092] | PASS |
+| (1000, 2000) | 20 | 0.0504 | +0.0004 | 0.0080 | [0.017, 0.083] | PASS |
+
+**Overall GATE PASS.** The EXACT per-dataset add-one rule (a fresh permutation null built from each analyzed
+phenotype — the procedure real `gwas()` uses) controls family-wise type-I right at α at realistic scale
+(m=2000): means **0.0542 / 0.0504**, essentially nominal, vs the REUSE shortcut's 0.056–0.061 on comparable
+designs. This is the empirical complement to the reuse-shortcut NEGATIVE and confirms the Phipson–Smyth ≤α
+construction at production-scale marker counts.
+
+**Reading.** The exact rule is well-calibrated (means at α, not anti-conservative). Combined with the
+diagnostic (REUSE 0.0642 vs REBUILD 0.0478) and the theorem, this establishes: the per-dataset add-one rule —
+what real `gwas()` will use — controls type-I; the type-I-SIMULATION's fixed-null-reuse shortcut (used by the
+production REUSE campaign and #203/#204) is the (small, documented) anti-conservatism source. NOTHING promoted;
+`validation_status()` count, public-covered fitting = 1, and `gwas()` wording are unchanged — V5 covered still
+owes the R `gwas()`/`marker_scan()` activation. NO post-hoc relaxation (criterion fixed before the run; the
+m 5000→2000 re-size was a tractability change made before any REBUILD result existed).
