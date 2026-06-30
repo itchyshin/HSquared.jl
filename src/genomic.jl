@@ -2423,3 +2423,101 @@ function genome_wide_pvalue(observed::Real, null_max_statistics::AbstractVector{
         throw(ArgumentError("null_max_statistics must be finite"))
     return (1 + count(>=(Float64(observed)), nulls)) / (length(nulls) + 1)
 end
+
+"""
+    genome_wide_marker_scan(y, X, markers; n_permutations = 1000, alpha = 0.05,
+                            sigma_e2 = 1.0, allele_frequencies = nothing,
+                            marker_ids = nothing, rng = Random.default_rng())
+
+Genome-wide-CALIBRATED fixed-effect single-marker scan. Runs [`single_marker_scan`](@ref),
+then builds a PER-DATASET residual-permutation null of the per-scan MAXIMUM chi-square
+(permute the residuals of `y` on `X`, re-scan `n_permutations` times) and returns the
+exact/conservative add-one genome-wide p-value ([`genome_wide_pvalue`](@ref)) for the
+observed maximum AND for each marker, plus the `(1 - alpha)` permutation threshold.
+
+This is the EXACT per-dataset permutation test (Phipson–Smyth add-one): the null is rebuilt
+for THIS `y`, NOT reused across datasets. Its family-wise type-I control is validated at
+validation scale (`sim/phase5_qtl_addone_gate.jl` + `…_design_sweep.jl`) AND production scale
+(`sim/phase5_qtl_rebuild_production_gate.jl`, type-I at α). The fixed-null-REUSE shortcut is
+mildly anti-conservative (a documented simulation caveat); this per-dataset rule is the
+calibrated path.
+
+SCOPE: fixed-effect `X` only (intercept or supplied covariates) — the validated calibration.
+The relatedness-corrected MIXED-model genome-wide null (permuting under `V = σ²a ZAZ' + σ²e I`)
+is a DIFFERENT, not-yet-validated calibration and is NOT this function.
+
+Returns the [`single_marker_scan`](@ref) fields plus `genome_wide_p_values` (per marker),
+`genome_wide_threshold`, `genome_wide_p_min` (the top marker's genome-wide p), `n_permutations`,
+`alpha`, `null_max`, a `calibration` NamedTuple, and `target = :genome_wide_marker_scan`.
+"""
+function genome_wide_marker_scan(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    markers::AbstractMatrix;
+    n_permutations::Integer = 1000,
+    alpha::Real = 0.05,
+    sigma_e2::Real = 1.0,
+    allele_frequencies::Union{Nothing,AbstractVector} = nothing,
+    marker_ids = nothing,
+    rng::AbstractRNG = Random.default_rng(),
+)
+    n_permutations > 0 || throw(ArgumentError("n_permutations must be positive"))
+    0 < alpha < 1 || throw(ArgumentError("alpha must be in (0, 1)"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+
+    scan = single_marker_scan(y, X, markers; sigma_e2 = sigma_e2,
+                              allele_frequencies = allele_frequencies,
+                              marker_ids = marker_ids)
+
+    yv = Float64.(y)
+    Xmat = Matrix{Float64}(X)
+    n = length(yv)
+    # residual permutation conditional on X (the per-dataset null)
+    beta = Symmetric(transpose(Xmat) * Xmat) \ (transpose(Xmat) * yv)
+    fitted = Xmat * beta
+    resid = yv .- fitted
+    null_max = Vector{Float64}(undef, n_permutations)
+    for i in 1:n_permutations
+        yp = fitted .+ resid[randperm(rng, n)]
+        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = sigma_e2,
+                                allele_frequencies = allele_frequencies,
+                                marker_ids = marker_ids)
+        null_max[i] = _scan_max_statistic(sc; statistic = :chisq)
+    end
+
+    thr = genome_wide_threshold_from_null(null_max; alpha = alpha, statistic = :chisq)
+    genome_wide_p_values = [genome_wide_pvalue(c, null_max) for c in scan.chisq]
+    obs_max = maximum(scan.chisq)
+    genome_wide_p_min = genome_wide_pvalue(obs_max, null_max)
+
+    return (
+        marker_ids = scan.marker_ids,
+        effects = scan.effects,
+        standard_errors = scan.standard_errors,
+        z_scores = scan.z_scores,
+        chisq = scan.chisq,
+        p_values = scan.p_values,
+        bonferroni_p_values = scan.bonferroni_p_values,
+        bh_q_values = scan.bh_q_values,
+        lod_scores = scan.lod_scores,
+        denominators = scan.denominators,
+        p = scan.p,
+        k = scan.k,
+        genome_wide_p_values = genome_wide_p_values,
+        genome_wide_threshold = thr.threshold,
+        genome_wide_p_min = genome_wide_p_min,
+        n_permutations = Int(n_permutations),
+        alpha = Float64(alpha),
+        null_max = null_max,
+        calibration = (
+            method = :permutation_addone,
+            alpha = Float64(alpha),
+            n_permutations = Int(n_permutations),
+            threshold = thr.threshold,
+            statistic = :chisq,
+            marker_panel_mode = :fixed,
+            rebuilt_per_dataset = true,
+        ),
+        target = :genome_wide_marker_scan,
+    )
+end

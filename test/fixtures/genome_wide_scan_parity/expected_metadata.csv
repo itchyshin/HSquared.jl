@@ -1,0 +1,13 @@
+field,value
+engine,HSquared.jl
+target,genome_wide_marker_scan
+n_markers,4
+seed,20264200
+n_permutations,300
+alpha,0.05
+calibration_method,permutation_addone
+rebuilt_per_dataset,true
+marker_panel_mode,fixed
+genome_wide_threshold,9.000767881417556
+genome_wide_p_min,0.0033222591362126247
+top_marker,m2

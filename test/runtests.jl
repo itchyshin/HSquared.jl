@@ -4605,6 +4605,90 @@ end
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation_status()]
 end
 
+@testset "genome_wide_marker_scan (R-activation entry point, exact per-dataset rule)" begin
+    rng = MersenneTwister(20264100)
+    n, m = 200, 40
+    X = ones(n, 1)
+    # build a small correlated panel + one planted causal marker
+    M = Float64.(rand(rng, 0:2, n, m))
+    causal = 10
+    gc = M[:, causal] .- (sum(M[:, causal]) / n)
+    y = 2.0 .+ 0.7 .* gc .+ randn(rng, n)
+
+    scan = genome_wide_marker_scan(y, X, M; n_permutations = 300, alpha = 0.05,
+                                   rng = MersenneTwister(99))
+
+    # (1) reduces to single_marker_scan on the per-marker fields (same y/X/M)
+    base = single_marker_scan(y, X, M)
+    @test scan.effects ≈ base.effects
+    @test scan.chisq ≈ base.chisq
+    @test scan.p_values ≈ base.p_values
+    @test scan.marker_ids == base.marker_ids
+
+    # (2) genome-wide p-values are valid add-one p's: in (0, 1], never zero,
+    # bounded below by the add-one floor 1/(nperm+1)
+    @test length(scan.genome_wide_p_values) == m
+    @test all(0 .< scan.genome_wide_p_values .<= 1)
+    @test minimum(scan.genome_wide_p_values) >= 1 / (scan.n_permutations + 1) - 1e-12
+
+    # (3) genome_wide_p_min is the top marker's genome-wide p (= min over markers)
+    @test scan.genome_wide_p_min == minimum(scan.genome_wide_p_values)
+    @test scan.genome_wide_p_min == genome_wide_pvalue(maximum(scan.chisq), scan.null_max)
+
+    # (4) per-marker genome-wide p is monotone non-increasing in the marker chisq
+    ord = sortperm(scan.chisq)
+    @test issorted(scan.genome_wide_p_values[ord]; rev = true)
+
+    # (5) the planted causal marker is the top hit and genome-wide significant here
+    @test argmax(scan.chisq) == causal
+    @test scan.genome_wide_p_min < 0.05
+
+    # (6) threshold matches genome_wide_threshold_from_null on the same null
+    thr = genome_wide_threshold_from_null(scan.null_max; alpha = 0.05)
+    @test scan.genome_wide_threshold == thr.threshold
+
+    # (7) determinism: same rng seed -> identical genome-wide p's
+    scan2 = genome_wide_marker_scan(y, X, M; n_permutations = 300, alpha = 0.05,
+                                    rng = MersenneTwister(99))
+    @test scan2.genome_wide_p_values == scan.genome_wide_p_values
+
+    # (8) calibration payload describes the exact per-dataset rule
+    @test scan.calibration.method === :permutation_addone
+    @test scan.calibration.rebuilt_per_dataset === true
+    @test scan.calibration.n_permutations == 300
+    @test scan.calibration.alpha == 0.05
+    @test scan.target === :genome_wide_marker_scan
+
+    # (9) a PURE-NULL dataset is not spuriously genome-wide significant at the floor
+    ynull = 2.0 .+ randn(MersenneTwister(7), n)
+    snull = genome_wide_marker_scan(ynull, X, M; n_permutations = 300,
+                                    rng = MersenneTwister(7))
+    @test snull.genome_wide_p_min > 1 / (snull.n_permutations + 1)
+
+    # (10) input guards
+    @test_throws ArgumentError genome_wide_marker_scan(y, X, M; n_permutations = 0)
+    @test_throws ArgumentError genome_wide_marker_scan(y, X, M; alpha = 0.0)
+    @test_throws ArgumentError genome_wide_marker_scan(y, X, M; sigma_e2 = -1.0)
+
+    # (11) R-bridge parity fixture: regenerating with the fixture's pinned seed
+    # reproduces the committed payload EXACTLY (keeps the cross-twin fixture in sync;
+    # the R `gwas(..., genome_wide = TRUE)` bridge tests against the same CSVs).
+    fdir = joinpath(@__DIR__, "fixtures", "genome_wide_scan_parity")
+    _, fph = _csv_strings_for_test(joinpath(fdir, "phenotypes.csv"))
+    yf = parse.(Float64, fph[:, 2])
+    fmh, fmr = _csv_strings_for_test(joinpath(fdir, "markers.csv"))
+    fmids = fmh[2:end]
+    Mf = parse.(Float64, fmr[:, 2:end])
+    ph, pr = _csv_strings_for_test(joinpath(fdir, "expected_genome_wide_scan_payload.csv"))
+    @test ph[end] == "genome_wide_p_value"
+    sf = genome_wide_marker_scan(yf, ones(length(yf), 1), Mf;
+                                 n_permutations = 300, alpha = 0.05,
+                                 marker_ids = fmids, rng = MersenneTwister(20264200))
+    @test sf.marker_ids == vec(pr[:, 1])
+    @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8
+    @test sf.genome_wide_p_values ≈ parse.(Float64, pr[:, end]) rtol = 1e-12
+end
+
 @testset "Phase 2 dense NRM helper" begin
     ids = [1, 2, 3, 4, 5]; sire = [0, 0, 1, 1, 3]; dam = [0, 0, 2, 2, 4]   # 5=(3x4), full-sib parents
     ped = normalize_pedigree(ids, sire, dam)
