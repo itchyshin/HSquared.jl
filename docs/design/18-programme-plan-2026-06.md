@@ -51,9 +51,14 @@ review/search fan-out within one session, and order-free `[solo]` slices — nev
 ## Phase maps — distance-to-gate governs execution; the version ladder is release-naming only
 
 Release ladder (naming): v0.1 Gaussian ✅ → v0.2 genomic → v0.3 standard-QG → v0.4 multivariate (+4B FA)
-→ v0.5 QTL → v0.6 non-Gaussian → v0.7 GPU → v0.8 HPC. **The lanes number their phases differently** (the
-engine by capability layering, R by what-users-get-next); they are not a shared coordinate system, so
-execution is ordered by *distance to the covered gate*, not by phase/version number.
+→ v0.5 QTL → v0.6 non-Gaussian → v0.7 GPU → v0.8 HPC → **v0.9 R↔Julia bridge consolidation** → v1.0 release.
+**The lanes number their phases differently** (the engine by capability layering, R by what-users-get-next);
+they are not a shared coordinate system, so execution is ordered by *distance to the covered gate*, not by
+phase/version number. **The R↔Julia bridge is one-way (R calls Julia via JuliaCall; Julia never calls R) and
+is the load-bearing adoption feature** (R audience + Julia speed). Bridge activation happens AS-YOU-GO — each
+covered engine model should get its R-facing exposure + parity test alongside — with **v0.9** the dedicated
+consolidation/hardening + the production-fitting execution path (the master gate). Honest current state: the
+engine leads; the R-lane bridge activation for the covered models (V4-MV, V3-two-effect) is owed.
 
 - Engine (−1…8): 0 scaffold (public default) · 1 Gaussian 🧪 · 2 genomic 🧪 · 3 QG+inheritance 🧪 · 4 MV 🧪 · 4B FA 🧪 (recovery did not pass) · 5 QTL 🧪 · 6 non-Gaussian ⛔ · 7 GPU ⛔ (G0/G1 landed) · 8 HPC ⛔.
 - R (0…8): 1 Gaussian ✅ covered · 2 QG 🧪 · 3 MV 🧪 · 4 FA-diagonal 🧪 · 5 genomic+single-step 🧪 · 6 non-Gaussian 🧪 · 7 inheritance ⛔ · 8 scale ⛔.

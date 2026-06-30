@@ -100,7 +100,7 @@
   </div>
 
   <div class="card">
-    <p class="lbl"><i class="ti ti-flag-3"></i> Roadmap to v1.0 <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— per version: <span style="color:#8a6fe0;font-weight:600">Julia</span> (HSquared.jl engine) &amp; <span style="color:#4a90d9;font-weight:600">R</span> (hsquared public language); ordered by distance to the covered gate</span></p>
+    <p class="lbl"><i class="ti ti-flag-3"></i> Roadmap to v1.0 <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— per version: <span style="color:#8a6fe0;font-weight:600">Julia</span> (HSquared.jl engine) &amp; <span style="color:#4a90d9;font-weight:600">R</span> (hsquared public language) — R calls Julia via the <strong>one-way R→Julia bridge</strong> (JuliaCall; v0.9); ordered by distance to the covered gate</span></p>
     <div id="roadmap"></div>
   </div>
 
@@ -200,6 +200,9 @@ const ROADMAP=[
   {v:'v0.8',n:'HPC / scale',st:'todo',
    jl:'Wave F F1/F3 done; F4–F8 (matrix-free PCG, distributed, checkpointing) owed',
    r:'engine-transparent'},
+  {v:'v0.9',n:'R↔Julia bridge — the adoption feature',st:'mid',
+   jl:'result-payload contract + engine controls (~15 target paths wired); the production fitting execution path = the master gate',
+   r:'JuliaCall marshalling + per-model parity (R-via-bridge == direct Julia) + install UX + honest error/placeholder wording. Done AS-YOU-GO per covered model; v0.9 consolidates + hardens it'},
   {v:'v1.0',n:'Release',st:'goal',
    jl:'JOSS engine paper; reproducibility',
    r:'CRAN (hsquared) + pkgdown; every phase covered or scoped'},
