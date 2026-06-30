@@ -25,6 +25,15 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-06-30: Julia lane / BLUPF90 multitrait `renumf90.par` emitter fix (PR #197,
+  `main` `c43e37c9`). Closed the 2026-06-29 v0.4 next-action #3: the committed
+  `comparator/prepare_blupf90_multitrait.jl` packet now runs `renumf90` 1.166 →
+  `blupf90+` 2.60 directly (verified end-to-end this session) without the manual
+  `renumf90_fixed.par`. Tooling-only: no `validation_status()` row-count/status
+  change (stays 48), nothing promoted, NO R files / no R-facing contract change —
+  no cross-lane action owed. Real Rose audit (PROMOTE-WITH-CHANGES) → three
+  evidence-hygiene sweeps applied. `Pkg.test()` + CI green.
+
 - 2026-06-27: Julia lane / small-sample interval calibration debt + smoke harness.
   Added planned validation-debt row `V1-HERIT-TCAL` to record that current Gaussian
   interval helpers are asymptotic (normal-z delta/Wald and chi-square profile

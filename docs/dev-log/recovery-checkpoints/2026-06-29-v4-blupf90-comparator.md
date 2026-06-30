@@ -29,7 +29,8 @@ emitter** (separate-line keyword/value; `cross alpha`; FILE_POS). Independent of
 
 **RESOLVED 2026-06-30:** the emitter now writes the correct format directly (`DATAFILE` keyword/value on
 separate lines; blank `FIELDS_PASSED TO OUTPUT`/`WEIGHT(S)` value-lines; `cross alpha`; `FILE_POS 1 2 3 0 0`),
-byte-identical to `renumf90_fixed.par` and to the sibling `prepare_blupf90_two_effect.jl`. The `#49` preflight
+byte-identical to the manually-corrected `renumf90_fixed.par` and format-identical to the sibling
+`prepare_blupf90_two_effect.jl`. The `#49` preflight
 was updated to the new tokens and `Pkg.test()` passes (preflight 42/42). CONFIRMED end-to-end: `renumf90`
 1.166 + `blupf90+` 2.60 (re-downloaded from UGA this session, Mac x86_64/Rosetta, MKL-free) were RUN on the
 regenerated packet — `renumf90` accepts the emitted `renumf90.par` directly (exit 0; the `Data file is not
