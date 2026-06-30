@@ -67,6 +67,23 @@ those `missing` items verbatim per open row.
   passed + a real Rose audit + sign-off. Retained debts (a 2nd same-estimand
   comparator, the in-suite unstructured-`sommer` test, broader-DGP recovery, the
   deep-inbreeding boundary) are **not retired** — see the next section.
+- **`V5-MARKER-THRESHOLD`** (`covered`, scoped, 2026-06-30): the FIRST
+  **non-point-estimator** covered row — the estimand is **type-I error control** of a
+  genome-wide significance rule, not parameter recovery. The substitutable gate is the
+  **type-I-control adaptation of G11**: where G11 wants a known-truth *recovery* gate, a
+  significance rule wants a known-null *type-I* gate. The recovery-gate slot is filled by
+  **pre-declared type-I gates** on the EXACT per-dataset add-one rule (`genome_wide_pvalue`):
+  #203 single-design + #204 design-grid + the #207 **production** REBUILD gate, each
+  `mean type-I − α ≤ 2·MCSE` (one-sided upper; production means 0.0542/0.0504 at α=0.05).
+  The external-comparator slot is filled by **PLINK 1.9 max(T)** (#205, an independent
+  permutation implementation reproducing the rule). Banked NEGATIVES fix the SCOPE: the
+  `(1-α)` quantile rule FAILED anti-conservative (#202) and the fixed-null-reuse simulation
+  shortcut is mildly anti-conservative (diagnosed as a sim artifact) — so the covered claim
+  is fenced to the **exact per-dataset rule, type-I CONTROL only, fixed-effect/intercept-only**,
+  on the tested LD designs. Retained debts (a 2nd external comparator e.g. GCTA/statgenGWAS,
+  mixed-model genome-wide calibration, broader-LD/covariate-adjusted + coverage, the #45
+  dependency) are **not retired**. The R public surface stays experimental
+  (engine-covered ≠ R-public-covered).
 
 ## "Covered" does NOT retire debt
 
