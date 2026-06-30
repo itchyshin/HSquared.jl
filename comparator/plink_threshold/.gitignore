@@ -1,0 +1,8 @@
+# Regenerable PLINK I/O (rebuilt by ../prepare_plink_threshold.jl). Keep the
+# headline comparison.tsv, the README, and the .qassoc.mperm EMP2 evidence.
+*.ped
+*.map
+*.nosex
+*.log
+*.qassoc
+!*.qassoc.mperm
