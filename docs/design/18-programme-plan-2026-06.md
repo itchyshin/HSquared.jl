@@ -90,13 +90,20 @@ Priority by closeness to a 2nd covered model:
 1. **Multivariate-unstructured — closest.** Engine-covered already; to finish, the broader-DGP recovery
    gate via doc-33 path-(b) (a `sommer` leg + a passing recovery gate already exist — an open door, not a
    wall). A BLUPF90 second lineage is optional hardening, not a blocker. ⚠️ regression risk (R9).
-2. **Standard-QG kernels** — repeatability/two-effect/RR: formula + bridge built; only a committed
-   recovery harness + comparator owed. The shortest *new* hop.
+2. **Standard-QG kernels** — **two-effect REML now COVERED (2026-06-30)**; repeatability + RR owed. RR
+   **covered aim = k=2 linear reaction norm** (Gaussian + each non-Gaussian family + the genetic GLLVM;
+   engine general-`k` stays experimental; `k>2` covered is post-v1.0 via reduced-rank / FA `K_g`) — see
+   `docs/dev-log/decisions/2026-06-30-rr-aim-and-nongaussian-family-plan.md`. Per kernel: a committed
+   recovery harness + a pre-declared gate + a same-estimand comparator.
 3. **Genomic** — engine done; blocked on a same-estimand REML genomic comparator that does not exist yet
    (rrBLUP/BGLR are agreement-only). Realistic path = a BLUPF90 binary (unstarted). Trails correctly.
 4. **QTL** — calibrated genome-wide thresholds (null-DGP sims) + `marker_scan()` activation.
-5. **Non-Gaussian** — families exist (NB/BetaBinomial/Probit); coverage conservative-not-calibrated;
-   needs comparator depth + a scale-labelled h² contract.
+5. **Non-Gaussian / GLLVM** — have Poisson/Binomial/probit/NB2/beta-binomial + GLLVM; coverage
+   conservative-not-calibrated. PLAN (`docs/dev-log/decisions/2026-06-30-rr-aim-and-nongaussian-family-plan.md`):
+   priority by breeding relevance — **T1 ordinal/categorical threshold** (calving ease — top value) →
+   Gamma/lognormal → zero-inflated/hurdle; T4 (survival/Tweedie) post-v1.0. Same-estimand comparator =
+   **glmmTMB** (Laplace-ML; MCMCglmm/brms/THRGIBBS are Bayesian agreement-only). Scale-labelled h² (latent
+   + observation, QGglmm convention). Non-Gaussian + GLLVM RR k=2 per the RR aim.
 6. **FA / low-rank — furthest** — recovery did not pass; eigenbasis payload (gap c) not built.
 
 Cross-cutting enablers: fitted Mrode; production sparse fitting (Wave F F4–F8 — the scale enabler);
