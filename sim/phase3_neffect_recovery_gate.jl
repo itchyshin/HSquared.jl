@@ -6,28 +6,36 @@ using Statistics
 
 # Pre-declared bias/MCSE recovery gate for the arbitrary-N independent-random-effect
 # REML estimator (`fit_multi_effect_reml`) — the doc-33 path-(b) substitutable gate for a
-# V3-NEFFECT-REML covered close (ultraplan Phase 2). Extends the two-effect gate
-# (`sim/phase3_two_effect_bias_mcse.jl`) to K=3 NON-CONFOUNDED effects.
+# V3-NEFFECT-REML covered close (ultraplan Phase 2). K=3 NON-CONFOUNDED effects.
+#
+# NOTE (design integrity): a first predeclaration (v1, 2026-07-01) used a dam-level
+# "maternal-environment" third effect, but a pre-run single-seed diagnostic showed it was
+# CONFOUNDED with the additive relationship (in the half-sib layout dam-mates are FULL
+# SIBS, so a dam-level effect aliases the full-sib additive covariance; σm² collapsed to
+# ~0). v1 was WITHDRAWN (not relaxed). This v2 uses the proven non-confounding device from
+# the two-effect gate — environmental factors assigned INDEPENDENTLY of the pedigree —
+# DOUBLED to three identifiable effects. See the predeclaration doc.
 #
 # PRE-DECLARED (see docs/dev-log/recovery-checkpoints/
 # 2026-07-01-neffect-recovery-gate-predeclaration.md, committed BEFORE this runs):
-#   - DGP (K=3, all identifiable, non-confounded): records = 800 offspring of a half-sib
-#     pedigree (20 sires × 40 dams × 800 offspring, q=860).
-#       * animal additive:      u_a ~ N(0, σ_a²·A)         (A-structured, via the pedigree)
-#       * maternal-environment: u_m ~ N(0, σ_m²·I_40)      (dam-level, dam-replicated)
-#       * contemporary group:   u_c ~ N(0, σ_c²·I_80)      (80 groups, drawn INDEPENDENTLY
-#                                                            of the pedigree — the non-
-#                                                            confounding device)
-#       * residual:             e   ~ N(0, σ_e²·I)
-#     truth (σ_a²,σ_m²,σ_c²,σ_e²)=(1.0,0.5,0.5,1.0), μ=2.0.
+#   - DGP (K=3, all identifiable, non-confounded): records = all q=860 animals of a
+#     half-sib pedigree (20 sires × 40 dams × 800 offspring), Z1 = I_q.
+#       * animal additive:  u_a  ~ N(0, σ_a²·A)        (A-structured, via the pedigree)
+#       * environment 1:    u_g1 ~ N(0, σ_g1²·I_80)    (80 levels, assigned INDEPENDENTLY
+#                                                        of the pedigree)
+#       * environment 2:    u_g2 ~ N(0, σ_g2²·I_60)    (60 levels, assigned INDEPENDENTLY
+#                                                        of the pedigree AND of env 1)
+#       * residual:         e    ~ N(0, σ_e²·I)
+#     truth (σ_a²,σ_g1²,σ_g2²,σ_e²)=(1.0,0.5,0.5,1.0), μ=2.0.
 #   - Seeds: 20260800 .. 20260847 (48 cold-start; UNSEEN at declaration time).
-#   - PASS criteria (ALL): 48/48 converged AND |bias| ≤ 2·MCSE for EACH of σ_a²,σ_m²,σ_c²,σ_e².
+#   - PASS criteria (ALL): 48/48 converged AND |bias| ≤ 2·MCSE for EACH of σ_a²,σ_g1²,σ_g2²,σ_e².
 #   - Read as: NO DETECTABLE across-seed bias (a low-power non-rejection), never "unbiased".
 #   NO post-hoc relaxation. A failure is a banked negative — V3-NEFFECT-REML stays partial.
 #
 #   env OPENBLAS_NUM_THREADS=1 julia --project=. sim/phase3_neffect_recovery_gate.jl
 
-const MU, SA, SM, SC, SE = 2.0, 1.0, 0.5, 0.5, 1.0
+const MU, SA, SG1, SG2, SE = 2.0, 1.0, 0.5, 0.5, 1.0
+const NG1, NG2 = 80, 60
 const SEEDS = 20260800:20260847
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -42,44 +50,37 @@ function _halfsib_pedigree(nsire, ndam, noffspring)
     return normalize_pedigree(ids, sire, dam)
 end
 
-function _fit(seed; nsire = 20, ndam = 40, noffspring = 800, ngroup = 80)
+function _fit(seed; nsire = 20, ndam = 40, noffspring = 800)
     rng = MersenneTwister(seed)
     ped = _halfsib_pedigree(nsire, ndam, noffspring)
     Ainv = pedigree_inverse(ped)
     q = length(ped.ids)
     A = Matrix(inv(Symmetric(Matrix(Ainv))))
     LA = cholesky(Symmetric(A)).L
-    ua = (LA * randn(rng, q)) .* sqrt(SA)          # animal additive BVs (length q)
-    um = randn(rng, ndam) .* sqrt(SM)              # maternal-environment (40)
-    uc = randn(rng, ngroup) .* sqrt(SC)            # contemporary group (80)
-
-    idpos = Dict(id => k for (k, id) in enumerate(ped.ids))
-    Za = zeros(noffspring, q)                       # record -> animal (offspring only)
-    Zm = zeros(noffspring, ndam)                    # record -> dam maternal-env
-    Zc = zeros(noffspring, ngroup)                  # record -> contemporary group
-    for i in 1:noffspring
-        Za[i, idpos["o$i"]] = 1.0
-        Zm[i, ((i - 1) % ndam) + 1] = 1.0
-        Zc[i, rand(rng, 1:ngroup)] = 1.0
-    end
-    X = ones(noffspring, 1)
-    e = randn(rng, noffspring) .* sqrt(SE)
-    y = MU .+ Za * ua .+ Zm * um .+ Zc * uc .+ e
-
-    Im = Matrix(1.0I, ndam, ndam)
-    Ic = Matrix(1.0I, ngroup, ngroup)
-    fit = HSquared.fit_multi_effect_reml(y, X, [(Za, Ainv), (Zm, Im), (Zc, Ic)];
+    u1 = (LA * randn(rng, q)) .* sqrt(SA)
+    g1 = [rand(rng, 1:NG1) for _ in 1:q]
+    ug1 = randn(rng, NG1) .* sqrt(SG1)
+    g2 = [rand(rng, 1:NG2) for _ in 1:q]
+    ug2 = randn(rng, NG2) .* sqrt(SG2)
+    e = randn(rng, q) .* sqrt(SE)
+    X = ones(q, 1)
+    Z1 = Matrix(1.0I, q, q)
+    Zg1 = zeros(q, NG1); for a in 1:q; Zg1[a, g1[a]] = 1.0; end
+    Zg2 = zeros(q, NG2); for a in 1:q; Zg2[a, g2[a]] = 1.0; end
+    y = MU .+ u1 .+ Zg1 * ug1 .+ Zg2 * ug2 .+ e
+    I1 = Matrix(1.0I, NG1, NG1); I2 = Matrix(1.0I, NG2, NG2)
+    fit = HSquared.fit_multi_effect_reml(y, X, [(Z1, Ainv), (Zg1, I1), (Zg2, I2)];
                                          initial = [1.0, 1.0, 1.0, 1.0])
     s = fit.variance_components.sigmas
     return (fit.converged, s[1], s[2], s[3], fit.variance_components.sigma_e2)
 end
 
 function main()
-    sa = Float64[]; sm = Float64[]; sc = Float64[]; se = Float64[]; nconv = 0
+    sa = Float64[]; sg1 = Float64[]; sg2 = Float64[]; se = Float64[]; nconv = 0
     for seed in SEEDS
-        conv, a, m, c, r = _fit(seed)
+        conv, a, b, c, r = _fit(seed)
         conv && (nconv += 1)
-        push!(sa, a); push!(sm, m); push!(sc, c); push!(se, r)
+        push!(sa, a); push!(sg1, b); push!(sg2, c); push!(se, r)
     end
     n = length(SEEDS)
     results = Tuple{String,Bool,Float64,Float64,Float64}[]
@@ -93,12 +94,12 @@ function main()
     end
     println("N-effect (K=3) bias/MCSE gate — $n seeds ($(first(SEEDS))..$(last(SEEDS))), converged=$nconv/$n")
     oka = report("σa²", sa, SA)
-    okm = report("σm²", sm, SM)
-    okc = report("σc²", sc, SC)
+    ok1 = report("σg1²", sg1, SG1)
+    ok2 = report("σg2²", sg2, SG2)
     oke = report("σe²", se, SE)
-    gate = (nconv == n) && oka && okm && okc && oke
+    gate = (nconv == n) && oka && ok1 && ok2 && oke
     println("GATE: ", gate ? "PASS" : "FAIL",
-            "  (converged $(nconv)/$n; |bias|≤2·MCSE σa²=$oka σm²=$okm σc²=$okc σe²=$oke)")
+            "  (converged $(nconv)/$n; |bias|≤2·MCSE σa²=$oka σg1²=$ok1 σg2²=$ok2 σe²=$oke)")
     js = "{\"gate_pass\":$(gate),\"seeds\":$n,\"converged\":$nconv,\"params\":{" *
          join(["\"$(r[1])\":{\"bias\":$(round(r[3],digits=5)),\"mcse\":$(round(r[4],digits=5)),\"mean\":$(round(r[5],digits=5))}" for r in results], ",") * "}}"
     println("GATE_JSON ", js)
