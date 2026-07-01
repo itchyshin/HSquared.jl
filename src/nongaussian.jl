@@ -1141,7 +1141,7 @@ _h2_family_params(::BernoulliResponse) = (:bernoulli, 1, NaN)
 _h2_family_params(f::BinomialResponse) = (:binomial, f.n_trials, NaN)
 _h2_family_params(::BernoulliProbitResponse) = (:bernoulli_probit, 1, NaN)
 _h2_family_params(::OrderedProbitResponse) = (:ordered_probit, 1, NaN)
-_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: beta-binomial, negative-binomial)"))
+_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: gamma, beta-binomial, negative-binomial)"))
 
 """
     nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing, predictor_variance = 0.0)
