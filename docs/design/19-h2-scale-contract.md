@@ -141,7 +141,7 @@ The observed-0/1 scale connects to it by the Dempster–Lerner transform
 | **Bernoulli-probit** | probit | `1` | = liability h² | Dempster–Lerner `z²/[p(1−p)]` | **`V_A/(V_A+1+V_fixed)`** | binary→liability | **owed** (follow-up) |
 | **Beta-binomial** | logit + Beta | `π²/3` + overdispersion | needs derivation | needs derivation | (logit) | proportion | **owed** |
 | **Neg-binomial (NB2)** | log | `0` + overdispersion | needs derivation (NS 2017 NB term) | NS 2017 log-normal form | n/a | count | **owed** |
-| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var[log Y]; NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | NS 2017 multiplicative (data scale, owed) | n/a | positive continuous | **owed** (T2; latent `V_link` now derived — see §3.1) |
+| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var[log Y]; NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
 | **Ordinal / categorical** | cumulative probit/logit | `1` (probit) / `π²/3` (logit) | per-threshold liability | category probabilities | **liability (primary)** | ordinal→liability | **owed** (T1, top) |
 
 **Rules for the owed rows (so future slices don't drift):**

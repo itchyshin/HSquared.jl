@@ -1135,22 +1135,27 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                     "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.",
                 method = :logit_quadrature)
     elseif family === :gamma
-        # Gamma (log link): the LATENT (log) scale residual is the distribution-specific
-        # variance V_link = Var[log Y] = ψ₁(shape) (trigamma) — EXACT and mean-independent
-        # (doc-19 §3.1; NOT the ln(1+1/ν) lognormal/CV approximation). Unlike Poisson
-        # (V_link = 0, degenerate), the Gamma has a genuine multiplicative log-scale
-        # residual, so the latent h² is NON-degenerate. The observation/data scale (the
-        # NS-2017 multiplicative data scale) needs the mean–variance and is a FENCED
-        # follow-up → NaN (not guessed).
+        # Gamma (log link). LATENT (log) scale: V_link = Var[log Y] = ψ₁(shape) (trigamma) — EXACT,
+        # mean-independent (doc-19 §3.1); NON-degenerate unlike Poisson (V_link = 0).
+        # OBSERVATION/DATA scale (the NS-2017 multiplicative form): over η ~ N(μ, V_A+V_fixed),
+        # μ = exp(η), Var(y|η) = μ²/ν; Ψ = E[dμ/dη] = E[μ]; V_A,obs = Ψ²·V_A;
+        # V_P,obs = Var(μ) + E[μ²/ν]. All lognormal closed forms, so
+        # h²_obs = V_A/[e^{V_pred}(1+1/ν) − 1] (μ CANCELS). VALIDATED against QGglmm's custom
+        # Gamma model (var.func = μ²/ν) to ~5e-11 (`comparator/qgglmm_gamma_observed/`).
         isnan(shape) && throw(ArgumentError("nongaussian_heritability for :gamma needs the shape ν (from the fit's variance_components.shape or the GammaResponse family object)"))
         shape > 0 || throw(ArgumentError("the Gamma shape ν must be positive"))
         V_link = _trigamma(shape)
         latent_total = V_A + V_link + V_fixed
+        V_pred = V_A + V_fixed
+        Ψ = exp(mu + V_pred / 2)                            # E[dμ/dη] = E[exp η]
+        var_mu = (exp(V_pred) - 1.0) * exp(2.0 * mu + V_pred)   # Var(exp η) (lognormal)
+        e_var = exp(2.0 * mu + 2.0 * V_pred) / shape        # E[Var(y|η)] = E[μ²/ν]
+        h2_obs = Ψ^2 * V_A / (var_mu + e_var)              # = V_A/[e^{V_pred}(1+1/ν) − 1]
         return (family = :gamma, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
-                h2_latent = V_A / latent_total, h2_observation = NaN,
-                var_distribution = NaN, var_link = V_link, converged = converged,
+                h2_latent = V_A / latent_total, h2_observation = h2_obs,
+                var_distribution = e_var, var_link = V_link, converged = converged,
                 information_limited = false,
-                caveat = "Gamma log link: latent (log) scale V_link = trigamma(shape) = Var[log Y] (EXACT, doc-19 §3.1); the observation/data scale (NS-2017 multiplicative) is a follow-up → NaN.",
+                caveat = "Gamma log link: latent (log) scale V_link = trigamma(shape) = Var[log Y] (EXACT, doc-19 §3.1); observation/data scale = the NS-2017 multiplicative form V_A/[e^{V_pred}(1+1/ν)−1], validated against QGglmm's custom Gamma model.",
                 method = :gamma_trigamma_latent)
     else
         throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale) and :gamma (latent/log scale, V_link = trigamma(shape)); family :$family is follow-up (probit V_link = 1, beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))

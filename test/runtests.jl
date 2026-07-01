@@ -1103,7 +1103,7 @@ end
     @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
 end
 
-@testset "Phase 6 Gamma LATENT-scale h² — trigamma V_link (doc-19 §3.1, V6-NS-H2)" begin
+@testset "Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2)" begin
     # _trigamma(ν) = ψ₁(ν) against known closed forms (recurrence + asymptotic, ~3e-9).
     @test HSquared._trigamma(1.0) ≈ π^2 / 6 atol = 1e-7            # ψ₁(1)
     @test HSquared._trigamma(2.0) ≈ π^2 / 6 - 1 atol = 1e-7        # ψ₁(2) = ψ₁(1) − 1
@@ -1115,7 +1115,12 @@ end
     @test hg.family === :gamma && hg.method === :gamma_trigamma_latent
     @test hg.var_link ≈ π^2 / 6 atol = 1e-7                        # V_link = ψ₁(1) = π²/6
     @test hg.h2_latent ≈ 1 / (1 + π^2 / 6) atol = 1e-7
-    @test isnan(hg.h2_observation)                                 # data scale fenced (NaN)
+    # DATA/OBSERVATION scale: h²_obs = V_A/[e^{V_pred}(1+1/ν)−1] (NS-2017 multiplicative; μ CANCELS),
+    # validated against QGglmm's custom Gamma model (comparator/qgglmm_gamma_observed/).
+    @test hg.h2_observation ≈ 1.0 / (exp(1.0) * (1 + 1 / 1.0) - 1) atol = 1e-9   # V_A=1, V_pred=1, ν=1
+    @test 0.0 < hg.h2_observation < 1.0
+    # the data-scale h² is μ-independent (the μ-dependent pieces cancel in the ratio).
+    @test HSquared.nongaussian_heritability(1.0, 4.2, HSquared.GammaResponse(1.0)).h2_observation ≈ hg.h2_observation atol = 1e-10
     # NON-degenerate (unlike Poisson): a finite positive latent h² for a log link.
     @test 0.0 < hg.h2_latent < 1.0
     # μ-independence (the shape/variances set it, not the location).
