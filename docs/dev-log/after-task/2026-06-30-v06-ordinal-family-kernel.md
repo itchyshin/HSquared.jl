@@ -13,8 +13,11 @@ larger follow-ups (joint cutpoint estimation, fit/resolver + R wiring).
 
 - **Perspectives (inline):** Gauss/Noether (kernel numerics + log-concavity/observed-info choice),
   Curie/Fisher (the deterministic oracle design), Falconer (ordinal = calving-ease framing).
-- **Rose** (`rose-systems-auditor`) — the mandatory audit is PENDING (next step before the PR is
-  presented for review).
+- **Rose** (`rose-systems-auditor`) — the mandatory audit → **PROMOTE-WITH-CHANGES**: verified no
+  overclaim (count 48→49, covered unchanged, not exported/wired, three surfaces agree), the
+  observed-information math (exact to 4.2e-8), the reduction gate discriminates a wrong weight, honest
+  fences, and clean hygiene (7 files, no foreign files). One required fix applied: the struct docstring
+  still described the abandoned Fisher weight → corrected to OBSERVED information (comment-only).
 
 ## Live phase snapshot
 
