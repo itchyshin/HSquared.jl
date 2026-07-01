@@ -126,14 +126,21 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
       `Poisson.log` (≤1.7e-16, machine precision) + `binomN.logit` (≤1.2e-8) agree with the engine — so
       **all FOUR QGglmm-builtin observation scales** (logit, probit, Poisson, binomN; 25 comparisons)
       are now externally discharged. Rose PROMOTE-clean.
-    - **ORDINAL (K>2) observed/category scale — owed (non-builtin).** QGglmm's ordinal support + the
-      per-category vs per-threshold convention need checking. A careful follow-up.
-    - **Gamma data/observation scale — owed.** QGglmm has NO built-in Gamma model — it needs a CUSTOM
-      model spec (inverse-link `exp`, var.func `μ²/ν`, d.inv.link `exp`) with the shape ν. Finicky; a
-      careful follow-up (do NOT rush the custom var.func).
-  This is the honest boundary the overnight session stopped at: the DONE pieces are internally
-  cross-checked AND (for the two observation scales) externally validated against QGglmm; the owed pieces
-  need either an easy builtin run (Poisson/binomN) or careful convention work (ordinal, Gamma-custom).
+    - **Gamma data/observation scale — DONE + EXTERNALLY VALIDATED (#222).** `h²_obs =
+      V_A/[e^{V_pred}(1+1/ν)−1]` (NS-2017 multiplicative, μ-independent lognormal closed form), validated
+      against QGglmm's CUSTOM Gamma-log model (`var.func=μ²/ν`, mathematically determined) to ~5e-11
+      (`comparator/qgglmm_gamma_observed/`). Rose PROMOTE-with-changes (applied). So **every non-Gaussian
+      h² scale is now done + externally validated EXCEPT the one below.**
+    - **ORDINAL (K>2) observed/category scale — the ONLY remaining piece, and it is an API DESIGN
+      DECISION, not a missing formula.** QGglmm DOES support ordinal (`model="ordinal"`, `cut.points=…`)
+      — but it returns a **per-category VECTOR** of h² (one per category-indicator), not a scalar. The
+      engine's `h2_observation` field is a scalar. So exposing the ordinal observed scale needs a
+      representation choice (return a vector? a `h2_observation_by_category` field? which summary?) — a
+      maintainer/API decision, best made deliberately, NOT rushed unattended. This is the genuine
+      boundary the session stopped at (the finding is recorded so the decision starts informed).
+  Honest summary: the DONE pieces are internally cross-checked AND externally validated against QGglmm
+  (all four builtins + the Gamma custom model); the sole remaining observation scale (ordinal K>2) is
+  blocked on an API-shape decision, not a derivation.
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
