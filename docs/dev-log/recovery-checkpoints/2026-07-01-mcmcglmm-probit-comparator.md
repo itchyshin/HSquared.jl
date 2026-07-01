@@ -1,37 +1,41 @@
-# MCMCglmm same-estimand h² comparator — RUN + AGREES (probit liability, 2026-07-01)
+# MCMCglmm same-estimand h² comparator — probit + ordinal RUN + AGREE; Gamma N/A (2026-07-01)
 
-**What.** The last owed external comparator for the V6-NS-H2 non-Gaussian h² surface (the
-QGglmm legs are banked; an MCMCglmm leg was still owed). MCMCglmm is Bayesian, so this is a
-**distributional** same-estimand check: the engine's Laplace *point* estimate must fall inside
-MCMCglmm's Bayesian **95% credible interval** — agreement within MCMC error, NOT a
-machine-precision identity.
+**What.** The MCMCglmm external comparator for the V6-NS-H2 non-Gaussian h² surface (the
+QGglmm legs are banked; an MCMCglmm leg was still owed). MCMCglmm is Bayesian → a
+**distributional** same-estimand check (engine Laplace *point* inside the Bayesian **95%
+CrI**, agreement within MCMC error — NOT machine precision). Harness: `comparator/mcmcglmm_observed/`.
 
-**Design (the clean match): probit LIABILITY.** MCMCglmm `family="threshold"` fixes the
-residual variance at 1 == the engine's probit convention `V_link = 1` (Dempster–Lerner). Both
-sides fit the same simulated liability-threshold binary dataset (`G=400 × n=8`, σ²a=0.8). Engine:
-`fit_laplace_reml(:bernoulli_probit)` (on `main`, #171) → σ̂²a, `h²_liab = σ̂²a/(σ̂²a+1)`, QGglmm
-`binom1.probit` observed h² (the exact PR-branch `nongaussian_heritability` formulas). MCMCglmm:
-posterior of (VA, μ) → the same transforms per draw. Harness: `comparator/mcmcglmm_observed/`.
+**The convention that makes it work:** the engine's `:bernoulli_probit` / `:ordered_probit`
+are unit-residual **threshold/liability** models (`V_link=1`); MCMCglmm `family="threshold"`
+with the residual fixed at 1 is the matching estimand for BOTH binary and ordinal.
 
-**Result (seed 20260701, eff. size ~1000 — all three engine points INSIDE the 95% CrI):**
+**Leg 1 — probit binary (K=2), on `main`:** engine point INSIDE the MCMCglmm 95% CrI for
+σ²a (0.754 vs 0.788 [0.625,0.967]), h²_liability (0.430 vs 0.439 [0.385,0.492]), h²_observed
+(0.274 vs 0.280 [0.245,0.313]). Eff. size ~1000.
 
-| quantity | engine point | MCMCglmm [95% CrI] | agree |
-| --- | --- | --- | --- |
-| σ²a | 0.7540 | 0.7875 [0.6250, 0.9672] | INSIDE |
-| h²_liability | 0.4299 | 0.4392 [0.3846, 0.4917] | INSIDE |
-| h²_observed | 0.2736 | 0.2795 [0.2447, 0.3129] | INSIDE |
+**Leg 2 — ordinal (K=3), on the v0.6 integration build:** engine point INSIDE for σ²a
+(0.704 vs 0.718 [0.591,0.880]), θ₂ (0.977 vs 0.979 [0.924,1.035]), h²_liability (0.413 vs
+0.417 [0.371,0.468]), AND the full per-category observed vector — cat1 0.259 vs 0.261, **cat2
+(interior) 0.0038 vs 0.0042 [0.0013,0.0081]**, cat3 0.237 vs 0.239. Eff. size ~1800. The
+interior-category agreement independently CONFIRMS Falconer's finding: the interior-category
+observed h² is genuinely ~0 under the QGglmm/Stein estimand (both methods agree) — descriptive,
+not an independently selectable heritability.
 
-**Pitfall banked.** The naive LOGIT comparison (engine `:bernoulli` vs MCMCglmm
-`family="categorical"` with the residual pinned ≈0) gave VA=0.284 vs the engine's 1.109 on the
-SAME data (~4× off) despite clean mixing — the known MCMCglmm categorical fixed-residual
-convention issue. The probit/threshold design is the correct same-estimand match; the logit one
-is documented as a dead end in the README so it is not re-tread.
+**Leg 3 — Gamma: NOT APPLICABLE.** MCMCglmm has no general Gamma family (only `exponential` =
+Gamma shape ν=1). The general-shape engine Gamma cannot be MCMCglmm-compared; the **glmmTMB
+`Gamma(link="log")`** comparator (already RUN, `comparator/gamma_glmmtmb/`) is the correct
+same-estimand tool. No MCMCglmm Gamma leg is owed.
 
-**Honesty fence.** Evidence toward the owed MCMCglmm comparator, on the probit
-liability/observed scale (Fisher/Falconer's flagged primary scale). It does NOT flip covered.
+**Two pitfalls banked** (README): logit `family="categorical"` VR→0 gives VA ~4× off; ordinal
+`family="ordinal"` gives σ²a/θ₂ inflated ~1.4–2× — both wrong residual conventions;
+`family="threshold"` is the correct match in every case.
+
+**Honesty fence.** Evidence toward the owed MCMCglmm comparator, on the probit + ordinal
+liability/observed scales (Fisher/Falconer's flagged primary scales). Does NOT flip covered.
 **For the real #221/#223 PR:** the V6-NS-H2 `missing`/`owed` field can move from "an MCMCglmm
-comparator [owed]" to "MCMCglmm probit-liability comparator RUN + AGREES (within MCMC error;
-`comparator/mcmcglmm_observed/`); the ordinal-K>2 + Gamma MCMCglmm legs still owed." Still owed
-independently: the MCMCglmm ordinal + Gamma legs, the maintainer Fisher/Falconer sign-off, and
-the maintainer **G10** covered flip. V6-NS-H2 / V6-ORDINAL / V6-GAMMA stay `partial`; count 50 /
-public-covered 1 UNCHANGED (this ran on `main` + a comparator dir; no engine/status change).
+comparator [owed]" to "MCMCglmm threshold comparator RUN + AGREES for probit binary + ordinal
+K=3 (liability + observed, within MCMC error; `comparator/mcmcglmm_observed/`); Gamma N/A
+(MCMCglmm has no general Gamma — glmmTMB is the tool, done)." Still owed independently: the
+maintainer Fisher/Falconer sign-off + the maintainer **G10** covered flip. V6-NS-H2 /
+V6-ORDINAL / V6-GAMMA stay `partial`; count 50 / public-covered 1 UNCHANGED (ran on `main` +
+a worktree + a comparator dir; no engine/status change to `main`).
