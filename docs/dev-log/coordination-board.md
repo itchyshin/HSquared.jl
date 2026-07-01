@@ -36,6 +36,28 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-07-01: Julia lane / MCMCglmm observation-scale h² comparator + lane hand-off.
+  Committed `80a049a4` (+ handover `fe30c98e`), merged LOCALLY into
+  `feat/2026-07-01-v06-ordinal-liability-h2` — **UNPUSHED** (push is the user's call).
+  The exported `nongaussian_heritability` observation-scale surface now carries BOTH owed
+  external comparators: the QGglmm exact-transform leg (≤4.5e-6, four builtin scales) AND a
+  new MCMCglmm END-TO-END leg (`comparator/mcmcglmm_observed/`; Poisson, A=I/repeated-records
+  — the engine's h²_obs point 0.502 lies inside the MCMCglmm 95% CI [0.449, 0.515];
+  DISTRIBUTIONAL agreement within MCMC error, NOT machine precision or unbiasedness). Real
+  `rose-systems-auditor` → PROMOTE.
+  **For the R/coordinator lane:** the engine-side observation-scale h² comparator debt is now
+  largely discharged, BUT `nongaussian_heritability` stays EXPERIMENTAL/`partial` — the R twin
+  must NOT surface it as covered, and any R-facing extractor is a JOINT bridge / result-payload
+  contract task (AGENTS.md rule 2), never unilateral; when it is surfaced, the scale label
+  (`latent`/`liability`/`observation`) MUST travel with the number (doc-19 §6 — no bare `h²` in
+  R either). No R files were edited this session.
+  **Recon banked:** the QGglmm ordinal(K>2) + Gamma-data comparators already EXIST on
+  `feat/2026-07-01-v06-ordinal-observed-h2` (#223) + `feat/2026-07-01-v06-gamma-latent-h2`
+  (#222) — unmerged, NOT owed globally; MCMCglmm has NO Gamma family (glmmTMB is that tool).
+  Honesty pins UNCHANGED: `validation_status()` = 50, public-covered FITTING = 1, V6-NS-H2
+  `partial`; no covered flip (the 9-PR merge, Fisher/Falconer sign-off, and G10 are
+  maintainer/human). START HERE: `docs/dev-log/handover/2026-07-01-claude-handover.md`.
+
 - 2026-06-30: Julia lane / BLUPF90 multitrait `renumf90.par` emitter fix (PR #197,
   `main` `c43e37c9`). Closed the 2026-06-29 v0.4 next-action #3: the committed
   `comparator/prepare_blupf90_multitrait.jl` packet now runs `renumf90` 1.166 →
