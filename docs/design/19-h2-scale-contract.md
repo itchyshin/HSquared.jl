@@ -58,13 +58,16 @@ The scale of `η` itself. Total latent variance adds the link's *implied latent 
 h²_latent = V_A / (V_A + V_link + V_fixed)
 ```
 
-`V_link` is a property of the link, not of the data: `π²/3` for logit (variance of the
-standard logistic), `1` for probit (the classic Gaussian-liability scale), `π²/6` for
-complementary-log-log (the Gumbel/extreme-value variance; an owed family), `σ²e` for the
-Gaussian identity link, and **`0` for the log link** — Poisson has no latent residual, so
-its latent h² is **degenerate (`NaN`)** (`src/nongaussian.jl:952–954, 982`). This is the
-exact reason the uniform payload refuses a single h². (Link variances verified against
-Nakagawa & Schielzeth 2017 via the NotebookLM source set: logit π²/3, probit 1, cloglog π²/6.)
+`V_link` is a property of the family and link, not of the data: `π²/3` for logit (variance of
+the standard logistic), `1` for probit (the classic Gaussian-liability scale), `π²/6` for
+complementary-log-log (the Gumbel/extreme-value variance; an owed family), and `σ²e` for the
+Gaussian identity link. The **log link is family-dependent**: **`0` for Poisson** — no latent
+residual, so its latent h² is **degenerate (`NaN`)** (`src/nongaussian.jl:952–954, 982`), the
+exact reason the uniform payload refuses a single h² — but **`ψ₁(ν)` (trigamma of the shape) for
+Gamma**, a genuine multiplicative log-scale residual (`Var[log Y] = ψ₁(ν)`), so the **Gamma
+latent h² is NON-degenerate** (§3.1). (Link variances verified against Nakagawa & Schielzeth 2017
+via the NotebookLM source set: logit π²/3, probit 1, cloglog π²/6; the Gamma `ψ₁(ν)` verified
+numerically — §3.1.)
 
 ### 2.2 Observation (data) scale
 The scale of the measured `y` (counts, proportions). The additive genetic variance is
@@ -138,7 +141,7 @@ The observed-0/1 scale connects to it by the Dempster–Lerner transform
 | **Bernoulli-probit** | probit | `1` | = liability h² | Dempster–Lerner `z²/[p(1−p)]` | **`V_A/(V_A+1+V_fixed)`** | binary→liability | **owed** (follow-up) |
 | **Beta-binomial** | logit + Beta | `π²/3` + overdispersion | needs derivation | needs derivation | (logit) | proportion | **owed** |
 | **Neg-binomial (NB2)** | log | `0` + overdispersion | needs derivation (NS 2017 NB term) | NS 2017 log-normal form | n/a | count | **owed** |
-| **Gamma / lognormal** | log | multiplicative (CV-based) | needs derivation | NS 2017 multiplicative | n/a | positive continuous | **owed** (T2) |
+| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var[log Y]; NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
 | **Ordinal / categorical** | cumulative probit/logit | `1` (probit) / `π²/3` (logit) | per-threshold liability | category probabilities | **liability (primary)** | ordinal→liability | **owed** (T1, top) |
 
 **Rules for the owed rows (so future slices don't drift):**
@@ -153,6 +156,35 @@ The observed-0/1 scale connects to it by the Dempster–Lerner transform
    observed scale is secondary and obtained by the Dempster–Lerner transform.
 4. Each new family lands `experimental`/`partial` until it has its own Laplace oracle +
    pre-declared recovery gate + a same-estimand comparator (§5).
+
+### 3.1 The Gamma log-scale `V_link` — trigamma, verified (2026-07-01)
+
+The Gamma-log latent residual was tentatively "multiplicative (CV-based)" in the table above; this
+resolves it to the **exact** value. On the log link the latent residual is `log Y − log μ =
+log(Y/μ)`, whose variance for `Y ~ Gamma(shape ν, mean μ)` is a standard, mean-independent fact:
+
+```
+V_link,Gamma = Var[log Y] = ψ₁(ν)      (trigamma of the shape)
+```
+
+so the Gamma **latent-scale** heritability is `h²_latent = V_A / (V_A + ψ₁(ν) + V_fixed)` —
+**non-degenerate**, unlike the Poisson log link (`V_link = 0`), because the Gamma carries a genuine
+multiplicative dispersion. Special case `ν = 1` (exponential): `ψ₁(1) = π²/6 ≈ 1.6449`.
+
+**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape): the empirical
+`Var[log Y]` matches `ψ₁(ν)` to 3–4 significant figures across `ν ∈ {0.5, 1, 2, 5}` (e.g. ν=0.5 →
+`4.938` vs `ψ₁ = 4.9348`; ν=2 → `0.645` vs `0.6449`), while the **`ln(1+1/ν)` lognormal/CV
+approximation is materially wrong** for small `ν` (ν=0.5 → `1.099`, off by ~4.5×). So the exact
+`ψ₁(ν)` is the correct `V_link`; the CV/lognormal form is only a large-`ν` asymptotic approximation
+and must NOT be used as the constant. This satisfies Rule 1 by **derivation + numerical proof**
+(stronger than a table citation).
+
+**Status:** the Gamma **latent**-scale h² (trigamma `V_link`) and the **observation/data**-scale h²
+(NS-2017 multiplicative, `V_A/[e^{V_pred}(1+1/ν)−1]`) are BOTH now implemented in
+`nongaussian_heritability`, and the data scale is externally validated against QGglmm's custom Gamma
+model (~5e-11; `comparator/qgglmm_gamma_observed/`). V6-NS-H2 stays `partial` pending an MCMCglmm
+comparator + a Fisher/Falconer sign-off + maintainer G10. The only remaining fenced observation scale
+is the **ordinal (K>2)** per-category scale.
 
 ---
 

@@ -935,6 +935,48 @@ end
     @test_throws ArgumentError HSquared._check_counts(op([0.0, 1.0]), [4.0])  # category 4 > K=3
 end
 
+@testset "Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6)" begin
+    # fit_laplace_reml(...; family = :ordered_probit) JOINTLY estimates σ²a AND the K-1
+    # cutpoints θ (identified by θ_1 = 0 + positive increments). Structured pedigree so
+    # σ²a is at least identifiable via relatives; deterministic optimizer → deterministic.
+    ped = normalize_pedigree(
+        ["s1", "s2", "d1", "d2", "o1", "o2", "o3", "o4", "o5", "o6", "o7", "o8"],
+        ["0", "0", "0", "0", "s1", "s1", "s2", "s2", "s1", "s1", "s2", "s2"],
+        ["0", "0", "0", "0", "d1", "d2", "d1", "d2", "d1", "d2", "d1", "d2"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 12
+    X = ones(q, 1); Z = Matrix(1.0I, q, q)
+
+    # --- (a) THE FITTED REDUCTION GATE: K=2 :ordered_probit == :bernoulli_probit
+    #     (σ²a AND marginal loglik), fitting the same binary data (recoded 1/2 ↔ 0/1).
+    let y2 = Float64[1, 2, 2, 1, 2, 1, 1, 2, 2, 1, 2, 2]
+        fo = fit_laplace_reml(y2, X, Z, Ainv; family = :ordered_probit)
+        fp = fit_laplace_reml(y2 .- 1, X, Z, Ainv; family = :bernoulli_probit)
+        @test fo.variance_components.sigma_a2 ≈ fp.variance_components.sigma_a2 rtol = 1e-3
+        @test fo.marginal_loglik ≈ fp.marginal_loglik atol = 1e-5
+        @test fo.variance_components.cutpoints == [0.0]     # K=2: θ_1 = 0 only
+        @test fo.family == :ordered_probit && fo.converged
+    end
+
+    # --- (b) K=3 JOINT fit: ordered cutpoints (θ_1=0 < θ_2), σ²a bounded by the rail,
+    #     self-consistent marginal loglik at the returned estimate, converged.
+    let y3 = Float64[1, 2, 3, 2, 1, 3, 2, 3, 1, 2, 3, 2]
+        f3 = fit_laplace_reml(y3, X, Z, Ainv; family = :ordered_probit)
+        θ = f3.variance_components.cutpoints
+        @test length(θ) == 2 && θ[1] == 0.0 && θ[2] > θ[1]   # identified + strictly ordered
+        @test 0 < f3.variance_components.sigma_a2 < 3000      # bounded (rail e^8 ≈ 2981)
+        @test f3.converged
+        mm = HSquared.laplace_marginal_loglik(y3, X, Z, Ainv,
+                 f3.variance_components.sigma_a2, HSquared.OrderedProbitResponse(θ))
+        @test f3.marginal_loglik ≈ mm.loglik atol = 1e-8     # self-consistency
+    end
+
+    # --- (c) guards: non-integer / <1 category codes; variational rejected.
+    @test_throws ArgumentError fit_laplace_reml(Float64[0, 1, 1], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :ordered_probit)  # code 0
+    @test_throws ArgumentError fit_laplace_reml(Float64[1, 2, 2], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :ordered_probit, marginal = :variational)
+end
+
 @testset "Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6)" begin
     # GammaResponse(shape) — strictly-positive continuous response, mean μ=exp(η), SUPPLIED
     # shape ν. EXPERIMENTAL, internal, Laplace-only. (validation_status() row DEFERRED to
@@ -972,6 +1014,38 @@ end
     @test_throws ArgumentError G(-1.0)
     @test_throws ArgumentError G(0.0)
     @test_throws ArgumentError HSquared._check_counts(G(2.0), [0.0])
+end
+
+@testset "Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6)" begin
+    # fit_laplace_reml(...; family = :gamma) JOINTLY estimates σ²a AND the shape ν over
+    # (log σ²a, log ν) by NelderMead (same shape as :nbinom). A=I animal model with REPEATED
+    # RECORDS: repeated records identify the Gamma shape ν (an uninformative one-record design
+    # weakly identifies ν — flat likelihood for large ν → the safety rail), between-animal
+    # spread identifies σ²a. Deterministic optimizer + fixed data → deterministic.
+    q = 6; reps = 4; n = q * reps
+    id = repeat(1:q, inner = reps)
+    Ainv = Matrix(1.0I, q, q)
+    X = ones(n, 1); Z = zeros(n, q)
+    for i in 1:n; Z[i, id[i]] = 1.0; end
+    # 3 "high" animals (~2.2) + 3 "low" (~0.7); within-animal spread identifies ν.
+    y = [2.3, 1.9, 2.6, 2.1, 0.7, 0.5, 0.9, 0.6, 2.4, 2.0, 2.7, 2.2,
+         0.8, 0.6, 1.0, 0.7, 2.5, 2.1, 2.8, 2.3, 0.75, 0.55, 0.95, 0.65]
+
+    f = fit_laplace_reml(y, X, Z, Ainv; family = :gamma)
+    sa = f.variance_components.sigma_a2; ν = f.variance_components.shape
+    @test f.family == :gamma && f.converged
+    @test sa > 1e-3 && 0 < ν < 1.0e4                        # σ²a meaningful; shape BOUNDED (the rail catches a runaway)
+    # self-consistency: reported loglik == the marginal at the returned (σ²a, ν)
+    mm = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa, HSquared.GammaResponse(ν))
+    @test f.marginal_loglik ≈ mm.loglik atol = 1e-8
+    # the returned optimum beats a deliberately off-optimum (σ²a, ν) point
+    off = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa * 4, HSquared.GammaResponse(ν * 0.2)).loglik
+    @test f.marginal_loglik >= off
+
+    # guards: strictly-positive response; variational rejected.
+    @test_throws ArgumentError fit_laplace_reml([1.0, -2.0, 1.0], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :gamma)
+    @test_throws ArgumentError fit_laplace_reml(y, X, Z, Ainv; family = :gamma, marginal = :variational)
 end
 
 @testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
@@ -1101,6 +1175,94 @@ end
     @test nsh2.status == "partial"
     @test occursin("Nakagawa", nsh2.evidence) || occursin("observation", nsh2.evidence)
     @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
+end
+
+@testset "Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2)" begin
+    # Threshold models: the liability scale IS the latent scale, with the probit residual
+    # V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The liability h² = V_A/(V_A + 1 + V_fixed)
+    # is the selection-relevant PRIMARY scale; the cutpoints do NOT enter it. The BINARY observed-0/1
+    # scale is computed via the QGglmm probit integration (= the Dempster–Lerner transform, verified
+    # equal); the ORDINAL (K>2) per-category observed scale needs the cutpoints and stays fenced (NaN).
+    # Bernoulli-probit (binary): V_A = 0.5, μ = 0 → h²_liab = 0.5/1.5 = 1/3.
+    hb = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse())
+    @test hb.h2_latent ≈ 1 / 3 atol = 1e-12          # latent == liability for a threshold family
+    @test hb.var_link == 1.0
+    @test hb.method == :probit_liability
+    @test occursin("liability", hb.caveat)
+    # Binary observed-0/1 scale: the QGglmm probit integration == the Dempster–Lerner transform.
+    let Φ = HSquared._norm_cdf, φ = HSquared._norm_pdf
+        Φinv(p) = (lo = -40.0; hi = 40.0; for _ in 1:200; m = (lo + hi) / 2; (Φ(m) < p ? lo = m : hi = m); end; (lo + hi) / 2)
+        pbar = HSquared._gh_expect(Φ, 0.0, 0.5)
+        dl = (0.5 / 1.5) * φ(Φinv(pbar))^2 / (pbar * (1 - pbar))
+        @test hb.h2_observation ≈ dl atol = 1e-6     # QGglmm integration == Dempster–Lerner z²/[p(1−p)]
+    end
+    @test 0.0 < hb.h2_observation < hb.h2_latent      # observed-0/1 h² < liability h² (classic DL)
+    # Ordinal (K=3): cutpoints [0, 1] do NOT change the liability h².
+    ho = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.OrderedProbitResponse([0.0, 1.0]))
+    @test ho.h2_latent ≈ 1 / 3 atol = 1e-12
+    @test ho.var_link == 1.0 && isnan(ho.h2_observation)   # scalar stays NaN (per-category instead)
+    @test ho.family === :ordered_probit
+    # PER-CATEGORY observed-scale h² (the `h2_observation_by_category` vector field; validated to
+    # ≤3e-8 vs QGglmm `model="ordinal"` in comparator/qgglmm_ordinal_observed/).
+    @test length(ho.h2_observation_by_category) == 3
+    @test ho.h2_observation_by_category ≈ [0.2122066, 0.0205833, 0.1658663] atol = 1e-6
+    @test all(0.0 .< ho.h2_observation_by_category .< 1.0)
+    # K=2 reduction: the two complementary category indicators have EQUAL observed h², and it equals
+    # the bernoulli-probit binary observed-0/1 h² at the same μ, V_A.
+    let ho2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.OrderedProbitResponse([0.0])),
+        hb2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.BernoulliProbitResponse())
+        @test length(ho2.h2_observation_by_category) == 2
+        @test ho2.h2_observation_by_category[1] ≈ ho2.h2_observation_by_category[2] atol = 1e-9
+        @test ho2.h2_observation_by_category[1] ≈ hb2.h2_observation atol = 1e-9
+    end
+    @test_throws ArgumentError HSquared._nongaussian_h2_core(:ordered_probit, 0.5, 0.0, NaN, 1, 0.0, true)
+    # Exact reduction: K=2 ordinal liability h² == bernoulli-probit liability h² (same μ, V_A).
+    ho2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.OrderedProbitResponse([0.0]))
+    hb2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.BernoulliProbitResponse())
+    @test ho2.h2_latent ≈ hb2.h2_latent atol = 1e-14
+    # V_fixed enters the liability denominator: V_A = 1, V_fixed = 1 → 1/(1+1+1) = 1/3.
+    hf = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.BernoulliProbitResponse();
+                                           predictor_variance = 1.0)
+    @test hf.h2_latent ≈ 1 / 3 atol = 1e-12
+    @test hf.latent_total_variance ≈ 3.0
+    # h²_liab ∈ (0,1) and is MONOTONE increasing in V_A (unlike the Poisson observation scale).
+    @test 0.0 < hb.h2_latent < 1.0
+    @test HSquared.nongaussian_heritability(2.0, 0.0, HSquared.BernoulliProbitResponse()).h2_latent >
+          HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse()).h2_latent
+end
+
+@testset "Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2)" begin
+    # _trigamma(ν) = ψ₁(ν) against known closed forms (recurrence + asymptotic, ~3e-9).
+    @test HSquared._trigamma(1.0) ≈ π^2 / 6 atol = 1e-7            # ψ₁(1)
+    @test HSquared._trigamma(2.0) ≈ π^2 / 6 - 1 atol = 1e-7        # ψ₁(2) = ψ₁(1) − 1
+    @test HSquared._trigamma(0.5) ≈ π^2 / 2 atol = 1e-7            # ψ₁(1/2)
+    # ψ₁(x) = ψ₁(x+1) + 1/x² (the recurrence the code relies on)
+    @test HSquared._trigamma(3.7) ≈ HSquared._trigamma(4.7) + 1 / 3.7^2 atol = 1e-9
+    # Gamma latent-scale h² = V_A/(V_A + ψ₁(ν) + V_fixed) — the log-scale (V_link = trigamma).
+    hg = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(1.0))
+    @test hg.family === :gamma && hg.method === :gamma_trigamma_latent
+    @test hg.var_link ≈ π^2 / 6 atol = 1e-7                        # V_link = ψ₁(1) = π²/6
+    @test hg.h2_latent ≈ 1 / (1 + π^2 / 6) atol = 1e-7
+    # DATA/OBSERVATION scale: h²_obs = V_A/[e^{V_pred}(1+1/ν)−1] (NS-2017 multiplicative; μ CANCELS),
+    # validated against QGglmm's custom Gamma model (comparator/qgglmm_gamma_observed/).
+    @test hg.h2_observation ≈ 1.0 / (exp(1.0) * (1 + 1 / 1.0) - 1) atol = 1e-9   # V_A=1, V_pred=1, ν=1
+    @test 0.0 < hg.h2_observation < 1.0
+    # the data-scale h² is μ-independent (the μ-dependent pieces cancel in the ratio).
+    @test HSquared.nongaussian_heritability(1.0, 4.2, HSquared.GammaResponse(1.0)).h2_observation ≈ hg.h2_observation atol = 1e-10
+    # NON-degenerate (unlike Poisson): a finite positive latent h² for a log link.
+    @test 0.0 < hg.h2_latent < 1.0
+    # μ-independence (the shape/variances set it, not the location).
+    @test HSquared.nongaussian_heritability(1.0, 3.5, HSquared.GammaResponse(1.0)).h2_latent ≈ hg.h2_latent atol = 1e-12
+    # V_fixed enters the denominator.
+    hf = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(2.0); predictor_variance = 0.5)
+    @test hf.latent_total_variance ≈ 1 + HSquared._trigamma(2.0) + 0.5 atol = 1e-9
+    # larger shape ν → smaller V_link (trigamma decreasing) → larger latent h² at fixed V_A.
+    @test HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(10.0)).h2_latent >
+          HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(1.0)).h2_latent
+    # guards: the (sigma_a2, mu, family) path requires a positive shape; a missing shape via the
+    # symbol path (should never happen through the public API) throws.
+    @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(-1.0))
+    @test_throws ArgumentError HSquared._nongaussian_h2_core(:gamma, 1.0, 0.0, NaN, 1, 0.0, true)  # shape = NaN
 end
 
 @testset "Phase 1 pedigree normalization and Ainv" begin

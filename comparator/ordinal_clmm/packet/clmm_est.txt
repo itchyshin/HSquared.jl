@@ -1,0 +1,8 @@
+truth_sigma2a 0.5000000000
+truth_cut1 -0.4000000000
+truth_cut2 0.8000000000
+clmm_sigma2a 0.7291241319
+clmm_theta1 -0.2974249252
+clmm_theta2 0.8908758049
+n 320
+q 80
