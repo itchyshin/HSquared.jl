@@ -131,6 +131,29 @@ function _halfsib_pedigree(nsire, ndam, noffspring)
     return normalize_pedigree(ids, sire, dam)
 end
 
+# Full-sib design: `npair` distinct sire×dam pairs, each producing
+# `noffspring_per_pair` full-sib offspring (BOTH parents known). Higher relatedness
+# than the half-sib design (shared sire AND dam → A = 0.5 within a family), so it is
+# the EASIER identifiability regime — a pass closes the design owed item but is not a
+# stress test (the 3-trait cell is the substantive test).
+function _fullsib_pedigree(npair, noffspring_per_pair)
+    sire_ids = ["s$(i)" for i in 1:npair]
+    dam_ids = ["d$(i)" for i in 1:npair]
+    noff = npair * noffspring_per_pair
+    offspring_ids = ["o$(i)" for i in 1:noff]
+    ids = vcat(sire_ids, dam_ids, offspring_ids)
+    # offspring k belongs to family ((k-1) ÷ noffspring_per_pair) + 1
+    sire = vcat(
+        fill("0", 2 * npair),
+        [sire_ids[((k - 1) ÷ noffspring_per_pair) + 1] for k in 1:noff],
+    )
+    dam = vcat(
+        fill("0", 2 * npair),
+        [dam_ids[((k - 1) ÷ noffspring_per_pair) + 1] for k in 1:noff],
+    )
+    return normalize_pedigree(ids, sire, dam)
+end
+
 function _simulate_repeated_records(config::MultivariateRecoveryConfig)
     rng = MersenneTwister(config.seed)
     ped = _halfsib_pedigree(config.nsire, config.ndam, config.noffspring)
@@ -326,4 +349,8 @@ function main(args = ARGS)
     return nothing
 end
 
-main()
+# Run only when invoked as a script (`julia sim/phase4_..._recovery.jl ...`); an
+# `include` (e.g. from the self-test) brings the helpers into scope without running.
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
