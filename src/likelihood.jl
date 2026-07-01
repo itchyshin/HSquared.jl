@@ -807,6 +807,218 @@ function fit_two_effect_reml(
     )
 end
 
+"""
+    multi_effect_mme(y, X, effects, sigmas, sigma_e2; ids = nothing)
+
+Supplied-variance Henderson solve of the general model with an ARBITRARY number
+`K` of independent random effects — the `K`-block generalization of
+[`two_effect_mme`](@ref):
+
+    y = X·β + Σ_{i=1}^{K} Z_i·u_i + e,
+    u_i ~ N(0, sigma_i·A_i),  e ~ N(0, sigma_e2·I),
+
+where `effects` is a vector of `(Z_i, Ainv_i)` pairs (`Z_i` the `n×q_i`
+record→level incidence, `Ainv_i` the `q_i×q_i` relationship precision — pass
+`I` for a plain i.i.d. `(1|group)` effect), `sigmas[i]` the variance of effect
+`i`, and `sigma_e2 > 0`. The stacked random precision is
+`blockdiag(A_1/σ_1, …, A_K/σ_K)` over `[u_1; …; u_K]` and the random design is
+`hcat(Z_1, …, Z_K)`, exactly as the two-effect kernel. `ids` may be `nothing`
+or a length-`K` vector of per-effect id vectors.
+
+Returns `(beta, effects = [(ids, values), …], variance_components =
+(sigmas, sigma_e2))`. The `K=2` case is byte-identical to [`two_effect_mme`](@ref).
+Experimental, supplied-variance, engine-internal — it does not estimate variances
+and does not cover correlated effects (a 2×2 direct–maternal `G` needs
+`kron(inv(G), Ainv)`, a different structure).
+"""
+function multi_effect_mme(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    ids = nothing,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+    if ids === nothing
+        eids = [collect(1:qi) for qi in qs]
+    else
+        length(ids) == K || throw(ArgumentError("ids must be a length-$K vector of per-effect id vectors"))
+        eids = [collect(ids[i]) for i in 1:K]
+        for i in 1:K
+            length(eids[i]) == qs[i] || throw(ArgumentError("ids[$i] length must match Ainv[$i] dimensions"))
+        end
+    end
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    rp = inv(Float64(sigma_e2))
+    Zf = reduce(hcat, Zs)
+    Ginv = blockdiag((Ainvs[i] .* inv(Float64(sigmas[i])) for i in 1:K)...)
+    Xt = transpose(Xs)
+    Zft = transpose(Zf)
+    nfixed = size(Xs, 2)
+    lhs = [
+        rp * (Xt * Xs) rp * (Xt * Zf)
+        rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+    ]
+    rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
+    solution = lhs \ rhs
+    beta = Vector{Float64}(solution[1:nfixed])
+    effects_out = Vector{NamedTuple{(:ids, :values)}}(undef, K)
+    off = nfixed
+    for i in 1:K
+        u = Vector{Float64}(solution[(off + 1):(off + qs[i])])
+        effects_out[i] = (ids = eids[i], values = u)
+        off += qs[i]
+    end
+    return (
+        beta = beta,
+        effects = effects_out,
+        variance_components = (sigmas = Float64.(collect(sigmas)), sigma_e2 = Float64(sigma_e2)),
+    )
+end
+
+# Dense REML log-likelihood and BLUPs for a general K-independent-random-effect
+# model: V = Σ_i sigma_i·(Z_i A_i Z_i') + sigma_e2·I (validation-scale, forms the
+# n×n marginal covariance). The genetic terms accumulate first, then the residual
+# is added last, matching `_two_effect_dense`'s associativity so the K=2 case is
+# byte-identical. `ZAs` is a vector of dense `(Z_i, A_i)` pairs.
+function _multi_effect_dense(y, X, ZAs, sigmas, sigma_e2)
+    n = length(y)
+    K = length(ZAs)
+    Vacc = zeros(n, n)
+    for i in 1:K
+        Zi, Ai = ZAs[i]
+        Vacc = Vacc .+ sigmas[i] .* (Zi * Ai * transpose(Zi))
+    end
+    V = Symmetric(Vacc .+ sigma_e2 .* Matrix(1.0I, n, n))
+    Vf = cholesky(V)
+    ViX = Vf \ Matrix(X)
+    XtViX = cholesky(Symmetric(transpose(X) * ViX))
+    beta = XtViX \ (transpose(X) * (Vf \ y))
+    r = y .- X * beta
+    Vir = Vf \ r
+    loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+    us = [sigmas[i] .* (ZAs[i][2] * (transpose(ZAs[i][1]) * Vir)) for i in 1:K]
+    return loglik, Vector{Float64}(beta), us
+end
+
+"""
+    fit_multi_effect_reml(y, X, effects; initial = nothing, iterations = 200,
+                          ids = nothing, max_dense_cells = 1_000_000)
+
+REML estimation of the `K+1` variance components `(sigmas..., sigma_e2)` of the
+general `K`-independent-random-effect model (see [`multi_effect_mme`](@ref)), by
+maximizing the dense REML log-likelihood (`NelderMead` over `K+1` log-variances).
+`effects` is a vector of `(Z_i, Ainv_i)` pairs; `initial`, if supplied, is a
+length-`K+1` vector of positive starting variances (`[σ_1, …, σ_K, σ_e2]`),
+otherwise all start at 1.
+
+Returns a `NamedTuple` with `variance_components = (sigmas, sigma_e2)`, per-effect
+`ratios`, `beta`, the `K` BLUPs (`effects = [(ids, values), …]`), `loglik`,
+`converged`, and per-component `boundary` flags (`σ_i / total < 1e-6`).
+
+Reductions: the `K=1` fit recovers the univariate animal-model REML optimum, and
+the `K=2` fit is byte-identical to [`fit_two_effect_reml`](@ref) on identified
+data. EXPERIMENTAL, dense/validation-scale, REML-only, Gaussian, INDEPENDENT
+effects only (no correlated / direct–maternal covariance). The dense path forms
+an `n×n` `V` (guarded by `max_dense_cells`); it is an oracle for small `K`
+(≲4) and `n` (≲2000), NOT a production sparse estimator — that is the owed sparse
+AI-REML `K`-component path. On small/uninformative data the optimum can sit on a
+boundary (a variance → 0), reported via `converged` / `boundary`, never hidden.
+Non-identifiability (e.g. two `A=I` effects on the same grouping) shows as a flat
+ridge (`converged = false`); the engine reports it, it does not certify
+identifiability.
+"""
+function fit_multi_effect_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    n * n <= max_dense_cells ||
+        throw(ArgumentError("dense N-effect REML would form an $(n)×$(n) covariance " *
+            "($(n * n) cells) exceeding max_dense_cells=$(max_dense_cells)"))
+    As = Matrix{Float64}[]
+    Zds = Matrix{Float64}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(As, inv(Symmetric(Matrix{Float64}(Ainvi))))
+        push!(Zds, Matrix{Float64}(Zi))
+        push!(qs, qi)
+    end
+    if initial === nothing
+        p0 = zeros(K + 1)
+    else
+        length(initial) == K + 1 ||
+            throw(ArgumentError("initial must have length K+1 = $(K + 1) (one per effect plus residual)"))
+        all(s -> s > 0, initial) || throw(ArgumentError("initial variance components must be positive"))
+        p0 = log.(Float64.(collect(initial)))
+    end
+    yv = Float64.(y)
+    Xd = Matrix{Float64}(X)
+    ZAs = [(Zds[i], As[i]) for i in 1:K]
+    function objective(p)
+        sigmas = exp.(p[1:K])
+        se2 = exp(p[K + 1])
+        try
+            val = -_multi_effect_dense(yv, Xd, ZAs, sigmas, se2)[1]
+            return isfinite(val) ? val : Inf
+        catch err
+            (err isa PosDefException || err isa SingularException) && return Inf
+            rethrow()
+        end
+    end
+    result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+    popt = exp.(Optim.minimizer(result))
+    sigmas = popt[1:K]
+    se2 = popt[K + 1]
+    loglik, beta, us = _multi_effect_dense(yv, Xd, ZAs, sigmas, se2)
+    total = sum(sigmas) + se2
+    eids = ids === nothing ? [collect(1:qs[i]) for i in 1:K] : [collect(ids[i]) for i in 1:K]
+    effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
+    return (
+        variance_components = (sigmas = sigmas, sigma_e2 = se2),
+        ratios = sigmas ./ total,
+        beta = beta,
+        effects = effects_out,
+        loglik = loglik,
+        converged = Optim.converged(result),
+        boundary = [s / total < 1e-6 for s in sigmas],
+    )
+end
+
 # Repeatability dense loglik = the two-effect dense loglik with the
 # permanent-environment effect sharing Z and carrying an identity relationship.
 function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)

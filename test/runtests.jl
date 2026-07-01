@@ -171,7 +171,8 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 50
+    @test length(validation) == 51
+    @test "V3-NEFFECT-REML" in [row.id for row in validation]
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -5674,6 +5675,85 @@ end
     @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2);
         initial = (sigma1 = -1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2))
+end
+
+@testset "Phase 3 N-effect MME + REML (arbitrary independent random effects)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Z1 = Matrix(1.0I, 4, 4)                       # record -> animal (A-structured)
+    Z2 = [1.0 0; 1 0; 0 1; 0 1]                   # record -> common-env group (I)
+    y = [10.0, 11.0, 9.0, 12.0]; X = ones(4, 1)
+    s1 = 1.0; s2 = 0.5; se2 = 2.0
+
+    # K=2 MME is byte-identical to two_effect_mme (the honesty-backbone reduction)
+    m = multi_effect_mme(y, X, [(Z1, Ainv), (Z2, Matrix(1.0I, 2, 2))], [s1, s2], se2)
+    t = two_effect_mme(y, X, Z1, Ainv, Z2, Matrix(1.0I, 2, 2), s1, s2, se2)
+    @test length(m.effects) == 2
+    @test m.beta ≈ t.beta atol = 1e-12
+    @test m.effects[1].values ≈ t.effect1.values atol = 1e-12
+    @test m.effects[2].values ≈ t.effect2.values atol = 1e-12
+
+    # K=3 MME: independent marginal-GLS cross-check with a second i.i.d. grouping
+    Z3 = [1.0 0; 0 1; 1 0; 0 1]
+    s3 = 0.7
+    m3 = multi_effect_mme(y, X, [(Z1, Ainv), (Z2, Matrix(1.0I, 2, 2)), (Z3, Matrix(1.0I, 2, 2))],
+                          [s1, s2, s3], se2)
+    V = s1 .* (Z1 * A * transpose(Z1)) .+ s2 .* (Z2 * transpose(Z2)) .+
+        s3 .* (Z3 * transpose(Z3)) .+ se2 .* Matrix(1.0I, 4, 4)
+    bg = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    resid = y .- X * bg
+    @test m3.beta ≈ bg atol = 1e-9
+    @test m3.effects[1].values ≈ s1 .* A * transpose(Z1) * (V \ resid) atol = 1e-9
+    @test m3.effects[2].values ≈ s2 .* transpose(Z2) * (V \ resid) atol = 1e-9
+    @test m3.effects[3].values ≈ s3 .* transpose(Z3) * (V \ resid) atol = 1e-9
+
+    # K=1 MME reduces to the single-effect marginal-GLS animal-model solve
+    m1 = multi_effect_mme(y, X, [(Z1, Ainv)], [1.0], 2.0)
+    V1 = 1.0 .* (Z1 * A * transpose(Z1)) .+ 2.0 .* Matrix(1.0I, 4, 4)
+    b1 = (transpose(X) * (V1 \ X)) \ (transpose(X) * (V1 \ y))
+    @test m1.effects[1].values ≈ 1.0 .* A * transpose(Z1) * (V1 \ (y .- X * b1)) atol = 1e-9
+
+    # MME guards
+    @test_throws ArgumentError multi_effect_mme(y, X, [(Z1, Ainv)], [1.0, 2.0], se2)
+    @test_throws ArgumentError multi_effect_mme(y, X, [(Z1, Ainv)], [-1.0], se2)
+    @test_throws ArgumentError multi_effect_mme(y, X, [(Z2[:, 1:1], Matrix(1.0I, 2, 2))], [1.0], se2)
+
+    # ---- REML ----
+    Zf = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Zf[rec, an] = 1.0; end
+    yf = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; Xf = ones(8, 1)
+    Z2f = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
+
+    # K=2 REML byte-identical to fit_two_effect_reml on identified data
+    gen2 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2))])
+    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2))
+    @test gen2.variance_components.sigmas[1] ≈ two.variance_components.sigma1 atol = 1e-10
+    @test gen2.variance_components.sigmas[2] ≈ two.variance_components.sigma2 atol = 1e-10
+    @test gen2.variance_components.sigma_e2 ≈ two.variance_components.sigma_e2 atol = 1e-10
+
+    # K=1 REML recovers the univariate fit_sparse_reml optimum
+    spec1 = animal_model_spec(yf, Xf, sparse(Zf), sparse(Matrix(Ainv)); method = :REML)
+    sp = fit_sparse_reml(spec1)
+    g1 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)])
+    @test g1.variance_components.sigmas[1] ≈ sp.variance_components.sigma_a2 rtol = 1e-3
+    @test g1.variance_components.sigma_e2 ≈ sp.variance_components.sigma_e2 rtol = 1e-3
+
+    # K=3 REML: converges, valid components + ratios, permutation-invariant loglik
+    g3 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2)),
+                                        (Z2f, Matrix(1.0I, 2, 2))])
+    @test g3.converged
+    @test all(g3.variance_components.sigmas .>= 0)
+    @test g3.variance_components.sigma_e2 > 0
+    @test all(0 .<= g3.ratios .<= 1)
+    @test length(g3.boundary) == 3
+    g3p = fit_multi_effect_reml(yf, Xf, [(Z2f, Matrix(1.0I, 2, 2)), (Zf, Ainv),
+                                         (Z2f, Matrix(1.0I, 2, 2))])
+    @test g3.loglik ≈ g3p.loglik rtol = 1e-6
+
+    # REML guards
+    @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; initial = [1.0, 1.0, 1.0])
+    @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; initial = [-1.0, 1.0])
+    @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; max_dense_cells = 4)
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin
