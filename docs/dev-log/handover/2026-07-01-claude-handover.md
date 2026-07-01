@@ -131,16 +131,16 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
       against QGglmm's CUSTOM Gamma-log model (`var.func=μ²/ν`, mathematically determined) to ~5e-11
       (`comparator/qgglmm_gamma_observed/`). Rose PROMOTE-with-changes (applied). So **every non-Gaussian
       h² scale is now done + externally validated EXCEPT the one below.**
-    - **ORDINAL (K>2) observed/category scale — the ONLY remaining piece, and it is an API DESIGN
-      DECISION, not a missing formula.** QGglmm DOES support ordinal (`model="ordinal"`, `cut.points=…`)
-      — but it returns a **per-category VECTOR** of h² (one per category-indicator), not a scalar. The
-      engine's `h2_observation` field is a scalar. So exposing the ordinal observed scale needs a
-      representation choice (return a vector? a `h2_observation_by_category` field? which summary?) — a
-      maintainer/API decision, best made deliberately, NOT rushed unattended. This is the genuine
-      boundary the session stopped at (the finding is recorded so the decision starts informed).
-  Honest summary: the DONE pieces are internally cross-checked AND externally validated against QGglmm
-  (all four builtins + the Gamma custom model); the sole remaining observation scale (ordinal K>2) is
-  blocked on an API-shape decision, not a derivation.
+    - **ORDINAL (K>2) observed/category scale — DONE + EXTERNALLY VALIDATED (#223).** The maintainer
+      chose the API (a new **vector field** `h2_observation_by_category`, keeping the scalar
+      `h2_observation = NaN`). Per category k: `h²_k = Ψ_k²V_A/[p_k(1−p_k)]`, validated **probe-first**
+      then against QGglmm `model="ordinal"` to ≤3.17e-8 (K=3, K=4; Rose's independent re-check incl. a
+      K=5 symmetric cancellation case, ≤2.1e-9). Rose PROMOTE-with-changes (applied). Test includes the
+      K=2 reduction to the binary observed h². Stacked on #221.
+  Honest summary: **EVERY non-Gaussian h² scale is now implemented and externally validated against
+  QGglmm** — the four builtins + binary-probit (#221), Gamma latent + data (#222), ordinal per-category
+  (#223). The h² surface is complete once #221 + #222 + #223 merge. Remaining for the covered path:
+  MCMCglmm, a Fisher/Falconer sign-off, intervals/SEs, R activation, and G10.
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
