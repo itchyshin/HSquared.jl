@@ -868,6 +868,45 @@ end
     @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, 1.0, f)
 end
 
+@testset "Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6)" begin
+    # GammaResponse(shape) — strictly-positive continuous response, mean μ=exp(η), SUPPLIED
+    # shape ν. EXPERIMENTAL, internal, Laplace-only. (validation_status() row DEFERRED to
+    # merge-sequencing per the one-row-adding-PR-at-a-time count-guard discipline.)
+    G = HSquared.GammaResponse
+
+    # --- (a) THE REDUCTION GATE: ν=1 reduces EXACTLY to the Exponential
+    #     (ℓ=−η−y·e^{-η}, score=y·e^{-η}−1, observed weight=y·e^{-η}).
+    let g1 = G(1.0)
+        for (y, η) in ((0.5, -0.3), (2.0, 0.7), (1.2, 1.5))
+            @test HSquared._fam_loglik(g1, y, η) ≈ -η - y * exp(-η) atol = 1e-12
+            @test HSquared._fam_score(g1, y, η) ≈ y * exp(-η) - 1 atol = 1e-12
+            @test HSquared._fam_weight(g1, y, η) ≈ y * exp(-η) atol = 1e-12
+        end
+    end
+
+    # --- (b) KERNEL GATES (ν≠1): score == central FD of loglik; observed weight ==
+    #     −(second FD) and is > 0 (Gamma log-link is log-concave in η).
+    for ν in (0.5, 2.0, 5.0), (y, η) in ((0.8, -0.2), (3.0, 0.9))
+        f = G(ν)
+        ll(x) = HSquared._fam_loglik(f, y, x)
+        @test HSquared._fam_score(f, y, η) ≈ (ll(η + 1e-6) - ll(η - 1e-6)) / 2e-6 rtol = 1e-5
+        @test HSquared._fam_weight(f, y, η) ≈ -(ll(η + 1e-4) - 2ll(η) + ll(η - 1e-4)) / 1e-8 rtol = 1e-3
+        @test HSquared._fam_weight(f, y, η) > 0
+    end
+
+    # --- (c) END-TO-END: the Laplace marginal is finite on a tiny Gamma fixture.
+    let ped = normalize_pedigree(string.(1:6), fill("0", 6), fill("0", 6))
+        Ainv = pedigree_inverse(ped)
+        X = ones(6, 1); Z = Matrix(1.0I, 6, 6); y = [0.8, 1.5, 2.1, 0.6, 1.2, 3.0]
+        @test isfinite(HSquared.laplace_marginal_loglik(y, X, Z, Ainv, 0.5, G(2.0)).loglik)
+    end
+
+    # --- (d) guards: positive shape; strictly-positive response.
+    @test_throws ArgumentError G(-1.0)
+    @test_throws ArgumentError G(0.0)
+    @test_throws ArgumentError HSquared._check_counts(G(2.0), [0.0])
+end
+
 @testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
     # The σ²a profile-LRT interval covers ALL single-component families through ONE
     # shared `_resolve_single_family` + `target`/`_profile_root` path. Lock that

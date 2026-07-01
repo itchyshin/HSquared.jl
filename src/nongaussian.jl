@@ -126,6 +126,24 @@ Nakagawa–Schielzeth transform, a separate slice). Internal, Laplace-only.
 """
 struct BernoulliProbitResponse <: ResponseFamily end
 
+"""
+Gamma (log-link) family for a strictly-positive continuous response — a v0.6 plan
+family (e.g. milk yield, longevity). Mean `μ = exp(η)`, SUPPLIED shape `ν > 0`:
+`y | η ~ Gamma(shape ν, mean μ)`, density `(ν/μ)^ν y^{ν-1} e^{-νy/μ} / Γ(ν)`, `y > 0`.
+The conditional `ℓ = ν(log ν − η) + (ν−1)log y − ν y e^{-η} − log Γ(ν)` is LOG-CONCAVE
+in η, so the score `ν(y e^{-η} − 1)` and the OBSERVED-information weight `ν y e^{-η}`
+are exact and `> 0` (no Fisher-scoring substitution; same convention as Poisson/probit).
+At `ν = 1` the family reduces to the EXPONENTIAL. EXPERIMENTAL, internal, Laplace-only,
+SUPPLIED shape (joint shape estimation is a follow-up, like the beta-binomial dispersion).
+"""
+struct GammaResponse <: ResponseFamily
+    shape::Float64
+    function GammaResponse(shape::Real)
+        shape > 0 || throw(ArgumentError("GammaResponse shape must be positive, got $shape"))
+        return new(Float64(shape))
+    end
+end
+
 # Per-record family resolution. For every family without per-record state this is
 # the identity (compiles away; zero overhead in the per-observation comprehensions).
 # For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
@@ -380,6 +398,16 @@ function _fam_weight(::BernoulliProbitResponse, y, η)
     return m * (m + s * η)
 end
 
+# Gamma (log link), mean μ = exp(η), supplied shape ν. ℓ = ν(log ν − η) + (ν−1)log y −
+# ν y e^{-η} − log Γ(ν). Log-concave in η → observed info = −d²ℓ/dη² = ν y e^{-η} > 0
+# (no Fisher-scoring substitution). ν = 1 reduces to the exponential.
+function _fam_loglik(f::GammaResponse, y, η)
+    ν = f.shape
+    return ν * (log(ν) - η) + (ν - 1) * log(y) - ν * y * exp(-η) - _loggamma(ν)
+end
+_fam_score(f::GammaResponse, y, η) = f.shape * (y * exp(-η) - 1.0)
+_fam_weight(f::GammaResponse, y, η) = f.shape * y * exp(-η)
+
 function _logfactorial(y)
     k = Int(round(y))
     s = 0.0
@@ -428,6 +456,11 @@ end
 function _check_counts(::BernoulliProbitResponse, yv)
     all(y -> y == 0 || y == 1, yv) ||
         throw(ArgumentError("BernoulliProbitResponse requires binary 0/1 responses"))
+    return nothing
+end
+function _check_counts(::GammaResponse, yv)
+    all(y -> y > 0, yv) ||
+        throw(ArgumentError("GammaResponse requires strictly positive responses"))
     return nothing
 end
 
