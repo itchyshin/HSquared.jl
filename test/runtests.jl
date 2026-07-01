@@ -1231,6 +1231,40 @@ end
           HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse()).h2_latent
 end
 
+@testset "Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2)" begin
+    # _trigamma(ν) = ψ₁(ν) against known closed forms (recurrence + asymptotic, ~3e-9).
+    @test HSquared._trigamma(1.0) ≈ π^2 / 6 atol = 1e-7            # ψ₁(1)
+    @test HSquared._trigamma(2.0) ≈ π^2 / 6 - 1 atol = 1e-7        # ψ₁(2) = ψ₁(1) − 1
+    @test HSquared._trigamma(0.5) ≈ π^2 / 2 atol = 1e-7            # ψ₁(1/2)
+    # ψ₁(x) = ψ₁(x+1) + 1/x² (the recurrence the code relies on)
+    @test HSquared._trigamma(3.7) ≈ HSquared._trigamma(4.7) + 1 / 3.7^2 atol = 1e-9
+    # Gamma latent-scale h² = V_A/(V_A + ψ₁(ν) + V_fixed) — the log-scale (V_link = trigamma).
+    hg = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(1.0))
+    @test hg.family === :gamma && hg.method === :gamma_trigamma_latent
+    @test hg.var_link ≈ π^2 / 6 atol = 1e-7                        # V_link = ψ₁(1) = π²/6
+    @test hg.h2_latent ≈ 1 / (1 + π^2 / 6) atol = 1e-7
+    # DATA/OBSERVATION scale: h²_obs = V_A/[e^{V_pred}(1+1/ν)−1] (NS-2017 multiplicative; μ CANCELS),
+    # validated against QGglmm's custom Gamma model (comparator/qgglmm_gamma_observed/).
+    @test hg.h2_observation ≈ 1.0 / (exp(1.0) * (1 + 1 / 1.0) - 1) atol = 1e-9   # V_A=1, V_pred=1, ν=1
+    @test 0.0 < hg.h2_observation < 1.0
+    # the data-scale h² is μ-independent (the μ-dependent pieces cancel in the ratio).
+    @test HSquared.nongaussian_heritability(1.0, 4.2, HSquared.GammaResponse(1.0)).h2_observation ≈ hg.h2_observation atol = 1e-10
+    # NON-degenerate (unlike Poisson): a finite positive latent h² for a log link.
+    @test 0.0 < hg.h2_latent < 1.0
+    # μ-independence (the shape/variances set it, not the location).
+    @test HSquared.nongaussian_heritability(1.0, 3.5, HSquared.GammaResponse(1.0)).h2_latent ≈ hg.h2_latent atol = 1e-12
+    # V_fixed enters the denominator.
+    hf = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(2.0); predictor_variance = 0.5)
+    @test hf.latent_total_variance ≈ 1 + HSquared._trigamma(2.0) + 0.5 atol = 1e-9
+    # larger shape ν → smaller V_link (trigamma decreasing) → larger latent h² at fixed V_A.
+    @test HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(10.0)).h2_latent >
+          HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(1.0)).h2_latent
+    # guards: the (sigma_a2, mu, family) path requires a positive shape; a missing shape via the
+    # symbol path (should never happen through the public API) throws.
+    @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.GammaResponse(-1.0))
+    @test_throws ArgumentError HSquared._nongaussian_h2_core(:gamma, 1.0, 0.0, NaN, 1, 0.0, true)  # shape = NaN
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],

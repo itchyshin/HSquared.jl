@@ -268,6 +268,24 @@ function _digamma(x::Real)
     return ψ
 end
 
+# Trigamma ψ₁(x) = d/dx ψ(x) — same dependency-free strategy as `_digamma`:
+# recurrence ψ₁(x) = ψ₁(x+1) + 1/x² up to x ≥ 6, then the asymptotic series
+# ψ₁(x) ≈ 1/x + 1/(2x²) + 1/(6x³) − 1/(30x⁵) + 1/(42x⁷). Used for the Gamma
+# log-scale distribution-specific variance V_link = Var[log Y] = ψ₁(shape)
+# (doc-19 §3.1). Accurate to ~3e-9 for x > 0 (ψ₁(1) = π²/6, ψ₁(2) = π²/6 − 1).
+function _trigamma(x::Real)
+    z = Float64(x)
+    ψ₁ = 0.0
+    while z < 6.0
+        ψ₁ += 1.0 / (z * z)
+        z += 1.0
+    end
+    inv = 1.0 / z
+    inv2 = inv * inv
+    ψ₁ += inv + 0.5 * inv2 + inv2 * inv * (1 / 6 - inv2 * (1 / 30 - inv2 / 42))
+    return ψ₁
+end
+
 # --- Dependency-free standard-normal primitives for the probit family (H3) -------
 # Project.toml has no SpecialFunctions/Distributions; the coarse genomic
 # `_standard_normal_cdf_approx` (7.5e-8) is NOT accurate enough for likelihood
@@ -1161,7 +1179,7 @@ const _VAR_LOGISTIC = (π^2) / 3
 # QGglmm/MCMCglmm comparator + a Fisher/Falconer review before any promotion.
 function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e2::Float64,
                               n_trials::Int, V_fixed::Float64, converged::Bool;
-                              cutpoints = nothing)
+                              cutpoints = nothing, shape::Float64 = NaN)
     if family === :gaussian
         h2 = V_A / (V_A + sigma_e2)
         return (family = :gaussian, sigma_a2 = V_A, mu = mu,
@@ -1244,8 +1262,31 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                     caveat = "Ordinal probit threshold: h2_latent is the liability (selection-relevant, primary) scale (V_link = 1); the observed scale is PER-CATEGORY — h2_observation_by_category[k] = Ψ_k²V_A/[p_k(1−p_k)] per category indicator (validated vs QGglmm model=ordinal); the scalar h2_observation stays NaN (no single ordinal observed h²).",
                     method = :probit_liability)
         end
+    elseif family === :gamma
+        # Gamma (log link). LATENT (log) scale: V_link = Var[log Y] = ψ₁(shape) (trigamma) — EXACT,
+        # mean-independent (doc-19 §3.1); NON-degenerate unlike Poisson (V_link = 0).
+        # OBSERVATION/DATA scale (the NS-2017 multiplicative form): over η ~ N(μ, V_A+V_fixed),
+        # μ = exp(η), Var(y|η) = μ²/ν; Ψ = E[dμ/dη] = E[μ]; V_A,obs = Ψ²·V_A;
+        # V_P,obs = Var(μ) + E[μ²/ν]. All lognormal closed forms, so
+        # h²_obs = V_A/[e^{V_pred}(1+1/ν) − 1] (μ CANCELS). VALIDATED against QGglmm's custom
+        # Gamma model (var.func = μ²/ν) to ~5e-11 (`comparator/qgglmm_gamma_observed/`).
+        isnan(shape) && throw(ArgumentError("nongaussian_heritability for :gamma needs the shape ν (from the fit's variance_components.shape or the GammaResponse family object)"))
+        shape > 0 || throw(ArgumentError("the Gamma shape ν must be positive"))
+        V_link = _trigamma(shape)
+        latent_total = V_A + V_link + V_fixed
+        V_pred = V_A + V_fixed
+        Ψ = exp(mu + V_pred / 2)                            # E[dμ/dη] = E[exp η]
+        var_mu = (exp(V_pred) - 1.0) * exp(2.0 * mu + V_pred)   # Var(exp η) (lognormal)
+        e_var = exp(2.0 * mu + 2.0 * V_pred) / shape        # E[Var(y|η)] = E[μ²/ν]
+        h2_obs = Ψ^2 * V_A / (var_mu + e_var)              # = V_A/[e^{V_pred}(1+1/ν) − 1]
+        return (family = :gamma, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                h2_latent = V_A / latent_total, h2_observation = h2_obs,
+                var_distribution = e_var, var_link = V_link, converged = converged,
+                information_limited = false,
+                caveat = "Gamma log link: latent (log) scale V_link = trigamma(shape) = Var[log Y] (EXACT, doc-19 §3.1); observation/data scale = the NS-2017 multiplicative form V_A/[e^{V_pred}(1+1/ν)−1], validated against QGglmm's custom Gamma model.",
+                method = :gamma_trigamma_latent)
     else
-        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale) and :bernoulli_probit/:ordered_probit (liability scale); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
+        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale), :bernoulli_probit/:ordered_probit (liability scale), and :gamma (latent/log scale, V_link = trigamma(shape)); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
     end
 end
 
@@ -1255,7 +1296,8 @@ _h2_family_params(::BernoulliResponse) = (:bernoulli, 1, NaN)
 _h2_family_params(f::BinomialResponse) = (:binomial, f.n_trials, NaN)
 _h2_family_params(::BernoulliProbitResponse) = (:bernoulli_probit, 1, NaN)
 _h2_family_params(::OrderedProbitResponse) = (:ordered_probit, 1, NaN)
-_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: gamma, beta-binomial, negative-binomial)"))
+_h2_family_params(::GammaResponse) = (:gamma, 1, NaN)   # the shape ν is threaded separately (kwarg)
+_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: beta-binomial, negative-binomial)"))
 
 """
     nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing, predictor_variance = 0.0)
@@ -1334,14 +1376,16 @@ function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = 
     end
     σ²e = fit.family === :gaussian ? Float64(fit.variance_components.sigma_e2) : NaN
     cp = fit.family === :ordered_probit ? fit.variance_components.cutpoints : nothing
+    sh = fit.family === :gamma ? Float64(fit.variance_components.shape) : NaN
     return _nongaussian_h2_core(fit.family, V_A, μ, σ²e, nt_int, Float64(predictor_variance),
-                                fit.converged; cutpoints = cp)
+                                fit.converged; cutpoints = cp, shape = sh)
 end
 
 function nongaussian_heritability(sigma_a2::Real, mu::Real, family::ResponseFamily;
                                   predictor_variance::Real = 0.0)
     fam_sym, nt, σ²e = _h2_family_params(family)
     cp = family isa OrderedProbitResponse ? family.thresholds : nothing
+    sh = family isa GammaResponse ? Float64(family.shape) : NaN
     return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
-                                Float64(predictor_variance), true; cutpoints = cp)
+                                Float64(predictor_variance), true; cutpoints = cp, shape = sh)
 end
