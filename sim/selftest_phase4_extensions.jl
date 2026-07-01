@@ -16,5 +16,11 @@ Ainv = pedigree_inverse(ped)              # must not throw
 A = Matrix(inv(Symmetric(Matrix(Ainv))))
 check(isposdef(Symmetric(A)), "A must be PD for a non-inbred full-sib pedigree")
 
+# --- A2: --design parses; default is half-sib (back-compat) ---
+p_default = _parse_args(String[])
+check(p_default.design == "halfsib", "default design must be halfsib, got $(p_default.design)")
+p_fs = _parse_args(["--design=fullsib", "--npair=20", "--noffspring-per-pair=2"])
+check(p_fs.design == "fullsib", "design=fullsib must parse")
+
 isempty(failures) || (foreach(println, failures); error("SELFTEST FAILED ($(length(failures)))"))
 println("SELFTEST PASSED")

@@ -53,6 +53,9 @@ struct MultivariateRecoveryConfig
     cell::String
     gate_aggregate::Bool
     max_cond::Float64
+    design::String
+    npair::Int
+    noffspring_per_pair::Int
 end
 
 function _parse_args(args)
@@ -109,10 +112,18 @@ function _parse_args(args)
     gate_raw in ("aggregate", "per-seed") ||
         throw(ArgumentError("--gate must be aggregate or per-seed, got $gate_raw"))
     max_cond = parse(Float64, get(opts, "max-cond", "1.0e6"))
+    # Design: half-sib (default, back-compat) or full-sib. Full-sib uses npair pairs
+    # × noffspring_per_pair offspring; the nsire/ndam/noffspring knobs are ignored.
+    design = get(opts, "design", "halfsib")
+    design in ("halfsib", "fullsib") ||
+        throw(ArgumentError("--design must be halfsib or fullsib, got $design"))
+    npair = parse(Int, get(opts, "npair", "20"))
+    noffspring_per_pair = parse(Int, get(opts, "noffspring-per-pair", "2"))
     return (seeds = seeds, nsire = nsire, ndam = ndam, noffspring = noffspring,
             records = records, iterations = iterations, threshold_g = threshold_g,
             threshold_r = threshold_r, cold_start = cold_start, g0 = g0, r0 = r0,
-            cell = cell, gate_aggregate = (gate_raw == "aggregate"), max_cond = max_cond)
+            cell = cell, gate_aggregate = (gate_raw == "aggregate"), max_cond = max_cond,
+            design = design, npair = npair, noffspring_per_pair = noffspring_per_pair)
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -156,7 +167,9 @@ end
 
 function _simulate_repeated_records(config::MultivariateRecoveryConfig)
     rng = MersenneTwister(config.seed)
-    ped = _halfsib_pedigree(config.nsire, config.ndam, config.noffspring)
+    ped = config.design == "fullsib" ?
+        _fullsib_pedigree(config.npair, config.noffspring_per_pair) :
+        _halfsib_pedigree(config.nsire, config.ndam, config.noffspring)
     Ainv = pedigree_inverse(ped)
     A = Matrix(inv(Symmetric(Matrix(Ainv))))
     q = length(ped.ids)
@@ -322,15 +335,19 @@ function main(args = ARGS)
     p = _parse_args(args)
     @printf("START multivariate REML recovery cell=%s (%s)\n",
         p.cell, p.cold_start ? "COLD-START (default init)" : "warm-start at truth")
-    @printf("CELL %s nsire=%d ndam=%d noffspring=%d records=%d G0=[%.4f %.4f; %.4f %.4f] R0=[%.4f %.4f; %.4f %.4f] seeds=%d\n",
-        p.cell, p.nsire, p.ndam, p.noffspring, p.records,
-        p.g0[1, 1], p.g0[1, 2], p.g0[2, 1], p.g0[2, 2],
-        p.r0[1, 1], p.r0[1, 2], p.r0[2, 1], p.r0[2, 2], length(p.seeds))
+    design_desc = p.design == "fullsib" ?
+        @sprintf("fullsib npair=%d noffspring_per_pair=%d", p.npair, p.noffspring_per_pair) :
+        @sprintf("halfsib nsire=%d ndam=%d noffspring=%d", p.nsire, p.ndam, p.noffspring)
+    @printf("CELL %s design=[%s] records=%d traits=%d seeds=%d\n",
+        p.cell, design_desc, p.records, size(p.g0, 1), length(p.seeds))
+    println("  G0 = ", round.(p.g0; digits = 4))
+    println("  R0 = ", round.(p.r0; digits = 4))
     results = Any[]
     for seed in p.seeds
         result = _run(MultivariateRecoveryConfig(seed, p.nsire, p.ndam, p.noffspring,
             p.records, p.iterations, p.threshold_g, p.threshold_r, p.cold_start,
-            p.g0, p.r0, p.cell, p.gate_aggregate, p.max_cond))
+            p.g0, p.r0, p.cell, p.gate_aggregate, p.max_cond,
+            p.design, p.npair, p.noffspring_per_pair))
         _print_result(result)
         push!(results, result)
         flush(stdout)
