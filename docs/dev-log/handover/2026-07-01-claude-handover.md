@@ -87,9 +87,27 @@ apply the 3 resolutions above and the integrated suite is green.
    non-delegable **G10** call. It also wants a final Rose audit on the full chain. Engine-covered ≠
    R-public-covered — the R surfaces stay experimental regardless.
 
+## Additional PRs this session (h² surface — independent of the 6-PR family chain)
+
+Three more PRs landed, all extending the exported `nongaussian_heritability` (the `V6-NS-H2` row);
+each is off `main`, real-Rose-audited, honesty pins intact (count 50, public-covered 1, nothing
+flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` + a clause to the same
+`V6-NS-H2` row, so at merge they are **trivial keep-both** with each other:
+
+- **[#221](https://github.com/itchyshin/HSquared.jl/pull/221)** — ordinal/probit **liability**-scale h²
+  (`V_A/(V_A+1+V_fixed)`, probit `V_link=1`, Dempster–Lerner). Rose **PROMOTE (clean)**; CI green.
+- **[#222](https://github.com/itchyshin/HSquared.jl/pull/222)** — Gamma **latent**-scale h²
+  (`V_A/(V_A+ψ₁(ν)+V_fixed)`, `V_link=trigamma(shape)`, verified numerically). Includes the doc-19 §3.1
+  decision resolving the Gamma `V_link` (trigamma, NOT the lognormal approx). Rose **PROMOTE (clean)**.
+- Both are EXACT closed forms with verified constants → no recovery gate / same-estimand comparator
+  owed for those values. The **observation/data** scale for BOTH threshold and Gamma remains fenced
+  (`h2_observation = NaN`) — the genuine next follow-up, and it wants a QGglmm/MCMCglmm external
+  comparator (doc-19 §5), so it's best done with external validation, not a closed-form guess.
+
 ## Follow-ups (not covered blockers)
 
-- Scale-labelled h² transform for ordinal (liability/observation) + Gamma (observation) — doc-20 Step 4.
+- Scale-labelled h²: ordinal **liability** (#221) + Gamma **latent** (#222) DONE; the **observation/data**
+  scale for threshold + Gamma is the remaining doc-20 Step-4 piece (needs a QGglmm external comparator).
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
