@@ -84,6 +84,22 @@ those `missing` items verbatim per open row.
   mixed-model genome-wide calibration, broader-LD/covariate-adjusted + coverage, the #45
   dependency) are **not retired**. The R public surface stays experimental
   (engine-covered ≠ R-public-covered).
+- **`V6-ORDINAL` + `V6-GAMMA`** (`covered`, scoped, 2026-07-01): the first NON-GAUSSIAN
+  FITTING families promoted via path (b). Each has a JOINT estimator
+  (`fit_laplace_reml(family=:ordered_probit)` estimates σ²a + the K−1 cutpoints;
+  `family=:gamma` estimates σ²a + the shape ν), ONE same-estimand comparator leg on an
+  A=I/repeated-records reduction (ordinal → `ordinal::clmm` Laplace-ML, since glmmTMB
+  cannot fit cumulative-link ordinal; Gamma → `glmmTMB Gamma(link="log")`; the ML-vs-REML
+  σ²a Δ~3% with an essentially-exact family parameter), and a PASSING pre-declared 48-seed
+  recovery gate (both 48/48 converged, `|bias| ≤ 2·MCSE`, predeclaration committed BEFORE
+  the run — Rose re-ran both gates byte-identically). A final full-chain Rose
+  (PROMOTE-with-changes) governed the flip, incl. the correction that this is engine-covered
+  8→10 with **`public_covered_count` held at 1**. SCOPED to the tested A=I/repeated-records
+  single design, Laplace-only, dense, INTERNAL. Retained debts (broader-DGP + pedigree-A
+  recovery; a 2nd same-estimand comparator — MCMCglmm `threshold` is Bayesian-agreement-only
+  for ordinal, and MCMCglmm has no general Gamma; the `:symbol` payload + observation-scale
+  h²; R activation) are **not retired**. The R public surface stays experimental
+  (engine-covered ≠ R-public-covered — public-covered fitting stays 1).
 
 ## "Covered" does NOT retire debt
 
