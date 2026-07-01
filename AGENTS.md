@@ -25,6 +25,28 @@ engine reality.
   public-covered fitting 1, nothing merged to `main`. MAINTAINER-GATED: merge the 9 PRs (mechanical, recipe
   provided) + the G10 covered flip (public-covered 1→3). START HERE:
   `docs/dev-log/handover/2026-07-01-claude-handover-v06-integration.md`.
+- **As of 2026-07-01 (v0.6 non-Gaussian ordinal + Gamma → COVERED-READY, staged for maintainer; Claude solo
+  autonomous; `main` @ `94d20319`/count 50 UNCHANGED; six stacked PRs #215–#220 open).** Executed the 7-hour
+  plan: BOTH new non-Gaussian families now have all doc-16 covered PREREQUISITES — (1) a JOINT estimator
+  (`fit_laplace_reml(family=:ordered_probit)` estimates σ²a + the K−1 cutpoints; `family=:gamma)` estimates
+  σ²a + the shape ν), (2) an agreeing SAME-ESTIMAND comparator on an A=I/repeated-records iid reduction
+  (**`ordinal::clmm`** for ordinal — glmmTMB does NOT fit cumulative-link; **`glmmTMB Gamma(link="log")`** for
+  Gamma; both AGREE), and (3) a PASSING PRE-DECLARED 48-seed recovery gate (both 48/48, `|bias|≤2·MCSE`).
+  Chains: ordinal **#215→#218→#220**, Gamma **#216→#217→#219**. This session also HARDENED the Gamma joint
+  fit — a runaway shape (`ν≈4e5`) on uninformative data → a σ²a+ν **safety rail** (`log(init)±8`, mirroring the
+  ordinal σ²a guard) + informative A=I test fixture; the 48-seed gate re-runs **byte-identical** post-rail
+  (rail proven INERT on identified data). A real `rose-systems-auditor` on the rail slice → PROMOTE-WITH-CHANGES
+  (3 documentation-lockstep fixes applied; Rose independently re-ran the gate + suite). A throwaway trial-merge
+  `main→#220→#219` **verified** the integration: **3 trivial keep-both conflicts** (`nongaussian.jl` allow-list
+  + both `elseif` cases; the two design-doc rows), `validation_status.jl`/`test/runtests.jl` auto-merge,
+  integrated `Pkg.test()` GREEN, count **50**, both families symbol-reachable. **Honesty pins HOLD: public-covered
+  FITTING = 1 UNCHANGED, `validation_status()` = 50, NOTHING flipped** (V6-ORDINAL + V6-GAMMA stay `partial`;
+  engine-covered ≠ R-public-covered). **MAINTAINER-GATED (non-autonomous): merge the 6 PRs (recipe verified) +
+  the G10 covered flip (would move public-covered 1→3 + wants a final full-chain Rose).** Deferred (not covered
+  blockers): doc-20 Step-4 scale-labelled h² (ordinal liability clean; Gamma observation needs NS-2017 trigamma
+  lit-check — do NOT guess); broader-DGP + pedigree-A recovery; 2nd comparators. NOTE: this AGENTS.md snapshot
+  bullet is a 4th trivial keep-both conflict at merge (prepend, like #213↔#211). START HERE:
+  `docs/dev-log/handover/2026-07-01-claude-handover.md`.
 
 - **As of 2026-06-30 (overnight 4-PR batch MERGED to `main`; Claude solo + maintainer merge authorization;
   `validation_status()` 48→50).** Landed: **#211** v0.4 MV broader-DGP recovery (full-sib + 3-trait recovery
