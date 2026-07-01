@@ -1,0 +1,8 @@
+truth_sigma2a 0.3500000000
+truth_shape 3.0000000000
+truth_intercept 0.6000000000
+glmmtmb_sigma2a 0.5456763164
+glmmtmb_shape 3.4891738437
+glmmtmb_intercept 0.5615127385
+n 160
+q 40

@@ -1016,6 +1016,38 @@ end
     @test_throws ArgumentError HSquared._check_counts(G(2.0), [0.0])
 end
 
+@testset "Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6)" begin
+    # fit_laplace_reml(...; family = :gamma) JOINTLY estimates σ²a AND the shape ν over
+    # (log σ²a, log ν) by NelderMead (same shape as :nbinom). A=I animal model with REPEATED
+    # RECORDS: repeated records identify the Gamma shape ν (an uninformative one-record design
+    # weakly identifies ν — flat likelihood for large ν → the safety rail), between-animal
+    # spread identifies σ²a. Deterministic optimizer + fixed data → deterministic.
+    q = 6; reps = 4; n = q * reps
+    id = repeat(1:q, inner = reps)
+    Ainv = Matrix(1.0I, q, q)
+    X = ones(n, 1); Z = zeros(n, q)
+    for i in 1:n; Z[i, id[i]] = 1.0; end
+    # 3 "high" animals (~2.2) + 3 "low" (~0.7); within-animal spread identifies ν.
+    y = [2.3, 1.9, 2.6, 2.1, 0.7, 0.5, 0.9, 0.6, 2.4, 2.0, 2.7, 2.2,
+         0.8, 0.6, 1.0, 0.7, 2.5, 2.1, 2.8, 2.3, 0.75, 0.55, 0.95, 0.65]
+
+    f = fit_laplace_reml(y, X, Z, Ainv; family = :gamma)
+    sa = f.variance_components.sigma_a2; ν = f.variance_components.shape
+    @test f.family == :gamma && f.converged
+    @test sa > 1e-3 && 0 < ν < 1.0e4                        # σ²a meaningful; shape BOUNDED (the rail catches a runaway)
+    # self-consistency: reported loglik == the marginal at the returned (σ²a, ν)
+    mm = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa, HSquared.GammaResponse(ν))
+    @test f.marginal_loglik ≈ mm.loglik atol = 1e-8
+    # the returned optimum beats a deliberately off-optimum (σ²a, ν) point
+    off = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa * 4, HSquared.GammaResponse(ν * 0.2)).loglik
+    @test f.marginal_loglik >= off
+
+    # guards: strictly-positive response; variational rejected.
+    @test_throws ArgumentError fit_laplace_reml([1.0, -2.0, 1.0], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :gamma)
+    @test_throws ArgumentError fit_laplace_reml(y, X, Z, Ainv; family = :gamma, marginal = :variational)
+end
+
 @testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
     # The σ²a profile-LRT interval covers ALL single-component families through ONE
     # shared `_resolve_single_family` + `target`/`_profile_root` path. Lock that
