@@ -55,6 +55,22 @@ committed before results): 12 params at the same n = 240 spread the information 
 slightly higher power floor on the variance estimates is expected. Criterion 2 (bias within
 2·MCSE) is the primary recovery test and is applied to all 12 params without relaxation.
 
+## Gating mechanics + reporting pre-commitment (added pre-run; Curie/Fisher/Mendel panel, no seeds run)
+
+- **What the harness enforces:** the `gate_pass`/exit code enforces **criterion 2 only**
+  (`|bias| ≤ 2·MCSE`, all 12 params). Criteria 1 (convergence), 3 (EBV floor, all 3 traits), and
+  4 (G-diagonal MCSE ceiling) are verified by **reading the printed AGGREGATE / convergence / EBV
+  block**. A PASS requires all four confirmed.
+- **Authoritative pass signal:** the `aggregate_within_2mcse=` (equivalently `gate_pass=`) field
+  on the final `GATE` line — **NOT** the process exit code. For t=3 the per-seed Frobenius gate
+  trips readily on the loose relative-error thresholds and is *ignored*; exit 1 does not mean the
+  aggregate gate failed. Ingest the `GATE`-line field, not the exit code.
+- **Reporting pre-commitment:** a PASS is reported with the realized `bias`, `MCSE`, and
+  standardized residual `|bias|/MCSE` for **all 12** parameters (criterion 4 gates the 3
+  G-diagonals only, but the realized MCSE of every param is reported so an inflated off-diagonal
+  MCSE is visible), plus an explicit detectability statement — "no bias larger than ≈2×(realized
+  MCSE) is detectable at this design." A reporting commitment, not a threshold change.
+
 ## Outcome semantics (declared before results)
 
 - **PASS** → the 3+-trait recovery item is **discharged** (point-estimate, single fixture,

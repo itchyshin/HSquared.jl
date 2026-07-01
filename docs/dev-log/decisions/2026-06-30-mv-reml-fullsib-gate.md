@@ -55,6 +55,21 @@ env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
 These mirror the covered half-sib gate exactly. Because full-sib is the easier regime, recovery
 is *expected* to pass at least as well as half-sib; a pass is confirmatory, not a stress result.
 
+## Gating mechanics + reporting pre-commitment (added pre-run; Curie/Fisher/Mendel panel, no seeds run)
+
+- **What the harness enforces:** the `gate_pass`/exit code enforces **criterion 2 only**
+  (`|bias| ≤ 2·MCSE` on all params). Criteria 1 (convergence), 3 (EBV floor), and 4 (MCSE
+  ceiling) are verified by **reading the printed AGGREGATE / convergence / EBV block** against
+  the thresholds above (as in the 2026-06-22 precedent). A PASS requires all four confirmed.
+- **Authoritative pass signal:** the `aggregate_within_2mcse=` (equivalently `gate_pass=`) field
+  on the final `GATE` line — **NOT** the process exit code. Exit 1 can fire on the *ignored*
+  per-seed Frobenius gate; do not read the exit code as the gate.
+- **Reporting pre-commitment:** a PASS is reported with the realized `bias`, `MCSE`, and
+  standardized residual `|bias|/MCSE` for **every** parameter, plus an explicit detectability
+  statement — "no bias larger than ≈2×(realized MCSE) is detectable at this design" (the covered
+  gate's G[1,1] at 1.57·MCSE / ≈7% floor is the template). A reporting commitment, not a
+  threshold change.
+
 ## Outcome semantics (declared before results)
 
 - **PASS** → the full-sib design recovery item is **discharged** (point-estimate, single fixture,
