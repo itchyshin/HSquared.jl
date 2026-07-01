@@ -108,21 +108,30 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
 
 - Scale-labelled h²: ordinal **liability** (#221) + Gamma **latent** (#222) DONE; the **observation/data**
   scale for threshold + Gamma is the remaining doc-20 Step-4 piece. **Status by piece:**
-  - **BINARY threshold observed-0/1 scale — DONE (coded in #221).** QGglmm probit integration
-    `Ψ²V_A/[p̄(1−p̄)]`, verified EQUAL to the Dempster–Lerner transform `h²_liab·z²/[p(1−p)]` (a real Rose
-    wrote a fully-independent 20000-pt Simpson quadrature → max|code−DL|=1.2e-6, plus an analytic proof
-    `Ψ²V_A = h²_liab·z²`). Rose PROMOTE-clean. The external QGglmm comparator debt is still retained for
-    the covered path.
+  - **BINARY threshold observed-0/1 scale — DONE + EXTERNALLY VALIDATED (#221).** QGglmm probit
+    integration `Ψ²V_A/[p̄(1−p̄)]`, verified EQUAL both to the Dempster–Lerner transform (Rose's
+    independent 20000-pt Simpson quadrature → 1.2e-6 + an analytic proof) AND to the actual **QGglmm
+    0.8.0 package** (`QGparams(model=binom1.probit)`, ≤4.5e-6 over 9 cases;
+    `comparator/qgglmm_probit_observed/`). The doc-19 §5 external-comparator debt is **DISCHARGED** for
+    this scale. Rose PROMOTE (+ 3 doc-fixes applied).
+  - **LOGIT (Bernoulli) observed scale — EXTERNALLY VALIDATED (#221).** The pre-existing logit
+    observation scale also agrees with QGglmm `binom1.logit` (≤2.5e-6) — its external-comparator debt is
+    **DISCHARGED** too.
   - **Gamma LATENT scale — DONE (coded in #222).** `V_link=trigamma(ν)` (doc-19 §3.1).
-  - **ORDINAL (K>2) observed/category scale — genuinely owed.** The convention is murky (no single
-    incidence; per-category or per-threshold definitions differ) and there is NO classic independent
-    cross-check like Dempster–Lerner — so it needs the external QGglmm comparator, not a 1-AM guess.
-    Fenced as `NaN`.
-  - **Gamma data/observation scale — genuinely owed.** NS-2017 multiplicative (`Ψ=E[μ]`,
-    `V_P,obs=Var(μ)+E[μ²/ν]`); again no classic independent formula → needs the external QGglmm
-    comparator. Fenced as `NaN`.
-  This is the honest boundary the overnight session stopped at: the two DONE pieces each had an internal
-  cross-check that made them safe unattended; the two owed pieces do not, so they wait for QGglmm.
+  - **QGglmm is now installed (CRAN 0.8.0) + a comparator harness exists**
+    (`comparator/qgglmm_probit_observed/compare.R`). KEY convention it pinned (the internal DL/quadrature
+    checks could NOT): QGglmm's `var.p` for the observation integration is the PREDICTOR variance
+    `V_A+V_fixed`, NOT `V_A+V_link+V_fixed`. So the remaining comparators are now unblocked-with-QGglmm:
+    - **Binomial(n>1) + Poisson observed scales — easy follow-ups** (QGglmm `binomN.*` / `Poisson.log`
+      builtins; the harness + convention are ready).
+    - **ORDINAL (K>2) observed/category scale — owed.** QGglmm's ordinal support + the per-category vs
+      per-threshold convention need checking. A careful follow-up.
+    - **Gamma data/observation scale — owed.** QGglmm has NO built-in Gamma model — it needs a CUSTOM
+      model spec (inverse-link `exp`, var.func `μ²/ν`, d.inv.link `exp`) with the shape ν. Finicky; a
+      careful follow-up (do NOT rush the custom var.func).
+  This is the honest boundary the overnight session stopped at: the DONE pieces are internally
+  cross-checked AND (for the two observation scales) externally validated against QGglmm; the owed pieces
+  need either an easy builtin run (Poisson/binomN) or careful convention work (ordinal, Gamma-custom).
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
