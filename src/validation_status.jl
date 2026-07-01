@@ -432,6 +432,15 @@ const VALIDATION_STATUS_DATA = (
         "Experimental, dense/validation-scale, asymptotic, INTERNAL family; SUPPLIED thresholds only, Laplace-only; reachable only via the family object through `laplace_marginal_loglik` (not the `:symbol` resolver). It is neither exported, wired into R, the public default, NOR a covered claim.",
     ),
     (
+        "V6-GAMMA",
+        "non-Gaussian Gamma (log-link, positive continuous) family (T-Gamma)",
+        "Phase 6",
+        "partial",
+        "`GammaResponse(shape)` (internal) extends the non-Gaussian engine to a STRICTLY-POSITIVE CONTINUOUS response with the log link: mean `μ = exp(η)`, SUPPLIED shape `ν > 0`, `y | η ~ Gamma(shape ν, mean μ)` with density `(ν/μ)^ν y^{ν-1} e^{-νy/μ}/Γ(ν)`. The conditional `ℓ = ν(log ν − η) + (ν−1)log y − ν y e^{-η} − log Γ(ν)` is LOG-CONCAVE in η, so the score `ν(y e^{-η} − 1)` and the OBSERVED-information IRLS weight `ν y e^{-η}` are exact and strictly `> 0` — the SAME convention as Poisson/probit (no Fisher-scoring substitution, in contrast to the beta-binomial). Reuses the module's existing `_loggamma` (no new dependency). Validated (`test/runtests.jl`, T-Gamma): the `ν = 1` REDUCTION to the EXPONENTIAL is EXACT for loglik/score/observed weight (`ℓ = −η − y e^{-η}`); on a `ν ∈ {0.5, 2, 5}` × `(y, η)` grid the score matches a central finite difference of the loglik (rtol 1e-5) and the observed weight matches `−(second finite difference)` and is `> 0` (rtol 1e-3); the Laplace marginal is finite end-to-end on a Gamma fixture; and positive-shape / strictly-positive-response guards throw.",
+        "JOINT shape estimation with the variance components (like the beta-binomial dispersion); the `:symbol` family-resolver + `fit_laplace_reml` wiring (currently reachable only by passing the family object to the internal `laplace_marginal_loglik`); a same-estimand external comparator — `glmmTMB` `Gamma(link=\"log\")` IS a valid same-estimand leg here (unlike the ordinal case, where glmmTMB does not fit cumulative-link models); a pre-declared recovery gate; observation-scale h²; and an R Gamma formula/bridge activation.",
+        "Experimental, dense/validation-scale, asymptotic, INTERNAL family; SUPPLIED shape only, Laplace-only; reachable only via the family object through `laplace_marginal_loglik` (not the `:symbol` resolver). It is neither exported, wired into R, the public default, NOR a covered claim.",
+    ),
+    (
         "V6-NS-H2",
         "non-Gaussian latent- and observation-scale heritability (Nakagawa–Schielzeth / de Villemereuil) (H7)",
         "Phase 6",
