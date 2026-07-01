@@ -1,22 +1,29 @@
-mu,V_A,V_fixed   model           engine        QGglmm        abs_diff 
-0,0.5,0          binom1.probit   0.2122066     0.2122066     6.05e-15
-0.3,1,0          binom1.probit   0.3131411     0.3131411     6.18e-12
--0.5,2,0.5       binom1.probit   0.3544492     0.3544447     4.45e-06
-1.2,0.4,0.2      binom1.probit   0.1139089     0.1139089     5.79e-14
-2,0.5,0          binom1.probit   0.0758321     0.0758321     2.60e-15
--1,0.7,1         binom1.probit   0.1440802     0.1440802     5.24e-09
-0.8,1.5,0.3      binom1.probit   0.3137091     0.3137088     2.65e-07
--2,1,0           binom1.probit   0.1486209     0.1486209     1.03e-10
-0,0.1,0          binom1.probit   0.0578745     0.0578745     1.67e-16
-0,0.5,0          binom1.logit    0.1009113     0.1009113     2.39e-12
-0.3,1,0          binom1.logit    0.1687648     0.1687648     6.82e-10
--0.5,2,0.5       binom1.logit    0.2327206     0.2327181     2.54e-06
-1.2,0.4,0.2      binom1.logit    0.0619995     0.0619995     3.92e-12
-2,0.5,0          binom1.logit    0.0528362     0.0528362     1.12e-12
--1,0.7,1         binom1.logit    0.0895248     0.0895249     5.21e-08
-0.8,1.5,0.3      binom1.logit    0.1946061     0.1946060     1.38e-07
--2,1,0           binom1.logit    0.1020604     0.1020604     4.80e-10
-0,0.1,0          binom1.logit    0.0238226     0.0238226     1.61e-13
+mu,V_A,V_fixed   model           n     engine        QGglmm        abs_diff 
+0,0.5,0          binom1.probit   -     0.2122066     0.2122066     6.05e-15
+0,0.5,0          binom1.logit    -     0.1009113     0.1009113     2.39e-12
+0.3,1,0          binom1.probit   -     0.3131411     0.3131411     6.18e-12
+0.3,1,0          binom1.logit    -     0.1687648     0.1687648     6.82e-10
+-0.5,2,0.5       binom1.probit   -     0.3544492     0.3544447     4.45e-06
+-0.5,2,0.5       binom1.logit    -     0.2327206     0.2327181     2.54e-06
+1.2,0.4,0.2      binom1.probit   -     0.1139089     0.1139089     5.79e-14
+1.2,0.4,0.2      binom1.logit    -     0.0619995     0.0619995     3.92e-12
+2,0.5,0          binom1.probit   -     0.0758321     0.0758321     2.60e-15
+2,0.5,0          binom1.logit    -     0.0528362     0.0528362     1.12e-12
+-1,0.7,1         binom1.probit   -     0.1440802     0.1440802     5.24e-09
+-1,0.7,1         binom1.logit    -     0.0895248     0.0895249     5.21e-08
+0.8,1.5,0.3      binom1.probit   -     0.3137091     0.3137088     2.65e-07
+0.8,1.5,0.3      binom1.logit    -     0.1946061     0.1946060     1.38e-07
+-2,1,0           binom1.probit   -     0.1486209     0.1486209     1.03e-10
+-2,1,0           binom1.logit    -     0.1020604     0.1020604     4.80e-10
+0,0.1,0          binom1.probit   -     0.0578745     0.0578745     1.67e-16
+0,0.1,0          binom1.logit    -     0.0238226     0.0238226     1.61e-13
+0,0.3,0          Poisson.log     -     0.2478178     0.2478178     2.78e-17
+0.5,0.5,0        Poisson.log     -     0.4459954     0.4459954     1.67e-16
+1,0.4,0.2        Poisson.log     -     0.3654134     0.3654134     0.00e+00
+-0.3,0.6,0       Poisson.log     -     0.3292870     0.3292870     0.00e+00
+0,0.5,0          binomN.logit    10    0.5273489     0.5273489     5.75e-11
+0.3,1,0          binomN.logit    10    0.6622238     0.6622238     6.50e-09
+-0.5,0.7,0.3     binomN.logit    10    0.4581107     0.4581107     1.18e-08
 
 max |engine - QGglmm| = 4.45e-06  (threshold 1e-4)
-PASS: engine observation-scale h2 == QGglmm same-estimand external comparator (logit + probit)
+PASS: engine observation-scale h2 == QGglmm (binom1.logit/probit, Poisson.log, binomN.logit)
