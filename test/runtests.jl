@@ -4,6 +4,7 @@ using SparseArrays
 using Test
 using TOML
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
+using JSON3   # P0.5 payload-v2 cross-lane parity testset
 
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
 
@@ -8524,3 +8525,315 @@ end
     @test Set(keys(probe)) == Set(HSquaredBLUPF90MultitraitPacket.BLUPF90_EXECUTABLES)
     @test all(path -> isnothing(path) || path isa String, values(probe))
 end
+
+# ============================================================================
+# P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
+# CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
+# validation_status() row count stays 52; public_covered_count stays 1.
+# ============================================================================
+@testset "payload-v2 parser (P0.3)" begin
+    # Shared small pedigree fixture (same as Phase 3 two-effect testset).
+    # 4 animals: founders 1,2; offspring 3,4 (parents 1,2).
+    ped_ids  = [1, 2, 3, 4]
+    ped_sire = [0, 0, 1, 1]
+    ped_dam  = [0, 0, 2, 2]
+    Ainv_direct = pedigree_inverse(ped_ids, ped_sire, ped_dam)
+
+    # 8 records, 2 per animal.
+    Z_animal = zeros(8, 4)
+    for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Z_animal[rec, an] = 1.0; end
+    y_obs = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]
+    X_int = ones(8, 1)  # intercept
+
+    # Helper: build a pedigree sub-dict suitable for a block.
+    pedigree_rows = Dict("id" => ped_ids, "sire" => ped_sire, "dam" => ped_dam)
+
+    # -----------------------------------------------------------------------
+    # (a) v0.1 alias: single pedigree block (top-level Z / no payload_version)
+    # -----------------------------------------------------------------------
+    @testset "(a) v0.1 alias — single pedigree block" begin
+        # Legacy flat form: top-level Z, pedigree, ainv_status in metadata.
+        legacy_payload = Dict(
+            "y"        => y_obs,
+            "X"        => X_int,
+            "Z"        => Z_animal,
+            "pedigree" => pedigree_rows,
+            "metadata" => Dict("ainv_status" => "build_in_julia"),
+        )
+
+        parsed = parse_payload_v2(legacy_payload)
+        @test parsed.dispatch == :animal
+        @test length(parsed.blocks) == 1
+        b = parsed.blocks[1]
+        @test b.name == "animal"
+        @test b.type == "pedigree"
+
+        # fit_payload_v2 returns an AnimalModelFit
+        fit_via_v2 = fit_payload_v2(legacy_payload)
+        @test fit_via_v2 isa HSquared.AnimalModelFit
+
+        # Direct animal-model fit for comparison
+        fit_direct = fit_animal_model(y_obs, X_int, sparse(Z_animal), sparse(Matrix(Ainv_direct));
+                                      method = :REML)
+        @test fit_via_v2.variance_components.sigma_a2 ≈
+              fit_direct.variance_components.sigma_a2 atol = 1e-10
+        @test fit_via_v2.variance_components.sigma_e2 ≈
+              fit_direct.variance_components.sigma_e2 atol = 1e-10
+
+        # result_payload_v2 single-block fast path: legacy flat fields present
+        res = result_payload_v2(fit_via_v2, parsed)
+        @test hasproperty(res, :variance_components)
+        @test hasproperty(res.variance_components, :sigma_a2)
+        @test hasproperty(res, :heritability)
+        @test hasproperty(res, :random_effects)
+        @test hasproperty(res.random_effects, :animal)
+        @test res.variance_components.sigma_a2 ≈ fit_direct.variance_components.sigma_a2 atol = 1e-10
+        @test res.heritability ≈ fit_direct.variance_components.sigma_a2 /
+            (fit_direct.variance_components.sigma_a2 + fit_direct.variance_components.sigma_e2) atol = 1e-10
+
+        # Equivalently: v2 payload with explicit single pedigree block
+        v2_payload = Dict(
+            "payload_version" => 2,
+            "y"              => y_obs,
+            "X"              => X_int,
+            "random_effects" => [
+                Dict(
+                    "name"           => "animal",
+                    "type"           => "pedigree",
+                    "Z"              => Z_animal,
+                    "relmat_status"  => "build_in_julia",
+                    "pedigree"       => pedigree_rows,
+                    "ids"            => ped_ids,
+                )
+            ],
+        )
+        parsed2 = parse_payload_v2(v2_payload)
+        @test parsed2.dispatch == :animal
+        fit2 = fit_payload_v2(v2_payload)
+        @test fit2.variance_components.sigma_a2 ≈ fit_direct.variance_components.sigma_a2 atol = 1e-10
+        @test fit2.variance_components.sigma_e2 ≈ fit_direct.variance_components.sigma_e2 atol = 1e-10
+    end
+
+    # -----------------------------------------------------------------------
+    # (b) Two independent blocks [pedigree, iid] → fit_two_effect_reml
+    # -----------------------------------------------------------------------
+    @testset "(b) two independent blocks (pedigree + iid)" begin
+        Z_group = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]   # 2 common-env groups
+        payload_two = Dict(
+            "payload_version" => 2,
+            "y" => y_obs,
+            "X" => X_int,
+            "random_effects" => [
+                Dict(
+                    "name"          => "animal",
+                    "type"          => "pedigree",
+                    "Z"             => Z_animal,
+                    "relmat_status" => "build_in_julia",
+                    "pedigree"      => pedigree_rows,
+                    "ids"           => ped_ids,
+                ),
+                Dict(
+                    "name"          => "litter",
+                    "type"          => "iid",
+                    "Z"             => Z_group,
+                    "relmat_status" => "identity",
+                    "ids"           => [1, 2],
+                ),
+            ],
+        )
+
+        parsed = parse_payload_v2(payload_two)
+        @test parsed.dispatch == :two_effect
+
+        fit_v2 = fit_payload_v2(payload_two)
+        # Direct fit_two_effect_reml call for parity
+        fit_ref = fit_two_effect_reml(y_obs, X_int, Z_animal, Matrix(Ainv_direct),
+                                      Z_group, Matrix(I, 2, 2))
+        @test fit_v2.variance_components.sigma1 ≈ fit_ref.variance_components.sigma1 atol = 1e-10
+        @test fit_v2.variance_components.sigma2 ≈ fit_ref.variance_components.sigma2 atol = 1e-10
+        @test fit_v2.variance_components.sigma_e2 ≈ fit_ref.variance_components.sigma_e2 atol = 1e-10
+
+        # result_payload_v2 block-structured shape
+        res = result_payload_v2(fit_v2, parsed)
+        @test hasproperty(res.variance_components, :residual)
+        @test hasproperty(res.variance_components, :blocks)
+        @test length(res.variance_components.blocks) == 2
+        @test res.variance_components.blocks[1].name == "animal"
+        @test res.variance_components.blocks[2].name == "litter"
+        @test length(res.random_effects) == 2
+    end
+
+    # -----------------------------------------------------------------------
+    # (c) Three independent blocks → fit_multi_effect_reml
+    # -----------------------------------------------------------------------
+    @testset "(c) three independent blocks → fit_multi_effect_reml" begin
+        Z_g1 = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
+        Z_g2 = [1.0 0; 0 1; 1 0; 0 1; 1 0; 0 1; 0 1; 1 0]
+        payload_three = Dict(
+            "payload_version" => 2,
+            "y" => y_obs,
+            "X" => X_int,
+            "random_effects" => [
+                Dict("name" => "animal", "type" => "pedigree",
+                     "Z" => Z_animal, "relmat_status" => "build_in_julia",
+                     "pedigree" => pedigree_rows, "ids" => ped_ids),
+                Dict("name" => "litter",  "type" => "iid",
+                     "Z" => Z_g1, "relmat_status" => "identity", "ids" => [1, 2]),
+                Dict("name" => "pen",     "type" => "iid",
+                     "Z" => Z_g2, "relmat_status" => "identity", "ids" => [1, 2]),
+            ],
+        )
+
+        parsed = parse_payload_v2(payload_three)
+        @test parsed.dispatch == :multi_effect
+
+        fit_v2 = fit_payload_v2(payload_three)
+        # Direct fit_multi_effect_reml call for parity
+        I2 = Matrix(I, 2, 2)
+        fit_ref = fit_multi_effect_reml(y_obs, X_int,
+                                        [(Z_animal, Matrix(Ainv_direct)),
+                                         (Z_g1, I2),
+                                         (Z_g2, I2)])
+        @test fit_v2.variance_components.sigmas ≈ fit_ref.variance_components.sigmas atol = 1e-10
+        @test fit_v2.variance_components.sigma_e2 ≈ fit_ref.variance_components.sigma_e2 atol = 1e-10
+
+        # result_payload_v2 block list has 3 entries
+        res = result_payload_v2(fit_v2, parsed)
+        @test length(res.variance_components.blocks) == 3
+        @test res.variance_components.blocks[1].name == "animal"
+        @test res.variance_components.blocks[2].name == "litter"
+        @test res.variance_components.blocks[3].name == "pen"
+    end
+
+    # -----------------------------------------------------------------------
+    # (d) correlated block → fit_direct_maternal_reml (frozen slot)
+    # -----------------------------------------------------------------------
+    @testset "(d) correlated block → fit_direct_maternal_reml" begin
+        Zd = Z_animal  # direct: record → animal
+        # Zm: record → dam (animals 1,2 are founders, 3,4 are offspring of 1/2)
+        Zm = zeros(8, 4)
+        for (rec, dm) in enumerate([1, 2, 1, 2, 1, 2, 1, 2]); Zm[rec, dm] = 1.0; end
+
+        payload_dm = Dict(
+            "payload_version" => 2,
+            "y" => y_obs,
+            "X" => X_int,
+            "random_effects" => [
+                Dict(
+                    "name"               => "animal",
+                    "type"               => "correlated",
+                    "Z"                  => Zd,
+                    "relmat_status"      => "build_in_julia",
+                    "pedigree"           => pedigree_rows,
+                    "ids"                => ped_ids,
+                    "partner_incidence"  => Zm,
+                    "partner_name"       => "maternal",
+                ),
+            ],
+        )
+
+        parsed = parse_payload_v2(payload_dm)
+        @test parsed.dispatch == :direct_maternal
+        @test parsed.blocks[1].type == "correlated"
+
+        fit_v2 = fit_payload_v2(payload_dm)
+        # Direct fit_direct_maternal_reml call for parity
+        fit_ref = fit_direct_maternal_reml(y_obs, X_int, Zd, Zm, Matrix(Ainv_direct))
+        @test fit_v2.variance_components.sigma_ad ≈ fit_ref.variance_components.sigma_ad atol = 1e-8
+        @test fit_v2.variance_components.sigma_am ≈ fit_ref.variance_components.sigma_am atol = 1e-8
+        @test fit_v2.variance_components.sigma_e2 ≈ fit_ref.variance_components.sigma_e2 atol = 1e-8
+
+        # result_payload_v2 correlated shape
+        res = result_payload_v2(fit_v2, parsed)
+        vb = res.variance_components.blocks
+        @test length(vb) == 1
+        @test vb[1].type == "correlated"
+        @test hasproperty(vb[1], :direct_variance)
+        @test hasproperty(vb[1], :partner_variance)
+        @test hasproperty(vb[1], :covariance)
+        @test length(res.random_effects) == 2   # direct + partner
+        @test res.random_effects[1].name == "animal"
+        @test res.random_effects[2].name == "maternal"
+    end
+
+    # -----------------------------------------------------------------------
+    # (e) Malformed block errors
+    # -----------------------------------------------------------------------
+    @testset "(e) malformed block errors" begin
+        # Unknown block type
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "x", "type" => "unknown",
+                                      "Z" => Z_animal, "relmat_status" => "identity")],
+        ))
+
+        # Missing Z incidence matrix
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "a", "type" => "iid",
+                                      "relmat_status" => "identity")],
+        ))
+
+        # Dimension mismatch: Z has wrong number of rows
+        Z_bad = zeros(5, 4)   # 5 rows vs 8 obs
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "a", "type" => "iid",
+                                      "Z" => Z_bad, "relmat_status" => "identity")],
+        ))
+
+        # Dimension mismatch: Z cols != relmat_inverse dim (supplied)
+        Ainv_wrong = Matrix(I, 3, 3)   # 3×3 but Z has 4 columns
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "a", "type" => "pedigree",
+                                      "Z" => Z_animal, "relmat_status" => "supplied",
+                                      "relmat_inverse" => Ainv_wrong)],
+        ))
+
+        # correlated block missing partner_incidence
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict(
+                "name" => "animal", "type" => "correlated",
+                "Z" => Z_animal, "relmat_status" => "build_in_julia",
+                "pedigree" => pedigree_rows,
+            )],
+        ))
+
+        # Duplicate block names
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [
+                Dict("name" => "animal", "type" => "iid",
+                     "Z" => Z_animal, "relmat_status" => "identity"),
+                Dict("name" => "animal", "type" => "iid",
+                     "Z" => Z_animal, "relmat_status" => "identity"),
+            ],
+        ))
+
+        # Multiple correlated blocks: not supported
+        Zm2 = zeros(8, 4); for (r, d) in enumerate([1,2,1,2,1,2,1,2]); Zm2[r,d] = 1.0; end
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [
+                Dict("name" => "a1", "type" => "correlated", "Z" => Z_animal,
+                     "relmat_status" => "build_in_julia", "pedigree" => pedigree_rows,
+                     "partner_incidence" => Zm2),
+                Dict("name" => "a2", "type" => "correlated", "Z" => Z_animal,
+                     "relmat_status" => "build_in_julia", "pedigree" => pedigree_rows,
+                     "partner_incidence" => Zm2),
+            ],
+        ))
+    end
+end
+
+# P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
+include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))

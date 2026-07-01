@@ -15,9 +15,11 @@ bridge wins and the contradiction is flagged in §9.
 
 **Ratification rule (Shannon):** a field name, unit, or shape here is NOT ratified
 until a mirrored-issue GitHub comment (Julia #5/#6 ↔ R #5) uses the keyword
-**RATIFIED** and is cross-linked by the R lane. Neither lane builds the v2 parser
-(P0.3, Julia) or the v2 emitter (P0.4, R) against these names until then. This
-doc is the proposal text for that comment; §8 tracks the freeze checklist.
+**RATIFIED** and is cross-linked by the R lane. The v2 parser (P0.3, Julia,
+`src/bridge_payload_v2.jl`) and emitter (P0.4, R, `hsquared` `R/bridge-payload.R`)
+are IMPLEMENTED in this same S0 bundle against these names; the RATIFIED handshake
+ratifies the already-built contract rather than gating construction. This doc is
+the proposal text for that comment; §8 tracks the freeze checklist.
 
 **Direction:** one-way **R → Julia** (JuliaCall; Julia never calls R). R builds
 every `Z`, `Phi`, and pedigree-row table and all metadata; Julia builds only the
@@ -200,6 +202,7 @@ variance_components = (
   blocks = [
     (name="animal", type="pedigree",  variance=σ_1),
     (name="litter", type="iid",       variance=σ_2),
+    # ── FROZEN-SLOT target shape below (no estimator emits these yet — see §10) ──
     (name="slope",  type="coefcov",   K=<k×k>, correlation=<k×k>, variances=diag(K)),
     (name="maternal", type="correlated", G=<2×2>, correlation=r_am,
                                         direct_variance=σ_ad, partner_variance=σ_am, covariance=σ_dm),
@@ -279,10 +282,11 @@ No estimator, objective, or covariance kernel is added. The parser MUST reject a
 block combination it cannot dispatch (e.g. two `correlated` blocks) with a clear
 `ArgumentError`, never silently drop a block.
 
-## 7. Emitter contract (P0.4, R side — later slice, NOT in this doc's scope)
+## 7. Emitter contract (P0.4, R side — implemented in the companion S0 branch)
 
-Recorded here so the R lane knows the exact target; **do not edit the R repo as
-part of freezing this doc**. `hs_build_bridge_payload()` (`bridge-payload.R:1`)
+Recorded here as the exact contract the R lane implements. The emitter lands in
+the companion S0 branch `feat/2026-07-01-payload-v2-emitter` (this file is the
+HSquared.jl-side edit, not itself the R change). `hs_build_bridge_payload()` (`bridge-payload.R:1`)
 gains a `random_effects` assembler that lifts the current `Z` + `Z2`/`effect2`
 construction into blocks and sets `payload_version = 2L`. The per-target callers
 in `julia-bridge.R` (`hs_fit_julia_two_effect_payload()` etc.) either (a) keep
@@ -363,7 +367,8 @@ text above.
 - No estimator, no R formula activation, no covered claim (`public_covered_count`
   stays 1). The `coefcov` multi-block and `correlated`-via-`maternal_genetic()`
   paths are FROZEN SLOTS, not wired estimators.
-- Does not edit the R repo (§7 is the emitter target for a later slice, P0.4).
+- The R emitter (§7) is implemented in the companion S0 branch
+  `feat/2026-07-01-payload-v2-emitter`; this HSquared.jl file is not itself the R edit.
 - Supersedes nothing; extends `03-engine-contract.md`. The
   `12-bridge-compatibility.md` matrix gains a `payload_version` column when this is
   RATIFIED.

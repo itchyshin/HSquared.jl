@@ -186,6 +186,9 @@ export AMDGPUBackend,
     multi_effect_mme,
     repeatability_mme,
     result_payload,
+    parse_payload_v2,
+    fit_payload_v2,
+    result_payload_v2,
     single_marker_scan,
     single_step,
     sparse_reml_loglik,
@@ -216,6 +219,7 @@ include("nongaussian.jl")
 include("genetic_gllvm.jl")
 include("planned_terms.jl")
 include("validation_status.jl")
+include("bridge_payload_v2.jl")
 include("placeholders.jl")
 include("plotting_ext.jl")
 include("gpu_ext.jl")
