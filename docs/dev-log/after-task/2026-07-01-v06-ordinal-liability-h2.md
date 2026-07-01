@@ -1,4 +1,9 @@
-# After-task — v0.6 ordinal/probit liability-scale h² (doc-20 Step 4) — 2026-07-01
+# After-task — v0.6 probit/ordinal liability + binary-observed h² (doc-20 Step 4) — 2026-07-01
+
+> **Update:** this PR grew from liability-only to also include the **BINARY (`:bernoulli_probit`)
+> observed-0/1 scale** (QGglmm probit integration, verified EQUAL to the Dempster–Lerner transform to
+> MC precision — see the check-log addendum). The ordinal K>2 observed scale + the Gamma data scale
+> stay fenced. A fresh Rose audit covers the addition. Suite green, count 50, nothing flipped.
 
 ## Task goal
 Autonomous follow-up after the v0.6 ordinal + Gamma covered-READY close. Extend the exported

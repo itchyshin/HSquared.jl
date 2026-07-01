@@ -1120,15 +1120,29 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
         # probit latent residual V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The
         # liability h² = V_A/(V_A + 1 + V_fixed) is the selection-relevant PRIMARY scale;
         # it does NOT depend on μ or the cutpoints (those set the observed incidence, not
-        # the liability partition). The observed/category scale (Dempster–Lerner
-        # z²/[p(1−p)] for binary; per-category for ordinal) needs the incidence/cutpoints
-        # and is a FENCED follow-up — returned as NaN rather than guessed.
+        # the liability partition).
         latent_total = V_A + 1.0 + V_fixed
+        # BINARY (bernoulli_probit) observed-0/1 scale: the QGglmm probit integration over
+        # the LINEAR-PREDICTOR distribution η ~ N(μ, V_A + V_fixed) — p̄ = E[Φ(η)],
+        # Ψ = E[φ(η)] (the average inverse-link derivative), h²_obs = Ψ²·V_A/[p̄(1−p̄)]. This
+        # EQUALS the classic Dempster–Lerner transform h²_liab·z²/[p̄(1−p̄)] (z = φ(Φ⁻¹(p̄)))
+        # — verified numerically to MC precision (doc-19 §2.3). The ORDINAL (K>2)
+        # observed/category scale needs the cutpoints and stays a fenced follow-up (NaN).
+        h2_obs, var_dist = if family === :bernoulli_probit
+            V_pred = V_A + V_fixed
+            p̄ = _gh_expect(_norm_cdf, mu, V_pred)
+            Ψ = _gh_expect(_norm_pdf, mu, V_pred)
+            (Ψ^2 * V_A / (p̄ * (1.0 - p̄)), p̄ * (1.0 - p̄))
+        else
+            (NaN, NaN)
+        end
         return (family = family, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
-                h2_latent = V_A / latent_total, h2_observation = NaN,
-                var_distribution = NaN, var_link = 1.0, converged = converged,
+                h2_latent = V_A / latent_total, h2_observation = h2_obs,
+                var_distribution = var_dist, var_link = 1.0, converged = converged,
                 information_limited = false,
-                caveat = "Probit threshold family: the latent scale IS the liability (selection-relevant) scale, V_link = 1 (Dempster–Lerner 1950); the observed/category scale (z²/[p(1−p)] binary; per-category ordinal) needs the incidence/cutpoints and is a follow-up → NaN.",
+                caveat = family === :bernoulli_probit ?
+                    "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal)." :
+                    "Ordinal probit threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1); the per-category observed scale needs the cutpoints and is a follow-up → NaN.",
                 method = :probit_liability)
     else
         throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale) and :bernoulli_probit/:ordered_probit (liability scale); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))

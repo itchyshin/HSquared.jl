@@ -36,3 +36,16 @@ QGglmm/MCMCglmm comparator + Fisher/Falconer sign-off) still covers the OBSERVAT
 EXPORTED but experimental; `validation_status()` = 50 UNCHANGED; public-covered fitting = 1 UNCHANGED;
 NOT a covered claim. The Gamma observation-scale h² is deliberately NOT included (it needs an NS-2017
 distribution-specific-variance / trigamma lit-check — not guessed).
+
+## Update — binary observed-0/1 scale added (same PR)
+
+After the liability-only slice, the **BINARY (`:bernoulli_probit`) observed-0/1 scale** was added to the
+same probit branch: the QGglmm probit integration over `η~N(μ,V_A+V_fixed)` — `p̄=E[Φ(η)]`,
+`Ψ=E[φ(η)]` (reusing the module's 20-node `_gh_expect`), `h²_obs = Ψ²V_A/[p̄(1−p̄)]`. This was FIRST
+verified (numerically, 4M MC) to EQUAL the classic Dempster–Lerner transform `h²_liab·z²/[p(1−p)]`
+across μ and V_A∈[0.1,2.0], so it is not a guess — the two independent formulas cross-check to MC
+precision. The test asserts `h²_obs ≈ DL` (≈1e-6) and `0 < h²_obs < h²_liab` (the classic result that
+the observed-0/1 scale h² is below the liability scale). The **ORDINAL (K>2)** per-category observed
+scale still needs the cutpoints and stays fenced (NaN). `method` stays `:probit_liability`;
+`h2_observation` is now populated for binary. `Pkg.test()` green (count 50 UNCHANGED). Still owed for
+the row's covered path: a same-estimand external QGglmm/MCMCglmm comparator on the observation scale.

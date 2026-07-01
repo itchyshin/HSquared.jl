@@ -1103,20 +1103,26 @@ end
     @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
 end
 
-@testset "Phase 6 ordinal/probit LIABILITY-scale h² (doc-20 Step 4, V6-NS-H2)" begin
+@testset "Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2)" begin
     # Threshold models: the liability scale IS the latent scale, with the probit residual
     # V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The liability h² = V_A/(V_A + 1 + V_fixed)
-    # is the selection-relevant PRIMARY scale. The cutpoints do NOT enter it (they set the
-    # observed/category incidence, not the liability partition). The observed/category scale
-    # (Dempster–Lerner z²/[p(1−p)] for binary; per-category for ordinal) is a FENCED follow-up,
-    # returned as NaN rather than guessed.
+    # is the selection-relevant PRIMARY scale; the cutpoints do NOT enter it. The BINARY observed-0/1
+    # scale is computed via the QGglmm probit integration (= the Dempster–Lerner transform, verified
+    # equal); the ORDINAL (K>2) per-category observed scale needs the cutpoints and stays fenced (NaN).
     # Bernoulli-probit (binary): V_A = 0.5, μ = 0 → h²_liab = 0.5/1.5 = 1/3.
     hb = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse())
     @test hb.h2_latent ≈ 1 / 3 atol = 1e-12          # latent == liability for a threshold family
     @test hb.var_link == 1.0
-    @test isnan(hb.h2_observation)                   # observed scale is the DL follow-up (not guessed)
     @test hb.method == :probit_liability
     @test occursin("liability", hb.caveat)
+    # Binary observed-0/1 scale: the QGglmm probit integration == the Dempster–Lerner transform.
+    let Φ = HSquared._norm_cdf, φ = HSquared._norm_pdf
+        Φinv(p) = (lo = -40.0; hi = 40.0; for _ in 1:200; m = (lo + hi) / 2; (Φ(m) < p ? lo = m : hi = m); end; (lo + hi) / 2)
+        pbar = HSquared._gh_expect(Φ, 0.0, 0.5)
+        dl = (0.5 / 1.5) * φ(Φinv(pbar))^2 / (pbar * (1 - pbar))
+        @test hb.h2_observation ≈ dl atol = 1e-6     # QGglmm integration == Dempster–Lerner z²/[p(1−p)]
+    end
+    @test 0.0 < hb.h2_observation < hb.h2_latent      # observed-0/1 h² < liability h² (classic DL)
     # Ordinal (K=3): cutpoints [0, 1] do NOT change the liability h².
     ho = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.OrderedProbitResponse([0.0, 1.0]))
     @test ho.h2_latent ≈ 1 / 3 atol = 1e-12
