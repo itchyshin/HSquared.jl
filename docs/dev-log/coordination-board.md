@@ -36,6 +36,19 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-07-01: Julia lane / v0.6 nine-PR integration BUILT + VERIFIED + handed to the
+  main lane (branch `origin/feat/2026-07-01-v06-integration` @ `802a846c`; `main` STILL
+  UNTOUCHED @ `94d20319`). Rebuilt the 9-PR (#215–#223) integration with clean merge
+  history, code/tests **byte-identical** to the Rose-PROMOTE trial tree (`743c62de`),
+  plus a doc-only V6-ORDINAL recovery-gate surface reconciliation (evidence/missing/
+  capability now lockstep with the debt register; status stays partial). Honesty pins:
+  `validation_status()` = 50, `public_covered_count` = 1, nothing flipped to covered.
+  Landing on `main` + the G10 covered flip + cross-twin R activation are HELD for the
+  main lane (maintainer-directed "hold covered"). Handover:
+  `docs/dev-log/handover/2026-07-01-v06-integration-to-main-lane.md`. NEXT (main lane):
+  `git push origin origin/feat/2026-07-01-v06-integration:main`, re-run `Pkg.test()`,
+  confirm #215–#223 close, merge PR #225.
+
 - 2026-07-01: Julia lane / v0.6 nine-PR merge recipe, trial-verified (PR #225,
   `docs/2026-07-01-v06-merge-recipe`; `main` UNTOUCHED @ `94d20319`). Non-destructive
   verification of merging the 9 open v0.6 PRs (#215–#223) via a throwaway branch (since
