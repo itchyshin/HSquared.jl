@@ -47,5 +47,20 @@ across μ and V_A∈[0.1,2.0], so it is not a guess — the two independent form
 precision. The test asserts `h²_obs ≈ DL` (≈1e-6) and `0 < h²_obs < h²_liab` (the classic result that
 the observed-0/1 scale h² is below the liability scale). The **ORDINAL (K>2)** per-category observed
 scale still needs the cutpoints and stays fenced (NaN). `method` stays `:probit_liability`;
-`h2_observation` is now populated for binary. `Pkg.test()` green (count 50 UNCHANGED). Still owed for
-the row's covered path: a same-estimand external QGglmm/MCMCglmm comparator on the observation scale.
+`h2_observation` is now populated for binary. `Pkg.test()` green (count 50 UNCHANGED).
+
+## Update — QGglmm EXTERNAL comparator RUN (logit + binary-probit observation scales)
+
+The observation-scale external comparator (doc-19 §5) is now RUN against de Villemereuil's **QGglmm**
+package (installed from CRAN). `QGglmm::QGparams(mu, var.a=V_A, var.p=V_A+V_fixed, model=binom1.{logit,
+probit})$h2.obs` AGREES with the engine's `h2_observation` to **≤4.5e-6** over 9 (μ,V_A,V_fixed) cases
+× 2 links = 18 comparisons (`comparator/qgglmm_probit_observed/`,
+`docs/dev-log/recovery-checkpoints/2026-07-01-qgglmm-probit-observed-comparator.md`). This DISCHARGES
+the external-comparator debt for the **logit** and **binary-probit** observation scales — the
+binary-probit scale now has an internal Dempster–Lerner cross-check AND the external QGglmm comparator;
+the logit scale (previously only internal-quadrature-checked) now has its external comparator too. KEY
+CONVENTION pinned by the comparator (that the internal checks could not): QGglmm's `var.p` for the
+observation integration is the PREDICTOR variance `V_A+V_fixed` (the link residual is baked into the
+inverse link), not `V_A+V_link+V_fixed`. Owed field updated on all 3 surfaces. STILL owed: the QGglmm
+comparator for the Binomial(n>1)/Poisson/ordinal(K>2)/Gamma-data scales, MCMCglmm, a Fisher/Falconer
+sign-off, and G10 — NOT a covered claim; `validation_status()` = 50 UNCHANGED; public-covered = 1.
