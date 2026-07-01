@@ -289,18 +289,26 @@ end
 # Monte Carlo standard error (MCSE = sd / sqrt(m)), and whether the bias is within
 # ±2·MCSE (i.e. consistent with an unbiased estimator at this seed count); per-trait
 # EBV accuracy; convergence count; and a Wilson 95% CI on the pass proportion.
+# Upper-triangle (i<=j) covariance parameters for t traits: t(t+1)/2 for G then the
+# same for R. Each entry is (name, estimate-getter, truth-getter). Julia's
+# `for i in 1:t, j in i:t` rebinds i/j per iteration, so each closure captures its own
+# indices (the selftest's closure-capture check proves it).
+function _covariance_params(t)
+    params = Any[]
+    for i in 1:t, j in i:t
+        push!(params, ("G[$i,$j]", r -> r.genetic_covariance[i, j], r -> r.gtrue[i, j]))
+    end
+    for i in 1:t, j in i:t
+        push!(params, ("R[$i,$j]", r -> r.residual_covariance[i, j], r -> r.rtrue[i, j]))
+    end
+    return params
+end
+
 function _print_aggregate(results)
     m = length(results)
     m >= 2 || return missing
     within_count = 0
-    params = (
-        ("G[1,1]", r -> r.genetic_covariance[1, 1], r -> r.gtrue[1, 1]),
-        ("G[1,2]", r -> r.genetic_covariance[1, 2], r -> r.gtrue[1, 2]),
-        ("G[2,2]", r -> r.genetic_covariance[2, 2], r -> r.gtrue[2, 2]),
-        ("R[1,1]", r -> r.residual_covariance[1, 1], r -> r.rtrue[1, 1]),
-        ("R[1,2]", r -> r.residual_covariance[1, 2], r -> r.rtrue[1, 2]),
-        ("R[2,2]", r -> r.residual_covariance[2, 2], r -> r.rtrue[2, 2]),
-    )
+    params = _covariance_params(length(results[1].ebv_accuracy))
     println("AGGREGATE Monte Carlo recovery (m = $m seeds)")
     println("  param    true     mean      bias     MCSE   |bias|<=2MCSE")
     for (name, getter, truthgetter) in params

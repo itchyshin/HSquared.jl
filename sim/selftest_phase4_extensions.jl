@@ -31,5 +31,19 @@ Y2, X2, Z2, Ainv2, G2, R2, U2 = _simulate_repeated_records(cfg2)
 check(size(Y2, 2) == 2, "t=2 sim must yield 2 trait columns")
 check(size(U2, 2) == 2, "t=2 breeding values must have 2 columns")
 
+# --- B2: covariance param list generalizes; t=2 names unchanged; no closure capture bug ---
+p2 = _covariance_params(2)
+check(length(p2) == 6, "t=2 must give 6 params, got $(length(p2))")
+check(p2[1][1] == "G[1,1]" && p2[3][1] == "G[2,2]" && p2[4][1] == "R[1,1]",
+      "t=2 param names/order changed")
+p3 = _covariance_params(3)
+check(length(p3) == 12, "t=3 must give 12 params (6 G + 6 R), got $(length(p3))")
+# closure-capture check: each getter must read its OWN (i,j), not the last loop value
+mock = (genetic_covariance = [10.0 11.0 12.0; 11.0 20.0 22.0; 12.0 22.0 30.0],
+        gtrue = zeros(3, 3),
+        residual_covariance = [40.0 0.0 0.0; 0.0 50.0 0.0; 0.0 0.0 60.0], rtrue = zeros(3, 3))
+check(p3[1][2](mock) == 10.0 && p3[2][2](mock) == 11.0 && p3[6][2](mock) == 30.0,
+      "closure capture bug: G getters do not read their own indices")
+
 isempty(failures) || (foreach(println, failures); error("SELFTEST FAILED ($(length(failures)))"))
 println("SELFTEST PASSED")
