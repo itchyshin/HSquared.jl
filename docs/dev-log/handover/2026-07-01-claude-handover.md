@@ -54,11 +54,28 @@ Two independent **stacked** chains off `main`:
   **tip** is cumulative (contains its chain's joint + comparator commits).
 - **No count-guard change across the merge** — `main` is already at 50; the joint fits EXTEND the
   existing `V6-ORDINAL` / `V6-GAMMA` row evidence, they do not add rows.
-- **One cross-chain conflict class** (both chains touch the same anchors in `src/nongaussian.jl` +
-  `test/runtests.jl`): the `fit_laplace_reml` family dispatch / allow-list, and the two adjacent
-  joint-estimation testsets. **Resolution: keep BOTH the `:ordered_probit` and `:gamma` cases /
-  testsets** — they are non-overlapping. Verify with a throwaway trial-merge before finalizing (the
-  prior-handover discipline).
+### Verified merge recipe (I ran a throwaway trial-merge `main → #220 → #219`, suite green)
+
+Merging the ordinal chain onto `main` is **clean**. Merging the gamma chain then yields **exactly 3
+conflicts**, all the trivial "keep both" class (`src/validation_status.jl` + `test/runtests.jl`
+**auto-merge** — no manual step):
+
+1. **`src/nongaussian.jl`** — the `fit_laplace_reml` family allow-list + the two `elseif` dispatch
+   cases. Keep BOTH: allow-list → `(…, :bernoulli_probit, :ordered_probit, :gamma)` (update the error
+   string to match); keep the complete `:ordered_probit` block AND the complete `:gamma` block.
+   ⚠️ The naive 3-way merge *tangles* them — both insert a `try/catch` at the same anchor, so git
+   interleaves the two objectives around one shared `catch…end`. Do NOT accept the tangle; rebuild as
+   two independent `elseif` blocks, each with its OWN `try … catch … end`.
+2. **`docs/design/capability-status.md`** — the ordinal + Gamma rows. Keep the ordinal row from the
+   ordinal chain (the FULL joint+comparator+gate version) and the Gamma row from the gamma chain (the
+   FULL version incl. the rail). One FULL row from each side — not ours/theirs wholesale.
+3. **`docs/design/validation-debt-register.md`** — same as (2): ordinal-FULL + Gamma-FULL.
+
+**Verified post-resolution (trial branch, then discarded — never pushed to `main`):** count guard
+stays **50**; both families symbol-reachable (`family=:gamma` → shape 28.33; `family=:ordered_probit`
+→ cutpoints [0, 0.98]); full `Pkg.test()` **green** on the integrated tree, incl. ordinal JOINT 10/10,
+Gamma JOINT 6/6, ordinal kernel 62/62, Gamma kernel 31/31. So the maintainer's merge is mechanical —
+apply the 3 resolutions above and the integrated suite is green.
 
 ## What is maintainer-gated (NOT autonomous — do not self-do)
 
