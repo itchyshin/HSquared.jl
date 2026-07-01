@@ -220,16 +220,16 @@ end
           occursin("nor a covered claim", probit_row.claim_boundary)
     # T1: ordered-categorical probit (ordinal threshold) family row.
     ordinal_row = only(row for row in validation if row.id == "V6-ORDINAL")
-    @test ordinal_row.status == "partial"
+    @test ordinal_row.status == "covered"
     @test occursin("OrderedProbitResponse", ordinal_row.evidence)
     @test occursin("REDUCTION to", ordinal_row.evidence)
-    @test occursin("covered claim", ordinal_row.claim_boundary)
+    @test occursin("public default", ordinal_row.claim_boundary)
     # T-Gamma: Gamma (log-link) family row.
     gamma_row = only(row for row in validation if row.id == "V6-GAMMA")
-    @test gamma_row.status == "partial"
+    @test gamma_row.status == "covered"
     @test occursin("GammaResponse", gamma_row.evidence)
     @test occursin("EXPONENTIAL", gamma_row.evidence)
-    @test occursin("covered claim", gamma_row.claim_boundary)
+    @test occursin("public default", gamma_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
