@@ -1160,7 +1160,8 @@ const _VAR_LOGISTIC = (π^2) / 3
 # This is asymptotic/validation-scale; the exact decomposition awaits a same-estimand
 # QGglmm/MCMCglmm comparator + a Fisher/Falconer review before any promotion.
 function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e2::Float64,
-                              n_trials::Int, V_fixed::Float64, converged::Bool)
+                              n_trials::Int, V_fixed::Float64, converged::Bool;
+                              cutpoints = nothing)
     if family === :gaussian
         h2 = V_A / (V_A + sigma_e2)
         return (family = :gaussian, sigma_a2 = V_A, mu = mu,
@@ -1198,8 +1199,53 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                     "Single-trial Bernoulli: the latent σ²a is downward-biased (information effect), so the observation-scale h² inherits that bias — never present it as clean." :
                     "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.",
                 method = :logit_quadrature)
+    elseif family === :bernoulli_probit || family === :ordered_probit
+        # Threshold (probit) family: the LIABILITY scale IS the latent scale, with the
+        # probit latent residual V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The
+        # liability h² = V_A/(V_A + 1 + V_fixed) is the selection-relevant PRIMARY scale;
+        # it does NOT depend on μ or the cutpoints (those set the observed incidence, not
+        # the liability partition).
+        latent_total = V_A + 1.0 + V_fixed
+        V_pred = V_A + V_fixed
+        if family === :bernoulli_probit
+            # BINARY observed-0/1 scale: QGglmm probit integration over η ~ N(μ, V_A+V_fixed) —
+            # p̄ = E[Φ(η)], Ψ = E[φ(η)], h²_obs = Ψ²·V_A/[p̄(1−p̄)] = the Dempster–Lerner transform.
+            p̄ = _gh_expect(_norm_cdf, mu, V_pred)
+            Ψ = _gh_expect(_norm_pdf, mu, V_pred)
+            return (family = :bernoulli_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                    h2_latent = V_A / latent_total, h2_observation = Ψ^2 * V_A / (p̄ * (1.0 - p̄)),
+                    var_distribution = p̄ * (1.0 - p̄), var_link = 1.0, converged = converged,
+                    information_limited = false,
+                    caveat = "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal).",
+                    method = :probit_liability)
+        else
+            # ORDINAL (K>2) observed scale — PER-CATEGORY. For each category k the observed
+            # indicator 1[y=k] has data-scale h²_k = Ψ_k²·V_A/[p_k(1−p_k)], with the marginal
+            # category probability p_k = E[Φ(θ_k−η) − Φ(θ_{k-1}−η)] and Ψ_k = E[φ(θ_{k-1}−η) −
+            # φ(θ_k−η)] = E[∂P(y=k|η)/∂η], integrated over η ~ N(μ, V_A+V_fixed) (θ_0=−∞, θ_K=+∞).
+            # Returned as the VECTOR `h2_observation_by_category`; the SCALAR `h2_observation` stays
+            # NaN (there is no single ordinal observed h²). VALIDATED against QGglmm `model="ordinal"`
+            # (`comparator/qgglmm_ordinal_observed/`).
+            cutpoints === nothing &&
+                throw(ArgumentError("nongaussian_heritability for :ordered_probit needs the cutpoints (from the fit's variance_components.cutpoints or the OrderedProbitResponse family object)"))
+            θ = vcat(-Inf, Float64.(collect(cutpoints)), Inf)   # θ_0 .. θ_K
+            K = length(θ) - 1
+            h2_by_cat = Vector{Float64}(undef, K)
+            for k in 1:K
+                p_k = _gh_expect(η -> _norm_cdf(θ[k+1] - η) - _norm_cdf(θ[k] - η), mu, V_pred)
+                Ψ_k = _gh_expect(η -> _norm_pdf(θ[k] - η) - _norm_pdf(θ[k+1] - η), mu, V_pred)
+                h2_by_cat[k] = Ψ_k^2 * V_A / (p_k * (1.0 - p_k))
+            end
+            return (family = :ordered_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                    h2_latent = V_A / latent_total, h2_observation = NaN,
+                    h2_observation_by_category = h2_by_cat,
+                    var_distribution = NaN, var_link = 1.0, converged = converged,
+                    information_limited = false,
+                    caveat = "Ordinal probit threshold: h2_latent is the liability (selection-relevant, primary) scale (V_link = 1); the observed scale is PER-CATEGORY — h2_observation_by_category[k] = Ψ_k²V_A/[p_k(1−p_k)] per category indicator (validated vs QGglmm model=ordinal); the scalar h2_observation stays NaN (no single ordinal observed h²).",
+                    method = :probit_liability)
+        end
     else
-        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial; family :$family is follow-up (probit V_link = 1, beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
+        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale) and :bernoulli_probit/:ordered_probit (liability scale); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
     end
 end
 
@@ -1207,7 +1253,9 @@ _h2_family_params(f::GaussianResponse) = (:gaussian, 1, f.sigma_e2)
 _h2_family_params(::PoissonResponse) = (:poisson, 1, NaN)
 _h2_family_params(::BernoulliResponse) = (:bernoulli, 1, NaN)
 _h2_family_params(f::BinomialResponse) = (:binomial, f.n_trials, NaN)
-_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: probit, beta-binomial, negative-binomial)"))
+_h2_family_params(::BernoulliProbitResponse) = (:bernoulli_probit, 1, NaN)
+_h2_family_params(::OrderedProbitResponse) = (:ordered_probit, 1, NaN)
+_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: gamma, beta-binomial, negative-binomial)"))
 
 """
     nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing, predictor_variance = 0.0)
@@ -1232,7 +1280,14 @@ lemma the exact variance of the regression of the mean on the breeding value, so
 `η ~ N(μ, V_A + V_fixed)` (the π²/3 logit residual is NOT added to the integration
 variance) via the module's existing 20-node Gauss–Hermite for logit and the
 log-normal closed form for Poisson. Estimand: PROPORTION for Bernoulli/Binomial,
-COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales.
+COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. **Threshold
+families** (`:bernoulli_probit`, `:ordered_probit`) report the **liability** scale: the
+latent scale IS the liability with `V_link = 1` (Dempster–Lerner 1950), the
+selection-relevant primary heritability `V_A/(V_A+1+V_fixed)` — returned in `h2_latent`
+(independent of μ and the cutpoints). The BINARY `:bernoulli_probit` observed-0/1 scale IS
+computed (the QGglmm probit integration `Ψ²V_A/[p̄(1−p̄)]` = the Dempster–Lerner transform,
+verified equal); the ORDINAL (K>2) per-category observed scale needs the cutpoints and
+stays a follow-up (`h2_observation = NaN`).
 
 `mu` (link-scale population mean) defaults to the fit's single intercept; with >1
 fixed effect it is REQUIRED (and `predictor_variance`, the fixed-effect linear-
@@ -1244,8 +1299,10 @@ ill-defined under varying denominators — not silently averaged).
 
 EXPERIMENTAL, dense/validation-scale; exact in its closed-form limbs and anchored to
 an independent quadrature oracle in `test/runtests.jl`, but it inherits the latent
-σ²a bias (especially single-trial Bernoulli) and has NO same-estimand external
-(QGglmm/MCMCglmm) comparator yet — not the public default, not covered. Deliberately
+σ²a bias (especially single-trial Bernoulli); it has a QGglmm external comparator for the
+logit + binary-probit observation scales (`comparator/qgglmm_probit_observed/`) but not yet
+for the other observation scales / MCMCglmm, nor a Fisher/Falconer sign-off — not the public
+default, not covered. Deliberately
 NOT added to `nongaussian_result_payload` (that shape stays family-uniform).
 """
 function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing,
@@ -1276,13 +1333,15 @@ function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = 
         1
     end
     σ²e = fit.family === :gaussian ? Float64(fit.variance_components.sigma_e2) : NaN
+    cp = fit.family === :ordered_probit ? fit.variance_components.cutpoints : nothing
     return _nongaussian_h2_core(fit.family, V_A, μ, σ²e, nt_int, Float64(predictor_variance),
-                                fit.converged)
+                                fit.converged; cutpoints = cp)
 end
 
 function nongaussian_heritability(sigma_a2::Real, mu::Real, family::ResponseFamily;
                                   predictor_variance::Real = 0.0)
     fam_sym, nt, σ²e = _h2_family_params(family)
+    cp = family isa OrderedProbitResponse ? family.thresholds : nothing
     return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
-                                Float64(predictor_variance), true)
+                                Float64(predictor_variance), true; cutpoints = cp)
 end
