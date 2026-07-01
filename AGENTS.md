@@ -9,6 +9,20 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (autonomous overnight segment — TWO staged PRs; Claude solo; `main` @ `c2b5babc`/#210
+  UNCHANGED).** Delivered two complete, CI-green, real-Rose-audited slices, both staged for the maintainer
+  (not merged): **[#211](https://github.com/itchyshin/HSquared.jl/pull/211) v0.4 MV broader-DGP recovery** —
+  full-sib + 3-trait recovery **DISCHARGED** on the covered `V4-MV-REML` row (pre-declared 48-seed Totoro
+  gates both PASS; Curie/Fisher/Mendel pre-run panel; additive, covered UNCHANGED, count 48); and
+  **[#212](https://github.com/itchyshin/HSquared.jl/pull/212) v0.6 ordered-categorical (ordinal) probit family
+  kernel (T1)** — new internal `OrderedProbitResponse` (exact K=2→probit reduction, log-concave observed-info
+  weight), experimental/`partial`, count 48→49 on-branch. **Honesty pins on `main` UNCHANGED:**
+  `validation_status()` = 48, covered 8, **public-covered FITTING = 1**. Comparator finding: v0.6 same-estimand
+  tool is **`ordinal::clmm`** (Laplace-ML) — **glmmTMB does NOT fit cumulative-link ordinal models**. Stale PRs
+  #193/#191 worth closing. **NEXT: maintainer review/merge #211 (G10) + #212; then finish v0.6 T1 (cutpoint
+  estimation + `ordinal::clmm` comparator + recovery gate) or V5 GCTA.** START HERE:
+  `docs/dev-log/handover/2026-06-30-claude-handover-v04-v06.md`.
+
 - **As of 2026-06-30 (v0.5 QTL genome-wide significance → COVERED, scoped; Claude solo; `HSquared.jl` `main` @
   `261b52c7`/#209; `hsquared` `main` @ `c4e73ef`/#114; maintainer G10 GIVEN + merged).** Resumed a frozen
   session and finished v0.5 to covered across both twins, every slice pre-registered + real-Rose-audited.
