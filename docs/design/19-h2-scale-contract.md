@@ -123,7 +123,10 @@ This is the **selection-relevant** heritability for threshold traits and the nat
 estimand for the `:bernoulli_probit` family and the owed ordinal/categorical family (T1).
 The observed-0/1 scale connects to it by the Dempster–Lerner transform
 `h²_obs = h²_liab · z² / [p(1−p)]` (`z` = standard-normal ordinate at the threshold,
-`p` = incidence) — useful as a closed-form cross-check.
+`p` = incidence) — useful as a closed-form cross-check. Because `z²/[p(1−p)] < 1` for all
+incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **always smaller
+than the liability heritability** — the classic Dempster–Lerner ordering (verified
+empirically: e.g. `V_A = 1`, `μ = 0` → liability 0.500 vs observed 0.318).
 
 ---
 
