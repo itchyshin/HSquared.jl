@@ -107,7 +107,15 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
 ## Follow-ups (not covered blockers)
 
 - Scale-labelled h²: ordinal **liability** (#221) + Gamma **latent** (#222) DONE; the **observation/data**
-  scale for threshold + Gamma is the remaining doc-20 Step-4 piece (needs a QGglmm external comparator).
+  scale for threshold + Gamma is the remaining doc-20 Step-4 piece. **De-risked this session (numerical
+  verification, not yet coded):** (a) the **threshold** observation scale is well-specified — the
+  Dempster–Lerner transform `h²_obs = h²_liab·z²/[p(1−p)]` **agrees with** the QGglmm probit integration
+  `Ψ²V_A/[p̄(1−p̄)]` (`Ψ=E[φ(η)]`, `p̄=E[Φ(η)]`) to MC precision across μ and V_A∈[0.1,2.0], so either
+  formula works and they cross-check; (b) the **Gamma latent** `V_link=trigamma(ν)` is likewise verified
+  (doc-19 §3.1). Still genuinely owed: the **Gamma data/observation** scale (NS-2017 multiplicative,
+  `Ψ=E[μ]`, `V_P,obs=Var(μ)+E[μ²/ν]`) — this one wants a **QGglmm external comparator** before shipping,
+  not a closed-form guess. So the threshold observation scale can be coded now (internally cross-checked);
+  the Gamma data scale should wait for the external comparator.
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
