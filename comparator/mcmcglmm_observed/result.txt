@@ -1,0 +1,4 @@
+MCMCglmm threshold (VR=1)  eff.size VA=1000
+  sigma_a2     post 0.7875 [0.6250,0.9672]  engine 0.7540  -> INSIDE
+  h2_liability post 0.4392 [0.3846,0.4917]  engine 0.4299  -> INSIDE
+  h2_observed  post 0.2795 [0.2447,0.3129]  engine 0.2736  -> INSIDE
