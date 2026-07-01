@@ -807,6 +807,140 @@ function fit_two_effect_reml(
     )
 end
 
+# One variance ratio `theta[keep_num] / total` and its logit-delta CI from the
+# supplied REML observed-information matrix `info` (the central FD Hessian of the
+# two-effect REML loglik at the optimum, negated). `keep_num` is the numerator
+# component (1 or 2). Components whose variance is a negligible fraction of the
+# total are BOUNDARY components: they are dropped from `info` (the interior
+# information conditional on a boundary component being fixed at 0 is the
+# corresponding sub-block), so a ratio built on a non-boundary numerator (e.g.
+# `ratio1` when only σ2²→0) still gets a valid interval — this is what makes the
+# σ2²=0 reduction match `heritability_interval`. A ratio whose OWN numerator or
+# whose total-defining denominator is degenerate is flagged and returns a NaN CI
+# (never a spuriously tight interval).
+function _two_effect_ratio_ci(info::AbstractMatrix, theta::AbstractVector,
+                              keep_num::Integer, level::Real, boundary_tol::Real)
+    total = sum(theta)
+    ratio = theta[keep_num] / total
+    # which of the three components sit on the boundary (σ_i / total ≈ 0)
+    on_boundary = [theta[i] / total <= boundary_tol for i in 1:3]
+    # the numerator itself at the boundary → the ratio is ≈ 0, no informative CI
+    if on_boundary[keep_num]
+        return (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+                lower_clamped = false, upper_clamped = false, boundary = true)
+    end
+    keep = [i for i in 1:3 if !on_boundary[i]]
+    # need at least the numerator + one other component to define a ratio interval
+    if length(keep) < 2
+        return (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+                lower_clamped = false, upper_clamped = false, boundary = true)
+    end
+    sub = Symmetric(Matrix(info)[keep, keep])
+    isposdef(sub) ||
+        return (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+                lower_clamped = false, upper_clamped = false, boundary = true)
+    covar = inv(sub)
+    # delta-method gradient of ratio = θ[keep_num]/Σθ wrt the KEPT components only
+    subtotal = sum(theta[k] for k in keep)   # == total (dropped comps are ≈ 0)
+    g = [k == keep_num ? (subtotal - theta[keep_num]) / subtotal^2 :
+                         -theta[keep_num] / subtotal^2 for k in keep]
+    se = sqrt(max(dot(g, covar * g), 0.0))
+    (0 < ratio < 1 && isfinite(se) && se > 0) ||
+        return (estimate = ratio, lower = NaN, upper = NaN, se = se,
+                lower_clamped = false, upper_clamped = false, boundary = true)
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(ratio / (1 - ratio))
+    se_eta = se / (ratio * (1 - ratio))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    # logit keeps endpoints in (0, 1); flag if they reach the numerical rails
+    return (estimate = ratio, lower = lower, upper = upper, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            boundary = false)
+end
+
+"""
+    two_effect_ratio_interval(y, X, Z1, Ainv1, Z2, Ainv2; level = 0.95,
+                              which = :both, initial = ..., iterations = 200,
+                              ids1 = nothing, ids2 = nothing, fd_step = 1e-4,
+                              boundary_tol = 1e-6)
+
+Asymptotic delta-method confidence interval(s) for the variance ratios of the
+general two-effect REML model ([`fit_two_effect_reml`](@ref)):
+
+    ratio1 = σ1² / (σ1² + σ2² + σe²),   ratio2 = σ2² / (σ1² + σ2² + σe²)
+
+(e.g. `h²` and `c²` / `m²` for a common-environment / maternal model). Fits by
+REML, forms the observed information as the central finite-difference Hessian of
+the two-effect REML log-likelihood (`_two_effect_dense`) at the optimum, and
+applies the delta method on the logit scale (so each interval lies in
+`(0, 1)`) — the same machinery as [`repeatability_interval`](@ref) and
+[`heritability_interval`](@ref) `method = :delta`.
+
+`which` selects which ratio(s) to build an interval for (`:both`, `:ratio1`, or
+`:ratio2`); the unrequested ratio still reports its point `estimate` with a `NaN`
+interval. Returns a `NamedTuple` `(ratio1, ratio2, level, converged)` where each
+of `ratio1`/`ratio2` is `(estimate, lower, upper, se, lower_clamped,
+upper_clamped, boundary)`.
+
+Boundary honesty: when a component sits on the variance boundary (σ → 0, i.e.
+`σ_i / total ≤ boundary_tol`) the ratio built on it is flagged `boundary = true`
+with a `NaN` interval — never a spuriously tight CI. A ratio built on a
+non-boundary numerator drops the degenerate component and uses the corresponding
+information sub-block (the interior information conditional on the boundary
+component being fixed at 0), so e.g. `ratio1` remains well-defined when only
+`σ2² → 0`; in that reduction it recovers [`heritability_interval`](@ref) on the
+underlying animal model. `converged` is carried from the REML fit.
+
+Experimental, asymptotic, delta-method, REML only; the interval is a large-sample
+approximation and is NOT coverage-calibrated — on small samples the REML surface
+is flat and the interval is unreliable (the parametric bootstrap,
+`bootstrap_variance_component_interval`, is the only finite-sample-aware path). No
+calibrated coverage is claimed.
+"""
+function two_effect_ratio_interval(
+    y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix, Ainv2::AbstractMatrix;
+    level::Real = 0.95, which::Symbol = :both,
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200, ids1 = nothing, ids2 = nothing,
+    fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    which in (:both, :ratio1, :ratio2) ||
+        throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+    fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
+                              initial = initial, iterations = iterations,
+                              ids1 = ids1, ids2 = ids2)
+    vc = fit.variance_components
+    theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
+
+    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
+    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
+    Xd = Matrix{Float64}(X); Z1d = Matrix{Float64}(Z1); Z2d = Matrix{Float64}(Z2)
+    yv = Float64.(y)
+    loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
+
+    # observed information = −Hessian of the REML loglik (central finite differences)
+    h = fd_step .* max.(abs.(theta), 1e-3)
+    H = zeros(3, 3)
+    for i in 1:3, j in 1:3
+        ei = zeros(3); ei[i] = h[i]
+        ej = zeros(3); ej[j] = h[j]
+        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
+                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    info = Symmetric(-H)
+
+    na_ci = (estimate = NaN, lower = NaN, upper = NaN, se = NaN,
+             lower_clamped = false, upper_clamped = false, boundary = false)
+    r1 = which === :ratio2 ? merge(na_ci, (estimate = fit.ratio1,)) :
+         _two_effect_ratio_ci(info, theta, 1, level, boundary_tol)
+    r2 = which === :ratio1 ? merge(na_ci, (estimate = fit.ratio2,)) :
+         _two_effect_ratio_ci(info, theta, 2, level, boundary_tol)
+    return (ratio1 = r1, ratio2 = r2, level = level, converged = fit.converged)
+end
+
 """
     multi_effect_mme(y, X, effects, sigmas, sigma_e2; ids = nothing)
 
