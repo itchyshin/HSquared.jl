@@ -105,8 +105,18 @@ function _parse_args(args)
     r11 = parse(Float64, get(opts, "r11", "0.8"))
     r12 = parse(Float64, get(opts, "r12", "0.2"))
     r22 = parse(Float64, get(opts, "r22", "0.55"))
-    g0 = [g11 g12; g12 g22]
-    r0 = [r11 r12; r12 r22]
+    # Trait count: 2 (default, uses the g11..r22 knobs) or 3 (a PRE-DECLARED 3×3 truth;
+    # the substantive broader-DGP test — 12 covariance params). See
+    # docs/dev-log/decisions/2026-06-30-mv-reml-3trait-gate.md.
+    traits = parse(Int, get(opts, "traits", "2"))
+    traits in (2, 3) || throw(ArgumentError("--traits must be 2 or 3, got $traits"))
+    if traits == 3
+        g0 = [1.0 0.35 0.25; 0.35 0.7 0.2; 0.25 0.2 0.9]
+        r0 = [0.8 0.2 0.15; 0.2 0.55 0.1; 0.15 0.1 0.75]
+    else
+        g0 = [g11 g12; g12 g22]
+        r0 = [r11 r12; r12 r22]
+    end
     cell = get(opts, "cell", "default")
     gate_raw = get(opts, "gate", "aggregate")
     gate_raw in ("aggregate", "per-seed") ||

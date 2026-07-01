@@ -45,5 +45,14 @@ mock = (genetic_covariance = [10.0 11.0 12.0; 11.0 20.0 22.0; 12.0 22.0 30.0],
 check(p3[1][2](mock) == 10.0 && p3[2][2](mock) == 11.0 && p3[6][2](mock) == 30.0,
       "closure capture bug: G getters do not read their own indices")
 
+# --- B3: --traits=3 builds a 3×3 PD truth; t=2 default byte-identical ---
+p3p = _parse_args(["--traits=3"])
+check(size(p3p.g0) == (3, 3), "traits=3 must build a 3×3 G0, got $(size(p3p.g0))")
+check(isposdef(Symmetric(p3p.g0)) && isposdef(Symmetric(p3p.r0)),
+      "default 3-trait G0/R0 must be PD")
+p2p = _parse_args(String[])
+check(size(p2p.g0) == (2, 2) && p2p.g0 == [1.0 0.35; 0.35 0.7],
+      "default t=2 truth must be byte-identical")
+
 isempty(failures) || (foreach(println, failures); error("SELFTEST FAILED ($(length(failures)))"))
 println("SELFTEST PASSED")
