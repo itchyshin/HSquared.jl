@@ -126,6 +126,37 @@ Nakagawa–Schielzeth transform, a separate slice). Internal, Laplace-only.
 """
 struct BernoulliProbitResponse <: ResponseFamily end
 
+"""
+Ordered-categorical probit (ordinal threshold / graded liability) — the T1
+calving-ease family (v0.6). `K` ordered categories `1..K` sit on a standard-normal
+latent scale with `K-1` SUPPLIED, strictly increasing cutpoints `θ`: with the
+latent liability `l = η + e`, `e ~ N(0,1)`,
+
+    P(y = k | η) = Φ(θ_k − η) − Φ(θ_{k-1} − η),   θ_0 = −∞, θ_K = +∞.
+
+The binary `K = 2` case with `θ = [0]` reduces EXACTLY to `BernoulliProbitResponse`
+(category 2 ↔ y = 1). EXPERIMENTAL, internal, Laplace-only, and SUPPLIED thresholds
+only — JOINT cutpoint estimation is a follow-up (like the beta-binomial dispersion).
+The conditional `ℓ = log P(y|η)` is LOG-CONCAVE in η (log of a Gaussian interval
+probability), so the working weight is the OBSERVED information `−d²ℓ/dη² = score² −
+(a·φ(a) − b·φ(b))/P`, which is `> 0` and equals the binary probit's observed weight at
+`K = 2` — no Fisher-scoring substitution is needed (contrast the beta-binomial, which
+is not log-concave in η).
+Numerically moderate-range: the category probabilities use a tail-aware interval
+form, but a category whose probability underflows in the deep latent tail is a
+documented follow-up (a log-space `logsubexp` loglik).
+"""
+struct OrderedProbitResponse <: ResponseFamily
+    thresholds::Vector{Float64}
+    function OrderedProbitResponse(thresholds::AbstractVector{<:Real})
+        length(thresholds) >= 1 ||
+            throw(ArgumentError("OrderedProbitResponse needs >= 1 threshold (K >= 2 categories)"))
+        all(i -> thresholds[i] < thresholds[i + 1], 1:(length(thresholds) - 1)) ||
+            throw(ArgumentError("OrderedProbitResponse thresholds must be strictly increasing"))
+        return new(Float64.(thresholds))
+    end
+end
+
 # Per-record family resolution. For every family without per-record state this is
 # the identity (compiles away; zero overhead in the per-observation comprehensions).
 # For the per-record Binomial it returns the SCALAR `BinomialResponse` for record
@@ -380,6 +411,49 @@ function _fam_weight(::BernoulliProbitResponse, y, η)
     return m * (m + s * η)
 end
 
+# Ordered-categorical probit kernels. Φ via the tail-stable log-cdf; the interval
+# probability Φ(b) − Φ(a) (a ≤ b) is computed in whichever tail avoids 1−1
+# cancellation, and ±Inf bounds fall through cleanly (Φ(−Inf)=0, Φ(+Inf)=1).
+_norm_cdf(x) = x == Inf ? 1.0 : (x == -Inf ? 0.0 : exp(_norm_logcdf(x)))
+function _ordered_interval_prob(a, b)   # P(a < e ≤ b), a ≤ b, standard normal
+    a == b && return 0.0
+    b <= 0 && return _norm_cdf(b) - _norm_cdf(a)     # left tail: both ≤ ½
+    a >= 0 && return _norm_cdf(-a) - _norm_cdf(-b)   # upper tails Φ̄(a)−Φ̄(b): both ≤ ½
+    return _norm_cdf(b) - _norm_cdf(a)               # straddles 0: well-conditioned
+end
+# Category-k latent bounds (θ_{k-1}−η, θ_k−η) with the ±Inf end thresholds.
+function _ord_bounds(f::OrderedProbitResponse, k, η)
+    K = length(f.thresholds) + 1
+    a = k == 1 ? -Inf : f.thresholds[k - 1] - η
+    b = k == K ? Inf : f.thresholds[k] - η
+    return a, b
+end
+_ord_pdf(x) = isinf(x) ? 0.0 : _norm_pdf(x)         # φ(±Inf) = 0 for the end categories
+function _fam_loglik(f::OrderedProbitResponse, y, η)
+    a, b = _ord_bounds(f, Int(y), Float64(η))
+    return log(_ordered_interval_prob(a, b))
+end
+# score = dℓ/dη = (φ(a) − φ(b)) / P, since dΦ(θ−η)/dη = −φ(θ−η).
+function _fam_score(f::OrderedProbitResponse, y, η)
+    a, b = _ord_bounds(f, Int(y), Float64(η))
+    P = _ordered_interval_prob(a, b)
+    return (_ord_pdf(a) - _ord_pdf(b)) / P
+end
+# working weight = OBSERVED information −d²ℓ/dη² = score² − (a·φ(a) − b·φ(b))/P.
+# Ordered probit is log-concave in η (log of a Gaussian interval probability), so the
+# observed information is ≥ 0 and equals the binary probit's observed weight at K = 2
+# — no Fisher-scoring substitution needed (contrast beta-binomial). The a·φ(a) end term
+# → 0 at an infinite bound (φ decays faster than a grows). Depends on the realised y
+# (observed info), like the other log-concave families (Poisson/Binomial/probit).
+function _fam_weight(f::OrderedProbitResponse, y, η)
+    a, b = _ord_bounds(f, Int(y), Float64(η))
+    P = _ordered_interval_prob(a, b)
+    score = (_ord_pdf(a) - _ord_pdf(b)) / P
+    aφa = isinf(a) ? 0.0 : a * _ord_pdf(a)
+    bφb = isinf(b) ? 0.0 : b * _ord_pdf(b)
+    return score * score - (aφa - bφb) / P
+end
+
 function _logfactorial(y)
     k = Int(round(y))
     s = 0.0
@@ -428,6 +502,12 @@ end
 function _check_counts(::BernoulliProbitResponse, yv)
     all(y -> y == 0 || y == 1, yv) ||
         throw(ArgumentError("BernoulliProbitResponse requires binary 0/1 responses"))
+    return nothing
+end
+function _check_counts(f::OrderedProbitResponse, yv)
+    K = length(f.thresholds) + 1
+    all(y -> isinteger(y) && 1 <= y <= K, yv) ||
+        throw(ArgumentError("OrderedProbitResponse requires integer category codes in 1:$(K)"))
     return nothing
 end
 

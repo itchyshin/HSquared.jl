@@ -171,7 +171,7 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 48
+    @test length(validation) == 49
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -218,6 +218,12 @@ end
     @test occursin("LAPLACE ONLY", probit_row.evidence) || occursin("Laplace", probit_row.evidence)
     @test occursin("not a covered claim", probit_row.claim_boundary) ||
           occursin("nor a covered claim", probit_row.claim_boundary)
+    # T1: ordered-categorical probit (ordinal threshold) family row.
+    ordinal_row = only(row for row in validation if row.id == "V6-ORDINAL")
+    @test ordinal_row.status == "partial"
+    @test occursin("OrderedProbitResponse", ordinal_row.evidence)
+    @test occursin("REDUCTION to", ordinal_row.evidence)
+    @test occursin("covered claim", ordinal_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
     mrode9_row = only(row for row in validation if row.id == "V1-AINV-MRODE9")
@@ -866,6 +872,61 @@ end
 
     # --- (h) guards: non-binary response throws
     @test_throws ArgumentError HSquared.laplace_marginal_loglik([2.0, 0.0, 1.0], X0, Z, Ainv, 1.0, f)
+end
+
+@testset "Phase 6 ordered-categorical probit (ordinal threshold) family (T1, v0.6)" begin
+    # OrderedProbitResponse: K ordered categories on a standard-normal latent scale with
+    # K-1 SUPPLIED cutpoints, P(y=k|η) = Φ(θ_k−η) − Φ(θ_{k-1}−η). EXPERIMENTAL, internal,
+    # supplied thresholds (joint cutpoint estimation is a follow-up).
+    op = HSquared.OrderedProbitResponse
+    bp = HSquared.BernoulliProbitResponse()
+
+    # --- (a) THE REDUCTION GATE: K=2, θ=[0] reduces EXACTLY to Bernoulli probit
+    #     (category 2 ↔ y=1, category 1 ↔ y=0) — loglik, score, AND observed weight.
+    let o = op([0.0])
+        for η in (-1.7, -0.4, 0.6, 1.9)
+            @test HSquared._fam_loglik(o, 2, η) ≈ HSquared._fam_loglik(bp, 1, η) atol = 1e-12
+            @test HSquared._fam_loglik(o, 1, η) ≈ HSquared._fam_loglik(bp, 0, η) atol = 1e-12
+            @test HSquared._fam_score(o, 2, η) ≈ HSquared._fam_score(bp, 1, η) atol = 1e-12
+            @test HSquared._fam_score(o, 1, η) ≈ HSquared._fam_score(bp, 0, η) atol = 1e-12
+            @test HSquared._fam_weight(o, 2, η) ≈ HSquared._fam_weight(bp, 1, η) atol = 1e-10
+            @test HSquared._fam_weight(o, 1, η) ≈ HSquared._fam_weight(bp, 0, η) atol = 1e-10
+        end
+    end
+
+    # --- (b) KERNEL GATES on a 3-category family: score == central FD of loglik;
+    #     observed weight == −(second FD of loglik) and is > 0 (ordered probit is
+    #     log-concave in η); category probabilities sum to 1; the score is zero-mean.
+    let f = op([-0.5, 0.8]), K = 3
+        for η in (-0.9, 0.4, 1.6)
+            P = [exp(HSquared._fam_loglik(f, k, η)) for k in 1:K]
+            @test sum(P) ≈ 1.0 atol = 1e-10
+            @test sum(P[k] * HSquared._fam_score(f, k, η) for k in 1:K) ≈ 0.0 atol = 1e-8
+            h = 1e-5
+            for k in 1:K
+                ll(x) = HSquared._fam_loglik(f, k, x)
+                @test HSquared._fam_score(f, k, η) ≈ (ll(η + h) - ll(η - h)) / (2h) rtol = 1e-5
+                @test HSquared._fam_weight(f, k, η) ≈ -(ll(η + h) - 2ll(η) + ll(η - h)) / h^2 rtol = 1e-3
+                @test HSquared._fam_weight(f, k, η) > 0
+            end
+        end
+    end
+
+    # --- (c) END-TO-END VALUE GATE: the ordinal Laplace marginal at θ=[0] equals the
+    #     Bernoulli-probit marginal on the same binary data (recoded 0/1 → 1/2).
+    let ped = normalize_pedigree(string.(1:8), fill("0", 8), fill("0", 8))
+        Ainv = pedigree_inverse(ped)
+        X = ones(8, 1); Z = Matrix(1.0I, 8, 8); y01 = [0.0, 1, 1, 0, 1, 0, 1, 1]
+        mp = HSquared.laplace_marginal_loglik(y01, X, Z, Ainv, 0.5, bp)
+        mo = HSquared.laplace_marginal_loglik(y01 .+ 1, X, Z, Ainv, 0.5, op([0.0]))
+        @test mo.loglik ≈ mp.loglik atol = 1e-9
+    end
+
+    # --- (d) guards: strictly-increasing thresholds; non-empty; category range 1:K.
+    @test_throws ArgumentError op([0.5, 0.2])
+    @test_throws ArgumentError op(Float64[])
+    @test_throws ArgumentError HSquared._check_counts(op([0.0, 1.0]), [0.0])  # category 0 < 1
+    @test_throws ArgumentError HSquared._check_counts(op([0.0, 1.0]), [4.0])  # category 4 > K=3
 end
 
 @testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
