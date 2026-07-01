@@ -9,6 +9,23 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-06-30 (v0.4 MV broader-DGP recovery → full-sib + 3-trait DISCHARGED, scoped; Claude solo; branch
+  `feat/2026-06-30-v04-broaderdgp-recovery`, PR #211 pending G10; `main` @ `c2b5babc`/#210).** Discharged the two
+  still-owed **pure-Julia** recovery items on the already-covered `V4-MV-REML` row — **full-sib design recovery** and
+  **3+-trait recovery** — each via a PRE-DECLARED, committed 48-seed cold-start gate run on **Totoro**. Both gates PASS
+  all four criteria: full-sib (t=2) 48/48 converged, all 6 `|bias|≤2·MCSE`, EBV ≈0.90, **R9-clean** (G[1,1] 1.05·MCSE
+  vs the half-sib covered gate's 1.57·MCSE — the EASIER regime, a confirmatory pass not a stress test); 3-trait (t=3,
+  the substantive **12-parameter** cell) 48/48, all 12 `|bias|≤2·MCSE`, EBV ≈0.90, **no off-diagonal MCSE inflation**.
+  Process: harness generalized (`_fullsib_pedigree`, general-`t` sim + `_covariance_params`, `--design`/`--traits=3`,
+  RNG-free self-test); pre-declarations committed BEFORE the run; **Curie/Fisher/Mendel pre-run panel** (real subagents,
+  all PROCEED — gates non-vacuous, full-sib generator genetically sound); **real Rose → PROMOTE-WITH-CHANGES** (7 points
+  verified incl. a byte-identical-default re-run; 2 citation fixes applied). ADDITIVE evidence: `validation_status()` =
+  **48 UNCHANGED**, **public-covered FITTING = 1 UNCHANGED**, covered status UNCHANGED, **no `src/` change** (estimator
+  already `t`-general), R lane untouched. One Totoro misfire (stale clone → flags ignored → default rerun) caught at
+  ingestion + discarded, no leak. STILL OWED on the row: the in-suite `sommer` test (needs live R), the deep-inbreeding
+  boundary. **NEXT: maintainer G10 → merge #211; then v0.6 non-Gaussian (T1 ordinal, glmmTMB) · V5 GCTA 2nd comparator.**
+  START HERE: `docs/dev-log/after-task/2026-06-30-mv-broaderdgp-recovery.md`.
+
 - **As of 2026-06-30 (v0.5 QTL genome-wide significance → COVERED, scoped; Claude solo; `HSquared.jl` `main` @
   `261b52c7`/#209; `hsquared` `main` @ `c4e73ef`/#114; maintainer G10 GIVEN + merged).** Resumed a frozen
   session and finished v0.5 to covered across both twins, every slice pre-registered + real-Rose-audited.
