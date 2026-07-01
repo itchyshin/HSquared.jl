@@ -1074,8 +1074,10 @@ const _VAR_LOGISTIC = (π^2) / 3
 #    residual is NOT added to this integration variance (it is an observation-process
 #    term, not predictor spread; matching de Villemereuil's QGglmm `binom1.logit`).
 #  • Estimand per family: PROPORTION for Bernoulli/Binomial, COUNT for Poisson.
-# This is asymptotic/validation-scale; the exact decomposition awaits a same-estimand
-# QGglmm/MCMCglmm comparator + a Fisher/Falconer review before any promotion.
+# This is asymptotic/validation-scale; same-estimand external comparators now AGREE
+# (QGglmm exact-transform + MCMCglmm end-to-end distributional), but the exact
+# decomposition still awaits a Fisher/Falconer review (and ordinal/Gamma-scale
+# comparators) before any promotion.
 function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e2::Float64,
                               n_trials::Int, V_fixed::Float64, converged::Bool)
     if family === :gaussian
@@ -1200,9 +1202,11 @@ ill-defined under varying denominators — not silently averaged).
 EXPERIMENTAL, dense/validation-scale; exact in its closed-form limbs and anchored to
 an independent quadrature oracle in `test/runtests.jl`, but it inherits the latent
 σ²a bias (especially single-trial Bernoulli); it has a QGglmm external comparator for the
-logit + binary-probit observation scales (`comparator/qgglmm_probit_observed/`) but not yet
-for the other observation scales / MCMCglmm, nor a Fisher/Falconer sign-off — not the public
-default, not covered. Deliberately
+four builtin observation scales (logit, binary-probit, Poisson, Binomial n>1;
+`comparator/qgglmm_probit_observed/`) and an MCMCglmm end-to-end DISTRIBUTIONAL comparator for
+Poisson (`comparator/mcmcglmm_observed/`; the engine point inside the MCMCglmm 95% credible
+interval — within MCMC error, not machine precision), but not yet for the ordinal(K>2)/Gamma-data
+observation scales, nor a Fisher/Falconer sign-off — not the public default, not covered. Deliberately
 NOT added to `nongaussian_result_payload` (that shape stays family-uniform).
 """
 function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing,

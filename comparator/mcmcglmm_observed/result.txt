@@ -1,0 +1,27 @@
+=== MCMCglmm observation-scale h2 comparator (Poisson log-link, A = I) ===
+Recorded run: 2026-07-01 · MCMCglmm 2.36 + QGglmm 0.8.0 (CRAN) · R 4.6.0 · seeds 20260701.
+DGP: N=300 individuals x 6 records = 1800, A=I, sigma_a2=0.5 (truth), mu=0.8 (truth),
+Poisson(exp(mu + a_i)), NO record-level over-dispersion.
+
+chain: nitt=260000 burnin=60000 thin=100 (effective samples 2000; ESS[id]=455, ESS[units]=56)
+MCMCglmm latent variances:   V_id mean 0.5018, V_units mean 0.0132 (units~0 => var.p~V_A)
+engine (Laplace REML) point:  sigma_a2=0.4939  mu=0.8153  h2_observation=0.501739
+MCMCglmm h2_observation:      mean 0.485185  median 0.485982  sd 0.016934
+             95% credible interval: [0.449053, 0.515349]
+engine point vs posterior:    83.5% of posterior mass below it; offset +0.98 posterior SD
+
+PASS: engine observation-scale h2 point lies within the MCMCglmm 95% credible interval.
+
+NOTE: DISTRIBUTIONAL (Bayesian posterior vs asymptotic point) AGREEMENT within MCMC error,
+NOT machine precision and NOT a validation of unbiasedness (the Laplace engine and MCMCglmm
+share the Poisson-GLMM information limit). Transform = de Villemereuil's documented QGglmm
+posterior workflow: var.a = VCV[,"id"], var.p = rowSums(VCV) (id + units; no link constant
+added for Poisson.log), QGparams(model="Poisson.log") per draw.
+
+The +0.98-SD offset is the tiny residual over-dispersion (V_units~0.013) inflating var.p and
+nudging MCMCglmm's h2.obs posterior just below the engine's zero-over-dispersion point — the
+genuine Bayesian-vs-asymptotic / over-dispersion-convention difference, not a transform error.
+
+Reproduce (~2.5 min):
+  PATH="$HOME/.juliaup/bin:$PATH" julia --project=. comparator/mcmcglmm_observed/generate.jl
+  Rscript comparator/mcmcglmm_observed/run_mcmcglmm.R 260000 60000 100

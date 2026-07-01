@@ -11,9 +11,12 @@ and stated as a principle in the family-plan decision
 doc makes the principle a precise per-family contract and extends it to the owed families.
 
 **Honesty pins unchanged.** This is a docs/contract slice: no code, no API, no default, no
-R wording changes; `validation_status()` stays 48 rows; public-covered FITTING surface
-stays **1** (v0.1 univariate Gaussian). Every non-Gaussian h² surface below is
-`experimental`/`partial` (no same-estimand QGglmm/MCMCglmm comparator yet).
+R wording changes; `validation_status()` stayed 48 rows at this doc's authoring (since grown
+to 50 via unrelated slices); public-covered FITTING surface stays **1** (v0.1 univariate
+Gaussian). Every non-Gaussian h² surface below is `experimental`/`partial` (as of 2026-07-01 the
+QGglmm same-estimand comparator is RUN for the four builtin observation scales and MCMCglmm is
+RUN end-to-end/distributional for Poisson; the ordinal(K>2)/Gamma-scale comparators + a
+Fisher/Falconer review are still owed — none is `covered`).
 
 ---
 
@@ -179,11 +182,15 @@ subject of de Villemereuil et al. (2018, *J. Evol. Biol.*) on whether/how to inc
   h² inherit that bias. Single-trial Bernoulli sets `information_limited = true` with a caveat;
   never present it as clean (`src/nongaussian.jl:1001–1002`). glmmTMB shares the same Laplace
   bias, so glmmTMB *agreement ≠ unbiasedness*.
-- **No same-estimand comparator yet.** The h² transform is exact in its closed-form limbs and
-  checked against an independent Gauss–Hermite quadrature oracle in `test/runtests.jl`, but it
-  has **no external QGglmm/MCMCglmm same-estimand comparator**. Per doc-16 (G11) and doc-04,
-  promotion off `partial` needs that comparator + a Fisher/Falconer review
-  (`src/nongaussian.jl:1049–1053`).
+- **External comparators RUN (as of 2026-07-01); a Fisher/Falconer review still owed.** The h²
+  transform is exact in its closed-form limbs and checked against an independent Gauss–Hermite
+  quadrature oracle in `test/runtests.jl`; it now also has a **QGglmm same-estimand external
+  comparator** (exact-transform agreement ≤4.5e-6 for the four builtin observation scales;
+  `comparator/qgglmm_probit_observed/`) and an **MCMCglmm end-to-end comparator** (DISTRIBUTIONAL
+  agreement within MCMC error for Poisson A=I/repeated-records — the engine point inside the
+  posterior 95% credible interval; `comparator/mcmcglmm_observed/`). Per doc-16 (G11) and doc-04,
+  promotion off `partial` still needs comparators for the ordinal(K>2)/Gamma-data observation
+  scales + a Fisher/Falconer review (`src/nongaussian.jl`) + the maintainer G10.
 - **Scope.** Everything here is dense / validation-scale / experimental. None of it is the
   public default; the R bridge does not expose `nongaussian_heritability`.
 
