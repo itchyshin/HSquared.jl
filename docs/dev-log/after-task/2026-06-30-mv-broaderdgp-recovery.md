@@ -11,7 +11,12 @@ covered-regression risk; NOT a new covered flip. Plan: `~/.claude/plans/plan-the
 
 - **Real subagents:** Curie (`curie-validation-tester`), Fisher (`fisher-inference-reviewer`),
   Mendel (`mendel-inheritance-specialist`) — the pre-run validation panel (all **PROCEED**). Rose
-  (`rose-systems-auditor`) — the mandatory claim-vs-evidence audit (Task P5, pending).
+  (`rose-systems-auditor`) — the mandatory claim-vs-evidence audit → **PROMOTE-WITH-CHANGES**: all
+  seven audit points verified independently (predeclaration ordering by timestamp, both gates PASS
+  byte-for-byte vs the raw logs, byte-identical default re-run at `main` vs HEAD, honesty pins,
+  lockstep reconciliation, misfire quarantine). Two citation-accuracy fixes applied: the 3-trait
+  pre-declaration is `7e4a7d53` (not the amendments `4f3fcde6`) — corrected in the 3-trait
+  checkpoint, the check-log, and the debt-register clause.
 - **Perspectives (inline):** Ada (orchestration), Gauss/Henderson (t=3 REML), Falconer (h²
   interpretation), Karpinski (Totoro), Shannon (twin-lane: R untouched), Grace (CI).
 
@@ -97,7 +102,6 @@ design/power — never "unbiased". STILL OWED on the row: the in-suite unstructu
 
 ## Next actions
 
-1. Real **Rose** audit (`rose-systems-auditor`) on the diff — predeclaration ordering, byte-identical
-   default, no "unbiased", full-sib-easier caveat, lockstep agreement, count/public-covered pins.
+1. ✅ Real **Rose** audit (`rose-systems-auditor`) → PROMOTE-WITH-CHANGES (2 citation fixes applied).
 2. Regenerate `status.json`; push; open PR to `main` (docs/sim-only).
 3. **STOP for maintainer G10** — the standing-debt-clause edit is a covered-row change; no self-merge.

@@ -19,7 +19,7 @@ UNCHANGED. Plan: `~/.claude/plans/plan-the-arc-concurrent-mccarthy.md`.
   q=80 + PD `A`; `--design` back-compat; t read from G0; t=2 param names/order unchanged; t=3 = 12
   params; closure-capture correctness; 3×3 PD truth; t=2 default byte-identical.
 - **Pre-declarations** (committed BEFORE the run): `docs/dev-log/decisions/2026-06-30-mv-reml-fullsib-gate.md`
-  (`0a39e93a`), `…-3trait-gate.md` (`4f3fcde6`), + panel amendments (`4f3fcde6`).
+  (`0a39e93a`), `…-3trait-gate.md` (`7e4a7d53`), + panel amendments to both gates (`4f3fcde6`).
 - **Pre-run lens panel** (real subagents Curie/Fisher/Mendel — all PROCEED): gates non-vacuous,
   estimand↔estimator matched, MCSE arithmetic correct, full-sib generator genetically sound
   (A=0.5 within family, F=0, d_i=0.5). Two procedure amendments applied pre-run (exit-code≠gate;
