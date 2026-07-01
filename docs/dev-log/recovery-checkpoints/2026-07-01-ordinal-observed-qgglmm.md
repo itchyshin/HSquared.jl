@@ -31,9 +31,11 @@ For a single cutpoint (K=2), the two complementary category indicators have EQUA
 equals the `:bernoulli_probit` binary observed-0/1 h² at the same μ, V_A — a self-consistency cross-check.
 
 ## Verdict / scope
-The ordinal per-category observed h² is implemented + externally validated. **Combined with the four
-builtin observation scales (#221), the Gamma latent + data scales (#222), this completes EVERY
-non-Gaussian h² scale in the V6-NS-H2 surface** — all externally validated against QGglmm. STILL owed
+The ordinal per-category observed h² is implemented + externally validated. This is the LAST fenced h²
+scale. ON THIS #221-based branch the Gamma-data scale is still owed (it lands on the sibling #222).
+**Once #221 + #222 + this all merge, EVERY non-Gaussian h² scale in the V6-NS-H2 surface is done** —
+each externally validated against QGglmm (the four builtins + binary-probit on #221, Gamma latent+data
+on #222, ordinal per-category here). STILL owed
 for the covered path: an MCMCglmm comparator, a Fisher/Falconer sign-off, intervals/SEs, the R-facing
 surface, and maintainer G10. NOT a covered claim; `validation_status()` = 50 UNCHANGED; public-covered
 fitting = 1 UNCHANGED.

@@ -28,7 +28,9 @@ the LAST fenced non-Gaussian h² scale. Maintainer-approved API: a new vector fi
 - Real `rose-systems-auditor` audit (recorded in the PR).
 
 ## Claim boundary
-This COMPLETES every non-Gaussian h² scale in the V6-NS-H2 surface (all externally validated vs QGglmm).
+This delivers the ordinal observation scale — the LAST fenced h² scale. ON THIS #221-based branch the
+Gamma-data observation scale remains owed (it lands on the sibling #222); once #221 + #222 + this all
+merge, every non-Gaussian h² scale is done + externally validated vs QGglmm.
 NOT a covered claim; `validation_status()` = 50 UNCHANGED; public-covered fitting = 1 UNCHANGED; V6-NS-H2
 stays `partial`. Remaining owed: MCMCglmm, Fisher/Falconer sign-off, intervals/SEs, R surface, G10.
 Merge note: composes with #221 (base) + #222 (Gamma) — the V6-NS-H2 row + `_nongaussian_h2_core` combine
