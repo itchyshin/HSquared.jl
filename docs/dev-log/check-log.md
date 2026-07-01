@@ -5108,3 +5108,38 @@ Newest entries go at the top.
   `blupf90+` AIREMLF90 2×2-G comparator (WOMBAT not installed) + Mrode Ch.7 anchor + R
   `maternal_genetic()` (ultraplan Phase 4 gate).
 - Checks: `Pkg.test()` green. `docs/make.jl` deferred to pre-push (VitePress). `[JL]` engine-only.
+
+## 2026-07-01 — Generality-gap Phase 2: `V3-NEFFECT-REML` `partial → covered` (G10) `[JL]`
+
+- Flipped the arbitrary-N independent-random-effect REML estimator (`fit_multi_effect_reml`,
+  Phase 2 P2.1) to **covered** (experimental, validation-scale, opt-in; NOT the public default)
+  via the doc-16 substitutable gate. Both owed legs satisfied:
+- **Leg 1 — PRE-DECLARED 48-seed bias/MCSE recovery gate PASSED.** Predeclaration committed
+  `68cc7acc` BEFORE the run (`docs/dev-log/recovery-checkpoints/2026-07-01-neffect-recovery-gate-predeclaration.md`);
+  harness `sim/phase3_neffect_recovery_gate.jl` byte-identical pre/post. DGP: 860-animal half-sib,
+  K=3 non-confounded (animal-A + two environmental factors assigned INDEPENDENTLY of the pedigree),
+  truth (σa²,σg1²,σg2²,σe²)=(1,0.5,0.5,1), seeds 20260800..20260847. Result: **48/48 converged, all
+  four `|bias| ≤ 2·MCSE`** (σa² 0.34·MCSE the largest) — no detectable bias, never "unbiased".
+  Integrity note: a v1 design (dam-level maternal) was WITHDRAWN pre-run (a diagnostic showed it
+  aliased the full-sib additive covariance) — a design correction, SAME criteria/seeds/truth, not a
+  post-hoc relaxation.
+- **Leg 2 — same-estimand external REML comparator AGREE.** `sommer` 4.4.5
+  `mmer(y~1, random=~vsr(animal,Gu=A)+vsr(g1)+vsr(g2), rcov=~units)` on the seed-20260800 data
+  (`comparator/run_sommer_neffect.R`) independently converges to the engine optimum — **max rel.diff
+  8.09e-5** across all four components. Evidence banked:
+  `docs/dev-log/recovery-checkpoints/2026-07-01-neffect-covered-evidence.md`.
+- **Rose audit → PROMOTE.** A real `rose-systems-auditor` (2026-07-01) independently reproduced BOTH
+  legs (re-ran the sommer comparator → AGREE 8.09e-5; re-ran the K=1/K=2/K=3 reduction testset → 8/8)
+  and verified all five items clean: withdrawal honest, predeclaration-before-run, gate PASS,
+  same-estimand comparator (A-structured animal, same data — no trap), and scope. The audit was
+  interrupted by `/compact` at the scratchpad-cleanup step AFTER every check passed; verdict is an
+  unambiguous PROMOTE on the completed evidence. Maintainer **G10 delegated** ("flip autonomously
+  once evidence passes").
+- Funnel: `V3-NEFFECT-REML` `partial → covered` across all three surfaces (`src/validation_status.jl`,
+  `capability-status.md`, `validation-debt-register.md`) in lockstep; `tools/status_cache.json`
+  covered 10→**11**, partial 38→**37**. Row count **52 UNCHANGED** (count guard `== 52` intact).
+  **`public_covered_count` UNCHANGED at 1** — engine-covered ≠ R-public-covered (no R surface;
+  V4-MV-REML / GWAS precedent). Covered does NOT retire the standing debt: production sparse AI-REML
+  `K`-component estimator (dense path is a small-`K`/small-`n` oracle) + the R `(1|g)` surface.
+- Checks: `Pkg.test()` green (`sim/.neffect_flip_test.log.txt`). `docs/make.jl` deferred to pre-push
+  (VitePress). `[JL]` engine-only.
