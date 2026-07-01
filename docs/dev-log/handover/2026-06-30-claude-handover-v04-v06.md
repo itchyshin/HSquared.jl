@@ -1,7 +1,35 @@
 # Handover → next Claude — v0.4 recovery + v0.6 ordinal kernel (2026-06-30)
 
 Meta: 2026-06-30 · from Claude · autonomous overnight segment (maintainer away until ~05:00).
-You are the next Claude, picking up two staged PRs and an open next-arc decision.
+You are the next Claude, picking up **four staged PRs** and an open next-arc decision.
+
+## Merge guide (conflicts PRE-CHECKED via a throwaway trial-merge)
+
+**Merge order: #211 → #212 → #214 → #213.** #211 and #212 merge clean. Two trivial conflicts remain
+(both = "keep both additions"):
+
+- **#214 (Gamma) conflicts with #212 (ordinal)** in `src/nongaussian.jl` and `test/runtests.jl` — both
+  add a new family at the same anchor points (a struct after `BernoulliProbitResponse`, kernels after
+  the probit `_fam_weight`, a `_check_counts`, and a testset after the H3 probit testset). **Resolution:
+  keep BOTH** the `OrderedProbitResponse` and `GammaResponse` additions (they are adjacent, non-overlapping
+  — no shared logic). Then **add the deferred `V6-GAMMA` row** (below) so the family is tracked.
+- **#213 (this handover) conflicts with #211** in `AGENTS.md` — both prepend a Live Phase Snapshot bullet.
+  **Resolution: keep BOTH bullets** (the overnight-segment bullet on top, then #211's v0.4 bullet).
+
+### Deferred `V6-GAMMA` row (add when merging #214, per the count-guard sequencing)
+
+Append after the `V6-ORDINAL` row in `src/validation_status.jl` (a 7-tuple), bump the count guard
+`test/runtests.jl` `length(validation)` 49→**50**, and mirror into `capability-status.md` +
+`validation-debt-register.md` (`partial`):
+
+> `V6-GAMMA` · "non-Gaussian Gamma (log-link, positive continuous) family (T-Gamma)" · Phase 6 · partial
+> · evidence: `GammaResponse(shape)` (internal, log-link, supplied shape ν); log-concave observed-info
+> weight `ν y e^{-η}`; validated by the ν=1→Exponential reduction + finite-difference score/weight gates
+> + finite end-to-end marginal + guards (`test/runtests.jl`). · owed: joint shape estimation, the
+> `:symbol` resolver + `fit_laplace_reml`/R wiring, the **glmmTMB `Gamma(link="log")`** same-estimand
+> comparator (valid here, unlike the ordinal case), a recovery gate, observation-scale h². · boundary:
+> experimental/internal/Laplace-only/supplied-shape; not exported, not wired to R, not the public
+> default, NOT a covered claim.
 
 ## Critical Context
 
