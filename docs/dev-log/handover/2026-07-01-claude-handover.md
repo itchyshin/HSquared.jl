@@ -122,10 +122,12 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
     (`comparator/qgglmm_probit_observed/compare.R`). KEY convention it pinned (the internal DL/quadrature
     checks could NOT): QGglmm's `var.p` for the observation integration is the PREDICTOR variance
     `V_A+V_fixed`, NOT `V_A+V_link+V_fixed`. So the remaining comparators are now unblocked-with-QGglmm:
-    - **Binomial(n>1) + Poisson observed scales — easy follow-ups** (QGglmm `binomN.*` / `Poisson.log`
-      builtins; the harness + convention are ready).
-    - **ORDINAL (K>2) observed/category scale — owed.** QGglmm's ordinal support + the per-category vs
-      per-threshold convention need checking. A careful follow-up.
+    - **Binomial(n>1) + Poisson observed scales — DONE + EXTERNALLY VALIDATED (#221).** QGglmm
+      `Poisson.log` (≤1.7e-16, machine precision) + `binomN.logit` (≤1.2e-8) agree with the engine — so
+      **all FOUR QGglmm-builtin observation scales** (logit, probit, Poisson, binomN; 25 comparisons)
+      are now externally discharged. Rose PROMOTE-clean.
+    - **ORDINAL (K>2) observed/category scale — owed (non-builtin).** QGglmm's ordinal support + the
+      per-category vs per-threshold convention need checking. A careful follow-up.
     - **Gamma data/observation scale — owed.** QGglmm has NO built-in Gamma model — it needs a CUSTOM
       model spec (inverse-link `exp`, var.func `μ²/ν`, d.inv.link `exp`) with the shape ν. Finicky; a
       careful follow-up (do NOT rush the custom var.func).
