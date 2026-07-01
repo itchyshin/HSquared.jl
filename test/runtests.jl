@@ -1103,6 +1103,40 @@ end
     @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
 end
 
+@testset "Phase 6 ordinal/probit LIABILITY-scale h² (doc-20 Step 4, V6-NS-H2)" begin
+    # Threshold models: the liability scale IS the latent scale, with the probit residual
+    # V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The liability h² = V_A/(V_A + 1 + V_fixed)
+    # is the selection-relevant PRIMARY scale. The cutpoints do NOT enter it (they set the
+    # observed/category incidence, not the liability partition). The observed/category scale
+    # (Dempster–Lerner z²/[p(1−p)] for binary; per-category for ordinal) is a FENCED follow-up,
+    # returned as NaN rather than guessed.
+    # Bernoulli-probit (binary): V_A = 0.5, μ = 0 → h²_liab = 0.5/1.5 = 1/3.
+    hb = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse())
+    @test hb.h2_latent ≈ 1 / 3 atol = 1e-12          # latent == liability for a threshold family
+    @test hb.var_link == 1.0
+    @test isnan(hb.h2_observation)                   # observed scale is the DL follow-up (not guessed)
+    @test hb.method == :probit_liability
+    @test occursin("liability", hb.caveat)
+    # Ordinal (K=3): cutpoints [0, 1] do NOT change the liability h².
+    ho = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.OrderedProbitResponse([0.0, 1.0]))
+    @test ho.h2_latent ≈ 1 / 3 atol = 1e-12
+    @test ho.var_link == 1.0 && isnan(ho.h2_observation)
+    @test ho.family === :ordered_probit
+    # Exact reduction: K=2 ordinal liability h² == bernoulli-probit liability h² (same μ, V_A).
+    ho2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.OrderedProbitResponse([0.0]))
+    hb2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.BernoulliProbitResponse())
+    @test ho2.h2_latent ≈ hb2.h2_latent atol = 1e-14
+    # V_fixed enters the liability denominator: V_A = 1, V_fixed = 1 → 1/(1+1+1) = 1/3.
+    hf = HSquared.nongaussian_heritability(1.0, 0.0, HSquared.BernoulliProbitResponse();
+                                           predictor_variance = 1.0)
+    @test hf.h2_latent ≈ 1 / 3 atol = 1e-12
+    @test hf.latent_total_variance ≈ 3.0
+    # h²_liab ∈ (0,1) and is MONOTONE increasing in V_A (unlike the Poisson observation scale).
+    @test 0.0 < hb.h2_latent < 1.0
+    @test HSquared.nongaussian_heritability(2.0, 0.0, HSquared.BernoulliProbitResponse()).h2_latent >
+          HSquared.nongaussian_heritability(0.5, 0.0, HSquared.BernoulliProbitResponse()).h2_latent
+end
+
 @testset "Phase 1 pedigree normalization and Ainv" begin
     ped = normalize_pedigree(
         ["calf", "sire", "dam"],

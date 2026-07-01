@@ -1115,8 +1115,23 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                     "Single-trial Bernoulli: the latent σ²a is downward-biased (information effect), so the observation-scale h² inherits that bias — never present it as clean." :
                     "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.",
                 method = :logit_quadrature)
+    elseif family === :bernoulli_probit || family === :ordered_probit
+        # Threshold (probit) family: the LIABILITY scale IS the latent scale, with the
+        # probit latent residual V_link = 1 (Dempster–Lerner 1950; doc-19 §2.3). The
+        # liability h² = V_A/(V_A + 1 + V_fixed) is the selection-relevant PRIMARY scale;
+        # it does NOT depend on μ or the cutpoints (those set the observed incidence, not
+        # the liability partition). The observed/category scale (Dempster–Lerner
+        # z²/[p(1−p)] for binary; per-category for ordinal) needs the incidence/cutpoints
+        # and is a FENCED follow-up — returned as NaN rather than guessed.
+        latent_total = V_A + 1.0 + V_fixed
+        return (family = family, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                h2_latent = V_A / latent_total, h2_observation = NaN,
+                var_distribution = NaN, var_link = 1.0, converged = converged,
+                information_limited = false,
+                caveat = "Probit threshold family: the latent scale IS the liability (selection-relevant) scale, V_link = 1 (Dempster–Lerner 1950); the observed/category scale (z²/[p(1−p)] binary; per-category ordinal) needs the incidence/cutpoints and is a follow-up → NaN.",
+                method = :probit_liability)
     else
-        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial; family :$family is follow-up (probit V_link = 1, beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
+        throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale) and :bernoulli_probit/:ordered_probit (liability scale); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
     end
 end
 
@@ -1124,7 +1139,9 @@ _h2_family_params(f::GaussianResponse) = (:gaussian, 1, f.sigma_e2)
 _h2_family_params(::PoissonResponse) = (:poisson, 1, NaN)
 _h2_family_params(::BernoulliResponse) = (:bernoulli, 1, NaN)
 _h2_family_params(f::BinomialResponse) = (:binomial, f.n_trials, NaN)
-_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: probit, beta-binomial, negative-binomial)"))
+_h2_family_params(::BernoulliProbitResponse) = (:bernoulli_probit, 1, NaN)
+_h2_family_params(::OrderedProbitResponse) = (:ordered_probit, 1, NaN)
+_h2_family_params(f::ResponseFamily) = throw(ArgumentError("nongaussian_heritability does not support $(typeof(f)) (follow-up: beta-binomial, negative-binomial)"))
 
 """
     nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing, predictor_variance = 0.0)
@@ -1149,7 +1166,12 @@ lemma the exact variance of the regression of the mean on the breeding value, so
 `η ~ N(μ, V_A + V_fixed)` (the π²/3 logit residual is NOT added to the integration
 variance) via the module's existing 20-node Gauss–Hermite for logit and the
 log-normal closed form for Poisson. Estimand: PROPORTION for Bernoulli/Binomial,
-COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales.
+COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. **Threshold
+families** (`:bernoulli_probit`, `:ordered_probit`) report the **liability** scale: the
+latent scale IS the liability with `V_link = 1` (Dempster–Lerner 1950), the
+selection-relevant primary heritability `V_A/(V_A+1+V_fixed)` — returned in `h2_latent`
+(independent of μ and the cutpoints); their observed/category scale needs the
+incidence/cutpoints and is a follow-up (`h2_observation = NaN`).
 
 `mu` (link-scale population mean) defaults to the fit's single intercept; with >1
 fixed effect it is REQUIRED (and `predictor_variance`, the fixed-effect linear-
