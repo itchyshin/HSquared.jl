@@ -935,6 +935,48 @@ end
     @test_throws ArgumentError HSquared._check_counts(op([0.0, 1.0]), [4.0])  # category 4 > K=3
 end
 
+@testset "Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6)" begin
+    # fit_laplace_reml(...; family = :ordered_probit) JOINTLY estimates σ²a AND the K-1
+    # cutpoints θ (identified by θ_1 = 0 + positive increments). Structured pedigree so
+    # σ²a is at least identifiable via relatives; deterministic optimizer → deterministic.
+    ped = normalize_pedigree(
+        ["s1", "s2", "d1", "d2", "o1", "o2", "o3", "o4", "o5", "o6", "o7", "o8"],
+        ["0", "0", "0", "0", "s1", "s1", "s2", "s2", "s1", "s1", "s2", "s2"],
+        ["0", "0", "0", "0", "d1", "d2", "d1", "d2", "d1", "d2", "d1", "d2"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 12
+    X = ones(q, 1); Z = Matrix(1.0I, q, q)
+
+    # --- (a) THE FITTED REDUCTION GATE: K=2 :ordered_probit == :bernoulli_probit
+    #     (σ²a AND marginal loglik), fitting the same binary data (recoded 1/2 ↔ 0/1).
+    let y2 = Float64[1, 2, 2, 1, 2, 1, 1, 2, 2, 1, 2, 2]
+        fo = fit_laplace_reml(y2, X, Z, Ainv; family = :ordered_probit)
+        fp = fit_laplace_reml(y2 .- 1, X, Z, Ainv; family = :bernoulli_probit)
+        @test fo.variance_components.sigma_a2 ≈ fp.variance_components.sigma_a2 rtol = 1e-3
+        @test fo.marginal_loglik ≈ fp.marginal_loglik atol = 1e-5
+        @test fo.variance_components.cutpoints == [0.0]     # K=2: θ_1 = 0 only
+        @test fo.family == :ordered_probit && fo.converged
+    end
+
+    # --- (b) K=3 JOINT fit: ordered cutpoints (θ_1=0 < θ_2), σ²a bounded by the rail,
+    #     self-consistent marginal loglik at the returned estimate, converged.
+    let y3 = Float64[1, 2, 3, 2, 1, 3, 2, 3, 1, 2, 3, 2]
+        f3 = fit_laplace_reml(y3, X, Z, Ainv; family = :ordered_probit)
+        θ = f3.variance_components.cutpoints
+        @test length(θ) == 2 && θ[1] == 0.0 && θ[2] > θ[1]   # identified + strictly ordered
+        @test 0 < f3.variance_components.sigma_a2 < 3000      # bounded (rail e^8 ≈ 2981)
+        @test f3.converged
+        mm = HSquared.laplace_marginal_loglik(y3, X, Z, Ainv,
+                 f3.variance_components.sigma_a2, HSquared.OrderedProbitResponse(θ))
+        @test f3.marginal_loglik ≈ mm.loglik atol = 1e-8     # self-consistency
+    end
+
+    # --- (c) guards: non-integer / <1 category codes; variational rejected.
+    @test_throws ArgumentError fit_laplace_reml(Float64[0, 1, 1], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :ordered_probit)  # code 0
+    @test_throws ArgumentError fit_laplace_reml(Float64[1, 2, 2], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :ordered_probit, marginal = :variational)
+end
+
 @testset "Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6)" begin
     # GammaResponse(shape) — strictly-positive continuous response, mean μ=exp(η), SUPPLIED
     # shape ν. EXPERIMENTAL, internal, Laplace-only. (validation_status() row DEFERRED to

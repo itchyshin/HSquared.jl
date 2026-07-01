@@ -894,8 +894,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
                           theta_init::Real = 1.0, iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, or :bernoulli_probit"))
+    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, or :ordered_probit"))
     # probit (threshold) is Laplace-only at this slice: its variational expected
     # information is response-dependent (−E[ℓ″] varies with the sign s = 2y−1), which
     # the y-free `_fam_expected_weight` signature cannot carry — a VA kernel is
@@ -958,6 +958,57 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
         return NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
                               fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing)
+    elseif family === :ordered_probit
+        # ordered-categorical probit: JOINTLY estimate σ²a AND the K-1 cutpoints θ.
+        # IDENTIFICATION: fix θ_1 = 0 (drop the intercept location, standard for a
+        # cumulative link with a probit residual variance fixed at 1) and estimate the
+        # remaining θ_2..θ_{K-1} through POSITIVE increments δ (θ_j = θ_{j-1} + exp(δ_j)),
+        # so strict ordering is automatic and the search is unconstrained. K is read from
+        # the data (codes 1..K). Laplace-only (the ordinal VA kernel is a follow-up).
+        mm isa Laplace ||
+            throw(ArgumentError("family = :ordered_probit supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
+        all(yi -> isinteger(yi) && yi >= 1, y) ||
+            throw(ArgumentError("family = :ordered_probit requires integer category codes >= 1"))
+        K = Int(maximum(y))
+        K >= 2 || throw(ArgumentError("family = :ordered_probit needs >= 2 categories in the data"))
+        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
+        sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
+        ndelta = K - 2                                   # free cutpoints beyond the fixed θ_1 = 0
+        _cuts(δ) = ndelta == 0 ? [0.0] : cumsum(vcat(0.0, exp.(collect(δ))))  # length K-1
+        # Guard the objective: during the simplex search NelderMead probes (σ²a, θ)
+        # configurations where the penalized-IRLS Hessian degenerates (a category with
+        # ~0 probability under every record); return a large finite penalty so the
+        # optimizer walks away from those regions rather than throwing.
+        # Safety rail on σ²a: threshold models weakly identify the breeding-value
+        # variance on uninformative data (it is confounded with the fixed unit probit
+        # residual absent relatedness/replication), so the MLE can run to the boundary.
+        # Confine the search to log(sa0) ± 8 (σ²a within ~3000× of the start) — the same
+        # bounded-search spirit as the single-component Brent path. A returned estimate
+        # at the rail is a self-describing "not credibly identified at this design" signal.
+        logsa0 = log(sa0)
+        function objord(p)
+            abs(p[1] - logsa0) > 8.0 && return 1.0e12    # σ²a safety rail
+            m = try
+                laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]),
+                                        OrderedProbitResponse(_cuts(@view p[2:end])))
+            catch err
+                err isa Union{LinearAlgebra.SingularException, LinearAlgebra.PosDefException, DomainError} ?
+                    nothing : rethrow(err)
+            end
+            (m === nothing || !isfinite(m.loglik)) ? 1.0e12 : -m.loglik
+        end
+        if ndelta == 0                                   # K = 2: only σ²a (1-D Brent), θ = [0]
+            res = optimize(s -> objord([s]), log(sa0) - 6.0, log(sa0) + 6.0)
+            sa2 = exp(Optim.minimizer(res)); thetahat = [0.0]
+        else
+            res = optimize(objord, vcat(log(sa0), zeros(ndelta)), NelderMead(),
+                           Optim.Options(iterations = iterations))
+            pmin = Optim.minimizer(res); sa2 = exp(pmin[1]); thetahat = _cuts(pmin[2:end])
+        end
+        fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, OrderedProbitResponse(thetahat))
+        return NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
+                              fit.u, aids, Optim.converged(res) && fit.converged,
+                              :ordered_probit, :laplace, nothing, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial
         # (logit), and beta-binomial (logit, σ²a estimated at the supplied fixed ρ)
