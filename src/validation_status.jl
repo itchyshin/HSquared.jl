@@ -252,6 +252,15 @@ const VALIDATION_STATUS_DATA = (
         "Dense validation-scale REML, COVERED (experimental, validation-scale, opt-in; NOT the public default) on the doc-33 substitutable gate — the recovery harness + a PRE-DECLARED bias/MCSE gate (PASS) + one external `blupf90+` same-estimand comparator leg. \"Covered\" = the engine correctly implements two-effect REML, NOT small-sample accuracy on σ1²; ratio intervals, correlated maternal genetic, and the R-facing model-spec remain owed (covered does NOT retire them).",
     ),
     (
+        "V3-NEFFECT-REML",
+        "arbitrary-N independent-random-effect REML",
+        "Phase 3",
+        "partial",
+        "`multi_effect_mme` (supplied-variance Henderson solve) and `fit_multi_effect_reml` (dense REML over `K+1` log-variances) generalize the two-effect kernel to an ARBITRARY number `K` of INDEPENDENT random effects (`blockdiag(A_i/σ_i)` precision, `hcat(Z_i)` design). Correctness is pinned by deterministic reductions in `test/runtests.jl`: the `K=2` MME solve is byte-identical to `two_effect_mme` and the `K=2` REML fit is byte-identical to `fit_two_effect_reml` on identified data (~1e-12); the `K=1` fit recovers the supplied-variance animal-model / `fit_sparse_reml` solve; a `K=3` fit (animal-A + i.i.d. maternal + pedigree-independent contemporary-group) matches an independent marginal-GLS oracle and returns valid ratios; loglik is permutation-invariant in effect order. Guards: `PosDefException`/`SingularException` → `Inf` reject in the objective, `max_dense_cells` on the dense `n×n` V, and per-component `boundary` + `converged` honesty flags.",
+        "a PRE-DECLARED 48-seed bias/MCSE recovery gate on a non-confounded ≥3-effect design + a same-estimand external REML comparator (`blupf90+`/ASReml/DMU); a production sparse AI-REML `K`-component estimator (the dense path is a small-`K`/small-`n` oracle only); and the R-facing multi-term `(1|g)` model-spec / bridge payload",
+        "Experimental dense/validation-scale REML, INDEPENDENT effects only (no correlated / direct–maternal 2×2 `G`). Correctness is reduction- + oracle-validated, but known-truth recovery is NOT gated, there is no external comparator, the dense path does not scale, and there is no R surface. Not a public claim; `public_covered_count` unchanged.",
+    ),
+    (
         "V3-RR-REML",
         "random-regression REML (coefficient covariance K_g + residual estimation)",
         "Phase 3",

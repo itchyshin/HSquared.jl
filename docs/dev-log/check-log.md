@@ -5056,3 +5056,30 @@ Newest entries go at the top.
   fixes); `docs/make.jl` → exit 0. Real `rose-systems-auditor` audit before merge.
 - Coverage NOT calibrated (the cross-check the debt names); an opt-in coverage sim is
   deferred follow-up. Percentile-only (BCa out of scope). `[JL]` engine-only; no R edit.
+
+## 2026-07-01 — Generality-gap Phase 2 P2.1: arbitrary-N independent random effects `[JL]`
+
+- New engine kernels in `src/likelihood.jl`: `multi_effect_mme` (supplied-variance
+  Henderson solve) + `_multi_effect_dense` + `fit_multi_effect_reml` (dense REML over
+  `K+1` log-variances), the `K`-block generalization of the two-effect kernel
+  (`blockdiag(A_i/σ_i)` precision, `hcat(Z_i)` design). Exported both.
+- Reductions (the honesty backbone, `test/runtests.jl`, all PASS): `K=2` MME solve
+  **byte-identical** to `two_effect_mme` (V-assembly order preserved so associativity
+  matches); `K=2` REML **byte-identical** to `fit_two_effect_reml` (~1e-12) on identified
+  data; `K=1` recovers the `fit_sparse_reml` optimum (σa²/σe² exact match observed);
+  `K=3` (animal-A + i.i.d. maternal + pedigree-independent contemporary-group) matches an
+  independent marginal-GLS oracle (~1e-9); loglik permutation-invariant; guards
+  (`PosDefException`/`SingularException`→`Inf` reject, `max_dense_cells`, `boundary`/
+  `converged` flags).
+- Funnel: NEW `V3-NEFFECT-REML` row, status **`partial`** (`validation_status()`
+  50→**51**; count guard `test/runtests.jl` and `tools/status_cache.json` updated,
+  partial 36→37). capability-status + validation-debt rows added in lockstep.
+  **`public_covered_count` UNCHANGED at 1** — engine estimator only, no covered flip, no
+  R surface. Covered is owed: a pre-declared 48-seed recovery gate + a same-estimand
+  external comparator (`blupf90+`) + the sparse AI-REML `K`-component estimator + the R
+  bridge (ultraplan Phase 2 gate + Phase 5).
+- Checks: `Pkg.test()` → **"Testing HSquared tests passed"**. `docs/make.jl` deferred to
+  pre-push (VitePress). Also landed Phase-0 P0.1 (`docs/design/21-payload-v2-multiblock-schema.md`,
+  DRAFT) + CI cost-leak fixes (CI.yml/Documenter.yml push triggers trimmed).
+- Honest scope: dense/validation-scale, INDEPENDENT effects only (no correlated 2×2 G);
+  the dense path is a small-`K`/small-`n` oracle, not production. `[JL]` engine-only.
