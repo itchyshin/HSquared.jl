@@ -179,10 +179,12 @@ approximation is materially wrong** for small `ν` (ν=0.5 → `1.099`, off by ~
 and must NOT be used as the constant. This satisfies Rule 1 by **derivation + numerical proof**
 (stronger than a table citation).
 
-**Status:** this pins the CONSTANT (a docs/contract decision). The Gamma latent-scale h² CODE
-(threading the shape `ν` through `nongaussian_heritability`) and the Gamma **observation/data**-scale
-h² (the NS-2017 multiplicative data scale) remain owed follow-ups — but the fenced convention
-question is now resolved.
+**Status:** the Gamma **latent**-scale h² (trigamma `V_link`) and the **observation/data**-scale h²
+(NS-2017 multiplicative, `V_A/[e^{V_pred}(1+1/ν)−1]`) are BOTH now implemented in
+`nongaussian_heritability`, and the data scale is externally validated against QGglmm's custom Gamma
+model (~5e-11; `comparator/qgglmm_gamma_observed/`). V6-NS-H2 stays `partial` pending an MCMCglmm
+comparator + a Fisher/Falconer sign-off + maintainer G10. The only remaining fenced observation scale
+is the **ordinal (K>2)** per-category scale.
 
 ---
 

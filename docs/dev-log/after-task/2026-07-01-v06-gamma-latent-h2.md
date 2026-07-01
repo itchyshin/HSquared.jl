@@ -1,4 +1,13 @@
-# After-task — v0.6 Gamma latent-scale h² (trigamma V_link) — 2026-07-01
+# After-task — v0.6 Gamma latent + data-scale h² (trigamma V_link + multiplicative) — 2026-07-01
+
+> **Update — data scale added (commit `51a06d6c`, same PR #222).** This PR grew from latent-only to
+> ALSO implement the Gamma **observation/DATA** scale: `h²_obs = V_A/[e^{V_pred}(1+1/ν)−1]` (NS-2017
+> multiplicative, μ-independent lognormal closed form), **externally validated** against QGglmm's
+> custom Gamma-log model (`var.func=μ²/ν`) to ~5e-11 (`comparator/qgglmm_gamma_observed/`). The Gamma
+> testset is now **16 assertions** (as the test runner reports) covering latent + data + μ-independence
+> (the earlier `isnan(h2_observation)` assertion is replaced by the data-scale value). Only the
+> **ordinal (K>2)** observation scale now remains fenced. Rose PROMOTE-with-changes (this update + the
+> doc-19 §3.1 Status paragraph). Below documents the original latent-scale commit `0e5a0755`.
 
 ## Task goal
 Continue the overnight v0.6 loop. Resolve the fenced Gamma `V_link` convention (doc-19 flagged it
