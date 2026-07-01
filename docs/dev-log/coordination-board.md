@@ -36,6 +36,18 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-07-01: Julia lane / v0.6 nine-PR merge recipe, trial-verified (PR #225,
+  `docs/2026-07-01-v06-merge-recipe`; `main` UNTOUCHED @ `94d20319`). Non-destructive
+  verification of merging the 9 open v0.6 PRs (#215–#223) via a throwaway branch (since
+  discarded): all conflicts keep-both/combine, `Pkg.test()` GREEN, `validation_status()`
+  = 50 (distribution unchanged), `public_covered_count` = 1, nothing flipped to covered.
+  Real `rose-systems-auditor` → PROMOTE. Recipe committed at
+  `docs/dev-log/recovery-checkpoints/2026-07-01-full-v06-merge-recipe.md`. NOT merged to
+  `main` (maintainer merges) and NOT a covered flip (G10 separate). No R-twin action owed
+  (v0.6 kernels are engine-internal). MAINTAINER-GATED NEXT: merge the 9 PRs (recipe),
+  reconcile the V6-ORDINAL recovery-gate surface staleness before any ordinal covered flip,
+  the G10 covered flip, merge PR #225.
+
 - 2026-06-30: Julia lane / BLUPF90 multitrait `renumf90.par` emitter fix (PR #197,
   `main` `c43e37c9`). Closed the 2026-06-29 v0.4 next-action #3: the committed
   `comparator/prepare_blupf90_multitrait.jl` packet now runs `renumf90` 1.166 →
