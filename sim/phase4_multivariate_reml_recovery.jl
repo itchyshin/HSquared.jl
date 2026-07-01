@@ -173,7 +173,7 @@ function _simulate_repeated_records(config::MultivariateRecoveryConfig)
     Ainv = pedigree_inverse(ped)
     A = Matrix(inv(Symmetric(Matrix(Ainv))))
     q = length(ped.ids)
-    t = 2
+    t = size(config.g0, 1)   # trait count from the supplied truth (general-t; was hardcoded 2)
 
     Gtrue = config.g0
     Rtrue = config.r0
