@@ -137,8 +137,11 @@ latent liability `l = η + e`, `e ~ N(0,1)`,
 The binary `K = 2` case with `θ = [0]` reduces EXACTLY to `BernoulliProbitResponse`
 (category 2 ↔ y = 1). EXPERIMENTAL, internal, Laplace-only, and SUPPLIED thresholds
 only — JOINT cutpoint estimation is a follow-up (like the beta-binomial dispersion).
-The working weight is the FISHER (expected) information `Σ_k P(k)·score(k)²`, not the
-observed `−d²ℓ/dη²`, so the IRLS Hessian stays PD (the beta-binomial convention).
+The conditional `ℓ = log P(y|η)` is LOG-CONCAVE in η (log of a Gaussian interval
+probability), so the working weight is the OBSERVED information `−d²ℓ/dη² = score² −
+(a·φ(a) − b·φ(b))/P`, which is `> 0` and equals the binary probit's observed weight at
+`K = 2` — no Fisher-scoring substitution is needed (contrast the beta-binomial, which
+is not log-concave in η).
 Numerically moderate-range: the category probabilities use a tail-aware interval
 form, but a category whose probability underflows in the deep latent tail is a
 documented follow-up (a log-space `logsubexp` loglik).
