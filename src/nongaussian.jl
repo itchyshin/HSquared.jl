@@ -1233,8 +1233,8 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
             return (family = :bernoulli_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
                     h2_latent = V_A / latent_total, h2_observation = Ψ^2 * V_A / (p̄ * (1.0 - p̄)),
                     var_distribution = p̄ * (1.0 - p̄), var_link = 1.0, converged = converged,
-                    information_limited = false,
-                    caveat = "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal).",
+                    information_limited = true,
+                    caveat = "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal), always < h2_latent. information_limited = true: single-binary data downward-biases the Laplace σ²a (as for single-trial Bernoulli-logit), so BOTH h² scales inherit that bias — never present them as clean. Plug-in point estimates (no calibrated interval).",
                     method = :probit_liability)
         else
             # ORDINAL (K>2) observed scale — PER-CATEGORY. For each category k the observed
@@ -1249,17 +1249,19 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
             θ = vcat(-Inf, Float64.(collect(cutpoints)), Inf)   # θ_0 .. θ_K
             K = length(θ) - 1
             h2_by_cat = Vector{Float64}(undef, K)
+            p_min = 1.0
             for k in 1:K
                 p_k = _gh_expect(η -> _norm_cdf(θ[k+1] - η) - _norm_cdf(θ[k] - η), mu, V_pred)
                 Ψ_k = _gh_expect(η -> _norm_pdf(θ[k] - η) - _norm_pdf(θ[k+1] - η), mu, V_pred)
                 h2_by_cat[k] = Ψ_k^2 * V_A / (p_k * (1.0 - p_k))
+                p_min = min(p_min, p_k)
             end
             return (family = :ordered_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
                     h2_latent = V_A / latent_total, h2_observation = NaN,
                     h2_observation_by_category = h2_by_cat,
                     var_distribution = NaN, var_link = 1.0, converged = converged,
-                    information_limited = false,
-                    caveat = "Ordinal probit threshold: h2_latent is the liability (selection-relevant, primary) scale (V_link = 1); the observed scale is PER-CATEGORY — h2_observation_by_category[k] = Ψ_k²V_A/[p_k(1−p_k)] per category indicator (validated vs QGglmm model=ordinal); the scalar h2_observation stays NaN (no single ordinal observed h²).",
+                    information_limited = p_min < 0.05,
+                    caveat = "Ordinal probit threshold: h2_latent is the liability (selection-relevant, primary) scale (V_link = 1), which inherits the single-record Laplace σ²a bias — worse with sparse extreme categories (information_limited flags any modelled category with marginal probability < 0.05). The observed scale is PER-CATEGORY — h2_observation_by_category[k] = Ψ_k²V_A/[p_k(1−p_k)] per category indicator (validated vs QGglmm model=ordinal); the scalar h2_observation stays NaN. NOTE: for INTERIOR categories P(y=k|η) is non-monotone in the breeding value, so the per-category value is a Stein first-order estimand that can substantially UNDERSTATE the exact indicator genetic variance — it is DESCRIPTIVE, not an independently selectable heritability; the liability scale is the selection summary. Plug-in point estimates (no calibrated interval).",
                     method = :probit_liability)
         end
     elseif family === :gamma
