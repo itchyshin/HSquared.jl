@@ -9,6 +9,21 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-01 (v0.6 MCMCglmm observation-scale h² comparator + lane hand-off — Claude solo; committed
+  `80a049a4`, merged LOCALLY into `feat/2026-07-01-v06-ordinal-liability-h2`, UNPUSHED).** Added the MCMCglmm
+  END-TO-END observation-scale h² comparator (`comparator/mcmcglmm_observed/`) — the last owed h² comparator on
+  that branch. Poisson, A=I/repeated-records: the engine's `nongaussian_heritability` observation-scale point
+  (0.502) lies INSIDE the MCMCglmm 95% credible interval [0.449, 0.515] via de Villemereuil's documented
+  QGglmm posterior workflow (`var.a=VCV[,"id"]`, `var.p=rowSums(VCV)`, `QGparams(Poisson.log)` per draw) — a
+  **DISTRIBUTIONAL** agreement within MCMC error (NOT machine precision, NOT unbiasedness; complements the
+  QGglmm exact-transform leg). V6-NS-H2 owed→RUN updated in LOCKSTEP on all 3 surfaces + the `nongaussian.jl`
+  docstring/comment + doc-14 + doc-19 (Rose-required drift fix). Real `rose-systems-auditor` → PROMOTE. **RECON
+  FINDING:** the QGglmm ordinal(K>2) + Gamma-data comparators ALREADY EXIST on `feat/2026-07-01-v06-ordinal-observed-h2`
+  (#223) + `feat/2026-07-01-v06-gamma-latent-h2` (#222) — NOT owed globally, just unmerged; MCMCglmm has NO
+  Gamma family (glmmTMB is that tool). `validation_status()` = **50 UNCHANGED**; **public-covered FITTING = 1
+  UNCHANGED**; V6-NS-H2 stays `partial` — no covered flip. Lane closed via hand-off; the 9-PR merge recipe +
+  Fisher/Falconer sign-off + G10 are maintainer/human. **START HERE:** `docs/dev-log/handover/2026-07-01-claude-handover.md`.
+
 - **As of 2026-06-30 (overnight 4-PR batch MERGED to `main`; Claude solo + maintainer merge authorization;
   `validation_status()` 48→50).** Landed: **#211** v0.4 MV broader-DGP recovery (full-sib + 3-trait recovery
   **DISCHARGED** on the covered `V4-MV-REML` row — pre-declared 48-seed Totoro gates both PASS all four criteria,
