@@ -107,15 +107,22 @@ flipped). They **compose** — each adds an `elseif` to `_nongaussian_h2_core` +
 ## Follow-ups (not covered blockers)
 
 - Scale-labelled h²: ordinal **liability** (#221) + Gamma **latent** (#222) DONE; the **observation/data**
-  scale for threshold + Gamma is the remaining doc-20 Step-4 piece. **De-risked this session (numerical
-  verification, not yet coded):** (a) the **threshold** observation scale is well-specified — the
-  Dempster–Lerner transform `h²_obs = h²_liab·z²/[p(1−p)]` **agrees with** the QGglmm probit integration
-  `Ψ²V_A/[p̄(1−p̄)]` (`Ψ=E[φ(η)]`, `p̄=E[Φ(η)]`) to MC precision across μ and V_A∈[0.1,2.0], so either
-  formula works and they cross-check; (b) the **Gamma latent** `V_link=trigamma(ν)` is likewise verified
-  (doc-19 §3.1). Still genuinely owed: the **Gamma data/observation** scale (NS-2017 multiplicative,
-  `Ψ=E[μ]`, `V_P,obs=Var(μ)+E[μ²/ν]`) — this one wants a **QGglmm external comparator** before shipping,
-  not a closed-form guess. So the threshold observation scale can be coded now (internally cross-checked);
-  the Gamma data scale should wait for the external comparator.
+  scale for threshold + Gamma is the remaining doc-20 Step-4 piece. **Status by piece:**
+  - **BINARY threshold observed-0/1 scale — DONE (coded in #221).** QGglmm probit integration
+    `Ψ²V_A/[p̄(1−p̄)]`, verified EQUAL to the Dempster–Lerner transform `h²_liab·z²/[p(1−p)]` (a real Rose
+    wrote a fully-independent 20000-pt Simpson quadrature → max|code−DL|=1.2e-6, plus an analytic proof
+    `Ψ²V_A = h²_liab·z²`). Rose PROMOTE-clean. The external QGglmm comparator debt is still retained for
+    the covered path.
+  - **Gamma LATENT scale — DONE (coded in #222).** `V_link=trigamma(ν)` (doc-19 §3.1).
+  - **ORDINAL (K>2) observed/category scale — genuinely owed.** The convention is murky (no single
+    incidence; per-category or per-threshold definitions differ) and there is NO classic independent
+    cross-check like Dempster–Lerner — so it needs the external QGglmm comparator, not a 1-AM guess.
+    Fenced as `NaN`.
+  - **Gamma data/observation scale — genuinely owed.** NS-2017 multiplicative (`Ψ=E[μ]`,
+    `V_P,obs=Var(μ)+E[μ²/ν]`); again no classic independent formula → needs the external QGglmm
+    comparator. Fenced as `NaN`.
+  This is the honest boundary the overnight session stopped at: the two DONE pieces each had an internal
+  cross-check that made them safe unattended; the two owed pieces do not, so they wait for QGglmm.
 - Broader-DGP + pedigree-A (non-`I`) recovery designs for both families (current gates are A=I / q=80).
 - Second same-estimand comparator per family (MCMCglmm `threshold` for ordinal; a 2nd Gamma tool).
 - R formula/bridge activation for ordinal + Gamma families (currently engine-internal only).
