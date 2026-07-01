@@ -16,8 +16,8 @@ import{_ as t,o as a,c as i,ao as n}from"./chunks/framework.Dw2L1Yz_.js";const u
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">          &quot;V6-NBINOM&quot; =&gt; &quot;partial&quot;</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">    &quot;V6-BETABINOMIAL&quot; =&gt; &quot;partial&quot;</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">          &quot;V6-PROBIT&quot; =&gt; &quot;partial&quot;</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">         &quot;V6-ORDINAL&quot; =&gt; &quot;partial&quot;</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">           &quot;V6-GAMMA&quot; =&gt; &quot;partial&quot;</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">         &quot;V6-ORDINAL&quot; =&gt; &quot;covered&quot;</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">           &quot;V6-GAMMA&quot; =&gt; &quot;covered&quot;</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">           &quot;V6-NS-H2&quot; =&gt; &quot;partial&quot;</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">     &quot;V6-GGLLVM-DESC&quot; =&gt; &quot;partial&quot;</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> &quot;V6-GGLLVM-MARGINAL&quot; =&gt; &quot;partial&quot;</span></span>
