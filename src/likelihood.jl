@@ -1019,6 +1019,137 @@ function fit_multi_effect_reml(
     )
 end
 
+# Dense REML log-likelihood + BLUPs for the direct–maternal model: one trait, one
+# relationship A, two incidences (Z_d = record→animal, Z_m = record→dam), a 2×2
+# genetic covariance G_dm over [a_d; a_m] (effect-outer, Var = kron(G_dm, A)):
+#   V = W·kron(G_dm, A)·Wᵀ + σ²e·I,  W = [Z_d  Z_m].
+function _direct_maternal_dense(y, X, Zd, Zm, A, G_dm, sigma_e2)
+    n = length(y)
+    q = size(A, 1)
+    Sigma_u = kron(G_dm, A)                  # 2q×2q, effect-outer
+    W = hcat(Zd, Zm)                         # n×2q
+    V = Symmetric(W * Sigma_u * transpose(W) .+ sigma_e2 .* Matrix(1.0I, n, n))
+    Vf = cholesky(V)
+    ViX = Vf \ Matrix(X)
+    XtViX = cholesky(Symmetric(transpose(X) * ViX))
+    beta = XtViX \ (transpose(X) * (Vf \ y))
+    r = y .- X * beta
+    Vir = Vf \ r
+    loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+    u = Sigma_u * (transpose(W) * Vir)
+    return loglik, Vector{Float64}(beta), Vector{Float64}(u[1:q]), Vector{Float64}(u[(q + 1):(2q)])
+end
+
+"""
+    fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = nothing,
+                             iterations = 200, ids = nothing,
+                             max_dense_cells = 1_000_000)
+
+REML estimation of the direct–maternal genetic model — one trait, one relationship
+`A = Ainv⁻¹`, a DIRECT additive effect (incidence `Zd`, record→animal) and a
+MATERNAL additive effect (incidence `Zm`, record→dam) with a `2×2` genetic
+covariance `G_dm` over `[a_d; a_m]` (`Var = kron(G_dm, A)`), plus residual `σ²e`.
+The `2×2` `G_dm` is estimated by dense REML over a log-Cholesky parameterization
+(so `G_dm` stays positive definite), reusing the multivariate `_chol_params_to_cov`
+machinery; the direct/maternal BLUPs come from the marginal GLS form.
+
+Returns a `NamedTuple` with `variance_components = (G_dm, sigma_ad, sigma_am,
+sigma_dm, sigma_e2)`, the direct–maternal `genetic_correlation` `r_am`, `beta`,
+`direct_effects`/`maternal_effects` `(ids, values)`, `loglik`, and `converged`.
+
+Reduction: with a diagonal `G_dm` (`σ_dm = 0`) `_direct_maternal_dense` equals the
+two-independent-effect dense model `[(Zd, A), (Zm, A)]`. EXPERIMENTAL,
+dense/validation-scale, REML-only, Gaussian. This is the FIRST correlated
+random-effect structure (`σ_dm ≠ 0`), distinct from independent multi-effect and
+from multivariate G0-over-traits. INTERPRETATION FENCE (Falconer): a negative
+`r_am` is real and expected; the direct heritability `σ_ad/σ_P` is NOT "the
+heritability" (the selection-relevant total additive variance involves `σ_dm`);
+callers must label direct-vs-total, never emit a bare h². On small/uninformative
+data or `|r_am| → 1` the optimum can sit on a boundary (`converged = false`);
+identifiability generally needs designed data (the direct–maternal/PE/cytoplasmic
+confound). No R surface, no external comparator, no pre-declared recovery gate yet.
+"""
+function fit_direct_maternal_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Zd::AbstractMatrix,
+    Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    n = length(y)
+    q = size(Ainv, 1)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Zd, 1) == n || throw(ArgumentError("Zd must have one row per record"))
+    size(Zm, 1) == n || throw(ArgumentError("Zm must have one row per record"))
+    size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+    size(Zd, 2) == q || throw(ArgumentError("Zd columns must match Ainv dimensions"))
+    size(Zm, 2) == q || throw(ArgumentError("Zm columns must match Ainv dimensions"))
+    n * n <= max_dense_cells ||
+        throw(ArgumentError("dense direct–maternal REML would form an $(n)×$(n) covariance " *
+            "($(n * n) cells) exceeding max_dense_cells=$(max_dense_cells)"))
+    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+    Xd = Matrix{Float64}(X)
+    Zdd = Matrix{Float64}(Zd)
+    Zmd = Matrix{Float64}(Zm)
+    yv = Float64.(y)
+    mu = sum(yv) / n
+    vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
+    vp > 0 || (vp = 1.0)
+    if initial !== nothing && hasproperty(initial, :G_dm)
+        G0 = Matrix(Float64.(Matrix(initial.G_dm)))
+        size(G0) == (2, 2) || throw(ArgumentError("initial.G_dm must be 2×2"))
+        isposdef(Symmetric(G0)) || throw(ArgumentError("initial.G_dm must be positive definite"))
+    else
+        G0 = Matrix(Diagonal(fill(0.33 * vp, 2)))
+    end
+    se0 = if initial !== nothing && hasproperty(initial, :sigma_e2)
+        s = Float64(initial.sigma_e2)
+        s > 0 || throw(ArgumentError("initial.sigma_e2 must be positive"))
+        s
+    else
+        0.33 * vp
+    end
+    function negloglik(p)
+        G = _chol_params_to_cov(@view(p[1:3]), 2)
+        se2 = exp(p[4])
+        try
+            val = -_direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G, se2)[1]
+            return isfinite(val) ? val : Inf
+        catch err
+            (err isa PosDefException || err isa SingularException) && return Inf
+            rethrow()
+        end
+    end
+    p0 = vcat(_cov_to_chol_params(G0, 2), log(se0))
+    result = optimize(negloglik, p0, NelderMead(), Optim.Options(iterations = iterations))
+    popt = Optim.minimizer(result)
+    G_dm = Matrix(Symmetric(_chol_params_to_cov(popt[1:3], 2)))
+    se2 = exp(popt[4])
+    loglik, beta, ad, am = _direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G_dm, se2)
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+    r_am = G_dm[1, 2] / sqrt(G_dm[1, 1] * G_dm[2, 2])
+    return (
+        variance_components = (
+            G_dm = G_dm,
+            sigma_ad = G_dm[1, 1],
+            sigma_am = G_dm[2, 2],
+            sigma_dm = G_dm[1, 2],
+            sigma_e2 = se2,
+        ),
+        genetic_correlation = r_am,
+        beta = beta,
+        direct_effects = (ids = aids, values = ad),
+        maternal_effects = (ids = aids, values = am),
+        loglik = loglik,
+        converged = Optim.converged(result),
+    )
+end
+
 # Repeatability dense loglik = the two-effect dense loglik with the
 # permanent-environment effect sharing Z and carrying an identity relationship.
 function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)

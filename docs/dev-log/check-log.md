@@ -5083,3 +5083,28 @@ Newest entries go at the top.
   DRAFT) + CI cost-leak fixes (CI.yml/Documenter.yml push triggers trimmed).
 - Honest scope: dense/validation-scale, INDEPENDENT effects only (no correlated 2×2 G);
   the dense path is a small-`K`/small-`n` oracle, not production. `[JL]` engine-only.
+
+## 2026-07-01 — Generality-gap Phase 4 P4.1: direct–maternal 2×2 G (first correlated) `[JL]`
+
+- New engine kernels in `src/likelihood.jl`: `fit_direct_maternal_reml` + `_direct_maternal_dense`.
+  One trait, one relationship `A`, DIRECT incidence `Zd`=record→animal + MATERNAL incidence
+  `Zm`=record→dam, a 2×2 genetic covariance `G_dm` over `[a_d; a_m]` (`Var = kron(G_dm, A)`,
+  marginal `V = W·kron(G_dm,A)·Wᵀ + σ²e I`, `W=[Zd Zm]`), estimated by dense log-Cholesky
+  REML (reuses the multivariate `_chol_params_to_cov`). Exported. This is the FIRST correlated
+  random-effect structure (`σ_dm ≠ 0`), distinct from independent multi-effect and multivariate-G0.
+- Correctness (`test/runtests.jl`, all PASS): diagonal `G_dm` (`σ_dm=0`) **byte-identical** to the
+  two-independent-effect dense model `[(Zd,A),(Zm,A)]` (~1e-9, observed 0.0); a full 2×2 `G_dm`
+  (negative off-diagonal) matches an independent marginal-GLS oracle for β + both BLUP vectors
+  (~1e-9, observed ~1e-15); the fit returns a PD `G_dm` + `r_am ∈ [-1,1]` and honestly reports
+  `converged=false` on the tiny/non-identified fixture (correct — direct/maternal confound).
+  Guards: `PosDefException`/`SingularException`→`Inf`, `max_dense_cells`, non-PD `initial.G_dm`.
+- INTERPRETATION FENCE (Falconer, in docstring + status rows): a negative `r_am` is real and
+  expected; direct h² is NOT "the heritability" (total additive variance involves `σ_dm`) — never
+  a bare h².
+- Funnel: NEW `V4-DIRECT-MATERNAL` row, status **`partial`** (`validation_status()` 51→**52**;
+  count guard + `tools/status_cache.json` updated, partial 37→38). capability-status +
+  validation-debt in lockstep. **`public_covered_count` UNCHANGED at 1** — engine only, no covered
+  flip, no R surface. Covered owed: pre-declared recovery gate (confounding-breaking design) +
+  `blupf90+` AIREMLF90 2×2-G comparator (WOMBAT not installed) + Mrode Ch.7 anchor + R
+  `maternal_genetic()` (ultraplan Phase 4 gate).
+- Checks: `Pkg.test()` green. `docs/make.jl` deferred to pre-push (VitePress). `[JL]` engine-only.

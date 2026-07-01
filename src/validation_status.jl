@@ -279,6 +279,15 @@ const VALIDATION_STATUS_DATA = (
         "Supplied-covariance with a design shared across traits; handles missing-trait records and Julia-side result accessors, but does not estimate G0/R0 and has no R-facing multivariate model-spec or bridge payload change.",
     ),
     (
+        "V4-DIRECT-MATERNAL",
+        "direct–maternal genetic model (2×2 G, first correlated random effect)",
+        "Phase 4",
+        "partial",
+        "`fit_direct_maternal_reml(y, X, Zd, Zm, Ainv)` estimates the 2×2 direct–maternal genetic covariance `G_dm` over `[a_d; a_m]` (one trait, one relationship `A`, DIRECT incidence `Zd`=record→animal, MATERNAL incidence `Zm`=record→dam; `Var = kron(G_dm, A)`, marginal `V = W·kron(G_dm,A)·Wᵀ + σ²e I`, `W = [Zd Zm]`) plus residual `σ²e`, by dense REML over a log-Cholesky parameterization (reusing the multivariate `_chol_params_to_cov`). This is the FIRST CORRELATED random-effect structure (`σ_dm ≠ 0`), distinct from independent multi-effect and from multivariate G0-over-traits. Correctness (`test/runtests.jl`): with a diagonal `G_dm` (`σ_dm=0`) `_direct_maternal_dense` is byte-identical (~1e-9) to the two-independent-effect model `[(Zd,A),(Zm,A)]`; a full 2×2 `G_dm` (incl. negative off-diagonal) matches an independent marginal-GLS oracle for β and both BLUP vectors (~1e-9, observed ~1e-15); the fit returns a PD `G_dm` and `r_am ∈ [-1,1]`, and on tiny/non-identified data honestly reports `converged=false` / boundary `r_am`.",
+        "a PRE-DECLARED recovery gate on a confounding-breaking design (interior `G_dm`, moderate negative `r_am`) + a same-estimand external REML comparator (`blupf90+` AIREMLF90 2×2-G; WOMBAT not installed) + Mrode Ch.7 textbook anchor; the labelled direct-vs-total h² extractor + interpretation fences; and the R-facing `maternal_genetic()` model-spec / bridge payload",
+        "Experimental dense/validation-scale REML. INTERPRETATION FENCE: a negative `r_am` is real and expected, and direct h² (`σ_ad/σ_P`) is NOT \"the heritability\" (the selection-relevant total additive variance involves `σ_dm`) — never emit a bare h². Reduction- + oracle-validated, but known-truth recovery is NOT gated, there is no external comparator, and there is no R surface. Not a public claim; `public_covered_count` unchanged.",
+    ),
+    (
         "V4-MV-REML",
         "multivariate REML (genetic/residual covariance estimation)",
         "Phase 4",

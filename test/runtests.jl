@@ -171,8 +171,9 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 51
+    @test length(validation) == 52
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
+    @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]
@@ -5754,6 +5755,50 @@ end
     @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; initial = [1.0, 1.0, 1.0])
     @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; initial = [-1.0, 1.0])
     @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; max_dense_cells = 4)
+end
+
+@testset "Phase 4 direct–maternal 2×2 G (first correlated genetic effect)" begin
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    A = inv(Symmetric(Matrix(Ainv)))
+    Zd = zeros(8, 4); for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Zd[rec, an] = 1.0; end
+    Zm = zeros(8, 4); for (rec, dm) in enumerate([1, 2, 1, 2, 1, 2, 1, 2]); Zm[rec, dm] = 1.0; end
+    y = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; X = ones(8, 1)
+
+    # reduction: diagonal G_dm (σ_dm = 0) equals two independent effects [(Zd,A),(Zm,A)]
+    G = [1.0 0.0; 0.0 0.5]; se2 = 2.0
+    dm = HSquared._direct_maternal_dense(y, X, Zd, Zm, A, G, se2)
+    me = HSquared._multi_effect_dense(y, X, [(Zd, A), (Zm, A)], [1.0, 0.5], se2)
+    @test dm[1] ≈ me[1] atol = 1e-9          # loglik
+    @test dm[2] ≈ me[2] atol = 1e-9          # beta
+    @test dm[3] ≈ me[3][1] atol = 1e-9       # a_d
+    @test dm[4] ≈ me[3][2] atol = 1e-9       # a_m
+
+    # full 2×2 (σ_dm ≠ 0) matches an independent marginal-GLS oracle
+    Gf = [1.0 -0.3; -0.3 0.6]
+    Sig = kron(Gf, A); W = hcat(Zd, Zm)
+    V = W * Sig * transpose(W) .+ se2 .* Matrix(1.0I, 8, 8)
+    b = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+    u = Sig * (transpose(W) * (V \ (y .- X * b)))
+    d2 = HSquared._direct_maternal_dense(y, X, Zd, Zm, A, Gf, se2)
+    @test d2[2] ≈ b atol = 1e-9
+    @test d2[3] ≈ u[1:4] atol = 1e-9
+    @test d2[4] ≈ u[5:8] atol = 1e-9
+
+    # fit runs, returns a PD 2×2 G_dm and a finite r_am in [-1,1] (tiny data may sit on
+    # a boundary → convergence NOT asserted; the estimator flags it honestly)
+    f = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv)
+    @test size(f.variance_components.G_dm) == (2, 2)
+    @test isposdef(Symmetric(f.variance_components.G_dm))
+    @test -1 - 1e-8 <= f.genetic_correlation <= 1 + 1e-8
+    @test length(f.direct_effects.values) == 4
+    @test length(f.maternal_effects.values) == 4
+    @test isfinite(f.loglik)
+
+    # guards
+    @test_throws ArgumentError fit_direct_maternal_reml(y, X, Zd[:, 1:3], Zm, Ainv)
+    @test_throws ArgumentError fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; max_dense_cells = 4)
+    @test_throws ArgumentError fit_direct_maternal_reml(y, X, Zd, Zm, Ainv;
+        initial = (G_dm = [1.0 2.0; 2.0 1.0], sigma_e2 = 1.0))
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin
