@@ -9,6 +9,23 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-01 (v0.6 9-PR integration VERIFIED green + merge recipe + 3 lanes spawned; Claude solo
+  autonomous; `main` @ `94d20319`/count 50 UNCHANGED; the six family PRs #215–#220 + three h² PRs #221–#223
+  all still open).** De-risked the maintainer's merge: ran the FULL 4-tip trial-merge of all 9 v0.6 PRs onto
+  `origin/main` in a throwaway branch (`trial/v06-full-integration`, discarded), resolved every conflict
+  (three trivial keep-both + one genuine COMBINE — the `V6-NS-H2` row across 3 surfaces + `_nongaussian_h2_core`'s
+  two h² branches + the two h² testsets), and `Pkg.test()` PASSED with count **50** / split unchanged /
+  **nothing flipped to covered** / `public_covered_count` **1**. A real `rose-systems-auditor` on the integrated
+  tree → **PROMOTE-WITH-CHANGES**: exactly one required fix (the `V6-NS-H2` `claim_boundary` field-7 was a STALE
+  self-contradiction — "no QGglmm evidence" vs the same row's "QGglmm RUN + AGREES"; NOT a git conflict, so a
+  mechanical merge silently carries it forward — the real #221/#223 PR must apply the exact one-line fix, banked
+  + verified in the recipe). Exact recipe: `docs/dev-log/recovery-checkpoints/2026-07-01-full-v06-merge-recipe.md`.
+  Also spawned THREE launch-ready work-lanes (merge-verify [maintainer started it], MCMCglmm h² comparator, v0.4
+  broader-DGP MV recovery) — all experimental-only, G10-fenced, no covered flip. HONESTY PINS HOLD: count 50,
+  public-covered fitting 1, nothing merged to `main`. MAINTAINER-GATED: merge the 9 PRs (mechanical, recipe
+  provided) + the G10 covered flip (public-covered 1→3). START HERE:
+  `docs/dev-log/handover/2026-07-01-claude-handover-v06-integration.md`.
+
 - **As of 2026-06-30 (overnight 4-PR batch MERGED to `main`; Claude solo + maintainer merge authorization;
   `validation_status()` 48→50).** Landed: **#211** v0.4 MV broader-DGP recovery (full-sib + 3-trait recovery
   **DISCHARGED** on the covered `V4-MV-REML` row — pre-declared 48-seed Totoro gates both PASS all four criteria,
