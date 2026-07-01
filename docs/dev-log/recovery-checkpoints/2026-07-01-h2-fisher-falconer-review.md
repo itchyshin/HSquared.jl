@@ -19,6 +19,21 @@ against the *actual* QGglmm comparator calls (not just the numeric tolerance alr
 No derivation error was found. The corrections are honesty/consistency/wording items required
 to make the surface *self-describing* at this repo's bar.
 
+## Verified patch available (2026-07-01)
+
+Corrections 1 (bias-fence), 2 (plug-in/no-interval status), and 4 (interior-category
+Stein-understatement caveat) are now applied + **test-verified** as
+`docs/dev-log/recovery-checkpoints/2026-07-01-h2-biasfence.patch` — a 6-line `src/nongaussian.jl`
+diff generated on the v0.6 integration build: `:bernoulli_probit` → `information_limited = true`;
+`:ordered_probit` → `information_limited = p_min < 0.05` (fires for sparse categories) + the
+interior-category "descriptive, not selectable" caveat; both caveats gain the plug-in/no-interval
+note. `Pkg.test()` stays GREEN and `validation_status()` count stays **50** with the patch applied
+(verified: probit `information_limited` flips true, ordinal sparse-design flag fires, balanced
+design stays false). Apply with `git apply` after merging the 9 PRs. Correction 3 (the doc-19 §2.3
+Dempster–Lerner-ordering sentence) is a pure-prose addition captured below — the code caveat already
+states "always < h2_latent". No test asserted the old `information_limited = false`, so nothing
+downstream breaks.
+
 ## The convergent finding (BOTH lenses, independently) — highest priority
 
 **The `information_limited` bias-fence is family-incomplete.** The Laplace/penalized-IRLS σ²a
