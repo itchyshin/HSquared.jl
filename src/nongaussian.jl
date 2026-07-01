@@ -960,16 +960,30 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                               fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing)
     elseif family === :gamma
         # Gamma (log link): TWO estimable scalars (σ²a + the shape ν), profiled jointly by
-        # NelderMead over (log σ²a, log ν) — the same shape as :nbinom. Continuous positive
-        # response; (σ²a, ν) is well identified given relatedness/replication. Laplace-only
-        # (the Gamma variational ELBO is a follow-up). `theta_init` seeds the shape ν.
+        # NelderMead over (log σ²a, log ν) — the same shape as :nbinom. Well identified GIVEN
+        # relatedness/replication; on uninformative data (few animals, no replication) the
+        # shape (flat likelihood for large ν) and σ²a are weakly identified and the optimum
+        # can run away — so both are confined by a safety rail (log(init) ± 8, within ~3000×
+        # of the start; an estimate at a rail is a "not credibly identified at this design"
+        # signal), matching the ordinal joint-estimation guard. Laplace-only (the Gamma
+        # variational ELBO is a follow-up). `theta_init` seeds the shape ν.
         mm isa Laplace ||
             throw(ArgumentError("family = :gamma supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
         all(yi -> yi > 0, y) ||
             throw(ArgumentError("family = :gamma requires strictly positive responses"))
         sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
-        objg(p) = -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), GammaResponse(exp(p[2]))).loglik
+        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        function objg(p)
+            (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + ν safety rails
+            m = try
+                laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), GammaResponse(exp(p[2])))
+            catch err
+                err isa Union{LinearAlgebra.SingularException, LinearAlgebra.PosDefException, DomainError} ?
+                    nothing : rethrow(err)
+            end
+            (m === nothing || !isfinite(m.loglik)) ? 1.0e12 : -m.loglik
+        end
         res = optimize(objg, log.([sa0, Float64(theta_init)]), NelderMead(),
                        Optim.Options(iterations = iterations))
         sa2, shape = exp.(Optim.minimizer(res))
