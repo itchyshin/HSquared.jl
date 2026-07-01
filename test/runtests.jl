@@ -974,6 +974,36 @@ end
     @test_throws ArgumentError HSquared._check_counts(G(2.0), [0.0])
 end
 
+@testset "Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6)" begin
+    # fit_laplace_reml(...; family = :gamma) JOINTLY estimates σ²a AND the shape ν over
+    # (log σ²a, log ν) by NelderMead (same shape as :nbinom). Structured pedigree + a sire
+    # pattern so σ²a is meaningfully identified; deterministic optimizer → deterministic.
+    ped = normalize_pedigree(
+        ["s1", "s2", "d1", "d2", "o1", "o2", "o3", "o4", "o5", "o6", "o7", "o8"],
+        ["0", "0", "0", "0", "s1", "s1", "s2", "s2", "s1", "s1", "s2", "s2"],
+        ["0", "0", "0", "0", "d1", "d2", "d1", "d2", "d1", "d2", "d1", "d2"])
+    Ainv = Matrix(pedigree_inverse(ped)); q = 12
+    X = ones(q, 1); Z = Matrix(1.0I, q, q)
+    # sire pattern (s1 offspring high, s2 low) → a real genetic signal, so σ²a > 0.
+    y = [1.5, 0.8, 1.2, 1.0, 2.2, 2.4, 0.6, 0.7, 2.1, 2.3, 0.65, 0.75]
+
+    f = fit_laplace_reml(y, X, Z, Ainv; family = :gamma)
+    sa = f.variance_components.sigma_a2; ν = f.variance_components.shape
+    @test f.family == :gamma && f.converged
+    @test sa > 1e-3 && ν > 0                                # meaningful σ²a + positive shape
+    # self-consistency: reported loglik == the marginal at the returned (σ²a, ν)
+    mm = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa, HSquared.GammaResponse(ν))
+    @test f.marginal_loglik ≈ mm.loglik atol = 1e-8
+    # the returned optimum beats a deliberately off-optimum (σ²a, ν) point
+    off = HSquared.laplace_marginal_loglik(y, X, Z, Ainv, sa * 4, HSquared.GammaResponse(ν * 0.2)).loglik
+    @test f.marginal_loglik >= off
+
+    # guards: strictly-positive response; variational rejected.
+    @test_throws ArgumentError fit_laplace_reml([1.0, -2.0, 1.0], ones(3, 1),
+        Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3); family = :gamma)
+    @test_throws ArgumentError fit_laplace_reml(y, X, Z, Ainv; family = :gamma, marginal = :variational)
+end
+
 @testset "Phase 6 non-Gaussian interval cross-family contract (H6)" begin
     # The σ²a profile-LRT interval covers ALL single-component families through ONE
     # shared `_resolve_single_family` + `target`/`_profile_root` path. Lock that

@@ -894,8 +894,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
                           theta_init::Real = 1.0, iterations::Integer = 200)
-    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit) ||
-        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, or :bernoulli_probit"))
+    family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :gamma) ||
+        throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, or :gamma"))
     # probit (threshold) is Laplace-only at this slice: its variational expected
     # information is response-dependent (−E[ℓ″] varies with the sign s = 2y−1), which
     # the y-free `_fam_expected_weight` signature cannot carry — a VA kernel is
@@ -958,6 +958,24 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
         return NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
                               fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing)
+    elseif family === :gamma
+        # Gamma (log link): TWO estimable scalars (σ²a + the shape ν), profiled jointly by
+        # NelderMead over (log σ²a, log ν) — the same shape as :nbinom. Continuous positive
+        # response; (σ²a, ν) is well identified given relatedness/replication. Laplace-only
+        # (the Gamma variational ELBO is a follow-up). `theta_init` seeds the shape ν.
+        mm isa Laplace ||
+            throw(ArgumentError("family = :gamma supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
+        all(yi -> yi > 0, y) ||
+            throw(ArgumentError("family = :gamma requires strictly positive responses"))
+        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
+        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
+        objg(p) = -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), GammaResponse(exp(p[2]))).loglik
+        res = optimize(objg, log.([sa0, Float64(theta_init)]), NelderMead(),
+                       Optim.Options(iterations = iterations))
+        sa2, shape = exp.(Optim.minimizer(res))
+        fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, GammaResponse(shape))
+        return NonGaussianFit((sigma_a2 = sa2, shape = shape), fit.loglik, fit.beta,
+                              fit.u, aids, Optim.converged(res) && fit.converged, :gamma, :laplace, nothing, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial
         # (logit), and beta-binomial (logit, σ²a estimated at the supplied fixed ρ)
