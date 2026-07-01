@@ -30,6 +30,20 @@ the shape ν, with both biases well inside the band (σ²a at 0.37·MCSE, ν at 
 detectable bias** at this design/power — never "unbiased". The MCSE floor (σ²a 0.0089) means a σ²a bias
 above ≈0.018 (≈5%) would be detectable; the observed −0.003 is far below that.
 
+## Re-confirmed post-rail (2026-07-01, commit `7666b656`)
+
+After the run above, a σ²a + shape-ν **safety rail** (`log(init) ± 8`) was added to the `:gamma`
+joint estimator (`7666b656`) to catch a runaway shape on *uninformative* data (a bug found on a tiny
+test fixture, not on this gate's design). Because the rail is **inert on identified data** — on this
+gate's A=I / repeated-records DGP the optimum sits well within `±8` of the start and no
+singular/pos-def error is hit — re-running the gate against the post-rail committed code reproduces
+the table **byte-for-byte**:
+
+`GATE gamma_recovery within_2mcse_all=true converged_all=true gate_pass=true seeds=48`
+(σ²a bias −0.0033 / MCSE 0.0089; ν bias −0.0019 / MCSE 0.0434; converged 48/48 — identical to above).
+
+So the committed estimator and this gate evidence provably match; the rail did not relax the gate.
+
 ## Covered-path status for V6-GAMMA (doc-16 prerequisites)
 
 With this gate, the Gamma family now has ALL the doc-16 covered PREREQUISITES assembled:
