@@ -10,7 +10,7 @@ V6-NS-H2 stays `partial`, public-covered fitting = 1.
 - Engine: `nongaussian_heritability(V_A, μ, <family>; predictor_variance=V_fixed).h2_observation`
   for `<family>` ∈ {`BernoulliResponse()` (logit), `BernoulliProbitResponse()` (probit)}.
 - Comparator: `QGglmm::QGparams(mu=μ, var.a=V_A, var.p=V_A+V_fixed, model=<model>)$h2.obs`
-  for `<model>` ∈ {`binom1.logit`, `binom1.probit`} (QGglmm 1.1.x from CRAN 2026-07-01; R 4.6.0).
+  for `<model>` ∈ {`binom1.logit`, `binom1.probit`} (QGglmm 0.8.0 from CRAN 2026-07-01; R 4.6.0).
 - Harness: `comparator/qgglmm_probit_observed/compare.R` + `engine_h2obs.csv` + `result.txt`.
 - Reproduce: write the engine CSV (`mu,V_A,V_fixed,model,h2_observation`), then
   `Rscript comparator/qgglmm_probit_observed/compare.R comparator/qgglmm_probit_observed/engine_h2obs.csv`.

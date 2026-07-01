@@ -1184,8 +1184,10 @@ COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. **Thres
 families** (`:bernoulli_probit`, `:ordered_probit`) report the **liability** scale: the
 latent scale IS the liability with `V_link = 1` (Dempster–Lerner 1950), the
 selection-relevant primary heritability `V_A/(V_A+1+V_fixed)` — returned in `h2_latent`
-(independent of μ and the cutpoints); their observed/category scale needs the
-incidence/cutpoints and is a follow-up (`h2_observation = NaN`).
+(independent of μ and the cutpoints). The BINARY `:bernoulli_probit` observed-0/1 scale IS
+computed (the QGglmm probit integration `Ψ²V_A/[p̄(1−p̄)]` = the Dempster–Lerner transform,
+verified equal); the ORDINAL (K>2) per-category observed scale needs the cutpoints and
+stays a follow-up (`h2_observation = NaN`).
 
 `mu` (link-scale population mean) defaults to the fit's single intercept; with >1
 fixed effect it is REQUIRED (and `predictor_variance`, the fixed-effect linear-
@@ -1197,8 +1199,10 @@ ill-defined under varying denominators — not silently averaged).
 
 EXPERIMENTAL, dense/validation-scale; exact in its closed-form limbs and anchored to
 an independent quadrature oracle in `test/runtests.jl`, but it inherits the latent
-σ²a bias (especially single-trial Bernoulli) and has NO same-estimand external
-(QGglmm/MCMCglmm) comparator yet — not the public default, not covered. Deliberately
+σ²a bias (especially single-trial Bernoulli); it has a QGglmm external comparator for the
+logit + binary-probit observation scales (`comparator/qgglmm_probit_observed/`) but not yet
+for the other observation scales / MCMCglmm, nor a Fisher/Falconer sign-off — not the public
+default, not covered. Deliberately
 NOT added to `nongaussian_result_payload` (that shape stays family-uniform).
 """
 function nongaussian_heritability(fit::NonGaussianFit; mu = nothing, n_trials = nothing,
