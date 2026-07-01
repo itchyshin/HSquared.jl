@@ -1126,8 +1126,22 @@ end
     # Ordinal (K=3): cutpoints [0, 1] do NOT change the liability h².
     ho = HSquared.nongaussian_heritability(0.5, 0.0, HSquared.OrderedProbitResponse([0.0, 1.0]))
     @test ho.h2_latent ≈ 1 / 3 atol = 1e-12
-    @test ho.var_link == 1.0 && isnan(ho.h2_observation)
+    @test ho.var_link == 1.0 && isnan(ho.h2_observation)   # scalar stays NaN (per-category instead)
     @test ho.family === :ordered_probit
+    # PER-CATEGORY observed-scale h² (the `h2_observation_by_category` vector field; validated to
+    # ≤3e-8 vs QGglmm `model="ordinal"` in comparator/qgglmm_ordinal_observed/).
+    @test length(ho.h2_observation_by_category) == 3
+    @test ho.h2_observation_by_category ≈ [0.2122066, 0.0205833, 0.1658663] atol = 1e-6
+    @test all(0.0 .< ho.h2_observation_by_category .< 1.0)
+    # K=2 reduction: the two complementary category indicators have EQUAL observed h², and it equals
+    # the bernoulli-probit binary observed-0/1 h² at the same μ, V_A.
+    let ho2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.OrderedProbitResponse([0.0])),
+        hb2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.BernoulliProbitResponse())
+        @test length(ho2.h2_observation_by_category) == 2
+        @test ho2.h2_observation_by_category[1] ≈ ho2.h2_observation_by_category[2] atol = 1e-9
+        @test ho2.h2_observation_by_category[1] ≈ hb2.h2_observation atol = 1e-9
+    end
+    @test_throws ArgumentError HSquared._nongaussian_h2_core(:ordered_probit, 0.5, 0.0, NaN, 1, 0.0, true)
     # Exact reduction: K=2 ordinal liability h² == bernoulli-probit liability h² (same μ, V_A).
     ho2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.OrderedProbitResponse([0.0]))
     hb2 = HSquared.nongaussian_heritability(0.8, 0.3, HSquared.BernoulliProbitResponse())
