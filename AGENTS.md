@@ -9,6 +9,33 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-01 (generality-gap ultraplan: N-effect covered + Phase 0 (S0) done + FIRST public flip;
+  Claude solo autonomous; `HSquared.jl` `main` @ `0d1518bf`, `hsquared` `main` @ `8ef81ac`; `public_covered_count`
+  1→**2**).** Executed the cross-twin "Closing the mixed-model generality gap" ultraplan under the `ultra-plan`
+  house method (~15 sub-agents, real Rose audits, both-lane CI). THREE landings: (1) **`V3-NEFFECT-REML` engine
+  `partial→covered`** (PR #230 — pre-declared 48-seed bias/MCSE gate PASS + `sommer` 4.4.5 same-estimand
+  comparator 8.09e-5; engine-only, `public_covered_count` stayed 1). (2) **Phase 0 / S0 — payload-v2 multi-block
+  bridge contract FROZEN** (PRs #231/#115 — `parse_payload_v2`/`fit_payload_v2`/`result_payload_v2` + R
+  `hs_build_bridge_payload` emitter; **byte-identical** cross-lane parity, v0.1 fast-path `===` bit-identical;
+  contract-only; `maternal_genetic` stays INDEPENDENT, the correlated 2×2-G + `coefcov` are frozen slots).
+  (3) **Phase 1 — FIRST public-covered model beyond v0.1: `public_covered_count` 1→2** (PRs #232/#116 — the
+  opt-in **common-environment two-effect** animal model, NOT the default `engine="fit"` path). New engine
+  `two_effect_ratio_interval` (asymptotic delta-method logit CI for h²/c²; boundary-flagged; NOT
+  coverage-calibrated; reduces to `heritability_interval` at σ2²=0) + R `common_env_proportion()`/`maternal_proportion()`
+  + `_interval()` accessors + `heritability_interval()` for two-effect + Falconer fences + `sommer` comparator
+  vignette. Live R↔engine parity **EXACT** (max diff 0 on VC/h²/c²/intervals). SCOPE (Rose-adjudicated):
+  common-env / c² leg ONLY — the **maternal leg (A2=pedigree) STAYS EXPERIMENTAL** (same estimator, exact
+  parity, but a harder direct-maternal-correlated identifiability problem; its recovery gate + comparator owed).
+  **Honesty pins HOLD:** `validation_status()` count **52 UNCHANGED**, engine covered-count unchanged by the
+  Phase 1 (public-SURFACE) flip, v0.1 default untouched, all intervals asymptotic/uncalibrated,
+  `public_covered_count` pinned consistently at all 5 sites (`status_cache.json` + `gen_status_json.jl`). Real
+  `rose-systems-auditor` PROMOTE(-WITH-CHANGES) on every flip; R CMD check caught a non-ASCII WARNING (fixed
+  `532d51d`) → merged only after BOTH lanes green (paired-PR discipline). **MAINTAINER-GATED items are delegated
+  (G10 "flip autonomously once evidence passes"); nothing faked.** **NEXT (parallel streams, now unblocked by
+  S0): Phase 4 direct-maternal 2×2 G → covered (engine exists `partial`; Fable-tier gate design + BLUPF90
+  AIREMLF90 2×2-G comparator), Phase 3 RR k=2 → covered (after the P3.0 `(x|g)`-vs-`rr()` convention lock;
+  `sommer leg()` comparator), Phase 5 sparse AI-REML N-component (scale, measure-first).** START HERE:
+  `docs/dev-log/after-task/2026-07-01-phase0-phase1-public-flip.md`.
 - **As of 2026-07-01 (v0.6 9-PR integration VERIFIED green + merge recipe + 3 lanes spawned; Claude solo
   autonomous; `main` @ `94d20319`/count 50 UNCHANGED; the six family PRs #215–#220 + three h² PRs #221–#223
   all still open).** De-risked the maintainer's merge: ran the FULL 4-tip trial-merge of all 9 v0.6 PRs onto
