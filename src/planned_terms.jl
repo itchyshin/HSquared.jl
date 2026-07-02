@@ -247,10 +247,13 @@ common_env(args...; kwargs...) = _planned_model_term_error(:common_env)
 """
     maternal_genetic(args...; kwargs...)
 
-Planned maternal-genetic model term.
+Planned maternal-genetic model term (engine-internal formula marker).
 
-Mirrors the R `maternal_genetic()` formula marker. This function is
-intentionally not implemented yet.
+Mirrors the R `maternal_genetic()` formula marker. This stub is intentionally
+not implemented as a standalone engine path. Note: the correlated 2×2 direct–
+maternal capability IS covered at validation scale (opt-in) via
+`fit_direct_maternal_reml` / R `target="direct_maternal"` — this stub is only
+the engine-internal formula-reservation marker, not the fitting entry point.
 """
 maternal_genetic(args...; kwargs...) = _planned_model_term_error(:maternal_genetic)
 
