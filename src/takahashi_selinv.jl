@@ -189,3 +189,55 @@ function selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
     end
     return trace
 end
+
+"""
+    selinv_block_traces(ch, Ainvs, offsets) -> Vector{Float64}
+
+Multi-block generalization of [`selinv_trace_against`](@ref). For each block `b`,
+accumulate the REML score trace term `tr(Ainvs[b] · C⁻¹[block_b, block_b]) =
+Σ Ainvs[b][i,j] · C⁻¹[offsets[b]+i, offsets[b]+j]`, where block `b` occupies the
+contiguous global indices `offsets[b] .+ (1:size(Ainvs[b],1))` in the matrix `C`
+whose sparse Cholesky factor is `ch`. `C⁻¹[block_b, block_b]` is the `b`-th diagonal
+block of the FULL inverse (it accounts for every other effect jointly), which is
+exactly what the K-component REML score for component `b` requires.
+
+Computes the Takahashi selected inverse ONCE (`O(nnz(L))`) and reuses it across all
+`K = length(Ainvs)` blocks, so the whole score-trace sweep is a single selected
+inversion rather than `K`. Each `Ainvs[b]` pattern is a subset of `C`'s block-`b`
+diagonal block, hence of the `L + Lᵀ` pattern, so every entry looked up is
+in-pattern (exact). This is the `[tr(A₁⁻¹ C^{u₁u₁}), …, tr(A_K⁻¹ C^{u_Ku_K})]`
+vector used by [`fit_sparse_multi_effect_aireml`](@ref).
+"""
+function selinv_block_traces(ch::SparseArrays.CHOLMOD.Factor{Float64},
+                             Ainvs::AbstractVector, offsets::AbstractVector)
+    length(Ainvs) == length(offsets) ||
+        throw(ArgumentError("Ainvs and offsets must have the same length"))
+    Zvals, colptr, rowval, perm, _ = _selinv_zvals(ch)
+    iperm = invperm(perm)            # original index -> permuted index
+    K = length(Ainvs)
+    traces = zeros(Float64, K)
+    @inbounds for b in 1:K
+        Ainv = Ainvs[b]
+        off = offsets[b]
+        rows = rowvals(Ainv)
+        vals = nonzeros(Ainv)
+        t = 0.0
+        for jcol in 1:size(Ainv, 2)
+            vp = iperm[off + jcol]
+            for k in nzrange(Ainv, jcol)
+                up = iperm[off + rows[k]]
+                if up == vp
+                    z = Zvals[colptr[up]]
+                else
+                    lo = up < vp ? up : vp
+                    hi = up < vp ? vp : up
+                    idx = _csc_rowidx(colptr, rowval, lo, hi)
+                    z = idx == -1 ? 0.0 : Zvals[idx]
+                end
+                t += vals[k] * z
+            end
+        end
+        traces[b] = t
+    end
+    return traces
+end

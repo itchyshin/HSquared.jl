@@ -3,7 +3,8 @@
 # Contract: §6 of docs/design/21-payload-v2-multiblock-schema.md (FREEZE-READY).
 # This file is CONTRACT-ONLY: it reuses existing estimators, adds no new
 # numerics, and makes no covered-status change (contract-only; this file does not
-# move `public_covered_count`).  `validation_status()` row count stays 52.
+# move `public_covered_count`).  This file does not change the
+# `validation_status()` row count.
 #
 # Three public functions are exported from HSquared.jl:
 #   parse_payload_v2(payload)  → ParsedPayloadV2 (resolved engine inputs + dispatch tag)

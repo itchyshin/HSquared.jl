@@ -1258,6 +1258,358 @@ function multi_effect_ratio_interval(
     return (ratios = ratios, level = level, converged = fit.converged)
 end
 
+# Assemble the SPARSE Henderson mixed-model-equation coefficient matrix `C` and
+# right-hand side for the general K-independent-random-effect model at the given
+# variance components, from the iteration-invariant cross-products. `C` is the
+# UNSCALED (1/σ_e²) Henderson form, so `C⁻¹`'s random-block diagonal is directly
+# the PEV in σ² units — the same convention as `_sparse_mme_system` (K=1) — and the
+# random block is ordered `[u_1; …; u_K]` (`hcat(Z_i)` design, `blockdiag(A_i⁻¹/σ_i²)`
+# precision), matching `multi_effect_mme`. All blocks are `SparseMatrixCSC`, so the
+# hvcat result is sparse (type-stable).
+function _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
+    K = length(Ainvs)
+    rp = inv(sigma_e2)
+    Ginv = blockdiag((Ainvs[i] .* inv(sigmas[i]) for i in 1:K)...)
+    lhs = [
+        rp .* XtX  rp .* XtZ
+        rp .* ZtX  rp .* ZtZ .+ Ginv
+    ]
+    rhs = vcat(rp .* Xty, rp .* Zty)
+    return lhs, rhs
+end
+
+"""
+    sparse_multi_reml_loglik(y, X, effects, sigmas, sigma_e2) -> (loglik, beta, us)
+
+Evaluate the Gaussian REML log-likelihood, fixed effects, and per-block BLUPs of
+the general `K`-independent-random-effect model
+`y = X·β + Σᵢ Zᵢ·uᵢ + e`, `uᵢ ~ N(0, σᵢ²·Aᵢ)`, `e ~ N(0, σ_e²·I)`,
+at supplied positive variance components, using the sparse Henderson MME
+determinant identity — the `K`-block generalization of [`sparse_reml_loglik`](@ref).
+`effects` is a vector of `(Zᵢ, Ainvᵢ)` pairs (same contract as
+[`multi_effect_mme`](@ref)).
+
+The log-likelihood uses the package-wide full-constant convention
+`−0.5·[(n−p)·log(2π) + log|R| + log|G| + log|C| + y'Py]` (identical to
+`sparse_reml_loglik` / `fit_ai_reml`). It therefore equals the dense
+`fit_multi_effect_reml` REML objective (`_multi_effect_dense`, which omits the
+`(n−p)·log(2π)` constant) PLUS `−0.5·(n−p)·log(2π)`; this offset is the only
+difference and is exact. Engine-internal, supplied-variance; it does not estimate.
+"""
+function sparse_multi_reml_loglik(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    nfixed = size(Xs, 2)
+    nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+
+    ss = Float64.(collect(sigmas))
+    se2 = Float64(sigma_e2)
+    Zf = reduce(hcat, Zs)
+    Xt = transpose(Xs); Zft = transpose(Zf)
+    XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
+    ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
+    Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
+    lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, ss, se2)
+    factor = cholesky(Symmetric(lhs); check = true)
+    solution = factor \ rhs
+
+    beta = Vector{Float64}(solution[1:nfixed])
+    us = Vector{Vector{Float64}}(undef, K)
+    off = nfixed
+    for i in 1:K
+        us[i] = Vector{Float64}(solution[(off + 1):(off + qs[i])])
+        off += qs[i]
+    end
+
+    logdetR = n * log(se2)
+    logdetG = 0.0
+    for i in 1:K
+        logdetG += qs[i] * log(ss[i]) - logdet(cholesky(Symmetric(Ainvs[i]); check = true))
+    end
+    logdetC = logdet(factor)
+    quad = inv(se2) * dot(yv, yv) - dot(rhs, solution)      # y'Py
+    loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+    return loglik, beta, us
+end
+
+# AI/Newton step for the (K+1)×(K+1) average-information matrix (symmetric PSD).
+# General-size analogue of `_ai_newton_step`: try a Cholesky solve, and if the AI
+# matrix is not positive definite (near a boundary) or gives a non-finite step,
+# ridge it by a small multiple of its mean diagonal and solve the symmetric system.
+# Reduces to `_ai_newton_step` behaviour for a well-conditioned 2×2 (K=1).
+function _ai_newton_step_nd(information::AbstractMatrix, score::AbstractVector)
+    m = size(information, 1)
+    A = Matrix{Float64}(information)
+    A = (A .+ transpose(A)) ./ 2                       # symmetrize roundoff
+    fac = cholesky(Symmetric(A); check = false)
+    if issuccess(fac)
+        step = fac \ score
+        all(isfinite, step) && return step
+    end
+    ridge = 1e-8 * (tr(A) / m + 1)
+    return Symmetric(A .+ ridge .* Matrix{Float64}(I, m, m)) \ score
+end
+
+"""
+    fit_sparse_multi_effect_aireml(y, X, effects; initial = nothing,
+                                   iterations = 100, tol = 1e-8, em_warmup = 0,
+                                   ids = nothing)
+
+Sparse average-information (AI) REML for the general `K`-independent-random-effect
+Gaussian animal model
+`y = X·β + Σᵢ Zᵢ·uᵢ + e`, `uᵢ ~ N(0, σᵢ²·Aᵢ)`, `e ~ N(0, σ_e²·I)`,
+estimating the `K+1` variance components `(σ₁²,…,σ_K², σ_e²)`. This is the sparse,
+scale-path generalization of the single-component [`fit_ai_reml`](@ref); it is the
+production-shaped estimator behind the dense oracle [`fit_multi_effect_reml`](@ref)
+(which forms an `n×n` `V` and is guarded by `max_dense_cells`).
+
+`effects` is a vector of `(Zᵢ, Ainvᵢ)` pairs (`Zᵢ` the `n×qᵢ` record→level sparse
+incidence, `Ainvᵢ` the `qᵢ×qᵢ` supplied relationship PRECISION — pass a sparse
+identity for a plain i.i.d. `(1|group)` effect), the same contract as
+[`multi_effect_mme`](@ref). `initial`, if supplied, is a length-`K+1` vector of
+positive starting variances `[σ₁,…,σ_K,σ_e2]` (default all `1`).
+
+Each iteration assembles the sparse Henderson MME coefficient matrix
+`C = [X'R⁻¹X X'R⁻¹Z; Z'R⁻¹X Z'R⁻¹Z + blockdiag(Aᵢ⁻¹/σᵢ²)]` (`R = σ_e²·I`),
+sparse-Cholesky factorizes it ONCE, reads each block's REML score
+`∂ℓ/∂σᵢ² = −0.5·(qᵢ − tr(Aᵢ⁻¹C^{uᵢuᵢ})/σᵢ² − uᵢ'Aᵢ⁻¹uᵢ/σᵢ²)/σᵢ²`
+from the BLUP solution and the **Takahashi selected inverse**
+(`selinv_block_traces`, the `tr(Aᵢ⁻¹C^{uᵢuᵢ})` terms — no dense inverse is
+formed), assembles the `(K+1)×(K+1)` average-information matrix from working-variate
+re-solves that reuse the same Cholesky factor, and takes an AI/Newton step with
+step-halving to keep every component positive. Convergence uses the SCALE-INVARIANT
+relative-variance rule (the "F3" stopping rule shared with `fit_ai_reml`): the
+absolute REML score scales with `n`, so at large `q` the fit also stops on the
+relative change in the variance components. An optional EM-REML warm-start
+(`em_warmup`, default `0` = byte-identical to the pure AI path) hands the AI step a
+good in-bounds start.
+
+CORRECTNESS: on the SAME data at small scale, the optimum reduces EXACTLY to the
+dense [`fit_multi_effect_reml`](@ref) optimum (variance components and REML
+log-likelihood) for `K = 2` and `K = 3`, and the `K = 1` path reduces to
+[`fit_ai_reml`](@ref) (`test/runtests.jl`). Returns a `NamedTuple` with
+`variance_components = (sigmas, sigma_e2)`, per-effect `ratios`, `beta`, the `K`
+BLUPs (`effects = [(ids, values), …]`), `loglik` (full-constant convention,
+identical to `fit_ai_reml`), `converged`, `iterations`, per-component `boundary`
+flags (`σᵢ/total < 1e-6`), and `estimator = :sparse_multi_effect_aireml`.
+
+EXPERIMENTAL, REML-only, Gaussian, INDEPENDENT effects only (no correlated /
+direct–maternal 2×2 `G`). The sparse machinery EXISTS and is verified to reduce to
+the dense optimum, but its scale/performance is NOT yet benchmarked (measure-first;
+`sim/phase5_sparse_aireml_benchmark.jl` is the opt-in scaffold) and it is NOT the
+public default fit path. On uninformative/non-identified data a component can ride
+to the `σ²→0` boundary; the fit reports `converged = false` and never returns NaN.
+"""
+function fit_sparse_multi_effect_aireml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    initial = nothing,
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+    em_warmup::Integer = 0,
+    ids = nothing,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    nfixed = size(Xs, 2)
+    nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    if ids === nothing
+        eids = [collect(1:qs[i]) for i in 1:K]
+    else
+        length(ids) == K || throw(ArgumentError("ids must be a length-$K vector of per-effect id vectors"))
+        eids = [collect(ids[i]) for i in 1:K]
+        for i in 1:K
+            length(eids[i]) == qs[i] ||
+                throw(ArgumentError("ids[$i] length must match Ainv[$i] dimensions"))
+        end
+    end
+
+    if initial === nothing
+        sigmas = ones(Float64, K)
+        sigma_e2 = 1.0
+    else
+        length(initial) == K + 1 ||
+            throw(ArgumentError("initial must have length K+1 = $(K + 1) (one per effect plus residual)"))
+        all(s -> s > 0, initial) || throw(ArgumentError("initial variance components must be positive"))
+        sigmas = Float64.(collect(initial[1:K]))
+        sigma_e2 = Float64(initial[K + 1])
+    end
+
+    # Contiguous global offset of each random block within [β; u_1; …; u_K].
+    offsets = Vector{Int}(undef, K)
+    acc = nfixed
+    for i in 1:K
+        offsets[i] = acc
+        acc += qs[i]
+    end
+    nrandom = acc - nfixed
+
+    # Iteration-invariant cross-products (only the σ scaling + Ginv change per step).
+    Zf = reduce(hcat, Zs)
+    Xt = transpose(Xs); Zft = transpose(Zf)
+    XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
+    ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
+    Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
+
+    # EM-REML warm-start (closed-form, monotone, in-bounds): σᵢ² = (uᵢ'Aᵢ⁻¹uᵢ +
+    # tr(Aᵢ⁻¹C^{uᵢuᵢ}))/qᵢ, σ_e² = e'e/(n − p − Σq + Σ tr(Aᵢ⁻¹C^{uᵢuᵢ})/σᵢ²).
+    for _ in 1:max(0, em_warmup)
+        lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException && break
+            rethrow(err)
+        end
+        solution = factor \ rhs
+        urand = solution[(nfixed + 1):end]
+        e = yv .- Xs * solution[1:nfixed] .- Zf * urand
+        traces = selinv_block_traces(factor, Ainvs, offsets)
+        newsig = similar(sigmas)
+        ok = true
+        for i in 1:K
+            ui = solution[(offsets[i] + 1):(offsets[i] + qs[i])]
+            uAu = dot(ui, Ainvs[i] * ui)
+            newsig[i] = (uAu + traces[i]) / qs[i]
+            (isfinite(newsig[i]) && newsig[i] > 0) || (ok = false)
+        end
+        dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
+        newe = dot(e, e) / dfe
+        (ok && isfinite(newe) && newe > 0) || break
+        rel = max(maximum(abs.(newsig .- sigmas) ./ sigmas), abs(newe - sigma_e2) / sigma_e2)
+        sigmas = newsig
+        sigma_e2 = newe
+        rel < tol && break
+    end
+
+    converged = false
+    iters = 0
+    for it in 1:iterations
+        iters = it
+        lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
+        factor = cholesky(Symmetric(lhs); check = true)
+        solution = factor \ rhs
+        urand = solution[(nfixed + 1):end]
+        e = yv .- Xs * solution[1:nfixed] .- Zf * urand
+        traces = selinv_block_traces(factor, Ainvs, offsets)
+
+        us = [solution[(offsets[i] + 1):(offsets[i] + qs[i])] for i in 1:K]
+        uAu = [dot(us[i], Ainvs[i] * us[i]) for i in 1:K]
+
+        # REML scores: K component scores then the residual score (same identities
+        # as fit_ai_reml, generalized to K blocks + a joint effective residual df).
+        score = Vector{Float64}(undef, K + 1)
+        for i in 1:K
+            score[i] = -0.5 / sigmas[i]^2 * (qs[i] * sigmas[i] - traces[i] - uAu[i])
+        end
+        dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
+        score[K + 1] = -0.5 / sigma_e2^2 * (sigma_e2 * dfe - dot(e, e))
+
+        if norm(score) < tol
+            converged = true
+            break
+        end
+
+        # Working variates wᵢ = Zᵢuᵢ/σᵢ², w_e = e/σ_e²; AI[i,j] = 0.5·wᵢ'P wⱼ, with
+        # P applied by an MME re-solve that reuses `factor` (stacked Zf ⇒ Σᵢ Zᵢu_{w,i}).
+        W = Matrix{Float64}(undef, n, K + 1)
+        for i in 1:K
+            W[:, i] = (Zs[i] * us[i]) ./ sigmas[i]
+        end
+        W[:, K + 1] = e ./ sigma_e2
+        PW = Matrix{Float64}(undef, n, K + 1)
+        for j in 1:(K + 1)
+            PW[:, j] = _reml_project(factor, Xs, Zf, W[:, j], sigma_e2, nfixed)
+        end
+        information = 0.5 .* (transpose(W) * PW)
+        step = _ai_newton_step_nd(information, score)
+        all(isfinite, step) || break
+
+        newsig = sigmas .+ step[1:K]
+        newe = sigma_e2 + step[K + 1]
+        halvings = 0
+        while (any(<=(0.0), newsig) || newe <= 0) && halvings < 60
+            step = step ./ 2
+            newsig = sigmas .+ step[1:K]
+            newe = sigma_e2 + step[K + 1]
+            halvings += 1
+        end
+        (all(>(0.0), newsig) && newe > 0) || break
+        # Scale-invariant (F3) convergence on the relative variance-component change.
+        rel_change = max(maximum(abs.(newsig .- sigmas) ./ sigmas), abs(newe - sigma_e2) / sigma_e2)
+        sigmas = newsig
+        sigma_e2 = newe
+        if rel_change < tol
+            converged = true
+            break
+        end
+    end
+
+    loglik, beta, us = sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)
+    total = sum(sigmas) + sigma_e2
+    effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
+    status = converged ? "converged" : "not_converged"
+    return (
+        variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
+        ratios = sigmas ./ total,
+        beta = beta,
+        effects = effects_out,
+        loglik = loglik,
+        converged = converged,
+        iterations = iters,
+        boundary = [s / total < 1e-6 for s in sigmas],
+        status = status,
+        estimator = :sparse_multi_effect_aireml,
+    )
+end
+
 # Dense REML log-likelihood + BLUPs for the direct–maternal model: one trait, one
 # relationship A, two incidences (Z_d = record→animal, Z_m = record→dam), a 2×2
 # genetic covariance G_dm over [a_d; a_m] (effect-outer, Var = kron(G_dm, A)):
