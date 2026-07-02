@@ -5679,6 +5679,101 @@ end
     @test_throws ArgumentError fit_two_effect_reml(y, X, Z, Ainv, Z2[:, 1:1], Matrix(1.0I, 2, 2))
 end
 
+@testset "Phase 3 two-effect ratio interval (asymptotic delta-method)" begin
+    # (A) interior common-environment dataset: BOTH ratios well-identified.
+    # half-sib pedigree + a common-env grouping assigned INDEPENDENTLY of pedigree,
+    # truth (sigma1,sigma2,sigma_e2) = (1.0, 0.5, 1.0).
+    rng = MersenneTwister(20260701)
+    sires = 20; q = 200
+    sire = zeros(Int, sires + q)
+    for i in 1:q; sire[sires + i] = rand(rng, 1:sires); end
+    Ainv = pedigree_inverse(collect(1:(sires + q)), sire, zeros(Int, sires + q))
+    A = inv(Symmetric(Matrix(Ainv))); na = size(Ainv, 1)
+    g = cholesky(Symmetric(A + 1e-8I)).L * randn(rng, na)          # sigma1 = 1
+    ngrp = 40; grp_eff = randn(rng, ngrp) .* sqrt(0.5)            # sigma2 = 0.5
+    recs = (sires + 1):(sires + q); n = q; X = ones(n, 1)
+    Z1 = zeros(n, na); Z2 = zeros(n, ngrp); y = zeros(n)
+    for (r, an) in enumerate(recs)
+        Z1[r, an] = 1.0; gg = rand(rng, 1:ngrp); Z2[r, gg] = 1.0
+        y[r] = 3.0 + g[an] + grp_eff[gg] + randn(rng)            # sigma_e2 = 1
+    end
+    A2I = sparse(Matrix(1.0I, ngrp, ngrp))
+    ci = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I)
+
+    # brackets the point estimate; both ratios strictly inside (0,1)
+    @test ci.converged
+    for r in (ci.ratio1, ci.ratio2)
+        @test r.boundary == false
+        @test 0 < r.lower < r.estimate < r.upper < 1
+        @test r.se > 0
+        @test r.lower_clamped == false && r.upper_clamped == false
+    end
+    # point estimates equal the underlying REML fit
+    fit = fit_two_effect_reml(y, X, sparse(Z1), Ainv, sparse(Z2), A2I)
+    @test ci.ratio1.estimate ≈ fit.ratio1
+    @test ci.ratio2.estimate ≈ fit.ratio2
+
+    # level nesting: 99% ⊇ 95% ⊇ 90% for both ratios
+    ci90 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I; level = 0.90)
+    ci99 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I; level = 0.99)
+    @test ci99.ratio1.lower < ci90.ratio1.lower && ci99.ratio1.upper > ci90.ratio1.upper
+    @test ci99.ratio2.lower < ci90.ratio2.lower && ci99.ratio2.upper > ci90.ratio2.upper
+
+    # which selection: :ratio1 computes ratio1 only, ratio2 point-only (NaN CI)
+    c1 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I; which = :ratio1)
+    @test !isnan(c1.ratio1.lower)
+    @test isnan(c1.ratio2.lower) && isnan(c1.ratio2.upper)
+    @test c1.ratio2.estimate ≈ ci.ratio2.estimate
+
+    # guards
+    @test_throws ArgumentError two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I; level = 1.5)
+    @test_throws ArgumentError two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), A2I; which = :bogus)
+
+    # (B) reduction: pure animal model (no common-env variance) → sigma2 → 0.
+    # ratio2 must be FLAGGED at the boundary (no spurious CI); ratio1 must reduce
+    # to heritability_interval on the underlying animal fit.
+    rng2 = MersenneTwister(2)
+    sb = 40; qb = 400
+    sireb = zeros(Int, sb + qb)
+    for i in 1:qb; sireb[sb + i] = rand(rng2, 1:sb); end
+    Ainvb = pedigree_inverse(collect(1:(sb + qb)), sireb, zeros(Int, sb + qb))
+    Ab = inv(Symmetric(Matrix(Ainvb))); nab = size(Ainvb, 1)
+    gb = cholesky(Symmetric(Ab + 1e-8I)).L * randn(rng2, nab)
+    recsb = (sb + 1):(sb + qb); nb = qb; Xb = ones(nb, 1)
+    Zb = zeros(nb, nab); yb = zeros(nb)
+    for (r, an) in enumerate(recsb); Zb[r, an] = 1.0; yb[r] = 2.0 + gb[an] + randn(rng2); end
+    ngrpb = 40; grpb = rand(rng2, 1:ngrpb, nb)
+    Z2b = zeros(nb, ngrpb); for r in 1:nb; Z2b[r, grpb[r]] = 1.0; end
+
+    spec = animal_model_spec(yb, Xb, sparse(Zb), sparse(Matrix(Ainvb)); method = :REML)
+    afit = fit_ai_reml(spec)
+    hci = heritability_interval(afit; level = 0.95)
+    cib = two_effect_ratio_interval(yb, Xb, sparse(Zb), Ainvb, sparse(Z2b),
+                                    sparse(Matrix(1.0I, ngrpb, ngrpb)))
+    # sigma2 collapsed → ratio2 flagged, NaN interval (not a bogus tight CI)
+    @test cib.ratio2.boundary == true
+    @test isnan(cib.ratio2.lower) && isnan(cib.ratio2.upper) && isnan(cib.ratio2.se)
+    # ratio1 stays well-defined and reduces to the animal-model heritability interval.
+    # Point matches tightly; endpoints match to a few % (FD observed information vs
+    # the analytic AI matrix used by heritability_interval — same estimand, different
+    # information estimator), so a realistic tol, not machine precision.
+    @test cib.ratio1.boundary == false
+    @test cib.ratio1.estimate ≈ heritability(afit) rtol = 1e-3
+    @test cib.ratio1.lower ≈ hci.lower rtol = 0.05
+    @test cib.ratio1.upper ≈ hci.upper rtol = 0.05
+
+    # (C) fully degenerate data (no genetic, no group signal) → BOTH ratios flagged,
+    # neither emits a spurious interval.
+    rng3 = MersenneTwister(99)
+    Ainvc = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    Zc = zeros(8, 4); for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Zc[rec, an] = 1.0; end
+    Z2c = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
+    yc = randn(rng3, 8) .* 0.5 .+ 10.0; Xc = ones(8, 1)
+    cic = two_effect_ratio_interval(yc, Xc, Zc, Ainvc, Z2c, Matrix(1.0I, 2, 2))
+    @test cic.ratio1.boundary == true && isnan(cic.ratio1.lower)
+    @test cic.ratio2.boundary == true && isnan(cic.ratio2.lower)
+end
+
 @testset "Phase 3 N-effect MME + REML (arbitrary independent random effects)" begin
     Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
     A = inv(Symmetric(Matrix(Ainv)))
@@ -8529,7 +8624,7 @@ end
 # ============================================================================
 # P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
 # CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
-# validation_status() row count stays 52; public_covered_count stays 1.
+# validation_status() row count stays 52; this contract-only slice does not change public_covered_count.
 # ============================================================================
 @testset "payload-v2 parser (P0.3)" begin
     # Shared small pedigree fixture (same as Phase 3 two-effect testset).

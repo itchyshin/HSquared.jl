@@ -13,8 +13,10 @@
 #         [--deploy-dir=~/.claude/hsquared-control-centre]
 #   julia --project=. tools/gen_status_json.jl --refresh-count   # recompute the cache live
 #
-# Honesty: public_covered_count is hard-pinned to 1 (v0.1 univariate Gaussian); the
-# covered/partial/planned split is generated, never quoted in prose.
+# Honesty: public_covered_count is hard-pinned to 2 — (1) the v0.1 univariate Gaussian
+# animal model (default `engine="fit"` path) and (2) the opt-in common-environment
+# two-effect model (`engine="julia", target="two_effect"`; c² covered, maternal leg
+# still experimental). The covered/partial/planned split is generated, never quoted in prose.
 
 using Dates
 
@@ -52,7 +54,7 @@ if hasflag("--refresh-count")
   "covered_external": $(get(d,"covered_external",0)),
   "partial": $(get(d,"partial",0)),
   "planned": $(get(d,"planned",0)),
-  "public_covered_count": 1,
+  "public_covered_count": 2,
   "refreshed_at": "$(Dates.format(now(), "yyyy-mm-dd"))",
   "refreshed_from_head": "$(trycmd(`git -C $root log -1 --format=%h`))",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
@@ -97,8 +99,8 @@ genat = Dates.format(now(), "yyyy-mm-ddTHH:MM:SS")
 status = """{
   "generated_at": "$genat",
   "generator_version": "tools/gen_status_json.jl @ $(trycmd(`git -C $root log -1 --format=%h`))",
-  "public_covered_count": 1,
-  "honesty_assert": "Public-covered FITTING surface = 1 (v0.1 univariate Gaussian animal model). Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
+  "public_covered_count": 2,
+  "honesty_assert": "Public-covered FITTING surface = 2: (1) v0.1 univariate Gaussian animal model (default path) and (2) the opt-in common-environment two-effect model (engine=julia, target=two_effect; c² covered, maternal leg experimental, intervals asymptotic/uncalibrated). Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
   "validation": {"rows": $rows, "covered": $cov, "covered_external": $covx, "partial": $part, "planned": $plan, "source": "cache", "refreshed_at": "$refreshed"},
   "repos": [
     {"name": "HSquared.jl", "branch": "$(jesc(jb))", "head": "$(jesc(jh))", "ci": "$(jesc(jci))"},
@@ -124,4 +126,4 @@ write(joinpath(deploy, "version.txt"), Dates.format(now(), "yyyymmddHHMMSS"))
 board = joinpath(root, "tools", "control-centre", "index.html")
 isfile(board) && cp(board, joinpath(deploy, "index.html"); force=true)
 
-println("wrote ", joinpath(deploy, "status.json"), "  (rows=$rows covered=$cov, public_covered=1)")
+println("wrote ", joinpath(deploy, "status.json"), "  (rows=$rows covered=$cov, public_covered=2)")
