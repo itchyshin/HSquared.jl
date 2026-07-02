@@ -5181,3 +5181,33 @@ Newest entries go at the top.
   (all applied). R CMD check caught a non-ASCII WARNING (em-dashes in status strings) → fixed `532d51d`;
   merged both PRs #232 (`HSquared.jl`) + #116 (`hsquared`) only after BOTH lanes' CI green.
 - Checks: `Pkg.test()` green; R CMD check green (1570 pass); both-lane CI green. Maintainer G10 delegated.
+
+## 2026-07-01 — Generality-gap Phase 2-R: arbitrary `(1|g)` → R public, `public_covered_count` 2→3 `[JL+R]`
+
+- The HEADLINE: `hsquared(y ~ animal(1|id, pedigree=ped) + (1|nest) + (1|year), engine="julia",
+  target="multi_effect")` now fits + returns per-component variances + animal-block h² + intervals.
+  The opt-in arbitrary-N INDEPENDENT random-effect model is the 3rd public-covered model.
+- Engine (`HSquared.jl`): NEW `multi_effect_ratio_interval` — generalizes `two_effect_ratio_interval`
+  to K components (delta-method logit CI per ratio from the FD-Hessian of the multi-effect REML loglik;
+  boundary-flagged; NOT coverage-calibrated; reduces to two-effect at K=2, `heritability_interval` at
+  K=1). Shared refactor: `_ratio_delta_ci` (dimension-agnostic) + `_reml_fd_information`. 47 tests.
+- R (`hsquared`): `(1|g)` grammar (accept intercepts, REJECT `(x|g)` slopes + `(x||g)`; iid-effects
+  LIST fixes the type-key collision), N-block emitter, `multi_effect` dispatch via
+  `hs_fit_julia_n_effect_payload` → `parse/fit/result_payload_v2`, `hs_normalize_n_effect_result`
+  (h² = animal block only; Falconer `variance_ratios`), `hs_attach_n_effect_intervals`
+  (`heritability_interval()` resolves for K≥3; per-block `variance_ratio_intervals`; NaN→NA).
+- Evidence: live R↔engine parity **EXACT (max diff 0)** on a K=3 fixture, TWO independent checks
+  (marshalling identity + native-Julia rebuild → verifies the JuliaCall N-block marshalling); live K≥3
+  test 96/0/0; `sommer` same-estimand ~1.5e-2; engine `V3-NEFFECT-REML` covered (48-seed gate + sommer,
+  cited). Vignette `multi-effect-comparator.Rmd` + parity record.
+- SCOPE (Rose-adjudicated): INDEPENDENT iid + animal-A only — NOT correlated / RR / random-slope /
+  non-Gaussian; maternal leg stays experimental; intervals asymptotic/uncalibrated.
+- `public_covered_count` 2→**3** at all 5 pin sites (`status_cache.json` + `gen_status_json.jl`);
+  new 06-public-claims-register row; 11-completion-plan Two→Three; R `validation-status.R` row 8 extended.
+  Engine `validation_status()` count 52 + engine covered-count UNCHANGED (public-SURFACE flip). v0.1
+  default untouched. Real `rose-systems-auditor` → PROMOTE-WITH-CHANGES (all applied; stale-string fixes).
+- CI caught a Julia-1.11/1.12 version-fragile boundary test → fixed to a contract-based assertion
+  (verified on 1.10 AND 1.12); merged PRs #234 (`HSquared.jl`) + #117 (`hsquared`) only after BOTH
+  lanes' CI green (paired-PR discipline).
+- Checks: `Pkg.test()` green on Julia 1.10 AND 1.12; R CMD check green; both-lane CI green (Julia 1 +
+  1.10 + docs + R-CMD-check). Maintainer G10 delegated.
