@@ -1160,6 +1160,8 @@ function fit_multi_effect_reml(
         effects = effects_out,
         loglik = loglik,
         converged = Optim.converged(result),
+        iterations = Optim.iterations(result),
+        f_calls = Optim.f_calls(result),
         boundary = [s / total < 1e-6 for s in sigmas],
     )
 end
