@@ -23,6 +23,16 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-07-02 — heads-up to the main lane (no contract impact)
+
+Julia-lane-only doc hygiene landing as [HSquared.jl#243](https://github.com/itchyshin/HSquared.jl/pull/243):
+retired stale hardcoded `52` row-count comments now that `validation_status()`
+returns **53** (`tools/status_cache.json`). **No contract, bridge/payload,
+numerics, or public claim touched** — count stays 53, covered count unchanged,
+`public_covered_count` stays **5**, v0.1 default untouched. **No `hsquared`
+change is required or coming from this.** Flagged only so the shared ledger
+shows why #243 exists.
+
 ## Public Landing Pages
 
 - Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
