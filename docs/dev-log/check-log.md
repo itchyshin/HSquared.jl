@@ -5143,3 +5143,41 @@ Newest entries go at the top.
   `K`-component estimator (dense path is a small-`K`/small-`n` oracle) + the R `(1|g)` surface.
 - Checks: `Pkg.test()` green (`sim/.neffect_flip_test.log.txt`). `docs/make.jl` deferred to pre-push
   (VitePress). `[JL]` engine-only.
+
+## 2026-07-01 — Generality-gap Phase 0 (S0): payload-v2 bridge FROZEN `[JL+R]`
+
+- Frozen the multi-block payload-v2 R→Julia bridge contract (ultraplan Phase 0). Julia:
+  `src/bridge_payload_v2.jl` (`parse_payload_v2`/`fit_payload_v2`/`result_payload_v2`, reusing existing
+  estimators — no new numerics) + frozen `docs/design/21-payload-v2-multiblock-schema.md`. R
+  (`hsquared`): `hs_build_bridge_payload()` emits additive `payload_version=2L` + `random_effects` block
+  list (v0.1 byte-identical).
+- Cross-lane parity (`test/test_payload_v2_parity.jl`): R-emitted payloads round-trip **byte-identically**
+  (3 fixtures, max_abs=max_rel=0.0); v0.1 fast-path `===` bit-identical. Parser 54/54; full `Pkg.test()`
+  3641/3641; R emitter 82 + existing 38 pass.
+- Fences: `maternal_genetic()` stays INDEPENDENT (two-effect, NOT correlated 2×2-G); `coefcov` result
+  shape deferred to P3.0; frozen slots marked not-live. Real Rose → PROMOTE-WITH-CHANGES (JSON3 →
+  test-only dep; schema self-contradiction fixes; all applied).
+- CONTRACT-ONLY: `validation_status()` count 52 UNCHANGED; **`public_covered_count` UNCHANGED at 1**.
+  Merged PRs #231 (`HSquared.jl`) + #115 (`hsquared`); CI green both lanes.
+
+## 2026-07-01 — Generality-gap Phase 1: FIRST public flip — `public_covered_count` 1→2 `[JL+R]`
+
+- The opt-in **common-environment two-effect** animal model becomes public-covered (2nd public model
+  beyond v0.1; `engine="julia", target="two_effect"`, NOT the default path).
+- Engine (`HSquared.jl`): NEW `two_effect_ratio_interval` — asymptotic delta-method logit CI for h²
+  (ratio1) / c²·m² (ratio2) from a finite-difference observed-information Hessian, mirroring
+  `heritability_interval`; boundary-flagged (σ→0 → NaN, no spurious CI); reduces to `heritability_interval`
+  at σ2²=0; NOT coverage-calibrated (house caveat). 26/26 new tests.
+- R (`hsquared`): exported `common_env_proportion()`/`maternal_proportion()` + `_interval()`;
+  `heritability_interval()` now resolves for two-effect; Falconer fences; `sommer` comparator vignette +
+  live-parity record. `validation_status()` position 8 `partial→covered` (covered 3→4).
+- Evidence: live R↔engine parity **EXACT** (max diff 0, common-env + maternal legs); `sommer`
+  `vsr(id,Gu=A)+vsr(litter)` ~2e-5; engine `V3-TWOEFFECT-REML` covered (48-seed gate + blupf90+, cited).
+- SCOPE (Rose-adjudicated): common-env / c² ONLY; **maternal leg (A2=pedigree) stays experimental**
+  (harder direct-maternal-correlated identifiability; gate/comparator owed).
+- `public_covered_count` 1→**2** pinned at all 5 sites (`status_cache.json` + `gen_status_json.jl`);
+  06-public-claims-register + 11-completion-plan updated. Engine `validation_status()` count 52 +
+  engine covered-count UNCHANGED (public-SURFACE flip). Real Rose pre-public audit → PROMOTE-WITH-CHANGES
+  (all applied). R CMD check caught a non-ASCII WARNING (em-dashes in status strings) → fixed `532d51d`;
+  merged both PRs #232 (`HSquared.jl`) + #116 (`hsquared`) only after BOTH lanes' CI green.
+- Checks: `Pkg.test()` green; R CMD check green (1570 pass); both-lane CI green. Maintainer G10 delegated.
