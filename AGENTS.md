@@ -9,6 +9,22 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (OVERNIGHT 7-hour autonomous session CLOSE — generality-gap ultraplan public goal
+  DELIVERED, `public_covered_count` 1→**5**; Claude solo; `HSquared.jl` `main` @ `90bdf435`, `hsquared`
+  `main` @ `7e848ee`; live `validation_status()` rows **53** / covered 13 / covered_external 3 / partial 36
+  / planned 1).** One session moved the R public surface from a single covered model to **five**: v0.1
+  Gaussian → (Phase 1) common-env two-effect/c² → (Phase 2-R) arbitrary-N `(1|g)` → (Phase 3) RR k=2
+  reaction norm → (Phase 4) direct–maternal correlated 2×2 `G_dm` — each on the Phase 0 payload-v2
+  bridge, each with a pre-declared 48-seed gate (all PASSED, no banked negatives) + a `sommer`
+  same-estimand comparator + a real Rose audit + paired CI-green merge. Plus **Phase 5 P5.1**: a sparse
+  K-component AI-REML estimator (`fit_sparse_multi_effect_aireml`; `V3-NEFFECT-SPARSE` partial; exact
+  dense-match oracle; NO perf claim — benchmark OWED; no public move). HONESTY PINS HELD: engine-covered
+  ≠ R-public-covered; v0.1 default untouched; all intervals asymptotic/uncalibrated (RR + direct–maternal
+  point-estimate); direct h² ≠ Willham total h². Both repos green incl. `hsquared` pkgdown (the
+  user-flagged pkgdown CI failure was fixed in `hsquared` #118). NEXT: Phase 5 perf close (pre-declared
+  DRAC/Totoro sparse-vs-dense benchmark + scale comparator); standing debt (BLUPF90 `OPTIONAL mat` 2nd
+  direct–maternal comparator lineage, broader-DGP recovery, calibrated intervals). START HERE:
+  `docs/dev-log/after-task/2026-07-02-overnight-7hr-session.md`.
 - **As of 2026-07-02 (generality-gap ultraplan Phase 4: direct–maternal correlated 2×2 G_dm → covered
   + R public; `public_covered_count` 4→**5**; Claude solo autonomous; `HSquared.jl` `main` @ `e34a1ef8`
   (#238); `hsquared` `main` @ `7e848ee` (#120)).** The FIRST correlated random-effect structure promoted
