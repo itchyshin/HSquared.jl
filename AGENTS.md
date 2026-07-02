@@ -9,6 +9,48 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (generality-gap ultraplan Phase 4: direct–maternal correlated 2×2 G_dm → covered
+  + R public; `public_covered_count` 4→**5**; Claude solo autonomous; `HSquared.jl` `main` @ `e34a1ef8`
+  (#238); `hsquared` `main` @ `7e848ee` (#120)).** The FIRST correlated random-effect structure promoted
+  to covered: `fit_direct_maternal_reml` — the 2×2 `G_dm` over `[a_d; a_m]` with shared pedigree `A`
+  and one residual variance — satisfies BOTH doc-16 covered legs. Evidence: **(1) PRE-DECLARED 48-seed
+  bias/MCSE recovery gate PASS** (predeclaration `76f6c67e` committed BEFORE the run; harness
+  `sim/phase4_direct_maternal_recovery_gate.jl` byte-identical pre/post; confound-breaking DGP — 4
+  overlapping generations, dams with own records + 8 offspring, 90 identifying dams, n=960 — plus a
+  negative-control cell; 48/48 converged; all four |bias|≤2·MCSE: σ²_ad 0.13·MCSE, σ²_am 1.65·MCSE,
+  σ_dm 0.72·MCSE, σ²e 0.24·MCSE; EBV acc direct 0.667/maternal 0.759; max cond 157; max |r_am| 0.80,
+  no seed rode the ±1 boundary). **(2) `sommer` 4.4.5 `covm()` same-estimand REML comparator AGREE**
+  (≤1.1e-2 on all entries including σ_dm; `covm(vsm(ism(animal),Gu=A), vsm(ism(dam_id),Gu=A))`
+  pattern; **the RR `usm(leg())` idiom does NOT transfer** — maternal coefficient loads on a different
+  incidence matrix `Z_m` = record→dam; column-identification verified: absolute variance-entry
+  agreement, NOT correlation-only). **(3) Engine G1/G2**: σ_dm=0 reduction byte-identical to the
+  two-independent-effect model; negative-off-diagonal marginal-GLS oracle matched ~1e-9.
+  **R vertical** (paired PR #120): opt-in `target="direct_maternal"` surface (`maternal_genetic()`
+  stub wired to `fit_direct_maternal_reml`); labelled-triple `heritability()` returning direct h²,
+  m², and Willham total h²_T (`σ_P = σ²_ad + σ²_am + σ_dm + σ²e`); corrected phenotypic variance
+  denominator (includes σ_dm); `total_heritability()` extractor. Live R↔engine parity verified.
+  **SCOPE (Rose-adjudicated):** validation-scale dense n≤~1000, OPT-IN NOT the public default; direct
+  h² ≠ total h² (Willham — labelled triple, never a bare scalar); negative r_am is real and expected;
+  |r_am|→1 rides on `converged=false` (covered claim is on well-conditioned identified designs);
+  single relationship matrix A (not the maternal-A2/metafounder generalization). Covered = engine
+  correctly implements direct–maternal 2×2-G REML on the tested confound-broken design, NOT
+  small-sample accuracy of any single component. **Honesty pins HOLD:**
+  `validation_status()` count **52 UNCHANGED** (covered 12→**13**, partial 36→35), v0.1 default
+  untouched, `public_covered_count` 4→**5** at ALL 5 pin sites (`status_cache.json` +
+  `gen_status_json.jl`). Real Fable `rose-systems-auditor` → **PROMOTE-WITH-CHANGES** (3
+  stale-status contradictions + sibling field fixes; all applied). **R-CMD-check non-ASCII lesson
+  (SECOND occurrence):** non-ASCII em-dashes in R string literals caused R-CMD-check WARNING (invisible
+  to `devtools::test`); fixed by ASCII-izing 4 strings before merge. **Recommend adding "run R CMD
+  check locally for R branches, not just devtools::test" to the R-lane DoD** — this has now recurred
+  twice (Phase 1 + Phase 4). Merged only after BOTH lanes CI green (paired-PR discipline). **SESSION
+  ARC (generality-gap ultraplan full run): `public_covered_count` 1→5** across the programme:
+  Phase 1 common-env two-effect/c², Phase 2-R arbitrary-N `(1|g)`, Phase 3 RR k=2, Phase 4
+  direct–maternal 2×2 G_dm. **NEXT: Phase 5 sparse AI-REML N-effect scale (measure-first, no perf
+  claim without a pre-declared benchmark). Standing debt: BLUPF90 AIREMLF90 2×2-G optional 2nd-
+  lineage comparator (OPTIONAL — not a covered blocker), broader-DGP/larger-scale direct–maternal
+  recovery, maternal-A2 generalization (separate pedigree per leg).** START HERE:
+  `docs/dev-log/after-task/2026-07-02-phase4-direct-maternal.md`.
+
 - **As of 2026-07-01 (generality-gap ultraplan Phase 3: random regression k=2 / random slopes `rr()` →
   covered + R public; `public_covered_count` 3→**4**; Claude solo autonomous; `HSquared.jl` `main` @
   `13f9662f` (#236); `hsquared` `main` @ `e57a4e8` (#119)).** The 4th public-covered model: opt-in
