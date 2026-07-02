@@ -29,7 +29,7 @@ object flows back into the request payload. This matches the current bridge:
 `bridge-payload.R:137` sets `metadata$ainv_status = "build_in_julia"`).
 
 **Honesty:** this is a *contract only*. It ships no estimator, activates no R
-formula, and makes no capability claim. `public_covered_count` stays 1.
+formula, and makes no capability claim (contract-only; does not move `public_covered_count`).
 Engine-covered ≠ R-public-covered.
 
 ---
@@ -364,8 +364,8 @@ text above.
 
 ## 10. What this doc does NOT do
 
-- No estimator, no R formula activation, no covered claim (`public_covered_count`
-  stays 1). The `coefcov` multi-block and `correlated`-via-`maternal_genetic()`
+- No estimator, no R formula activation, no covered claim (contract-only; this
+  slice does not move `public_covered_count`). The `coefcov` multi-block and `correlated`-via-`maternal_genetic()`
   paths are FROZEN SLOTS, not wired estimators.
 - The R emitter (§7) is implemented in the companion S0 branch
   `feat/2026-07-01-payload-v2-emitter`; this HSquared.jl file is not itself the R edit.
