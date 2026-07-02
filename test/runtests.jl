@@ -8861,7 +8861,7 @@ end
 # ============================================================================
 # P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
 # CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
-# validation_status() row count stays 52; this contract-only slice does not change public_covered_count.
+# this contract-only slice does not change the validation_status() row count or public_covered_count.
 # ============================================================================
 @testset "payload-v2 parser (P0.3)" begin
     # Shared small pedigree fixture (same as Phase 3 two-effect testset).
