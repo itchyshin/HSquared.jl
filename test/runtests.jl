@@ -437,7 +437,7 @@ end
     @test occursin("no bridge payload change", loco_marker_row.claim_boundary)
     threshold_row = only(row for row in validation if row.id == "V5-MARKER-THRESHOLD")
     @test threshold_row.phase == "Phase 5"
-    @test threshold_row.status == "covered"   # scoped covered (doc-33 substitutable gate, 2026-06-30)
+    @test threshold_row.status == "covered"   # scoped covered (doc-16 substitutable gate, 2026-06-30)
     @test occursin("fixed-marker-panel type-I smoke", threshold_row.evidence)
     @test occursin("machine-readable TSV evidence", threshold_row.evidence)
     @test occursin("0.015/0.065/0.050", threshold_row.evidence)
@@ -6132,6 +6132,88 @@ end
     @test_throws ArgumentError fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; max_dense_cells = 4)
     @test_throws ArgumentError fit_direct_maternal_reml(y, X, Zd, Zm, Ainv;
         initial = (G_dm = [1.0 2.0; 2.0 1.0], sigma_e2 = 1.0))
+end
+
+@testset "direct_maternal_interval (asymptotic delta-method SEs/CIs)" begin
+    # Compact 3-generation confound-broken design (gen-1 dams have BOTH their own
+    # record AND recorded offspring); correlated direct+maternal BVs drawn from
+    # G ⊗ A. Deterministic (fixed seed → interior r_am, PD information).
+    ids = String[]; sire = String[]; dam = String[]
+    addp!(i, s, d) = (push!(ids, i); push!(sire, s); push!(dam, d))
+    fd = ["fd$i" for i in 1:10]; fs = ["fs$i" for i in 1:5]
+    for d in fd; addp!(d, "0", "0"); end
+    for s in fs; addp!(s, "0", "0"); end
+    g1 = String[]; k = 0
+    for d in fd, _ in 1:6
+        k += 1; o = "g1_$k"; addp!(o, fs[(k % 5) + 1], d); push!(g1, o)
+    end
+    g1dams = g1[1:15]; g1sires = g1[16:30]
+    g2 = String[]; k = 0
+    for d in g1dams, _ in 1:6
+        k += 1; o = "g2_$k"; addp!(o, g1sires[(k % length(g1sires)) + 1], d); push!(g2, o)
+    end
+    P = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(P)
+    q = size(Ainv, 1)
+    pos = Dict(id => i for (i, id) in enumerate(P.ids))
+    dam_of = Dict(ids[i] => dam[i] for i in eachindex(ids))
+    recorded = vcat(g1, g2); n = length(recorded)
+    Zd = zeros(n, q); Zm = zeros(n, q)
+    for (r, o) in enumerate(recorded)
+        Zd[r, pos[o]] = 1.0; Zm[r, pos[dam_of[o]]] = 1.0
+    end
+    rng = MersenneTwister(20264106)
+    A = inv(Symmetric(Matrix(Ainv)))
+    LA = cholesky(Symmetric(A + 1e-10I)).L
+    LG = cholesky(Symmetric([1.0 -0.25; -0.25 0.6])).L
+    U = LA * randn(rng, q, 2) * transpose(LG)
+    X = ones(n, 1)
+    y = 5.0 .+ [U[pos[o], 1] for o in recorded] .+ [U[pos[dam_of[o]], 2] for o in recorded] .+ randn(rng, n)
+
+    ci = direct_maternal_interval(y, X, Zd, Zm, Ainv)
+    fit = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv)
+
+    @test ci.information_posdef
+    @test ci.converged
+    @test ci.level == 0.95
+    @test ci.interval_method == "asymptotic_delta_uncalibrated"
+
+    zq = HSquared._standard_normal_quantile(0.975)
+    # every reported quantity: positive SE, brackets the point estimate, width = 2·z·se
+    for k in (:sigma_ad, :sigma_am, :sigma_dm, :sigma_e2)
+        c = getfield(ci.variance_components, k)
+        @test c.se > 0
+        @test c.lower < c.estimate < c.upper
+        @test c.upper - c.lower ≈ 2 * zq * c.se rtol = 1e-8
+    end
+    # VC point estimates match the fit exactly
+    @test ci.variance_components.sigma_ad.estimate ≈ fit.variance_components.sigma_ad
+    @test ci.variance_components.sigma_dm.estimate ≈ fit.variance_components.sigma_dm
+
+    # genetic correlation: Fisher-z interval, strictly inside (-1, 1)
+    r = ci.genetic_correlation
+    @test r.estimate ≈ fit.genetic_correlation
+    @test -1 < r.lower < r.estimate < r.upper < 1
+    @test r.method == :fisher_z
+
+    # Willham labelled triple present and bracketed
+    for c in (ci.direct_heritability, ci.maternal_ratio, ci.total_heritability)
+        @test c.se > 0
+        @test c.lower < c.estimate < c.upper
+    end
+    @test occursin("Willham", ci.total_heritability.convention)
+
+    # wider confidence level → wider interval
+    lo = direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.90).variance_components.sigma_ad
+    hi = direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.99).variance_components.sigma_ad
+    @test (hi.upper - hi.lower) > (lo.upper - lo.lower)
+
+    # argument guard: level ∈ (0, 1)
+    @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.0)
+    @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 1.0)
+    # boundary/flat-surface guard: tiny uninformative data → information not PD
+    @test_throws ArgumentError direct_maternal_interval([1.0, 2.0, 1.5, 2.5], ones(4, 1),
+        Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4))
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin

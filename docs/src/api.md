@@ -128,6 +128,8 @@ HSquared.multi_effect_mme
 HSquared.fit_multi_effect_reml
 HSquared.fit_sparse_multi_effect_aireml
 HSquared.multi_effect_ratio_interval
+HSquared.fit_direct_maternal_reml
+HSquared.direct_maternal_interval
 HSquared.NonGaussianFit
 HSquared.fit_laplace_reml
 HSquared.laplace_reml_interval

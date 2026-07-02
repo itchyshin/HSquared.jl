@@ -1660,7 +1660,7 @@ surface (`target="direct_maternal"` / `maternal_genetic()`), a `sommer` 4.4.5
 and a PRE-DECLARED 48-seed bias/MCSE recovery gate (48/48 converged, all four
 `|bias| ≤ 2·MCSE`; see
 `docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-covered-evidence.md`).
-INTERPRETATION FENCE (Falconer): a negative `r_am` is real and expected; the
+INTERPRETATION FENCE (Willham): a negative `r_am` is real and expected; the
 direct heritability `σ_ad/σ_P` is NOT "the heritability" (the selection-relevant
 total additive variance involves `σ_dm`); callers must label direct-vs-total,
 never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
@@ -1745,6 +1745,138 @@ function fit_direct_maternal_reml(
         maternal_effects = (ids = aids, values = am),
         loglik = loglik,
         converged = Optim.converged(result),
+    )
+end
+
+"""
+    direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.95, initial = nothing,
+                             iterations = 200, ids = nothing, fd_step = 1e-4,
+                             max_dense_cells = 1_000_000)
+
+Asymptotic delta-method standard errors and confidence intervals for the
+direct–maternal REML model ([`fit_direct_maternal_reml`](@ref)). Fits the model,
+forms the observed information as the central finite-difference Hessian of the
+dense REML log-likelihood over the four natural variance components
+`θ = (σ²_ad, σ²_am, σ_dm, σ²e)` at the optimum, inverts it for `cov(θ̂)`, and
+delta-transforms to each reported quantity — the SAME finite-difference-Hessian +
+delta machinery as [`repeatability_interval`](@ref).
+
+Returns a `NamedTuple` with per-component `(estimate, se, lower, upper)` records
+for the variance components (`sigma_ad`, `sigma_am`, `sigma_dm`, `sigma_e2`), the
+direct–maternal genetic correlation `r_am` (Fisher-`z` interval, so it stays in
+`(-1, 1)`), and the Willham labelled triple `direct_heritability` (`σ²_ad/σ_P`),
+`maternal_ratio` (`σ²_am/σ_P`), and `total_heritability`
+(`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ_P`, Willham (1972), with
+`σ_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
+`total_heritability()` surface).
+
+INTERVALS ARE ASYMPTOTIC / UNCALIBRATED (normal-`z` Wald / delta on the observed
+REML information; Fisher-`z` for `r_am`), NOT coverage-calibrated — the same house
+convention as every other interval helper. Variance-component Wald bounds are NOT
+clamped (a lower bound may fall below 0 on a flat surface; that is honest and
+flagged by `information_posdef`). If the observed information is not positive
+definite (flat surface / boundary optimum, e.g. `|r_am| → 1`) the interval is
+undefined and an error is thrown, mirroring [`repeatability_interval`](@ref).
+Internal / opt-in; this does NOT change the fitted result or any R-facing surface.
+"""
+function direct_maternal_interval(
+    y::AbstractVector, X::AbstractMatrix, Zd::AbstractMatrix, Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    level::Real = 0.95,
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    fd_step::Real = 1e-4,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    fit = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = initial,
+                                   iterations = iterations, ids = ids,
+                                   max_dense_cells = max_dense_cells)
+    vc = fit.variance_components
+    theta = [vc.sigma_ad, vc.sigma_am, vc.sigma_dm, vc.sigma_e2]
+
+    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+    Xd = Matrix{Float64}(X); Zdd = Matrix{Float64}(Zd); Zmd = Matrix{Float64}(Zm)
+    yv = Float64.(y)
+    # REML loglik as a function of the natural VCs (G = [σ²_ad σ_dm; σ_dm σ²_am]).
+    function loglik(t)
+        G = [t[1] t[3]; t[3] t[2]]
+        se2 = t[4]
+        se2 > 0 || return NaN
+        try
+            return _direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G, se2)[1]
+        catch err
+            (err isa PosDefException || err isa SingularException) && return NaN
+            rethrow()
+        end
+    end
+
+    # observed information = −Hessian of the REML loglik (central finite differences)
+    h = fd_step .* max.(abs.(theta), 1e-3)
+    H = zeros(4, 4)
+    for i in 1:4, j in 1:4
+        ei = zeros(4); ei[i] = h[i]
+        ej = zeros(4); ej[j] = h[j]
+        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
+                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    all(isfinite, H) ||
+        throw(ArgumentError("direct–maternal interval undefined: the REML surface is not " *
+            "finite under perturbation (boundary optimum / non-PD G_dm; e.g. |r_am| → 1)"))
+    info = Symmetric(-H)
+    isposdef(info) ||
+        throw(ArgumentError("direct–maternal interval undefined: REML information is not " *
+            "positive definite (flat surface / boundary optimum)"))
+    covar = inv(info)
+
+    zq = _standard_normal_quantile((1 + level) / 2)
+    seof(g) = sqrt(max(dot(g, covar * g), 0.0))
+    function wald(est, g)
+        s = seof(g)
+        return (estimate = est, se = s, lower = est - zq * s, upper = est + zq * s)
+    end
+
+    sad, sam, sdm, se2 = theta
+    sP = sad + sam + sdm + se2
+
+    # variance components: gradients are the standard basis vectors
+    vc_out = (
+        sigma_ad = wald(sad, [1.0, 0.0, 0.0, 0.0]),
+        sigma_am = wald(sam, [0.0, 1.0, 0.0, 0.0]),
+        sigma_dm = wald(sdm, [0.0, 0.0, 1.0, 0.0]),
+        sigma_e2 = wald(se2, [0.0, 0.0, 0.0, 1.0]),
+    )
+
+    # genetic correlation r_am = σ_dm / sqrt(σ²_ad σ²_am); Fisher-z interval
+    r = fit.genetic_correlation
+    abs(r) < 1 || throw(ArgumentError("direct–maternal r_am is on the ±1 boundary; interval undefined"))
+    denom = sqrt(sad * sam)
+    gr = [-0.5 * r / sad, -0.5 * r / sam, 1.0 / denom, 0.0]
+    se_r = seof(gr)
+    zr = atanh(r); se_zr = se_r / (1 - r^2)
+    r_ci = (estimate = r, se = se_r, method = :fisher_z,
+            lower = tanh(zr - zq * se_zr), upper = tanh(zr + zq * se_zr))
+
+    # Willham labelled triple over σ_P = σ²_ad + σ²_am + σ_dm + σ²e
+    sP2 = sP^2
+    direct_h2 = wald(sad / sP, [(sP - sad) / sP2, -sad / sP2, -sad / sP2, -sad / sP2])
+    m2 = wald(sam / sP, [-sam / sP2, (sP - sam) / sP2, -sam / sP2, -sam / sP2])
+    N = sad + 1.5 * sdm + 0.5 * sam
+    total_h2 = wald(N / sP,
+        [(sP - N) / sP2, (0.5 * sP - N) / sP2, (1.5 * sP - N) / sP2, -N / sP2])
+
+    return (
+        level = level,
+        converged = fit.converged,
+        variance_components = vc_out,
+        genetic_correlation = r_ci,
+        direct_heritability = direct_h2,
+        maternal_ratio = m2,
+        total_heritability = merge(total_h2,
+            (convention = "Willham (1972): (σ²_ad + 1.5σ_dm + 0.5σ²_am)/σ_P, σ_P = σ²_ad+σ²_am+σ_dm+σ²e",)),
+        interval_method = "asymptotic_delta_uncalibrated",
+        information_posdef = true,
     )
 end
 
