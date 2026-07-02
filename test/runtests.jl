@@ -172,8 +172,9 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 52
+    @test length(validation) == 53
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
+    @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
     @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
@@ -5984,6 +5985,111 @@ end
     @test mc.ratios[2].boundary == true && isnan(mc.ratios[2].lower)
 end
 
+@testset "Phase 5 sparse multi-effect AI-REML (reduces EXACTLY to dense N-effect optimum)" begin
+    # The correctness gate for the sparse K-component AI-REML scale path: on the SAME
+    # data at small scale, its optimum must reduce to the DENSE fit_multi_effect_reml
+    # optimum (K=2 AND K=3), and N=1 must reduce to fit_ai_reml. If the selected-inverse
+    # score/AI trace were wrong, these would fail.
+    Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    Zf = zeros(8, 4); for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Zf[rec, an] = 1.0; end
+    yf = [14.0, 13.0, 6.9, 6.1, 12.1, 11.5, 8.9, 8.5]; Xf = ones(8, 1)
+    Z2f = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
+    Z3f = [1.0 0; 0 1; 1 0; 0 1; 1 0; 0 1; 0 1; 1 0]
+    Aiid = sparse(Matrix(1.0I, 2, 2)); Zfs = sparse(Zf); Ais = sparse(Matrix(Ainv))
+    n = length(yf); p = size(Xf, 2)
+    const2pi = 0.5 * (n - p) * log(2 * pi)          # dense (no-2π) → sparse (full) offset
+
+    # --- (A) machine-precision objective identity at ARBITRARY variance components:
+    #     sparse_multi_reml_loglik == _multi_effect_dense (minus the (n-p)log(2π) const).
+    #     This proves the sparse objective IS the dense REML objective (independent of
+    #     any optimizer).
+    As = [inv(Symmetric(Matrix(Ainv))), Matrix(1.0I, 2, 2), Matrix(1.0I, 2, 2)]
+    ZAs = [(Zf, As[1]), (Z2f, As[2]), (Z3f, As[3])]
+    effS3 = [(Zfs, Ais), (sparse(Z2f), Aiid), (sparse(Z3f), Aiid)]
+    for θ in ([0.7, 0.3, 0.5, 1.3], [2.0, 1.0, 0.5, 3.0], [0.1, 0.9, 1.5, 0.4])
+        sp = sparse_multi_reml_loglik(yf, Xf, effS3, θ[1:3], θ[4])[1]
+        de = HSquared._multi_effect_dense(yf, Xf, ZAs, θ[1:3], θ[4])[1]
+        @test sp ≈ de - const2pi atol = 1e-8
+    end
+
+    # --- (B) N=1 reduces to fit_ai_reml (~1e-6; observed ~1e-14) ---
+    spec1 = animal_model_spec(yf, Xf, Zfs, Ais; method = :REML)
+    ai = fit_ai_reml(spec1)
+    s1 = fit_sparse_multi_effect_aireml(yf, Xf, [(Zfs, Ais)])
+    @test s1.variance_components.sigmas[1] ≈ ai.variance_components.sigma_a2 rtol = 1e-6
+    @test s1.variance_components.sigma_e2 ≈ ai.variance_components.sigma_e2 rtol = 1e-6
+    @test s1.loglik ≈ ai.likelihood.loglik rtol = 1e-6
+    @test s1.converged
+
+    # --- (C) analytic score (selected-inverse trace) == central-FD gradient of the
+    #     sparse REML loglik (~1e-5; observed ~2e-8). Directly verifies the trace term. ---
+    sparse_ll(θ) = sparse_multi_reml_loglik(yf, Xf, effS3, θ[1:3], θ[4])[1]
+    θ0 = [0.8, 0.4, 0.6, 1.2]; h = 1e-6
+    fdg = [ (sparse_ll([k == j ? θ0[k] + h : θ0[k] for k in 1:4]) -
+             sparse_ll([k == j ? θ0[k] - h : θ0[k] for k in 1:4])) / (2h) for j in 1:4 ]
+    # rebuild the analytic score exactly as the estimator does at θ0
+    Zs0 = [Zfs, sparse(Z2f), sparse(Z3f)]; Ainvs0 = [Ais, Aiid, Aiid]
+    qs0 = [4, 2, 2]; offs0 = [1, 5, 7]; Zfull0 = reduce(hcat, Zs0)
+    rp0 = inv(θ0[4]); Xs0 = sparse(Xf)
+    G0 = HSquared.blockdiag((Ainvs0[i] .* inv(θ0[i]) for i in 1:3)...)
+    lhs0 = [rp0 .* (transpose(Xs0) * Xs0)  rp0 .* (transpose(Xs0) * Zfull0)
+            rp0 .* (transpose(Zfull0) * Xs0)  rp0 .* (transpose(Zfull0) * Zfull0) .+ G0]
+    fac0 = cholesky(Symmetric(lhs0); check = true)
+    sol0 = fac0 \ vcat(rp0 .* (transpose(Xs0) * yf), rp0 .* (transpose(Zfull0) * yf))
+    e0 = yf .- Xs0 * sol0[1:1] .- Zfull0 * sol0[2:end]
+    tr0 = HSquared.selinv_block_traces(fac0, Ainvs0, offs0)
+    asc = zeros(4)
+    for i in 1:3
+        ui = sol0[(offs0[i] + 1):(offs0[i] + qs0[i])]
+        asc[i] = -0.5 / θ0[i]^2 * (qs0[i] * θ0[i] - tr0[i] - dot(ui, Ainvs0[i] * ui))
+    end
+    asc[4] = -0.5 / θ0[4]^2 * (θ0[4] * (n - 1 - 8 + sum(tr0[i] / θ0[i] for i in 1:3)) - dot(e0, e0))
+    @test maximum(abs.(asc .- fdg)) < 1e-5
+
+    # --- (D) K=2 reduction to the dense fit_multi_effect_reml optimum ---
+    dense2 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2))])
+    sp2 = fit_sparse_multi_effect_aireml(yf, Xf, [(Zfs, Ais), (sparse(Z2f), Aiid)]; em_warmup = 5)
+    @test sp2.converged
+    d2 = vcat(dense2.variance_components.sigmas, dense2.variance_components.sigma_e2)
+    v2 = vcat(sp2.variance_components.sigmas, sp2.variance_components.sigma_e2)
+    @test v2 ≈ d2 rtol = 1e-3                                  # optimum agreement (dense NelderMead-limited)
+    @test sp2.loglik ≈ dense2.loglik - const2pi atol = 1e-6    # REML loglik agreement (tight)
+    @test sp2.loglik >= dense2.loglik - const2pi - 1e-9        # sparse Newton is at least as good
+
+    # --- (E) K=3 reduction to the dense fit_multi_effect_reml optimum ---
+    dense3 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2)), (Z3f, Matrix(1.0I, 2, 2))])
+    sp3 = fit_sparse_multi_effect_aireml(yf, Xf, effS3; em_warmup = 5)
+    @test sp3.converged
+    d3 = vcat(dense3.variance_components.sigmas, dense3.variance_components.sigma_e2)
+    v3 = vcat(sp3.variance_components.sigmas, sp3.variance_components.sigma_e2)
+    @test v3 ≈ d3 rtol = 1e-3
+    @test sp3.loglik ≈ dense3.loglik - const2pi atol = 1e-6
+    @test sp3.loglik >= dense3.loglik - const2pi - 1e-9
+
+    # --- (F) the sparse optimum is the TRUE stationary point of the DENSE REML
+    #     objective: its central-FD gradient there is ~0 (observed ~6e-9). This is the
+    #     tolerance-independent proof that the sparse AI-REML lands on the exact dense
+    #     optimum (the ~2e-4 VC gap above is dense NelderMead stopping short, not sparse). ---
+    dense_ll3(θ) = HSquared._multi_effect_dense(yf, Xf, ZAs, θ[1:3], θ[4])[1]
+    grad_at_sparse = [ (dense_ll3([k == j ? v3[k] + h : v3[k] for k in 1:4]) -
+                        dense_ll3([k == j ? v3[k] - h : v3[k] for k in 1:4])) / (2h) for j in 1:4 ]
+    @test norm(grad_at_sparse) < 1e-5
+
+    # --- (G) BLUP shape + ratios + boundary honesty ---
+    @test length(sp3.effects) == 3
+    @test length(sp3.effects[1].values) == 4 && length(sp3.effects[2].values) == 2
+    @test all(0 .<= sp3.ratios .<= 1)
+    @test length(sp3.boundary) == 3
+    @test sp3.estimator == :sparse_multi_effect_aireml
+
+    # --- (H) input guards mirror multi_effect_mme / fit_multi_effect_reml ---
+    @test_throws ArgumentError fit_sparse_multi_effect_aireml(yf, Xf, [(Zfs, Ais)]; initial = [1.0, 1.0, 1.0])
+    @test_throws ArgumentError fit_sparse_multi_effect_aireml(yf, Xf, [(Zfs, Ais)]; initial = [-1.0, 1.0])
+    @test_throws ArgumentError fit_sparse_multi_effect_aireml(yf, Xf, [(sparse(Z2f[:, 1:1]), Aiid)])
+    @test_throws ArgumentError sparse_multi_reml_loglik(yf, Xf, effS3, [1.0, 1.0], 1.0)
+    @test_throws ArgumentError sparse_multi_reml_loglik(yf, Xf, effS3, [1.0, 1.0, -1.0], 1.0)
+end
+
 @testset "Phase 4 direct–maternal 2×2 G (first correlated genetic effect)" begin
     Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
     A = inv(Symmetric(Matrix(Ainv)))
@@ -8755,7 +8861,7 @@ end
 # ============================================================================
 # P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
 # CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
-# validation_status() row count stays 52; this contract-only slice does not change public_covered_count.
+# this contract-only slice does not change the validation_status() row count or public_covered_count.
 # ============================================================================
 @testset "payload-v2 parser (P0.3)" begin
     # Shared small pedigree fixture (same as Phase 3 two-effect testset).

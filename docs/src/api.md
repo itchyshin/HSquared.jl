@@ -105,6 +105,7 @@ HSquared.animal_model_spec
 HSquared.GaussianLikelihoodResult
 HSquared.gaussian_loglik
 HSquared.sparse_reml_loglik
+HSquared.sparse_multi_reml_loglik
 HSquared.HendersonMMEResult
 HSquared.henderson_mme
 HSquared.solve_animal_model_pcg
@@ -125,6 +126,7 @@ HSquared.fit_two_effect_reml
 HSquared.two_effect_ratio_interval
 HSquared.multi_effect_mme
 HSquared.fit_multi_effect_reml
+HSquared.fit_sparse_multi_effect_aireml
 HSquared.multi_effect_ratio_interval
 HSquared.NonGaussianFit
 HSquared.fit_laplace_reml
