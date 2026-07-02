@@ -123,6 +123,9 @@ HSquared.fit_repeatability_reml
 HSquared.two_effect_mme
 HSquared.fit_two_effect_reml
 HSquared.two_effect_ratio_interval
+HSquared.multi_effect_mme
+HSquared.fit_multi_effect_reml
+HSquared.multi_effect_ratio_interval
 HSquared.NonGaussianFit
 HSquared.fit_laplace_reml
 HSquared.laplace_reml_interval
