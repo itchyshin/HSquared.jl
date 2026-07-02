@@ -7,6 +7,7 @@
 /docs/build/
 /docs/node_modules/
 /docs/package-lock.json
+/docs/package.json
 /coverage/
 /tmp/
 /comparator/Manifest.toml
@@ -29,4 +30,11 @@
 /comparator/blupf90_multitrait/renf90_neutral*.par
 /comparator/blupf90_two_effect/
 /comparator/blupf90_genomic/
+/comparator/blupf90_direct_maternal/
+/comparator/blupf90_neffect/
+/comparator/sommer_neffect/
+/comparator/sommer_rr/
+/comparator/bin/
+/sim/*.log.txt
+/sim/.*.log.txt
 .claude/worktrees/

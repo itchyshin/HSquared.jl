@@ -9,6 +9,36 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (Phase 5 sparse-vs-dense benchmark BANKED + direct–maternal 2nd comparator
+  DISCHARGED + DM asymptotic intervals; Claude solo (Fable), R twin frozen; branch
+  `feat/2026-07-02-phase5-sparse-benchmark`, PREDECL `662663ed`, PR pending; counts UNCHANGED —
+  rows 53 / covered 13 / `public_covered_count` 5).** Closed the **one remaining compute-gated
+  owed item** — the sparse K-component AI-REML timing/scaling benchmark — under full doc-16
+  pre-declaration discipline (predeclaration `662663ed` committed BEFORE the run; harness
+  byte-identical; run on Totoro 1-core; user-approved at the pre-compute checkpoint). **GO**
+  decision, banked as MEASUREMENT on the `partial` `V3-NEFFECT-SPARSE` row (NO covered flip):
+  sparse ≤ dense at ALL overlap sizes (**122×–692×** min-time q=200→1000, monotone, sign-stable,
+  dense `converged=true`, same-optimum ≤3.3e-5); K=1 sparse **near-linear** (log-log slope 1.01,
+  feasible to q=50k), K=3 **~quadratic** (slope 2.25; q≥20k infeasible in-budget). **Headline
+  finding:** the K=1-vs-K=3 contrast pinpoints the multi-effect environmental-group columns'
+  Cholesky fill-in as the K≥2 scale bottleneck → a fill-reducing ordering (METIS) is the concrete
+  next enabler. Estimator-vs-estimator machine-specific measurement (confound disclosed via
+  iters vs f_calls); NO isolated-LA / GPU / production / accuracy / portable claim. Plus two
+  additive hardening slices on the COVERED `V4-DIRECT-MATERNAL` (no flip): (2) an INDEPENDENT
+  `blupf90+` 2.60 AIREMLF90 2×2-G 2nd same-estimand comparator via `OPTIONAL mat` — converged to
+  the engine optimum ~3e-5 on all four entries (dam-identification verified; verified against the
+  raw `blupf90.log`) → the owed 2nd-comparator leg DISCHARGED (point-estimate, single fixture);
+  (3) NEW exported `direct_maternal_interval` — asymptotic delta-method SEs/CIs (VCs + r_am
+  Fisher-z + Willham triple; observed-info FD-Hessian; UNCALIBRATED; 32/32 tests; corroborated by
+  BLUPF90's AI SEs to ~4–12%). Hygiene: Falconer→Willham fence, doc-33→doc-16 canonicalization
+  (4 files), `.gitignore` + `docs/api.md` (direct-maternal family) + `docs/package.json` gitignore.
+  Pre-freeze reviews (Karpinski/Gauss on the harness; Fisher/Rose on the pre-declaration) + a real
+  Fable `rose-systems-auditor` close-out audit → **PROMOTE-WITH-CHANGES** (all numbers
+  independently reproduced; 3 doc-hygiene fixes applied). `Pkg.test()` GREEN (count 53);
+  `docs/make.jl` GREEN. Owed on V3-NEFFECT-SPARSE: METIS fill-reducing ordering for near-linear
+  K≥2 scaling, a sparse-path recovery gate + comparator, the R multi-term `(1|g)` bridge. START
+  HERE: `docs/dev-log/after-task/2026-07-02-phase5-benchmark-dm-comparator-intervals.md`.
+
 - **As of 2026-07-02 (ULTRAPLAN COMPLETE + CERTIFIED airtight — generality-gap doc-consistency sweep
   closed; Claude solo; `HSquared.jl` `main` @ `2b2078cc`, `hsquared` `main` @ `f01ff61`; counts UNCHANGED
   rows 53 / covered 13 / `public_covered_count` 5).** An ultracode 20-agent adversarial verification sweep
