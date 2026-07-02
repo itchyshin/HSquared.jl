@@ -4,8 +4,8 @@
   "covered_external": 3,
   "partial": 37,
   "planned": 1,
-  "public_covered_count": 1,
+  "public_covered_count": 2,
   "refreshed_at": "2026-07-01",
-  "refreshed_from_head": "feat-generality-gap-neffect-covered",
+  "refreshed_from_head": "feat-generality-gap-phase1-two-effect-public",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
 }

@@ -63,10 +63,15 @@ regression, interval mapping), and (d) **hardware-gated** (#11, #12).
 
 ## Current reality (honest)
 
-- **One fully public-covered capability**: the v0.1 univariate Gaussian animal
+- **Two public-covered capabilities**: (1) the v0.1 univariate Gaussian animal
   model — the R default `hsquared()` fit by AI-REML through this engine,
   validated by the published gryphon anchor + sommer + a known-truth recovery
-  study (`V1-AI-REML`, `V1-MRODE-FIT` external).
+  study (`V1-AI-REML`, `V1-MRODE-FIT` external); and (2) the **opt-in
+  common-environment two-effect model** (`engine="julia", target="two_effect"`;
+  NOT the default path) — engine `V3-TWOEFFECT-REML` covered (pre-declared 48-seed
+  bias/MCSE gate + `blupf90+` comparator), exact live R↔engine parity, `sommer`
+  cross-check ~2e-5; c² covered with an asymptotic/uncalibrated interval; the
+  maternal-genetic leg stays experimental (maternal-A2 gate/comparator owed).
 - **Everything else is experimental / validation-scale / engine-internal**:
   genomic (G/GBLUP/SNP-BLUP/single-step/GREML), standard-QG (repeatability,
   two-effect), multivariate REML + factor-analytic structured G, and the entire
