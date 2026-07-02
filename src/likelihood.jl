@@ -1297,16 +1297,21 @@ sigma_dm, sigma_e2)`, the direct–maternal `genetic_correlation` `r_am`, `beta`
 `direct_effects`/`maternal_effects` `(ids, values)`, `loglik`, and `converged`.
 
 Reduction: with a diagonal `G_dm` (`σ_dm = 0`) `_direct_maternal_dense` equals the
-two-independent-effect dense model `[(Zd, A), (Zm, A)]`. EXPERIMENTAL,
-dense/validation-scale, REML-only, Gaussian. This is the FIRST correlated
-random-effect structure (`σ_dm ≠ 0`), distinct from independent multi-effect and
-from multivariate G0-over-traits. INTERPRETATION FENCE (Falconer): a negative
-`r_am` is real and expected; the direct heritability `σ_ad/σ_P` is NOT "the
-heritability" (the selection-relevant total additive variance involves `σ_dm`);
-callers must label direct-vs-total, never emit a bare h². On small/uninformative
-data or `|r_am| → 1` the optimum can sit on a boundary (`converged = false`);
-identifiability generally needs designed data (the direct–maternal/PE/cytoplasmic
-confound). No R surface, no external comparator, no pre-declared recovery gate yet.
+two-independent-effect dense model `[(Zd, A), (Zm, A)]`. COVERED at validation
+scale (opt-in, NOT the public default), dense (n ≤ ~1000), REML-only, Gaussian.
+This is the FIRST correlated random-effect structure (`σ_dm ≠ 0`), distinct from
+independent multi-effect and from multivariate G0-over-traits. Evidence: an R
+surface (`target="direct_maternal"` / `maternal_genetic()`), a `sommer` 4.4.5
+`covm()` same-estimand REML comparator (AGREE, all entries ≤ 1.1e-2 rel.diff),
+and a PRE-DECLARED 48-seed bias/MCSE recovery gate (48/48 converged, all four
+`|bias| ≤ 2·MCSE`; see
+`docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-covered-evidence.md`).
+INTERPRETATION FENCE (Falconer): a negative `r_am` is real and expected; the
+direct heritability `σ_ad/σ_P` is NOT "the heritability" (the selection-relevant
+total additive variance involves `σ_dm`); callers must label direct-vs-total,
+never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
+can sit on a boundary (`converged = false`); identifiability generally needs
+designed data (the direct–maternal/PE/cytoplasmic confound).
 """
 function fit_direct_maternal_reml(
     y::AbstractVector,

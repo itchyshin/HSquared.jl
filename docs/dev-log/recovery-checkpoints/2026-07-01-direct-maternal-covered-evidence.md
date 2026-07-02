@@ -104,3 +104,14 @@ Maintainer G10 delegated ("flip autonomously once evidence passes"); real `rose-
 audit on the flip before promotion. `public_covered_count` 4 → 5 is the R-public surface (the 5th
 public-covered model; engine-covered ≠ R-public-covered layering — see
 `docs/design/06-public-claims-register.md`).
+
+## Harness header note
+
+`sim/phase4_direct_maternal_recovery_gate.jl` carries illustrative header comments
+(NOFF=6, 3 overlapping generations, 3-seed example) that are SUPERSEDED by the locked
+constants at L88–94 of the same file (NOFF=8, NGEN=4, the 48 actual seeds) and by the
+predeclaration document
+`docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-recovery-gate-predeclaration.md`.
+The harness itself MUST remain byte-identical to commit `76f6c67e` (the predeclared artifact);
+the header text is informational only and does not affect the run results. The locked
+constants and the predeclaration are the authoritative DGP specification.
