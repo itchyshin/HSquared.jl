@@ -9,6 +9,30 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-01 (generality-gap ultraplan Phase 2-R: arbitrary `(1|g)` from R → `public_covered_count`
+  2→**3**; Claude solo autonomous; `HSquared.jl` `main` @ `74b9dcbb`, `hsquared` `main` @ `c86b355`).**
+  Delivered the HEADLINE: `hsquared(y ~ animal(1|id, pedigree=ped) + (1|nest) + (1|year), engine="julia",
+  target="multi_effect")` now fits + returns per-component variances + animal-block h² + intervals. The
+  opt-in **arbitrary-N INDEPENDENT random-effect model** is the 3rd public-covered model (PRs #234/#117,
+  atomic pair; preceded by engine interval + R core + parity slices). Engine: NEW `multi_effect_ratio_interval`
+  (generalizes `two_effect_ratio_interval` to K; delta-method, boundary-flagged, NOT calibrated; reduces to
+  two-effect at K=2, heritability_interval at K=1). R: `(1|g)` grammar (accepts intercepts, **rejects** `(x|g)`
+  slopes + `(x||g)`), N-block emitter, `multi_effect` dispatch, `hs_normalize_n_effect_result` +
+  `hs_attach_n_effect_intervals` (heritability_interval resolves for K≥3 = animal ratio; per-block
+  `variance_ratio_intervals`). **Live R↔engine parity EXACT (max diff 0, two independent checks incl. a native-
+  Julia rebuild → verifies JuliaCall N-block marshalling); `sommer` cross-check ~1.5e-2.** SCOPE (Rose-adjudicated):
+  INDEPENDENT iid + animal-A only — NOT correlated (direct–maternal), NOT random-regression, NOT random slopes,
+  NOT non-Gaussian; maternal leg (A2=pedigree) stays experimental; animal ratio = narrow-sense h², other blocks =
+  variance proportions; intervals asymptotic/uncalibrated. **Honesty pins HOLD:** `validation_status()` count
+  **52 UNCHANGED**, engine covered-count unchanged (public-SURFACE flip), v0.1 default untouched,
+  `public_covered_count` pinned at all 5 sites. Real `rose-systems-auditor` PROMOTE-WITH-CHANGES (all applied
+  incl. stale-string fixes). CI caught a Julia-1.11/1.12 version-fragile boundary test (fixed to a contract-based
+  assertion, verified on 1.10 AND 1.12) — merged only after BOTH lanes green (paired-PR discipline). SESSION ARC:
+  `public_covered_count` **1→3** (v0.1 Gaussian → Phase 1 common-env two-effect/c² → Phase 2-R arbitrary-N
+  `(1|g)`), on the Phase 0 (S0) payload-v2 bridge + engine `V3-NEFFECT-REML`. **NEXT: Phase 3 RR k=2 (after the
+  P3.0 `(x|g)`-vs-`rr()` convention lock; random slopes), Phase 4 direct–maternal 2×2 G (Fable-tier gate + BLUPF90
+  2×2-G comparator), Phase 5 sparse AI-REML (scale).** START HERE:
+  `docs/dev-log/after-task/2026-07-01-phase2-r-arbitrary-1g.md`.
 - **As of 2026-07-01 (generality-gap ultraplan: N-effect covered + Phase 0 (S0) done + FIRST public flip;
   Claude solo autonomous; `HSquared.jl` `main` @ `0d1518bf`, `hsquared` `main` @ `8ef81ac`; `public_covered_count`
   1→**2**).** Executed the cross-twin "Closing the mixed-model generality gap" ultraplan under the `ultra-plan`
