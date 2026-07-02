@@ -1,11 +1,11 @@
 {
   "rows": 52,
-  "covered": 11,
+  "covered": 13,
   "covered_external": 3,
-  "partial": 37,
+  "partial": 35,
   "planned": 1,
-  "public_covered_count": 4,
-  "refreshed_at": "2026-07-01",
-  "refreshed_from_head": "feat-generality-gap-phase2-r-multieffect",
+  "public_covered_count": 5,
+  "refreshed_at": "2026-07-02",
+  "refreshed_from_head": "14e3e028",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
 }

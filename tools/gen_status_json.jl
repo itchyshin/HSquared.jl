@@ -13,15 +13,17 @@
 #         [--deploy-dir=~/.claude/hsquared-control-centre]
 #   julia --project=. tools/gen_status_json.jl --refresh-count   # recompute the cache live
 #
-# Honesty: public_covered_count is hard-pinned to 4 — (1) the v0.1 univariate Gaussian
+# Honesty: public_covered_count is hard-pinned to 5 — (1) the v0.1 univariate Gaussian
 # animal model (default `engine="fit"` path), (2) the opt-in common-environment
 # two-effect model (`engine="julia", target="two_effect"`; c² covered, maternal leg
 # still experimental), (3) the opt-in arbitrary-N independent random-effect model
 # (`(1|g)`; `engine="julia", target="multi_effect"`; animal ratio covered, INDEPENDENT
-# effects only, intervals asymptotic/uncalibrated), and (4) the opt-in random-regression
+# effects only, intervals asymptotic/uncalibrated), (4) the opt-in random-regression
 # k=2 reaction-norm model (`rr()`; target="random_regression"; K_g + h²(t) curve,
-# POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian). The covered/partial/planned split
-# is generated, never quoted in prose.
+# POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian), and (5) the opt-in direct–maternal
+# correlated 2×2 G animal model (`maternal_genetic()`; target="direct_maternal"; Willham
+# total-h² labelled triple, direct h² ≠ total h², validation-scale/dense n≤1000, NOT the
+# default). The covered/partial/planned split is generated, never quoted in prose.
 
 using Dates
 
@@ -59,7 +61,7 @@ if hasflag("--refresh-count")
   "covered_external": $(get(d,"covered_external",0)),
   "partial": $(get(d,"partial",0)),
   "planned": $(get(d,"planned",0)),
-  "public_covered_count": 4,
+  "public_covered_count": 5,
   "refreshed_at": "$(Dates.format(now(), "yyyy-mm-dd"))",
   "refreshed_from_head": "$(trycmd(`git -C $root log -1 --format=%h`))",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
@@ -104,8 +106,8 @@ genat = Dates.format(now(), "yyyy-mm-ddTHH:MM:SS")
 status = """{
   "generated_at": "$genat",
   "generator_version": "tools/gen_status_json.jl @ $(trycmd(`git -C $root log -1 --format=%h`))",
-  "public_covered_count": 4,
-  "honesty_assert": "Public-covered FITTING surface = 4: (1) v0.1 univariate Gaussian animal model (default path); (2) the opt-in common-environment two-effect model (engine=julia, target=two_effect; c² covered, maternal leg experimental); (3) the opt-in arbitrary-N independent random-effect model ((1|g); target=multi_effect; animal ratio = narrow-sense h², other blocks are variance-explained proportions NOT heritabilities; INDEPENDENT effects only, NOT correlated/RR/non-Gaussian); and (4) the opt-in random-regression k=2 reaction-norm model (rr(); target=random_regression; K_g + h²(t) curve, POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian). All intervals asymptotic/delta-method, NOT coverage-calibrated. Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
+  "public_covered_count": 5,
+  "honesty_assert": "Public-covered FITTING surface = 5: (1) v0.1 univariate Gaussian animal model (default path); (2) the opt-in common-environment two-effect model (engine=julia, target=two_effect; c² covered, maternal leg experimental); (3) the opt-in arbitrary-N independent random-effect model ((1|g); target=multi_effect; animal ratio = narrow-sense h², other blocks are variance-explained proportions NOT heritabilities; INDEPENDENT effects only, NOT correlated/RR/non-Gaussian); (4) the opt-in random-regression k=2 reaction-norm model (rr(); target=random_regression; K_g + h²(t) curve, POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian); and (5) direct–maternal correlated 2×2 G animal model (maternal_genetic(); target=direct_maternal; opt-in; Willham total-h² labelled triple, direct h² ≠ total h², validation-scale/dense n≤1000, single relationship A, NOT the default). All intervals asymptotic/delta-method, NOT coverage-calibrated. Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
   "validation": {"rows": $rows, "covered": $cov, "covered_external": $covx, "partial": $part, "planned": $plan, "source": "cache", "refreshed_at": "$refreshed"},
   "repos": [
     {"name": "HSquared.jl", "branch": "$(jesc(jb))", "head": "$(jesc(jh))", "ci": "$(jesc(jci))"},
@@ -131,4 +133,4 @@ write(joinpath(deploy, "version.txt"), Dates.format(now(), "yyyymmddHHMMSS"))
 board = joinpath(root, "tools", "control-centre", "index.html")
 isfile(board) && cp(board, joinpath(deploy, "index.html"); force=true)
 
-println("wrote ", joinpath(deploy, "status.json"), "  (rows=$rows covered=$cov, public_covered=4)")
+println("wrote ", joinpath(deploy, "status.json"), "  (rows=$rows covered=$cov, public_covered=5)")
