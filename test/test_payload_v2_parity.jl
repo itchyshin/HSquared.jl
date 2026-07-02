@@ -1,8 +1,8 @@
 # test_payload_v2_parity.jl — P0.5 cross-lane round-trip parity
 #
 # Contract: docs/design/21-payload-v2-multiblock-schema.md (FREEZE-READY).
-# No covered-status change; this contract-only slice does not change public_covered_count;
-# validation_status() count stays 52.
+# No covered-status change; this contract-only slice does not change public_covered_count
+# or the validation_status() row count.
 #
 # Each fixture is a JSON file written by:
 #   hsquared/tests/fixtures/emit_payload_v2_fixtures.R
