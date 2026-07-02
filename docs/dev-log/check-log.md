@@ -5235,3 +5235,40 @@ Newest entries go at the top.
   PROMOTE-WITH-CHANGES (stale field-6/field-7 self-contradictions fixed; all applied).
 - Checks: `Pkg.test()` green; R CMD check green; both-lane CI green (Julia 1 + 1.10 + docs +
   R-CMD-check). Maintainer G10 delegated. Merged PRs #236 (`HSquared.jl`) + #119 (`hsquared`).
+
+## 2026-07-02 — Generality-gap Phase 4: direct–maternal 2×2 G_dm → covered + R public, `public_covered_count` 4→5 `[JL+R]`
+
+- The 5th public-covered model and FIRST correlated random-effect structure: opt-in
+  `hsquared(y ~ animal(1|id, pedigree=ped), engine="julia", target="direct_maternal")`
+  fits the direct–maternal 2×2 `G_dm` (`[a_d; a_m]` with shared pedigree `A`), returns σ²_ad,
+  σ²_am, σ_dm, σ²e, EBVs for both direct and maternal components, and the labelled-triple
+  heritability (direct h², m², Willham total h²_T).
+- Engine (`HSquared.jl`): `V4-DIRECT-MATERNAL` `partial→covered` (commit `f8959fb8`, PR #238).
+  Evidence: **(1) PRE-DECLARED 48-seed bias/MCSE recovery gate PASS** — predeclaration `76f6c67e`
+  committed BEFORE the run; harness `sim/phase4_direct_maternal_recovery_gate.jl` byte-identical
+  pre/post; confound-breaking DGP (4 overlapping generations, dams with own records + 8 offspring,
+  90 identifying dams, n=960) + negative-control cell; 48/48 converged; all four |bias|≤2·MCSE:
+  σ²_ad 0.13·MCSE, σ²_am 1.65·MCSE, σ_dm 0.72·MCSE, σ²e 0.24·MCSE; EBV acc direct 0.667/maternal
+  0.759; max cond 157; max |r_am| 0.80 (no seed rode the ±1 boundary). (2) **`sommer` 4.4.5 `covm()`
+  same-estimand REML comparator AGREE** (≤1.1e-2 on all entries incl. σ_dm;
+  `covm(vsm(ism(animal),Gu=A), vsm(ism(dam_id),Gu=A))` pattern; **RR `usm(leg())` idiom does NOT
+  transfer** — maternal loads on `Z_m`=record→dam, not own-id; column-identification verified as
+  absolute variance-entry, NOT correlation-only). Evidence banked:
+  `docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-covered-evidence.md`.
+- R (`hsquared`): opt-in `target="direct_maternal"` surface (`maternal_genetic()` wired);
+  labelled-triple `heritability()` (direct h², m², total h²_T); corrected σ_P (includes σ_dm;
+  Willham); `total_heritability()` extractor. Live R↔engine parity verified. PR #120 (`hsquared`).
+- SCOPE (Rose-adjudicated): validation-scale dense n≤~1000, OPT-IN NOT the public default; direct h²
+  ≠ total h² (Willham); negative r_am is real; |r_am|→1 rides on `converged=false`; single pedigree A
+  (NOT maternal-A2 generalization).
+- `public_covered_count` 4→**5** at all 5 pin sites (`status_cache.json` + `gen_status_json.jl`).
+  Engine `validation_status()` count **52 UNCHANGED** (covered 12→**13**, partial 36→35). v0.1 default
+  untouched. Real Fable `rose-systems-auditor` → PROMOTE-WITH-CHANGES (3 stale-status contradictions +
+  siblings fixed; all applied).
+- **R-CMD-check non-ASCII catch (SECOND occurrence):** non-ASCII em-dashes in 4 R string literals
+  caused R-CMD-check WARNING (invisible to `devtools::test` locally); ASCII-ized before merge. Recommend
+  adding "run R CMD check locally for R branches, not just devtools::test" to the R-lane DoD — recurred
+  from Phase 1.
+- Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
+  after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
+  Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
