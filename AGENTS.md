@@ -9,6 +9,21 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (ULTRAPLAN COMPLETE + CERTIFIED airtight — generality-gap doc-consistency sweep
+  closed; Claude solo; `HSquared.jl` `main` @ `2b2078cc`, `hsquared` `main` @ `f01ff61`; counts UNCHANGED
+  rows 53 / covered 13 / `public_covered_count` 5).** An ultracode 20-agent adversarial verification sweep
+  confirmed the 1→5 public-covered win is EVIDENCE-airtight (every gate/comparator/parity clean; zero
+  numerics/overclaim findings) but found **11 stale status-surface contradictions** (covered models still
+  labelled partial/experimental from uneven Phase 1–3 flip propagation; SAFE-direction under-claiming). This
+  CORRECTS the overnight report's "no stale contradictions" — the sweep run to check caught the debt. All 11
+  now RESOLVED + re-verified clean: hsquared named surfaces (R-lane peer `5389f23`), hsquared vignettes/README
+  (#121), HSquared.jl v0.6 orphans V6-ORDINAL/V6-GAMMA (#245, after integrity-confirming the #229 G10 flip).
+  No coverage decision moved (pure propagation); both repos CI green. Banked cosmetic nits: doc-16/doc-33
+  citation style, a Falconer-vs-Willham fence tag (`likelihood.jl:1661`), `sommer_rr` R-stdout not committed,
+  `status_cache.json refreshed_from_head` pointer. The generality-gap ultraplan is DONE. The one remaining
+  compute-gated item is Phase 5's sparse-AI-REML PERFORMANCE benchmark (P5.1 estimator landed + reduction-
+  verified; a pre-declared DRAC/Totoro run is OWED — engine scale, NOT a generality claim). START HERE:
+  `docs/dev-log/check-log.d/2026-07-02-doc-consistency-certification.md`.
 - **As of 2026-07-02 (OVERNIGHT 7-hour autonomous session CLOSE — generality-gap ultraplan public goal
   DELIVERED, `public_covered_count` 1→**5**; Claude solo; `HSquared.jl` `main` @ `90bdf435`, `hsquared`
   `main` @ `7e848ee`; live `validation_status()` rows **53** / covered 13 / covered_external 3 / partial 36
