@@ -9,6 +9,34 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-01 (generality-gap ultraplan Phase 3: random regression k=2 / random slopes `rr()` →
+  covered + R public; `public_covered_count` 3→**4**; Claude solo autonomous; `HSquared.jl` `main` @
+  `13f9662f` (#236); `hsquared` `main` @ `e57a4e8` (#119)).** The 4th public-covered model: opt-in
+  `hsquared(y ~ animal(rr(t, k=2)|id, pedigree=ped), engine="julia", target="random_regression")` now
+  fits a linear reaction norm + returns the 2×2 K_g (intercept×slope genetic covariance matrix), σ²e,
+  EBVs, and h²(t) trajectory. ENGINE: `V3-RR-REML` `partial→covered` (commit `2e777f74`) via two
+  doc-16 legs: **(1)** a **pre-declared 48-seed bias/MCSE recovery gate PASS** (predeclared `b3e97835`
+  BEFORE the run; 48/48 converged, |bias|≤2·MCSE for all K_g entries + σ²e; slope variance K_g[2,2]
+  at 1.67·MCSE — within gate, no detectable bias); **(2)** a **`sommer` 4.4.5 `leg()` same-estimand
+  REML comparator AGREE** ≤1.9e-5 on all K_g entries + σ²e (Legendre-normalization D=I₂ verified:
+  basis diff 7.4e-13 — absolute variance-entry agreement, not correlation-only; evidence banked in
+  `docs/dev-log/recovery-checkpoints/2026-07-01-rr-k2-covered-evidence.md`). R: **live R↔engine parity
+  EXACT ≤1.03e-5 (VC) / h²(t) ≤4.24e-6** (two independent checks); `public_covered_count` 3→4 pinned
+  at ALL 5 sites (`status_cache.json` + `gen_status_json.jl`). Real `rose-systems-auditor` →
+  PROMOTE-WITH-CHANGES (stale field-6/field-7 self-contradictions fixed). Paired PRs #236
+  (`HSquared.jl`) + #119 (`hsquared`); both-lane CI green; Maintainer G10 delegated. **SCOPE
+  (Rose-adjudicated):** k=2 ONLY (k≥3 experimental, deferred to reduced-rank/FA post-v1.0); homogeneous
+  residual; no PE term; h²(t) is a CURVE (point-estimate, NOT interval — unlike two-effect/N-effect;
+  `heritability()` errors on curve gracefully); narrow-sense on animal block with PE-overstatement
+  caveat; `(x|g)` raw slopes rejected; NOT non-Gaussian; NOT k≥3 / correlated-residual. **Honesty
+  pins HOLD:** `validation_status()` count **52 UNCHANGED** (covered 11→12, partial 37→36), v0.1
+  default untouched, `public_covered_count` 3→**4** (1 Gaussian → 2 two-effect → 3 multi-effect →
+  4 RR k=2). **SESSION ARC:** `public_covered_count` **1→4** across this session (Phase 1 common-env
+  two-effect, Phase 2-R arbitrary `(1|g)`, Phase 3 RR k=2), on the Phase 0 payload-v2 bridge. **NEXT:
+  Phase 4 direct–maternal 2×2 G (Fable-tier gate + BLUPF90 AIREMLF90 2×2-G comparator → covered);
+  Phase 5 sparse AI-REML (scale, measure-first).** START HERE:
+  `docs/dev-log/recovery-checkpoints/2026-07-01-rr-k2-covered-evidence.md`.
+
 - **As of 2026-07-01 (generality-gap ultraplan Phase 2-R: arbitrary `(1|g)` from R → `public_covered_count`
   2→**3**; Claude solo autonomous; `HSquared.jl` `main` @ `74b9dcbb`, `hsquared` `main` @ `c86b355`).**
   Delivered the HEADLINE: `hsquared(y ~ animal(1|id, pedigree=ped) + (1|nest) + (1|year), engine="julia",

@@ -5211,3 +5211,27 @@ Newest entries go at the top.
   lanes' CI green (paired-PR discipline).
 - Checks: `Pkg.test()` green on Julia 1.10 AND 1.12; R CMD check green; both-lane CI green (Julia 1 +
   1.10 + docs + R-CMD-check). Maintainer G10 delegated.
+
+## 2026-07-01 — Generality-gap Phase 3: RR k=2 random regression → covered + R public, `public_covered_count` 3→4 `[JL+R]`
+
+- The 4th public-covered model: opt-in `hsquared(y ~ animal(rr(t, k=2)|id, pedigree=ped),
+  engine="julia", target="random_regression")` fits a linear reaction norm + returns the 2×2 K_g
+  (intercept×slope genetic covariance matrix), σ²e, EBVs, and h²(t) trajectory.
+- Engine (`HSquared.jl`): `V3-RR-REML` `partial→covered` (commit `2e777f74`, PR #236). Evidence:
+  (1) **pre-declared 48-seed bias/MCSE gate PASS** — predeclared `b3e97835` BEFORE the run; 48/48
+  converged; |bias|≤2·MCSE for all K_g entries + σ²e; slope variance K_g[2,2] at 1.67·MCSE
+  (within gate; no detectable bias across seeds). (2) **`sommer` 4.4.5 `leg()` same-estimand REML
+  comparator AGREE** ≤1.9e-5 on all K_g entries + σ²e; Legendre-normalization D=I₂ verified (basis
+  diff 7.4e-13 — absolute variance-entry agreement). Evidence banked:
+  `docs/dev-log/recovery-checkpoints/2026-07-01-rr-k2-covered-evidence.md`.
+- R (`hsquared`): live R↔engine parity EXACT ≤1.03e-5 (VC) / h²(t) ≤4.24e-6 (two independent
+  checks); `public_covered_count` 3→4 at ALL 5 pin sites (`status_cache.json` + `gen_status_json.jl`);
+  new 06-public-claims-register row; 11-completion-plan "Three"→"Four". PR #119 (`hsquared`).
+- SCOPE (Rose-adjudicated): k=2 ONLY (k≥3 experimental); homogeneous residual; no PE term; h²(t)
+  is a CURVE (POINT-ESTIMATE, no interval — unlike two-effect/N-effect); `heritability()` errors on
+  curve gracefully; `(x|g)` raw slopes rejected; NOT non-Gaussian; NOT correlated-residual / k≥3.
+- `public_covered_count` 3→**4** at all 5 pin sites. Engine `validation_status()` count **52 UNCHANGED**
+  (covered 11→12, partial 37→36). v0.1 default untouched. Real `rose-systems-auditor` →
+  PROMOTE-WITH-CHANGES (stale field-6/field-7 self-contradictions fixed; all applied).
+- Checks: `Pkg.test()` green; R CMD check green; both-lane CI green (Julia 1 + 1.10 + docs +
+  R-CMD-check). Maintainer G10 delegated. Merged PRs #236 (`HSquared.jl`) + #119 (`hsquared`).
