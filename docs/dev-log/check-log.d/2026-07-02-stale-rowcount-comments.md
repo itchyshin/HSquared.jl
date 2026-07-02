@@ -25,8 +25,13 @@ prior fix — editing it would corrupt the audit trail).
   `payload-v2 parser (P0.3) 54/54`; `P0.5 payload-v2 parity` fixtures
   19/19, 23/23, 19/19.
 - CI (PR #243): Julia 1 + Julia 1.10 + docs — recorded green at merge.
-- Real `rose-systems-auditor` audit — verdict recorded in the after-task
-  report `docs/dev-log/after-task/2026-07-02-stale-rowcount-comments.md`.
+- Real `rose-systems-auditor` audit → **PROMOTE** (clean, no changes). Rose
+  independently triangulated the live count = 53 three ways
+  (`tools/status_cache.json`, 53 row-id literals in `src/validation_status.jl`,
+  and the count-guard `test/runtests.jl:175 @test length(validation) == 53`),
+  confirmed both edits are comment-only, ratified both "not changed" decisions,
+  and swept siblings (all other "52" hits are dated historical records). Full
+  verdict in `docs/dev-log/after-task/2026-07-02-stale-rowcount-comments.md`.
 
 ## Claim boundary
 
