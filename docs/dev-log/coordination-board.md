@@ -46,6 +46,23 @@ support beyond the recorded evidence.
 
 ## Current Slice
 
+- 2026-07-02: R lane (cross-lane heads-up) / covered-status surface reconciliation
+  in `hsquared` (R `main` `5389f23`, pushed, pkgdown CI green). Propagated four
+  prior maintainer-signed G10 covered flips — common-env two-effect leg
+  (`7538663`), arbitrary-N `(1|g)` multi-effect (`9fe1458`), RR k=2 (`9cb3481`),
+  direct–maternal (`e3462d3`) — to the R status surfaces that had lagged
+  (`formula-status.R` behavior, `06-public-claims-register.md`,
+  `capability-status.md`, `ROADMAP.md`, `NEWS.md`) plus the `model-status` pkgdown
+  article, which now splits "opt-in and covered at validation scale" from "opt-in
+  and experimental". **No engine / bridge / shared-payload change; NO action owed
+  from the Julia lane** — these R surfaces now simply match the Julia twin's
+  `V3-TWOEFFECT-REML` / `V3-NEFFECT-REML` / `V3-RR-REML` / `V4-DIRECT-MATERNAL`
+  covered gates. Honesty: no new coverage decision; R `validation_status()`
+  unchanged (21 rows); maternal two-effect leg + genomic / single-step / SNP-BLUP /
+  multivariate / non-Gaussian / metafounder / repeatability STAY experimental. Real
+  `rose-systems-auditor` → PROMOTE-WITH-CHANGES (excluded unrelated local
+  `AGENTS.md`/`CLAUDE.md` hub-wiring from the R commit).
+
 - 2026-06-30: Julia lane / BLUPF90 multitrait `renumf90.par` emitter fix (PR #197,
   `main` `c43e37c9`). Closed the 2026-06-29 v0.4 next-action #3: the committed
   `comparator/prepare_blupf90_multitrait.jl` packet now runs `renumf90` 1.166 →
