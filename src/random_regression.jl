@@ -432,8 +432,12 @@ optimum (`K_g[1,1] = 2σ²a`, equal `σ²e`, equal log-likelihood); the reported
 log-likelihood matches an independent marginal oracle and beats off-optimum
 points; the BLUPs reproduce [`random_regression_mme`](@ref) at the estimate.
 Known-truth `K_g` recovery and any WOMBAT/ASReml/JWAS comparator are not yet
-exercised, and there is no R-facing model-spec or bridge payload. As a dense GLS
-path, `V`'s conditioning degrades as `O(1/σ²e)` toward the residual boundary, so a
+exercised. An R surface (`rr(covariate, order)`) exists but is experimental/opt-in,
+not covered (the R lane parses `rr()`, builds the bridge payload, and returns a
+curve-valued h²; engine-covered ≠ R-public-covered). The covered aim + reporting
+convention lock (`k = 2`, basis, `K_g` reporting, `h²`-curve, frozen `(x|g)`,
+`k ≥ 3`) is `docs/design/22-rr-convention-lock.md`. As a dense GLS path, `V`'s
+conditioning degrades as `O(1/σ²e)` toward the residual boundary, so a
 near-noiseless optimum (`σ²e → 0`) is conditioning-limited at this validation scale.
 """
 function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::AbstractMatrix,
