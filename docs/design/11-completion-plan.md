@@ -63,7 +63,7 @@ regression, interval mapping), and (d) **hardware-gated** (#11, #12).
 
 ## Current reality (honest)
 
-- **Three public-covered capabilities**: (1) the v0.1 univariate Gaussian animal
+- **Four public-covered capabilities**: (1) the v0.1 univariate Gaussian animal
   model — the R default `hsquared()` fit by AI-REML through this engine,
   validated by the published gryphon anchor + sommer + a known-truth recovery
   study (`V1-AI-REML`, `V1-MRODE-FIT` external); (2) the **opt-in
@@ -71,13 +71,20 @@ regression, interval mapping), and (d) **hardware-gated** (#11, #12).
   NOT the default path) — engine `V3-TWOEFFECT-REML` covered (pre-declared 48-seed
   bias/MCSE gate + `blupf90+` comparator), exact live R↔engine parity, `sommer`
   cross-check ~2e-5; c² covered with an asymptotic/uncalibrated interval; the
-  maternal-genetic leg stays experimental (maternal-A2 gate/comparator owed); and
-  (3) the **opt-in arbitrary-N independent random-effect model** (`(1|g)`;
+  maternal-genetic leg stays experimental (maternal-A2 gate/comparator owed); (3)
+  the **opt-in arbitrary-N independent random-effect model** (`(1|g)`;
   `engine="julia", target="multi_effect"`; NOT the default path) — engine
   `V3-NEFFECT-REML` covered (48-seed gate + `sommer` comparator), exact live
   R↔engine parity (max diff 0); the animal-block ratio is narrow-sense h² (other
   blocks are variance-explained proportions), intervals asymptotic/uncalibrated,
-  INDEPENDENT effects only (NOT correlated / random-regression / non-Gaussian).
+  INDEPENDENT effects only (NOT correlated / random-regression / non-Gaussian); and
+  (4) the **opt-in random-regression k=2 reaction-norm model** (`rr()`;
+  `engine="julia", target="random_regression"`; NOT the default path) — engine
+  `V3-RR-REML` covered (pre-declared 48-seed bias/MCSE gate + `sommer` 4.4.5
+  `leg()` comparator AGREE ≤1.9e-5), exact live R↔engine parity (≤1.03e-5); h²(t)
+  is a CURVE never scalar (PE-overstatement caveat), POINT-ESTIMATE only (no
+  interval/CI on the K_g curve), k=2 only (k≥3 experimental), NOT `(x|g)` raw
+  slopes, NOT heterogeneous residual, NOT PE, NOT non-Gaussian.
 - **Everything else is experimental / validation-scale / engine-internal**:
   genomic (G/GBLUP/SNP-BLUP/single-step/GREML), standard-QG (repeatability,
   two-effect), multivariate REML + factor-analytic structured G, and the entire
