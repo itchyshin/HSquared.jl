@@ -72,7 +72,8 @@ reduction testset (→ 8/8 pass). It verified all five items clean:
 4. **Same-estimand comparator** — sommer's animal effect is genuinely A-structured
    (`vsr(animal, Gu=A)`, not identity) on the same seed-20260800 data; no same-estimand trap.
 5. **Scope honesty** — `V4-DIRECT-MATERNAL` is a separate row (no conflation); the estimator
-   has NO R surface (`public_covered_count` staying 1 is correct); row count stays 52.
+   has NO R surface (`public_covered_count` staying 1 is correct); row count unchanged by
+   this flip (52 at the time of this 2026-07-01 gate; 53 as of 2026-07-02).
 
 The audit was interrupted by a `/compact` at the final scratchpad-cleanup step, AFTER every
 substantive check had passed — the verdict is an unambiguous **PROMOTE** on the completed
