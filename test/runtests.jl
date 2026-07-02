@@ -5853,6 +5853,137 @@ end
     @test_throws ArgumentError fit_multi_effect_reml(yf, Xf, [(Zf, Ainv)]; max_dense_cells = 4)
 end
 
+@testset "Phase 3 N-effect ratio interval (asymptotic delta-method)" begin
+    # (A) interior K=3 dataset: all three ratios well-identified. half-sib pedigree
+    # + two common-env groupings assigned INDEPENDENTLY of pedigree; truth
+    # (σ1²,σ2²,σ3²,σe²) = (1.0, 0.5, 0.4, 1.0).
+    rng = MersenneTwister(20260702)
+    sires = 25; q = 260
+    sire = zeros(Int, sires + q)
+    for i in 1:q; sire[sires + i] = rand(rng, 1:sires); end
+    Ainv = pedigree_inverse(collect(1:(sires + q)), sire, zeros(Int, sires + q))
+    A = inv(Symmetric(Matrix(Ainv))); na = size(Ainv, 1)
+    g = cholesky(Symmetric(A + 1e-8I)).L * randn(rng, na)          # σ1² = 1
+    ng2 = 40; e2 = randn(rng, ng2) .* sqrt(0.5)                    # σ2² = 0.5
+    ng3 = 30; e3 = randn(rng, ng3) .* sqrt(0.4)                    # σ3² = 0.4
+    recs = (sires + 1):(sires + q); n = q; X = ones(n, 1)
+    Z1 = zeros(n, na); Z2 = zeros(n, ng2); Z3 = zeros(n, ng3); y = zeros(n)
+    for (r, an) in enumerate(recs)
+        Z1[r, an] = 1.0
+        gg2 = rand(rng, 1:ng2); Z2[r, gg2] = 1.0
+        gg3 = rand(rng, 1:ng3); Z3[r, gg3] = 1.0
+        y[r] = 3.0 + g[an] + e2[gg2] + e3[gg3] + randn(rng)       # σe² = 1
+    end
+    I2 = sparse(Matrix(1.0I, ng2, ng2)); I3 = sparse(Matrix(1.0I, ng3, ng3))
+    effs = [(sparse(Z1), Ainv), (sparse(Z2), I2), (sparse(Z3), I3)]
+    ci = multi_effect_ratio_interval(y, X, effs)
+
+    # brackets each point estimate; every ratio strictly inside (0,1)
+    @test ci.converged
+    @test length(ci.ratios) == 3
+    for r in ci.ratios
+        @test r.boundary == false
+        @test 0 < r.lower < r.estimate < r.upper < 1
+        @test r.se > 0
+        @test r.lower_clamped == false && r.upper_clamped == false
+    end
+    # point estimates equal the underlying REML fit
+    fit = fit_multi_effect_reml(y, X, effs)
+    for i in 1:3
+        @test ci.ratios[i].estimate ≈ fit.ratios[i]
+    end
+
+    # level nesting: 99% ⊇ 95% ⊇ 90% for every ratio
+    ci90 = multi_effect_ratio_interval(y, X, effs; level = 0.90)
+    ci99 = multi_effect_ratio_interval(y, X, effs; level = 0.99)
+    for i in 1:3
+        @test ci99.ratios[i].lower < ci90.ratios[i].lower
+        @test ci99.ratios[i].upper > ci90.ratios[i].upper
+    end
+
+    # which selection: an integer index computes only that ratio; the rest are
+    # point-only (NaN CI)
+    c2 = multi_effect_ratio_interval(y, X, effs; which = 2)
+    @test !isnan(c2.ratios[2].lower)
+    @test isnan(c2.ratios[1].lower) && isnan(c2.ratios[3].lower)
+    @test c2.ratios[1].estimate ≈ ci.ratios[1].estimate
+    @test c2.ratios[3].estimate ≈ ci.ratios[3].estimate
+
+    # guards
+    @test_throws ArgumentError multi_effect_ratio_interval(y, X, effs; level = 1.5)
+    @test_throws ArgumentError multi_effect_ratio_interval(y, X, effs; which = :bogus)
+    @test_throws ArgumentError multi_effect_ratio_interval(y, X, effs; which = 4)
+    @test_throws ArgumentError multi_effect_ratio_interval(y, X, effs; which = 0)
+
+    # (B) K=2 REDUCTION: on the SAME data/effects, multi_effect_ratio_interval with
+    # two effects matches two_effect_ratio_interval tightly (same FD observed
+    # information, same estimand — only iteration path differs).
+    eff2 = [(sparse(Z1), Ainv), (sparse(Z2), I2)]
+    m2 = multi_effect_ratio_interval(y, X, eff2)
+    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2)
+    @test m2.ratios[1].estimate ≈ t2.ratio1.estimate rtol = 1e-6
+    @test m2.ratios[2].estimate ≈ t2.ratio2.estimate rtol = 1e-6
+    @test m2.ratios[1].lower ≈ t2.ratio1.lower rtol = 1e-4
+    @test m2.ratios[1].upper ≈ t2.ratio1.upper rtol = 1e-4
+    @test m2.ratios[2].lower ≈ t2.ratio2.lower rtol = 1e-4
+    @test m2.ratios[2].upper ≈ t2.ratio2.upper rtol = 1e-4
+
+    # (C) K=1 REDUCTION: single effect matches heritability_interval on the same
+    # animal fit. Point matches tightly; endpoints to a few % (FD observed
+    # information here vs the analytic AI matrix used by heritability_interval —
+    # same estimand, different information estimator), so a realistic tol.
+    rng2 = MersenneTwister(7)
+    sb = 40; qb = 400
+    sireb = zeros(Int, sb + qb)
+    for i in 1:qb; sireb[sb + i] = rand(rng2, 1:sb); end
+    Ainvb = pedigree_inverse(collect(1:(sb + qb)), sireb, zeros(Int, sb + qb))
+    Ab = inv(Symmetric(Matrix(Ainvb))); nab = size(Ainvb, 1)
+    gb = cholesky(Symmetric(Ab + 1e-8I)).L * randn(rng2, nab)
+    recsb = (sb + 1):(sb + qb); nb = qb; Xb = ones(nb, 1)
+    Zb = zeros(nb, nab); yb = zeros(nb)
+    for (r, an) in enumerate(recsb); Zb[r, an] = 1.0; yb[r] = 2.0 + gb[an] + randn(rng2); end
+    spec1 = animal_model_spec(yb, Xb, sparse(Zb), sparse(Matrix(Ainvb)); method = :REML)
+    afit = fit_ai_reml(spec1)
+    hci = heritability_interval(afit; level = 0.95)
+    m1 = multi_effect_ratio_interval(yb, Xb, [(sparse(Zb), Ainvb)])
+    @test m1.ratios[1].boundary == false
+    @test m1.ratios[1].estimate ≈ heritability(afit) rtol = 1e-3
+    @test m1.ratios[1].lower ≈ hci.lower rtol = 0.05
+    @test m1.ratios[1].upper ≈ hci.upper rtol = 0.05
+
+    # (D) BOUNDARY behavior: an effect with no signal collapses (σ_i → 0). Reuse
+    # the K=1 animal data and append a pure-noise i.i.d. grouping as effect 2:
+    # effect 2 must be FLAGGED (NaN CI); effect 1 stays well-defined (drops the
+    # degenerate block, uses the sub-block information — the h² reduction pattern).
+    ngd = 40; grpd = rand(rng2, 1:ngd, nb)
+    Zd = zeros(nb, ngd); for r in 1:nb; Zd[r, grpd[r]] = 1.0; end
+    md = multi_effect_ratio_interval(yb, Xb,
+            [(sparse(Zb), Ainvb), (sparse(Zd), sparse(Matrix(1.0I, ngd, ngd)))])
+    # effect 2 is a no-signal grouping → σ₂ collapses toward 0. Whether it lands BELOW
+    # boundary_tol (flagged, NaN CI) or at a tiny non-boundary variance with a valid CI is
+    # optimizer/BLAS-version-sensitive (Julia 1.10 vs ≥1.11), so assert the CONTRACT either
+    # way; the DECISIVE boundary path is exercised by the fully-degenerate case below.
+    r2 = md.ratios[2]
+    if r2.boundary
+        @test isnan(r2.lower) && isnan(r2.upper) && isnan(r2.se)
+    else
+        @test 0 <= r2.estimate < 1
+        @test !isnan(r2.lower) && !isnan(r2.upper) && r2.lower <= r2.upper
+    end
+    @test md.ratios[1].boundary == false
+    @test 0 < md.ratios[1].lower < md.ratios[1].estimate < md.ratios[1].upper < 1
+
+    # fully degenerate data → every ratio flagged, none emits a spurious interval
+    rng3 = MersenneTwister(99)
+    Ainvc = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
+    Zc = zeros(8, 4); for (rec, an) in enumerate([1, 1, 2, 2, 3, 3, 4, 4]); Zc[rec, an] = 1.0; end
+    Z2c = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
+    yc = randn(rng3, 8) .* 0.5 .+ 10.0; Xc = ones(8, 1)
+    mc = multi_effect_ratio_interval(yc, Xc, [(Zc, Ainvc), (Z2c, Matrix(1.0I, 2, 2))])
+    @test mc.ratios[1].boundary == true && isnan(mc.ratios[1].lower)
+    @test mc.ratios[2].boundary == true && isnan(mc.ratios[2].lower)
+end
+
 @testset "Phase 4 direct–maternal 2×2 G (first correlated genetic effect)" begin
     Ainv = pedigree_inverse([1, 2, 3, 4], [0, 0, 1, 1], [0, 0, 2, 2])
     A = inv(Symmetric(Matrix(Ainv)))

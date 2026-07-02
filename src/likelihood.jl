@@ -809,27 +809,29 @@ end
 
 # One variance ratio `theta[keep_num] / total` and its logit-delta CI from the
 # supplied REML observed-information matrix `info` (the central FD Hessian of the
-# two-effect REML loglik at the optimum, negated). `keep_num` is the numerator
-# component (1 or 2). Components whose variance is a negligible fraction of the
-# total are BOUNDARY components: they are dropped from `info` (the interior
-# information conditional on a boundary component being fixed at 0 is the
-# corresponding sub-block), so a ratio built on a non-boundary numerator (e.g.
-# `ratio1` when only σ2²→0) still gets a valid interval — this is what makes the
-# σ2²=0 reduction match `heritability_interval`. A ratio whose OWN numerator or
-# whose total-defining denominator is degenerate is flagged and returns a NaN CI
-# (never a spuriously tight interval).
-function _two_effect_ratio_ci(info::AbstractMatrix, theta::AbstractVector,
-                              keep_num::Integer, level::Real, boundary_tol::Real)
+# REML loglik at the optimum, negated). `theta` is the full length-`d` variance
+# vector `[σ_1², …, σ_{d-1}², σ_e²]` (`d = 3` for the two-effect model, `d = K+1`
+# for the K-effect model) and `keep_num` is the numerator component. Components
+# whose variance is a negligible fraction of the total are BOUNDARY components:
+# they are dropped from `info` (the interior information conditional on a boundary
+# component being fixed at 0 is the corresponding sub-block), so a ratio built on
+# a non-boundary numerator (e.g. `ratio1` when only σ2²→0) still gets a valid
+# interval — this is what makes the σ2²=0 reduction match `heritability_interval`.
+# A ratio whose OWN numerator or whose total-defining denominator is degenerate is
+# flagged and returns a NaN CI (never a spuriously tight interval).
+function _ratio_delta_ci(info::AbstractMatrix, theta::AbstractVector,
+                         keep_num::Integer, level::Real, boundary_tol::Real)
+    d = length(theta)
     total = sum(theta)
     ratio = theta[keep_num] / total
-    # which of the three components sit on the boundary (σ_i / total ≈ 0)
-    on_boundary = [theta[i] / total <= boundary_tol for i in 1:3]
+    # which of the d components sit on the boundary (σ_i / total ≈ 0)
+    on_boundary = [theta[i] / total <= boundary_tol for i in 1:d]
     # the numerator itself at the boundary → the ratio is ≈ 0, no informative CI
     if on_boundary[keep_num]
         return (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
                 lower_clamped = false, upper_clamped = false, boundary = true)
     end
-    keep = [i for i in 1:3 if !on_boundary[i]]
+    keep = [i for i in 1:d if !on_boundary[i]]
     # need at least the numerator + one other component to define a ratio interval
     if length(keep) < 2
         return (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
@@ -857,6 +859,23 @@ function _two_effect_ratio_ci(info::AbstractMatrix, theta::AbstractVector,
     return (estimate = ratio, lower = lower, upper = upper, se = se,
             lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
             boundary = false)
+end
+
+# Observed REML information = −Hessian of the REML loglik `f` at the variance
+# vector `theta` (length `d`), by central finite differences with a
+# component-relative step `fd_step · max(|θ_i|, 1e-3)`. Shared by the two-effect
+# and K-effect ratio-interval paths.
+function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)
+    d = length(theta)
+    h = fd_step .* max.(abs.(theta), 1e-3)
+    H = zeros(d, d)
+    for i in 1:d, j in 1:d
+        ei = zeros(d); ei[i] = h[i]
+        ej = zeros(d); ej[j] = h[j]
+        H[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                   f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    return Symmetric(-H)
 end
 
 """
@@ -922,22 +941,14 @@ function two_effect_ratio_interval(
     loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
 
     # observed information = −Hessian of the REML loglik (central finite differences)
-    h = fd_step .* max.(abs.(theta), 1e-3)
-    H = zeros(3, 3)
-    for i in 1:3, j in 1:3
-        ei = zeros(3); ei[i] = h[i]
-        ej = zeros(3); ej[j] = h[j]
-        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
-                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
-    end
-    info = Symmetric(-H)
+    info = _reml_fd_information(loglik, theta, fd_step)
 
     na_ci = (estimate = NaN, lower = NaN, upper = NaN, se = NaN,
              lower_clamped = false, upper_clamped = false, boundary = false)
     r1 = which === :ratio2 ? merge(na_ci, (estimate = fit.ratio1,)) :
-         _two_effect_ratio_ci(info, theta, 1, level, boundary_tol)
+         _ratio_delta_ci(info, theta, 1, level, boundary_tol)
     r2 = which === :ratio1 ? merge(na_ci, (estimate = fit.ratio2,)) :
-         _two_effect_ratio_ci(info, theta, 2, level, boundary_tol)
+         _ratio_delta_ci(info, theta, 2, level, boundary_tol)
     return (ratio1 = r1, ratio2 = r2, level = level, converged = fit.converged)
 end
 
@@ -1151,6 +1162,100 @@ function fit_multi_effect_reml(
         converged = Optim.converged(result),
         boundary = [s / total < 1e-6 for s in sigmas],
     )
+end
+
+"""
+    multi_effect_ratio_interval(y, X, effects; level = 0.95, which = :all,
+                                initial = nothing, iterations = 200,
+                                ids = nothing, fd_step = 1e-4,
+                                boundary_tol = 1e-6)
+
+Asymptotic delta-method confidence interval(s) for the per-component variance
+ratios of the general `K`-independent-random-effect REML model
+([`fit_multi_effect_reml`](@ref)) — the `K`-component generalization of
+[`two_effect_ratio_interval`](@ref):
+
+    ratio_i = σ_i² / (Σ_{j=1}^{K} σ_j² + σ_e²),   i = 1, …, K.
+
+Fits by REML, forms the observed information as the central finite-difference
+Hessian of the `K`-effect REML log-likelihood (`_multi_effect_dense`) over the
+`K+1` variances at the optimum, and applies the delta method on the logit scale
+(so each interval lies in `(0, 1)`) — the SAME machinery as
+[`two_effect_ratio_interval`](@ref) / [`heritability_interval`](@ref)
+`method = :delta`, sharing the finite-difference information and per-ratio
+logit-delta helper.
+
+`which` selects which component(s) to build an interval for: `:all` (default,
+all `K`) or an integer `1 ≤ i ≤ K` (only component `i`; the others report their
+point `estimate` with a `NaN` interval). Returns a `NamedTuple`
+`(ratios, level, converged)` where `ratios` is a length-`K` vector of
+`(estimate, lower, upper, se, lower_clamped, upper_clamped, boundary)`.
+
+Boundary honesty (identical to the two-effect path): a component on the variance
+boundary (σ_i / total ≤ `boundary_tol`) is flagged `boundary = true` with a `NaN`
+interval — never a spuriously tight CI. A ratio built on a non-boundary numerator
+drops the degenerate component(s) and uses the corresponding information sub-block
+(the interior information conditional on the boundary component fixed at 0), so a
+well-identified component keeps a valid interval even when another collapses.
+
+Reductions: at `K = 2` this matches [`two_effect_ratio_interval`](@ref) (same
+finite-difference information, same estimand); at `K = 1` it matches
+[`heritability_interval`](@ref) `method = :delta` up to the finite-difference vs
+analytic-AI information difference (same estimand, different information
+estimator — a few-percent endpoint difference, not machine precision).
+
+Experimental, asymptotic, delta-method, dense/validation-scale, REML only,
+Gaussian, INDEPENDENT effects only (no correlated / direct–maternal covariance);
+the dense path forms an `n×n` `V`. The interval is a large-sample approximation
+and is NOT coverage-calibrated — on small samples the REML surface is flat and the
+interval is unreliable (the parametric bootstrap,
+`bootstrap_variance_component_interval`, is the only finite-sample-aware path). No
+calibrated coverage is claimed.
+"""
+function multi_effect_ratio_interval(
+    y::AbstractVector, X::AbstractMatrix, effects::AbstractVector;
+    level::Real = 0.95, which::Union{Symbol,Integer} = :all,
+    initial = nothing, iterations::Integer = 200, ids = nothing,
+    fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    if which isa Symbol
+        which === :all ||
+            throw(ArgumentError("which must be :all or an integer component index 1..$K"))
+    else
+        1 <= which <= K ||
+            throw(ArgumentError("which must be :all or an integer component index 1..$K"))
+    end
+
+    fit = fit_multi_effect_reml(y, X, effects; initial = initial,
+                                iterations = iterations, ids = ids)
+    sigmas = fit.variance_components.sigmas
+    se2 = fit.variance_components.sigma_e2
+    theta = vcat(collect(sigmas), se2)        # [σ_1², …, σ_K², σ_e²], length K+1
+
+    As = [inv(Symmetric(Matrix{Float64}(pair[2]))) for pair in effects]
+    Zds = [Matrix{Float64}(pair[1]) for pair in effects]
+    ZAs = [(Zds[i], As[i]) for i in 1:K]
+    Xd = Matrix{Float64}(X); yv = Float64.(y)
+    loglik(t) = _multi_effect_dense(yv, Xd, ZAs, t[1:K], t[K + 1])[1]
+
+    # observed information = −Hessian of the K-effect REML loglik (central FD),
+    # shared with the two-effect path
+    info = _reml_fd_information(loglik, theta, fd_step)
+
+    na_ci = (estimate = NaN, lower = NaN, upper = NaN, se = NaN,
+             lower_clamped = false, upper_clamped = false, boundary = false)
+    ratios = Vector{typeof(na_ci)}(undef, K)
+    for i in 1:K
+        if which isa Integer && which != i
+            ratios[i] = merge(na_ci, (estimate = fit.ratios[i],))
+        else
+            ratios[i] = _ratio_delta_ci(info, theta, i, level, boundary_tol)
+        end
+    end
+    return (ratios = ratios, level = level, converged = fit.converged)
 end
 
 # Dense REML log-likelihood + BLUPs for the direct–maternal model: one trait, one
