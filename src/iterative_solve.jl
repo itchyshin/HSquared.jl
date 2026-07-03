@@ -851,6 +851,119 @@ function matrix_free_reml_loglik(
 end
 
 """
+    matrix_free_reml_information(y, X, effects, sigmas, sigma_e2; pcg_tol = 1e-11, pcg_maxiter = 5000)
+
+MATRIX-FREE average-information (AI) matrix of the `K`-independent-effect REML fit at the SUPPLIED
+variance components — the `(K+1)×(K+1)` information over `[σ²₁, …, σ²_K, σ²e]` used for asymptotic
+variance-component standard errors + ratio/`h²` intervals (v0.8 V8.3). It is EXACT (not stochastic):
+unlike the score's trace term, the AI matrix `0.5·WᵀPW` is built purely from working-variate
+`P`-projections (`W = [Zᵢûᵢ/σᵢ²; ê/σ²e]`, `P·w` an MME re-solve), so it needs only matrix-free
+solves — NO Hutchinson trace. It reproduces the exact Cholesky-factor AI matrix
+(`fit_sparse_multi_effect_aireml`'s `information`) to the PCG tolerance.
+
+Returns the `Symmetric` `(K+1)×(K+1)` AI matrix.
+"""
+function matrix_free_reml_information(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    pcg_tol::Real = 1e-11,
+    pcg_maxiter::Integer = 5000,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    n = length(y)
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    p = size(Xs, 2)
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for pair in effects
+        push!(Zs, sparse(Float64.(pair[1])))
+        push!(Ainvs, sparse(Float64.(pair[2])))
+        push!(qs, size(pair[2], 1))
+    end
+    ss = Float64.(collect(sigmas)); se2 = Float64(sigma_e2)
+    inv_se2 = inv(se2); inv_sig = inv.(ss)
+    offs = Vector{Int}(undef, K); acc = p
+    for i in 1:K; offs[i] = acc; acc += qs[i]; end
+    ntot = acc
+    Xt = transpose(Xs); Zts = [transpose(Zs[i]) for i in 1:K]
+    applyC = v -> _multi_mme_matvec(Xs, Xt, Zs, Zts, Ainvs, inv_se2, inv_sig, p, offs, qs, v)
+    d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sig, p, offs, qs, ntot)
+    invd = 1.0 ./ d
+    applyMinv = r -> invd .* r
+
+    # matrix-free solve of the RHS system for [β; u], then the residual e
+    solve_rhs(w) = begin
+        rr = Vector{Float64}(undef, ntot)
+        rr[1:p] .= inv_se2 .* (Xt * w)
+        for i in 1:K
+            rr[(offs[i] + 1):(offs[i] + qs[i])] .= inv_se2 .* (Zts[i] * w)
+        end
+        xw, _, _ = _pcg_solve(applyC, rr; tol = Float64(pcg_tol), maxiter = Int(pcg_maxiter),
+                              applyMinv = applyMinv)
+        xw
+    end
+    sol = solve_rhs(yv)
+    beta = sol[1:p]
+    us = [sol[(offs[i] + 1):(offs[i] + qs[i])] for i in 1:K]
+    e = yv .- Xs * beta
+    for i in 1:K; e .-= Zs[i] * us[i]; end
+
+    # working variates and their P-projections (P·w = (w − Xβ_w − Σ Zᵢu_{w,i})/σ²e)
+    W = Matrix{Float64}(undef, n, K + 1)
+    for i in 1:K; W[:, i] = (Zs[i] * us[i]) ./ ss[i]; end
+    W[:, K + 1] = e ./ se2
+    PW = Matrix{Float64}(undef, n, K + 1)
+    for j in 1:(K + 1)
+        w = @view W[:, j]
+        xw = solve_rhs(Vector(w))
+        pw = Vector(w) .- Xs * xw[1:p]
+        for i in 1:K; pw .-= Zs[i] * xw[(offs[i] + 1):(offs[i] + qs[i])]; end
+        PW[:, j] = pw ./ se2
+    end
+    return Symmetric(0.5 .* (transpose(W) * PW))
+end
+
+"""
+    matrix_free_ratio_intervals(y, X, effects, sigmas, sigma_e2; level = 0.95,
+                                boundary_tol = 1e-6, pcg_tol = 1e-11, pcg_maxiter = 5000)
+
+Asymptotic delta-method variance-ratio intervals for the matrix-free `K`-effect fit (v0.8 V8.3) —
+one per random effect (the animal-block ratio is narrow-sense `h²`; the others are
+variance-explained proportions). Builds the matrix-free AI matrix
+([`matrix_free_reml_information`](@ref)) at the supplied estimate and applies the same logit
+delta-method (`_ratio_delta_ci`) as the exact `multi_effect_ratio_interval`. AI-based, ASYMPTOTIC,
+NOT coverage-calibrated; boundary components (`σᵢ/total ≤ boundary_tol`) are flagged. Returns a
+length-`K` vector of `(estimate, lower, upper, se, lower_clamped, upper_clamped, boundary)`.
+"""
+function matrix_free_ratio_intervals(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    level::Real = 0.95,
+    boundary_tol::Real = 1e-6,
+    pcg_tol::Real = 1e-11,
+    pcg_maxiter::Integer = 5000,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    K = length(effects)
+    info = matrix_free_reml_information(y, X, effects, sigmas, sigma_e2;
+                                        pcg_tol = pcg_tol, pcg_maxiter = pcg_maxiter)
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+    return [_ratio_delta_ci(info, theta, i, level, boundary_tol) for i in 1:K]
+end
+
+"""
     fit_multi_effect(y, X, effects; method = :auto, direct_max_n = 200_000, nprobe = 64,
                      verbose = true, kwargs...)
 
