@@ -9,6 +9,24 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-03 (v0.8 doc-25 progress: V8.3 matrix-free intervals MERGED (PR #252) + V8.5 APY
+  genomic inverse; Claude solo (Opus), autonomous; rows 54→**55** / covered **13** / `public_covered_count`
+  **5** UNCHANGED).** Two more doc-25 slices, NO covered flip. **V8.3 (merged `afc446c4`):**
+  `matrix_free_reml_information` — the average-information (AI) matrix built matrix-free and EXACTLY
+  (working-variate `P`-projections, no stochastic trace — only the *score* needs the trace),
+  reproducing the exact Cholesky-factor AI; `matrix_free_ratio_intervals` gives the same
+  delta-method ratio/`h²` intervals as the exact path (asymptotic, NOT coverage-calibrated). **V8.5
+  (this slice, branch `feat/2026-07-03-v85-apy`):** `apy_genomic_relationship_inverse(G, core; ridge)`
+  — the Algorithm for Proven & Young (Misztal 2014) sparse-structured genomic inverse (factorizes
+  only the core×core block + a diagonal conditional-variance correction for non-core, `O(ncore³)` not
+  `O(n³)`) — the genomic analogue of the matrix-free "avoid the full dense object" move. EXACT-REDUCTION
+  gate: core=all == full `inv(G+ridge·I)` to ~1e-15; the approximation converges to the full-inverse
+  GEBV as the core grows (near-full core relerr 0.029 / corr ~0.9996). NEW `partial` row `V2-APY`
+  (count 54→55; covered + `public_covered_count` UNCHANGED — engine scale primitive, caller-supplied
+  core, dense return, no core-selection/scale-benchmark/comparator yet). `Pkg.test()` GREEN (55);
+  `docs/make.jl` GREEN. REMAINING doc-25: V8.4 (external comparator at scale) + v0.7 GPU stream
+  (G-B/C/D/E). START HERE: `docs/dev-log/after-task/2026-07-03-v85-apy-genomic-inverse.md`.
+
 - **As of 2026-07-03 (v0.8 doc-25 progress: V8.1 loglik + V8.2 varreduction MERGED, V8.6 R
   CONNECTION in paired PRs; R twin REOPENED; Claude solo (Opus), autonomous; rows 54 / covered 13
   / `public_covered_count` 5 UNCHANGED).** Working down the completion ultra-plan (`docs/design/25-completion-ultraplan.md`).

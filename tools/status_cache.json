@@ -1,11 +1,11 @@
 {
-  "rows": 54,
+  "rows": 55,
   "covered": 13,
   "covered_external": 3,
-  "partial": 37,
+  "partial": 38,
   "planned": 1,
   "public_covered_count": 5,
-  "refreshed_at": "2026-07-02",
-  "refreshed_from_head": "56c6e13f",
+  "refreshed_at": "2026-07-03",
+  "refreshed_from_head": "afc446c4",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
 }

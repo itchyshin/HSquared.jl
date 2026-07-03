@@ -77,6 +77,7 @@ HSquared.maternal_lineage
 HSquared.single_step_inverse
 HSquared.genomic_relationship_matrix
 HSquared.genomic_relationship_inverse
+HSquared.apy_genomic_relationship_inverse
 HSquared.gpu_genomic_relationship_matrix
 HSquared.gpu_genomic_relationship_inverse
 HSquared.centered_markers

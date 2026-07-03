@@ -189,6 +189,15 @@ const VALIDATION_STATUS_DATA = (
         "Supplied-variance genomic solve plus a Julia-native/R-consumed comparator target only; no genomic variance-component estimation, no single-step, no external comparator parity.",
     ),
     (
+        "V2-APY",
+        "APY sparse-structured genomic inverse (large genotyped populations)",
+        "Phase 2",
+        "partial",
+        "`apy_genomic_relationship_inverse(G, core; ridge)` builds the Algorithm-for-Proven-&-Young (Misztal et al. 2014) inverse: it factorizes only the `core × core` block and adds a diagonal conditional-variance (`Mendelian`) correction for the non-core animals (`O(ncore³ + nnoncore·ncore²)` instead of the dense `O(n³)` inverse). EXACT-REDUCTION gate in `test/runtests.jl`: `core = 1:n` (all animals) reproduces the full regularized `genomic_relationship_inverse(G; ridge)` to ~1e-15 (a machine-precision identity, not a tolerance). APPROXIMATION: fed through `fit_gblup`, the APY GEBVs approach the full-inverse GEBVs as the core grows — a near-full core (n−3) reaches correlation ~0.9996 with the full-inverse GEBVs and a small core (n/3) ~0.986, monotone in core size. Guards: non-positive conditional variance, empty/out-of-range core, and negative ridge all throw.",
+        "a core-selection algorithm (the caller currently supplies `core`), a genuinely sparse/on-device `Ginv` representation (the result is returned dense at validation scale), a large-`n` scale/timing benchmark, an accuracy-vs-core-size recovery gate, and an external APY comparator (BLUPF90 `OPTION apy`/`sommer`)",
+        "Validation-scale supplied-`G` APY STRUCTURE only: the exact-reduction identity (core=all) is machine-precision; the sub-full-core case is an APPROXIMATION whose accuracy is demonstrated but not gate-calibrated; caller-supplied core, dense return, no scale benchmark, no external comparator, not the public default.",
+    ),
+    (
         "V2-SNPBLUP",
         "SNP-BLUP / GBLUP equivalence",
         "Phase 2",
