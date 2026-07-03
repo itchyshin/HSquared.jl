@@ -172,8 +172,9 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 54
+    @test length(validation) == 55
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
+    @test "V2-APY" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
     @test "V3-NEFFECT-MATFREE-FIT" in [row.id for row in validation]
     @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
@@ -4025,6 +4026,46 @@ end
     @test_throws ArgumentError genomic_relationship_matrix(M; method = :bogus)
     mono = [0.0 1.0; 0.0 1.0; 0.0 2.0]   # column 1 monomorphic (p = 0)
     @test_throws ArgumentError genomic_relationship_matrix(mono; method = :vanraden2)
+end
+
+@testset "APY genomic inverse (Algorithm for Proven & Young, v0.8 V8.5)" begin
+    # apy_genomic_relationship_inverse: core=all reduces EXACTLY to the full regularized inverse;
+    # the approximation improves with core size (GEBV -> full-inverse GEBV as core -> effective rank).
+    rng = MersenneTwister(3); n = 120; m = 600
+    pf = 0.05 .+ 0.9 .* rand(rng, m)
+    M = Float64[(rand(rng) < pf[j]) + (rand(rng) < pf[j]) for i in 1:n, j in 1:m]
+    G = genomic_relationship_matrix(M; method = :vanraden1)
+    ridge = 0.01
+
+    # (1) EXACT REDUCTION: core = all animals == inv(G + ridge·I)
+    full_inv = genomic_relationship_inverse(G; ridge = ridge)
+    apy_all = apy_genomic_relationship_inverse(G, collect(1:n); ridge = ridge)
+    @test size(apy_all) == (n, n)
+    @test maximum(abs.(apy_all .- full_inv)) < 1e-8               # core=all == full inverse
+    @test issymmetric(Symmetric(apy_all))
+
+    # (2) APPROXIMATION improves as the core approaches all animals. A near-full core (only a few
+    # non-core) is ~exact, and clearly closer to the full-inverse GEBV than a small core (with a
+    # full-rank G, m > n, a mid-size core is a genuine low-rank approximation — the near-full core
+    # is the robust demonstration that APY converges to the full inverse).
+    y = 5.0 .+ randn(rng, n); X = ones(n, 1); sa2, se2 = 1.0, 1.0
+    Z = sparse(1.0I, n, n)
+    gebv_full = breeding_values(fit_gblup(y, X, Z, full_inv, sa2, se2)).values
+    core_near = collect(1:(n - 3))          # 3 non-core → APY ~exact
+    core_small = collect(1:(n ÷ 3))         # many non-core → approximate
+    gebv_near = breeding_values(fit_gblup(y, X, Z, apy_genomic_relationship_inverse(G, core_near; ridge = ridge), sa2, se2)).values
+    gebv_small = breeding_values(fit_gblup(y, X, Z, apy_genomic_relationship_inverse(G, core_small; ridge = ridge), sa2, se2)).values
+    relerr(g) = norm(g .- gebv_full) / norm(gebv_full)           # relative L2 distance to full-inverse GEBV
+    @test relerr(gebv_near) < relerr(gebv_small)                 # closer to all ⇒ closer to full
+    @test relerr(gebv_near) < 0.05                               # near-full core is ~exact
+    # core=all GEBV equals the full-inverse GEBV exactly
+    gebv_apy_all = breeding_values(fit_gblup(y, X, Z, apy_all, sa2, se2)).values
+    @test maximum(abs.(gebv_apy_all .- gebv_full)) < 1e-6
+
+    # guards
+    @test_throws ArgumentError apy_genomic_relationship_inverse(G, Int[]; ridge = ridge)      # empty core
+    @test_throws ArgumentError apy_genomic_relationship_inverse(G, [1, n + 1]; ridge = ridge)  # out-of-range
+    @test_throws ArgumentError apy_genomic_relationship_inverse(G, collect(1:n); ridge = -1.0) # ridge >= 0
 end
 
 @testset "Phase 2 weighted genomic relationship (weighted GBLUP)" begin

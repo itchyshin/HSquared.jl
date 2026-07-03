@@ -122,6 +122,68 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
 end
 
 """
+    apy_genomic_relationship_inverse(G, core; ridge = 0.0)
+
+APY (Algorithm for Proven & Young, Misztal et al. 2014) sparse-structured inverse of a genomic
+relationship matrix `G` — the large-genotyped-population scale path for `Ginv` (v0.8-S4/V8.5). It
+inverts only the `core × core` block and adds a DIAGONAL conditional-variance correction for the
+non-core animals, instead of the full `O(n³)` dense inverse: partition animals into `core` `c` and
+non-core `n`,
+
+  - `Mnn = Diagonal(gᵢᵢ − G[i,c]·Gcc⁻¹·G[c,i])` (each non-core animal's conditional "Mendelian"
+    variance);
+  - `Ginv = [[Gcc⁻¹ + Gcc⁻¹Gcn·Mnn⁻¹·GncGcc⁻¹,  −Gcc⁻¹Gcn·Mnn⁻¹];  [−Mnn⁻¹·GncGcc⁻¹,  Mnn⁻¹]]`.
+
+`core` is the vector of core-animal row indices into `G`. `ridge` is added to the `core` block
+before its Cholesky (a VanRaden `G` is rank-deficient). As the core set approaches the effective
+rank of `G`, `Ginv_APY → inv(G)`; with `core = 1:n` (all animals) it equals the full regularized
+`inv(G + ridge·I)` EXACTLY. Returns the dense `n × n` `Ginv` (the APY STRUCTURE — the compute win is
+inverting `Gcc` (`ncore³`) + the diagonal `Mnn`, `O(ncore³ + nnoncore·ncore²)`, not `O(n³)`; the
+result is returned dense at validation scale — a sparse/on-device representation is future work).
+
+EXPERIMENTAL, engine-internal, validation-scale, supplied-`G`; no core-selection algorithm (the
+caller supplies `core`), no R surface. Throws on a non-positive conditional variance (increase the
+core set or `ridge`).
+"""
+function apy_genomic_relationship_inverse(G::AbstractMatrix, core::AbstractVector{<:Integer};
+                                          ridge::Real = 0.0)
+    n = size(G, 1)
+    size(G, 2) == n || throw(ArgumentError("G must be square"))
+    ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    core = sort(unique(Int.(core)))
+    (isempty(core) || core[1] < 1 || core[end] > n) &&
+        throw(ArgumentError("core must be a non-empty set of row indices in 1:$n"))
+    noncore = setdiff(1:n, core)
+    nc = length(core)
+    Gd = Matrix{Float64}(G)
+    Gcc = Symmetric(Gd[core, core] + ridge * I)
+    Gcc_f = try
+        cholesky(Gcc)
+    catch err
+        err isa LinearAlgebra.PosDefException &&
+            throw(ArgumentError("APY core block is not positive definite; increase ridge or the core set"))
+        rethrow(err)
+    end
+    Gcc_inv = Gcc_f \ Matrix{Float64}(I, nc, nc)
+    Ginv = zeros(Float64, n, n)
+    Ginv[core, core] .= Gcc_inv
+    if !isempty(noncore)
+        Gcn = Gd[core, noncore]                              # nc × nn
+        B = Gcc_inv * Gcn                                    # Gcc⁻¹Gcn
+        m = [Gd[noncore[j], noncore[j]] - dot(view(Gcn, :, j), view(B, :, j)) for j in eachindex(noncore)]
+        all(>(1e-12), m) ||
+            throw(ArgumentError("APY: non-positive conditional variance for a non-core animal; increase the core set or ridge"))
+        Minv = 1.0 ./ m
+        Ginv[core, core] .+= B * (Diagonal(Minv) * transpose(B))
+        cn = -(B .* transpose(Minv))                         # −Gcc⁻¹Gcn·Mnn⁻¹
+        Ginv[core, noncore] .= cn
+        Ginv[noncore, core] .= transpose(cn)
+        Ginv[noncore, noncore] .= Diagonal(Minv)
+    end
+    return Ginv
+end
+
+"""
     loco_relationship_precisions(markers, marker_groups; allele_frequencies = nothing,
                                  ridge = 0.01)
 
