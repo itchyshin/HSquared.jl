@@ -5,7 +5,7 @@ The committed tamia run of the pre-declared harness (`sim/drac/g_b_float32.jl`, 
 the opt-in `precision = Float32` path of `gpu_genomic_relationship_matrix`.
 
 - **Run:** tamia SLURM job **360780**, node tg10607, **NVIDIA H100 80GB HBM3**, CUDA 13.0 driver /
-  CUDA.jl runtime, Julia 1.10.10, 2026-07-03. Artifacts: `sim/drac/results/g_b_float32_360780.tsv`,
+  CUDA.jl runtime 12.6, Julia 1.10.10, 2026-07-03. Artifacts: `sim/drac/results/g_b_float32_360780.tsv`,
   `sim/drac/results/v07_gb_f32_360780.out`.
 
 ## (1) HARD GATE — PASSED
