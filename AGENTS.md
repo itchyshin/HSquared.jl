@@ -24,8 +24,15 @@ engine reality.
   GEBV as the core grows (near-full core relerr 0.029 / corr ~0.9996). NEW `partial` row `V2-APY`
   (count 54→55; covered + `public_covered_count` UNCHANGED — engine scale primitive, caller-supplied
   core, dense return, no core-selection/scale-benchmark/comparator yet). `Pkg.test()` GREEN (55);
-  `docs/make.jl` GREEN. REMAINING doc-25: V8.4 (external comparator at scale) + v0.7 GPU stream
-  (G-B/C/D/E). START HERE: `docs/dev-log/after-task/2026-07-03-v85-apy-genomic-inverse.md`.
+  `docs/make.jl` GREEN. **V8.4 (this session, ESTIMAND LEG DONE — no covered flip, no count change):**
+  `comparator/matfree_blupf90_neffect.jl` runs `blupf90+` 2.60 AIREMLF90 LIVE on the shared K=3
+  fixture (q=860); the matrix-free `fit_multi_effect_mc_reml` across-seed mean reaches blupf90's
+  optimum to **≤0.15%** within MC error (nprobe 128→0.05%, 512→0.15%; blupf90 within ≤0.5 across-seed
+  SD/component; exact-vs-blupf90 3.8e-5) — the external SAME-ESTIMAND leg for the matrix-free path at
+  validation scale; `V3-NEFFECT-MATFREE-FIT` owed-notes swept (V8.3+V8.4 delivered) across all 3
+  surfaces. REMAINING doc-25 (all COMPUTE-gated): V8.4 AT-SCALE leg (large-fixture, DRAC) +
+  coverage-calibrated intervals + the v0.7 GPU stream (G-B/C/D/E, DRAC GPU). START HERE:
+  `docs/dev-log/after-task/2026-07-03-v84-matfree-blupf90-comparator.md`.
 
 - **As of 2026-07-03 (v0.8 doc-25 progress: V8.1 loglik + V8.2 varreduction MERGED, V8.6 R
   CONNECTION in paired PRs; R twin REOPENED; Claude solo (Opus), autonomous; rows 54 / covered 13
