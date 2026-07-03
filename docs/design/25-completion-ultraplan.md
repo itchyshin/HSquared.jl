@@ -1,11 +1,15 @@
 # doc-25 — Ultra-plan: completely finishing the v0.7 + v0.8 arc
 
 **Authored:** 2026-07-02 (Claude, autonomous session). **Method:** ultra-plan (decompose →
-dispatch → verify → consolidate). **Status:** PLAN for the next sessions. **Context:** this
-session delivered the v0.7/v0.8 *first wave* (G-A device-resident GBLUP; S1 METIS banked-negative;
-S2 matrix-free multi-effect PCG + the matrix-free Monte-Carlo REML FIT: Slices A/B/C + the `:auto`
-usability layer). This doc is the honest map of what remains to take BOTH versions to their
-covered gates, and the strategic fork underneath.
+dispatch → verify → consolidate). **Status (2026-07-03 update):** ALL NUMBERED SLICES DONE — the
+**V8 stream (V8.1–V8.6) is COMPLETE** and the **V7 GPU stream (V7.1–V7.5) is COMPLETE**, each slice
+pre-declared + Rose-audited + merged. The only remaining items are the two explicitly-OWED
+hardening legs (not numbered slices, and not covered-flips): **V8.4's at-scale comparator** and
+**coverage-calibrated intervals** — both for a *covered* move that stays gated (`public_covered_count`
+5 throughout). **Context:** the first wave delivered G-A device-resident GBLUP; S1 METIS
+banked-negative; S2 matrix-free multi-effect PCG + the matrix-free Monte-Carlo REML FIT (Slices A/B/C
++ the `:auto` usability layer). This doc is the honest map of what remained; the numbered map is now
+cleared.
 
 ## Where we are
 
@@ -39,7 +43,7 @@ covered gates, and the strategic fork underneath.
 | **V7.2 ✅ DONE (2026-07-03)** G-A cross-device replicate | SAME committed G-A + G-B harnesses re-run on NVIDIA A100 (Narval job 64637092): device-resident GBLUP CPU↔GPU agreement HELD (β/GEBV ~1e-15) + Float64 gate HELD (3.0e-15) → GPU numerical AGREEMENT is architecture-portable (H100 → A100); Float32 same story (FP32-level, TF32 not engaged, modest speedup); A100 device-resident GBLUP benchmark 5.9×→46.7×. Machine-specific, not a competitive A100-vs-H100 claim. (checkpoint `docs/dev-log/recovery-checkpoints/2026-07-03-v07-g72-crossdevice-result.md`) | DRAC GPU (done) | — | low |
 | **V7.3 ✅ DONE (2026-07-03)** G-C real marker panel | `sim/drac/g_c_realpanel.jl` benchmarks `gpu_genomic_relationship_matrix` at realistic panel dimensions (LARGE SIMULATED, not a real dataset) + a device-memory profile. RUN on tamia H100 (job 360812): agreement gate 1.35e-14; the GPU HANDLES **n=20k × m=300k** on one H100 (largest cell ~24 GB = 29% of 80 GB; the n×m marker matrix `W` dominates memory, up to 22 GB, not the n×n `G`). Float32 speedup MODEST even at scale (0.96×–1.38×; transfer-bound — the 6–41 s times are dominated by CPU centering + H2D of the huge `W`, not the sub-second GEMM). A feasibility + memory-envelope record, NOT a speed headline. (checkpoint `docs/dev-log/recovery-checkpoints/2026-07-03-v07-gc-realpanel-result.md`) | DRAC GPU (done) | — | low |
 | **V7.4 ✅ DONE (2026-07-03)** G-D backend dispatcher | opt-in `backend = :cuda` kwarg on `genomic_relationship_matrix` / `genomic_relationship_inverse` routes to their GPU twins (the GPU analogue of the `:auto` solver dispatch) — the two construction ops whose CPU/GPU signatures match. `backend = :cpu` (default) byte-identical; `:cuda` → `MethodError` without CUDA; invalid backend → `ArgumentError`. NOT the general backend dispatcher (`backend_info()` `:cuda` stays `:planned`); the device-resident GBLUP (`gpu_fit_gblup`, different from-markers signature) stays its own entry point. CI-tested (7 assertions). | local | done | low |
-| **V7.5** G-E close-out | Rose + status flip of `V2-GRM-GPU` evidence (no public move) | local | Rose-gated | low |
+| **V7.5 ✅ DONE (2026-07-03)** G-E close-out | Consolidated the V7 GPU stream: `status_cache.json` pointer refreshed (→ current HEAD, 55/13/5); the whole `V2-GRM-GPU` evidence chain (G-A device-resident GBLUP + G-B Float32 + G-7.2 cross-device A100 + G-C large-panel + G-D dispatcher) verified coherent by a final Rose consolidation. NO status flip — `V2-GRM-GPU` stays `partial` (no covered move; the honest summary is: GPU acceleration is numerically-exact + architecture-portable + handles realistic panels, but Float32 is only a minor win and there is no R-public surface). The **v0.7 GPU stream (V7.1–V7.5) is COMPLETE**. | local | done | low |
 
 ### Cross-cutting
 
