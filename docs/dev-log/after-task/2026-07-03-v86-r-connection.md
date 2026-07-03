@@ -55,7 +55,13 @@ not a bug; the proper-scale agreement is the real check.)
 - Honesty pins: engine rows 54 / covered 13 / `public_covered_count` 5 UNCHANGED; R covered claim
   UNCHANGED (validation-scale, exact path). The large-scale matrix-free path is opt-in experimental
   on BOTH lanes.
-- Real `rose-systems-auditor`: <!-- ROSE_V86 -->
+- Real `rose-systems-auditor` (Opus) over BOTH lanes → **PROMOTE-WITH-CHANGES**: independently
+  reproduced the frozen-contract byte-identity (payload-v2 parity `max_abs=0.0`), the pins (rows 54
+  / covered 13 / `public_covered_count` 5), the `match.arg` error string, and the ranef/random_effects
+  extractor status; confirmed the matrix-free-only kwargs don't leak into the exact branch and all
+  three fit paths supply `loglik`/`boundary`. 2 required fixes applied (doc-25 V8.6 status
+  BLOCKED→DONE; this check-log entry), plus the AGENTS.md snapshot + capability/debt R-connection
+  mirror + hsquared NEWS entry.
 
 ## Next (doc-25)
 

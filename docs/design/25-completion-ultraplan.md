@@ -14,7 +14,9 @@ covered gates, and the strategic fork underneath.
   broken; the estimator is validated at small scale + (Slice C) a recovery/scale gate.
 - **v0.7 engine:** device-resident GBLUP agreement (~1e-15) + benchmark (5.2×→23×) on H100.
 - **The honest gap (unchanged):** engine capability keeps outrunning *user reachability* — the
-  public covered surface is still the same 5 R-reachable models; the R twin is frozen.
+  public covered surface is still the same 5 R-reachable models. (The R twin has since REOPENED —
+  V8.6 below connects the matrix-free scale path to the R multi_effect surface as an opt-in, with
+  no covered-count change.)
 
 ## The remaining work, decomposed
 
@@ -27,7 +29,7 @@ covered gates, and the strategic fork underneath.
 | **V8.3** matrix-free intervals | asymptotic SE/CI for the matrix-free VCs (stochastic observed-information) — currently NO intervals on the matrix-free fit | local + gate | yes | med |
 | **V8.4** external comparator at scale | blupf90/sommer same-estimand through the sparse/matrix-free path on a large fixture (the S3 comparator leg) | fleet | partly (needs blupf90) | med |
 | **V8.5** APY genomic scaling | Algorithm for Proven & Young sparse genomic inverse for large genotyped populations (distinct algorithm) | local + fleet | yes | high (new algorithm) |
-| **V8.6** R multi-term `(1\|g)` bridge | surface the multi-effect + matrix-free path through the R twin | — | **BLOCKED** (R frozen) | — |
+| **V8.6 ✅ DONE (2026-07-03)** R multi-term `(1\|g)` bridge | R twin REOPENED. `fit_payload_v2(...; scale_method=:auto)` + R `engine_control scale_method="auto"` route the existing `target="multi_effect"` surface through `fit_multi_effect(:auto)` — validation-scale = sparse-exact (reduces to the covered dense result, live-bridge verified 2.7e-5), large-scale = experimental matrix-free. Default `:dense` byte-identical (frozen contract). NO covered-count change (opt-in). Paired PRs (engine #251 / hsquared #122). | — | done | — |
 
 ### Stream V7 — v0.7 GPU to covered
 
@@ -69,12 +71,13 @@ At the first-wave cadence (~1 focused session/day, DRAC queues behaving):
 
 - **v0.7 to covered** (V7.1–V7.5): ~**3–4 sessions** — G-B is the only real build; the rest are
   fleet replicates + dispatcher + close-out. Lower risk.
-- **v0.8 to covered** (V8.1–V8.5, excluding the R-blocked V8.6): ~**5–8 sessions** — the loglik +
+- **v0.8 to covered** (V8.1–V8.5; V8.6 R connection DONE 2026-07-03): ~**5–8 sessions** — the loglik +
   intervals + APY are genuine new machinery, and a covered flip needs the comparator + gate to
   actually pass (science risk).
 - **Both, end-to-end:** realistically **2–3 weeks** of focused sessions, gated by (a) DRAC queue
-  time, (b) whether the recovery/comparator gates pass first try, (c) the R-lane freeze (V8.6 and
-  all *public* surfacing are blocked until it reopens — so "covered" here means *engine*-covered).
+  time, (b) whether the recovery/comparator gates pass first try. (The R lane has reopened; V8.6 is
+  DONE. Further *public covered* surfacing of the matrix-free path would still need its own R gate —
+  the current V8.6 connection is an opt-in experimental route, not a covered-count move.)
 
 **The honest ceiling:** without reopening the R twin, this arc can reach *engine*-covered for both
 versions in ~2–3 weeks, but the capability stays unreachable by R users. The single highest-impact
