@@ -3344,6 +3344,41 @@ end
     @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 0)
 end
 
+@testset "Matrix-free REML loglik via stochastic Lanczos quadrature (v0.8 V8.1)" begin
+    # matrix_free_reml_loglik estimates the Gaussian REML loglik matrix-free: log|C| by SLQ,
+    # the rest exact. It must match the exact sparse_multi_reml_loglik within the SLQ MC error.
+    function _hs(q)
+        nsire = max(2, round(Int, 0.04q)); ndam = max(2, round(Int, 0.08q)); noff = q - nsire - ndam
+        sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+        normalize_pedigree(vcat(sids, dids, oids),
+            vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff]),
+            vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff]))
+    end
+    rng = MersenneTwister(3); q = 400
+    ped = _hs(q); na = length(ped.ids); Ainv = pedigree_inverse(ped)
+    n = na; X = ones(n, 1); y = 5.0 .+ randn(rng, n)
+    ng = q ÷ 8; Z2 = spzeros(n, ng)
+    for r in 1:n; Z2[r, rand(rng, 1:ng)] = 1.0; end
+    effects = [(sparse(1.0I, n, na), Ainv), (Z2, sparse(1.0I, ng, ng))]
+    sig = [1.2, 0.6]; se2 = 0.8
+
+    exll, _, _ = HSquared.sparse_multi_reml_loglik(y, X, effects, sig, se2)
+    mfll, mcse = matrix_free_reml_loglik(y, X, effects, sig, se2; slq_probes = 40, slq_steps = 50, seed = 7)
+    @test mcse > 0                                            # honest MC noise band on the loglik
+    @test abs(mfll - exll) < 4 * mcse                         # matches exact within the SLQ error band
+    @test abs(mfll - exll) / abs(exll) < 0.02                 # practically close
+
+    # more SLQ probes ⇒ tighter (MC error ∝ 1/√probes)
+    _, mcse_hi = matrix_free_reml_loglik(y, X, effects, sig, se2; slq_probes = 160, slq_steps = 50, seed = 8)
+    @test mcse_hi < mcse
+
+    # guards
+    @test_throws ArgumentError matrix_free_reml_loglik(y, X, effects, [1.2], se2)   # sigmas length
+    @test_throws ArgumentError matrix_free_reml_loglik(y, X, effects, sig, 0.0)      # σ²e > 0
+    @test_throws ArgumentError matrix_free_reml_loglik(y, X, effects, sig, se2; slq_probes = 0)
+    @test_throws ArgumentError matrix_free_reml_loglik(y, X, effects, sig, se2; slq_steps = 1)
+end
+
 @testset "fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability)" begin
     # fit_multi_effect routes between the exact sparse AI-REML and the matrix-free MC-REML by
     # feasibility, with a forced override. Small K=2 case (animal-A + env group).

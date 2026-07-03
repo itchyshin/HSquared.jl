@@ -687,6 +687,153 @@ function fit_multi_effect_mc_reml(
     )
 end
 
+# Stochastic Lanczos quadrature (SLQ) for one Rademacher probe: k Lanczos steps on `applyC`
+# (matrix-free `C·v`) build a k×k symmetric-tridiagonal `T`; the quadrature `Σ ωⱼ log θⱼ`
+# (θ = eigenvalues of T, ω = squared first components of its eigenvectors) estimates
+# `z_unitᵀ log(C) z_unit`. Full re-orthogonalization for stability at small k. Returns that
+# scalar (per unit vector); the caller multiplies by `‖z‖² = N` for the Rademacher trace.
+function _lanczos_logquad(applyC, z::Vector{Float64}, k::Int)
+    N = length(z)
+    V = zeros(Float64, N, k)
+    alpha = zeros(Float64, k)
+    beta = zeros(Float64, max(k - 1, 0))
+    v = z ./ norm(z)
+    @views V[:, 1] .= v
+    w = applyC(v)
+    a = dot(w, v); alpha[1] = a
+    @. w = w - a * v
+    kk = k
+    for j in 2:k
+        b = norm(w)
+        if b < 1e-12
+            kk = j - 1
+            break
+        end
+        beta[j - 1] = b
+        vprev = @view V[:, j - 1]
+        v = w ./ b
+        for i in 1:(j - 1)                                  # full re-orthogonalization
+            @views v .-= dot(v, V[:, i]) .* V[:, i]
+        end
+        v ./= norm(v)
+        @views V[:, j] .= v
+        w = applyC(v)
+        a = dot(w, v); alpha[j] = a
+        @. w = w - a * v - b * vprev
+    end
+    T = SymTridiagonal(alpha[1:kk], beta[1:(kk - 1)])
+    E = eigen(T)
+    all(>(0), E.values) || return NaN                       # C must be PD (log of a non-PD ⇒ NaN)
+    return sum((E.vectors[1, :] .^ 2) .* log.(E.values))
+end
+
+"""
+    matrix_free_reml_loglik(y, X, effects, sigmas, sigma_e2; slq_probes = 20, slq_steps = 40,
+                            seed = 0, pcg_tol = 1e-9, pcg_maxiter = 2000)
+
+MATRIX-FREE Gaussian REML log-likelihood of the `K`-independent-effect model at the SUPPLIED
+variance components — the loglik companion of [`fit_multi_effect_mc_reml`](@ref) (v0.8 V8.1). It
+never forms or factorizes the MME coefficient matrix `C`: the only determinant term that needs
+`C`, `log|C|`, is estimated by **stochastic Lanczos quadrature** (SLQ) — `slq_probes` Rademacher
+probes, `slq_steps` matrix-free Lanczos steps each — while the other REML terms are exact/cheap:
+
+`ℓ = −½[(n−p)·log(2π) + n·log(σ²e) + Σᵢ(qᵢ·log(σᵢ²) − log|Aᵢ⁻¹|) + log|C| + yᵀPy]`,
+
+with `log|Aᵢ⁻¹|` from a one-time sparse Cholesky of each `Aᵢ⁻¹` (the pedigree/identity precision —
+far cheaper than `C`; an `O(q)` Mendelian route is a future scale optimization) and `yᵀPy` from a
+matrix-free MME solve. It uses the SAME full-constant convention as `sparse_multi_reml_loglik`, so
+the two agree up to the SLQ Monte-Carlo error on `log|C|`.
+
+Returns `(loglik, loglik_mcse)` — the estimate and its Monte-Carlo standard error (the SLQ noise on
+`log|C|`, scaled by ½; `∝ 1/√slq_probes`).
+
+EXPERIMENTAL. This is the term that unlocks LRTs / interval machinery for the matrix-free fit. It
+is STOCHASTIC (the loglik carries MC noise); at validation scale the exact
+`sparse_multi_reml_loglik` is preferred. Requires a positive-definite `C` (returns `NaN` loglik
+otherwise).
+"""
+function matrix_free_reml_loglik(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    slq_probes::Integer = 20,
+    slq_steps::Integer = 40,
+    seed::Integer = 0,
+    pcg_tol::Real = 1e-9,
+    pcg_maxiter::Integer = 2000,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    slq_probes >= 1 || throw(ArgumentError("slq_probes must be >= 1"))
+    slq_steps >= 2 || throw(ArgumentError("slq_steps must be >= 2"))
+
+    n = length(y)
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    p = size(Xs, 2)
+    p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, size(Ainvi, 1))
+    end
+    ss = Float64.(collect(sigmas)); se2 = Float64(sigma_e2)
+    inv_se2 = inv(se2); inv_sig = inv.(ss)
+    offs = Vector{Int}(undef, K); acc = p
+    for i in 1:K; offs[i] = acc; acc += qs[i]; end
+    ntot = acc
+
+    Xt = transpose(Xs); Zts = [transpose(Zs[i]) for i in 1:K]
+    applyC = v -> _multi_mme_matvec(Xs, Xt, Zs, Zts, Ainvs, inv_se2, inv_sig, p, offs, qs, v)
+
+    # log|R| + log|G|
+    logdetR = n * log(se2)
+    logdetG = 0.0
+    for i in 1:K
+        logdetG += qs[i] * log(ss[i])
+        chAinv = cholesky(Symmetric(Ainvs[i]); check = true)   # one-time; pedigree/identity, cheaper than C
+        logdetG -= logdet(chAinv)                              # log|Aᵢ⁻¹|
+    end
+
+    # yᵀPy = (1/σ²e)·yᵀy − rhsᵀ·C⁻¹·rhs (the sparse MME identity), matrix-free.
+    rhs = Vector{Float64}(undef, ntot)
+    rhs[1:p] .= inv_se2 .* (Xt * yv)
+    for i in 1:K
+        rhs[(offs[i] + 1):(offs[i] + qs[i])] .= inv_se2 .* (Zts[i] * yv)
+    end
+    d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sig, p, offs, qs, ntot)
+    invd = 1.0 ./ d
+    sol, _, _ = _pcg_solve(applyC, copy(rhs); tol = Float64(pcg_tol),
+                           maxiter = Int(pcg_maxiter), applyMinv = r -> invd .* r)
+    quad = inv_se2 * dot(yv, yv) - dot(rhs, sol)
+
+    # log|C| by SLQ (matrix-free).
+    rng = MersenneTwister(seed)
+    contribs = Float64[]
+    for _ in 1:slq_probes
+        z = rand(rng, (-1.0, 1.0), ntot)                      # Rademacher, ‖z‖²=ntot
+        c = _lanczos_logquad(applyC, z, Int(slq_steps))
+        isnan(c) && return (NaN, NaN)
+        push!(contribs, ntot * c)
+    end
+    logdetC = sum(contribs) / slq_probes
+    logdetC_mcse = slq_probes > 1 ?
+        sqrt(sum(abs2, contribs .- logdetC) / (slq_probes - 1) / slq_probes) : NaN
+
+    loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+    loglik_mcse = 0.5 * logdetC_mcse
+    return (loglik, loglik_mcse)
+end
+
 """
     fit_multi_effect(y, X, effects; method = :auto, direct_max_n = 200_000, nprobe = 64,
                      verbose = true, kwargs...)
