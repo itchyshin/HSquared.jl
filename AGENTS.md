@@ -22,9 +22,13 @@ engine reality.
   modest, transfer-bound), and **V7.5** G-E close-out (this slice — `status_cache` pointer refreshed,
   stream consolidated). HONEST GPU summary: numerically exact + architecture-portable + handles realistic
   panels, but Float32 only a minor win + no R-public surface → `V2-GRM-GPU` stays `partial`, NO covered
-  move. REMAINING (owed hardening legs, NOT numbered slices, NOT covered-flips): V8.4 at-scale comparator
-  (limited by the external tool's own scale ceiling), coverage-calibrated intervals (DRAC coverage sim;
-  prelim local read in progress). START HERE: `docs/dev-log/after-task/2026-07-03-v07-ge-closeout.md`.
+  move. **doc-25 FULLY CLOSED** — both owed hardening legs now DISCHARGED (each Rose-audited + merged):
+  **V8.4 at-scale** (blupf90 vs exact-sparse vs matrix-free at q=4060, PR #260 — exact==blupf90 4.7e-6,
+  matrix-free ≤1%; the exact-infeasible regime q≫50k has NO external oracle by construction) and
+  **coverage-calibrated intervals** (DRAC fir job 46853279 — empirical coverage of the shipped
+  `:delta`/`:profile` h²/σ²a intervals: CONSERVATIVE over-coverage at small n, converging to nominal,
+  `:profile` > `:delta`; a characterization, no covered flip). `public_covered_count` **5** held across
+  the ENTIRE arc. START HERE: `docs/dev-log/after-task/2026-07-03-interval-coverage.md`.
 
 - **As of 2026-07-03 (doc-25 V7 GPU stream STARTED — V7.1 G-B Float32 RUN on tamia H100; Claude solo
   (Opus), autonomous; user steer "V7 GPU stream (finish doc-25)"; rows **55** / covered **13** /
