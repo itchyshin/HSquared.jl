@@ -41,7 +41,8 @@ function centered_markers(
 end
 
 """
-    genomic_relationship_matrix(markers; allele_frequencies = nothing, method = :vanraden1)
+    genomic_relationship_matrix(markers; allele_frequencies = nothing, method = :vanraden1,
+                                weights = nothing, backend = :cpu)
 
 VanRaden (2008) genomic relationship matrix `G` from a biallelic marker genotype
 matrix `markers` (rows = individuals, columns = markers; entries are the count of
@@ -60,6 +61,13 @@ Optional per-marker `weights` (for weighted GBLUP / GWAS-informed prediction,
 `method = :vanraden1` only) give `G = Z·diag(w)·Zᵀ / Σ_j w_j·2 p_j(1 − p_j)`,
 which reduces exactly to the unweighted method-1 `G` when the weights are equal.
 
+`backend = :cpu` (default) computes on the CPU as described. `backend = :cuda`
+(v0.7-G-D, opt-in) routes to the GPU twin [`gpu_genomic_relationship_matrix`](@ref)
+(the `HSquaredCUDAExt` extension) — the SAME estimand (it reuses the validated
+`centered_markers` verbatim) accelerated on-device; without a CUDA backend in scope
+it throws a `MethodError` asking you to load CUDA. The `:cpu` result is unchanged by
+the addition of this keyword.
+
 This is the Phase 2 genomic-relationship construction utility — it builds `G`
 only. Its regularized inverse is [`genomic_relationship_inverse`](@ref), and the
 experimental supplied-variance GBLUP / SNP-BLUP fitting that consume `G` / `Ginv`
@@ -72,7 +80,17 @@ function genomic_relationship_matrix(
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     method::Symbol = :vanraden1,
     weights::Union{Nothing,AbstractVector} = nothing,
+    backend::Symbol = :cpu,
 )
+    if backend === :cuda
+        # v0.7-G-D: opt-in device dispatch. Routes to the GPU twin (HSquaredCUDAExt), which
+        # throws a `MethodError` asking you to load CUDA when no CUDA backend is in scope. Same
+        # estimand (the GPU twin reuses `centered_markers` verbatim); the default `:cpu` path below
+        # is byte-identical to before this kwarg existed.
+        return gpu_genomic_relationship_matrix(markers; allele_frequencies = allele_frequencies,
+                                               method = method, weights = weights)
+    end
+    backend === :cpu || throw(ArgumentError("backend must be :cpu (default) or :cuda"))
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
     if weights !== nothing
         method === :vanraden1 ||
@@ -99,7 +117,7 @@ function genomic_relationship_matrix(
 end
 
 """
-    genomic_relationship_inverse(G; ridge = 0.01)
+    genomic_relationship_inverse(G; ridge = 0.01, backend = :cpu)
 
 Regularized inverse of a genomic relationship matrix `G` (e.g. from
 [`genomic_relationship_matrix`](@ref)) — the genomic relationship inverse `Ginv`
@@ -110,8 +128,18 @@ is added to the diagonal before inversion: `inv(G + ridge·I)`.
 This is a simple ridge regularization. Blending `G` with a pedigree `A`
 (single-step / `H`-matrix) exists as an internal validation utility and is not
 yet part of the public surface.
+
+`backend = :cpu` (default) is unchanged; `backend = :cuda` (v0.7-G-D, opt-in)
+routes to the GPU twin [`gpu_genomic_relationship_inverse`](@ref) (MethodError
+without CUDA in scope).
 """
-function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01)
+function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01, backend::Symbol = :cpu)
+    if backend === :cuda
+        # v0.7-G-D: opt-in device dispatch (routes to the GPU twin; MethodError without CUDA).
+        # The default `:cpu` path below is byte-identical to before this kwarg existed.
+        return gpu_genomic_relationship_inverse(G; ridge = ridge)
+    end
+    backend === :cpu || throw(ArgumentError("backend must be :cpu (default) or :cuda"))
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
     ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
