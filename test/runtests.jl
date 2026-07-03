@@ -9288,6 +9288,8 @@ end
     markers = [0.0 1.0 2.0; 1.0 1.0 0.0; 2.0 0.0 1.0]
     @test_throws MethodError gpu_genomic_relationship_matrix(markers)
     @test_throws MethodError gpu_genomic_relationship_matrix(markers; method = :vanraden2)
+    # v0.7 G-B: the opt-in mixed-precision kwarg is still a stub without CUDA (no method leaked).
+    @test_throws MethodError gpu_genomic_relationship_matrix(markers; precision = Float32)
     @test_throws MethodError gpu_genomic_relationship_inverse([1.0 0.0; 0.0 1.0])
     @test_throws MethodError gpu_fit_gblup([1.0, 2.0, 3.0], ones(3, 1), sparse(1.0I, 3, 3), markers, 1.0, 1.0)
 end

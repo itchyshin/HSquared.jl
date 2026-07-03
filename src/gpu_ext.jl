@@ -8,7 +8,8 @@
 
 """
     gpu_genomic_relationship_matrix(markers; allele_frequencies = nothing,
-                                    method = :vanraden1, weights = nothing)
+                                    method = :vanraden1, weights = nothing,
+                                    precision = Float64)
 
 GPU-accelerated VanRaden genomic relationship matrix `G` — the device twin of
 [`genomic_relationship_matrix`](@ref). **STUB:** the method is provided by the
@@ -21,11 +22,20 @@ centering and validation (`centered_markers`) verbatim — same allele frequenci
 same VanRaden scale `k`, same input guards — and runs only the dense `W·Wᵀ / k`
 GEMM (and the `:vanraden2` / weighted variants) on the device, returning a CPU
 `Matrix{Float64}` identical (to floating-point tolerance) to the CPU result. The
-accepted keywords match [`genomic_relationship_matrix`](@ref) exactly.
+accepted keywords match [`genomic_relationship_matrix`](@ref) exactly, plus
+`precision`.
 
-Float64 throughout (matches the CPU contract). The CPU↔GPU agreement test and the
-GPU benchmark are opt-in cluster scripts (`sim/drac/g1_gpu_genomic.jl`), run on a
-CUDA device — never in CI. No performance or agreement claim holds until a
+`precision = Float64` (default) runs the GEMM in Float64 and matches the CPU result
+to BLAS round-off. `precision = Float32` (v0.7-G-B) is an OPT-IN mixed-precision
+path: the centered marker matrix is downcast to Float32 for the O(n²·m) GEMM (where
+H100 Float32/TF32 throughput dominates) and the result is upcast to Float64 before
+the scaling — so the return is ALWAYS `Matrix{Float64}` (the drop-in contract
+holds), only the GEMM accumulation precision changes. Float32 is a speed-vs-accuracy
+trade: the Float32 `G` differs from the Float64 `G` by the GEMM round-off (absolute
+error ~Float32-eps scale, characterized on-device), NOT more accurate and NOT the
+default. The CPU↔GPU agreement test and the Float32 accuracy + speedup benchmark are
+opt-in cluster scripts (`sim/drac/g1_gpu_genomic.jl`, `sim/drac/g_b_float32.jl`), run
+on a CUDA device — never in CI. No performance or agreement claim holds until a
 committed run lands its artifact (Wave F execution model, doc 17).
 """
 function gpu_genomic_relationship_matrix end
