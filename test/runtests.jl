@@ -9424,6 +9424,19 @@ end
         @test res.variance_components.blocks[1].name == "animal"
         @test res.variance_components.blocks[2].name == "litter"
         @test res.variance_components.blocks[3].name == "pen"
+
+        # V8.6: scale_method = :auto routes through fit_multi_effect(:auto) and stays
+        # bridge-compatible (result_payload_v2 marshals its result — the matrix-free result now
+        # carries loglik + boundary via V8.1). Default :dense is byte-identical (tested above).
+        # This 8-record fixture is under-identified, so :auto (sparse AI-REML) and :dense
+        # (NelderMead) may land on different boundary optima — the dense-vs-auto agreement at
+        # proper scale is validated in the R live-bridge test (hsquared test-formula-animal).
+        fit_auto = fit_payload_v2(payload_three; scale_method = :auto)
+        @test length(fit_auto.variance_components.sigmas) == 3
+        @test hasproperty(fit_auto, :loglik) && hasproperty(fit_auto, :boundary)
+        res_auto = result_payload_v2(fit_auto, parsed)
+        @test length(res_auto.variance_components.blocks) == 3
+        @test_throws ArgumentError fit_payload_v2(payload_three; scale_method = :bogus)
     end
 
     # -----------------------------------------------------------------------

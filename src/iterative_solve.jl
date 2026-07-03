@@ -602,6 +602,9 @@ function fit_multi_effect_mc_reml(
     initial = nothing,
     ids = nothing,
     shared_probes::Bool = false,
+    compute_loglik::Bool = false,
+    slq_probes::Integer = 20,
+    slq_steps::Integer = 40,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -676,11 +679,23 @@ function fit_multi_effect_mc_reml(
     else
         zeros(p), [(ids = collect(1:qs[i]), values = zeros(qs[i])) for i in 1:K]
     end
+    # Optional matrix-free REML loglik (V8.1, stochastic) at the converged estimate — makes the
+    # result shape-compatible with the exact estimators (and the payload-v2 bridge). NaN when off.
+    loglik = NaN
+    loglik_mcse = NaN
+    if compute_loglik
+        loglik, loglik_mcse = matrix_free_reml_loglik(yv, Xs, effects, sigmas, sigma_e2;
+                                                      slq_probes = slq_probes, slq_steps = slq_steps,
+                                                      seed = seed, pcg_tol = pcg_tol, pcg_maxiter = pcg_maxiter)
+    end
     return (
         variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
         ratios = sigmas ./ total,
         beta = beta_final,
         effects = effects_final,
+        loglik = loglik,
+        loglik_mcse = loglik_mcse,
+        boundary = [s / total < 1e-6 for s in sigmas],
         trace_mcse = trace_mcse,
         converged = converged,
         iterations = iters,
@@ -874,6 +889,10 @@ function fit_multi_effect(
     direct_max_n::Integer = 200_000,
     nprobe::Integer = 64,
     verbose::Bool = true,
+    shared_probes::Bool = false,
+    compute_loglik::Bool = false,
+    slq_probes::Integer = 20,
+    slq_steps::Integer = 40,
     kwargs...,
 )
     method in (:auto, :exact, :matrix_free) ||
@@ -901,7 +920,9 @@ function fit_multi_effect(
                   "estimates carry a Monte-Carlo standard error (see `trace_mcse`). " *
                   "Override with method=:exact to force the exact (fill-limited) path.")
         end
-        res = fit_multi_effect_mc_reml(y, X, effects; nprobe = nprobe, kwargs...)
+        res = fit_multi_effect_mc_reml(y, X, effects; nprobe = nprobe, shared_probes = shared_probes,
+                                       compute_loglik = compute_loglik, slq_probes = slq_probes,
+                                       slq_steps = slq_steps, kwargs...)
         return merge(res, (dispatch = :matrix_free,))
     end
 end
