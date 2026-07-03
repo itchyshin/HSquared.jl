@@ -2,8 +2,8 @@
 
 The AT-SCALE leg V8.4's estimand leg left owed. The validation-scale estimand leg
 (`comparator/matfree_blupf90_neffect.jl`, q=860) validated the matrix-free fit against blupf90 at
-small scale. This leg runs the SAME 3 estimators at a **~5× larger q (q=4060)** — the largest scale
-where the external tool still runs.
+small scale. This leg runs the SAME 3 estimators at a **~5× larger q (q=4060)** — a scale ~5× the estimand leg
+where all three estimators still run comfortably.
 
 ## The honest ceiling (why "at-scale" is intrinsically capped)
 
@@ -11,11 +11,12 @@ The matrix-free fit's raison d'être is `q` where the EXACT/direct path is INFEA
 Cholesky-fill-limited past ~50k). But **blupf90 — and any external REML tool — forms the MME too**,
 so it ALSO cannot run there. There is therefore **no `q` where (exact infeasible) AND (external tool
 feasible)** — the exact-infeasible regime has **no external oracle by construction**. This leg does
-the most that is physically possible: a 3-way comparison at the largest `q` blupf90 handles.
+the most that is meaningful: a 3-way comparison at a q ~5× the estimand leg (q=4060), well within
+blupf90's reach.
 
 ## Run (`comparator/matfree_blupf90_atscale.jl 4000`, q=4060, K=3, local)
 
-- **Executables:** `renumf90` 1.166 + `blupf90+` 2.60 (`comparator/bin/`), Mac arm64. Fixture = the
+- **Executables:** `renumf90` 1.166 + `blupf90+` 2.60 (`comparator/bin/`), Mac x86_64 (Rosetta). Fixture = the
   same DGP as the estimand leg (seed 20260800) but noffspring 800→4000 → q=4060.
 
 **Exact-sparse engine vs blupf90 (the estimand at scale):**

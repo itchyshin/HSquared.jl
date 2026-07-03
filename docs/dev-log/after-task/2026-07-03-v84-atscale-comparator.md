@@ -32,8 +32,8 @@ ceiling, the exact-infeasible regime has **no external oracle by construction** 
 ## Honesty pins
 
 - The "at-scale" leg is intrinsically capped: no `q` is simultaneously (exact infeasible) AND
-  (blupf90 feasible), since blupf90 forms the MME too. This leg does the most physically possible
-  (largest q blupf90 runs); the exact-infeasible regime is validated by the internal
+  (blupf90 feasible), since blupf90 forms the MME too. This leg runs at a q ~5× the estimand leg
+  (q=4060, well within blupf90's reach); the exact-infeasible regime is validated by the internal
   exact-agreement + the 48-seed recovery gate, NOT an external oracle.
 - `V3-NEFFECT-MATFREE-FIT` stays `partial`; NO covered flip; `public_covered_count` UNCHANGED. Only
   coverage-calibrated intervals remain owed. `Pkg.test()` GREEN (55).

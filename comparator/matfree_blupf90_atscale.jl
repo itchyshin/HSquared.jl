@@ -4,11 +4,10 @@
 # HONEST framing of "at-scale": the matrix-free fit's raison d'être is q where the EXACT/direct path
 # is INFEASIBLE (K≥2 fill-limited past ~50k). But blupf90 (and any external REML tool) forms the MME
 # too, so it ALSO cannot run there. There is therefore NO q where (exact infeasible) AND (external
-# tool feasible) — the exact-infeasible regime has no external oracle BY CONSTRUCTION. This leg does
-# the most that is physically possible: it runs the SAME 3 estimators — blupf90 AIREMLF90 (external),
-# fit_sparse_multi_effect_aireml (EXACT sparse engine), fit_multi_effect_mc_reml (matrix-free) — at
-# the LARGEST q where blupf90 still runs (default q≈4060, ~5× the estimand leg), and shows all three
-# agree. Beyond blupf90's ceiling, the matrix-free path's validation rests on: this larger-scale
+# tool feasible) — the exact-infeasible regime has no external oracle BY CONSTRUCTION. This leg runs
+# the SAME 3 estimators — blupf90 AIREMLF90 (external), fit_sparse_multi_effect_aireml (EXACT sparse
+# engine), fit_multi_effect_mc_reml (matrix-free) — at a substantially larger q (default q≈4060, ~5×
+# the estimand leg) where all three estimators still run, and shows all three agree. Beyond blupf90's ceiling, the matrix-free path's validation rests on: this larger-scale
 # external agreement + the internal exact-agreement (matrix-free == exact sparse) + the pre-declared
 # 48-seed recovery gate.
 #
