@@ -37,11 +37,20 @@ the grid capped at the feasible range **q ∈ {2000, 4000, 8000, 16000}** (m=500
 byte-identical — only the grid arg + SLURM memory differ (infrastructure the harness
 parameterizes). q=32000 is a documented CPU-reference-infeasibility cap, NOT a claim relaxation.
 
-**Benchmark table: PENDING** — rerun job 360589 is queued behind tamia's whole-node (4×H100)
-allocation as of this checkpoint. The end-to-end CPU-vs-GPU GBLUP speedup table (q ∈ {2000, 4000,
-8000, 16000}, m=5000) will be appended on completion. The load-bearing G-A result — the CPU↔GPU
-agreement gate (A1) — is already PASSED and banked; the benchmark is a secondary machine-specific
-speedup measurement.
+End-to-end GBLUP (G build + ridge inverse + MME solve), CPU vs device-resident GPU, on H100
+`tg11306` (m=5000 markers; q = genotyped population; job 360589, COMPLETED):
+
+| q | CPU (s) | GPU (s) | speedup | maxΔβ | maxΔGEBV |
+|---|---|---|---|---|---|
+| 2000 | 0.988 | 0.189 | **5.2×** | 3.7e-14 | 2.0e-14 |
+| 4000 | 3.746 | 0.292 | **12.8×** | 1.8e-14 | 1.8e-14 |
+| 8000 | 16.542 | 0.950 | **17.4×** | 3.3e-14 | 1.3e-13 |
+| 16000 | 76.883 | 3.337 | **23.0×** | 5.3e-14 | 2.1e-13 |
+
+The device-resident speedup grows with q (dense GBLUP is O(q³), so the GPU advantage compounds):
+5.2× at q=2000 → 23× at q=16000. CPU↔GPU agreement holds through the benchmark too (β/GEBV maxΔ ≤
+2.1e-13, consistent with the A1 gate's ~1e-15 at q=400 — the modest growth is float accumulation
+at larger q, still negligible vs the O(1) values). Raw: `sim/drac/results/g_a_gblup_360589.tsv`.
 
 Machine-specific measurement on H100 `tg11304`; end-to-end includes H2D marker transfer + D2H
 result transfer. NOT a competitive/"faster than package Y" claim; NOT a REML-fit claim (this is a

@@ -32,8 +32,10 @@ engine reality.
   `G`/`Ginv`/`C` on-device across `G→Ginv→MME solve`): **CPU↔GPU agreement gate PASSED on tamia H100
   to ~1e-15** (β+GEBV, vanraden1/2/weighted; device assembly also CPU-mirror-validated to ~1e-15
   pre-run) → device-resident GBLUP numerically identical to `fit_gblup`; CI stub-tested. The
-  end-to-end speedup benchmark first-run OOM'd on the q=32000 CPU reference (agreement had already
-  passed); rerun capped at the feasible q≤16000 (job 360589, queued — table lands as a follow-up).
+  end-to-end speedup benchmark (job 360589, H100, q≤16000) shows device-resident GBLUP **5.2×→23×
+  faster than CPU** (q=2k→16k; dense O(q³)), agreement holding through the benchmark (maxΔ ≤ 2e-13);
+  first-run OOM'd on the q=32000 CPU reference (agreement had already passed) → rerun capped at the
+  feasible q≤16000, harness byte-identical.
   Real `rose-systems-auditor` (Opus) on S1+S2 → **PROMOTE-WITH-CHANGES** (every load-bearing number
   independently reproduced; pins 53/13/5 verified live; pre-declaration-before-run ordering
   verified; 4 post-run status-string refreshes applied). `Pkg.test()` GREEN (count 53); `docs/make.jl`
