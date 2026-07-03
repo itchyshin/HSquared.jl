@@ -4068,6 +4068,24 @@ end
     @test_throws ArgumentError apy_genomic_relationship_inverse(G, collect(1:n); ridge = -1.0) # ridge >= 0
 end
 
+@testset "v0.7 G-D backend dispatch (:cpu default / :cuda routing)" begin
+    # backend = :cpu (default) is byte-identical; :cuda routes to the GPU stub (MethodError
+    # without CUDA in scope); invalid backend throws. No GPU is exercised in CI.
+    M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
+    G_default = genomic_relationship_matrix(M)
+    @test genomic_relationship_matrix(M; backend = :cpu) == G_default          # :cpu byte-identical
+    @test genomic_relationship_matrix(M; method = :vanraden2, backend = :cpu) ==
+          genomic_relationship_matrix(M; method = :vanraden2)
+    @test genomic_relationship_inverse(G_default; ridge = 0.05, backend = :cpu) ==
+          genomic_relationship_inverse(G_default; ridge = 0.05)               # :cpu byte-identical
+    # :cuda routes to the method-less GPU stub → MethodError until the CUDA extension loads
+    @test_throws MethodError genomic_relationship_matrix(M; backend = :cuda)
+    @test_throws MethodError genomic_relationship_inverse(G_default; backend = :cuda)
+    # invalid backend
+    @test_throws ArgumentError genomic_relationship_matrix(M; backend = :bogus)
+    @test_throws ArgumentError genomic_relationship_inverse(G_default; backend = :bogus)
+end
+
 @testset "Phase 2 weighted genomic relationship (weighted GBLUP)" begin
     M = [0.0 1 2; 2 1 0; 1 1 1; 0 2 2; 1 0 2; 2 1 1]   # 6 individuals x 3 markers
     G1 = genomic_relationship_matrix(M)                         # unweighted method 1
