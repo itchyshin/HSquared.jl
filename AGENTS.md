@@ -9,6 +9,34 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (v0.8 MATRIX-FREE Monte-Carlo REML FIT — lifts the multi-effect scale path from
+  SOLVE to FIT, recovery+scale gate PASS to q=200k; Claude solo (Opus), autonomous; `main` @
+  `b2ec7707` (PR #249); R twin frozen; rows 53→**54**, covered **13**, `public_covered_count` **5**).**
+  Built the production large-`q` FITTING engine on top of the S2 matrix-free solve. FOUR slices, NO
+  covered flip: (A) **`mc_reml_block_traces`** — Hutchinson stochastic trace estimating the REML
+  score-trace `tr(Aᵢ⁻¹C⁻¹[uᵢ,uᵢ])` matrix-free (the term the exact path reads from a Cholesky
+  selected inverse), unbiased vs the exact `selinv_block_traces`. (B) **`fit_multi_effect_mc_reml`**
+  — matrix-free Monte-Carlo EM-REML fit; each EM step = a matrix-free PCG solve + the Hutchinson
+  trace, `C` NEVER formed/factorized → not limited by the K≥2 fill-in; recovers the exact AI-REML
+  optimum to ~0.7% (q=300). (usability) **`fit_multi_effect(...; method=:auto)`** — routes exact
+  (`fit_sparse_multi_effect_aireml`) vs matrix-free by feasibility (K==1 || N≤direct_max_n; a
+  documented heuristic, overridable) with a switch `@info` + `trace_mcse`; + the "Fitting at scale"
+  doc page. (C) **PRE-DECLARED recovery+scale gate** (PREDECL `66ac9521` BEFORE the run; DRAC fir
+  job 46725575): RECOVERY 48 seeds K=3 q=960 **PASS** — all converged, MC reproduces the covered
+  exact estimator (`V3-NEFFECT-REML`) to **2.6%** (≤5% primary), secondary |bias|≤2·MCSE (max 1.20)
+  with the exact fit sharing the means; SCALE the **FIT converges to q=200,000** (11.5s→586s) where
+  the direct multi-effect AI-REML is fill-limited past ~50k — extending the S2 SOLVE feasibility
+  (q=10⁶) to the FIT. The science risk (is the MC gradient noise benign?) is RESOLVED: benign,
+  controllable by nprobe. NEW `partial` row `V3-NEFFECT-MATFREE-FIT` (count 53→54; covered +
+  `public_covered_count` UNCHANGED — engine capability, APPROXIMATES the exact fit, NO
+  loglik/intervals/comparator yet). Real `rose-systems-auditor` (Opus) → **PROMOTE-WITH-CHANGES**
+  (every number independently reproduced, pins verified live, predeclaration-before-run confirmed,
+  Pkg.test GREEN; 3 fixes applied). Cross-project methodology issues filed (gllvmTMB #705, drmTMB
+  #714, GLLVM.jl #167, DRM.jl #327). **Completion ultra-plan: `docs/design/25-completion-ultraplan.md`**
+  (V8.1 matrix-free loglik + V8.2 trace variance reduction = recommended next; v0.7 G-B/C/D + v0.8
+  S3/S4 remain; V8.6 R bridge BLOCKED by the R freeze). `Pkg.test()` GREEN (count 54); `docs/make.jl`
+  GREEN. START HERE: `docs/dev-log/after-task/2026-07-02-matrix-free-fit-arc.md`.
+
 - **As of 2026-07-02 (v0.7 G-A + v0.8 S1/S2 DRAC FLEET CAMPAIGN — matrix-free multi-effect PCG to
   q=10⁶ + METIS banked-negative + device-resident GBLUP agreement PASSED; Claude solo (Opus), R
   twin frozen; branch `feat/2026-07-02-v07-v08-fleet`, PREDECL `cad28efb` pushed BEFORE any run;
