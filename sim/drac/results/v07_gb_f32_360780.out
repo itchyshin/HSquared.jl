@@ -1,0 +1,108 @@
+node=tg10607.tamia.ecpia.ca start=Fri Jul  3 12:10:28 PM EDT 2026
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-0c2a96b1-5fc7-e9f6-af38-7a6d9cc1635e)
+GPU 1: NVIDIA H100 80GB HBM3 (UUID: GPU-8936bf6d-6574-c756-8039-abbbfcb38c2c)
+GPU 2: NVIDIA H100 80GB HBM3 (UUID: GPU-f0f5d3e6-6086-9b9e-c689-4f73f0455aad)
+GPU 3: NVIDIA H100 80GB HBM3 (UUID: GPU-f0ae11e0-628b-9779-89ca-108b0e86e7b9)
+GPU=NVIDIA H100 80GB HBM3
+# HSquared.jl v0.7 G-B Float32 genomic accuracy + speedup  2026-07-03T12:10:56.987
+# host=tg10607.tamia.ecpia.ca  julia=1.10.10
+# GPU=NVIDIA H100 80GB HBM3  CUDA=12.6.0  totalmem=79.2 GiB
+# n=2000 individuals; return is always Matrix{Float64}; OPT-IN, NO CI, NO competitive claim.
+
+# GATE: precision=Float64 GPU G vs CPU genomic_relationship_matrix
+  max|GPU_f64 - CPU| = 7.327e-15  OK
+
+# ACCURACY + BENCHMARK  math_mode=default
+m        mode               maxabs_G     maxrel_G    meanrel_G  gebv_maxabs   gebv_relL2      f64_s      f32_s  speedup
+2000     default           2.718e-06    2.408e-01    3.860e-06    3.375e-06    1.493e-06     0.0896     0.0643     1.39
+5000     default           1.741e-06    2.166e-01    6.317e-06    1.463e-06    7.524e-07     0.0874     0.1680     0.52
+10000    default           2.053e-06    1.182e+00    1.303e-05    1.088e-06    4.765e-07     0.2254     0.1657     1.36
+20000    default           3.909e-06    1.220e+00    2.120e-05    2.831e-06    1.013e-06     0.4697     0.3446     1.36
+40000    default           4.042e-06    2.188e+00    3.521e-05    2.796e-06    7.638e-07     0.9228     0.7891     1.17
+80000    default           5.320e-06    2.588e+00    3.379e-05    3.285e-06    1.095e-06     1.8712     1.7754     1.05
+
+# ACCURACY + BENCHMARK  math_mode=pedantic_fp32
+m        mode               maxabs_G     maxrel_G    meanrel_G  gebv_maxabs   gebv_relL2      f64_s      f32_s  speedup
+2000     pedantic_fp32     2.718e-06    2.408e-01    3.860e-06    3.375e-06    1.493e-06     0.0243     0.0223     1.09
+5000     pedantic_fp32     1.741e-06    2.166e-01    6.317e-06    1.463e-06    7.524e-07     0.0589     0.0464     1.27
+10000    pedantic_fp32     2.053e-06    1.182e+00    1.303e-05    1.088e-06    4.765e-07     0.1851     0.1446     1.28
+20000    pedantic_fp32     3.909e-06    1.220e+00    2.120e-05    2.831e-06    1.013e-06     0.4849     0.3455     1.40
+40000    pedantic_fp32     4.042e-06    2.188e+00    3.521e-05    2.796e-06    7.638e-07     0.9095     0.7867     1.16
+80000    pedantic_fp32     5.320e-06    2.588e+00    3.379e-05    3.285e-06    1.095e-06     1.8449     1.7461     1.06
+
+# wrote /project/aip-snakagaw/HSquared.jl/sim/drac/results/g_b_float32_360780.tsv
+end=Fri Jul  3 12:12:01 PM EDT 2026
+
+======== GPU REPORT ========
+
+==============NVSMI LOG==============
+
+Timestamp                                              : Fri Jul  3 12:12:01 2026
+Driver Version                                         : 580.159.04
+CUDA Version                                           : 13.0
+
+Attached GPUs                                          : 4
+GPU 00000000:4E:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes
+        Process ID                                     : 2735126
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 520 MiB
+            Time                                       : 3237 ms
+            Is Running                                 : 0
+        Process ID                                     : 2735193
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 1902 MiB
+            Time                                       : 71864 ms
+            Is Running                                 : 0
+
+GPU 00000000:5F:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:CB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:DB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+Fri Jul  3 12:12:02 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.04             Driver Version: 580.159.04     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:4E:00.0 Off |                    0 |
+| N/A   38C    P0            123W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 80GB HBM3          On  |   00000000:5F:00.0 Off |                    0 |
+| N/A   37C    P0             70W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 80GB HBM3          On  |   00000000:CB:00.0 Off |                    0 |
+| N/A   37C    P0             69W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 80GB HBM3          On  |   00000000:DB:00.0 Off |                    0 |
+| N/A   37C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
