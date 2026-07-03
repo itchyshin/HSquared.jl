@@ -9,6 +9,39 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-02 (v0.7 G-A + v0.8 S1/S2 DRAC FLEET CAMPAIGN — matrix-free multi-effect PCG to
+  q=10⁶ + METIS banked-negative + device-resident GBLUP agreement PASSED; Claude solo (Opus), R
+  twin frozen; branch `feat/2026-07-02-v07-v08-fleet`, PREDECL `cad28efb` pushed BEFORE any run;
+  counts UNCHANGED — rows 53 / covered 13 / `public_covered_count` 5).** Executed the doc-23 v0.7/v0.8
+  programme via a DRAC fleet campaign (doc-24; all 8 DRAC clusters reachable, Totoro socket down →
+  DRAC-only; headline nodes **fir** CPU + **tamia** H100), full measure-first + pre-declaration
+  discipline, user-approved pre-compute checkpoint. THREE outcomes, NO covered flip:
+  (1) **v0.8-S1 METIS BANKED NEGATIVE** — measured (before writing ordering code) that METIS nested
+  dissection is NOT a robust fill-reducing enabler for the multi-effect MME: **~3.2× SLOWER / 2.5×
+  more fill than CHOLMOD AMD at q=50k K=3** (DRAC fir, reproduces local Mac); per the pre-declared
+  ≥1.2×-at-every-cell rule → FAIL → **AMD retained, no Metis dependency**. This falsified doc-23's
+  headline hypothesis. (2) **v0.8-S2 matrix-free multi-effect PCG — the real scale enabler** (NEW
+  `solve_multi_effect_pcg`; never forms/factors `C`, bypasses the K≥2 fill wall): correctness-gated
+  in-suite (matrix-free==direct ~1e-8; operator `C·eᵢ==C[:,i]` ≤1e-12; K=1 reduces to
+  `solve_animal_model_pcg`), and BENCHMARKED (DRAC fir job 46705208, pre-declared) **feasible to
+  q=1,000,000** (converged, PCG iters DECREASING 42→36 across 500× q, near-linear OLS slope ≈1.08,
+  19× faster than direct at q=50k where direct is nnz(L)-cap-excluded). Machine-specific
+  SUPPLIED-VARIANCE-SOLVE measurement — NOT a full REML fit (the AI-REML Takahashi score needs a
+  factor → a stochastic-trace/EM matrix-free FIT is owed), NOT a GPU/portable claim. `V1-PCG`
+  extended (count unchanged). (3) **v0.7-G-A device-resident GBLUP** (NEW `gpu_fit_gblup`; keeps
+  `G`/`Ginv`/`C` on-device across `G→Ginv→MME solve`): **CPU↔GPU agreement gate PASSED on tamia H100
+  to ~1e-15** (β+GEBV, vanraden1/2/weighted; device assembly also CPU-mirror-validated to ~1e-15
+  pre-run) → device-resident GBLUP numerically identical to `fit_gblup`; CI stub-tested. The
+  end-to-end speedup benchmark first-run OOM'd on the q=32000 CPU reference (agreement had already
+  passed); rerun capped at the feasible q≤16000 (job 360589, queued — table lands as a follow-up).
+  Real `rose-systems-auditor` (Opus) on S1+S2 → **PROMOTE-WITH-CHANGES** (every load-bearing number
+  independently reproduced; pins 53/13/5 verified live; pre-declaration-before-run ordering
+  verified; 4 post-run status-string refreshes applied). `Pkg.test()` GREEN (count 53); `docs/make.jl`
+  GREEN. OWED: v0.8 matrix-free FIT (stochastic-trace/EM) + sparse recovery gate + external
+  comparator; v0.7 G-B Float32 + G-C real-panel + G-A cross-device agreement replicate (fleet set
+  up); Totoro reconnect. START HERE:
+  `docs/dev-log/after-task/2026-07-02-v07-v08-fleet.md`.
+
 - **As of 2026-07-02 (Phase 5 sparse-vs-dense benchmark BANKED + direct–maternal 2nd comparator
   DISCHARGED + DM asymptotic intervals; Claude solo (Fable), R twin frozen; branch
   `feat/2026-07-02-phase5-sparse-benchmark`, PREDECL `662663ed`, PR pending; counts UNCHANGED —

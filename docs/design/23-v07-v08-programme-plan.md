@@ -1,10 +1,22 @@
 # doc-23 — Programme plan: v0.7 (GPU) + v0.8 (HPC / production-sparse)
 
 **Authored:** 2026-07-02 (Claude/Fable, planning session; ultra-plan method). **Status:**
-PLAN — for maintainer review, then execution in a FRESH session (this plan is the start-point).
-**Predecessor:** the Phase 5 sparse-vs-dense benchmark (merged PR #247) — its headline finding
-(K=1 sparse near-linear to q=50k, K=3 ~quadratic from environmental-group Cholesky fill-in →
-**METIS fill-reducing ordering is the concrete scale enabler**) is the load-bearing input to v0.8.
+PLAN — partially EXECUTED 2026-07-02 (see the update note below). **Predecessor:** the Phase 5
+sparse-vs-dense benchmark (merged PR #247) — its headline finding (K=1 sparse near-linear to
+q=50k, K=3 ~quadratic from environmental-group Cholesky fill-in → METIS fill-reducing ordering
+hypothesized as the scale enabler) is the load-bearing input to v0.8.
+
+> **EXECUTION UPDATE (2026-07-02, branch `feat/2026-07-02-v07-v08-fleet`):** the METIS hypothesis
+> was FALSIFIED. v0.8-S1 measured METIS nested dissection vs CHOLMOD AMD (pre-declared, run on
+> DRAC fir) — METIS is NOT a robust enabler (2.5× more fill / ~3.2× SLOWER than AMD at q=50k K=3;
+> banked negative, AMD retained, no Metis dependency). v0.8 pivoted to a **matrix-free multi-effect
+> PCG solve** (`solve_multi_effect_pcg`, S2 below), which never forms/factors `C` and so bypasses
+> the fill entirely — benchmarked feasible to q=10⁶ (near-linear, iterations decreasing, 19× over
+> direct at q=50k). See `docs/dev-log/recovery-checkpoints/2026-07-02-v08-s{1,2}-*.md` and the
+> fleet campaign `docs/design/24-v07-v08-fleet-campaign.md`. v0.7 G-A (device-resident GBLUP)
+> agreement gate PASSED on tamia H100 (CPU↔GPU ~1e-15); its benchmark run completed on the
+> feasible q-range. The S1 "METIS is the concrete enabler" framing below is the pre-run hypothesis,
+> retained as a historical snapshot — read it together with this update.
 
 ## Goal (one sentence)
 
