@@ -19,9 +19,13 @@ engine reality.
   absolute with NEGLIGIBLE GEBV impact (~1e-6) — numerically safe for prediction; but the speedup is
   **MODEST (~1.1–1.4×)** and TF32 tensor cores were NOT engaged (default==pedantic, FP32-level) — an
   HONEST, underwhelming measurement that CORRECTED the prior owed-note's "larger speedups" optimism.
-  Float64 stays default. `V2-GRM-GPU` stays `partial`, NO covered flip. REMAINING V7: V7.2 cross-device
-  (Narval A100, needs gpu_env setup), V7.3 real panel, V7.4 dispatcher (local), V7.5 close-out. START
-  HERE: `docs/dev-log/after-task/2026-07-03-v07-gb-float32.md`.
+  Float64 stays default. `V2-GRM-GPU` stays `partial`, NO covered flip. **V7.2 (cross-device, Narval
+  A100 job 64637092) DONE:** the SAME committed G-A + G-B harnesses re-run on A100 — device-resident
+  GBLUP CPU↔GPU agreement HELD (β/GEBV ~1e-15) + Float64 gate HELD (3.0e-15) → the GPU numerical
+  AGREEMENT is architecture-portable (H100 → A100); Float32 same story (FP32-level, TF32 not engaged);
+  A100 GBLUP benchmark 5.9×→46.7× (machine-specific, NOT a competitive A100-vs-H100 claim). Narval
+  gpu_env set up under `/project/def-snakagaw`. REMAINING V7: V7.3 real panel, V7.4 dispatcher (local),
+  V7.5 close-out. START HERE: `docs/dev-log/after-task/2026-07-03-v07-g72-crossdevice.md`.
 
 - **As of 2026-07-03 (v0.8 doc-25 progress: V8.3 matrix-free intervals MERGED (PR #252) + V8.5 APY
   genomic inverse; Claude solo (Opus), autonomous; rows 54→**55** / covered **13** / `public_covered_count`
