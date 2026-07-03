@@ -9,6 +9,24 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-03 (v0.8 doc-25 progress: V8.1 loglik + V8.2 varreduction MERGED, V8.6 R
+  CONNECTION in paired PRs; R twin REOPENED; Claude solo (Opus), autonomous; rows 54 / covered 13
+  / `public_covered_count` 5 UNCHANGED).** Working down the completion ultra-plan (`docs/design/25-completion-ultraplan.md`).
+  DONE + MERGED (PR #250): **V8.1** matrix-free REML `loglik` (`matrix_free_reml_loglik`, `log|C|`
+  by stochastic Lanczos quadrature, matches exact within the SLQ MC band); **V8.2** trace variance
+  reduction (`shared_probes=true`, one full-random probe → all K traces, K× fewer solves, unbiased).
+  IN PAIRED PRs (engine #251 / hsquared #122, Rose PROMOTE-WITH-CHANGES, auto-merge on CI green):
+  **V8.6** R connection — `fit_payload_v2(...; scale_method=:auto)` + R `engine_control
+  scale_method="auto"` route the EXISTING `target="multi_effect"` `(1|g)` surface through
+  `fit_multi_effect(:auto)`; validation-scale = sparse-exact (reduces to the covered dense result,
+  live-bridge verified dense-vs-auto 2.7e-5), large-scale = experimental matrix-free (its result now
+  carries a stochastic `loglik` (V8.1) + `boundary` so `result_payload_v2` marshals it). **Default
+  `scale_method=:dense` is BYTE-IDENTICAL** (frozen payload-v2 contract; parity `max_abs=0.0`). NO
+  covered-count change (opt-in). Rose-principle fix: the pre-existing `random_effects(fit)` latent
+  bug (masked in CI) → `ranef`. REMAINING doc-25: V8.3 (matrix-free intervals — AI matrix is
+  matrix-free-EXACT, next), V8.4 (external comparator), V8.5 (APY), and the v0.7 GPU stream
+  (G-B/C/D/E). START HERE: `docs/dev-log/after-task/2026-07-03-v86-r-connection.md`.
+
 - **As of 2026-07-02 (v0.8 MATRIX-FREE Monte-Carlo REML FIT — lifts the multi-effect scale path from
   SOLVE to FIT, recovery+scale gate PASS to q=200k; Claude solo (Opus), autonomous; `main` @
   `b2ec7707` (PR #249); R twin frozen; rows 53→**54**, covered **13**, `public_covered_count` **5**).**

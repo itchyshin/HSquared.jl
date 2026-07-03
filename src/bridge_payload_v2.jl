@@ -393,12 +393,12 @@ The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
 `Phase0NotImplementedError` for it (§6: "no multi-block coefcov estimator is
 wired yet").
 """
-function fit_payload_v2(payload)
+function fit_payload_v2(payload; scale_method::Symbol = :dense)
     parsed = parse_payload_v2(payload)
-    return _dispatch_fit(parsed)
+    return _dispatch_fit(parsed; scale_method = scale_method)
 end
 
-function _dispatch_fit(parsed::ParsedPayloadV2)
+function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense)
     dispatch = parsed.dispatch
     blocks   = parsed.blocks
     X        = parsed.X
@@ -422,11 +422,25 @@ function _dispatch_fit(parsed::ParsedPayloadV2)
                                    ids1 = b1.ids, ids2 = b2.ids)
 
     elseif dispatch == :multi_effect
-        # §6 row 3: K ≥ 2 independent blocks → fit_multi_effect_reml.
+        # §6 row 3: K ≥ 2 independent blocks. `scale_method = :dense` (DEFAULT — the frozen
+        # contract, byte-identical) → the dense `fit_multi_effect_reml`. `scale_method = :auto`
+        # → `fit_multi_effect(:auto)`, which routes to the SPARSE-EXACT AI-REML (reduces exactly
+        # to the dense optimum) for validation-scale problems and to the EXPERIMENTAL matrix-free
+        # Monte-Carlo fit for large ones (with a stochastic loglik so the result stays
+        # bridge-shape-compatible). The covered claim is on the validation-scale (exact) path;
+        # the large-scale matrix-free path is experimental (opt-in).
         y = parsed.y
-        effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
         per_block_ids = [b.ids for b in blocks]
-        return fit_multi_effect_reml(y, X, effects; ids = per_block_ids)
+        if scale_method === :auto
+            effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in blocks]
+            return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
+                                    compute_loglik = true, verbose = false)
+        elseif scale_method === :dense
+            effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
+            return fit_multi_effect_reml(y, X, effects; ids = per_block_ids)
+        else
+            throw(ArgumentError("scale_method must be :dense (default) or :auto"))
+        end
 
     elseif dispatch == :direct_maternal
         # §6 row 4: one correlated block → fit_direct_maternal_reml.
