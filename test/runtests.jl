@@ -3275,6 +3275,64 @@ end
     @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; maxiter = 0)
 end
 
+@testset "Matrix-free MC REML block traces (Hutchinson == selinv, v0.8-S2 fit primitive)" begin
+    # mc_reml_block_traces is a matrix-free stochastic (Hutchinson) estimator of the K REML
+    # score-trace terms tr(Aᵢ⁻¹ C⁻¹[uᵢ,uᵢ]) — the building block for a matrix-free Monte-Carlo
+    # REML fit. It must be an UNBIASED estimate of the EXACT selinv_block_traces (Takahashi
+    # selected inverse of the assembled C), converging as ~1/√nprobe. K=2 animal-A + env-group.
+    ped = normalize_pedigree(
+        ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    n = 8
+    X = hcat(ones(n), Float64[0, 1, 0, 1, 0, 1, 0, 1])
+    p = size(X, 2)
+    Ainv = sparse(Matrix(pedigree_inverse(ped)))
+    Z1 = sparse(1.0I, n, 8)
+    ng = 3
+    Z2 = spzeros(n, ng)
+    for i in 1:n
+        Z2[i, (i % ng) + 1] = 1.0
+    end
+    A2inv = sparse(1.0I, ng, ng)
+    effects = [(Z1, Ainv), (Z2, A2inv)]
+    s1, s2, se2 = 1.5, 0.6, 0.7
+
+    # EXACT reference: assemble C (the _sparse_multi_lhs_rhs coefficient matrix), factor,
+    # selected-inverse block traces.
+    Zf = hcat(Z1, Z2)
+    Ginv = blockdiag(Ainv ./ s1, A2inv ./ s2)
+    rp = 1 / se2
+    C = [rp .* (transpose(X) * X)   rp .* (transpose(X) * Zf)
+         rp .* (transpose(Zf) * X)  rp .* (transpose(Zf) * Zf) .+ Ginv]
+    ch = cholesky(Symmetric(sparse(C)))
+    exact = HSquared.selinv_block_traces(ch, [Ainv, A2inv], [p, p + 8])
+    @test length(exact) == 2
+
+    # MC estimate at a large probe count sits within a few MCSE of the exact trace (unbiased),
+    # deterministic given the seed.
+    tr, mcse = mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 400, seed = 20260703)
+    @test length(tr) == 2 && length(mcse) == 2
+    @test all(mcse .> 0)                                        # honest noise band reported
+    for b in 1:2
+        @test abs(tr[b] - exact[b]) < 5 * mcse[b]              # within its own MC error band (unbiased)
+        @test abs(tr[b] - exact[b]) / exact[b] < 0.05          # and practically close at nprobe=400
+    end
+
+    # MCSE shrinks with more probes (~1/√nprobe): 4× probes ⇒ ~½ MCSE.
+    _, mcse_hi = mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 1600, seed = 20260704)
+    for b in 1:2
+        @test mcse_hi[b] < mcse[b]                             # more probes ⇒ tighter
+    end
+
+    # guards
+    @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1], se2)          # sigmas length ≠ K
+    @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], 0.0)       # σ²e > 0
+    @test_throws ArgumentError mc_reml_block_traces(X, effects, [-1.0, s2], se2)     # positive σ
+    @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 0)
+end
+
 @testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
     # The fused kernel must equal the materialize-then-broadcast formula it
     # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to

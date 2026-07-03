@@ -420,3 +420,110 @@ function solve_multi_effect_pcg(
         matrix_free = matrix_free,
     )
 end
+
+"""
+    mc_reml_block_traces(X, effects, sigmas, sigma_e2; nprobe = 64, tol = 1e-9,
+                         maxiter = 2000, seed = 0)
+
+MATRIX-FREE stochastic (Hutchinson) estimator of the `K` REML score-trace terms
+`tr(Aᵢ⁻¹·C⁻¹[uᵢ,uᵢ])` of the `K`-INDEPENDENT-effect mixed-model equations — the building
+block for a matrix-free Monte-Carlo REML FIT (v0.8-S2 follow-on) at `q → 10⁶`, where the
+EXACT [`selinv_block_traces`](@ref) (a Takahashi selected inverse of the sparse Cholesky
+factor, used by [`fit_sparse_multi_effect_aireml`](@ref)) is factorization-limited by the
+K≥2 environmental-group Cholesky fill-in.
+
+`effects` is the vector of `(Zᵢ, Aᵢ⁻¹)` pairs; `sigmas`/`sigma_e2` are the SUPPLIED variance
+components at which the trace is evaluated (the same `C` as `solve_multi_effect_pcg`). For
+each block `b`: draw Rademacher probes `z ∈ {±1}^{qᵦ}`, embed into the full `[β; u]` space,
+solve `C·x = ẑ` MATRIX-FREE (the `solve_multi_effect_pcg` operator — `C` is never assembled
+or factorized), extract the `b`-block `xᵦ = C⁻¹[uᵦ,uᵦ]·z`, and accumulate the probe sample
+`zᵀ·Aᵦ⁻¹·xᵦ`. Since `E[z zᵀ] = I`, the probe MEAN is an UNBIASED estimate of the trace
+(`E[zᵀ M z] = tr(M)`, `M = Aᵦ⁻¹C⁻¹[uᵦ,uᵦ]`).
+
+Returns `(traces, mcse)` — each a length-`K` vector: the trace estimate and its Monte-Carlo
+standard error (probe SD / √nprobe; the honest noise band, `∝ 1/√nprobe`).
+
+EXPERIMENTAL — a stochastic-trace PRIMITIVE, NOT a fit. At validation scale the EXACT
+`selinv_block_traces` / `fit_sparse_multi_effect_aireml` is preferred (exact, no MC noise, few
+iterations); this exists ONLY for the large-`q` regime the direct factorization cannot reach.
+Deterministic given `seed`. No performance/scaling claim here (that is the pre-declared
+benchmark's job).
+"""
+function mc_reml_block_traces(
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    nprobe::Integer = 64,
+    tol::Real = 1e-9,
+    maxiter::Integer = 2000,
+    seed::Integer = 0,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    nprobe >= 1 || throw(ArgumentError("nprobe must be >= 1"))
+
+    Xs = sparse(Float64.(X))
+    n = size(Xs, 1)
+    p = size(Xs, 2)
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+
+    offs = Vector{Int}(undef, K)
+    acc = p
+    for i in 1:K
+        offs[i] = acc
+        acc += qs[i]
+    end
+    ntot = acc
+
+    ss = Float64.(collect(sigmas))
+    se2 = Float64(sigma_e2)
+    inv_se2 = inv(se2)
+    inv_sig = inv.(ss)
+    Xt = transpose(Xs)
+    Zts = [transpose(Zs[i]) for i in 1:K]
+    d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sig, p, offs, qs, ntot)
+    all(>(0), d) ||
+        throw(ArgumentError("MME diagonal has a non-positive entry; system is not positive definite"))
+    invd = 1.0 ./ d
+    applyC = v -> _multi_mme_matvec(Xs, Xt, Zs, Zts, Ainvs, inv_se2, inv_sig, p, offs, qs, v)
+    applyMinv = r -> invd .* r
+
+    rng = MersenneTwister(seed)
+    traces = zeros(Float64, K)
+    mcse = zeros(Float64, K)
+    zhat = zeros(Float64, ntot)
+    for b in 1:K
+        rng_b = (offs[b] + 1):(offs[b] + qs[b])
+        samples = Vector{Float64}(undef, nprobe)
+        for k in 1:nprobe
+            z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
+            fill!(zhat, 0.0)
+            @views zhat[rng_b] .= z
+            x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
+                                 maxiter = Int(maxiter), applyMinv = applyMinv)
+            xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
+            samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+        end
+        m = sum(samples) / nprobe
+        traces[b] = m
+        # sample standard error of the mean = sqrt(unbiased variance / nprobe)
+        mcse[b] = nprobe > 1 ? sqrt(sum(abs2, samples .- m) / (nprobe - 1) / nprobe) : NaN
+    end
+    return traces, mcse
+end
