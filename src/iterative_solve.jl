@@ -443,6 +443,12 @@ or factorized), extract the `b`-block `xᵦ = C⁻¹[uᵦ,uᵦ]·z`, and accumul
 Returns `(traces, mcse)` — each a length-`K` vector: the trace estimate and its Monte-Carlo
 standard error (probe SD / √nprobe; the honest noise band, `∝ 1/√nprobe`).
 
+`shared_probes` (default `false`): with `false`, each block gets its own `nprobe` probes
+(`nprobe·K` solves). With `true` (v0.8 V8.2 variance reduction), one FULL-random probe over the
+whole random block per solve yields ALL `K` block traces (`nprobe` solves total — `K×` fewer),
+unbiased because `E[z_b z_{b'}ᵀ] = δ_{bb'} I`; at equal solve budget it is as tight or tighter than
+the per-block estimator (each trace sees `K×` more probes).
+
 EXPERIMENTAL — a stochastic-trace PRIMITIVE, NOT a fit. At validation scale the EXACT
 `selinv_block_traces` / `fit_sparse_multi_effect_aireml` is preferred (exact, no MC noise, few
 iterations); this exists ONLY for the large-`q` regime the direct factorization cannot reach.
@@ -458,6 +464,7 @@ function mc_reml_block_traces(
     tol::Real = 1e-9,
     maxiter::Integer = 2000,
     seed::Integer = 0,
+    shared_probes::Bool = false,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -507,23 +514,47 @@ function mc_reml_block_traces(
     rng = MersenneTwister(seed)
     traces = zeros(Float64, K)
     mcse = zeros(Float64, K)
-    zhat = zeros(Float64, ntot)
-    for b in 1:K
-        rng_b = (offs[b] + 1):(offs[b] + qs[b])
-        samples = Vector{Float64}(undef, nprobe)
+    meanmcse(samples) = (m = sum(samples) / length(samples);
+        (m, length(samples) > 1 ? sqrt(sum(abs2, samples .- m) / (length(samples) - 1) / length(samples)) : NaN))
+
+    if shared_probes
+        # SHARED probes (V8.2): one FULL-random Rademacher probe over the whole random block per
+        # solve yields ALL K block traces (nprobe solves total, not nprobe·K). Unbiased because
+        # `E[z_b z_{b'}ᵀ] = δ_{bb'} I`, so `E[z_bᵀ Aᵦ⁻¹ (C⁻¹ ẑ)_b] = tr(Aᵦ⁻¹ C⁻¹[u_b,u_b])`.
+        nrand = ntot - p
+        samples = [Vector{Float64}(undef, nprobe) for _ in 1:K]
+        zhat = zeros(Float64, ntot)
         for k in 1:nprobe
-            z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
             fill!(zhat, 0.0)
-            @views zhat[rng_b] .= z
+            @views zhat[(p + 1):ntot] .= rand(rng, (-1.0, 1.0), nrand)   # Rademacher over all random effects
             x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
                                  maxiter = Int(maxiter), applyMinv = applyMinv)
-            xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
-            samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+            for b in 1:K
+                rng_b = (offs[b] + 1):(offs[b] + qs[b])
+                zb = @view zhat[rng_b]
+                samples[b][k] = dot(zb, Ainvs[b] * (@view x[rng_b]))
+            end
         end
-        m = sum(samples) / nprobe
-        traces[b] = m
-        # sample standard error of the mean = sqrt(unbiased variance / nprobe)
-        mcse[b] = nprobe > 1 ? sqrt(sum(abs2, samples .- m) / (nprobe - 1) / nprobe) : NaN
+        for b in 1:K
+            traces[b], mcse[b] = meanmcse(samples[b])
+        end
+    else
+        # PER-BLOCK probes: nprobe probes embedded in block b -> nprobe·K solves.
+        zhat = zeros(Float64, ntot)
+        for b in 1:K
+            rng_b = (offs[b] + 1):(offs[b] + qs[b])
+            samples = Vector{Float64}(undef, nprobe)
+            for k in 1:nprobe
+                z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
+                fill!(zhat, 0.0)
+                @views zhat[rng_b] .= z
+                x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
+                                     maxiter = Int(maxiter), applyMinv = applyMinv)
+                xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
+                samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+            end
+            traces[b], mcse[b] = meanmcse(samples)
+        end
     end
     return traces, mcse
 end
@@ -569,6 +600,7 @@ function fit_multi_effect_mc_reml(
     pcg_maxiter::Integer = 2000,
     initial = nothing,
     ids = nothing,
+    shared_probes::Bool = false,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -619,7 +651,8 @@ function fit_multi_effect_mc_reml(
         uAu = [dot(us[i], Ainvs[i] * us[i]) for i in 1:K]
         traces, trace_mcse = mc_reml_block_traces(Xs, effects, sigmas, sigma_e2;
                                                   nprobe = nprobe, tol = pcg_tol,
-                                                  maxiter = pcg_maxiter, seed = seed)
+                                                  maxiter = pcg_maxiter, seed = seed,
+                                                  shared_probes = shared_probes)
         newsig = [(uAu[i] + traces[i]) / qs[i] for i in 1:K]
         dfe = n - p - nrand + sum(traces[i] / sigmas[i] for i in 1:K)
         newe = dfe > 0 ? dot(e, e) / dfe : -1.0

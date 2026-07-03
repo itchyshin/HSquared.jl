@@ -3327,6 +3327,16 @@ end
         @test mcse_hi[b] < mcse[b]                             # more probes ⇒ tighter
     end
 
+    # SHARED probes (V8.2): one full-random probe per solve yields all K block traces
+    # (nprobe solves total, not nprobe·K), still UNBIASED vs the exact selinv traces.
+    trs, mcses = mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 400, seed = 20260705,
+                                      shared_probes = true)
+    @test length(trs) == 2 && all(mcses .> 0)
+    for b in 1:2
+        @test abs(trs[b] - exact[b]) < 5 * mcses[b]            # shared estimator is unbiased too
+        @test abs(trs[b] - exact[b]) / exact[b] < 0.05
+    end
+
     # guards
     @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1], se2)          # sigmas length ≠ K
     @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], 0.0)       # σ²e > 0
