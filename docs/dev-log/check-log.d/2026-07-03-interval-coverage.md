@@ -5,8 +5,10 @@
 
 ## Key result (DRAC fir job 46853279, 500 reps/cell, nominal 95%)
 
-- **Both intervals OVER-COVER at small n** (`:delta` = 100% at n=36, h²≥0.4) — conservative, never
-  under-covers.
+- **The shipped intervals OVER-COVER at small n** (`:delta` = 100% at n=36, h²≥0.4) — conservative,
+  never under-cover (`heritability_interval` `:delta`/`:profile` + `variance_component_interval`
+  `:profile`; floor ~0.926 ≈ 2·MCSE). A harness-internal σ²a Wald probe (NOT shipped) does dip to
+  ~0.90, which is why `variance_component_interval` ships `:profile`-only.
 - **Converge to nominal as n grows** (n=36 → 120 → 240); `:profile` faster.
 - **`:profile` > `:delta`** for calibration (medium n=240: `:profile` 0.938–0.959 ≈ nominal, `:delta`
   0.934–0.976).

@@ -8,7 +8,7 @@
 
 Measured the empirical coverage of the SHIPPED animal-model h²/σ²a intervals (`heritability_interval`
 `:delta` / `:profile`; `variance_component_interval`) — the "coverage-calibrated intervals" owed
-item. Honest finding: **both intervals are CONSERVATIVE** (over-cover at small n, never under-cover),
+item. Honest finding: **the shipped intervals are CONSERVATIVE** (over-cover at small n, never under-cover — a harness-internal σ²a Wald probe, NOT a shipped surface, does dip to ~0.90, which is why `variance_component_interval` ships `:profile`-only),
 **converge to nominal as n grows**, and **`:profile` is better-calibrated than `:delta`**. This
 quantifies the existing "uncalibrated on small samples" docstring caveat + makes it directional.
 

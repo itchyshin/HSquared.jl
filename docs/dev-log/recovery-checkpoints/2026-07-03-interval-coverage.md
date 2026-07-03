@@ -28,8 +28,13 @@ animal-model heritability / variance-component intervals (`heritability_interval
 
 1. **Both intervals OVER-COVER at small n** — most extreme for `:delta` at n=36 (100% coverage at
    h²≥0.4, i.e. the interval is so wide it always contains the truth). This is the expected flat-REML-
-   surface behavior: at small n the interval widens / clamps to (0,1) and over-covers. It is
-   CONSERVATIVE — it never UNDER-covers, so it does not give false confidence.
+   surface behavior: at small n the interval widens / clamps to (0,1) and over-covers. The SHIPPED
+   methods (`heritability_interval` `:delta`/`:profile`, `variance_component_interval` `:profile`) are
+   CONSERVATIVE — they never UNDER-cover (the lowest shipped cell is the σ²a `:profile` at n=240,
+   h²=0.6, 0.926 ≈ 2·MCSE below nominal), so they do not give false confidence. (The tsv also reports
+   a harness-internal σ²a normal-Wald PROBE `sigma_a2_delta_z` that DOES under-cover — down to ~0.90
+   at n≥120 — but that is NOT a shipped surface; `variance_component_interval` ships `:profile`-only,
+   precisely because the Wald probe under-covers.)
 2. **`:profile` is better-calibrated than `:delta`.** At medium (n=240) `:profile` is 0.938–0.959
    (near nominal 95%) while `:delta` is 0.934–0.976 (more variable, tends to over-cover). `:profile`
    is the recommended choice when calibration matters.
