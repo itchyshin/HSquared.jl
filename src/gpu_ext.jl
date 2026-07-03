@@ -46,3 +46,35 @@ positive-definite regularized `G` throws the same `ArgumentError` as the CPU twi
 scripts (see [`gpu_genomic_relationship_matrix`](@ref)), never CI.
 """
 function gpu_genomic_relationship_inverse end
+
+"""
+    gpu_fit_gblup(y, X, Z, markers, sigma_a2, sigma_e2; ridge = 0.01,
+                  method = :vanraden1, allele_frequencies = nothing, weights = nothing)
+
+DEVICE-RESIDENT genomic BLUP (GBLUP) at supplied variance components — the GPU twin
+of the CPU pipeline [`genomic_relationship_matrix`](@ref) →
+[`genomic_relationship_inverse`](@ref) → [`fit_gblup`](@ref), run **end-to-end on
+the device** (v0.7 slice G-A). **STUB:** the method is provided by the
+`HSquaredCUDAExt` package extension (loads on `using CUDA`); without a CUDA backend
+in scope this throws a `MethodError`.
+
+The genomic relationship `G = W·Wᵀ/k` (GEMM), its ridge-regularized inverse
+`Ginv = inv(G + ridge·I)` (Cholesky + solve), and the dense Henderson mixed-model
+equations `C·[β; u] = rhs`
+(`C = [[X'X/σe²  X'Z/σe²]; [Z'X/σe²  Z'Z/σe² + Ginv/σa²]]`) are built and solved on
+the device, keeping the `q×q` matrices `G`/`Ginv`/`C` ON-DEVICE across all three
+stages — only the marker matrix goes up and the fixed effects `β` + genomic
+breeding values `u` come back. This is a NUMERICAL ACCELERATION of the CPU GBLUP,
+NOT a new estimand: the marker centering/validation is the validated CPU
+[`centered_markers`](@ref) verbatim (same `p`, `k`, guards), and the returned
+`(beta, breeding_values)` equal (to floating-point tolerance) the CPU
+`fit_gblup(y, X, Z, genomic_relationship_inverse(genomic_relationship_matrix(markers;
+method), ridge), sigma_a2, sigma_e2)`. `sigma_a2`/`sigma_e2` are SUPPLIED, not
+estimated. Float64 throughout.
+
+Returns a `NamedTuple` `(beta, breeding_values = (ids, values), converged)`. The
+CPU↔GPU agreement test and the end-to-end benchmark are opt-in cluster scripts
+(`sim/drac/g_a_device_gblup.jl`), run on a CUDA device — never in CI. No
+performance or agreement claim holds until a committed run lands its artifact.
+"""
+function gpu_fit_gblup end

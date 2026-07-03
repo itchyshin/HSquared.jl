@@ -1,0 +1,105 @@
+node=tg11306.tamia.ecpia.ca start=Thu Jul  2 09:06:53 PM EDT 2026
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-0061f755-ee6c-9fd5-9859-5ac501f10f7b)
+GPU=NVIDIA H100 80GB HBM3
+# HSquared.jl v0.7 G-A device-resident GBLUP agreement + benchmark  2026-07-02T21:07:30.694
+# host=tg11306.tamia.ecpia.ca  julia=1.10.10
+# GPU=NVIDIA H100 80GB HBM3  CUDA=12.6.0  totalmem=79.2 GiB
+# Float64; end-to-end (G build + ridge inverse + MME solve) incl. H2D/D2H; OPT-IN, NO CI, NO competitive claim.
+
+# AGREEMENT  q=400  m=2000  ridge=0.01  sa2=1.0  se2=1.0
+  beta vanraden1                 maxΔ=1.776e-15  relΔ=3.544e-16  OK
+  gebv vanraden1                 maxΔ=3.914e-15  relΔ=2.928e-15  OK
+  beta vanraden2                 maxΔ=2.665e-15  relΔ=5.314e-16  OK
+  gebv vanraden2                 maxΔ=3.775e-15  relΔ=2.787e-15  OK
+  beta weighted                  maxΔ=9.021e-16  relΔ=1.800e-16  OK
+  gebv weighted                  maxΔ=4.219e-15  relΔ=3.151e-15  OK
+# agreement OK
+
+# BENCHMARK  m=5000 markers  (q = genotyped population; end-to-end GBLUP scales ~O(q³) dense)
+# benchmarking q=2000 m=5000 ...
+# benchmarking q=4000 m=5000 ...
+# benchmarking q=8000 m=5000 ...
+# benchmarking q=16000 m=5000 ...
+
+q        m              cpu_s       gpu_s   speedup    maxΔbeta    maxΔgebv
+2000     5000          0.9881      0.1888      5.23    3.73e-14    1.99e-14
+4000     5000          3.7463      0.2916     12.85    1.77e-14    1.77e-14
+8000     5000         16.5419      0.9500     17.41    3.34e-14    1.32e-13
+16000    5000         76.8831      3.3372     23.04    5.30e-14    2.13e-13
+
+# wrote /project/aip-snakagaw/HSquared.jl/sim/drac/results/g_a_gblup_360589.tsv
+end=Thu Jul  2 09:11:13 PM EDT 2026
+
+======== GPU REPORT ========
+
+==============NVSMI LOG==============
+
+Timestamp                                              : Thu Jul  2 21:11:13 2026
+Driver Version                                         : 580.159.04
+CUDA Version                                           : 13.0
+
+Attached GPUs                                          : 4
+GPU 00000000:4E:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes
+        Process ID                                     : 2127026
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 520 MiB
+            Time                                       : 3196 ms
+            Is Running                                 : 0
+        Process ID                                     : 2127080
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 16654 MiB
+            Time                                       : 235998 ms
+            Is Running                                 : 0
+
+GPU 00000000:5F:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:CB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:DB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+Thu Jul  2 21:11:14 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.04             Driver Version: 580.159.04     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:4E:00.0 Off |                    0 |
+| N/A   38C    P0            129W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 80GB HBM3          On  |   00000000:5F:00.0 Off |                    0 |
+| N/A   35C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 80GB HBM3          On  |   00000000:CB:00.0 Off |                    0 |
+| N/A   35C    P0             70W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 80GB HBM3          On  |   00000000:DB:00.0 Off |                    1 |
+| N/A   36C    P0             69W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+

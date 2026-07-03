@@ -3170,6 +3170,111 @@ end
     @test_throws ArgumentError solve_animal_model_pcg(spec, 1.5, 0.7; preconditioner = :bogus)
 end
 
+@testset "Multi-effect matrix-free PCG (iterative == direct, V1-PCG multi-effect / v0.8-S2)" begin
+    # solve_multi_effect_pcg solves the IDENTICAL sparse SPD multi-effect MME as the direct
+    # Cholesky in fit_sparse_multi_effect_aireml / sparse_multi_reml_loglik, matrix-free.
+    # Ground truth is an INDEPENDENT dense-Cholesky solve of C assembled from the definition.
+    ped = normalize_pedigree(
+        ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    n = 8
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = hcat(ones(n), Float64[0, 1, 0, 1, 0, 1, 0, 1])
+    p = size(X, 2)
+    Ainv = sparse(Matrix(pedigree_inverse(ped)))
+    Z1 = sparse(1.0I, n, 8)                                   # record → animal
+    ng = 3
+    Z2 = spzeros(n, ng)                                       # record → environmental group
+    for i in 1:n
+        Z2[i, (i % ng) + 1] = 1.0
+    end
+    A2inv = sparse(1.0I, ng, ng)
+    effects = [(Z1, Ainv), (Z2, A2inv)]
+    s1, s2, se2 = 1.5, 0.6, 0.7
+
+    # INDEPENDENT ground truth: assemble C = [[X'X/σe² X'Z/σe²]; [Z'X/σe² Z'Z/σe² + Ginv]]
+    Zf = hcat(Z1, Z2)
+    Ginv = blockdiag(Ainv ./ s1, A2inv ./ s2)
+    rp = 1 / se2
+    C = [rp .* (transpose(X) * X)   rp .* (transpose(X) * Zf)
+         rp .* (transpose(Zf) * X)  rp .* (transpose(Zf) * Zf) .+ Ginv]
+    rhs = vcat(rp .* (transpose(X) * y), rp .* (transpose(Zf) * y))
+    direct = cholesky(Symmetric(Matrix(C))) \ rhs
+    dbeta = direct[1:p]
+    du1 = direct[(p + 1):(p + 8)]
+    du2 = direct[(p + 9):(p + 8 + ng)]
+
+    pf = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-12)
+    @test pf.matrix_free                                      # matrix-free is the default
+    @test pf.converged
+    @test pf.relative_residual <= 1e-12
+    @test length(pf.effects) == 2
+    @test pf.beta ≈ dbeta atol = 1e-8                         # matrix-free iterative == direct
+    @test pf.effects[1].values ≈ du1 atol = 1e-8
+    @test pf.effects[2].values ≈ du2 atol = 1e-8
+    @test pf.effects[1].ids == collect(1:8)                   # default per-block ids
+    @test pf.effects[2].ids == collect(1:ng)
+
+    # assembled path (matrix_free = false) reaches the SAME solution; :ichol works on it.
+    asm = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-12, matrix_free = false)
+    @test !asm.matrix_free
+    @test asm.beta ≈ pf.beta atol = 1e-10                     # matrix-free == assembled
+    @test asm.effects[1].values ≈ pf.effects[1].values atol = 1e-10
+    cgm = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-12,
+                                 matrix_free = false, preconditioner = :none)
+    @test cgm.beta ≈ dbeta atol = 1e-8
+    @test pf.iterations <= cgm.iterations                     # Jacobi in no more iters than plain CG
+    icm = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-12,
+                                 matrix_free = false, preconditioner = :ichol)
+    @test icm.beta ≈ dbeta atol = 1e-8                        # IC(0) == direct
+    @test icm.iterations <= cgm.iterations
+
+    # matrix-free operator == assembled C column-by-column (exact), and matrix-free Jacobi
+    # diagonal == diag(C).
+    N = size(C, 1)
+    Xs = sparse(X); Xt = transpose(Xs)
+    Zsv = [Z1, Z2]; Zts = [transpose(Z1), transpose(Z2)]
+    Ainvs = [Ainv, A2inv]; qs = [8, ng]; offs = [p, p + 8]
+    invs = [1 / s1, 1 / s2]
+    colerr = 0.0
+    for i in 1:N
+        e = zeros(N); e[i] = 1.0
+        col = HSquared._multi_mme_matvec(Xs, Xt, Zsv, Zts, Ainvs, rp, invs, p, offs, qs, e)
+        colerr = max(colerr, maximum(abs.(col .- Vector(C[:, i]))))
+    end
+    @test colerr < 1e-12                                     # matrix-free C·eᵢ == C[:,i] (to summation-order rounding)
+    @test HSquared._multi_mme_diag(Xs, Zsv, Ainvs, rp, invs, p, offs, qs, N) ≈
+          Vector(diag(C)) atol = 1e-12
+
+    # REDUCTION: with K = 1 (animal effect only) it equals the single-effect solve_animal_model_pcg.
+    spec1 = animal_model_spec(y, X, Z1, pedigree_inverse(ped); ids = ped.ids, method = :REML)
+    one_effect = solve_multi_effect_pcg(y, X, [(Z1, Ainv)], [s1], se2; tol = 1e-12)
+    single = solve_animal_model_pcg(spec1, s1, se2; tol = 1e-12)
+    @test one_effect.beta ≈ single.beta atol = 1e-9
+    @test one_effect.effects[1].values ≈ single.breeding_values.values atol = 1e-9
+
+    # supplied per-block ids are threaded through
+    lab = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-12,
+                                 ids = [ped.ids, ["g1", "g2", "g3"]])
+    @test lab.effects[1].ids == ped.ids
+    @test lab.effects[2].ids == ["g1", "g2", "g3"]
+
+    # deterministic non-convergence flag when the iteration budget is too small
+    starved = solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; tol = 1e-14, maxiter = 1)
+    @test !starved.converged
+
+    # guards
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1, s2], se2;
+                                                      preconditioner = :ichol, matrix_free = true)
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; preconditioner = :bogus)
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [-1.0, s2], se2)
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1, s2], 0.0)
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1], se2)   # sigmas length ≠ K
+    @test_throws ArgumentError solve_multi_effect_pcg(y, X, effects, [s1, s2], se2; maxiter = 0)
+end
+
 @testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
     # The fused kernel must equal the materialize-then-broadcast formula it
     # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to
@@ -8873,12 +8978,15 @@ end
     # CUDA device via the opt-in cluster script sim/drac/g1_gpu_genomic.jl, never in CI.
     @test gpu_genomic_relationship_matrix isa Function
     @test gpu_genomic_relationship_inverse isa Function
+    @test gpu_fit_gblup isa Function
     @test isempty(methods(gpu_genomic_relationship_matrix))   # stub: no methods without CUDA
     @test isempty(methods(gpu_genomic_relationship_inverse))
+    @test isempty(methods(gpu_fit_gblup))                     # v0.7 G-A device-resident GBLUP stub
     markers = [0.0 1.0 2.0; 1.0 1.0 0.0; 2.0 0.0 1.0]
     @test_throws MethodError gpu_genomic_relationship_matrix(markers)
     @test_throws MethodError gpu_genomic_relationship_matrix(markers; method = :vanraden2)
     @test_throws MethodError gpu_genomic_relationship_inverse([1.0 0.0; 0.0 1.0])
+    @test_throws MethodError gpu_fit_gblup([1.0, 2.0, 3.0], ones(3, 1), sparse(1.0I, 3, 3), markers, 1.0, 1.0)
 end
 
 @testset "BLUPF90 multivariate starter packet preflight (#49)" begin

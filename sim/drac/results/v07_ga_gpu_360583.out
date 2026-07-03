@@ -1,0 +1,103 @@
+node=tg11304.tamia.ecpia.ca start=Thu Jul  2 08:27:53 PM EDT 2026
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-ca69edfb-15fc-5f09-08a7-9243c2409e1c)
+GPU 1: NVIDIA H100 80GB HBM3 (UUID: GPU-a03fb8eb-4ce2-8ba6-3c10-4542e3c39551)
+GPU 2: NVIDIA H100 80GB HBM3 (UUID: GPU-4523728e-9388-3ea6-9dab-6e1ee9f208ce)
+GPU 3: NVIDIA H100 80GB HBM3 (UUID: GPU-85315446-5a40-0fe3-a748-d370a438bb4b)
+GPU=NVIDIA H100 80GB HBM3
+# HSquared.jl v0.7 G-A device-resident GBLUP agreement + benchmark  2026-07-02T20:28:33.608
+# host=tg11304.tamia.ecpia.ca  julia=1.10.10
+# GPU=NVIDIA H100 80GB HBM3  CUDA=12.6.0  totalmem=79.2 GiB
+# Float64; end-to-end (G build + ridge inverse + MME solve) incl. H2D/D2H; OPT-IN, NO CI, NO competitive claim.
+
+# AGREEMENT  q=400  m=2000  ridge=0.01  sa2=1.0  se2=1.0
+  beta vanraden1                 maxΔ=1.776e-15  relΔ=3.544e-16  OK
+  gebv vanraden1                 maxΔ=3.858e-15  relΔ=2.887e-15  OK
+  beta vanraden2                 maxΔ=2.665e-15  relΔ=5.314e-16  OK
+  gebv vanraden2                 maxΔ=3.886e-15  relΔ=2.869e-15  OK
+  beta weighted                  maxΔ=1.159e-15  relΔ=2.313e-16  OK
+  gebv weighted                  maxΔ=3.886e-15  relΔ=2.902e-15  OK
+# agreement OK
+
+# BENCHMARK  m=5000 markers  (q = genotyped population; end-to-end GBLUP scales ~O(q³) dense)
+# benchmarking q=2000 m=5000 ...
+# benchmarking q=4000 m=5000 ...
+# benchmarking q=8000 m=5000 ...
+# benchmarking q=16000 m=5000 ...
+# benchmarking q=32000 m=5000 ...
+/var/spool/slurmd/job360583/slurm_script: line 33: 2877262 Killed                  julia --project=. /project/aip-snakagaw/HSquared.jl/sim/drac/g_a_device_gblup.jl /project/aip-snakagaw/HSquared.jl/sim/drac/results/g_a_gblup_${SLURM_JOB_ID}.tsv 2000,4000,8000,16000,32000 5000
+end=Thu Jul  2 08:39:16 PM EDT 2026
+
+======== GPU REPORT ========
+
+==============NVSMI LOG==============
+
+Timestamp                                              : Thu Jul  2 20:39:16 2026
+Driver Version                                         : 580.159.04
+CUDA Version                                           : 13.0
+
+Attached GPUs                                          : 4
+GPU 00000000:4E:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes
+        Process ID                                     : 2877208
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 520 MiB
+            Time                                       : 3222 ms
+            Is Running                                 : 0
+        Process ID                                     : 2877262
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 16654 MiB
+            Time                                       : 655648 ms
+            Is Running                                 : 0
+
+GPU 00000000:5F:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:CB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:DB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+Thu Jul  2 20:39:16 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.04             Driver Version: 580.159.04     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:4E:00.0 Off |                    0 |
+| N/A   36C    P0            122W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 80GB HBM3          On  |   00000000:5F:00.0 Off |                    0 |
+| N/A   34C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 80GB HBM3          On  |   00000000:CB:00.0 Off |                    0 |
+| N/A   34C    P0             70W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 80GB HBM3          On  |   00000000:DB:00.0 Off |                    0 |
+| N/A   34C    P0             70W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+[2026-07-03T00:39:16.959] error: Detected 1 oom_kill event in StepId=360583.batch. Some of the step tasks have been OOM Killed.
