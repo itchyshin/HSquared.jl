@@ -3333,6 +3333,50 @@ end
     @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 0)
 end
 
+@testset "fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability)" begin
+    # fit_multi_effect routes between the exact sparse AI-REML and the matrix-free MC-REML by
+    # feasibility, with a forced override. Small K=2 case (animal-A + env group).
+    ped = normalize_pedigree(["a1","a2","a3","a4","a5","a6","a7","a8"],
+        ["0","0","a1","a1","a2","a2","a3","a5"], ["0","0","a2","a2","0","0","a4","a6"])
+    n = 8; X = ones(n, 1); Ainv = sparse(Matrix(pedigree_inverse(ped)))
+    Z1 = sparse(1.0I, n, 8); ng = 3; Z2 = spzeros(n, ng)
+    for i in 1:n; Z2[i, (i % ng) + 1] = 1.0; end
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    effects = [(Z1, Ainv), (Z2, sparse(1.0I, ng, ng))]
+    N = 1 + 8 + ng
+
+    # forced exact
+    ex = fit_multi_effect(y, X, effects; method = :exact)
+    @test ex.dispatch == :exact
+    @test ex.estimator == :sparse_multi_effect_aireml
+    @test !haskey(ex, :trace_mcse)
+
+    # forced matrix-free
+    mf = fit_multi_effect(y, X, effects; method = :matrix_free, nprobe = 200, verbose = false)
+    @test mf.dispatch == :matrix_free
+    @test mf.estimator == :matrix_free_mc_em_reml
+    @test haskey(mf, :trace_mcse)
+
+    # :auto with K≥2 and N ≤ direct_max_n ⇒ exact
+    a_ex = fit_multi_effect(y, X, effects; method = :auto, direct_max_n = 10_000)
+    @test a_ex.dispatch == :exact
+
+    # :auto with K≥2 and N > direct_max_n ⇒ matrix-free (switch)
+    a_mf = fit_multi_effect(y, X, effects; method = :auto, direct_max_n = N - 1,
+                            nprobe = 200, verbose = false)
+    @test a_mf.dispatch == :matrix_free
+
+    # :auto with a single random effect (K=1) ⇒ always exact regardless of threshold
+    a_k1 = fit_multi_effect(y, X, [(Z1, Ainv)]; method = :auto, direct_max_n = 1)
+    @test a_k1.dispatch == :exact
+
+    # forced and auto matrix-free route to the same engine (recovery accuracy is covered by the
+    # dedicated MC-EM-REML recovery testset, not re-checked on this tiny 8-record fixture)
+    @test a_mf.estimator == mf.estimator
+
+    @test_throws ArgumentError fit_multi_effect(y, X, effects; method = :bogus)
+end
+
 @testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
     # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
     # matrix-free PCG solve + the Hutchinson trace (C never assembled/factorized). It must

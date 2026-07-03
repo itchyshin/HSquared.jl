@@ -428,7 +428,7 @@ end
 MATRIX-FREE stochastic (Hutchinson) estimator of the `K` REML score-trace terms
 `tr(Aᵢ⁻¹·C⁻¹[uᵢ,uᵢ])` of the `K`-INDEPENDENT-effect mixed-model equations — the building
 block for a matrix-free Monte-Carlo REML FIT (v0.8-S2 follow-on) at `q → 10⁶`, where the
-EXACT [`selinv_block_traces`](@ref) (a Takahashi selected inverse of the sparse Cholesky
+EXACT `selinv_block_traces` (a Takahashi selected inverse of the sparse Cholesky
 factor, used by [`fit_sparse_multi_effect_aireml`](@ref)) is factorization-limited by the
 K≥2 environmental-group Cholesky fill-in.
 
@@ -652,4 +652,75 @@ function fit_multi_effect_mc_reml(
         iterations = iters,
         estimator = :matrix_free_mc_em_reml,
     )
+end
+
+"""
+    fit_multi_effect(y, X, effects; method = :auto, direct_max_n = 200_000, nprobe = 64,
+                     verbose = true, kwargs...)
+
+Fit the `K`-INDEPENDENT-effect Gaussian mixed model, automatically choosing the solver by
+feasibility. This is the single entry point over the two multi-effect REML engines:
+
+  - **exact** [`fit_sparse_multi_effect_aireml`](@ref) — sparse AI-REML, exact gradient (a
+    Cholesky selected inverse each iteration). The default where feasible; limited by the K≥2
+    environmental-group Cholesky fill-in at large `N`.
+  - **matrix-free** [`fit_multi_effect_mc_reml`](@ref) — Monte-Carlo EM-REML, never forms or
+    factorizes `C` (matrix-free solves + Hutchinson trace). Feasible where the exact path is
+    fill-limited, at the cost of Monte-Carlo noise in the gradient (`trace_mcse`).
+
+`method`:
+  - `:auto` (default) — route on feasibility: `:exact` for a single random effect (`K = 1`, the
+    animal-model MME stays sparse-feasible to very large `q`) OR when `N = p + Σqᵢ ≤ direct_max_n`;
+    otherwise `:matrix_free`, with a `@info` message (unless `verbose = false`) noting the switch
+    and that estimates carry a Monte-Carlo standard error.
+  - `:exact` / `:matrix_free` — force the engine (may OOM / accept MC noise respectively).
+
+The `:auto` `direct_max_n` threshold is a **coarse, machine-agnostic heuristic** calibrated to the
+measured K≥2 factorization cost (Phase 5 / v0.8-S2 benchmarks: the direct multi-effect Cholesky is
+already ~quadratic by `q ≈ 50k` and infeasible past `~10⁵`–`10⁶`). It is deliberately conservative
+and ALWAYS overridable; a precise symbolic-fill predictor is future work. Because the exact and
+matrix-free result shapes differ (matrix-free has `trace_mcse`, no `loglik`), the returned
+`NamedTuple` is the chosen engine's own, with an added `dispatch` field (`:exact` | `:matrix_free`)
+recording which ran.
+
+EXPERIMENTAL. `nprobe` and other keywords forward to the chosen engine.
+"""
+function fit_multi_effect(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    method::Symbol = :auto,
+    direct_max_n::Integer = 200_000,
+    nprobe::Integer = 64,
+    verbose::Bool = true,
+    kwargs...,
+)
+    method in (:auto, :exact, :matrix_free) ||
+        throw(ArgumentError("method must be :auto, :exact, or :matrix_free"))
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    p = size(X, 2)
+    N = p + sum(size(pair[2], 1) for pair in effects)
+
+    chosen = if method === :exact
+        :exact
+    elseif method === :matrix_free
+        :matrix_free
+    else
+        (K == 1 || N <= direct_max_n) ? :exact : :matrix_free
+    end
+
+    if chosen === :exact
+        res = fit_sparse_multi_effect_aireml(y, X, effects; kwargs...)
+        return merge(res, (dispatch = :exact,))
+    else
+        if verbose
+            @info("fit_multi_effect: problem exceeds the direct-factorization budget " *
+                  "(N=$N, K=$K > direct_max_n=$direct_max_n) — using matrix-free Monte-Carlo REML; " *
+                  "estimates carry a Monte-Carlo standard error (see `trace_mcse`). " *
+                  "Override with method=:exact to force the exact (fill-limited) path.")
+        end
+        res = fit_multi_effect_mc_reml(y, X, effects; nprobe = nprobe, kwargs...)
+        return merge(res, (dispatch = :matrix_free,))
+    end
 end
