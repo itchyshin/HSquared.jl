@@ -3333,6 +3333,57 @@ end
     @test_throws ArgumentError mc_reml_block_traces(X, effects, [s1, s2], se2; nprobe = 0)
 end
 
+@testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
+    # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
+    # matrix-free PCG solve + the Hutchinson trace (C never assembled/factorized). It must
+    # RECOVER the exact fit_sparse_multi_effect_aireml optimum within MC error (~1/√nprobe),
+    # deterministically given the probe seed. Half-sib pedigree animal effect + env group, K=2.
+    function _halfsib(q)
+        nsire = max(2, round(Int, 0.04q)); ndam = max(2, round(Int, 0.08q)); noff = q - nsire - ndam
+        sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+        normalize_pedigree(vcat(sids, dids, oids),
+            vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff]),
+            vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff]))
+    end
+    rng = MersenneTwister(11); q = 300
+    ped = _halfsib(q); na = length(ped.ids); Ainv = pedigree_inverse(ped)
+    u = zeros(na)
+    for i in 1:na
+        s = ped.sire[i]; d = ped.dam[i]; pa = s > 0 ? u[s] : 0.0; pb = d > 0 ? u[d] : 0.0
+        nk = (s > 0) + (d > 0); msv = nk == 0 ? 1.0 : (nk == 1 ? 0.75 : 0.5)
+        u[i] = 0.5 * (pa + pb) + sqrt(msv) * randn(rng)
+    end
+    n = na; X = ones(n, 1); y = 5.0 .+ u
+    ng = q ÷ 20; Z2 = spzeros(n, ng)
+    for r in 1:n; Z2[r, rand(rng, 1:ng)] = 1.0; end
+    y .+= Z2 * (randn(rng, ng) .* sqrt(0.5)); y .+= randn(rng, n)
+    effects = [(sparse(1.0I, n, na), Ainv), (Z2, sparse(1.0I, ng, ng))]
+
+    exact = fit_sparse_multi_effect_aireml(y, X, effects; em_warmup = 0)
+    exsig = exact.variance_components.sigmas; exse = exact.variance_components.sigma_e2
+
+    fit = fit_multi_effect_mc_reml(y, X, effects; nprobe = 300, seed = 20260703)
+    @test fit.estimator == :matrix_free_mc_em_reml
+    @test fit.converged
+    @test length(fit.variance_components.sigmas) == 2
+    @test all(fit.trace_mcse .> 0)                                  # honest gradient noise band
+    relerr = vcat(abs.(fit.variance_components.sigmas .- exsig) ./ exsig,
+                  abs(fit.variance_components.sigma_e2 - exse) / exse)
+    @test maximum(relerr) < 0.05                                    # recovers exact optimum within MC error
+    @test length(fit.beta) == 1 && length(fit.effects) == 2
+
+    # more probes ⇒ closer to the exact optimum (MC error ∝ 1/√nprobe)
+    coarse = fit_multi_effect_mc_reml(y, X, effects; nprobe = 40, seed = 20260703)
+    fine = fit_multi_effect_mc_reml(y, X, effects; nprobe = 500, seed = 20260703)
+    err_coarse = abs(coarse.variance_components.sigmas[1] - exsig[1]) / exsig[1]
+    err_fine = abs(fine.variance_components.sigmas[1] - exsig[1]) / exsig[1]
+    @test err_fine <= err_coarse                                    # tighter with more probes
+
+    # guards
+    @test_throws ArgumentError fit_multi_effect_mc_reml(y, X, effects; initial = [1.0, 1.0])  # wrong length
+    @test_throws ArgumentError fit_multi_effect_mc_reml(y, X, effects; initial = [1.0, -1.0, 1.0])
+end
+
 @testset "Phase 1 fused AI-REML selinv trace (selinv_trace_against)" begin
     # The fused kernel must equal the materialize-then-broadcast formula it
     # replaces in fit_ai_reml — sum(Ainv .* takahashi_selinv(factor)[uu]) — to

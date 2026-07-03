@@ -527,3 +527,129 @@ function mc_reml_block_traces(
     end
     return traces, mcse
 end
+
+"""
+    fit_multi_effect_mc_reml(y, X, effects; nprobe = 64, tol = 1e-4, iterations = 200,
+                             seed = 0, pcg_tol = 1e-9, pcg_maxiter = 2000,
+                             initial = nothing, ids = nothing)
+
+MATRIX-FREE Monte-Carlo EM-REML fit of the `K`-INDEPENDENT-effect Gaussian mixed model
+`y = Xβ + Σᵢ Zᵢuᵢ + e`, `uᵢ ~ N(0, σᵢ²Aᵢ)`, `e ~ N(0, σ²e I)` — the FIT companion of the
+matrix-free solve [`solve_multi_effect_pcg`](@ref) and the estimator that lifts v0.8-S2 from a
+SOLVE to a FIT. It NEVER forms or factorizes the MME coefficient matrix `C`: each EM step is a
+matrix-free PCG solve plus the matrix-free Hutchinson trace [`mc_reml_block_traces`](@ref), so
+it is not limited by the K≥2 environmental-group Cholesky fill-in that caps the direct/sparse
+AI-REML.
+
+Uses the SAME closed-form EM-REML update as `fit_sparse_multi_effect_aireml`'s warmup —
+`σᵢ²_new = (ûᵢ'Aᵢ⁻¹ûᵢ + tr(Aᵢ⁻¹C⁻¹[uᵢ,uᵢ]))/qᵢ`, `σ²e_new = ê'ê/(n−p−Σqᵢ + Σ trᵢ/σᵢ²)` — but
+with the trace terms MC-estimated. A FIXED probe `seed` is reused across EM iterations
+(correlated sampling), so the EM map is deterministic and convergent; its fixed point is the
+exact REML optimum perturbed by the MC error (`∝ 1/√nprobe`).
+
+Returns a `NamedTuple` `(variance_components = (sigmas, sigma_e2), ratios, beta, effects, trace_mcse,
+converged, iterations, estimator)`. `trace_mcse` is the final block-trace Monte-Carlo standard
+error — the honest noise band on the gradient.
+
+EXPERIMENTAL. **No `loglik`** (a matrix-free REML loglik needs a stochastic log-determinant —
+owed). At validation scale the EXACT `fit_sparse_multi_effect_aireml` is preferred (exact, no MC
+noise, fewer iterations); this exists for the large-`q` regime the direct factorization cannot
+reach. It RECOVERS the exact AI-REML optimum within MC error (`test/runtests.jl`); a pre-declared
+bias/MCSE recovery gate at scale + an external comparator are OWED before any covered claim.
+"""
+function fit_multi_effect_mc_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    nprobe::Integer = 64,
+    tol::Real = 1e-4,
+    iterations::Integer = 200,
+    seed::Integer = 0,
+    pcg_tol::Real = 1e-9,
+    pcg_maxiter::Integer = 2000,
+    initial = nothing,
+    ids = nothing,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    n = length(y)
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+    p = size(Xs, 2)
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+    nrand = sum(qs)
+    p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    if initial === nothing
+        sigmas = ones(Float64, K)
+        sigma_e2 = 1.0
+    else
+        length(initial) == K + 1 ||
+            throw(ArgumentError("initial must have length K+1 = $(K + 1)"))
+        all(s -> s > 0, initial) || throw(ArgumentError("initial variance components must be positive"))
+        sigmas = Float64.(collect(initial[1:K]))
+        sigma_e2 = Float64(initial[K + 1])
+    end
+
+    converged = false
+    iters = 0
+    trace_mcse = fill(NaN, K)
+    local last_effects
+    for it in 1:iterations
+        iters = it
+        sol = solve_multi_effect_pcg(yv, Xs, effects, sigmas, sigma_e2;
+                                     tol = pcg_tol, maxiter = pcg_maxiter, matrix_free = true, ids = ids)
+        us = [e.values for e in sol.effects]
+        last_effects = sol.effects
+        e = yv .- Xs * sol.beta
+        for i in 1:K
+            e .-= Zs[i] * us[i]
+        end
+        uAu = [dot(us[i], Ainvs[i] * us[i]) for i in 1:K]
+        traces, trace_mcse = mc_reml_block_traces(Xs, effects, sigmas, sigma_e2;
+                                                  nprobe = nprobe, tol = pcg_tol,
+                                                  maxiter = pcg_maxiter, seed = seed)
+        newsig = [(uAu[i] + traces[i]) / qs[i] for i in 1:K]
+        dfe = n - p - nrand + sum(traces[i] / sigmas[i] for i in 1:K)
+        newe = dfe > 0 ? dot(e, e) / dfe : -1.0
+        (all(>(0), newsig) && newe > 0) || break
+        rel = max(maximum(abs.(newsig .- sigmas) ./ sigmas), abs(newe - sigma_e2) / sigma_e2)
+        sigmas = newsig
+        sigma_e2 = newe
+        if rel < tol
+            converged = true
+            break
+        end
+    end
+
+    total = sum(sigmas) + sigma_e2
+    beta_final, effects_final = if @isdefined(last_effects)
+        # one final solve at the converged variances for clean BLUPs
+        s = solve_multi_effect_pcg(yv, Xs, effects, sigmas, sigma_e2;
+                                   tol = pcg_tol, maxiter = pcg_maxiter, matrix_free = true, ids = ids)
+        s.beta, s.effects
+    else
+        zeros(p), [(ids = collect(1:qs[i]), values = zeros(qs[i])) for i in 1:K]
+    end
+    return (
+        variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
+        ratios = sigmas ./ total,
+        beta = beta_final,
+        effects = effects_final,
+        trace_mcse = trace_mcse,
+        converged = converged,
+        iterations = iters,
+        estimator = :matrix_free_mc_em_reml,
+    )
+end
