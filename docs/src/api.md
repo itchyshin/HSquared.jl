@@ -131,6 +131,8 @@ HSquared.solve_multi_effect_pcg
 HSquared.mc_reml_block_traces
 HSquared.fit_multi_effect_mc_reml
 HSquared.matrix_free_reml_loglik
+HSquared.matrix_free_reml_information
+HSquared.matrix_free_ratio_intervals
 HSquared.fit_multi_effect
 HSquared.multi_effect_ratio_interval
 HSquared.fit_direct_maternal_reml

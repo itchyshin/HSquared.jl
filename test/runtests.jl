@@ -3379,6 +3379,69 @@ end
     @test_throws ArgumentError matrix_free_reml_loglik(y, X, effects, sig, se2; slq_steps = 1)
 end
 
+@testset "Matrix-free AI information + ratio intervals (v0.8 V8.3)" begin
+    # matrix_free_reml_information builds the (K+1)x(K+1) average-information matrix matrix-free
+    # (working-variate P-projections; NO stochastic trace). It must reproduce the exact
+    # Cholesky-factor AI matrix; the delta-method ratio intervals then match the exact-AI intervals.
+    function _hs(q)
+        nsire = max(2, round(Int, 0.04q)); ndam = max(2, round(Int, 0.08q)); noff = q - nsire - ndam
+        sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
+        normalize_pedigree(vcat(sids, dids, oids),
+            vcat(fill("0", nsire + ndam), [sids[((i - 1) % nsire) + 1] for i in 1:noff]),
+            vcat(fill("0", nsire + ndam), [dids[((i - 1) % ndam) + 1] for i in 1:noff]))
+    end
+    rng = MersenneTwister(3); q = 300
+    ped = _hs(q); na = length(ped.ids); Ainv = pedigree_inverse(ped); n = na; X = ones(n, 1)
+    ng = q ÷ 6; Z2 = spzeros(n, ng)
+    for r in 1:n; Z2[r, rand(rng, 1:ng)] = 1.0; end
+    # add BOTH an env-group signal and residual so both variance components are identified
+    # (a near-zero env variance rides the boundary and yields NaN intervals on both paths).
+    y = 5.0 .+ Z2 * (randn(rng, ng) .* sqrt(0.6)) .+ randn(rng, n)
+    effects = [(sparse(1.0I, n, na), Ainv), (Z2, sparse(1.0I, ng, ng))]
+    fit = fit_sparse_multi_effect_aireml(y, X, effects; em_warmup = 0)
+    sig = fit.variance_components.sigmas; se2 = fit.variance_components.sigma_e2
+
+    # EXACT factor-based AI matrix at the estimate (0.5·WᵀPW via the Cholesky factor)
+    Xs = sparse(X); Zf = hcat(effects[1][1], effects[2][1]); Xt = transpose(Xs); Zft = transpose(Zf)
+    Ainvs = [effects[1][2], effects[2][2]]; qs = [na, ng]; p = 1
+    lhs, rhs = HSquared._sparse_multi_lhs_rhs(sparse(Xt * Xs), sparse(Xt * Zf), sparse(Zft * Xs),
+                                              sparse(Zft * Zf), Vector(Xt * y), Vector(Zft * y),
+                                              Ainvs, sig, se2)
+    factor = cholesky(Symmetric(lhs)); sol = factor \ rhs; offs = [p, p + na]
+    us = [sol[(offs[i] + 1):(offs[i] + qs[i])] for i in 1:2]
+    e = y .- Xs * sol[1:p]; for i in 1:2; e .-= effects[i][1] * us[i]; end
+    W = Matrix{Float64}(undef, n, 3)
+    W[:, 1] = (effects[1][1] * us[1]) ./ sig[1]; W[:, 2] = (effects[2][1] * us[2]) ./ sig[2]; W[:, 3] = e ./ se2
+    PW = similar(W)
+    for j in 1:3; PW[:, j] = HSquared._reml_project(factor, Xs, Zf, W[:, j], se2, p); end
+    AI_exact = 0.5 .* (transpose(W) * PW)
+
+    AI_mf = matrix_free_reml_information(y, X, effects, sig, se2; pcg_tol = 1e-13)
+    @test size(AI_mf) == (3, 3)
+    @test maximum(abs.(Matrix(AI_mf) .- AI_exact)) < 1e-6          # matrix-free AI == exact AI
+
+    ci = matrix_free_ratio_intervals(y, X, effects, sig, se2; pcg_tol = 1e-13)
+    @test length(ci) == 2
+    theta = vcat(sig, se2)
+    ci_exact = [HSquared._ratio_delta_ci(Symmetric(AI_exact), theta, i, 0.95, 1e-6) for i in 1:2]
+    for i in 1:2
+        @test ci[i].estimate ≈ ci_exact[i].estimate atol = 1e-8
+        # matrix-free and exact-AI agree on boundary-NaN-ness; where finite, the intervals match
+        # (logit(inv(AI)) amplifies the PCG-tolerance AI residual, so a modest atol).
+        @test isnan(ci[i].lower) == isnan(ci_exact[i].lower)
+        if !isnan(ci[i].lower)
+            @test ci[i].lower ≈ ci_exact[i].lower atol = 1e-3
+            @test ci[i].upper ≈ ci_exact[i].upper atol = 1e-3
+        end
+    end
+    # animal-block ratio is a valid h2 in (0,1) with finite bounds
+    @test 0 < ci[1].estimate < 1 && (isnan(ci[1].lower) || (0 <= ci[1].lower < ci[1].upper <= 1))
+
+    # guards
+    @test_throws ArgumentError matrix_free_reml_information(y, X, effects, [sig[1]], se2)   # sigmas length
+    @test_throws ArgumentError matrix_free_ratio_intervals(y, X, effects, sig, se2; level = 1.5)
+end
+
 @testset "fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability)" begin
     # fit_multi_effect routes between the exact sparse AI-REML and the matrix-free MC-REML by
     # feasibility, with a forced override. Small K=2 case (animal-A + env group).
