@@ -582,9 +582,10 @@ Returns a `NamedTuple` `(variance_components = (sigmas, sigma_e2), ratios, beta,
 converged, iterations, estimator)`. `trace_mcse` is the final block-trace Monte-Carlo standard
 error — the honest noise band on the gradient.
 
-EXPERIMENTAL. **No `loglik`** (a matrix-free REML loglik needs a stochastic log-determinant —
-owed). At validation scale the EXACT `fit_sparse_multi_effect_aireml` is preferred (exact, no MC
-noise, fewer iterations); this exists for the large-`q` regime the direct factorization cannot
+EXPERIMENTAL. The returned `NamedTuple` carries no `loglik` field; the matrix-free REML
+log-likelihood is available separately via [`matrix_free_reml_loglik`](@ref) (stochastic
+log-determinant, V8.1). At validation scale the EXACT `fit_sparse_multi_effect_aireml` is preferred
+(exact, no MC noise, fewer iterations); this exists for the large-`q` regime the direct factorization cannot
 reach. It RECOVERS the exact AI-REML optimum within MC error (`test/runtests.jl`); a pre-declared
 bias/MCSE recovery gate at scale + an external comparator are OWED before any covered claim.
 """
