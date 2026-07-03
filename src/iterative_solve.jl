@@ -207,3 +207,216 @@ function solve_animal_model_pcg(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2:
         matrix_free = matrix_free,
     )
 end
+
+# Matrix-free apply of the MULTI-effect MME coefficient matrix `C·v` WITHOUT forming `C`,
+# for `K` INDEPENDENT random effects (the coefficient matrix of `_sparse_multi_lhs_rhs`):
+#   C = [[X'X/σe²      X'Z/σe²                        ];
+#        [Z'X/σe²      Z'Z/σe² + blockdiag(Aᵢ⁻¹/σᵢ²)  ]],   Z = hcat(Zᵢ).
+# With v = [v_β; v_{u₁}; …; v_{u_K}], `common = X·v_β + Σᵢ Zᵢ·v_{uᵢ}` (a single record-space
+# vector shared by every block) and
+#   top     = X'·common / σe²
+#   bottomᵢ = Zᵢ'·common / σe² + Aᵢ⁻¹·v_{uᵢ} / σᵢ².
+# Only the sparse per-block `X`, `Zᵢ`, `Aᵢ⁻¹` matvecs (O(Σnnz)); `C` is NEVER assembled — so
+# the quadratic Cholesky fill-in of the environmental-group columns (the Phase 5 K≥2 scale
+# wall) is bypassed entirely. `offs[i]` is the global offset of block `i` in `[β; u]`.
+function _multi_mme_matvec(X, Xt, Zs, Zts, Ainvs, inv_se2::Float64,
+                           inv_sigmas::Vector{Float64}, p::Int, offs::Vector{Int}, qs::Vector{Int},
+                           v::Vector{Float64})
+    common = X * view(v, 1:p)
+    @inbounds for i in eachindex(Zs)
+        common .+= Zs[i] * view(v, (offs[i] + 1):(offs[i] + qs[i]))
+    end
+    out = Vector{Float64}(undef, length(v))
+    out[1:p] .= inv_se2 .* (Xt * common)
+    @inbounds for i in eachindex(Zs)
+        rng = (offs[i] + 1):(offs[i] + qs[i])
+        out[rng] .= inv_se2 .* (Zts[i] * common) .+ inv_sigmas[i] .* (Ainvs[i] * view(v, rng))
+    end
+    return out
+end
+
+# Diagonal of the multi-effect MME coefficient matrix, matrix-free: `diag(X'X)/σe²` for the
+# fixed block and `diag(Zᵢ'Zᵢ)/σe² + diag(Aᵢ⁻¹)/σᵢ²` for each random block. Jacobi
+# preconditioner without forming `C`.
+function _multi_mme_diag(X, Zs, Ainvs, inv_se2::Float64, inv_sigmas::Vector{Float64},
+                         p::Int, offs::Vector{Int}, qs::Vector{Int}, ntot::Int)
+    d = Vector{Float64}(undef, ntot)
+    d[1:p] .= inv_se2 .* vec(sum(abs2, X; dims = 1))
+    @inbounds for i in eachindex(Zs)
+        rng = (offs[i] + 1):(offs[i] + qs[i])
+        d[rng] .= inv_se2 .* vec(sum(abs2, Zs[i]; dims = 1)) .+
+                  inv_sigmas[i] .* Vector{Float64}(diag(Ainvs[i]))
+    end
+    return d
+end
+
+"""
+    solve_multi_effect_pcg(y, X, effects, sigmas, sigma_e2; tol = 1e-10, maxiter = 1000,
+                           preconditioner = :jacobi, matrix_free = true, ids = nothing)
+
+Solve the supplied-variance `K`-INDEPENDENT-random-effect mixed-model equations by
+**preconditioned conjugate gradient**, matrix-free — the multi-effect generalization of
+[`solve_animal_model_pcg`](@ref) and the ITERATIVE companion of the direct multi-effect
+Cholesky in [`fit_sparse_multi_effect_aireml`](@ref) / [`sparse_multi_reml_loglik`](@ref).
+It solves the SAME sparse SPD system `C·[β; u₁; …; u_K] = rhs` as the direct factorization
+(the coefficient matrix of `_sparse_multi_lhs_rhs`), never forming `C`.
+
+`effects` is a vector of `(Zᵢ, Aᵢ⁻¹)` pairs (same contract as
+[`fit_sparse_multi_effect_aireml`](@ref)); `sigmas` are the `K` SUPPLIED random-effect
+variances and `sigma_e2` the SUPPLIED residual variance (this is a supplied-variance SOLVE,
+not a REML fit — it does not estimate variance components).
+
+`matrix_free = true` (default) applies `C·v` directly from the per-block sparse `X`, `Zᵢ`,
+`Aᵢ⁻¹` matvecs (`common = X·v_β + Σᵢ Zᵢ·v_{uᵢ}`; `top = X'·common/σe²`;
+`bottomᵢ = Zᵢ'·common/σe² + Aᵢ⁻¹·v_{uᵢ}/σᵢ²`) with a matrix-free Jacobi diagonal — `C` is
+NEVER assembled, so the quadratic Cholesky fill-in of the environmental-group columns (the
+Phase 5 K≥2 scale bottleneck) is bypassed. `matrix_free = false` assembles `C` once
+(`_sparse_multi_lhs_rhs`) and applies it, enabling `preconditioner = :ichol`; both paths
+return the SAME solution.
+
+`preconditioner = :jacobi` (default) uses `M⁻¹ = 1/diag(C)`; `:ichol` (assembled only) an
+IC(0) factor with a diagonal-shift fallback; `:none` plain CG.
+
+Returns a `NamedTuple`:
+
+  - `beta` — fixed effects (`1:p` of the solution);
+  - `effects` — length-`K` vector of `(ids, values)` per random block, in `[u₁; …; u_K]`
+    order (block `i`'s `ids` default to `1:qᵢ`, or the supplied `ids[i]`);
+  - `iterations` — CG iterations taken;
+  - `relative_residual` — `‖rhs − C·x‖ / ‖rhs‖` at the returned solution;
+  - `converged` — whether `relative_residual ≤ tol`;
+  - `preconditioner`, `matrix_free`.
+
+EXPERIMENTAL — a CORRECTNESS primitive: validated to recover the direct multi-effect solve
+(β and per-block BLUPs) to a tight tolerance. It makes NO performance / large-`q` scaling
+claim (no benchmark is asserted here); it is the matrix-free iterative foundation the
+production sparse multi-effect path builds on. NOT the default fit path.
+"""
+function solve_multi_effect_pcg(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    tol::Real = 1e-10,
+    maxiter::Integer = 1000,
+    preconditioner::Symbol = :jacobi,
+    matrix_free::Bool = true,
+    ids = nothing,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    tol > 0 || throw(ArgumentError("tol must be positive"))
+    maxiter >= 1 || throw(ArgumentError("maxiter must be >= 1"))
+    preconditioner in (:jacobi, :none, :ichol) ||
+        throw(ArgumentError("preconditioner must be :jacobi, :ichol, or :none"))
+    (preconditioner === :ichol && matrix_free) &&
+        throw(ArgumentError(":ichol preconditioner requires matrix_free = false (it factorizes the assembled C)"))
+
+    n = length(y)
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+    p = size(Xs, 2)
+    p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+
+    if ids === nothing
+        eids = [collect(1:qs[i]) for i in 1:K]
+    else
+        length(ids) == K || throw(ArgumentError("ids must be a length-$K vector of per-effect id vectors"))
+        eids = [collect(ids[i]) for i in 1:K]
+        for i in 1:K
+            length(eids[i]) == qs[i] ||
+                throw(ArgumentError("ids[$i] length must match Ainv[$i] dimensions"))
+        end
+    end
+
+    ss = Float64.(collect(sigmas))
+    se2 = Float64(sigma_e2)
+    inv_se2 = inv(se2)
+    inv_sigmas = inv.(ss)
+
+    offs = Vector{Int}(undef, K)
+    acc = p
+    for i in 1:K
+        offs[i] = acc
+        acc += qs[i]
+    end
+    ntot = acc
+
+    Xt = transpose(Xs)
+    Zts = [transpose(Zs[i]) for i in 1:K]
+    rhs = Vector{Float64}(undef, ntot)
+    rhs[1:p] .= inv_se2 .* (Xt * yv)
+    for i in 1:K
+        rhs[(offs[i] + 1):(offs[i] + qs[i])] .= inv_se2 .* (Zts[i] * yv)
+    end
+
+    if matrix_free
+        d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sigmas, p, offs, qs, ntot)
+        applyC = v -> _multi_mme_matvec(Xs, Xt, Zs, Zts, Ainvs, inv_se2, inv_sigmas, p, offs, qs, v)
+        lhs = nothing
+    else
+        Zf = reduce(hcat, Zs)
+        Zft = transpose(Zf)
+        XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
+        ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
+        Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
+        lhs, _ = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, ss, se2)
+        d = Vector{Float64}(diag(lhs))
+        applyC = v -> lhs * v
+    end
+    all(>(0), d) ||
+        throw(ArgumentError("MME diagonal has a non-positive entry; system is not positive definite"))
+
+    applyMinv = if preconditioner === :jacobi
+        invd = 1.0 ./ d
+        r -> invd .* r
+    elseif preconditioner === :ichol
+        L = _ichol0_factor(lhs)
+        if L === nothing
+            base = maximum(d)
+            for s in (1e-4, 1e-3, 1e-2, 1e-1, 1.0)
+                L = _ichol0_factor(lhs + (s * base) * I)
+                L === nothing || break
+            end
+            L === nothing &&
+                throw(ArgumentError(":ichol IC(0) broke down even with a diagonal shift; use :jacobi"))
+        end
+        Lt = sparse(transpose(L))
+        r -> UpperTriangular(Lt) \ (LowerTriangular(L) \ r)
+    else
+        identity
+    end
+
+    x, iters, relres = _pcg_solve(applyC, rhs; tol = Float64(tol), maxiter = Int(maxiter),
+                                  applyMinv = applyMinv)
+    effects_out = [(ids = eids[i], values = Vector{Float64}(x[(offs[i] + 1):(offs[i] + qs[i])]))
+                   for i in 1:K]
+    return (
+        beta = Vector{Float64}(x[1:p]),
+        effects = effects_out,
+        iterations = iters,
+        relative_residual = relres,
+        converged = relres <= tol,
+        preconditioner = preconditioner,
+        matrix_free = matrix_free,
+    )
+end
