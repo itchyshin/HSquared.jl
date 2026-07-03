@@ -25,16 +25,25 @@ function gpu_genomic_relationship_matrix(
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     method::Symbol = :vanraden1,
     weights::Union{Nothing,AbstractVector} = nothing,
+    precision::Type{<:AbstractFloat} = Float64,
 )
     CUDA.functional() || throw(
         ErrorException(
             "gpu_genomic_relationship_matrix requires a functional CUDA GPU (CUDA.functional() == false)",
         ),
     )
+    (precision === Float64 || precision === Float32) ||
+        throw(ArgumentError("precision must be Float64 (default) or Float32"))
     # Reuse the CPU centering + validation verbatim: identical p, k, and input guards, so
-    # the device result is the SAME estimand. Only the GEMM below runs on the GPU.
+    # the device result is the SAME estimand. Only the GEMM below runs on the GPU. With
+    # `precision = Float32` (v0.7-G-B) the centered marker matrix is downcast to Float32 for
+    # the O(n²·m) GEMM (where H100 Float32/TF32 throughput dominates) and the result is upcast
+    # to Float64 before the O(1)-per-entry scaling — so the return is ALWAYS Matrix{Float64}
+    # (the drop-in contract holds), only the GEMM accumulation precision changes. This is an
+    # OPT-IN speed-vs-accuracy trade: the Float32 G differs from the Float64 G by the GEMM
+    # round-off (characterized on-device by `sim/drac/g_b_float32.jl`), NOT the default.
     cm = HSquared.centered_markers(markers; allele_frequencies = allele_frequencies)
-    Wd = CuArray(cm.W)
+    Wd = CuArray(precision.(cm.W))
     if weights !== nothing
         method === :vanraden1 || throw(
             ArgumentError("per-marker weights are supported with method = :vanraden1 only"),
@@ -46,11 +55,12 @@ function gpu_genomic_relationship_matrix(
         scale = sum(w .* 2 .* cm.p .* (1 .- cm.p))
         scale > 0 || throw(ArgumentError("weighted genomic scaling is zero"))
         # W·diag(w)·Wᵀ = (W .* wᵀ)·Wᵀ — a column scale (broadcast, device-friendly) + GEMM,
-        # algebraically identical to the CPU `W * Diagonal(w) * transpose(W)`.
-        Gd = ((Wd .* CuArray(reshape(w, 1, :))) * Wd') ./ scale
+        # algebraically identical to the CPU `W * Diagonal(w) * transpose(W)`. The column scale
+        # is applied in `precision`; the /scale is done in Float64 after the upcast.
+        Gd = Float64.((Wd .* CuArray(precision.(reshape(w, 1, :)))) * Wd') ./ scale
         return Matrix{Float64}(Array(Gd))
     elseif method === :vanraden1
-        Gd = (Wd * Wd') ./ cm.k
+        Gd = Float64.(Wd * Wd') ./ cm.k
         return Matrix{Float64}(Array(Gd))
     elseif method === :vanraden2
         scale = 2 .* cm.p .* (1 .- cm.p)
@@ -61,9 +71,9 @@ function gpu_genomic_relationship_matrix(
         )
         # Standardize columns on the device (W ./ sqrt(scale)ᵀ), then GEMM / m — the same
         # column scaling the CPU path applies.
-        sd = CuArray(reshape(sqrt.(scale), 1, :))
+        sd = CuArray(precision.(reshape(sqrt.(scale), 1, :)))
         Zsd = Wd ./ sd
-        Gd = (Zsd * Zsd') ./ size(cm.W, 2)
+        Gd = Float64.(Zsd * Zsd') ./ size(cm.W, 2)
         return Matrix{Float64}(Array(Gd))
     else
         throw(ArgumentError("method must be :vanraden1 or :vanraden2"))

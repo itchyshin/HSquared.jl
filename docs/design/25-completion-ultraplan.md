@@ -35,7 +35,7 @@ covered gates, and the strategic fork underneath.
 
 | Slice | What | Compute | Parallel-safe? | Risk |
 |---|---|---|---|---|
-| **V7.1** G-B Float32 | mixed-precision device path + accuracy characterization vs Float64 (honest accuracy-vs-speed fence) | DRAC GPU | yes | low-med |
+| **V7.1 ✅ DONE (2026-07-03)** G-B Float32 | `gpu_genomic_relationship_matrix(...; precision = Float32)` — opt-in mixed-precision `G` GEMM (return always Float64; centering unchanged → same estimand). RUN on tamia H100 (job 360780): Float64 gate held (7.3e-15); Float32 `G` differs by ~1–5e-6 absolute with NEGLIGIBLE GEBV impact (~1e-6) — numerically safe for prediction; but the speedup is MODEST (~1.1–1.4×) and TF32 tensor cores were not engaged (default==pedantic, FP32-level). Honest: Float32 safe but only ~1.2× on this H100; Float64 stays default. `V2-GRM-GPU` stays partial, no covered flip. (checkpoint `docs/dev-log/recovery-checkpoints/2026-07-03-v07-gb-float32-result.md`) | DRAC GPU (done) | — | low-med |
 | **V7.2** G-A cross-device replicate | agreement gate on a 2nd/3rd GPU architecture (Narval A100, Killarney/Vulcan H100) | DRAC GPU | yes | low |
 | **V7.3** G-C real marker panel | real (or realistic large) genotype panel benchmark + memory profile | DRAC GPU | yes | low |
 | **V7.4** G-D backend dispatcher | `control`/`AutoBackend` → `:cuda` routing (the GPU analogue of the `:auto` solver dispatch just built) | local | yes | low |

@@ -9,6 +9,20 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
+- **As of 2026-07-03 (doc-25 V7 GPU stream STARTED — V7.1 G-B Float32 RUN on tamia H100; Claude solo
+  (Opus), autonomous; user steer "V7 GPU stream (finish doc-25)"; rows **55** / covered **13** /
+  `public_covered_count` **5** UNCHANGED).** After the engine-local matrix-free arc (V8.3/V8.4/V8.5,
+  all merged), the user chose the V7 GPU stream. **V7.1 (G-B, branch `feat/2026-07-03-v07-gb-float32`):**
+  `gpu_genomic_relationship_matrix(...; precision = Float32)` — opt-in mixed-precision `G` GEMM (return
+  always Float64; centering unchanged → SAME estimand). Pre-declared + RUN LIVE on tamia H100 (job
+  360780): Float64 gate HELD (`precision=Float64` GPU G ≡ CPU 7.3e-15); Float32 G differs ~1–5e-6
+  absolute with NEGLIGIBLE GEBV impact (~1e-6) — numerically safe for prediction; but the speedup is
+  **MODEST (~1.1–1.4×)** and TF32 tensor cores were NOT engaged (default==pedantic, FP32-level) — an
+  HONEST, underwhelming measurement that CORRECTED the prior owed-note's "larger speedups" optimism.
+  Float64 stays default. `V2-GRM-GPU` stays `partial`, NO covered flip. REMAINING V7: V7.2 cross-device
+  (Narval A100, needs gpu_env setup), V7.3 real panel, V7.4 dispatcher (local), V7.5 close-out. START
+  HERE: `docs/dev-log/after-task/2026-07-03-v07-gb-float32.md`.
+
 - **As of 2026-07-03 (v0.8 doc-25 progress: V8.3 matrix-free intervals MERGED (PR #252) + V8.5 APY
   genomic inverse; Claude solo (Opus), autonomous; rows 54→**55** / covered **13** / `public_covered_count`
   **5** UNCHANGED).** Two more doc-25 slices, NO covered flip. **V8.3 (merged `afc446c4`):**
