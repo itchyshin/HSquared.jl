@@ -127,6 +127,10 @@ HSquared.two_effect_ratio_interval
 HSquared.multi_effect_mme
 HSquared.fit_multi_effect_reml
 HSquared.fit_sparse_multi_effect_aireml
+HSquared.solve_multi_effect_pcg
+HSquared.mc_reml_block_traces
+HSquared.fit_multi_effect_mc_reml
+HSquared.fit_multi_effect
 HSquared.multi_effect_ratio_interval
 HSquared.fit_direct_maternal_reml
 HSquared.direct_maternal_interval

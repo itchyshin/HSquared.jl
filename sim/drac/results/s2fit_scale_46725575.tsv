@@ -1,0 +1,8 @@
+# HSquared.jl v0.8-S2-FIT matrix-free MC-EM-REML SCALE feasibility  2026-07-02T20:55:20.956
+# host=fc30611  julia=1.10.10  OPENBLAS_NUM_THREADS=1
+# sizes=[10000, 50000, 100000, 200000]  nprobe=48  truth=[1.0, 0.5, 0.5, 1.0]  K=3  1 seed/size. FIT feasibility (converges, bounded wall-clock).
+q	n	nprobe	converged	em_iters	wall_s	sigma_a2	sigma_e	loadavg1
+10000	10000	48	true	14	11.467	1.00650	1.02805	136.84
+50000	50000	48	true	48	251.831	1.02496	1.00103	118.57
+100000	100000	48	true	33	392.195	1.01123	1.00306	158.27
+200000	200000	48	true	23	585.619	1.00518	1.00037	113.33

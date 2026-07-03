@@ -30,6 +30,7 @@ makedocs(;
         "Multivariate models" => "multivariate-models.md",
         "Audience and comparators" => "audience-comparators.md",
         "Genomics, QTL, GPU, and HPC" => "genomics-qtl-gpu-hpc.md",
+        "Fitting at scale" => "fitting-at-scale.md",
         "Backend and algorithm roadmap" => "backend-algorithm-roadmap.md",
         "Roadmap" => "roadmap.md",
         "Reference" => "api.md",

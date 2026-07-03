@@ -1,0 +1,71 @@
+node=fc30611 start=Thu Jul  2 20:31:34 PDT 2026
+# HSquared.jl v0.8-S2-FIT matrix-free MC-EM-REML RECOVERY gate  2026-07-02T20:31:42.655
+# host=fc30611  julia=1.10.10  OPENBLAS_NUM_THREADS=1
+# q=960  nseeds=48  nprobe=200  base_seed=20260800  truth=[1.0, 0.5, 0.5, 1.0]  K=3 (animal-A + 2 pedigree-independent env factors)
+# PRIMARY criterion (pre-declared): all seeds converged AND max over seeds of |MC - EXACT|/EXACT <= mcvx_tol -- i.e. the matrix-free MC fit REPRODUCES the exact AI-REML fit (the covered V3-NEFFECT-REML estimator) on the same data; the MC approximation must not distort the estimate. SECONDARY (informational): |mean bias vs truth| <= 2*MCSE per component -- a joint estimator+DGP property the EXACT fit shares (its own small-sample recovery is the covered V3-NEFFECT-REML gate, NOT re-litigated here).
+# seed 20260801 conv=true MC=[1.107, 0.517, 0.767, 1.001] EX=[1.09, 0.519, 0.768, 1.01] mc_vs_ex=1.53e-02
+# seed 20260802 conv=true MC=[1.08, 0.552, 0.375, 0.844] EX=[1.105, 0.555, 0.376, 0.83] mc_vs_ex=2.27e-02
+# seed 20260803 conv=true MC=[0.928, 0.485, 0.681, 0.945] EX=[0.92, 0.485, 0.679, 0.949] mc_vs_ex=8.27e-03
+# seed 20260804 conv=true MC=[1.083, 0.67, 0.685, 0.91] EX=[1.055, 0.671, 0.683, 0.926] mc_vs_ex=2.64e-02
+# seed 20260805 conv=true MC=[0.902, 0.532, 0.682, 1.073] EX=[0.921, 0.534, 0.682, 1.061] mc_vs_ex=2.03e-02
+# seed 20260806 conv=true MC=[1.079, 0.538, 0.471, 0.97] EX=[1.099, 0.538, 0.472, 0.958] mc_vs_ex=1.89e-02
+# seed 20260807 conv=true MC=[1.366, 0.282, 0.339, 0.901] EX=[1.363, 0.282, 0.338, 0.903] mc_vs_ex=2.28e-03
+# seed 20260808 conv=true MC=[0.735, 0.528, 0.701, 1.126] EX=[0.741, 0.528, 0.701, 1.121] mc_vs_ex=8.94e-03
+# seed 20260809 conv=true MC=[1.149, 0.374, 0.579, 0.91] EX=[1.141, 0.374, 0.58, 0.914] mc_vs_ex=6.85e-03
+# seed 20260810 conv=true MC=[1.171, 0.372, 0.44, 0.843] EX=[1.152, 0.371, 0.437, 0.855] mc_vs_ex=1.72e-02
+# seed 20260811 conv=true MC=[0.946, 0.448, 0.44, 1.013] EX=[0.949, 0.449, 0.441, 1.011] mc_vs_ex=3.98e-03
+# seed 20260812 conv=true MC=[1.079, 0.436, 0.454, 1.113] EX=[1.095, 0.434, 0.454, 1.104] mc_vs_ex=1.40e-02
+# seed 20260813 conv=true MC=[1.076, 0.578, 0.274, 1.174] EX=[1.086, 0.579, 0.273, 1.168] mc_vs_ex=9.59e-03
+# seed 20260814 conv=true MC=[1.089, 0.587, 0.415, 0.991] EX=[1.084, 0.585, 0.416, 0.994] mc_vs_ex=4.20e-03
+# seed 20260815 conv=true MC=[0.862, 0.455, 0.322, 1.046] EX=[0.859, 0.455, 0.325, 1.047] mc_vs_ex=6.87e-03
+# seed 20260816 conv=true MC=[0.831, 0.339, 0.412, 1.205] EX=[0.834, 0.339, 0.411, 1.203] mc_vs_ex=3.37e-03
+# seed 20260817 conv=true MC=[1.266, 0.431, 0.743, 0.783] EX=[1.262, 0.432, 0.741, 0.785] mc_vs_ex=3.10e-03
+# seed 20260818 conv=true MC=[1.093, 0.36, 0.478, 0.861] EX=[1.115, 0.361, 0.476, 0.849] mc_vs_ex=1.99e-02
+# seed 20260819 conv=true MC=[1.212, 0.491, 0.549, 0.927] EX=[1.213, 0.492, 0.549, 0.926] mc_vs_ex=1.41e-03
+# seed 20260820 conv=true MC=[0.812, 0.544, 0.5, 1.155] EX=[0.799, 0.544, 0.499, 1.163] mc_vs_ex=1.66e-02
+# seed 20260821 conv=true MC=[1.006, 0.658, 0.589, 0.953] EX=[0.999, 0.662, 0.585, 0.957] mc_vs_ex=6.92e-03
+# seed 20260822 conv=true MC=[1.081, 0.33, 0.447, 1.019] EX=[1.071, 0.33, 0.444, 1.025] mc_vs_ex=9.35e-03
+# seed 20260823 conv=true MC=[0.807, 0.416, 0.368, 1.09] EX=[0.805, 0.415, 0.369, 1.091] mc_vs_ex=2.81e-03
+# seed 20260824 conv=true MC=[0.975, 0.564, 0.691, 1.07] EX=[0.963, 0.566, 0.697, 1.077] mc_vs_ex=1.24e-02
+# seed 20260825 conv=true MC=[1.083, 0.324, 0.405, 0.962] EX=[1.102, 0.325, 0.405, 0.951] mc_vs_ex=1.70e-02
+# seed 20260826 conv=true MC=[0.91, 0.495, 0.705, 1.118] EX=[0.904, 0.495, 0.705, 1.122] mc_vs_ex=7.03e-03
+# seed 20260827 conv=true MC=[1.176, 0.555, 0.585, 0.898] EX=[1.194, 0.553, 0.586, 0.888] mc_vs_ex=1.52e-02
+# seed 20260828 conv=true MC=[1.149, 0.557, 0.592, 1.041] EX=[1.169, 0.558, 0.593, 1.03] mc_vs_ex=1.68e-02
+# seed 20260829 conv=true MC=[1.061, 0.437, 0.548, 0.994] EX=[1.064, 0.438, 0.55, 0.992] mc_vs_ex=2.90e-03
+# seed 20260830 conv=true MC=[0.977, 0.335, 0.538, 1.02] EX=[0.993, 0.336, 0.537, 1.01] mc_vs_ex=1.64e-02
+# seed 20260831 conv=true MC=[1.377, 0.433, 0.372, 0.868] EX=[1.365, 0.433, 0.374, 0.875] mc_vs_ex=8.30e-03
+# seed 20260832 conv=true MC=[0.784, 0.534, 0.81, 1.156] EX=[0.794, 0.533, 0.815, 1.149] mc_vs_ex=1.33e-02
+# seed 20260833 conv=true MC=[1.071, 0.53, 0.231, 1.003] EX=[1.061, 0.527, 0.23, 1.01] mc_vs_ex=9.85e-03
+# seed 20260834 conv=true MC=[0.856, 0.502, 0.433, 1.034] EX=[0.868, 0.503, 0.435, 1.027] mc_vs_ex=1.38e-02
+# seed 20260835 conv=true MC=[0.659, 0.554, 0.27, 1.249] EX=[0.667, 0.554, 0.271, 1.243] mc_vs_ex=1.26e-02
+# seed 20260836 conv=true MC=[0.892, 0.496, 0.526, 1.016] EX=[0.891, 0.495, 0.522, 1.017] mc_vs_ex=6.64e-03
+# seed 20260837 conv=true MC=[0.886, 0.42, 0.676, 0.977] EX=[0.875, 0.421, 0.673, 0.984] mc_vs_ex=1.30e-02
+# seed 20260838 conv=true MC=[1.173, 0.377, 0.309, 0.824] EX=[1.187, 0.377, 0.31, 0.816] mc_vs_ex=1.24e-02
+# seed 20260839 conv=true MC=[1.093, 0.697, 0.372, 0.892] EX=[1.082, 0.697, 0.372, 0.898] mc_vs_ex=1.03e-02
+# seed 20260840 conv=true MC=[0.988, 0.755, 0.458, 0.933] EX=[1.003, 0.754, 0.456, 0.924] mc_vs_ex=1.51e-02
+# seed 20260841 conv=true MC=[1.215, 0.401, 0.466, 0.969] EX=[1.235, 0.402, 0.468, 0.958] mc_vs_ex=1.60e-02
+# seed 20260842 conv=true MC=[1.053, 0.584, 0.504, 0.82] EX=[1.058, 0.586, 0.503, 0.818] mc_vs_ex=4.04e-03
+# seed 20260843 conv=true MC=[1.086, 0.516, 0.784, 0.898] EX=[1.075, 0.515, 0.787, 0.904] mc_vs_ex=1.00e-02
+# seed 20260844 conv=true MC=[0.828, 0.707, 0.285, 1.186] EX=[0.83, 0.705, 0.287, 1.185] mc_vs_ex=7.51e-03
+# seed 20260845 conv=true MC=[1.012, 0.312, 0.406, 1.036] EX=[1.021, 0.312, 0.408, 1.031] mc_vs_ex=8.57e-03
+# seed 20260846 conv=true MC=[0.881, 0.507, 0.307, 1.049] EX=[0.867, 0.507, 0.309, 1.058] mc_vs_ex=1.68e-02
+# seed 20260847 conv=true MC=[1.381, 0.321, 0.497, 0.772] EX=[1.367, 0.322, 0.498, 0.779] mc_vs_ex=1.05e-02
+# seed 20260848 conv=true MC=[1.025, 0.387, 0.456, 1.047] EX=[1.033, 0.387, 0.455, 1.042] mc_vs_ex=7.87e-03
+
+# RESULT (mean over 48 seeds)
+# [SECONDARY, informational] component  truth   mc_mean   bias     MCSE     |bias|/MCSE  ex_mean
+# sigma_a2  1.000   1.0281    0.0281   0.0235   1.195       1.0297
+# sigma_e1  0.500   0.4839    -0.0161  0.0161   1.000       0.4841
+# sigma_e2  0.500   0.4987    -0.0013  0.0218   0.058       0.4988
+# sigma_e   1.000   0.9934    -0.0066  0.0165   0.400       0.9924
+# all_converged=true  max_mc_vs_ex_reldiff=2.639e-02  mcvx_tol=0.050  GATE=PASS
+# wrote sim/drac/results/s2fit_recovery_46725575.tsv
+# HSquared.jl v0.8-S2-FIT matrix-free MC-EM-REML SCALE feasibility  2026-07-02T20:55:20.956
+# host=fc30611  julia=1.10.10  OPENBLAS_NUM_THREADS=1
+# sizes=[10000, 50000, 100000, 200000]  nprobe=48  truth=[1.0, 0.5, 0.5, 1.0]  K=3  1 seed/size. FIT feasibility (converges, bounded wall-clock).
+# q=10000 conv=true em_iters=14 wall=11.5s sa2=1.0065
+# q=50000 conv=true em_iters=48 wall=251.8s sa2=1.0250
+# q=100000 conv=true em_iters=33 wall=392.2s sa2=1.0112
+# q=200000 conv=true em_iters=23 wall=585.6s sa2=1.0052
+# wrote sim/drac/results/s2fit_scale_46725575.tsv
+end=Thu Jul  2 21:16:16 PDT 2026
