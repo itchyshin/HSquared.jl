@@ -1,15 +1,18 @@
 # doc-25 — Ultra-plan: completely finishing the v0.7 + v0.8 arc
 
 **Authored:** 2026-07-02 (Claude, autonomous session). **Method:** ultra-plan (decompose →
-dispatch → verify → consolidate). **Status (2026-07-03 update):** ALL NUMBERED SLICES DONE — the
-**V8 stream (V8.1–V8.6) is COMPLETE** and the **V7 GPU stream (V7.1–V7.5) is COMPLETE**, each slice
-pre-declared + Rose-audited + merged. The only remaining items are the two explicitly-OWED
-hardening legs (not numbered slices, and not covered-flips): **V8.4's at-scale comparator** and
-**coverage-calibrated intervals** — both for a *covered* move that stays gated (`public_covered_count`
-5 throughout). **Context:** the first wave delivered G-A device-resident GBLUP; S1 METIS
-banked-negative; S2 matrix-free multi-effect PCG + the matrix-free Monte-Carlo REML FIT (Slices A/B/C
-+ the `:auto` usability layer). This doc is the honest map of what remained; the numbered map is now
-cleared.
+dispatch → verify → consolidate). **Status (2026-07-03 — ARC COMPLETE):** ALL NUMBERED SLICES DONE + BOTH OWED HARDENING LEGS DONE.
+The **V8 stream (V8.1–V8.6)** and the **V7 GPU stream (V7.1–V7.5)** are COMPLETE, each slice
+pre-declared + Rose-audited + merged. The two explicitly-OWED hardening legs are now discharged:
+**V8.4's at-scale comparator** (blupf90 vs exact-sparse vs matrix-free at q=4060; PR #260) and
+**coverage-calibrated intervals** (empirical coverage of the shipped `:delta`/`:profile` h²/σ²a
+intervals measured on DRAC fir — conservative over-coverage at small n, converging to nominal,
+`:profile` > `:delta`; `docs/dev-log/recovery-checkpoints/2026-07-03-interval-coverage.md`). Neither
+is a covered-flip — `public_covered_count` stayed **5** throughout the entire arc. **Context:** the
+first wave delivered G-A device-resident GBLUP; S1 METIS banked-negative; S2 matrix-free multi-effect
+PCG + the matrix-free Monte-Carlo REML FIT (Slices A/B/C + the `:auto` usability layer). This doc is
+the honest map of what remained; **the numbered map AND the owed legs are now cleared — doc-25 is
+fully closed.**
 
 ## Where we are
 
