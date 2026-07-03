@@ -1,0 +1,96 @@
+node=tg11205.tamia.ecpia.ca start=Fri Jul  3 12:59:35 PM EDT 2026
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-bac02587-0e70-036a-e2e3-86a841054a5b)
+GPU 1: NVIDIA H100 80GB HBM3 (UUID: GPU-47398e75-af0c-2ba4-ae2d-5f5be3179000)
+GPU=NVIDIA H100 80GB HBM3
+# HSquared.jl v0.7 G-C real/large-panel genomic-G benchmark + memory  2026-07-03T13:00:13.382
+# host=tg11205.tamia.ecpia.ca  julia=1.10.10
+# GPU=NVIDIA H100 80GB HBM3  CUDA=12.6.0  totalmem=79.2 GiB
+# LARGE SIMULATED panel (not a specific real dataset); return always Matrix{Float64}; OPT-IN, NO CI, NO competitive claim.
+
+# AGREEMENT gate  n=4000 m=20000 (CPU reference feasible)
+  max|GPU_f64 - CPU| = 1.354e-14  OK
+
+n        m             f64_s      f32_s    speedup   GPUmem%        W_GiB        G_GiB  alloc_GiB
+10000    50000        6.5199     6.7564       0.96      5.6         3.73         0.75       5.22
+10000    100000      12.2406    10.5584       1.16     10.4         7.45         0.75       8.94
+10000    200000      24.4138    21.6089       1.13     19.8        14.90         0.75      16.39
+20000    50000       15.1175    13.7531       1.10     13.2         7.45         2.98      13.41
+20000    100000      28.1105    24.4627       1.15     22.6        14.90         2.98      20.86
+10000    300000      40.9677    29.6068       1.38     29.2        22.35         0.75      23.84
+
+# wrote /project/aip-snakagaw/HSquared.jl/sim/drac/results/g_c_realpanel_360812.tsv
+end=Fri Jul  3 01:09:22 PM EDT 2026
+
+======== GPU REPORT ========
+
+==============NVSMI LOG==============
+
+Timestamp                                              : Fri Jul  3 13:09:22 2026
+Driver Version                                         : 580.159.04
+CUDA Version                                           : 13.0
+
+Attached GPUs                                          : 4
+GPU 00000000:4E:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes
+        Process ID                                     : 3901300
+            GPU Utilization                            : 0 %
+            Memory Utilization                         : 0 %
+            Max memory usage                           : 520 MiB
+            Time                                       : 3274 ms
+            Is Running                                 : 0
+        Process ID                                     : 3901354
+            GPU Utilization                            : 5 %
+            Memory Utilization                         : 3 %
+            Max memory usage                           : 25774 MiB
+            Time                                       : 561001 ms
+            Is Running                                 : 0
+
+GPU 00000000:5F:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:CB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+GPU 00000000:DB:00.0
+    Accounting Mode                                    : Enabled
+    Accounting Mode Buffer Size                        : 4000
+    Accounted Processes                                : None
+
+Fri Jul  3 13:09:22 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.159.04             Driver Version: 580.159.04     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:4E:00.0 Off |                    0 |
+| N/A   38C    P0            125W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 80GB HBM3          On  |   00000000:5F:00.0 Off |                    0 |
+| N/A   34C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 80GB HBM3          On  |   00000000:CB:00.0 Off |                    0 |
+| N/A   35C    P0             70W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 80GB HBM3          On  |   00000000:DB:00.0 Off |                    0 |
+| N/A   34C    P0             71W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
