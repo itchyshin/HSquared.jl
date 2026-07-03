@@ -15,9 +15,11 @@
 #SBATCH --job-name=v07_gb_f32
 #SBATCH --time=0:45:00
 #SBATCH --nodes=1
-#SBATCH --gpus-per-node=h100:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=48G
+# tamia requires a whole-node GPU allocation (h100:4); the harness uses a single GPU
+# (CUDA.device() = the first), the other three sit idle — the scheduler's constraint, not a need.
+#SBATCH --gpus-per-node=h100:4
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=64G
 #SBATCH --output=/project/aip-snakagaw/HSquared.jl/sim/drac/results/%x_%j.out
 export JULIA_DEPOT_PATH=/project/aip-snakagaw/julia_depot
 export OPENBLAS_NUM_THREADS=4 JULIA_NUM_THREADS=1
