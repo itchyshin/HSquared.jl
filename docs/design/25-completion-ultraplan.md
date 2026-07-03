@@ -22,8 +22,8 @@ covered gates, and the strategic fork underneath.
 
 | Slice | What | Compute | Parallel-safe? | Risk |
 |---|---|---|---|---|
-| **V8.1** matrix-free REML loglik | a stochastic log-determinant gradient (Hutchinson on `d/dθ log\|C\|`) so the FIT reports a `loglik` — needed for LRTs + interval machinery | local + small fleet | yes (Julia-solo) | med (variance of the log-det estimator) |
-| **V8.2** trace variance reduction | the K×-cheaper *shared-probe* estimator (one full-random probe → all K block traces) + correlated sampling; cuts the `nprobe·K` solves/iter to `nprobe` | local | yes | low |
+| **V8.1 ✅ DONE (2026-07-03)** matrix-free REML loglik | `matrix_free_reml_loglik` — `log\|C\|` by stochastic Lanczos quadrature (matrix-free) + the other REML terms exact; matches the exact `sparse_multi_reml_loglik` within the SLQ MC band (~0.5–1.5 abs at q=300–1000). Stochastic. Enables LRTs / interval machinery. | local | done | — |
+| **V8.2 ✅ DONE (2026-07-03)** trace variance reduction | `shared_probes = true` — one full-random probe/solve → all K block traces (`nprobe` solves/iter, not `nprobe·K`), unbiased, tighter-at-equal-budget. | local | done | — |
 | **V8.3** matrix-free intervals | asymptotic SE/CI for the matrix-free VCs (stochastic observed-information) — currently NO intervals on the matrix-free fit | local + gate | yes | med |
 | **V8.4** external comparator at scale | blupf90/sommer same-estimand through the sparse/matrix-free path on a large fixture (the S3 comparator leg) | fleet | partly (needs blupf90) | med |
 | **V8.5** APY genomic scaling | Algorithm for Proven & Young sparse genomic inverse for large genotyped populations (distinct algorithm) | local + fleet | yes | high (new algorithm) |

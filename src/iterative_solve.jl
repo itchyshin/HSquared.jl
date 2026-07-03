@@ -443,6 +443,12 @@ or factorized), extract the `b`-block `xᵦ = C⁻¹[uᵦ,uᵦ]·z`, and accumul
 Returns `(traces, mcse)` — each a length-`K` vector: the trace estimate and its Monte-Carlo
 standard error (probe SD / √nprobe; the honest noise band, `∝ 1/√nprobe`).
 
+`shared_probes` (default `false`): with `false`, each block gets its own `nprobe` probes
+(`nprobe·K` solves). With `true` (v0.8 V8.2 variance reduction), one FULL-random probe over the
+whole random block per solve yields ALL `K` block traces (`nprobe` solves total — `K×` fewer),
+unbiased because `E[z_b z_{b'}ᵀ] = δ_{bb'} I`; at equal solve budget it is as tight or tighter than
+the per-block estimator (each trace sees `K×` more probes).
+
 EXPERIMENTAL — a stochastic-trace PRIMITIVE, NOT a fit. At validation scale the EXACT
 `selinv_block_traces` / `fit_sparse_multi_effect_aireml` is preferred (exact, no MC noise, few
 iterations); this exists ONLY for the large-`q` regime the direct factorization cannot reach.
@@ -458,6 +464,7 @@ function mc_reml_block_traces(
     tol::Real = 1e-9,
     maxiter::Integer = 2000,
     seed::Integer = 0,
+    shared_probes::Bool = false,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -507,23 +514,47 @@ function mc_reml_block_traces(
     rng = MersenneTwister(seed)
     traces = zeros(Float64, K)
     mcse = zeros(Float64, K)
-    zhat = zeros(Float64, ntot)
-    for b in 1:K
-        rng_b = (offs[b] + 1):(offs[b] + qs[b])
-        samples = Vector{Float64}(undef, nprobe)
+    meanmcse(samples) = (m = sum(samples) / length(samples);
+        (m, length(samples) > 1 ? sqrt(sum(abs2, samples .- m) / (length(samples) - 1) / length(samples)) : NaN))
+
+    if shared_probes
+        # SHARED probes (V8.2): one FULL-random Rademacher probe over the whole random block per
+        # solve yields ALL K block traces (nprobe solves total, not nprobe·K). Unbiased because
+        # `E[z_b z_{b'}ᵀ] = δ_{bb'} I`, so `E[z_bᵀ Aᵦ⁻¹ (C⁻¹ ẑ)_b] = tr(Aᵦ⁻¹ C⁻¹[u_b,u_b])`.
+        nrand = ntot - p
+        samples = [Vector{Float64}(undef, nprobe) for _ in 1:K]
+        zhat = zeros(Float64, ntot)
         for k in 1:nprobe
-            z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
             fill!(zhat, 0.0)
-            @views zhat[rng_b] .= z
+            @views zhat[(p + 1):ntot] .= rand(rng, (-1.0, 1.0), nrand)   # Rademacher over all random effects
             x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
                                  maxiter = Int(maxiter), applyMinv = applyMinv)
-            xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
-            samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+            for b in 1:K
+                rng_b = (offs[b] + 1):(offs[b] + qs[b])
+                zb = @view zhat[rng_b]
+                samples[b][k] = dot(zb, Ainvs[b] * (@view x[rng_b]))
+            end
         end
-        m = sum(samples) / nprobe
-        traces[b] = m
-        # sample standard error of the mean = sqrt(unbiased variance / nprobe)
-        mcse[b] = nprobe > 1 ? sqrt(sum(abs2, samples .- m) / (nprobe - 1) / nprobe) : NaN
+        for b in 1:K
+            traces[b], mcse[b] = meanmcse(samples[b])
+        end
+    else
+        # PER-BLOCK probes: nprobe probes embedded in block b -> nprobe·K solves.
+        zhat = zeros(Float64, ntot)
+        for b in 1:K
+            rng_b = (offs[b] + 1):(offs[b] + qs[b])
+            samples = Vector{Float64}(undef, nprobe)
+            for k in 1:nprobe
+                z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
+                fill!(zhat, 0.0)
+                @views zhat[rng_b] .= z
+                x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
+                                     maxiter = Int(maxiter), applyMinv = applyMinv)
+                xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
+                samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+            end
+            traces[b], mcse[b] = meanmcse(samples)
+        end
     end
     return traces, mcse
 end
@@ -551,9 +582,10 @@ Returns a `NamedTuple` `(variance_components = (sigmas, sigma_e2), ratios, beta,
 converged, iterations, estimator)`. `trace_mcse` is the final block-trace Monte-Carlo standard
 error — the honest noise band on the gradient.
 
-EXPERIMENTAL. **No `loglik`** (a matrix-free REML loglik needs a stochastic log-determinant —
-owed). At validation scale the EXACT `fit_sparse_multi_effect_aireml` is preferred (exact, no MC
-noise, fewer iterations); this exists for the large-`q` regime the direct factorization cannot
+EXPERIMENTAL. The returned `NamedTuple` carries no `loglik` field; the matrix-free REML
+log-likelihood is available separately via [`matrix_free_reml_loglik`](@ref) (stochastic
+log-determinant, V8.1). At validation scale the EXACT `fit_sparse_multi_effect_aireml` is preferred
+(exact, no MC noise, fewer iterations); this exists for the large-`q` regime the direct factorization cannot
 reach. It RECOVERS the exact AI-REML optimum within MC error (`test/runtests.jl`); a pre-declared
 bias/MCSE recovery gate at scale + an external comparator are OWED before any covered claim.
 """
@@ -569,6 +601,7 @@ function fit_multi_effect_mc_reml(
     pcg_maxiter::Integer = 2000,
     initial = nothing,
     ids = nothing,
+    shared_probes::Bool = false,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -619,7 +652,8 @@ function fit_multi_effect_mc_reml(
         uAu = [dot(us[i], Ainvs[i] * us[i]) for i in 1:K]
         traces, trace_mcse = mc_reml_block_traces(Xs, effects, sigmas, sigma_e2;
                                                   nprobe = nprobe, tol = pcg_tol,
-                                                  maxiter = pcg_maxiter, seed = seed)
+                                                  maxiter = pcg_maxiter, seed = seed,
+                                                  shared_probes = shared_probes)
         newsig = [(uAu[i] + traces[i]) / qs[i] for i in 1:K]
         dfe = n - p - nrand + sum(traces[i] / sigmas[i] for i in 1:K)
         newe = dfe > 0 ? dot(e, e) / dfe : -1.0
@@ -652,6 +686,153 @@ function fit_multi_effect_mc_reml(
         iterations = iters,
         estimator = :matrix_free_mc_em_reml,
     )
+end
+
+# Stochastic Lanczos quadrature (SLQ) for one Rademacher probe: k Lanczos steps on `applyC`
+# (matrix-free `C·v`) build a k×k symmetric-tridiagonal `T`; the quadrature `Σ ωⱼ log θⱼ`
+# (θ = eigenvalues of T, ω = squared first components of its eigenvectors) estimates
+# `z_unitᵀ log(C) z_unit`. Full re-orthogonalization for stability at small k. Returns that
+# scalar (per unit vector); the caller multiplies by `‖z‖² = N` for the Rademacher trace.
+function _lanczos_logquad(applyC, z::Vector{Float64}, k::Int)
+    N = length(z)
+    V = zeros(Float64, N, k)
+    alpha = zeros(Float64, k)
+    beta = zeros(Float64, max(k - 1, 0))
+    v = z ./ norm(z)
+    @views V[:, 1] .= v
+    w = applyC(v)
+    a = dot(w, v); alpha[1] = a
+    @. w = w - a * v
+    kk = k
+    for j in 2:k
+        b = norm(w)
+        if b < 1e-12
+            kk = j - 1
+            break
+        end
+        beta[j - 1] = b
+        vprev = @view V[:, j - 1]
+        v = w ./ b
+        for i in 1:(j - 1)                                  # full re-orthogonalization
+            @views v .-= dot(v, V[:, i]) .* V[:, i]
+        end
+        v ./= norm(v)
+        @views V[:, j] .= v
+        w = applyC(v)
+        a = dot(w, v); alpha[j] = a
+        @. w = w - a * v - b * vprev
+    end
+    T = SymTridiagonal(alpha[1:kk], beta[1:(kk - 1)])
+    E = eigen(T)
+    all(>(0), E.values) || return NaN                       # C must be PD (log of a non-PD ⇒ NaN)
+    return sum((E.vectors[1, :] .^ 2) .* log.(E.values))
+end
+
+"""
+    matrix_free_reml_loglik(y, X, effects, sigmas, sigma_e2; slq_probes = 20, slq_steps = 40,
+                            seed = 0, pcg_tol = 1e-9, pcg_maxiter = 2000)
+
+MATRIX-FREE Gaussian REML log-likelihood of the `K`-independent-effect model at the SUPPLIED
+variance components — the loglik companion of [`fit_multi_effect_mc_reml`](@ref) (v0.8 V8.1). It
+never forms or factorizes the MME coefficient matrix `C`: the only determinant term that needs
+`C`, `log|C|`, is estimated by **stochastic Lanczos quadrature** (SLQ) — `slq_probes` Rademacher
+probes, `slq_steps` matrix-free Lanczos steps each — while the other REML terms are exact/cheap:
+
+`ℓ = −½[(n−p)·log(2π) + n·log(σ²e) + Σᵢ(qᵢ·log(σᵢ²) − log|Aᵢ⁻¹|) + log|C| + yᵀPy]`,
+
+with `log|Aᵢ⁻¹|` from a one-time sparse Cholesky of each `Aᵢ⁻¹` (the pedigree/identity precision —
+far cheaper than `C`; an `O(q)` Mendelian route is a future scale optimization) and `yᵀPy` from a
+matrix-free MME solve. It uses the SAME full-constant convention as `sparse_multi_reml_loglik`, so
+the two agree up to the SLQ Monte-Carlo error on `log|C|`.
+
+Returns `(loglik, loglik_mcse)` — the estimate and its Monte-Carlo standard error (the SLQ noise on
+`log|C|`, scaled by ½; `∝ 1/√slq_probes`).
+
+EXPERIMENTAL. This is the term that unlocks LRTs / interval machinery for the matrix-free fit. It
+is STOCHASTIC (the loglik carries MC noise); at validation scale the exact
+`sparse_multi_reml_loglik` is preferred. Requires a positive-definite `C` (returns `NaN` loglik
+otherwise).
+"""
+function matrix_free_reml_loglik(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    slq_probes::Integer = 20,
+    slq_steps::Integer = 40,
+    seed::Integer = 0,
+    pcg_tol::Real = 1e-9,
+    pcg_maxiter::Integer = 2000,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    slq_probes >= 1 || throw(ArgumentError("slq_probes must be >= 1"))
+    slq_steps >= 2 || throw(ArgumentError("slq_steps must be >= 2"))
+
+    n = length(y)
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    p = size(Xs, 2)
+    p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, size(Ainvi, 1))
+    end
+    ss = Float64.(collect(sigmas)); se2 = Float64(sigma_e2)
+    inv_se2 = inv(se2); inv_sig = inv.(ss)
+    offs = Vector{Int}(undef, K); acc = p
+    for i in 1:K; offs[i] = acc; acc += qs[i]; end
+    ntot = acc
+
+    Xt = transpose(Xs); Zts = [transpose(Zs[i]) for i in 1:K]
+    applyC = v -> _multi_mme_matvec(Xs, Xt, Zs, Zts, Ainvs, inv_se2, inv_sig, p, offs, qs, v)
+
+    # log|R| + log|G|
+    logdetR = n * log(se2)
+    logdetG = 0.0
+    for i in 1:K
+        logdetG += qs[i] * log(ss[i])
+        chAinv = cholesky(Symmetric(Ainvs[i]); check = true)   # one-time; pedigree/identity, cheaper than C
+        logdetG -= logdet(chAinv)                              # log|Aᵢ⁻¹|
+    end
+
+    # yᵀPy = (1/σ²e)·yᵀy − rhsᵀ·C⁻¹·rhs (the sparse MME identity), matrix-free.
+    rhs = Vector{Float64}(undef, ntot)
+    rhs[1:p] .= inv_se2 .* (Xt * yv)
+    for i in 1:K
+        rhs[(offs[i] + 1):(offs[i] + qs[i])] .= inv_se2 .* (Zts[i] * yv)
+    end
+    d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sig, p, offs, qs, ntot)
+    invd = 1.0 ./ d
+    sol, _, _ = _pcg_solve(applyC, copy(rhs); tol = Float64(pcg_tol),
+                           maxiter = Int(pcg_maxiter), applyMinv = r -> invd .* r)
+    quad = inv_se2 * dot(yv, yv) - dot(rhs, sol)
+
+    # log|C| by SLQ (matrix-free).
+    rng = MersenneTwister(seed)
+    contribs = Float64[]
+    for _ in 1:slq_probes
+        z = rand(rng, (-1.0, 1.0), ntot)                      # Rademacher, ‖z‖²=ntot
+        c = _lanczos_logquad(applyC, z, Int(slq_steps))
+        isnan(c) && return (NaN, NaN)
+        push!(contribs, ntot * c)
+    end
+    logdetC = sum(contribs) / slq_probes
+    logdetC_mcse = slq_probes > 1 ?
+        sqrt(sum(abs2, contribs .- logdetC) / (slq_probes - 1) / slq_probes) : NaN
+
+    loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+    loglik_mcse = 0.5 * logdetC_mcse
+    return (loglik, loglik_mcse)
 end
 
 """
