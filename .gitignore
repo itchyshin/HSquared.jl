@@ -38,3 +38,6 @@
 /sim/*.log.txt
 /sim/.*.log.txt
 .claude/worktrees/
+
+# session scratchpad (working files, never tracked)
+/scratchpad/
