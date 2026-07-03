@@ -172,9 +172,10 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 53
+    @test length(validation) == 54
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
+    @test "V3-NEFFECT-MATFREE-FIT" in [row.id for row in validation]
     @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"

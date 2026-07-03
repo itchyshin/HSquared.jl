@@ -24,7 +24,7 @@ permanent-environment term alongside the animal effect) the sparse Cholesky **fi
 factor becomes far denser than `C` — and past roughly `10⁵` individuals it becomes infeasible in
 memory and time (measured: the direct multi-effect path is already ~quadratic by `q ≈ 50 000`; a
 METIS reordering did **not** fix it). The matrix-free engine never forms or factorizes `C`, so it
-has no fill wall — it has fit `K = 3` models past a million individuals in testing — but it pays
+has no fill wall — it has stayed feasible fitting `K = 3` models to 200 000 individuals in testing (the matrix-free *solve* it is built on reaches a million) — but it pays
 with Monte-Carlo noise in the variance-component gradient.
 
 This is the same accuracy-for-feasibility trade a variational approximation makes: you reach for
