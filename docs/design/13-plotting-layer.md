@@ -21,9 +21,11 @@ A first-class plotting layer (brms/bayesplot-style), split across the twin:
   `theme_hsquared()`, the `hsquared_meta`/`hsquared_data` attribute pattern from
   gllvmTMB/drmTMB).
 - **Julia draws** via a thin **`HSquaredMakieExt` weak-dependency package
-  extension** (Makie in `[weakdeps]`/`[extensions]`, pinned in `[compat]`) — gives
-  Julia users real `plot()` functions while keeping the base install light. Docs
-  figures call the extension (or isolated docs-scripts), never embedded in `/src`.
+  extension** (Makie + AlgebraOfGraphics in `[weakdeps]`/`[extensions]`, pinned in
+  `[compat]`) — gives Julia users real `plot()` functions while keeping the base
+  install light. AoG is the grammar-of-graphics layer for tabular/faceted
+  statistical figures; bespoke scientific figures remain raw Makie. Docs figures
+  call the extension (or isolated docs-scripts), never embedded in `/src`.
 
 Twin boundary holds: R owns user language; Julia computes. The plot-data layer is
 the shared contract both drawing layers consume.
@@ -134,18 +136,20 @@ The #93 plot-data contract is now consumed on both sides of the twin.
 The Julia drawing half of §1. A single exported stub `hsquared_figure(data; kind,
 …)` lives in `src/plotting_ext.jl` (method-less); the drawing METHODS live in the
 `ext/HSquaredMakieExt.jl` package extension, which Julia loads **only** when a Makie
-backend is in scope (`using CairoMakie` / `GLMakie`). `Makie` is in
-`[weakdeps]`/`[extensions]` and pinned in `[compat]` (`0.24`); `/src` stays
-dependency-free. Without a backend the stub throws `MethodError` (a CI test asserts
-this). One dispatcher consumes the `*_plot_data` NamedTuples and infers `kind` from
-the carried fields (override with `kind = :variance_components | :breeding_values |
+backend and AlgebraOfGraphics are in scope (`using CairoMakie, AlgebraOfGraphics` /
+`using GLMakie, AlgebraOfGraphics`). `Makie` and `AlgebraOfGraphics` are in
+`[weakdeps]`/`[extensions]` and pinned in `[compat]` (`Makie = 0.24`,
+`AlgebraOfGraphics = 0.13`); `/src` stays dependency-free. Without the plotting weak
+dependencies the stub throws `MethodError` (a CI test asserts this). One dispatcher
+consumes the `*_plot_data` NamedTuples and infers `kind` from the carried fields
+(override with `kind = :variance_components | :breeding_values |
 :g_geometry | :genetic_correlation | :manhattan | :qq | :rr_variance | :rr_surface |
 :rr_eigenfunctions`):
 
 | `kind` | Preparer (set) | Draw | Honest-status behavior rendered ON the figure |
 | --- | --- | --- | --- |
-| `:variance_components` | `variance_components_plot_data` (B) | VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
-| `:breeding_values` | `breeding_values_plot_data` (B) | EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
+| `:variance_components` | `variance_components_plot_data` (B) | AoG-backed VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
+| `:breeding_values` | `breeding_values_plot_data` (B) | AoG-backed EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
 | `:g_geometry` | `genetic_pca_plot_data` (C) | eigenvalue **scree** | gated on `is_eigenstructure_not_loadings` — a loadings biplot is **rejected** (`ArgumentError`, FA rotation convention); a non-PD `G` (negative eigenvalue) draws the bar but **suppresses** %-variance labels; rotation-invariant caveat in the subtitle |
 | `:genetic_correlation` | `genetic_correlation_plot_data` (C) | `D⁻¹GD⁻¹` **heatmap** | gated on `rotation_invariant` — raw loadings **rejected** (`ArgumentError`); diverging colormap centred at 0, unit diagonal; when `heritabilities` are supplied, low-h² (imprecise) traits are **flagged in the subtitle** |
 | `:manhattan` | `marker_manhattan_data` (D) | chromosome-coloured **scatter** of cumulative `plot_positions` vs `-log10(p)` | a **VISUAL-ONLY** Bonferroni guide line at `-log10(0.05/m)`; subtitle: "nominal Wald p-values, **NOT genome-wide calibrated** (#48); threshold line is visual guidance only" |
@@ -158,7 +162,15 @@ The subtitle caveat is sourced from the SAME honest-status flags the preparer
 carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
 guardrail"). Drawing only: no estimation, no engine computation in the extension.
 
-**Verification (local-only; Makie is deliberately OUT of default CI — cost
+> **RE-VERIFICATION OWED (AoG migration, 2026-07-08).** The verification recorded below was
+> executed on **2026-06-22 against the raw-Makie drawing layer**. The `:variance_components`
+> and `:breeding_values` kinds have since been rerouted through AlgebraOfGraphics; that
+> re-draw has **NOT** been rerun. Until a live `CairoMakie + AlgebraOfGraphics` pass is
+> banked in `docs/dev-log/check-log.md`, treat the nine-kind claim as holding for the
+> raw-Makie layer only. The CI test cannot catch this: it asserts the stub is method-less
+> with Makie/AoG absent, so it passes *whether or not* the extension loads or is correct.
+
+**Verification (local-only; Makie/AoG are deliberately OUT of default CI — cost
 discipline):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),
 the stub throws `MethodError` before a backend loads (a CI test asserts this across
 all **nine** payload shapes — one per kind — in 11 total assertions), the

@@ -1,12 +1,15 @@
 module HSquaredMakieExt
 
-# Makie drawing extension for HSquared's backend-free `*_plot_data` preparers. Loads
-# only when a Makie backend is in scope (`using CairoMakie` / `GLMakie`). It draws the
-# figures with the R-twin's honest-status behaviors baked in (issue #93): the caveat is
-# rendered ON the figure (subtitle), whiskers are never clamped, the g-geometry view is
-# a scree (never a loadings biplot), and a non-PD G suppresses %-variance labels.
+# Makie/AoG drawing extension for HSquared's backend-free `*_plot_data` preparers.
+# Loads only when a Makie backend and AlgebraOfGraphics are in scope (`using
+# CairoMakie, AlgebraOfGraphics`). AoG handles the tabular/faceted statistical
+# figures; bespoke scientific layouts stay raw Makie. The R-twin's honest-status
+# behaviors are rendered ON the figure (issue #93): caveats are subtitles, whiskers
+# are never clamped, the g-geometry view is a scree (never a loadings biplot), and a
+# non-PD G suppresses %-variance labels.
 
 using HSquared
+using AlgebraOfGraphics
 using Makie
 import HSquared: hsquared_figure
 
@@ -48,20 +51,36 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
     ys = collect(Float64.(n:-1:1))
     caveat = d.supplied ? "supplied (descriptive)" :
         "estimated; $(d.interval_status) intervals (NOT coverage-calibrated)"
-    fig = Figure()
-    ax = Axis(fig[1, 1]; title = title, subtitle = caveat, xlabel = "estimate",
-              yticks = (ys, collect(string.(d.term))))
+    table = _forest_aog_table(d, ys)
+    spec = data(table) *
+        mapping(:estimate, :rank, row = :panel) *
+        visual(Scatter, markersize = 11, color = :black)
+    fg = draw(spec; axis = (; title = title, subtitle = caveat, xlabel = "estimate"),
+              figure = (; size = (760, 420)))
+    fig = fg.figure
+    axes = _axes_by_panel(fg, d.panel)
+    terms = collect(string.(d.term))
+    panels = collect(string.(d.panel))
+    # AoG's `visual(Scatter, ...)` above is the ONLY marker layer. The whiskers are
+    # drawn after it, so they are pushed BEHIND the markers with `translate!` rather
+    # than re-scattering the points on top (which would draw every marker twice).
     for i in 1:n
         (isfinite(d.lo[i]) && isfinite(d.hi[i])) || continue   # no fabricated whisker
-        lines!(ax, [d.lo[i], d.hi[i]], [ys[i], ys[i]]; color = :black)
+        w = lines!(axes[panels[i]], [d.lo[i], d.hi[i]], [ys[i], ys[i]]; color = :black)
+        translate!(w, 0, 0, -1)
     end
-    scatter!(ax, Float64.(d.estimate), ys; markersize = 11, color = :black)
-    vlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+    # Per-facet ticks: each panel labels ONLY the terms it actually contains (`ys` is a
+    # rank over ALL terms, so the full term list must never be forced onto every axis).
+    for (panel, ax) in axes
+        idx = sort(findall(==(panel), panels); by = i -> ys[i])
+        ax.yticks[] = (ys[idx], terms[idx])
+        vlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+    end
     for i in 1:n
-        d.panel[i] == "heritability" || continue   # boundary flag is h²-panel only
+        panels[i] == "heritability" || continue   # boundary flag is h²-panel only
         if isfinite(d.lo[i]) && isfinite(d.hi[i]) && (d.lo[i] <= 0.0 || d.hi[i] >= 1.0)
-            text!(ax, d.hi[i], ys[i]; text = " [0,1] boundary", align = (:left, :center),
-                  fontsize = 10, color = :red)
+            text!(axes[panels[i]], d.hi[i], ys[i]; text = " [0,1] boundary",
+                  align = (:left, :center), fontsize = 10, color = :red)
         end
     end
     return fig
@@ -77,14 +96,45 @@ function _caterpillar(d::NamedTuple; title = "Estimated breeding values", kwargs
     caveat = d.pev_scale == "validation" ?
         "EBV ± √PEV — PEV is VALIDATION-scale (dense inv(Ainv)), not a production reliability claim" :
         "EBV ± √PEV"
-    fig = Figure()
-    ax = Axis(fig[1, 1]; title = title, subtitle = caveat, xlabel = "rank (sorted)", ylabel = "EBV")
+    table = (rank = xs, value = v)
+    fg = draw(data(table) * mapping(:rank, :value) *
+              visual(Scatter, markersize = 6, color = :black);
+              axis = (; title = title, subtitle = caveat, xlabel = "rank (sorted)",
+                      ylabel = "EBV"),
+              figure = (; size = (760, 420)))
+    fig = fg.figure
+    ax = only(fg.grid).axis
+    # As in `_forest`: AoG owns the single marker layer; whiskers go behind it.
     for i in eachindex(xs)
-        lines!(ax, [xs[i], xs[i]], [v[i] - se[i], v[i] + se[i]]; color = (:black, 0.4))
+        w = lines!(ax, [xs[i], xs[i]], [v[i] - se[i], v[i] + se[i]]; color = (:black, 0.4))
+        translate!(w, 0, 0, -1)
     end
-    scatter!(ax, xs, v; markersize = 6, color = :black)
     hlines!(ax, [0.0]; color = :gray, linestyle = :dash)
     return fig
+end
+
+function _forest_aog_table(d::NamedTuple, ys)
+    return (term = collect(string.(d.term)),
+            estimate = Float64.(d.estimate),
+            rank = Float64.(ys),
+            panel = collect(string.(d.panel)))
+end
+
+# Map each `row = :panel` facet to its `Axis` through AlgebraOfGraphics' SUPPORTED
+# `FigureGrid.grid` accessor (a Matrix{AxisEntries}, each carrying `.axis`) — never by
+# pattern-matching `Label`s out of `fig.content`, which depends on undocumented
+# content ordering and on how AoG happens to render facet labels.
+#
+# ASSUMPTION (verify against the live AoG version): row facets are laid out in the
+# categorical scale's level order, i.e. `sort(unique(panels))`. The size guard below
+# catches a facet-count mismatch, but NOT a re-ordering — see the check-log entry.
+function _axes_by_panel(fg, panels)
+    levels = sort(unique(string.(panels)))
+    grid = fg.grid
+    size(grid, 1) == length(levels) && size(grid, 2) == 1 || throw(ArgumentError(
+        "hsquared_figure: AlgebraOfGraphics returned a $(size(grid)) facet grid for " *
+        "$(length(levels)) panel level(s); expected $(length(levels))x1"))
+    return Dict(levels[i] => grid[i, 1].axis for i in eachindex(levels))
 end
 
 # ── set C: G-geometry scree ──────────────────────────────────────────────────────
