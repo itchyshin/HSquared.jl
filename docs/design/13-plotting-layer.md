@@ -167,13 +167,20 @@ guardrail"). Drawing only: no estimation, no engine computation in the extension
 > re-run live on `AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`
 > (Julia 1.10.0) — 9/9 return a `Makie.Figure` for both inferred and explicit `kind`, both
 > AoG figures rasterize to PNG, and `Pkg.test()` stays green dependency-free. Evidence:
-> `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+> `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`; re-runnable driver:
+> `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`.
 >
 > **Note the CI blind spot.** The stub test asserts `isempty(methods(hsquared_figure))` with
 > Makie/AoG absent, so it passes *whether or not* the extension loads or is correct. A green
 > `Pkg.test()` is never evidence about the drawing layer — only a live draw is. Four defects
 > in this migration were invisible to CI, and three of those were invisible to plot-object
 > assertions too; they were caught only by **rendering the figure and looking at it**.
+>
+> **Version fragility.** The AoG `:variance_components` facet mapping assumes row facets are
+> laid out in `sort(unique(panel))` order — confirmed on AoG 0.13.0, and a re-ordering would
+> silently swap the two panels' ticks and annotations. The shape guard catches a facet-*count*
+> mismatch only. **Re-run the driver on any Makie/AoG bump**; its `forest_invariants()` check
+> fails on a swap (mutation-tested 2026-07-08). CI cannot see this.
 
 **Verification (local-only; Makie/AoG are deliberately OUT of default CI — cost
 discipline):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),
@@ -185,7 +192,10 @@ infers `:rr_eigenfunctions`), the honest-status branches all fire (supplied/NaN/
 forest; loadings-biplot / non-PD-`G` guards; the Manhattan/QQ NOT-calibrated subtitles;
 the reaction-norm single-vs-two-panel split; the correlation-`(-1,1)` vs
 covariance-data-driven surface colorrange; the eigenfunction signs-arbitrary subtitle),
-and all figures rasterize to PNG with CairoMakie 0.15.11 / Makie 0.24.x. Evidence:
+and all figures rasterize to PNG. **This paragraph records the 2026-06-22 RAW-MAKIE
+verification** (CairoMakie 0.15.11 / Makie 0.24.x): evidence
 `docs/dev-log/check-log.d/2026-06-22-l1-makie-figures.md` + after-task report
-`2026-06-22-l1-makie-figures.md`. This is a **drawing capability only** — no
-statistical claim is promoted by it.
+`2026-06-22-l1-makie-figures.md`. It does **not** cover the AoG code path for
+`:variance_components` / `:breeding_values` — that is the 2026-07-08 re-verification
+above (CairoMakie 0.15.13 / Makie 0.24.13 / AlgebraOfGraphics 0.13.0). This is a
+**drawing capability only** — no statistical claim is promoted by it.

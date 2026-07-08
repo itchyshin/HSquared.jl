@@ -146,6 +146,21 @@ Three of the four defect classes were nonetheless **invisible to plot-object ass
 were caught only by rasterizing the figure and looking at it. That is now recorded as standing
 guidance in `13-plotting-layer.md`.
 
+**The driver is mutation-tested.** After Rose's audit the live-draw checks were committed as
+`docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`, and — applying this section's own
+lesson to the new tool — three mutants were injected into `ext/HSquaredMakieExt.jl` to confirm it
+can fail:
+
+| Mutant | Expected catch | Result |
+| --- | --- | --- |
+| Reintroduce the manual `scatter!` (defect 1) | `Scatter == 1` | exit 1, `axis[1] double-draws markers` |
+| Drop the `panels[i] == "heritability"` gate | `Text == 0` on variance panel **and** the control payload | exit 1, `variance panel must NOT be flagged` |
+| `reverse(sort(unique(panels)))` — swap facet order | tick labels per facet | exit 1, `axis[1] should be the h² facet, got ["sigma_e2","sigma_a2"]` |
+
+The third mutant matters most: it proves the driver catches the exact residual risk the facet-grid
+shape guard **cannot** see (a re-ordering, as opposed to a count mismatch). The risk in §10 is now
+detectable rather than merely disclosed.
+
 ## 7. Issue Ledger
 
 No issue numbers were opened or closed by this slice. Related: #93 (plotting-layer contract).
@@ -215,8 +230,47 @@ Walked the neighbourhood after the fix:
 - **The CI stub test should arguably be strengthened** (an opt-in CairoMakie+AoG job behind an env
   flag). Cost-discipline tradeoff; raised, not taken.
 - **Coordination board not updated.** This was a Julia-lane slice run from an R-lane session on
-  maintainer instruction. If PR #264 merges, update the board.
-- **Merge gate:** Rose audit + this report. PR #264 is **not** merged.
+  maintainer instruction; `docs/dev-log/coordination-board.md` still reads "Julia lane: this
+  repository". If PR #264 merges, update the board.
+- **Only the forest's honest-status behaviours are asserted.** The other seven kinds are asserted
+  to return a `Makie.Figure`; their subtitle caveats rest on the 2026-06-22 raw-Makie verification,
+  which the AoG migration did not touch.
+- **Merge gate:** Rose audit (DONE) + this report (DONE). PR #264 is **not** merged.
+
+## 10a. Rose Audit
+
+A real `rose-systems-auditor` subagent audited the branch. **Verdict: PROMOTE-WITH-CHANGES.**
+Coverage pins confirmed against ground truth (`tools/status_cache.json:2-7`,
+`tools/gen_status_json.jl:64,109`), not self-report: `validation_status.jl` untouched,
+`public_covered_count` 5, rows 55, covered 13. All 8 required changes applied:
+
+1. **A false evidence pointer, authored by me.** `test/runtests.jl:9266` read "verified locally
+   with CairoMakie + AlgebraOfGraphics (see the after-task report **2026-06-22**)". No 2026-06-22
+   report mentions AoG — AoG did not exist on any ref until this branch. I edited that comment and
+   committed it without noticing I was attributing AoG verification to a report written sixteen days
+   before AoG entered the repository. **This is exactly the drift Rose exists to block, and I
+   introduced it.** Fixed: the comment now cites the raw-Makie report for the raw-Makie kinds, this
+   slice's evidence for the AoG path, and states the CI trap *at the trap site*.
+2. `13-plotting-layer.md` — the pre-existing verification paragraph now explicitly attributed to the
+   2026-06-22 raw-Makie era (CairoMakie 0.15.11), not the AoG path.
+3. **The evidence was unreproducible.** Steps (b)–(e) of the check-log — the entire evidentiary basis
+   — sat under a "Commands run" heading with no commands, in a scratch env that no longer exists,
+   while the same document demanded a re-run on every AoG bump. Fixed by committing the driver.
+4. The SUPERSEDED banner retracted three strings while the body asserted six more falsehoods
+   ("NOT PUSHED", "Nothing has ever been run", "three defects", "reviewed not tested", "UNVERIFIED",
+   and references to a RE-VERIFICATION OWED banner that had since been removed). Banner widened.
+5–6. `AGENTS.md` — stale commit id; the forest-payload assertions were phrased so they read as
+   applying to all nine kinds; the one-machine/one-version boundary was missing.
+7. `ext/HSquaredMakieExt.jl` — the source comment said the facet-order assumption was *still owed*
+   while the check-log said it was confirmed. Under-claiming, but it would have sent the next agent
+   to redo banked work.
+8. (Stale by the time Rose reported: the after-task report was untracked at her snapshot `3629031f`;
+   committed at `25a3a289`.)
+
+Accepted nit with teeth: `vlines!`/`hlines!` were drawn *after* the whiskers were pushed to `z=-1`,
+so the dashed zero line painted **over** the AoG markers — a term with `estimate ≈ 0` got a line
+through its marker. Same as `main`, so not a regression, but "markers on top" was incidental rather
+than invariant. Both are now `translate!`d to `z=-1` and the driver asserts it on every line layer.
 
 ## 11. Team Learning
 
@@ -235,8 +289,18 @@ Walked the neighbourhood after the fix:
 - **Check that your checker can fail.** `Rscript tools/check-after-task.R <path>` exits 0 for a
   nonexistent file — it defines a main function and never calls it. I only noticed because I ran a
   negative control on the validator itself before trusting its green. The same instinct that exposed
-  the CI stub-test blind spot in §6 exposed this. **A gate that cannot fail is not a gate**, and both
-  of this slice's gates turned out to be that. Run the negative control on the tool, not just the code.
+  the CI stub-test blind spot in §6 exposed this. **A gate that cannot fail is not a gate**, and
+  *three* of this slice's gates turned out to be that (the CI stub test, the report validator, and —
+  until it was mutation-tested — the live-draw driver itself). Run the negative control on the tool,
+  not just the code.
+- **A verifying agent can still author the drift it verifies.** I found the double-draw, the fragile
+  axis mapping, the mislabelled ticks, and four rendering defects — and in the same breath committed
+  `test/runtests.jl` citing a 2026-06-22 report as evidence for a package that did not exist on any
+  ref at the time. Rose caught it; I did not. **Being the person who found the bugs is not evidence
+  you did not add one.** Independent audit is not ceremony.
+- **"Nothing promoted" must be proved against the pin files, not asserted.** Rose confirmed
+  `public_covered_count` against `tools/status_cache.json` and `tools/gen_status_json.jl` and the
+  empty `git diff` of `src/validation_status.jl` — not against my say-so. That is the standard.
 - **Uncommitted-for-days work is usually mid-refactor, not finished.** Treat "please commit these"
   as "please find out what these are."
 - **Recall before scouting:** no cross-repo scouting was needed for this slice (self-contained

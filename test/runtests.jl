@@ -9262,9 +9262,17 @@ end
     # Makie/AoG are deliberately kept OUT of the default test/CI environment
     # (heavy plotting stack — cost discipline), so in CI the stub must be a
     # method-less generic function: any call throws `MethodError` until the plotting
-    # weak dependencies activate the extension. The full draw of all NINE figure
-    # kinds is verified locally with CairoMakie + AlgebraOfGraphics (see the after-task
-    # report 2026-06-22 + check-log), not in CI.
+    # weak dependencies activate the extension.
+    #
+    # TRAP — READ THIS BEFORE TRUSTING A GREEN CI RUN. `isempty(methods(...))` passes
+    # PRECISELY WHEN THE EXTENSION FAILS TO LOAD. This testset is therefore ZERO evidence
+    # that the drawing layer loads, resolves, or draws correctly; it only pins the
+    # dependency-free posture. The drawing layer is verified ONLY by a local live draw,
+    # which is NOT run here. Raw-Makie draw: after-task report
+    # `2026-06-22-l1-makie-figures.md`. AlgebraOfGraphics draw (the current code path for
+    # `:variance_components` and `:breeding_values`):
+    # `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`, driver
+    # `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`.
     @test hsquared_figure isa Function
     @test isempty(methods(hsquared_figure))          # stub: no methods without Makie
     @test_throws MethodError hsquared_figure((term = ["x"], panel = ["heritability"]))

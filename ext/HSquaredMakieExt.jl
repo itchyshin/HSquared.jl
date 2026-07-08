@@ -80,7 +80,10 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
     for (panel, ax) in axes
         idx = sort(findall(==(panel), panels); by = i -> ys[i])
         ax.yticks[] = (ys[idx], terms[idx])
-        vlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+        # Behind the markers too, so "markers always on top" is an invariant rather than an
+        # accident of insertion order (a term with `estimate ≈ 0` otherwise gets the dashed
+        # zero line drawn straight through its marker).
+        translate!(vlines!(ax, [0.0]; color = :gray, linestyle = :dash), 0, 0, -1)
     end
     annotated = Set{String}()
     for i in 1:n
@@ -124,7 +127,7 @@ function _caterpillar(d::NamedTuple; title = "Estimated breeding values", kwargs
         w = lines!(ax, [xs[i], xs[i]], [v[i] - se[i], v[i] + se[i]]; color = (:black, 0.4))
         translate!(w, 0, 0, -1)
     end
-    hlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+    translate!(hlines!(ax, [0.0]; color = :gray, linestyle = :dash), 0, 0, -1)
     return fig
 end
 
@@ -140,9 +143,13 @@ end
 # pattern-matching `Label`s out of `fig.content`, which depends on undocumented
 # content ordering and on how AoG happens to render facet labels.
 #
-# ASSUMPTION (verify against the live AoG version): row facets are laid out in the
-# categorical scale's level order, i.e. `sort(unique(panels))`. The size guard below
-# catches a facet-count mismatch, but NOT a re-ordering — see the check-log entry.
+# ASSUMPTION: row facets are laid out in the categorical scale's level order, i.e.
+# `sort(unique(panels))`. CONFIRMED EMPIRICALLY on AlgebraOfGraphics 0.13.0 (grid[1,1] ==
+# "heritability", grid[2,1] == "variance components"); NOT re-verified on any other version.
+# The size guard below catches a facet-COUNT mismatch but NOT a RE-ORDERING, which would
+# silently swap the two panels' ticks and annotations. RE-RENDER THE FOREST AND CHECK THE
+# TICKS ON ANY AoG BUMP — CI cannot see this. Evidence:
+# `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 function _axes_by_panel(fg, panels)
     levels = sort(unique(string.(panels)))
     grid = fg.grid

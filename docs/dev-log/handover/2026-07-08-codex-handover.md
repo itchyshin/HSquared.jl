@@ -5,13 +5,20 @@
 > `CairoMakie + AlgebraOfGraphics` draw this document hands to Codex **has since been run and
 > passed**, the compat pin resolves, and a fourth defect class was found and fixed.
 >
-> Everything below labelled "BLOCKER", "NOT VERIFIED", or "Codex owns the live draw" is **no
-> longer true**. Kept for the audit trail only.
+> **Treat the ENTIRE body below as historical fiction, not repo state.** In particular these are
+> all now FALSE: "NOT PUSHED" / "local only" (the branch is pushed, PR #264 open); "Nothing has
+> ever been run" and "reviewed not tested" (the nine-kind live draw passed); "three defects"
+> (there are four); "UNVERIFIED"; every "BLOCKER"; "Codex owns the live draw"; and every
+> reference to a "RE-VERIFICATION OWED" banner in `docs/design/13-plotting-layer.md` (that banner
+> was removed once the draw passed; the phrase now survives only in this file and in the two
+> documents that describe its removal). Kept for the audit trail only.
+> **Do not follow the "Next Immediate Steps" or the "How to Resume" prompt below.**
 >
 > **Current handover:** `docs/dev-log/handover/2026-07-08-claude-handover.md`
 > **Evidence:** `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`
+> **Driver:** `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`
 
-# Session Handoff: AlgebraOfGraphics plotting-layer migration — fixed, UNVERIFIED, needs a live draw
+# [SUPERSEDED] Session Handoff: AlgebraOfGraphics plotting-layer migration — fixed, UNVERIFIED, needs a live draw
 
 **Meta:** 2026-07-08 · from **Claude** (Opus 4.8, R-lane session in the `hsquared` twin) · to **Codex**
 **Branch:** `feat/2026-07-08-plotting-aog` (local only — **NOT PUSHED**) · base `main` @ `a2fc7625`

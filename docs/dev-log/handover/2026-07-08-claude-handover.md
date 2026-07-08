@@ -3,7 +3,8 @@
 **Meta:** 2026-07-08 · from **Claude** (Opus 4.8) · to **Claude** (fresh session)
 **Repos touched:** `HSquared.jl` (Julia lane) · `hsquared` (R lane — **untouched, clean**)
 **Branch:** `feat/2026-07-08-plotting-aog` · base `main` @ `a2fc7625`
-**Commits:** `fe93273c` → `5ebd7119` → `e6f27ac8`
+**Commits:** `fe93273c` → `5ebd7119` → `e6f27ac8` → `3629031f` → `25a3a289` → (Rose fixes)
+**Status:** Rose-audited (PROMOTE-WITH-CHANGES, all required changes applied). Ready for merge review.
 
 You are Claude, picking up a finished-but-unmerged slice. The work is **done and verified**.
 What remains is a merge decision and two follow-ups the maintainer may or may not want.
@@ -64,7 +65,7 @@ Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 - **Working:** everything on the branch. Verified against a live draw.
 - **In progress:** nothing.
 - **Blocked:** nothing.
-- **Awaiting:** a maintainer merge decision (see Next Steps), and an after-task report.
+- **Awaiting:** a maintainer merge decision on PR #264. Rose audit and after-task report are DONE.
 
 ---
 
@@ -74,7 +75,7 @@ Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 | --- | --- | --- |
 | `hsquared` | `main` | **CLEAN**, synced with `origin/main`. Not touched this session. |
 | `HSquared.jl` | `main` | **UNTOUCHED** @ `a2fc7625`. |
-| `HSquared.jl` | `feat/2026-07-08-plotting-aog` | 3 commits, **pushed**, PR open. **CARRIED-OVER: not merged** — awaiting maintainer merge + after-task report. |
+| `HSquared.jl` | `feat/2026-07-08-plotting-aog` | **pushed**, PR [#264](https://github.com/itchyshin/HSquared.jl/pull/264) open. **CARRIED-OVER: not merged** — awaiting maintainer merge. Rose audit and after-task report are DONE. |
 
 Pre-existing unpushed state in `HSquared.jl`, **not from this session, not mine to land**:
 `claude/kind-kirch-b8bbee` (ahead 1), `feat/2026-06-30-v04-broaderdgp-recovery` (ahead 12),
@@ -92,6 +93,10 @@ and `claude/*` branches. Flagged, deliberately untouched.
 - **Superseded rather than deleted** the earlier `2026-07-08-codex-handover.md`. It was written on a
   false premise; deleting it would erase the record of the mistake. It carries a SUPERSEDED banner.
 - **Wrote evidence to `check-log.d/`, not `check-log.md`** — the latter is frozen as of 2026-06-19.
+- **Committed the live-draw driver** (Rose's strongest finding: the only evidence proving this layer
+  works was un-re-runnable, while the same doc demanded a re-run on every AoG bump). The driver is
+  mutation-tested — reintroducing the double-draw, dropping the h²-only annotation gate, or reversing
+  the facet level order each make it exit 1.
 
 ---
 
@@ -107,18 +112,26 @@ Branch `feat/2026-07-08-plotting-aog`:
 - `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md` — **new**, the evidence
 - `docs/dev-log/handover/2026-07-08-codex-handover.md` — **new**, then SUPERSEDED
 - `docs/dev-log/handover/2026-07-08-claude-handover.md` — **new**, this file
+- `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl` — **new**, the re-runnable, mutation-tested live-draw driver
+- `docs/dev-log/after-task/2026-07-08-plotting-aog.md` — **new**, the after-task report
 - `AGENTS.md` — Live Phase Snapshot bullet
 
 ---
 
 ## Next Immediate Steps
 
-1. **Rose audit** (`.claude/agents/rose-systems-auditor.md`) on the public-claim surface. Nothing
-   is promoted, so this should be short: confirm `public_covered_count` **5**, rows **55**, covered
-   **13** are unchanged, and that `13-plotting-layer.md` claims exactly what the check-log shows.
-2. **After-task report** → `docs/dev-log/after-task/2026-07-08-plotting-aog.md` (11 sections;
-   validate with `tools/check-after-task.R`). This is the last open Definition-of-Done item.
-3. **Merge the PR** (maintainer's call), then update the coordination board.
+1. ~~**Rose audit**~~ **DONE.** A real `rose-systems-auditor` subagent returned
+   PROMOTE-WITH-CHANGES; all 8 required changes applied (the important one: `test/runtests.jl`
+   cited a 2026-06-22 after-task report as evidence for AlgebraOfGraphics, which did not exist on
+   any ref until this branch). Coverage pins confirmed against `tools/status_cache.json` ground
+   truth: `public_covered_count` **5**, rows **55**, covered **13**, `validation_status.jl` untouched.
+2. ~~**After-task report**~~ **DONE** → `docs/dev-log/after-task/2026-07-08-plotting-aog.md`.
+   Note: `tools/check-after-task.R` **does not work** as documented — it defines
+   `main_check_after_task()` and never calls it, so `Rscript tools/check-after-task.R <anything>`
+   exits 0, including for files that do not exist. Validate by `source()`-ing it and calling the
+   function. Filed separately.
+3. **Merge PR #264** (maintainer's call), then update the coordination board — this was a
+   Julia-lane slice run from an R-lane session and the board still reads "Julia lane: this repository".
 4. *(Optional, worth raising)* **Strengthen the stub test.** Today it is satisfied by the extension
    *failing to load*. A cheap opt-in job — `CairoMakie` + AoG behind an env flag, off by default —
    would turn a whole class of silent breakage into a red build. Cost-discipline tradeoff.
@@ -168,11 +181,11 @@ Branch `feat/2026-07-08-plotting-aog`:
 | --- | --- |
 | `hsquared` (R lane) | `main` clean, synced. Untouched. |
 | `HSquared.jl` `main` | `a2fc7625` — untouched, green |
-| Branch | `feat/2026-07-08-plotting-aog` (3 commits) — **pushed, PR open, NOT merged** |
+| Branch | `feat/2026-07-08-plotting-aog` — **pushed, PR #264 open, NOT merged** |
 | Shipped | drawing layer only: AoG migration, 4 defect classes fixed, verified live |
 | Verification | AoG 0.13.0 + Makie 0.24.13 + CairoMakie 0.15.13 · 9/9 kinds draw · `Pkg.test()` green |
 | Coverage | `public_covered_count` **5** · rows **55** · covered **13** — ALL UNCHANGED |
-| Highest leverage | Rose audit + after-task report → merge |
+| Highest leverage | merge PR #264, then update the coordination board |
 | Second | decide whether AoG earns its place in `_forest` |
 | Watch | facet-order assumption on any AoG version bump |
 
@@ -206,7 +219,7 @@ Read in this order:
 One-command resume (paste in your own authenticated terminal, from the repo root):
 
 ```
-claude "Rehydrate from docs/dev-log/handover/2026-07-08-claude-handover.md + the AGENTS.md snapshot, then continue with the Next Immediate Steps: Rose audit, after-task report, then propose the merge. Note julia is at ~/.juliaup/bin, not on PATH, and a green Pkg.test() proves nothing about the drawing layer."
+claude "Rehydrate from docs/dev-log/handover/2026-07-08-claude-handover.md + the AGENTS.md snapshot. The slice is Rose-audited and verified; the remaining step is the merge decision on PR #264 and updating the coordination board. Note julia is at ~/.juliaup/bin, not on PATH, and a green Pkg.test() proves nothing about the drawing layer — re-run docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl instead."
 ```
 
 **Routing.** This is now planning/audit/prose work — Claude's lane. Nothing here needs Codex: the

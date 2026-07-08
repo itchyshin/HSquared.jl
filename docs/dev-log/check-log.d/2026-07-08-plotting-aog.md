@@ -40,8 +40,24 @@ export PATH="$HOME/.juliaup/bin:$PATH"
 julia --version                                    # 1.10.0
 ```
 
-**(a) Compat pin resolves.** The `AlgebraOfGraphics = "0.13"` / `Makie = "0.24"` pin was
-unverified (no Manifest). Resolved in a scratch env:
+**Steps (b)–(e) are re-runnable as a committed driver**, not an archaeology exercise:
+
+```sh
+mkdir -p /tmp/aog-livedraw && cd /tmp/aog-livedraw
+julia --project=. -e 'import Pkg
+    Pkg.develop(path="<repo>"); Pkg.add(["CairoMakie", "AlgebraOfGraphics"])'
+julia --project=. <repo>/docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl
+```
+
+The driver exits non-zero on any failed invariant and writes `forest.png` / `caterpillar.png`.
+It was **mutation-tested** on 2026-07-08 — reintroducing the double-draw, dropping the
+h²-panel-only annotation gate, and reversing the facet level order each make it exit 1 with the
+specific assertion message. It can fail, which is the only reason its passing means anything.
+
+**(a) Compat pin resolves — standalone.** The `AlgebraOfGraphics = "0.13"` / `Makie = "0.24"`
+pin was unverified (no Manifest). Resolved in a scratch env **without HSquared's own
+dependencies** — it is step (b)'s `Pkg.develop` that proves the pin resolves *in the repo
+environment*:
 
 ```sh
 julia --project=aogcheck -e 'import Pkg; Pkg.add([
@@ -116,6 +132,38 @@ generic function, so the CI posture (Makie/AoG out of CI, cost discipline) is un
 - `_axes_by_panel` assumes row facets lay out in `sort(unique(panels))` order. **This was
   confirmed empirically** on AoG 0.13.0 (`axis[1]` is `"heritability"`, `axis[2]` is
   `"variance components"`), and a facet-grid shape guard throws on a count mismatch — but a
-  future AoG re-ordering would not be caught by that guard. Re-check the ticks on any AoG bump.
+  future AoG re-ordering would not be caught by that guard. It **is** caught by the driver's
+  `forest_invariants()` (mutation-tested: reversing the level order exits 1). Re-run the driver
+  on any AoG bump.
 - The nine-kind draw is **local-only** and is not run in CI. It must be re-run by hand on any
   Makie/AoG version bump; CI will not tell you.
+- The `[0,1] boundary` annotation and the tick/whisker geometry are asserted; the **subtitle
+  text of the other seven kinds is not** — those kinds are asserted only to return a
+  `Makie.Figure`. Their honest-status subtitles rest on the 2026-06-22 raw-Makie verification,
+  which the AoG migration did not touch.
+
+## Post-audit addendum (Rose, PROMOTE-WITH-CHANGES)
+
+A real `rose-systems-auditor` subagent audited the branch. Coverage pins confirmed against
+ground truth (`tools/status_cache.json`, `tools/gen_status_json.jl`), not self-report:
+`validation_status.jl` untouched, `public_covered_count` 5, rows 55, covered 13. Required
+changes applied:
+
+1. **False evidence pointer removed.** `test/runtests.jl` cited "after-task report 2026-06-22"
+   next to "CairoMakie + AlgebraOfGraphics". No 2026-06-22 report mentions AoG — AoG did not
+   exist on any ref until this branch. The comment now cites the raw-Makie report for the
+   raw-Makie kinds and this entry (plus the driver) for the AoG path, and states the CI trap
+   *at the trap site*.
+2. **`13-plotting-layer.md`** — the pre-existing verification paragraph is now explicitly
+   attributed to the 2026-06-22 raw-Makie era (CairoMakie 0.15.11), not to the AoG path.
+3. **Evidence made reproducible** — the live-draw driver is committed and mutation-tested.
+4. **Superseded Codex handover** — banner widened; its body asserted six further falsehoods
+   ("NOT PUSHED", "Nothing has ever been run", "three defects", a RE-VERIFICATION OWED banner
+   that no longer exists anywhere else) that the original three-string retraction did not cover.
+5. **`AGENTS.md`** — stale commit id; drawn-object assertions re-scoped to the forest payload
+   rather than reading as if they applied to all nine kinds; one-machine/one-version boundary added.
+6. **Zero line behind the markers.** Rose's nit: `vlines!`/`hlines!` were drawn after the
+   whiskers were pushed to `z = -1`, so the dashed zero line painted *over* the AoG markers — a
+   term with `estimate ≈ 0` got a dashed line through it. Same as `main`, so not a regression,
+   but "markers on top" was incidental rather than invariant. Both are now `translate!`d to
+   `z = -1`, and the driver asserts it on every line layer in both figures.

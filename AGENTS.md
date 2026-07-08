@@ -9,9 +9,9 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + **VERIFIED
-  LIVE**, on a branch awaiting merge; Claude solo (Opus), R-lane session on maintainer instruction;
-  rows **55** / covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat
+- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + VERIFIED
+  LIVE + ROSE-AUDITED, on a branch awaiting merge; Claude solo (Opus), R-lane session on maintainer
+  instruction; rows **55** / covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat
   uncommitted for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
   AlgebraOfGraphics (`:variance_components` + `:breeding_values`); AoG had never existed on any ref.
   **Four defect classes fixed:** (1) every marker drawn TWICE — the manual `scatter!` was restoring
@@ -23,14 +23,19 @@ engine reality.
   the mapped variable `"rank"`, x/y scales LINKED across facets (h² on `[0,1]` crushed against a `0–40`
   variance scale), and the `[0,1] boundary` annotation clipped at the data limit. **VERIFIED:** compat
   pin resolves (`AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`, Julia 1.10.0), the
-  extension precompiles, **9/9 kinds draw a `Makie.Figure`** (explicit + inferred), `Scatter=1` per axis,
-  `NaN` whisker draws nothing, whisker `z=-1.0`, boundary `Text` on the h² axis ONLY (control case draws
-  none), both figures rasterize, `Pkg.test()` GREEN dependency-free. The facet-order assumption HOLDS on
-  AoG 0.13.0. **Standing trap:** the CI stub test asserts `isempty(methods(hsquared_figure))` with
-  Makie/AoG out of CI, so it passes *precisely when the extension fails to load* — a green `Pkg.test()`
-  is NEVER evidence about the drawing layer. Also: **`julia` is not on `PATH` in a Claude Code shell**
-  (`~/.juliaup/bin`) — do not conclude the toolchain is absent. `feat/2026-07-08-plotting-aog`
-  (`e6f27ac8`), pushed, PR open, **NOT merged**; `main` untouched. Owed: Rose audit + after-task report.
+  extension precompiles, **9/9 kinds draw a `Makie.Figure`** (explicit + inferred); on the *forest payload
+  specifically*: `Scatter=1` per axis, `NaN` whisker draws nothing, whisker/zero-line `z=-1.0`, boundary
+  `Text` on the h² axis ONLY (control payload draws none); both AoG figures rasterize, `Pkg.test()` GREEN
+  dependency-free. **One machine, one version set** (Julia 1.10.0, macOS/arm64) — not a cross-version or
+  cross-platform claim. The facet-order assumption HOLDS on AoG 0.13.0. Re-runnable, **mutation-tested**
+  driver: `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`. **Standing trap:** the CI stub test
+  asserts `isempty(methods(hsquared_figure))` with Makie/AoG out of CI, so it passes *precisely when the
+  extension fails to load* — a green `Pkg.test()` is NEVER evidence about the drawing layer. Also:
+  **`julia` is not on `PATH` in a Claude Code shell** (`~/.juliaup/bin`) — do not conclude the toolchain
+  is absent. Branch `feat/2026-07-08-plotting-aog`, pushed, **PR #264 open, NOT merged**; `main`
+  untouched. Real `rose-systems-auditor` → PROMOTE-WITH-CHANGES (false 2026-06-22 AoG evidence pointer in
+  `test/runtests.jl`, unreproducible evidence, under-covering SUPERSEDED banner; **all applied**).
+  Coordination board NOT updated (Julia-lane slice run from an R-lane session) — do that on merge.
   Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
   START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
 
