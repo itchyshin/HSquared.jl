@@ -9,25 +9,30 @@ engine reality.
 > Refresh this block in every after-task report (GLLVM.jl pattern). Repo state
 > is truth; this is the at-a-glance pointer.
 
-- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + BANKED ON A
-  BRANCH, *not* verified; Claude solo (Opus), R-lane session on maintainer instruction; rows **55** /
-  covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat uncommitted
-  for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
-  AlgebraOfGraphics (`:variance_components` + `:breeding_values`). Reviewed by reading; **three real
-  defects fixed**: (1) every marker drawn TWICE — the manual `scatter!` was restoring z-order after the
-  whiskers overpainted, so AoG now owns the single marker layer and whiskers go behind via
-  `translate!`; (2) `_axes_by_panel` pattern-matched `Label`s out of `fig.content` and index-zipped them
-  to axes (two undocumented internals) — replaced with AoG's supported `FigureGrid.grid` accessor + a
-  shape guard; (3) the full term list was forced onto EVERY facet's yticks, so each panel labelled terms
-  it does not contain — now per-facet. Committed to `feat/2026-07-08-plotting-aog` (`fe93273c`),
-  **UNPUSHED, `main` untouched**. **NOT VERIFIED:** no `julia` on PATH in the authoring session, so the
-  nine-kind CairoMakie+AoG draw never ran, and the `AlgebraOfGraphics 0.13` / `Makie 0.24` pin is
-  unresolved. **The CI stub test passes precisely when the extension FAILS to load**
-  (`isempty(methods(hsquared_figure))` with Makie/AoG out of CI) — `Pkg.test()` green is zero evidence
-  here. `docs/design/13-plotting-layer.md` carries a RE-VERIFICATION OWED banner (its recorded
-  verification was 06-22, raw-Makie). Residual assumption flagged in-source: facet rows are taken to lay
-  out in `sort(unique(panels))` order. Codex owns the live draw + evidence + merge gate. Nothing
-  promoted. START HERE: `docs/dev-log/handover/2026-07-08-codex-handover.md`.
+- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + **VERIFIED
+  LIVE**, on a branch awaiting merge; Claude solo (Opus), R-lane session on maintainer instruction;
+  rows **55** / covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat
+  uncommitted for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
+  AlgebraOfGraphics (`:variance_components` + `:breeding_values`); AoG had never existed on any ref.
+  **Four defect classes fixed:** (1) every marker drawn TWICE — the manual `scatter!` was restoring
+  z-order after the whiskers overpainted, so AoG now owns the single marker layer and whiskers go behind
+  via `translate!`; (2) `_axes_by_panel` pattern-matched `Label`s out of `fig.content` and index-zipped
+  them to axes (two undocumented internals) — replaced with AoG's supported `FigureGrid.grid` accessor +
+  a shape guard; (3) the full term list was forced onto EVERY facet's yticks — now per-facet; (4) *found
+  only by rendering the PNG and looking at it* — title/subtitle drawn once PER FACET, `ylabel` leaking
+  the mapped variable `"rank"`, x/y scales LINKED across facets (h² on `[0,1]` crushed against a `0–40`
+  variance scale), and the `[0,1] boundary` annotation clipped at the data limit. **VERIFIED:** compat
+  pin resolves (`AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`, Julia 1.10.0), the
+  extension precompiles, **9/9 kinds draw a `Makie.Figure`** (explicit + inferred), `Scatter=1` per axis,
+  `NaN` whisker draws nothing, whisker `z=-1.0`, boundary `Text` on the h² axis ONLY (control case draws
+  none), both figures rasterize, `Pkg.test()` GREEN dependency-free. The facet-order assumption HOLDS on
+  AoG 0.13.0. **Standing trap:** the CI stub test asserts `isempty(methods(hsquared_figure))` with
+  Makie/AoG out of CI, so it passes *precisely when the extension fails to load* — a green `Pkg.test()`
+  is NEVER evidence about the drawing layer. Also: **`julia` is not on `PATH` in a Claude Code shell**
+  (`~/.juliaup/bin`) — do not conclude the toolchain is absent. `feat/2026-07-08-plotting-aog`
+  (`e6f27ac8`), pushed, PR open, **NOT merged**; `main` untouched. Owed: Rose audit + after-task report.
+  Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+  START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
 
 - **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;
   Claude solo (Opus), autonomous; `/goal` "finish everything left in doc-25"; rows **55** / covered

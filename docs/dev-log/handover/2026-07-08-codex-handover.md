@@ -1,3 +1,16 @@
+> ## ⚠️ SUPERSEDED — do not action this document
+>
+> Written earlier the same day on the false premise that the live Julia toolchain was
+> unavailable. **It was available** (`~/.juliaup/bin/julia`, simply not on `PATH`). The nine-kind
+> `CairoMakie + AlgebraOfGraphics` draw this document hands to Codex **has since been run and
+> passed**, the compat pin resolves, and a fourth defect class was found and fixed.
+>
+> Everything below labelled "BLOCKER", "NOT VERIFIED", or "Codex owns the live draw" is **no
+> longer true**. Kept for the audit trail only.
+>
+> **Current handover:** `docs/dev-log/handover/2026-07-08-claude-handover.md`
+> **Evidence:** `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`
+
 # Session Handoff: AlgebraOfGraphics plotting-layer migration — fixed, UNVERIFIED, needs a live draw
 
 **Meta:** 2026-07-08 · from **Claude** (Opus 4.8, R-lane session in the `hsquared` twin) · to **Codex**
