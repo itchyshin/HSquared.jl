@@ -36,7 +36,17 @@ engine reality.
   untouched. Real `rose-systems-auditor` → PROMOTE-WITH-CHANGES (false 2026-06-22 AoG evidence pointer in
   `test/runtests.jl`, unreproducible evidence, under-covering SUPERSEDED banner; **all applied**).
   Coordination board NOT updated (Julia-lane slice run from an R-lane session) — do that on merge.
-  Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+  **FOUR GATES THAT COULD NOT FAIL** were found closing this slice, each by the reflex the previous
+  one taught: (1) the CI stub test above; (2) `shinichi-brain/tools/check-after-task.R` defined a
+  main and never called it, so the documented CLI exited 0 for ANY input — including nonexistent
+  files — for its entire life, while `protocols/after-task.md` cited it as *the* DoD gate; (3) the
+  sibling sweep found `rose-pattern-scan.R` with the identical defect (both R honesty gates dead;
+  every shell/Python tool fine); (4) `handoff_gate.sh` audited only the checked-out branch. (2)+(3)
+  fixed + pushed (`shinichi-brain` @ `3468312`, guarded by `sys.nframe() == 0L` — NOT
+  `!interactive()`, which is FALSE under `Rscript -e 'source(...)'` too and would break the
+  workaround); (4) fixed independently by a parallel session (`1f1df6f`). **Before trusting a green,
+  make it go red on purpose.** Nothing promoted. Evidence:
+  `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
   START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
 
 - **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;

@@ -1,13 +1,18 @@
 # Session Handoff: AoG plotting-layer migration — recovered, fixed, VERIFIED, awaiting merge
 
-**Meta:** 2026-07-08 · from **Claude** (Opus 4.8) · to **Claude** (fresh session)
-**Repos touched:** `HSquared.jl` (Julia lane) · `hsquared` (R lane — **untouched, clean**)
+**Meta:** 2026-07-08 · from **Claude** (Opus 4.8) · to **Claude** (fresh session) · *revised after the hub-validator work*
+**Repos touched:** `HSquared.jl` (Julia lane) · `shinichi-brain` (hub tooling) · `hsquared` (R lane — **untouched, clean**)
 **Branch:** `feat/2026-07-08-plotting-aog` · base `main` @ `a2fc7625`
 **Commits:** `fe93273c` → `5ebd7119` → `e6f27ac8` → `3629031f` → `25a3a289` → (Rose fixes)
 **Status:** Rose-audited (PROMOTE-WITH-CHANGES, all required changes applied). Ready for merge review.
 
 You are Claude, picking up a finished-but-unmerged slice. The work is **done and verified**.
-What remains is a merge decision and two follow-ups the maintainer may or may not want.
+What remains is a merge decision on PR #264, one uncommitted `LESSONS.md` entry in the hub, and two
+follow-ups the maintainer may or may not want.
+
+**A parallel Claude session is active in `~/shinichi-brain`.** It cherry-picked three of my commits
+onto `master`, deleted a branch, and left one file uncommitted. Re-read that repo's live state before
+touching it; do not assume this document's snapshot of it is current.
 
 ---
 
@@ -27,7 +32,18 @@ What remains is a merge decision and two follow-ups the maintainer may or may no
    **precisely when the extension fails to load**. Four real defects lived in this code while CI
    was green. **Three of the four were also invisible to plot-object assertions** and surfaced
    only when the figure was rendered to PNG and *looked at*. If you touch the drawing layer,
-   render it and look.
+   render it and look. Use the committed driver:
+   `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl` (mutation-tested — it can fail).
+
+3. **Four gates that could not fail were found in one day.** (a) the stub test above; (b)
+   `shinichi-brain/tools/check-after-task.R` defined a main and never called it, so the documented
+   CLI exited 0 for *any* input including nonexistent files — for its entire life, while
+   `protocols/after-task.md` cited it as *the* Definition-of-Done gate; (c) the sibling sweep found
+   `rose-pattern-scan.R` with the identical defect (both R honesty gates dead; every shell/Python
+   tool fine); (d) `tools/handoff_gate.sh` audited only the checked-out branch and printed
+   `GATE PASS` over unpushed work parked elsewhere. (b) and (c) are **fixed and pushed**
+   (`shinichi-brain` @ `3468312`). (d) was found and fixed independently by the parallel session
+   (`1f1df6f`). **Before trusting a green, make it go red on purpose.**
 
 ---
 
@@ -71,16 +87,26 @@ Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 
 ## Landing State ledger
 
-| Repo | Branch | State |
+`tools/handoff_gate.sh` run against all three repos. **Read the CARRIED-OVER rows.**
+
+| Repo | Ref | State |
 | --- | --- | --- |
-| `hsquared` | `main` | **CLEAN**, synced with `origin/main`. Not touched this session. |
+| `hsquared` | `main` | **LANDED** — clean, synced with `origin/main`. Not touched this session. |
 | `HSquared.jl` | `main` | **UNTOUCHED** @ `a2fc7625`. |
-| `HSquared.jl` | `feat/2026-07-08-plotting-aog` | **pushed**, PR [#264](https://github.com/itchyshin/HSquared.jl/pull/264) open. **CARRIED-OVER: not merged** — awaiting maintainer merge. Rose audit and after-task report are DONE. |
+| `HSquared.jl` | `feat/2026-07-08-plotting-aog` | **CARRIED-OVER: pushed, PR [#264](https://github.com/itchyshin/HSquared.jl/pull/264) open, NOT merged.** Verified + Rose-audited. Why not merged: `handoff.md` says the human merges. Resume: `gh pr view 264`. |
+| `shinichi-brain` | `master` | **LANDED** — the R-validator fix is on `origin/master` @ `3468312` (cherry-picked; re-verified in all six directions before push). |
+| `shinichi-brain` | `memory/LESSONS.md` | **CARRIED-OVER: uncommitted.** A "gate that cannot fail" entry, written and left staged-in-tree. Why not landed: pushing a *second* commit to the hub's default branch was outside the approval I had. Resume: `cd ~/shinichi-brain && git add memory/LESSONS.md && git commit && git push origin master`. |
+| `shinichi-brain` | `Shinichi/methods/Native scale-side REML…Ayumi bird-data probe.md` | **CARRIED-OVER: uncommitted, NOT MINE.** Belongs to the parallel session. Do not commit it blind — ask first. |
+
+Deleted this session: `fix/2026-07-08-r-validators-never-ran` (local, redundant — all four commits
+confirmed `-` already-upstream by `git cherry` patch-id after the cherry-pick). `safety/2026-07-08-context-budget`
+vanished too, deleted by the parallel session.
 
 Pre-existing unpushed state in `HSquared.jl`, **not from this session, not mine to land**:
 `claude/kind-kirch-b8bbee` (ahead 1), `feat/2026-06-30-v04-broaderdgp-recovery` (ahead 12),
-`feat/2026-07-01-v06-ordinal-liability-h2` (ahead 3), plus several local-only `worktree-agent-*`
-and `claude/*` branches. Flagged, deliberately untouched.
+`feat/2026-07-01-v06-ordinal-liability-h2` (ahead 3), plus local-only `worktree-agent-*` branches.
+Flagged, deliberately untouched. The *fixed* `handoff_gate.sh` will now surface these — that is
+correct behaviour, not a regression.
 
 ---
 
@@ -131,7 +157,9 @@ Branch `feat/2026-07-08-plotting-aog`:
    **Fixed 2026-07-08** in `shinichi-brain` @ `c8b3b7d`; the sweep found `rose-pattern-scan.R` had
    the identical defect. Both now work; the documented `Rscript tools/check-after-task.R <path>`
    invocation is valid again.
-3. **Merge PR #264** (maintainer's call), then update the coordination board — this was a
+3. **Land the hub `LESSONS.md` entry** (one command, see the ledger). It is written and sitting
+   uncommitted; a second push to the hub's default branch was outside this session's approval.
+4. **Merge PR #264** (maintainer's call), then update the coordination board — this was a
    Julia-lane slice run from an R-lane session and the board still reads "Julia lane: this repository".
 4. *(Optional, worth raising)* **Strengthen the stub test.** Today it is satisfied by the extension
    *failing to load*. A cheap opt-in job — `CairoMakie` + AoG behind an env flag, off by default —
@@ -186,7 +214,8 @@ Branch `feat/2026-07-08-plotting-aog`:
 | Shipped | drawing layer only: AoG migration, 4 defect classes fixed, verified live |
 | Verification | AoG 0.13.0 + Makie 0.24.13 + CairoMakie 0.15.13 · 9/9 kinds draw · `Pkg.test()` green |
 | Coverage | `public_covered_count` **5** · rows **55** · covered **13** — ALL UNCHANGED |
-| Highest leverage | merge PR #264, then update the coordination board |
+| Hub | `origin/master` @ `3468312` — both R validators now actually run |
+| Highest leverage | merge PR #264; land the uncommitted hub `LESSONS.md` entry |
 | Second | decide whether AoG earns its place in `_forest` |
 | Watch | facet-order assumption on any AoG version bump |
 
@@ -220,8 +249,14 @@ Read in this order:
 One-command resume (paste in your own authenticated terminal, from the repo root):
 
 ```
-claude "Rehydrate from docs/dev-log/handover/2026-07-08-claude-handover.md + the AGENTS.md snapshot. The slice is Rose-audited and verified; the remaining step is the merge decision on PR #264 and updating the coordination board. Note julia is at ~/.juliaup/bin, not on PATH, and a green Pkg.test() proves nothing about the drawing layer — re-run docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl instead."
+claude "Rehydrate from docs/dev-log/handover/2026-07-08-claude-handover.md + the AGENTS.md snapshot, then work the Next Immediate Steps. The slice is verified and Rose-audited; what remains is the merge decision on PR #264, landing the uncommitted memory/LESSONS.md entry in ~/shinichi-brain, and updating the coordination board. Read the Landing State ledger first — it has four CARRIED-OVER rows, one of which is another session's uncommitted file that you must not commit. Note julia is at ~/.juliaup/bin, not on PATH; a green Pkg.test() proves nothing about the drawing layer (the stub test passes precisely when the extension fails to load) — re-run docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl instead."
 ```
 
 **Routing.** This is now planning/audit/prose work — Claude's lane. Nothing here needs Codex: the
-live toolchain ran fine from Claude Code once `PATH` was set.
+live Julia toolchain ran fine from Claude Code once `PATH` was set (`export PATH="$HOME/.juliaup/bin:$PATH"`).
+
+**Concurrency warning.** A parallel Claude session was working in `~/shinichi-brain` during this
+session: it cherry-picked three of my commits onto `master` (skipping the validator fix, which I
+later landed as `3468312`), deleted `safety/2026-07-08-context-budget`, and independently found and
+fixed the `handoff_gate.sh` blind spot in `1f1df6f`. Before touching that repo, `git fetch` and
+re-read live state. Do not assume this document's snapshot of the hub is current — repo state is truth.
