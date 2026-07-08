@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      run_plotting:
+        description: 'Also run the live-draw plotting check (installs CairoMakie + AlgebraOfGraphics)'
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -30,3 +35,51 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
 
       - uses: julia-actions/julia-runtest@v1
+
+  # OPT-IN, OFF BY DEFAULT. `inputs` is empty on `pull_request`, so this job is skipped
+  # unless a human dispatches the workflow with `run_plotting = true`.
+  #
+  # WHY IT EXISTS. The default suite asserts `isempty(methods(hsquared_figure))` with
+  # Makie/AoG absent -- it PASSES PRECISELY WHEN THE EXTENSION FAILS TO LOAD, so it is
+  # zero evidence about the drawing layer. This job is the only CI that exercises it.
+  # It stays opt-in because Makie + AoG dominate the install/precompile budget, and the
+  # drawing layer changes rarely. Run it on any Makie / AlgebraOfGraphics / CairoMakie
+  # bump, and on any PR touching `ext/HSquaredMakieExt.jl`.
+  #
+  # The driver's object assertions cannot see everything: of the five defect classes found on
+  # 2026-07-08, two were caught only by looking at the rendered PNG -- and one of those two had
+  # PASSED an object assertion that counted the annotation without checking where it sat. That
+  # is why this job UPLOADS THE FIGURES: a green check here still means "download the artifact
+  # and look". The driver rasterizes BEFORE it asserts, so the PNGs exist on a red run too.
+  plotting:
+    name: Live-draw plotting check (opt-in)
+    if: ${{ inputs.run_plotting }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Live draw (9/9 kinds, forest + caterpillar invariants)
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/aog-livedraw"
+          cd "${RUNNER_TEMP}/aog-livedraw"
+          julia --project=. -e 'import Pkg
+            Pkg.develop(path = ENV["GITHUB_WORKSPACE"])
+            Pkg.add(["CairoMakie", "AlgebraOfGraphics"])'
+          julia --project=. "${GITHUB_WORKSPACE}/docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl"
+
+      - name: Upload rendered figures (LOOK AT THEM -- assertions are not visual verification)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-draw-figures
+          path: ${{ runner.temp }}/aog-livedraw/*.png
+          if-no-files-found: error

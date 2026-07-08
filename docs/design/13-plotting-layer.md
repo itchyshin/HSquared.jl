@@ -21,9 +21,11 @@ A first-class plotting layer (brms/bayesplot-style), split across the twin:
   `theme_hsquared()`, the `hsquared_meta`/`hsquared_data` attribute pattern from
   gllvmTMB/drmTMB).
 - **Julia draws** via a thin **`HSquaredMakieExt` weak-dependency package
-  extension** (Makie in `[weakdeps]`/`[extensions]`, pinned in `[compat]`) — gives
-  Julia users real `plot()` functions while keeping the base install light. Docs
-  figures call the extension (or isolated docs-scripts), never embedded in `/src`.
+  extension** (Makie + AlgebraOfGraphics in `[weakdeps]`/`[extensions]`, pinned in
+  `[compat]`) — gives Julia users real `plot()` functions while keeping the base
+  install light. AoG is the grammar-of-graphics layer for tabular/faceted
+  statistical figures; bespoke scientific figures remain raw Makie. Docs figures
+  call the extension (or isolated docs-scripts), never embedded in `/src`.
 
 Twin boundary holds: R owns user language; Julia computes. The plot-data layer is
 the shared contract both drawing layers consume.
@@ -134,18 +136,20 @@ The #93 plot-data contract is now consumed on both sides of the twin.
 The Julia drawing half of §1. A single exported stub `hsquared_figure(data; kind,
 …)` lives in `src/plotting_ext.jl` (method-less); the drawing METHODS live in the
 `ext/HSquaredMakieExt.jl` package extension, which Julia loads **only** when a Makie
-backend is in scope (`using CairoMakie` / `GLMakie`). `Makie` is in
-`[weakdeps]`/`[extensions]` and pinned in `[compat]` (`0.24`); `/src` stays
-dependency-free. Without a backend the stub throws `MethodError` (a CI test asserts
-this). One dispatcher consumes the `*_plot_data` NamedTuples and infers `kind` from
-the carried fields (override with `kind = :variance_components | :breeding_values |
+backend and AlgebraOfGraphics are in scope (`using CairoMakie, AlgebraOfGraphics` /
+`using GLMakie, AlgebraOfGraphics`). `Makie` and `AlgebraOfGraphics` are in
+`[weakdeps]`/`[extensions]` and pinned in `[compat]` (`Makie = 0.24`,
+`AlgebraOfGraphics = 0.13`); `/src` stays dependency-free. Without the plotting weak
+dependencies the stub throws `MethodError` (a CI test asserts this). One dispatcher
+consumes the `*_plot_data` NamedTuples and infers `kind` from the carried fields
+(override with `kind = :variance_components | :breeding_values |
 :g_geometry | :genetic_correlation | :manhattan | :qq | :rr_variance | :rr_surface |
 :rr_eigenfunctions`):
 
 | `kind` | Preparer (set) | Draw | Honest-status behavior rendered ON the figure |
 | --- | --- | --- | --- |
-| `:variance_components` | `variance_components_plot_data` (B) | VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
-| `:breeding_values` | `breeding_values_plot_data` (B) | EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
+| `:variance_components` | `variance_components_plot_data` (B) | AoG-backed VC + h² forest | RAW whiskers (never clamped; VC crossing 0 is expected/honest); the `[0,1]` crossing is annotated on the **h² panel ONLY**, and the flag is anchored at the **end that is crossed** (`lo` when `lo ≤ 0`, `hi` when `hi ≥ 1`, both when both), never at a fixed end; `NaN` → no whisker; supplied/estimated + `interval_status` ("NOT coverage-calibrated") in the subtitle |
+| `:breeding_values` | `breeding_values_plot_data` (B) | AoG-backed EBV caterpillar | sorted EBV ± `√PEV`; the `pev_scale = "validation"` caveat (dense `inv(Ainv)`, not a production reliability claim) in the subtitle |
 | `:g_geometry` | `genetic_pca_plot_data` (C) | eigenvalue **scree** | gated on `is_eigenstructure_not_loadings` — a loadings biplot is **rejected** (`ArgumentError`, FA rotation convention); a non-PD `G` (negative eigenvalue) draws the bar but **suppresses** %-variance labels; rotation-invariant caveat in the subtitle |
 | `:genetic_correlation` | `genetic_correlation_plot_data` (C) | `D⁻¹GD⁻¹` **heatmap** | gated on `rotation_invariant` — raw loadings **rejected** (`ArgumentError`); diverging colormap centred at 0, unit diagonal; when `heritabilities` are supplied, low-h² (imprecise) traits are **flagged in the subtitle** |
 | `:manhattan` | `marker_manhattan_data` (D) | chromosome-coloured **scatter** of cumulative `plot_positions` vs `-log10(p)` | a **VISUAL-ONLY** Bonferroni guide line at `-log10(0.05/m)`; subtitle: "nominal Wald p-values, **NOT genome-wide calibrated** (#48); threshold line is visual guidance only" |
@@ -158,8 +162,42 @@ The subtitle caveat is sourced from the SAME honest-status flags the preparer
 carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
 guardrail"). Drawing only: no estimation, no engine computation in the extension.
 
-**Verification (local-only; Makie is deliberately OUT of default CI — cost
-discipline):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),
+> **AoG migration re-verified 2026-07-08.** The `:variance_components` and
+> `:breeding_values` kinds were rerouted through AlgebraOfGraphics; the nine-kind draw was
+> re-run live on `AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`
+> (Julia 1.10.0) — 9/9 return a `Makie.Figure` for both inferred and explicit `kind`, both
+> AoG figures rasterize to PNG, and `Pkg.test()` stays green dependency-free. Evidence:
+> `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`; re-runnable driver:
+> `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`.
+>
+> **Note the CI blind spot.** The stub test asserts `isempty(methods(hsquared_figure))` with
+> Makie/AoG absent, so it passes *whether or not* the extension loads or is correct. A green
+> default `Pkg.test()` is never evidence about the drawing layer — only a live draw is. **Five**
+> defects in this migration were invisible to the default CI. Three were found by reading the
+> code; **two** — defect 4 (per-facet title, leaked `ylabel`, linked scales, clipped annotation)
+> and defect 5 (flag anchored at the uncrossed end) — were caught only by **rendering the figure
+> and looking at it**. Defect 5 additionally *passed* a plot-object assertion, which counted the
+> annotation without checking its position. The opt-in `plotting` CI job runs the live-draw
+> driver and uploads the PNGs; the default CI still cannot see any of this.
+>
+> **Version fragility.** The AoG `:variance_components` facet mapping assumes row facets are
+> laid out in `sort(unique(panel))` order — confirmed on AoG 0.13.0, and a re-ordering would
+> silently swap the two panels' ticks and annotations. The shape guard catches a facet-*count*
+> mismatch only. **Re-run the driver on any Makie/AoG bump**; its `forest_invariants()` check
+> fails on a swap (mutation-tested 2026-07-08). The *default* CI cannot see this; the opt-in
+> `plotting` job can, but only when someone dispatches it.
+>
+> **Fifth defect, 2026-07-08 (post-audit).** The `[0,1]` flag was anchored at `hi` for *every*
+> crossing, so a `lo ≤ 0` interval (`lo = -0.05, hi = 0.72`) rendered the flag at `0.72` — the
+> one end the interval respects — with the `xautolimitmargin` headroom on the wrong side. It
+> passed every object assertion, because the driver counted `Text` plots and never asked *where*.
+> Fixed: the flag is anchored at the crossed end (both ends flagged when both are crossed) and
+> headroom is added on the flagged side(s). The driver now asserts anchor **position and
+> alignment** for the `lo`, `hi`, and both-ends cases. *Counting an annotation is not checking it.*
+
+**Verification (Makie/AoG are deliberately OUT of default CI — cost discipline; run locally,
+or via the opt-in `plotting` CI job, which runs the same live-draw driver and uploads the
+rendered PNGs):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),
 the stub throws `MethodError` before a backend loads (a CI test asserts this across
 all **nine** payload shapes — one per kind — in 11 total assertions), the
 `_infer_kind` eigenvalues-collision guard holds
@@ -168,7 +206,10 @@ infers `:rr_eigenfunctions`), the honest-status branches all fire (supplied/NaN/
 forest; loadings-biplot / non-PD-`G` guards; the Manhattan/QQ NOT-calibrated subtitles;
 the reaction-norm single-vs-two-panel split; the correlation-`(-1,1)` vs
 covariance-data-driven surface colorrange; the eigenfunction signs-arbitrary subtitle),
-and all figures rasterize to PNG with CairoMakie 0.15.11 / Makie 0.24.x. Evidence:
+and all figures rasterize to PNG. **This paragraph records the 2026-06-22 RAW-MAKIE
+verification** (CairoMakie 0.15.11 / Makie 0.24.x): evidence
 `docs/dev-log/check-log.d/2026-06-22-l1-makie-figures.md` + after-task report
-`2026-06-22-l1-makie-figures.md`. This is a **drawing capability only** — no
-statistical claim is promoted by it.
+`2026-06-22-l1-makie-figures.md`. It does **not** cover the AoG code path for
+`:variance_components` / `:breeding_values` — that is the 2026-07-08 re-verification
+above (CairoMakie 0.15.13 / Makie 0.24.13 / AlgebraOfGraphics 0.13.0). This is a
+**drawing capability only** — no statistical claim is promoted by it.

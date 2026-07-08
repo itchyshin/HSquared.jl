@@ -1,12 +1,15 @@
 module HSquaredMakieExt
 
-# Makie drawing extension for HSquared's backend-free `*_plot_data` preparers. Loads
-# only when a Makie backend is in scope (`using CairoMakie` / `GLMakie`). It draws the
-# figures with the R-twin's honest-status behaviors baked in (issue #93): the caveat is
-# rendered ON the figure (subtitle), whiskers are never clamped, the g-geometry view is
-# a scree (never a loadings biplot), and a non-PD G suppresses %-variance labels.
+# Makie/AoG drawing extension for HSquared's backend-free `*_plot_data` preparers.
+# Loads only when a Makie backend and AlgebraOfGraphics are in scope (`using
+# CairoMakie, AlgebraOfGraphics`). AoG handles the tabular/faceted statistical
+# figures; bespoke scientific layouts stay raw Makie. The R-twin's honest-status
+# behaviors are rendered ON the figure (issue #93): caveats are subtitles, whiskers
+# are never clamped, the g-geometry view is a scree (never a loadings biplot), and a
+# non-PD G suppresses %-variance labels.
 
 using HSquared
+using AlgebraOfGraphics
 using Makie
 import HSquared: hsquared_figure
 
@@ -48,21 +51,67 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
     ys = collect(Float64.(n:-1:1))
     caveat = d.supplied ? "supplied (descriptive)" :
         "estimated; $(d.interval_status) intervals (NOT coverage-calibrated)"
-    fig = Figure()
-    ax = Axis(fig[1, 1]; title = title, subtitle = caveat, xlabel = "estimate",
-              yticks = (ys, collect(string.(d.term))))
+    table = _forest_aog_table(d, ys)
+    spec = data(table) *
+        mapping(:estimate, :rank, row = :panel) *
+        visual(Scatter, markersize = 11, color = :black)
+    # `axis = (...)` is applied to EVERY facet axis, so title/subtitle must be FIGURE-level
+    # or they render once per panel. `ylabel` is blanked because AoG would otherwise label
+    # the y axis with the mapped variable ("rank"), which is an implementation detail.
+    # Facet scales are UNLINKED: h² lives on [0,1] while the variance components can span
+    # orders of magnitude — a shared x axis crushes the h² panel into an unreadable sliver.
+    fg = draw(spec; axis = (; xlabel = "estimate", ylabel = ""),
+              facet = (; linkxaxes = :none, linkyaxes = :none),
+              figure = (; title = title, subtitle = caveat, size = (760, 420)))
+    fig = fg.figure
+    axes = _axes_by_panel(fg, d.panel)
+    terms = collect(string.(d.term))
+    panels = collect(string.(d.panel))
+    # AoG's `visual(Scatter, ...)` above is the ONLY marker layer. The whiskers are
+    # drawn after it, so they are pushed BEHIND the markers with `translate!` rather
+    # than re-scattering the points on top (which would draw every marker twice).
     for i in 1:n
         (isfinite(d.lo[i]) && isfinite(d.hi[i])) || continue   # no fabricated whisker
-        lines!(ax, [d.lo[i], d.hi[i]], [ys[i], ys[i]]; color = :black)
+        w = lines!(axes[panels[i]], [d.lo[i], d.hi[i]], [ys[i], ys[i]]; color = :black)
+        translate!(w, 0, 0, -1)
     end
-    scatter!(ax, Float64.(d.estimate), ys; markersize = 11, color = :black)
-    vlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+    # Per-facet ticks: each panel labels ONLY the terms it actually contains (`ys` is a
+    # rank over ALL terms, so the full term list must never be forced onto every axis).
+    for (panel, ax) in axes
+        idx = sort(findall(==(panel), panels); by = i -> ys[i])
+        ax.yticks[] = (ys[idx], terms[idx])
+        # Behind the markers too, so "markers always on top" is an invariant rather than an
+        # accident of insertion order (a term with `estimate ≈ 0` otherwise gets the dashed
+        # zero line drawn straight through its marker).
+        translate!(vlines!(ax, [0.0]; color = :gray, linestyle = :dash), 0, 0, -1)
+    end
+    # The flag names WHICH boundary the interval crosses, so it must sit at the crossed
+    # END. Anchoring every flag at `hi` points the reader at the one end that is fine:
+    # for `lo = -0.05, hi = 0.72` the crossing is at the left, and a right-hand label
+    # (plus right-hand headroom) is actively misleading. An interval may cross both.
+    lo_flagged = Set{String}()
+    hi_flagged = Set{String}()
     for i in 1:n
-        d.panel[i] == "heritability" || continue   # boundary flag is h²-panel only
-        if isfinite(d.lo[i]) && isfinite(d.hi[i]) && (d.lo[i] <= 0.0 || d.hi[i] >= 1.0)
-            text!(ax, d.hi[i], ys[i]; text = " [0,1] boundary", align = (:left, :center),
-                  fontsize = 10, color = :red)
+        panels[i] == "heritability" || continue   # boundary flag is h²-panel only
+        (isfinite(d.lo[i]) && isfinite(d.hi[i])) || continue
+        if d.lo[i] <= 0.0
+            text!(axes[panels[i]], d.lo[i], ys[i]; text = "[0,1] boundary ",
+                  align = (:right, :center), fontsize = 10, color = :red)
+            push!(lo_flagged, panels[i])
         end
+        if d.hi[i] >= 1.0
+            text!(axes[panels[i]], d.hi[i], ys[i]; text = " [0,1] boundary",
+                  align = (:left, :center), fontsize = 10, color = :red)
+            push!(hi_flagged, panels[i])
+        end
+    end
+    # Each annotation is anchored exactly at a data limit, and text extent does not enter
+    # Makie's autolimits — so it clips without extra margin on THAT side.
+    for panel in union(lo_flagged, hi_flagged)
+        ax = axes[panel]
+        ax.xautolimitmargin[] = (panel in lo_flagged ? 0.35 : 0.05,
+                                 panel in hi_flagged ? 0.35 : 0.05)
+        autolimits!(ax)
     end
     return fig
 end
@@ -77,14 +126,50 @@ function _caterpillar(d::NamedTuple; title = "Estimated breeding values", kwargs
     caveat = d.pev_scale == "validation" ?
         "EBV ± √PEV — PEV is VALIDATION-scale (dense inv(Ainv)), not a production reliability claim" :
         "EBV ± √PEV"
-    fig = Figure()
-    ax = Axis(fig[1, 1]; title = title, subtitle = caveat, xlabel = "rank (sorted)", ylabel = "EBV")
+    table = (rank = xs, value = v)
+    fg = draw(data(table) * mapping(:rank, :value) *
+              visual(Scatter, markersize = 6, color = :black);
+              axis = (; title = title, subtitle = caveat, xlabel = "rank (sorted)",
+                      ylabel = "EBV"),
+              figure = (; size = (760, 420)))
+    fig = fg.figure
+    ax = only(fg.grid).axis
+    # As in `_forest`: AoG owns the single marker layer; whiskers go behind it.
     for i in eachindex(xs)
-        lines!(ax, [xs[i], xs[i]], [v[i] - se[i], v[i] + se[i]]; color = (:black, 0.4))
+        w = lines!(ax, [xs[i], xs[i]], [v[i] - se[i], v[i] + se[i]]; color = (:black, 0.4))
+        translate!(w, 0, 0, -1)
     end
-    scatter!(ax, xs, v; markersize = 6, color = :black)
-    hlines!(ax, [0.0]; color = :gray, linestyle = :dash)
+    translate!(hlines!(ax, [0.0]; color = :gray, linestyle = :dash), 0, 0, -1)
     return fig
+end
+
+function _forest_aog_table(d::NamedTuple, ys)
+    return (term = collect(string.(d.term)),
+            estimate = Float64.(d.estimate),
+            rank = Float64.(ys),
+            panel = collect(string.(d.panel)))
+end
+
+# Map each `row = :panel` facet to its `Axis` through AlgebraOfGraphics' SUPPORTED
+# `FigureGrid.grid` accessor (a Matrix{AxisEntries}, each carrying `.axis`) — never by
+# pattern-matching `Label`s out of `fig.content`, which depends on undocumented
+# content ordering and on how AoG happens to render facet labels.
+#
+# ASSUMPTION: row facets are laid out in the categorical scale's level order, i.e.
+# `sort(unique(panels))`. CONFIRMED EMPIRICALLY on AlgebraOfGraphics 0.13.0 (grid[1,1] ==
+# "heritability", grid[2,1] == "variance components"); NOT re-verified on any other version.
+# The size guard below catches a facet-COUNT mismatch but NOT a RE-ORDERING, which would
+# silently swap the two panels' ticks and annotations. RE-RENDER THE FOREST AND CHECK THE
+# TICKS ON ANY AoG BUMP — the default CI cannot see this (only the opt-in `plotting` job,
+# and only when dispatched). Evidence:
+# `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+function _axes_by_panel(fg, panels)
+    levels = sort(unique(string.(panels)))
+    grid = fg.grid
+    size(grid, 1) == length(levels) && size(grid, 2) == 1 || throw(ArgumentError(
+        "hsquared_figure: AlgebraOfGraphics returned a $(size(grid)) facet grid for " *
+        "$(length(levels)) panel level(s); expected $(length(levels))x1"))
+    return Dict(levels[i] => grid[i, 1].axis for i in eachindex(levels))
 end
 
 # ── set C: G-geometry scree ──────────────────────────────────────────────────────

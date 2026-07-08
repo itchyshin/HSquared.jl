@@ -1,24 +1,28 @@
 # Drawing-layer entry point. The METHOD lives in the `HSquaredMakieExt` package
 # extension (`ext/HSquaredMakieExt.jl`), which loads only when `Makie` (e.g.
-# `using CairoMakie`) is in scope — so `/src` stays dependency-free. This is just the
-# stub + the honest-status drawing contract; no engine computation happens here.
+# `using CairoMakie`) and `AlgebraOfGraphics` are in scope — so `/src` stays
+# dependency-free. This is just the stub + the honest-status drawing contract; no
+# engine computation happens here.
 
 """
     hsquared_figure(data; kind = <inferred>, kwargs...)
 
 Draw an HSquared plotting-layer figure from a `*_plot_data` NamedTuple. **STUB:** the
 drawing method is provided by the `HSquaredMakieExt` package extension, which activates
-only when a Makie backend is loaded (`using CairoMakie` / `GLMakie`). Without one,
-calling this throws a `MethodError` asking you to load Makie.
+only when a Makie backend and AlgebraOfGraphics are loaded (`using CairoMakie,
+AlgebraOfGraphics` / `using GLMakie, AlgebraOfGraphics`). Without them, calling this
+throws a `MethodError` asking you to load the plotting weak dependencies.
 
 Supported `kind`s (each consumes the matching preparer and renders the R-twin's
 honest-status drawing behaviors ON the figure — #93):
 
-- `:variance_components` ← [`variance_components_plot_data`](@ref) — the VC + h² forest.
+- `:variance_components` ← [`variance_components_plot_data`](@ref) — the VC + h² forest
+  (AoG tabular/faceted scaffold, Makie annotations).
   Whiskers are RAW (never clamped); a whisker crossing the `[0,1]` boundary is annotated
   on the **h² panel only** (a variance-component whisker crossing 0 is expected/honest,
   not flagged); `NaN` whiskers draw no whisker.
 - `:breeding_values` ← [`breeding_values_plot_data`](@ref) — the EBV caterpillar
+  (AoG tabular scaffold, Makie uncertainty whiskers)
   (sorted EBV ± `√PEV`); the `pev_scale = "validation"` caveat is rendered in the subtitle.
 - `:g_geometry` ← [`genetic_pca_plot_data`](@ref) — the eigenvalue **scree only**, NEVER
   a loadings biplot (gated on `is_eigenstructure_not_loadings`); on a non-PD `G` a
