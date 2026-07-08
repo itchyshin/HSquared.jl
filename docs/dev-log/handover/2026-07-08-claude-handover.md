@@ -87,7 +87,18 @@ Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 
 ## Landing State ledger
 
-`tools/handoff_gate.sh` run against all three repos. **Read the CARRIED-OVER rows.**
+`tools/handoff_gate.sh` run against all three repos — with the **fixed** gate (`1f1df6f`), which
+audits *all* local branches, not just `HEAD`. It reports **GATE FAIL on 3 of 3**. That is correct and
+mostly pre-existing: the old gate printed `GATE PASS` over the same estate by not looking. Nothing in
+the fail list is unlanded work of mine except the declared `LESSONS.md` row.
+
+| Repo | Gate verdict | Mine? |
+| --- | --- | --- |
+| `hsquared` | `main` clean + synced; **39 unpushed on other branches** (`codex/*`, `claude/*`) | **no** — pre-existing estate |
+| `HSquared.jl` | `feat/2026-07-08-plotting-aog` pushed; **20 unpushed on other branches** | **no** — pre-existing estate |
+| `shinichi-brain` | `master` synced; **2 uncommitted** | one mine (`LESSONS.md`), one the parallel session's |
+
+**Read the CARRIED-OVER rows.**
 
 | Repo | Ref | State |
 | --- | --- | --- |
