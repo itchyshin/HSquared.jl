@@ -15,8 +15,9 @@ engine reality.
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
 - **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + VERIFIED
-  LIVE + ROSE-AUDITED, on a branch awaiting merge; Claude solo (Opus), R-lane session on maintainer
-  instruction; rows **55** / covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat
+  LIVE + TWICE ROSE-AUDITED + **MERGED** (PR #264 → `main` @ `50131e69`); Claude (Opus), two sessions,
+  R-lane session on maintainer instruction; rows **55** / covered **13** / `public_covered_count` **5**
+  UNCHANGED).** Five plotting files had sat
   uncommitted for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
   AlgebraOfGraphics (`:variance_components` + `:breeding_values`); AoG had never existed on any ref.
   **Five defect classes fixed** (three found by reading, two — (4) and (5) — only by rendering the PNG
@@ -47,13 +48,15 @@ engine reality.
   *precisely when the extension fails to load* — a green `Pkg.test()` is NEVER evidence about the
   drawing layer. Also:
   **`julia` is not on `PATH` in a Claude Code shell** (`~/.juliaup/bin`) — do not conclude the toolchain
-  is absent. Branch `feat/2026-07-08-plotting-aog`, pushed, **PR #264 open, NOT merged**; `main`
-  untouched. **Two** real `rose-systems-auditor` audits, both PROMOTE-WITH-CHANGES, all changes applied:
+  is absent. **PR #264 MERGED** → `main` @ `50131e69`; branch `feat/2026-07-08-plotting-aog` retained.
+  **Two** real `rose-systems-auditor` audits, both PROMOTE-WITH-CHANGES, all changes applied:
   the first on the branch (false 2026-06-22 AoG evidence pointer in `test/runtests.jl`, unreproducible
   evidence, under-covering SUPERSEDED banner); the second on the defect-5 delta (a dangling "(see below)"
-  evidence pointer, a defect count left inconsistent across four surfaces, three absolutes falsified by
-  the new opt-in CI job, and an `if: always()` artifact upload defeated by rasterizing *after* asserting).
-  Coordination board NOT updated (Julia-lane slice run from an R-lane session) — do that on merge.
+  evidence pointer, a defect count left inconsistent across **five** surfaces — Rose named four, the
+  sweep found the fifth — three absolutes falsified by the new opt-in CI job, and an `if: always()`
+  artifact upload defeated by rasterizing *after* asserting).
+  Coordination board **UPDATED** — the R-lane-session lane exception is recorded and closed
+  (`docs/dev-log/coordination-board.md`, 2026-07-08 entry). No action owed from the R lane.
   **SIX GATES THAT COULD NOT FAIL** were found closing this slice, each by the reflex the previous
   one taught: (1) the CI stub test above; (2) `shinichi-brain/tools/check-after-task.R` defined a
   main and never called it, so the documented CLI exited 0 for ANY input — including nonexistent
