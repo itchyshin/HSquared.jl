@@ -162,13 +162,18 @@ The subtitle caveat is sourced from the SAME honest-status flags the preparer
 carries — this is the drawing-layer half of §5.2 ("subtitle drop is the only
 guardrail"). Drawing only: no estimation, no engine computation in the extension.
 
-> **RE-VERIFICATION OWED (AoG migration, 2026-07-08).** The verification recorded below was
-> executed on **2026-06-22 against the raw-Makie drawing layer**. The `:variance_components`
-> and `:breeding_values` kinds have since been rerouted through AlgebraOfGraphics; that
-> re-draw has **NOT** been rerun. Until a live `CairoMakie + AlgebraOfGraphics` pass is
-> banked in `docs/dev-log/check-log.md`, treat the nine-kind claim as holding for the
-> raw-Makie layer only. The CI test cannot catch this: it asserts the stub is method-less
-> with Makie/AoG absent, so it passes *whether or not* the extension loads or is correct.
+> **AoG migration re-verified 2026-07-08.** The `:variance_components` and
+> `:breeding_values` kinds were rerouted through AlgebraOfGraphics; the nine-kind draw was
+> re-run live on `AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`
+> (Julia 1.10.0) — 9/9 return a `Makie.Figure` for both inferred and explicit `kind`, both
+> AoG figures rasterize to PNG, and `Pkg.test()` stays green dependency-free. Evidence:
+> `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+>
+> **Note the CI blind spot.** The stub test asserts `isempty(methods(hsquared_figure))` with
+> Makie/AoG absent, so it passes *whether or not* the extension loads or is correct. A green
+> `Pkg.test()` is never evidence about the drawing layer — only a live draw is. Four defects
+> in this migration were invisible to CI, and three of those were invisible to plot-object
+> assertions too; they were caught only by **rendering the figure and looking at it**.
 
 **Verification (local-only; Makie/AoG are deliberately OUT of default CI — cost
 discipline):** all **nine** kinds draw a `Makie.Figure` (inferred + explicit `kind`),

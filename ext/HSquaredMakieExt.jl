@@ -55,8 +55,14 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
     spec = data(table) *
         mapping(:estimate, :rank, row = :panel) *
         visual(Scatter, markersize = 11, color = :black)
-    fg = draw(spec; axis = (; title = title, subtitle = caveat, xlabel = "estimate"),
-              figure = (; size = (760, 420)))
+    # `axis = (...)` is applied to EVERY facet axis, so title/subtitle must be FIGURE-level
+    # or they render once per panel. `ylabel` is blanked because AoG would otherwise label
+    # the y axis with the mapped variable ("rank"), which is an implementation detail.
+    # Facet scales are UNLINKED: h² lives on [0,1] while the variance components can span
+    # orders of magnitude — a shared x axis crushes the h² panel into an unreadable sliver.
+    fg = draw(spec; axis = (; xlabel = "estimate", ylabel = ""),
+              facet = (; linkxaxes = :none, linkyaxes = :none),
+              figure = (; title = title, subtitle = caveat, size = (760, 420)))
     fig = fg.figure
     axes = _axes_by_panel(fg, d.panel)
     terms = collect(string.(d.term))
@@ -76,12 +82,21 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
         ax.yticks[] = (ys[idx], terms[idx])
         vlines!(ax, [0.0]; color = :gray, linestyle = :dash)
     end
+    annotated = Set{String}()
     for i in 1:n
         panels[i] == "heritability" || continue   # boundary flag is h²-panel only
         if isfinite(d.lo[i]) && isfinite(d.hi[i]) && (d.lo[i] <= 0.0 || d.hi[i] >= 1.0)
             text!(axes[panels[i]], d.hi[i], ys[i]; text = " [0,1] boundary",
                   align = (:left, :center), fontsize = 10, color = :red)
+            push!(annotated, panels[i])
         end
+    end
+    # The annotation is anchored at `hi`, i.e. exactly the right data limit, and text
+    # extent does not enter Makie's autolimits — so it clips without extra right margin.
+    for panel in annotated
+        ax = axes[panel]
+        ax.xautolimitmargin[] = (0.05, 0.35)
+        autolimits!(ax)
     end
     return fig
 end
