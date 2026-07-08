@@ -1,6 +1,6 @@
 # Live Phase Snapshot — archive
 
-Thirty entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
+Thirty-one entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
 2026-06-20). **Nothing is summarised; nothing is deleted.**
 
 Why they moved: the `## Live Phase Snapshot` block had grown to **92% of `AGENTS.md`** (720 of 880
@@ -15,6 +15,27 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 6,000 B. The pattern was attributed, not copied.
 
 ---
+
+- **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;
+  Claude solo (Opus), autonomous; `/goal` "finish everything left in doc-25"; rows **55** / covered
+  **13** / `public_covered_count` **5** UNCHANGED throughout).** The doc-25 numbered map is CLEARED.
+  This continuation delivered + MERGED, each pre-declared + Rose-audited: **V8.5** APY genomic inverse
+  (#253), **V8.4** external blupf90 comparator for the matrix-free fit — estimand leg (#254), and the
+  ENTIRE **v0.7 GPU stream**: **V7.1** G-B Float32 (#255, tamia H100 — Float64 gate 7.3e-15, Float32
+  GEBV ~1e-6, speedup MODEST ~1.2×, TF32 not engaged), **V7.2** G-7.2 cross-device (#256, Narval A100 —
+  agreement PORTABLE ~1e-15, Float64 gate 3.0e-15; GBLUP bench 5.9×→46.7×), **V7.4** G-D backend
+  dispatcher (#257, opt-in `backend=:cuda` on the two construction ops; `:cpu` byte-identical), **V7.3**
+  G-C large-panel benchmark (#258, tamia H100 — handles n=20k×m=300k on one H100, 29% of 80GB; Float32
+  modest, transfer-bound), and **V7.5** G-E close-out (this slice — `status_cache` pointer refreshed,
+  stream consolidated). HONEST GPU summary: numerically exact + architecture-portable + handles realistic
+  panels, but Float32 only a minor win + no R-public surface → `V2-GRM-GPU` stays `partial`, NO covered
+  move. **doc-25 FULLY CLOSED** — both owed hardening legs now DISCHARGED (each Rose-audited + merged):
+  **V8.4 at-scale** (blupf90 vs exact-sparse vs matrix-free at q=4060, PR #260 — exact==blupf90 4.7e-6,
+  matrix-free ≤1%; the exact-infeasible regime q≫50k has NO external oracle by construction) and
+  **coverage-calibrated intervals** (DRAC fir job 46853279 — empirical coverage of the shipped
+  `:delta`/`:profile` h²/σ²a intervals: CONSERVATIVE over-coverage at small n, converging to nominal,
+  `:profile` > `:delta`; a characterization, no covered flip). `public_covered_count` **5** held across
+  the ENTIRE arc. START HERE: `docs/dev-log/after-task/2026-07-03-interval-coverage.md`.
 
 - **As of 2026-07-03 (doc-25 V7 GPU stream STARTED — V7.1 G-B Float32 RUN on tamia H100; Claude solo
   (Opus), autonomous; user steer "V7 GPU stream (finish doc-25)"; rows **55** / covered **13** /
