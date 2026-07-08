@@ -150,6 +150,7 @@ Maintain repo-visible memory in:
 ```sh
 julia --project=. -e 'using Pkg; Pkg.test()'
 julia --project=docs docs/make.jl
+bash tools/preamble_cap.sh          # this file is @imported into every session -- keep it small
 git status --short --branch
 gh run list --limit 3
 ```
@@ -168,4 +169,5 @@ A slice is done only when the relevant items are present:
 - validation-debt row;
 - Rose claim-vs-evidence audit;
 - clean local checks;
-- clean CI if pushed.
+- clean CI if pushed;
+- `bash tools/preamble_cap.sh` green (this file is re-read every session; it is capped).

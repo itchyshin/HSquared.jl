@@ -22,10 +22,11 @@ twin. The authoritative instructions live in `AGENTS.md` — read them:
   via the Agent/Task tool when a slice warrants a named lens (Ada, Shannon,
   Hopper, Henderson, Gauss, Fisher, Curie, Grace, Rose, Pat, …). Say explicitly
   when a subagent is actually running vs. used as a review perspective.
-- **Definition of Done:** the eleven items under `## Definition Of Done` in `AGENTS.md`, which this
-  file `@import`s above. **Not restated here.** The copy that used to sit on this line had already
-  drifted — it listed ten items, silently dropping *"example or explicit not-public-yet note"* — and
-  because `CLAUDE.md` imports `AGENTS.md`, both versions were in context at once, the wrong one first.
+- **Definition of Done:** the items under `## Definition Of Done` in `AGENTS.md`, which this
+  file `@import`s above. **Not restated here, and not counted here.** The copy that used to sit
+  on this line had drifted — ten items against eleven, silently dropping *"example or explicit
+  not-public-yet note"* — and because `CLAUDE.md` imports `AGENTS.md`, both versions were in
+  context at once, the wrong one first. A count is a claim; it drifts too.
 - **Local checks over CI:** run `julia --project=. -e 'using Pkg; Pkg.test()'`
   and `julia --project=docs docs/make.jl` locally before pushing.
 - **Honest status:** no fitting / performance / GPU / genomics / QTL / GLLVM
