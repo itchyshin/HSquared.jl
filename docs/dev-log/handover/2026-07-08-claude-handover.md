@@ -126,10 +126,11 @@ Branch `feat/2026-07-08-plotting-aog`:
    any ref until this branch). Coverage pins confirmed against `tools/status_cache.json` ground
    truth: `public_covered_count` **5**, rows **55**, covered **13**, `validation_status.jl` untouched.
 2. ~~**After-task report**~~ **DONE** → `docs/dev-log/after-task/2026-07-08-plotting-aog.md`.
-   Note: `tools/check-after-task.R` **does not work** as documented — it defines
-   `main_check_after_task()` and never calls it, so `Rscript tools/check-after-task.R <anything>`
-   exits 0, including for files that do not exist. Validate by `source()`-ing it and calling the
-   function. Filed separately.
+   Note: `tools/check-after-task.R` **was** broken (defined `main_check_after_task()` and never
+   called it, so the documented CLI exited 0 for any input, including nonexistent files).
+   **Fixed 2026-07-08** in `shinichi-brain` @ `c8b3b7d`; the sweep found `rose-pattern-scan.R` had
+   the identical defect. Both now work; the documented `Rscript tools/check-after-task.R <path>`
+   invocation is valid again.
 3. **Merge PR #264** (maintainer's call), then update the coordination board — this was a
    Julia-lane slice run from an R-lane session and the board still reads "Julia lane: this repository".
 4. *(Optional, worth raising)* **Strengthen the stub test.** Today it is satisfied by the extension

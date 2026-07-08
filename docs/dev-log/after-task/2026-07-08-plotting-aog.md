@@ -97,8 +97,13 @@ export PATH="$HOME/.juliaup/bin:$PATH"       # julia 1.10.0
 > it exits 0 for a file containing only `# nothing`, and for a path that does not exist. This report was
 > therefore validated by `source()`-ing the script and calling the function explicitly, with a negative
 > control (a bogus file correctly exits 1 and lists all 11 missing headers). **Every past "validated by
-> `check-after-task.R`" claim made via the documented CLI was vacuous.** Filed as a separate task; the
-> sibling validators in `~/shinichi-brain/tools/` should be swept for the same defect.
+> `check-after-task.R`" claim made via the documented CLI was vacuous.**
+>
+> **FIXED 2026-07-08** — `shinichi-brain` @ `c8b3b7d`, guarded by `sys.nframe() == 0L` (not
+> `!interactive()`, which is FALSE under `Rscript -e 'source(...)'` too and would have broken the
+> `source()` workaround). The documented CLI now works in all three directions. The sibling sweep found
+> **`rose-pattern-scan.R` had the identical defect** — both of the hub's R honesty gates were dead;
+> every shell and Python tool in `~/shinichi-brain/tools/` was fine.
 
 Assertions on the drawn object (payload `term=[sigma_a2, sigma_e2, h2]`, `lo=[5.0, NaN, -0.05]`,
 `hi=[35.0, NaN, 0.72]`):
@@ -292,7 +297,10 @@ than invariant. Both are now `translate!`d to `z=-1` and the driver asserts it o
   the CI stub-test blind spot in §6 exposed this. **A gate that cannot fail is not a gate**, and
   *three* of this slice's gates turned out to be that (the CI stub test, the report validator, and —
   until it was mutation-tested — the live-draw driver itself). Run the negative control on the tool,
-  not just the code.
+  not just the code. **Sequel:** fixing the validator, the Rose-principle sweep of its siblings found
+  `rose-pattern-scan.R` carried the identical defect. **Both** of the hub's R honesty gates had never
+  fired; every shell and Python tool was fine. One dead gate really does imply another
+  (`shinichi-brain` @ `c8b3b7d`).
 - **A verifying agent can still author the drift it verifies.** I found the double-draw, the fragile
   axis mapping, the mislabelled ticks, and four rendering defects — and in the same breath committed
   `test/runtests.jl` citing a 2026-06-22 report as evidence for a package that did not exist on any
