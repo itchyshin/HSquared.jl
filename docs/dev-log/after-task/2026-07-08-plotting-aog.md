@@ -1,5 +1,15 @@
 # After-task: AlgebraOfGraphics plotting-layer migration (recovered, fixed, verified)
 
+> **PARTIALLY SUPERSEDED — 2026-07-08, second Claude session.** This report is the accurate
+> record of *its own* session; two of its standing claims have since been overtaken. (1) It says
+> **four** defect classes: a **fifth** was found afterwards — the `[0,1]` flag was anchored at
+> `hi` for every crossing, so a `lo ≤ 0` interval flagged the end it respects. It had *passed*
+> this report's own plot-object assertion, which counted the annotation without checking its
+> position. (2) It calls the nine-kind draw **local-only / not in CI**: an opt-in `plotting` CI
+> job now runs the live-draw driver and uploads the figures (off by default). Current state:
+> `docs/dev-log/after-task/2026-07-08-plotting-aog-defect5.md` and the post-merge-review addendum
+> in `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+
 **Date:** 2026-07-08 · **Agent:** Claude (Opus 4.8), solo · **Lane:** Julia (`HSquared.jl`),
 entered from an R-lane session on explicit maintainer instruction
 **Branch:** `feat/2026-07-08-plotting-aog` · base `main` @ `a2fc7625` · PR

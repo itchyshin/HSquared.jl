@@ -17,10 +17,16 @@ no engine computation, nothing promoted.
 ## The CI blind spot (why this needed a live draw at all)
 
 `test/runtests.jl` asserts `isempty(methods(hsquared_figure))` with Makie/AoG deliberately out
-of CI. **That assertion passes precisely when the extension fails to load.** A green
-`Pkg.test()` is therefore zero evidence about the drawing layer. Every defect below was
-invisible to CI by construction; three of the four were invisible to plot-object assertions
-too, and surfaced only when the figure was **rendered and looked at**.
+of the default CI. **That assertion passes precisely when the extension fails to load.** A green
+`Pkg.test()` is therefore zero evidence about the drawing layer. Every defect below was invisible
+to the default CI by construction. Per the `Detected by` column: defects 1–3 were found by reading
+the code, and defect 4 only by **rendering the figure and looking at it** — as was defect 5, added
+in the post-merge-review addendum, which had also *passed* a plot-object assertion. Two of five.
+
+> Corrected 2026-07-08 (second session): this paragraph previously read "three of the four were
+> invisible to plot-object assertions," which the table below does not support. An opt-in
+> `plotting` CI job now runs the live-draw driver and uploads the figures; the *default* CI still
+> sees none of this.
 
 ## Defects found and fixed
 
@@ -135,8 +141,10 @@ generic function, so the CI posture (Makie/AoG out of CI, cost discipline) is un
   future AoG re-ordering would not be caught by that guard. It **is** caught by the driver's
   `forest_invariants()` (mutation-tested: reversing the level order exits 1). Re-run the driver
   on any AoG bump.
-- The nine-kind draw is **local-only** and is not run in CI. It must be re-run by hand on any
-  Makie/AoG version bump; CI will not tell you.
+- The nine-kind draw is **not run by the default CI**. Re-run it by hand on any Makie/AoG version
+  bump, or dispatch the opt-in `plotting` job (`run_plotting = true`), which runs the same driver
+  and uploads the figures. The default CI will not tell you. *(Added 2026-07-08, second session:
+  the job did not exist when this line first read "local-only".)*
 - The `[0,1] boundary` annotation and the tick/whisker geometry are asserted; the **subtitle
   text of the other seven kinds is not** — those kinds are asserted only to return a
   `Makie.Figure`. Their honest-status subtitles rest on the 2026-06-22 raw-Makie verification,
@@ -167,3 +175,72 @@ changes applied:
    term with `estimate ≈ 0` got a dashed line through it. Same as `main`, so not a regression,
    but "markers on top" was incidental rather than invariant. Both are now `translate!`d to
    `z = -1`, and the driver asserts it on every line layer in both figures.
+
+## Post-merge-review addendum (2026-07-08, second Claude session)
+
+Rehydrated from `handover/2026-07-08-claude-handover.md`. Re-ran the driver before trusting the
+handover's green.
+
+**Why the handover was not taken on faith.** It states (Critical Context (c)) that the two dead
+R honesty gates in the `shinichi-brain` hub were "fixed and pushed" at `3468312`. Running the
+negative control showed that claim was half wrong: `Rscript rose-pattern-scan.R <nonexistent>`
+still exited **0**. Restoring the script's missing `main()` invocation made it *run*, but
+`rose_pattern_scan()` never guarded its root, and `list.files()` returns `character(0)` for a
+missing directory with no error and no warning — so a typo'd path scanned zero files, found zero
+problems, and printed `Rose pattern scan passed`. Two layers, one defect. Fixed out-of-repo:
+`shinichi-brain@d85299f` (root guard), `@bbc1c34` (locale-independent matching); the lesson is
+banked at `@58a2936`. Since the handover's account of a gate it had itself declared fixed was
+wrong, its account of *this* branch was re-verified from scratch rather than believed — which is
+how defect 5 below was found.
+
+### Fifth defect: the `[0,1]` flag was anchored at the wrong end
+
+`_forest` annotated every boundary crossing at `d.hi[i]`, but the gate fires on
+`lo <= 0 || hi >= 1`. For the driver's own adversarial payload (`lo = -0.05, hi = 0.72`) the
+flag rendered at `x = 0.72` — the one end the interval respects — and the `xautolimitmargin`
+bump `(0.05, 0.35)` added headroom on the wrong side. Confirmed at the object level before
+fixing: `p[1][] == [[0.72, 1.0]]`, `p.align[] == (:left, :center)`.
+
+It survived the whole prior session because the driver asserted `nplots(ax, M.Text) == 1` —
+it counted the annotation and never asked **where** it was. Found by rendering `forest.png`
+and looking at it, exactly as this document's own CI-blind-spot note prescribes.
+
+**Fix.** Flag anchored at the crossed end: `lo` (right-aligned) when `lo <= 0`, `hi`
+(left-aligned) when `hi >= 1`, **both** when the interval crosses both; headroom added on the
+flagged side(s) only.
+
+**Driver strengthened.** `forest_invariants()` now asserts anchor **position and alignment**,
+plus axis headroom, for three payloads: `vc` (lo-crossing), `vc_hi` (hi-crossing, new), and
+`vc_both` (both ends, new). Counting is not checking.
+
+### Commands (Julia 1.10.0, macOS/arm64; `export PATH="$HOME/.juliaup/bin:$PATH"`)
+
+| Cell | Command | Result |
+| --- | --- | --- |
+| live draw | `julia --project=. .../2026-07-08-plotting-aog-livedraw.jl` | `ALL LIVE-DRAW CHECKS PASSED`; 9/9 kinds; `flag_placement = "ok (lo / hi / both)"` |
+| versions | `Pkg.status` | AoG 0.13.0 · Makie 0.24.13 · CairoMakie 0.15.13 |
+| visual | opened `forest.png`, `caterpillar.png` | flag now at the crossed end, unclipped |
+| mutation — double-draw | re-add the manual `scatter!` after the whisker loop | exit 1, `axis[1] double-draws markers` |
+| mutation — annotation gate | replace the `d.lo[i] <= 0.0` condition with `true` (the `lo` branch only) | exit 1, `annotation fired on the control payload` |
+| mutation — **anchor** | regress the `lo` branch to anchor at `d.hi[i]`, left-aligned | exit 1, `lo-crossing flag anchored at 0.72, not lo` |
+
+Each mutation is named for **exactly one** branch of the two-branch gate. Dropping *both* range
+conditions instead trips `h² panel missing the [0,1] boundary flag` first (the `vc` h² panel then
+carries two `Text` plots), so the row above would not reproduce — the mutation must be stated
+precisely or the evidence is not re-runnable. All three were applied to a **copy** of the package
+(`Project.toml` + `src/` + `ext/` dev'd into a scratch env); the repository working tree was never
+dirtied to run them.
+
+### Opt-in CI
+
+`.github/workflows/CI.yml` gains a `plotting` job: `workflow_dispatch` input `run_plotting`
+(default `false`), installs CairoMakie + AlgebraOfGraphics, runs the driver, and **uploads the
+rendered PNGs as an artifact**. `inputs` is empty on `pull_request`, so the job is skipped by
+default — the dependency-free CI posture is unchanged. A green there is still not visual
+verification; download the artifact and look.
+
+### Not covered
+
+One machine, one version set (Julia 1.10.0, macOS/arm64). No cross-version or cross-platform
+claim. The facet-order assumption (`sort(unique(panel))`) is still empirical, and the driver's
+shape guard still cannot see a re-ordering — only a facet-count mismatch.

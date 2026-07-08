@@ -85,20 +85,32 @@ function _forest(d::NamedTuple; title = "Variance components & heritability", kw
         # zero line drawn straight through its marker).
         translate!(vlines!(ax, [0.0]; color = :gray, linestyle = :dash), 0, 0, -1)
     end
-    annotated = Set{String}()
+    # The flag names WHICH boundary the interval crosses, so it must sit at the crossed
+    # END. Anchoring every flag at `hi` points the reader at the one end that is fine:
+    # for `lo = -0.05, hi = 0.72` the crossing is at the left, and a right-hand label
+    # (plus right-hand headroom) is actively misleading. An interval may cross both.
+    lo_flagged = Set{String}()
+    hi_flagged = Set{String}()
     for i in 1:n
         panels[i] == "heritability" || continue   # boundary flag is h²-panel only
-        if isfinite(d.lo[i]) && isfinite(d.hi[i]) && (d.lo[i] <= 0.0 || d.hi[i] >= 1.0)
+        (isfinite(d.lo[i]) && isfinite(d.hi[i])) || continue
+        if d.lo[i] <= 0.0
+            text!(axes[panels[i]], d.lo[i], ys[i]; text = "[0,1] boundary ",
+                  align = (:right, :center), fontsize = 10, color = :red)
+            push!(lo_flagged, panels[i])
+        end
+        if d.hi[i] >= 1.0
             text!(axes[panels[i]], d.hi[i], ys[i]; text = " [0,1] boundary",
                   align = (:left, :center), fontsize = 10, color = :red)
-            push!(annotated, panels[i])
+            push!(hi_flagged, panels[i])
         end
     end
-    # The annotation is anchored at `hi`, i.e. exactly the right data limit, and text
-    # extent does not enter Makie's autolimits — so it clips without extra right margin.
-    for panel in annotated
+    # Each annotation is anchored exactly at a data limit, and text extent does not enter
+    # Makie's autolimits — so it clips without extra margin on THAT side.
+    for panel in union(lo_flagged, hi_flagged)
         ax = axes[panel]
-        ax.xautolimitmargin[] = (0.05, 0.35)
+        ax.xautolimitmargin[] = (panel in lo_flagged ? 0.35 : 0.05,
+                                 panel in hi_flagged ? 0.35 : 0.05)
         autolimits!(ax)
     end
     return fig
@@ -148,7 +160,8 @@ end
 # "heritability", grid[2,1] == "variance components"); NOT re-verified on any other version.
 # The size guard below catches a facet-COUNT mismatch but NOT a RE-ORDERING, which would
 # silently swap the two panels' ticks and annotations. RE-RENDER THE FOREST AND CHECK THE
-# TICKS ON ANY AoG BUMP — CI cannot see this. Evidence:
+# TICKS ON ANY AoG BUMP — the default CI cannot see this (only the opt-in `plotting` job,
+# and only when dispatched). Evidence:
 # `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
 function _axes_by_panel(fg, panels)
     levels = sort(unique(string.(panels)))

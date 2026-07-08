@@ -1,10 +1,12 @@
 # Live-draw verification driver for the AlgebraOfGraphics plotting layer.
 #
 # WHY THIS EXISTS. `test/runtests.jl` asserts `isempty(methods(hsquared_figure))` with
-# Makie/AoG deliberately kept OUT of CI (cost discipline). That assertion passes PRECISELY
-# WHEN THE EXTENSION FAILS TO LOAD, so a green `Pkg.test()` is zero evidence about the
-# drawing layer. This script is the only thing that verifies it. Re-run it by hand on any
-# Makie / AlgebraOfGraphics / CairoMakie version bump — CI will not tell you.
+# Makie/AoG deliberately kept OUT of the DEFAULT test environment (cost discipline). That
+# assertion passes PRECISELY WHEN THE EXTENSION FAILS TO LOAD, so a green `Pkg.test()` is
+# zero evidence about the drawing layer. This script is the only thing that verifies it —
+# run either by hand, or as the opt-in `plotting` CI job (dispatch CI with
+# `run_plotting = true`), which runs this same file. The DEFAULT CI will never tell you.
+# Re-run it on any Makie / AlgebraOfGraphics / CairoMakie version bump.
 #
 # Evidence banked from this driver: docs/dev-log/check-log.d/2026-07-08-plotting-aog.md
 #
@@ -17,9 +19,12 @@
 #         Pkg.add(["CairoMakie", "AlgebraOfGraphics"])'
 #     julia --project=. /path/to/HSquared.jl/docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl
 #
-# Exits non-zero on any failed assertion. Writes forest.png / caterpillar.png to the cwd —
-# RENDER THEM AND LOOK AT THEM. Three of the four defect classes this driver was written for
-# were invisible to the object assertions below and visible instantly in the PNG.
+# Exits non-zero on any failed assertion. Writes forest.png / caterpillar.png to the cwd
+# BEFORE asserting, so the figures exist even on a failing run — RENDER THEM AND LOOK AT THEM.
+# Of the five defect classes this driver was written for, two (the clipped/linked-scale
+# cluster, and the flag anchored at the uncrossed end) were found only by looking at the PNG.
+# The second of those PASSED an object assertion below: it counted the annotation and never
+# asked where it was. Counting is not checking.
 
 using CairoMakie, AlgebraOfGraphics, HSquared
 const M = CairoMakie.Makie
@@ -40,6 +45,13 @@ vc = (term = ["sigma_a2", "sigma_e2", "h2"], estimate = [20.0, 40.0, 0.333],
 vc_ctl = (term = ["sigma_a2", "h2"], estimate = [20.0, 0.4], lo = [5.0, 0.2], hi = [35.0, 0.6],
           panel = ["variance components", "heritability"], supplied = false,
           interval_status = "delta")
+# The flag must sit at the END that is crossed. `vc` above crosses only `lo`; these cover
+# the other two cases. Counting annotations is not enough — a flag anchored at the wrong
+# end points the reader at the one boundary the interval respects.
+vc_hi = (term = ["h2"], estimate = [0.9], lo = [0.6], hi = [1.05],
+         panel = ["heritability"], supplied = false, interval_status = "delta")
+vc_both = (term = ["h2"], estimate = [0.5], lo = [-0.1], hi = [1.1],
+           panel = ["heritability"], supplied = false, interval_status = "delta")
 bv = (value = [0.5, -0.2, 1.3, 0.0], pev = [0.1, 0.2, 0.05, 0.3], pev_scale = "validation")
 gg = (is_eigenstructure_not_loadings = true, eigenvalues = [2.0, 1.0],
       variance_explained = [0.667, 0.333], axis_labels = ["PC1", "PC2"])
@@ -112,7 +124,39 @@ function forest_invariants()
     ctl = axes_of(hsquared_figure(vc_ctl; kind = :variance_components))
     @assert sum(ax -> nplots(ax, M.Text), ctl) == 0 "annotation fired on the control payload"
 
-    @info "forest invariants" facet_order = "ok" single_marker_layer = "ok" nan_whisker = "ok" z_order = "ok" boundary_h2_only = "ok" control = "ok"
+    # PLACEMENT: the flag must sit at the crossed END, not merely exist. Counting Text
+    # plots cannot see a flag anchored at `hi` for a `lo <= 0` crossing — it renders on
+    # the side the interval respects, with the headroom bump on the wrong side too.
+    # (x, y, halign). The ROW matters too: a flag at the right x on the wrong row still
+    # mislabels which term crosses the boundary, and counting Text plots cannot see that.
+    flags(ax) = [(p[1][][1][1], p[1][][1][2], p.align[][1]) for p in ax.scene.plots if p isa M.Text]
+
+    lo_only = flags(axs[1])                                   # vc: lo = -0.05, hi = 0.72
+    @assert length(lo_only) == 1
+    @assert lo_only[1][1] ≈ -0.05 "lo-crossing flag anchored at $(lo_only[1][1]), not lo"
+    @assert lo_only[1][2] ≈ 1.0 "lo-crossing flag on row $(lo_only[1][2]), not the h² row"
+    @assert lo_only[1][3] === :right "lo-crossing flag must be right-aligned"
+    @assert axs[1].finallimits[].origin[1] < -0.05 "no left headroom: the lo flag clips"
+
+    hi_ax = only(axes_of(hsquared_figure(vc_hi; kind = :variance_components)))
+    hi_only = flags(hi_ax)                                    # vc_hi: lo = 0.6, hi = 1.05
+    @assert length(hi_only) == 1
+    @assert hi_only[1][1] ≈ 1.05 "hi-crossing flag anchored at $(hi_only[1][1]), not hi"
+    @assert hi_only[1][2] ≈ 1.0 "hi-crossing flag on row $(hi_only[1][2]), not the h² row"
+    @assert hi_only[1][3] === :left "hi-crossing flag must be left-aligned"
+    lim = hi_ax.finallimits[]
+    @assert lim.origin[1] + lim.widths[1] > 1.05 "no right headroom: the hi flag clips"
+
+    both_ax = only(axes_of(hsquared_figure(vc_both; kind = :variance_components)))
+    both = sort(flags(both_ax); by = first)                   # vc_both: crosses BOTH ends
+    @assert length(both) == 2 "an interval crossing both ends must be flagged twice"
+    @assert both[1][1] ≈ -0.1 && both[1][3] === :right "both-ends: lo flag wrong"
+    @assert both[2][1] ≈ 1.1 && both[2][3] === :left "both-ends: hi flag wrong"
+    @assert both[1][2] ≈ 1.0 && both[2][2] ≈ 1.0 "both-ends: flags not on the h² row"
+    bl = both_ax.finallimits[]
+    @assert bl.origin[1] < -0.1 && bl.origin[1] + bl.widths[1] > 1.1 "both-ends: headroom missing"
+
+    @info "forest invariants" facet_order = "ok" single_marker_layer = "ok" nan_whisker = "ok" z_order = "ok" boundary_h2_only = "ok" control = "ok" flag_placement = "ok (lo / hi / both)"
 end
 
 function caterpillar_invariants()
@@ -131,11 +175,16 @@ function rasterize()
     save("forest.png", hsquared_figure(vc; kind = :variance_components))
     save("caterpillar.png", hsquared_figure(bv; kind = :breeding_values))
     @info "rasterized" forest = filesize("forest.png") caterpillar = filesize("caterpillar.png")
-    @warn "Object assertions are NOT visual verification. OPEN forest.png AND caterpillar.png."
 end
 
+# `rasterize()` runs BEFORE the invariants, not after. The figures are the evidence a human
+# reads on a FAILING run — two of the five defect classes were caught by looking at them and
+# by nothing else. Assert-then-rasterize exits on the first bad assertion with no PNG written,
+# so the CI job's `if: always()` artifact upload would have nothing to upload precisely when
+# it matters. Draw first, then assert.
 nine_kinds()
+rasterize()
 forest_invariants()
 caterpillar_invariants()
-rasterize()
+@warn "Object assertions are NOT visual verification. OPEN forest.png AND caterpillar.png."
 @info "ALL LIVE-DRAW CHECKS PASSED"

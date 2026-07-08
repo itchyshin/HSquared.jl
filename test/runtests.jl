@@ -9267,12 +9267,18 @@ end
     # TRAP — READ THIS BEFORE TRUSTING A GREEN CI RUN. `isempty(methods(...))` passes
     # PRECISELY WHEN THE EXTENSION FAILS TO LOAD. This testset is therefore ZERO evidence
     # that the drawing layer loads, resolves, or draws correctly; it only pins the
-    # dependency-free posture. The drawing layer is verified ONLY by a local live draw,
-    # which is NOT run here. Raw-Makie draw: after-task report
+    # dependency-free posture. The drawing layer is verified only by a live draw — locally,
+    # or via the opt-in `plotting` CI job described below; never by this testset.
+    # Raw-Makie draw: after-task report
     # `2026-06-22-l1-makie-figures.md`. AlgebraOfGraphics draw (the current code path for
     # `:variance_components` and `:breeding_values`):
     # `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`, driver
     # `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`.
+    #
+    # The driver also runs in CI as the OPT-IN `plotting` job (off by default; dispatch the
+    # CI workflow with `run_plotting = true`). Run it on any Makie / AlgebraOfGraphics /
+    # CairoMakie bump, and on any PR touching `ext/HSquaredMakieExt.jl`. It uploads the
+    # rendered PNGs as an artifact, because a green there is still not visual verification.
     @test hsquared_figure isa Function
     @test isempty(methods(hsquared_figure))          # stub: no methods without Makie
     @test_throws MethodError hsquared_figure((term = ["x"], panel = ["heritability"]))
