@@ -1,0 +1,63 @@
+cell=rg_low_rec1 scope=new seeds=50 G0=[1.0 0.0837; 0.0837 0.7] R0=[0.8 0.2; 0.2 0.55] design=8/16/56 rec=1
+=== GATE / AGGREGATE for rg_low_rec1 (scope=new) ===
+  converged=true iterations=364
+  converged=true iterations=258
+  converged=true iterations=248
+  converged=true iterations=207
+  converged=true iterations=213
+  converged=true iterations=419
+  converged=true iterations=227
+  converged=true iterations=206
+  converged=true iterations=219
+  converged=true iterations=273
+  converged=true iterations=207
+  converged=true iterations=196
+  converged=true iterations=277
+  converged=true iterations=202
+  converged=true iterations=199
+  converged=true iterations=357
+  converged=true iterations=196
+  converged=true iterations=242
+  converged=true iterations=242
+  converged=true iterations=189
+  converged=true iterations=430
+  converged=true iterations=225
+  converged=true iterations=209
+  converged=true iterations=475
+  converged=true iterations=214
+  converged=true iterations=216
+  converged=true iterations=243
+  converged=true iterations=275
+  converged=true iterations=249
+  converged=true iterations=246
+  converged=true iterations=269
+  converged=true iterations=477
+  converged=true iterations=217
+  converged=true iterations=471
+  converged=true iterations=462
+  converged=true iterations=804
+  converged=true iterations=333
+  converged=true iterations=589
+  converged=true iterations=242
+  converged=true iterations=309
+  converged=true iterations=275
+  converged=true iterations=245
+  converged=true iterations=221
+  converged=true iterations=546
+  converged=true iterations=180
+  converged=true iterations=285
+  converged=true iterations=219
+  converged=true iterations=284
+  converged=true iterations=169
+  converged=true iterations=223
+AGGREGATE Monte Carlo recovery (m = 50 seeds)
+  G[1,1]   1.0000   0.8723   -0.1277   0.0600   NO
+  G[1,2]   0.0837   0.0419   -0.0418   0.0374   yes
+  G[2,2]   0.7000   0.6909   -0.0091   0.0429   yes
+  R[1,1]   0.8000   0.8192    0.0192   0.0392   yes
+  R[1,2]   0.2000   0.2128    0.0128   0.0271   yes
+  R[2,2]   0.5500   0.5574    0.0074   0.0323   yes
+  EBV accuracy trait 1: mean=0.7316 sd=0.1378 (corr of EBV-hat with true BV)
+  EBV accuracy trait 2: mean=0.7548 sd=0.1572 (corr of EBV-hat with true BV)
+  converged=50/50  passed=1/50  pass-rate=0.020  Wilson95%=[0.004, 0.105]
+GATE cell=rg_low_rec1 mode=aggregate aggregate_within_2mcse=false per_seed_all_pass=false gate_pass=false seeds=50
