@@ -231,3 +231,5 @@ A slice is done only when the relevant items are present:
 - clean local checks;
 - clean CI if pushed;
 - `bash tools/preamble_cap.sh` green (this file is re-read every session; it is capped).
+<!-- shinichi-hub -->
+> Read \`~/shinichi-brain/AGENTS.md\` first; this repository's rules override the personal hub where they differ.
