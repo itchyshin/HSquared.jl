@@ -56,9 +56,11 @@ mkdir -p "$OUTDIR"
 if [[ "${RR_POOL:-0}" == "1" ]]; then
   POOLED="$OUTDIR/rr_wellpowered_pooled.tsv"
   if [[ ! -s "$POOLED" ]]; then echo "POOL: missing $POOLED (concat the per-task TSVs first)"; exit 2; fi
-  NTOT=2000
-  ALLSEEDS=$(seq -s, "$SEED0" "$((SEED0 + NTOT - 1))")
-  echo "POOL aggregate over $NTOT seeds from $POOLED"
+  # Derive the seed list from the pooled file itself (col 2), robust to any count
+  # (works for the 6-seed smoke and the 2000-seed full run). resume => 0 new fits.
+  ALLSEEDS=$(awk -F'\t' 'NR>1 {print $2}' "$POOLED" | sort -un | paste -sd, -)
+  NTOT=$(awk -F'\t' 'NR>1 {print $2}' "$POOLED" | sort -un | wc -l)
+  echo "POOL aggregate over $NTOT distinct seeds from $POOLED"
   julia --project=. sim/phase3_repeatability_recovery_gate.jl \
     --cell="$CELL" --scope="$SCOPE" \
     --nsire="$NSIRE" --ndam="$NDAM" --noffspring="$NOFF" --records="$RECORDS" \
