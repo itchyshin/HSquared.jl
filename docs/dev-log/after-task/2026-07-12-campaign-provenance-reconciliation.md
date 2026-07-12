@@ -9,7 +9,7 @@ DRAC evidence, preventing duplicate compute and unsupported capability promotion
 
 - Swept `main`, branches, worktrees, stashes, the R twin, and the multi-project brain index before launch.
 - Found the committed R-twin result checkpoint (`hsquared` `3221039`, corrected by `b90d4c3`).
-- Verified the cited Fir job IDs, array outcomes, raw `/project` result trees, row/seed counts, selected
+- Verified the cited Fir job IDs, array outcomes, raw remote result trees, row/seed counts, selected
   checksums, and machine-readable GATE lines over SSH.
 - Withheld every planned submission: the campaigns already ran, so no seed was duplicated.
 - Independently audited driver/pre-registration alignment and recorded the exact claim boundaries below.
@@ -30,7 +30,7 @@ No source, driver, capability-status, validation-status, or R-twin file changed.
 ## 5. Checks Run
 
 - Ultra-plan Phase 0.25: `git status -sb`, `git log --oneline -20`, `git branch -a`,
-  `git worktree list`, `git stash list`, staged/unstaged diffs — local `main` clean at `98b0d6c3`.
+  `git worktree list`, `git stash list`, staged/unstaged diffs — local `main` clean at `a6955220`.
 - Brain MCP `search_notes(..., search_all_projects=true)` — recovered doc 34 and the already-banked results.
 - `bash -n` on all five sbatch scripts — PASS (independent driver audit).
 - Julia `Meta.parseall` on all four drivers — PASS (independent driver audit).
@@ -80,7 +80,9 @@ so this report was created directly in the active repo instead.
 
 ## 10. Known Residuals
 
-The raw evidence remains on Fir `/project`, not copied into git. C1 claim-tier ratification still needs
+The raw evidence remains on Fir under
+`/home/snakagaw/projects/def-snakagaw/HSquared.jl/sim/drac/results/`, not copied into git.
+C1 claim-tier ratification still needs
 the h²=0.1 classification resolved plus Rose/maintainer review. supplied-K still owes its comparator,
 n-ladder/true-null, R wiring, maintainer IN/OUT decision, Rose, and G10. Repeatability remains partial after
 its banked negative. No automatic capability reconciliation was attempted.

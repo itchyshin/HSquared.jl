@@ -33,27 +33,34 @@ numerics, or public claim touched** — count stays 53, covered count unchanged,
 change is required or coming from this.** Flagged only so the shared ledger
 shows why #243 exists.
 
-### 2026-07-12 — Julia lane: coverage/recovery sim DRIVERS merged to `main` (scripts, not evidence)
+### 2026-07-12 — Julia lane: coverage/recovery evidence reconciled after driver merge
 
 Branch `sim/2026-07-10-coverage-recovery-drivers` fast-forwarded into `main`
 (now `98b0d6c3`, pushed) at Shinichi's instruction. `+2,299 −0`, additive: four
 coverage/recovery **sim drivers** + their DRAC sbatch scripts, plus two ancillary
 commits (Ranganathan subagent, brain-routing pointer).
 
-**Honest status — no evidence yet.** The drivers have **not been run**. No
-`capability-status` row moved, **`public_covered_count` unchanged (5)**, no public
-claim touched. The merge is scripts on `main`, nothing more — do not read it as
-coverage/recovery evidence.
+The earlier statement here that the drivers had not run was stale. A git-first prior-work
+sweep found that the exact committed driver lineage had already run on DRAC `fir` on
+2026-07-10 while it was still on the branch. The R twin had banked the outcomes, but this
+Julia board had not reconciled them. Codex rechecked the SLURM accounting, submit lines, raw
+TSV row/seed counts, machine-readable gate lines, and checksum-manifest digests directly on
+`fir`; see
+`docs/dev-log/recovery-checkpoints/2026-07-12-coverage-recovery-evidence-reconciliation.md`.
 
-**Action for whoever next holds this repo (live-toolchain / Codex lane) — run on
-Totoro/DRAC, never GitHub Actions (D-50):**
-- `sim/phase1_c1_rerun_interval_coverage.jl` → `sim/drac/phase1_c1_rerun.sbatch`
-- `sim/phase3_repeatability_recovery_gate.jl` → `sim/drac/phase3_repeatability_gate.sbatch` (+ `phase3_repeatability_confirm.sbatch`)
-- `sim/phase3_supplied_k_recovery_gate.jl` → `sim/drac/phase3_supplied_k_gate.sbatch`
-- `sim/phase4_v5_mv_recovery_reseed.jl` → `sim/drac/phase4_v5_reseed.sbatch`
+**Verified outcomes:** C1 20/20 tasks completed; at the interpretable `q=120`, 0.95-level
+interior cells `h2={0.3,0.5,0.7}`, h2 intervals meet the preregistered
+directional-conservative tier while sigma2_a delta/Wald under-covers at the worst cell.
+That public wording remains pending Rose audit and maintainer ratification. C8 16/16 completed with
+500/500 convergence per cell and only the two single-record x extreme-rg cells failing;
+supplied-K screen plus 2,000-replicate confirm clean in all three cells; repeatability
+screen passed in the interior but the 2,000-replicate confirm marginally failed
+(`bias=-0.00120`, `MCSE=0.00057`, `|bias|/MCSE=2.10`).
 
 They cite pre-reg doc 34. Results stay **local** + repo dev-log as evidence; a
-capability moves only behind the full chain + a Rose audit. Old branch still exists
+capability moves only behind the full chain + a Rose audit. **Do not rerun the
+repeatability confirm to seek a pass:** doc 34 R4 freezes the banked negative. No status
+was promoted and **`public_covered_count` remains 5**. Old branch still exists
 (identical to `main`) — delete whenever. **Before planning here, run the ultra-plan
 Phase 0.25 git-state sweep** (`git status -sb` / `log` / `branch -a` / `worktree
 list` / `stash list`) — we swap platforms and a prior session's branch is easy to
