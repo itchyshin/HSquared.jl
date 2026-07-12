@@ -33,6 +33,32 @@ numerics, or public claim touched** — count stays 53, covered count unchanged,
 change is required or coming from this.** Flagged only so the shared ledger
 shows why #243 exists.
 
+### 2026-07-12 — Julia lane: coverage/recovery sim DRIVERS merged to `main` (scripts, not evidence)
+
+Branch `sim/2026-07-10-coverage-recovery-drivers` fast-forwarded into `main`
+(now `98b0d6c3`, pushed) at Shinichi's instruction. `+2,299 −0`, additive: four
+coverage/recovery **sim drivers** + their DRAC sbatch scripts, plus two ancillary
+commits (Ranganathan subagent, brain-routing pointer).
+
+**Honest status — no evidence yet.** The drivers have **not been run**. No
+`capability-status` row moved, **`public_covered_count` unchanged (5)**, no public
+claim touched. The merge is scripts on `main`, nothing more — do not read it as
+coverage/recovery evidence.
+
+**Action for whoever next holds this repo (live-toolchain / Codex lane) — run on
+Totoro/DRAC, never GitHub Actions (D-50):**
+- `sim/phase1_c1_rerun_interval_coverage.jl` → `sim/drac/phase1_c1_rerun.sbatch`
+- `sim/phase3_repeatability_recovery_gate.jl` → `sim/drac/phase3_repeatability_gate.sbatch` (+ `phase3_repeatability_confirm.sbatch`)
+- `sim/phase3_supplied_k_recovery_gate.jl` → `sim/drac/phase3_supplied_k_gate.sbatch`
+- `sim/phase4_v5_mv_recovery_reseed.jl` → `sim/drac/phase4_v5_reseed.sbatch`
+
+They cite pre-reg doc 34. Results stay **local** + repo dev-log as evidence; a
+capability moves only behind the full chain + a Rose audit. Old branch still exists
+(identical to `main`) — delete whenever. **Before planning here, run the ultra-plan
+Phase 0.25 git-state sweep** (`git status -sb` / `log` / `branch -a` / `worktree
+list` / `stash list`) — we swap platforms and a prior session's branch is easy to
+miss (this entry is exactly that risk, mitigated). No `hsquared` change required.
+
 ## Public Landing Pages
 
 - Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
