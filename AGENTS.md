@@ -1,3 +1,5 @@
+Read first: /Users/z3437171/shinichi-brain/AGENTS.md
+
 # HSquared.jl Agent Instructions
 
 `HSquared.jl` is the Julia computational twin of the R package `hsquared`.
