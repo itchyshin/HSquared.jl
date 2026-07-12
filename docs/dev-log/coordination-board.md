@@ -66,6 +66,21 @@ Phase 0.25 git-state sweep** (`git status -sb` / `log` / `branch -a` / `worktree
 list` / `stash list`) — we swap platforms and a prior session's branch is easy to
 miss (this entry is exactly that risk, mitigated). No `hsquared` change required.
 
+### 2026-07-12 — Julia lane: post-hoc repeatability ratio-bias decomposition
+
+Using only the banked 2,000-seed confirm TSV (no new fits, seeds, or resampling), the exact
+decomposition assigns 10.3% of the realized `t` bias to the plug-in mean-component shift and
+89.7% to nonlinear averaging. A second-order Hessian/covariance diagnostic matches the exact
+nonlinear term to about 99%. All three supplied-K confirm cells show a similar negative
+ratio-curvature term, offset by positive plug-in mean shifts; they are controls/contrasts, not
+causal proof or repeatability validation.
+
+Interpretation is strictly post hoc: **consistent with ratio nonlinearity in this realized,
+convergence-conditional sample**, not “mechanism confirmed” or “engine defect excluded.” The
+doc-34 repeatability result remains `gate_pass=false`; V3-REPEAT-REML remains
+experimental/partial; `public_covered_count` remains **5**. Evidence:
+`docs/dev-log/recovery-checkpoints/2026-07-12-repeatability-ratio-bias-mechanism.md`.
+
 ## Public Landing Pages
 
 - Julia engine docs: <https://itchyshin.github.io/HSquared.jl/>
