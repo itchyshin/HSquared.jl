@@ -23,6 +23,35 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-07-08 — lane exception, now closed (plotting layer, PR #264 MERGED)
+
+The AlgebraOfGraphics plotting-layer slice was a **Julia-lane change made from an
+R-lane session**, on explicit maintainer instruction, across two Claude sessions.
+Recorded here because the standing rule above says the Julia thread owns this
+repository, and that rule was suspended for this slice only.
+
+- Landed: [HSquared.jl#264](https://github.com/itchyshin/HSquared.jl/pull/264) →
+  `main` @ `50131e69`. `hsquared` (R lane) was **never touched**; its `main` stayed
+  clean and synced throughout.
+- Scope: drawing layer only (`ext/HSquaredMakieExt.jl` + the live-draw driver + an
+  opt-in CI job + claim surfaces). **No engine, bridge, payload, or public-claim
+  change.** Coverage pins UNCHANGED: `public_covered_count` **5**, rows **55**,
+  covered **13**. **Nothing promoted.**
+- Five defect classes fixed; two of them were found only by *rendering the figure and
+  looking at it*, and the fifth had **passed** a plot-object assertion that counted the
+  `[0,1]` annotation without checking where it sat.
+- Two real `rose-systems-auditor` audits, both PROMOTE-WITH-CHANGES, all required
+  changes applied.
+- **No action owed from the R lane.** The lane exception is now closed; ordinary lane
+  discipline resumes.
+
+Standing note for both lanes: the default CI stub test asserts
+`isempty(methods(hsquared_figure))` with Makie/AoG out of that environment, so it
+**passes precisely when the extension fails to load**. A green `Pkg.test()` is never
+evidence about the drawing layer. Use the opt-in `plotting` CI job (dispatch CI with
+`run_plotting = true`) or run `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl`
+by hand — and look at the PNGs it uploads.
+
 ### 2026-07-02 — heads-up to the main lane (no contract impact)
 
 Julia-lane-only doc hygiene landing as [HSquared.jl#243](https://github.com/itchyshin/HSquared.jl/pull/243):
