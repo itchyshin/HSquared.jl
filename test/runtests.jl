@@ -3869,6 +3869,12 @@ end
     @test lower.fit.optimizer_status == "boundary_lower"
     @test lower.fit.variance_components.sigma_a2 > 0
     @test lower.fit.variance_components.sigma_e2 > 0
+    lower_sparse = sparse_reml_loglik(
+        lower_fixture.spec,
+        lower.fit.variance_components.sigma_a2,
+        lower.fit.variance_components.sigma_e2)
+    @test lower.fit.likelihood.loglik == lower_sparse.loglik
+    @test lower.fit.likelihood.beta == lower_sparse.beta
     @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) /
           length(lower_fixture.spec.y) <= 1e-8
     @test lower.boundary.lower_derivative_per_observation <= 1e-8
@@ -3881,6 +3887,12 @@ end
     @test upper.boundary.numerical_ratio == 1 - 1e-7
     @test upper.fit.converged
     @test upper.fit.optimizer_status == "boundary_upper"
+    upper_sparse = sparse_reml_loglik(
+        upper_fixture.spec,
+        upper.fit.variance_components.sigma_a2,
+        upper.fit.variance_components.sigma_e2)
+    @test upper.fit.likelihood.loglik == upper_sparse.loglik
+    @test upper.fit.likelihood.beta == upper_sparse.beta
     # This compares the epsilon representation (r = 1 - 1e-7) with the exact
     # r = 1 profile. Its first-order gap is about 1e-8 per observation; Julia
     # 1.12 BLAS/LAPACK variation raises the observed gap to 1.09e-8.
@@ -3926,10 +3938,81 @@ end
     end
     for r in (0.0, 0.37, 1.0)
         fast = HSquared._genomic_profile_reml(context, r)
+        generic = HSquared._genomic_profile_reml_generic(context, r)
         dense = dense_profile(r)
         @test fast.loglik ≈ dense.loglik atol=1e-10 rtol=0
         @test fast.t_hat ≈ dense.t_hat atol=1e-10 rtol=0
+        @test fast.loglik ≈ generic.loglik atol=1e-10 rtol=0
+        @test fast.t_hat ≈ generic.t_hat atol=1e-10 rtol=0
     end
+
+    grid = collect(0.0:HSquared._GENOMIC_BOUNDARY_GRID_STEP:1.0)
+    specialized_grid = [HSquared._genomic_profile_reml(context, r) for r in grid]
+    generic_grid = [HSquared._genomic_profile_reml_generic(context, r) for r in grid]
+    @test all(isapprox(a.loglik, b.loglik; atol=1e-10, rtol=0) &&
+              isapprox(a.t_hat, b.t_hat; atol=1e-10, rtol=0)
+              for (a, b) in zip(specialized_grid, generic_grid))
+    @test argmax(getproperty.(specialized_grid, :loglik)) ==
+          argmax(getproperty.(generic_grid, :loglik))
+    specialized_index = argmax(view(getproperty.(specialized_grid, :loglik), 2:400)) + 1
+    generic_index = argmax(view(getproperty.(generic_grid, :loglik), 2:400)) + 1
+    @test (grid[specialized_index - 1], grid[specialized_index + 1]) ==
+          (grid[generic_index - 1], grid[generic_index + 1])
+    # Warm both paths before comparing allocations. This is a tests-of-the-test
+    # guard: bypassing the p==1 dispatch with the allocation-heavy generic path
+    # must turn the performance specialization test red.
+    HSquared._genomic_profile_reml(context, 0.37)
+    HSquared._genomic_profile_reml_generic(context, 0.37)
+    specialized_allocations = @allocated HSquared._genomic_profile_reml(context, 0.37)
+    generic_allocations = @allocated HSquared._genomic_profile_reml_generic(context, 0.37)
+    @test specialized_allocations < generic_allocations
+
+    # The one-column specialization must use the actual rotated design column,
+    # not assume that the original design was an intercept.
+    nonconstant_X = reshape(collect(range(0.7, 1.3; length=n_boundary)), :, 1)
+    nonconstant_spec = animal_model_spec(interior_spec.y, nonconstant_X,
+        interior_spec.Z, interior_spec.Ainv; ids=interior_spec.ids, method=:REML)
+    nonconstant_precheck = HSquared._genomic_boundary_precheck(
+        nonconstant_spec, interior_fixture.provenance, interior_fixture.K)
+    nonconstant_context = HSquared._genomic_profile_context(nonconstant_precheck)
+    nonconstant_specialized = [HSquared._genomic_profile_reml(nonconstant_context, r) for r in grid]
+    nonconstant_generic = [HSquared._genomic_profile_reml_generic(nonconstant_context, r) for r in grid]
+    @test all(isapprox(a.loglik, b.loglik; atol=1e-10, rtol=0) &&
+              isapprox(a.t_hat, b.t_hat; atol=1e-10, rtol=0)
+              for (a, b) in zip(nonconstant_specialized, nonconstant_generic))
+    nonconstant_specialized_index =
+        argmax(view(getproperty.(nonconstant_specialized, :loglik), 2:400)) + 1
+    nonconstant_generic_index =
+        argmax(view(getproperty.(nonconstant_generic, :loglik), 2:400)) + 1
+    @test nonconstant_specialized_index == nonconstant_generic_index
+    @test (grid[nonconstant_specialized_index - 1], grid[nonconstant_specialized_index + 1]) ==
+          (grid[nonconstant_generic_index - 1], grid[nonconstant_generic_index + 1])
+
+    # Reused-eigen validation is algebraically identical to the sparse MME
+    # validator at the interior optimum and all four finite-difference
+    # perturbations. Endpoint result assembly deliberately retains sparse MME.
+    interior_components = interior.fit.variance_components
+    validation_points = [
+        (interior_components.sigma_a2, interior_components.sigma_e2),
+    ]
+    eta = log.([interior_components.sigma_a2, interior_components.sigma_e2])
+    for j in 1:2, direction in (-1.0, 1.0)
+        perturbed = copy(eta)
+        perturbed[j] += direction * 1e-5
+        push!(validation_points, (exp(perturbed[1]), exp(perturbed[2])))
+    end
+    for (sigma_a2, sigma_e2) in validation_points
+        eigen_fit = HSquared._genomic_eigen_reml(context, sigma_a2, sigma_e2)
+        sparse_fit = sparse_reml_loglik(interior_spec, sigma_a2, sigma_e2)
+        @test abs(eigen_fit.loglik - sparse_fit.loglik) / n_boundary <= 1e-10
+        @test eigen_fit.beta ≈ sparse_fit.beta atol=1e-10 rtol=0
+    end
+    @test isapprox(
+        HSquared._genomic_eigen_fd_log_gradient_norm(
+            context, interior_components.sigma_a2, interior_components.sigma_e2),
+        HSquared._genomic_fd_log_gradient_norm(
+            interior_spec, interior_components.sigma_a2, interior_components.sigma_e2);
+        atol=1e-10, rtol=0)
 
     supplied_provenance = HSquared._genomic_precision_provenance(
         Matrix(interior_spec.Ainv), interior_spec.ids)
@@ -3955,6 +4038,12 @@ end
     @test rescued.boundary.status == "interior_rescued"
     @test rescued.fit.converged
     @test rescued.fit.optimizer_status == "interior_rescued"
+    rescued_sparse = sparse_reml_loglik(
+        interior_spec,
+        rescued.fit.variance_components.sigma_a2,
+        rescued.fit.variance_components.sigma_e2)
+    @test rescued.fit.likelihood.loglik == rescued_sparse.loglik
+    @test rescued.fit.likelihood.beta == rescued_sparse.beta
     @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) /
           n_boundary <= 1e-8
 

@@ -683,6 +683,53 @@ function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2
     norm(gradient) / length(spec.y)
 end
 
+function _genomic_eigen_reml(context, sigma_a2::Real, sigma_e2::Real)
+    sa = Float64(sigma_a2)
+    se = Float64(sigma_e2)
+    sa > 0 || throw(ArgumentError("sigma_a2 must be positive"))
+    se > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    h = sa .* context.eigenvalues .+ se
+    all(isfinite, h) && all(>(0), h) || return nothing
+    weights = 1.0 ./ h
+    hi_x = weights .* context.X
+    hi_y = weights .* context.y
+    xt_hi_x = Symmetric(transpose(context.X) * hi_x)
+    fixed_factor = try
+        cholesky(xt_hi_x; check = true)
+    catch
+        return nothing
+    end
+    rhs = transpose(context.X) * hi_y
+    beta = fixed_factor \ rhs
+    quad = dot(context.y, hi_y) - dot(rhs, beta)
+    df = context.n - context.p
+    isfinite(quad) && quad > 0 && df > 0 || return nothing
+    logdet_v = sum(log, h)
+    logdet_fixed = 2sum(log, diag(fixed_factor.U))
+    loglik = -0.5 * (df * log(2pi) + logdet_v + logdet_fixed + quad)
+    isfinite(loglik) || return nothing
+    return GaussianLikelihoodResult(loglik, Vector{Float64}(beta), sa, se,
+                                    :REML, context.n, context.p)
+end
+
+function _genomic_eigen_fd_log_gradient_norm(context, sigma_a2, sigma_e2)
+    eta = log.([Float64(sigma_a2), Float64(sigma_e2)])
+    gradient = zeros(2)
+    h = 1e-5
+    for j in eachindex(gradient)
+        plus = copy(eta); minus = copy(eta)
+        plus[j] += h; minus[j] -= h
+        plus_fit = _genomic_eigen_reml(context, exp(plus[1]), exp(plus[2]))
+        minus_fit = _genomic_eigen_reml(context, exp(minus[1]), exp(minus[2]))
+        (plus_fit === nothing || minus_fit === nothing) && return Inf
+        lp = plus_fit.loglik
+        lm = minus_fit.loglik
+        all(isfinite, (lp, lm)) || return Inf
+        gradient[j] = (lp - lm) / (2h)
+    end
+    norm(gradient) / context.n
+end
+
 function _genomic_profile_context(precheck)
     n = length(precheck.y)
     # Canonicalize both marker and supplied-Q routes through the exact same Q→K
@@ -725,7 +772,7 @@ function _genomic_boundary_classify_candidates(lower_ll, interior_ll, upper_ll,
     return (status = "boundary_unresolved", reason = reason)
 end
 
-function _genomic_profile_reml(context, ratio::Real)
+function _genomic_profile_reml_generic(context, ratio::Real)
     r = Float64(ratio)
     0.0 <= r <= 1.0 || return nothing
     h = r .* context.eigenvalues .+ (1.0 - r)
@@ -749,6 +796,42 @@ function _genomic_profile_reml(context, ratio::Real)
     loglik = -0.5 * (df * (1 + log(2pi * t_hat)) + logdet_h + logdet_fixed)
     isfinite(loglik) || return nothing
     return (loglik = loglik, t_hat = t_hat)
+end
+
+function _genomic_profile_reml_p1(context, ratio::Real)
+    r = Float64(ratio)
+    0.0 <= r <= 1.0 || return nothing
+    eigenvalues = context.eigenvalues
+    x = view(context.X, :, 1)
+    y = context.y
+    a = 0.0
+    b = 0.0
+    c = 0.0
+    logdet_h = 0.0
+    @inbounds for i in eachindex(eigenvalues, x, y)
+        h = r * eigenvalues[i] + (1.0 - r)
+        isfinite(h) && h > 0 || return nothing
+        weight = inv(h)
+        xi = x[i]
+        yi = y[i]
+        a += xi * xi * weight
+        b += xi * yi * weight
+        c += yi * yi * weight
+        logdet_h += log(h)
+    end
+    isfinite(a) && a > 0 || return nothing
+    quad = c - b * b / a
+    df = context.n - 1
+    isfinite(quad) && quad > 0 && df > 0 || return nothing
+    t_hat = quad / df
+    loglik = -0.5 * (df * (1 + log(2pi * t_hat)) + logdet_h + log(a))
+    isfinite(loglik) || return nothing
+    return (loglik = loglik, t_hat = t_hat)
+end
+
+function _genomic_profile_reml(context, ratio::Real)
+    context.p == 1 ? _genomic_profile_reml_p1(context, ratio) :
+                     _genomic_profile_reml_generic(context, ratio)
 end
 
 function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
@@ -797,13 +880,13 @@ function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
         distinct_interior, d0, d1, n)
     if classification.status == "boundary_lower"
         return (status = "boundary_lower", reason = "likelihood_and_kkt", profile_ratio = 0.0,
-                exact = lower_part, d0 = d0, d1 = d1)
+                exact = lower_part, d0 = d0, d1 = d1, context = context)
     elseif classification.status == "boundary_upper"
         return (status = "boundary_upper", reason = "likelihood_and_kkt", profile_ratio = 1.0,
-                exact = upper_part, d0 = d0, d1 = d1)
+                exact = upper_part, d0 = d0, d1 = d1, context = context)
     elseif classification.status == "interior_profile"
         return (status = "interior_profile", reason = "profile_interior", profile_ratio = interior_r,
-                exact = interior_part, d0 = d0, d1 = d1)
+                exact = interior_part, d0 = d0, d1 = d1, context = context)
     end
     return (status = "boundary_unresolved", reason = classification.reason)
 end
@@ -833,7 +916,7 @@ function _fit_ai_reml_genomic_boundary(
         component_ok = all(abs(a - b) <= 1e-8 + 1e-5 * abs(b) for (a, b) in zip(ai_components, oracle_components))
         ratio_ok = abs(ratio_ai - profile.profile_ratio) <= 1e-8 + 1e-5 * abs(profile.profile_ratio)
         objective_ok = abs(ai.fit.likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8
-        gradient_ok = _genomic_fd_log_gradient_norm(spec, ai_components...) <= 1e-8
+        gradient_ok = _genomic_eigen_fd_log_gradient_norm(profile.context, ai_components...) <= 1e-8
         if ai.fit.converged && component_ok && ratio_ok && objective_ok && gradient_ok
             return (
                 fit = ai.fit,
@@ -847,7 +930,7 @@ function _fit_ai_reml_genomic_boundary(
             )
         end
         sigma_a2, sigma_e2 = oracle_components
-        _genomic_fd_log_gradient_norm(spec, sigma_a2, sigma_e2) <= 1e-8 ||
+        _genomic_eigen_fd_log_gradient_norm(profile.context, sigma_a2, sigma_e2) <= 1e-8 ||
             return _genomic_boundary_unresolved(ai, "interior_profile_gradient")
         likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
         all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
@@ -873,6 +956,10 @@ function _fit_ai_reml_genomic_boundary(
                       profile.status == "boundary_upper" ? 1 - _GENOMIC_BOUNDARY_EPSILON : ratio
     sigma_a2 = numerical_ratio * profile.exact.t_hat
     sigma_e2 = (1 - numerical_ratio) * profile.exact.t_hat
+    # Preserve the frozen sparse-MME result representation at the two epsilon
+    # boundaries. Near r = 1 the two algebraically equivalent forms differ by a
+    # few ulps, consistently with cancellation in the determinant identity, so
+    # replacing it would change the reported likelihood.
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
         return _genomic_boundary_unresolved(ai, "boundary_representation_nonfinite")
