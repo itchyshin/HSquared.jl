@@ -165,8 +165,14 @@ function _assert_single_threaded()
     BLAS.set_num_threads(1)
 end
 
+function _active_project()
+    project = Base.active_project()
+    project === nothing && error("active Julia project required")
+    project
+end
+
 function _git_root()
-    project = something(Base.active_project(), error("active Julia project required"))
+    project = _active_project()
     readchomp(`git -C $(dirname(project)) rev-parse --show-toplevel`)
 end
 _git_commit(root) = readchomp(`git -C $root rev-parse HEAD`)
@@ -356,7 +362,7 @@ function _settings(path)
 end
 
 function _environment_rows(root, frozen, discovery_sha)
-    project=something(Base.active_project(),error("active project required")); manifest=joinpath(dirname(project),"Manifest.toml")
+    project=_active_project(); manifest=joinpath(dirname(project),"Manifest.toml")
     isfile(manifest) || error("Manifest.toml required")
     r_version=first(split(read(`R --version`,String),'\n'))
     [["schema_version",SCHEMA_VERSION], ["execution_commit",frozen.execution_commit],
