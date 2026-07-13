@@ -87,7 +87,7 @@ run_units() {
       1) order=(reference_boundary candidate_boundary default_ai) ;;
       2) order=(candidate_boundary default_ai reference_boundary) ;;
     esac
-    timed_order=$(IFS='>'; echo "${order[*]}")
+    timed_order=$(IFS=">"; echo "${order[*]}")
     index=0
     for implementation in "${order[@]}"; do
       index=$((index+1))
@@ -121,6 +121,21 @@ argument_selftest() {
   esac
   [[ "$cycle" == 1 && "$order" == "reference_boundary>candidate_boundary>default_ai" ]] || {
     echo "Latin-order launcher selftest failed" >&2
+    exit 1
+  }
+  observed=$(printf 'cell\t123\tcontrol\t4\n' | xargs -n 4 bash -c '
+    set -euo pipefail
+    seed=$2; repeat=$4; cycle=$(( (seed + repeat) % 3 ))
+    case "$cycle" in
+      0) order=(default_ai reference_boundary candidate_boundary) ;;
+      1) order=(reference_boundary candidate_boundary default_ai) ;;
+      2) order=(candidate_boundary default_ai reference_boundary) ;;
+    esac
+    timed_order=$(IFS=">"; echo "${order[*]}")
+    printf "%s|%s|%s" "$1" "$cycle" "$timed_order"
+  ' _)
+  [[ "$observed" == "cell|1|reference_boundary>candidate_boundary>default_ai" ]] || {
+    echo "nested worker-script selftest failed" >&2
     exit 1
   }
 }
