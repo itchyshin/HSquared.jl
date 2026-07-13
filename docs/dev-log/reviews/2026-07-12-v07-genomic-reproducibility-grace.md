@@ -44,6 +44,52 @@ reproducibility lens, the repaired harness is ready for a **fresh**, external,
 clean. This is launch readiness only, not recovery evidence, an activation
 verdict, a capability/count move, or maintainer G10.
 
+## Post-clean false-positive discovery and final recheck
+
+**Rechecked again:** 2026-07-12
+
+**Pinned R commit:** `d4cefe10c155f87625bd5304d77e388a657c4eca`
+
+**Pinned Julia commit:** `fade1d02cb2a9b404ec5d2d97da73fa291ac1237`
+
+**Final verdict:** **CLEAN**
+
+The first live execution after the preceding CLEAN exposed one more gate that
+could not fail: `devtools::test()` printed a failed test but returned status zero,
+while the shell gate inspected only skips and therefore printed PASS. This was a
+real false-positive gate, so the preceding CLEAN was withdrawn until repaired.
+
+The R gate now scans the captured log for either the testthat `══ Failed` section
+or a positive `FAIL N`, in addition to its existing positive-skip check. Its
+`--selftest` proves all four directions: `FAIL 0` and `SKIP 0` are accepted;
+`FAIL 1` and `SKIP 1` are rejected. The stale failing assertion that exposed the
+problem was removed rather than hidden behind the shell parser.
+
+Grace independently reran:
+
+```text
+bash -n tools/run-v07-genomic-live-gate.sh                         PASS
+bash tools/run-v07-genomic-live-gate.sh --selftest                PASS
+git diff --check -- tools/run-v07-genomic-live-gate.sh            PASS
+exact commit-pinned live R--Julia gate                             PASS
+```
+
+The live run completed `boundary-genomic`, `genomic`, and the independent
+recomputation tests with no failed or skipped section, printed `Julia exit.`, and
+then emitted:
+
+```text
+V07_GENOMIC_LIVE_GATE_PASS
+hsquared_commit=d4cefe10c155f87625bd5304d77e388a657c4eca
+HSquared_jl_commit=fade1d02cb2a9b404ec5d2d97da73fa291ac1237
+fixture_tree=33bff946724b2ad7cf43e90e6a244079b917a747
+```
+
+The final verdict is therefore CLEAN from Grace's reproducibility lens. The
+lesson is retained explicitly: a subprocess exit code is not sufficient evidence
+when its test runner can report failure while returning zero; parse the semantic
+failure surface and mutation-test both zero and positive counts.
+
 ## Scope
 
 Independent review of campaign immutability, resume and denominator integrity,

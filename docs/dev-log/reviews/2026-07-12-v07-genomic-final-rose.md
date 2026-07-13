@@ -48,6 +48,40 @@ or imply G10. A future activation attempt requires optimizer localization, a
 fresh preregistered end-to-end campaign from the repaired committed harness,
 independent verification, a new Rose audit, and maintainer G10.
 
+## Post-Rose live-gate honesty event
+
+After the first `CLEAN-WITH-LIMITATIONS` verdict, the exact-commit live run found
+one more false-green gate. A stale assertion referenced the removed
+`fit_explicit` object, so `devtools::test()` reported a required live-test
+failure but still returned shell status zero. The gate checked skips and Julia
+shutdown, but not the reporter's failure summary, and therefore printed PASS.
+
+R commit `d4cefe10c155f87625bd5304d77e388a657c4eca` repairs both sides of the
+defect:
+
+- the stale default-route identity assertion is removed, consistent with the
+  held opt-in endpoint;
+- `tools/run-v07-genomic-live-gate.sh` now rejects either a `Failed` section or
+  a positive `FAIL` count;
+- the gate self-test proves `FAIL 0` is accepted and `FAIL 1` is rejected, in
+  addition to the existing zero-skip/positive-skip controls.
+
+The commit-pinned live gate then passed at R
+`d4cefe10c155f87625bd5304d77e388a657c4eca` and Julia
+`fade1d02cb2a9b404ec5d2d97da73fa291ac1237`. Rose independently inspected the
+committed parser and ran its self-test (`V07_GENOMIC_LIVE_GATE_SELFTEST_PASS`);
+an attempted duplicate full run correctly refused while Grace's concurrent
+recheck made the Julia tree dirty, demonstrating that the clean-tree precondition
+also fails closed. Grace's completed post-event recheck independently records the
+exact pinned gate PASS and retains a final `CLEAN` reproducibility verdict.
+
+This event **does not broaden or reverse the endpoint verdict**. It strengthens
+the reproducibility gate and removes a stale assertion; it creates no recovery
+evidence, default activation, confirmation result, capability/count move, or
+G10. The final Rose verdict remains **CLEAN-WITH-LIMITATIONS** for the negative,
+opt-in endpoint. The gate itself is now another explicit tests-of-the-tests
+obligation for any future activation campaign.
+
 ## Initial audit bottom line (superseded by the re-audit above)
 
 The scientific decision is conservative and correct: the 432-row run does not
