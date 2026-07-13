@@ -552,10 +552,16 @@ end
 function dataset_mode(args)
     outdir=abspath(_required(args,"out-dir")); phase=String(_required(args,"phase")); cellid=String(_required(args,"cell")); seed=parse(Int,_required(args,"seed"))
     manifest=_manifest(outdir,phase); mrows=_dataset_manifest_rows(manifest,cellid,seed); !isempty(mrows) || error("dataset absent from manifest")
+    final=joinpath(outdir,"datasets",phase,cellid,string(seed))
+    if isdir(final) && _bool(args,"resume",true)
+        _validate_packet(outdir,phase,cellid,seed)
+        println("resume: sealed $(final)")
+        return
+    end
     rawrows=Vector{Vector{String}}()
     for mr in mrows; push!(rawrows,_read_raw(_raw_path(outdir,phase,cellid,seed,mr["arm_id"]),mr)); end
     cell=_cell(cellid); data=_dataset(cell,seed); role=only(unique(mr["role"] for mr in mrows)); env=_settings(joinpath(outdir,"environment_manifest.tsv"))
-    final=joinpath(outdir,"datasets",phase,cellid,string(seed)); ispath(final) && error("dataset packet already exists")
+    ispath(final) && error("dataset packet already exists")
     tmp=final*".tmp.$(getpid())"; mkpath(tmp)
     _write_table_exclusive(joinpath(tmp,"y.tsv"),["row","y"],
                            [[i,data.y[i]] for i in eachindex(data.y)])

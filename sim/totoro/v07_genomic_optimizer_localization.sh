@@ -57,7 +57,9 @@ run_oracles() {
       packet="$OUT_DIR/datasets/'"$phase"'/$cell/$seed"
       output="$OUT_DIR/oracle/'"$phase"'/$cell/$seed.tsv"
       mkdir -p "$(dirname "$output")"
-      Rscript "$R_ORACLE" oracle --dataset "$packet" --output "$output"
+      if [[ ! -e "$output" && ! -e "$output.sha256" ]]; then
+        Rscript "$R_ORACLE" oracle --dataset "$packet" --output "$output"
+      fi
       Rscript "$R_ORACLE" verify --dataset "$packet" --output "$output"
       "$JULIA_BIN" --project="$REPO_ROOT" "$DRIVER" --mode=verify \
         --phase="'"$phase"'" --cell="$cell" --seed="$seed" --out-dir="$OUT_DIR"
