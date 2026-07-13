@@ -23,6 +23,25 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
+
+Codex held both twins sequentially for the preregistered doc-46 boundary slice.
+Julia core `ecc058f3` and R bridge/oracle `68e2bd06` passed their full and
+commit-pinned live checks; an independent adversarial review returned `CLEAN`.
+The create-once Totoro candidate at execution commit `d89100cd` then opened 240
+fresh holdout datasets. It resolved every independent-oracle classification and
+improved 30 default failures with 0 losses, but one cell failed the frozen 3x
+p95 runtime gate (5.99x). Therefore the aggregate outcome is
+`BOUNDARY_HOLDOUT_FAIL`: the nine-cell recovery campaign and default/public R
+activation remain held, all holdout seeds are spent, no status/count row moved,
+and `public_covered_count` remains 5. The reusable launcher argument fix landed
+after sealing at `75279136`; it changes orchestration only. Full evidence:
+`docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
+
+Current lane state: Julia and R implementation branches are pushed; neither is
+merged. The next shared seam is a separately preregistered performance-
+localization candidate on discovery seeds plus a new untouched holdout block.
+
 ### 2026-07-08 — lane exception, now closed (plotting layer, PR #264 MERGED)
 
 The AlgebraOfGraphics plotting-layer slice was a **Julia-lane change made from an
