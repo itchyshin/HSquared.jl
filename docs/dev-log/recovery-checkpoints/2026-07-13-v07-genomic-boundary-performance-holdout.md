@@ -92,8 +92,9 @@ This is performance and closed-boundary evidence for the selected Julia
 candidate linked to the explicit R genomic bridge. It is not nine-cell
 known-truth recovery and does not repair the evidentiary limitation of the old
 Julia-only diagnostic pilot. The next gate is a new, preregistered, fresh-seed
-pilot that calls the public R formula with the explicit genomic target in one
-R process per seed. Confirmation remains forbidden unless all nine pilot cells
+pilot that calls the ordinary public R formula in one R process per seed:
+`hsquared(y ~ genomic(1 | id, markers = M), data = dat, family = gaussian(), REML = TRUE)`,
+with no engine or target control. The explicit target remains a compatibility
+route, not the recovery target. Confirmation remains forbidden unless all nine pilot cells
 meet the frozen convergence and precision rules. Independent cross-language
 recomputation and final Fisher/Darwin/Grace/Rose audits are still outstanding.
-

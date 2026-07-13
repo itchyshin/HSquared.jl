@@ -37,9 +37,11 @@ const CELLS = [
 ]
 
 const MANIFEST_COLUMNS = split("tier cell_id cell_index seed_offset seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio ridge regime")
-const ATTEMPT_COLUMNS = split("tier cell_id cell_index seed_offset seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio ridge attempted status error_class converged boundary_status boundary_reason boundary_epsilon scientific_sigma_g2 scientific_sigma_e2 scientific_ratio profile_t_hat numerical_sigma_g2 numerical_sigma_e2 numerical_ratio profile_loglik lower_derivative_per_observation upper_derivative_per_observation iterations objective gradient_norm runtime_seconds peak_rss_mb relationship_source relationship_method allele_frequency_source relationship_scale scale_denominator marker_hash id_hash kernel_hash precision_hash route r_implementation_commit julia_implementation_commit driver_commit seal_sha256")
+const ATTEMPT_COLUMNS = split("tier cell_id cell_index seed_offset seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio ridge attempted status error_class converged boundary_status boundary_reason boundary_epsilon scientific_sigma_g2 scientific_sigma_e2 scientific_ratio fitted_total_variance numerical_sigma_g2 numerical_sigma_e2 numerical_ratio profile_loglik lower_derivative_per_observation upper_derivative_per_observation iterations objective gradient_norm runtime_seconds peak_rss_mb relationship_source relationship_method allele_frequency_source relationship_scale scale_denominator marker_hash id_hash kernel_hash precision_hash route r_implementation_commit julia_implementation_commit driver_commit seal_sha256")
 const SUMMARY_COLUMNS = split("tier cell_id n_expected n_attempted n_converged n_bias_rows n_interior n_interior_rescued n_boundary_lower n_boundary_upper n_unresolved n_error n_resolved_valid convergence_rate wilson_lower wilson_upper target truth mean_estimate bias mcse pilot_sd_upper bias_ci_lower bias_ci_upper margin target_pass required_n_raw required_n cell_status campaign_status failure_classes")
-const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon resolved_statuses output_absent_before_seal")
+const CORPUS_COLUMNS = ["relative_path", "sha256"]
+const PACKET_PRIMARIES = ["markers.tsv", "ids.tsv", "phenotype.tsv", "truth.tsv", "packet_files_lock.tsv"]
+const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon resolved_statuses output_absent_before_seal")
 
 struct TSV
     columns::Vector{String}
@@ -153,12 +155,18 @@ function _read_seal(root)
     seal["resolved_statuses"] == join(RESOLVED, ',') || error("seal resolved-status drift")
     seal["pilot_offsets"] == "7001:7048" || error("seal pilot offsets drift")
     seal["confirmation_offsets"] == "8001:10000" || error("seal confirmation offsets drift")
+    seal["output_root"] == root || error("output root differs from seal")
     for key in ("driver_commit", "julia_execution_commit", "r_selected_tree", "julia_selected_tree")
         _hex(seal[key], 40) || error("invalid $key in seal")
     end
-    for key in ("driver_sha256", "launcher_sha256", "doc48_sha256", "r_recomputer_sha256", "julia_recomputer_sha256")
+    for key in ("driver_sha256", "launcher_sha256", "doc48_sha256", "r_recomputer_sha256",
+                "julia_recomputer_sha256", "admission_receipt_sha256")
         _hex(seal[key], 64) || error("invalid/unsealed $key")
     end
+    admission=seal["admission_receipt_path"]
+    isabspath(admission)&&isfile(admission)&&!islink(admission)&&realpath(admission)==admission||
+        error("execution admission receipt path is not canonical")
+    _sha256(admission)==seal["admission_receipt_sha256"]||error("execution admission receipt differs from seal")
     _sha256(abspath(@__FILE__)) == seal["julia_recomputer_sha256"] || error("Julia recomputer differs from seal")
     realpath(dirname(dirname(abspath(@__FILE__)))) == seal["julia_root"] || error("Julia recomputer checkout path differs from seal")
     seal
@@ -214,11 +222,13 @@ function _attempt_row(d)
      converged=_bool(d["converged"], "converged"), boundary_status=d["boundary_status"],
      boundary_reason=d["boundary_reason"], boundary_epsilon=numeric("boundary_epsilon"),
      scientific_sigma_g2=numeric("scientific_sigma_g2"), scientific_sigma_e2=numeric("scientific_sigma_e2"),
-     scientific_ratio=numeric("scientific_ratio"), profile_t_hat=numeric("profile_t_hat"),
+     scientific_ratio=numeric("scientific_ratio"), fitted_total_variance=numeric("fitted_total_variance"),
      numerical_sigma_g2=numeric("numerical_sigma_g2"), numerical_sigma_e2=numeric("numerical_sigma_e2"),
      numerical_ratio=numeric("numerical_ratio"), profile_loglik=numeric("profile_loglik"),
      lower_derivative=numeric("lower_derivative_per_observation"), upper_derivative=numeric("upper_derivative_per_observation"),
-     runtime_seconds=numeric("runtime_seconds"), relationship_source=d["relationship_source"],
+     iterations=numeric("iterations"), objective=numeric("objective"), gradient_norm=numeric("gradient_norm"),
+     runtime_seconds=numeric("runtime_seconds"), peak_rss_mb=numeric("peak_rss_mb"),
+     relationship_source=d["relationship_source"],
      relationship_method=d["relationship_method"], allele_frequency_source=d["allele_frequency_source"],
      relationship_scale=d["relationship_scale"], scale_denominator=numeric("scale_denominator"),
      marker_hash=d["marker_hash"], id_hash=d["id_hash"], kernel_hash=d["kernel_hash"],
@@ -263,7 +273,7 @@ end
 
 function _packet_audit(root, tier, mr)
     dir = joinpath(root,"packets",tier,mr.cell_id,string(mr.seed))
-    primary = ["markers.tsv","ids.tsv","phenotype.tsv","truth.tsv","packet_files_lock.tsv"]
+    primary = PACKET_PRIMARIES
     _exact_entries(root,dir,vcat(primary,primary.*".sha256"))
     lock = _read_tsv(root,joinpath(dir,"packet_files_lock.tsv"),["file","sha256"])
     length(lock.rows)==4 || error("packet lock row count drift")
@@ -337,10 +347,14 @@ function _validate_attempt(ar,mr,audit,seal,seal_hash)
             ar.numerical_sigma_g2,ar.numerical_sigma_e2,ar.profile_loglik,ar.lower_derivative,ar.upper_derivative)) || error("nonfinite successful evidence")
         ratio = ar.boundary_status=="boundary_lower" ? 0.0 : ar.boundary_status=="boundary_upper" ? 1.0 : ar.scientific_ratio
         total = ar.numerical_sigma_g2 + ar.numerical_sigma_e2
-        total>=0 && abs(total-ar.profile_t_hat)<=1e-12 || error("profile total is not numerical sg+se")
+        total>=0 && abs(total-ar.fitted_total_variance)<=1e-12 || error("fitted total is not numerical sg+se")
         total>0 && abs(ar.numerical_ratio-ar.numerical_sigma_g2/total)<=1e-12 || error("numerical ratio/component drift")
         ar.boundary_status=="boundary_lower" && ar.numerical_ratio!=BOUNDARY_EPSILON && error("lower endpoint numerical ratio drift")
         ar.boundary_status=="boundary_upper" && ar.numerical_ratio!=1-BOUNDARY_EPSILON && error("upper endpoint numerical ratio drift")
+        ar.boundary_status in ("interior", "interior_rescued") && !(0 < ar.scientific_ratio < 1) &&
+            error("interior scientific ratio is not strictly inside (0,1)")
+        all(x -> isnan(x) || isfinite(x), (ar.iterations, ar.objective, ar.gradient_norm, ar.peak_rss_mb)) ||
+            error("retained diagnostic is infinite")
         abs(ar.scientific_ratio-ratio)<=1e-12 && abs(ar.scientific_sigma_g2-ratio*total)<=1e-12 &&
             abs(ar.scientific_sigma_e2-(1-ratio)*total)<=1e-12 || error("scientific endpoint derivation drift")
         ar.relationship_source=="markers" && ar.relationship_method=="vanraden1" &&
@@ -355,6 +369,30 @@ function _validate_attempt(ar,mr,audit,seal,seal_hash)
         ar.boundary_reason!="NA" || error("unresolved boundary lacks reason")
     end
     merge(ar,(derived_sigma_g2=NaN,derived_sigma_e2=NaN,derived_ratio=NaN,resolved_valid=false))
+end
+
+function _corpus_entries(root, tier, manifest)
+    paths = String[joinpath(root, "$(tier)_manifest.tsv")]
+    for row in manifest
+        push!(paths, joinpath(root, "attempts", tier, row.cell_id, "$(row.seed).tsv"))
+        packet_root = joinpath(root, "packets", tier, row.cell_id, string(row.seed))
+        append!(paths, joinpath.(Ref(packet_root), PACKET_PRIMARIES))
+    end
+    rows = Vector{Vector{String}}()
+    for path in paths
+        verified = _verify_pair(root, path)
+        push!(rows, [relpath(verified, root), _sha256(verified)])
+    end
+    sort!(rows; by=first)
+    allunique(first.(rows)) || error("duplicate corpus path")
+    TSV(CORPUS_COLUMNS, rows)
+end
+
+function _verify_corpus_lock(root, tier, manifest)
+    observed = _read_tsv(root, joinpath(root, "$(tier)_corpus_lock.tsv"), CORPUS_COLUMNS)
+    expected = _corpus_entries(root, tier, manifest)
+    observed.rows == expected.rows || error("current corpus differs from sealed lock")
+    nothing
 end
 
 function _load_attempts(root,tier,manifest,seal)
@@ -473,7 +511,10 @@ function _write_once(path,text)
 end
 
 function recompute(outdir,tier)
-    root=_safe_root(outdir);seal=_read_seal(root);manifest=_read_manifest(root,tier);attempts=_load_attempts(root,tier,manifest,seal)
+    root=_safe_root(outdir);seal=_read_seal(root);manifest=_read_manifest(root,tier)
+    _verify_corpus_lock(root,tier,manifest)
+    attempts=_load_attempts(root,tier,manifest,seal)
+    _verify_corpus_lock(root,tier,manifest)
     rows=_summarize(attempts,manifest,tier);length(rows)==27||error("summary must have 27 rows")
     path=joinpath(root,"$(tier)_summary_julia.tsv");_write_once(path,_summary_text(rows));println("wrote $path rows=27 campaign_status=$(rows[1].campaign_status)")
 end
@@ -500,9 +541,10 @@ function selftest()
         truth_sigma_g2=0.5,truth_sigma_e2=0.5,truth_ratio=0.5,ridge=RIDGE,attempted=true,
         status="success",error_class="none",converged=true,boundary_status="interior",
         boundary_reason="ai_interior",boundary_epsilon=BOUNDARY_EPSILON,
-        scientific_sigma_g2=0.5,scientific_sigma_e2=0.5,scientific_ratio=0.5,profile_t_hat=1.0,
+        scientific_sigma_g2=0.5,scientific_sigma_e2=0.5,scientific_ratio=0.5,fitted_total_variance=1.0,
         numerical_sigma_g2=0.5,numerical_sigma_e2=0.5,numerical_ratio=0.5,profile_loglik=-1.0,
-        lower_derivative=0.1,upper_derivative=-0.1,runtime_seconds=0.1,
+        lower_derivative=0.1,upper_derivative=-0.1,iterations=8.0,objective=1.0,
+        gradient_norm=1e-9,runtime_seconds=0.1,peak_rss_mb=100.0,
         relationship_source="markers",relationship_method="vanraden1",allele_frequency_source="sample",
         relationship_scale="K_lambda",scale_denominator=1.0,marker_hash=audit.marker_hash,
         id_hash=audit.id_hash,kernel_hash=audit.kernel_hash,precision_hash=audit.precision_hash,
@@ -523,6 +565,11 @@ function selftest()
     end
     dir=mktempdir();try
         root=realpath(dir);path=joinpath(root,"x.tsv");_write_once(path,"x\n");_must_fail("create-once contender") do;_write_once(path,"x\n");end
+        contested=joinpath(root,"contested.tsv")
+        cmd=`$(Base.julia_cmd()) --startup-file=no $(abspath(@__FILE__)) --mode=claim-once --path=$contested`
+        p1=run(ignorestatus(cmd);wait=false);p2=run(ignorestatus(cmd);wait=false);wait(p1);wait(p2)
+        count(success,(p1,p2))==1||error("concurrent create-once test did not produce exactly one winner")
+        _verify_pair(root,contested)
         _verify_pair(root,path);open(path,"w") do io;write(io,"y\n");end;_must_fail("checksum corruption") do;_verify_pair(root,path);end
         rm(path*".sha256");_must_fail("orphan primary") do;_verify_pair(root,path);end
         link=joinpath(dir,"link");symlink(path,link);_must_fail("symlink") do;_plain(root,link);end
@@ -539,7 +586,11 @@ end
 function main(args=ARGS)
     mode=_option(args,"mode";default="recompute")
     mode=="selftest"&&return selftest()
-    mode=="recompute"||error("--mode must be recompute or selftest")
+    if mode=="claim-once"
+        path=_option(args,"path");path===nothing&&error("--path is required")
+        return _write_once(path,"claim\n")
+    end
+    mode=="recompute"||error("--mode must be recompute, selftest, or claim-once")
     out=_option(args,"out-dir");tier=_option(args,"tier");out===nothing&&error("--out-dir is required");tier===nothing&&error("--tier is required")
     recompute(out,tier)
 end

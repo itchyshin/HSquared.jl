@@ -10,11 +10,12 @@ freezes sample-frequency, unweighted VanRaden method 1 with
 `K_lambda = G + 0.01I`, and records engine-owned ID, marker, kernel, and precision
 fingerprints. The deterministic cross-twin fixture in
 `test/fixtures/genomic_public_activation_target/` is construction and route-
-identity evidence. A later fail-closed boundary candidate matched an independent
-base-R oracle on all 240 sealed holdouts and corrected 30 classifications with
-0 losses, but the conjunctive gate was still `BOUNDARY_HOLDOUT_FAIL`: one cell
-was 5.99x slower at p95 than the old path, above the frozen 3x cap. The 240 seeds
-are spent, the nine-cell recovery campaign did not launch, and this is **not**
+identity evidence. The original offset-5001 boundary candidate remains a banked
+runtime failure because one cell reached 5.99x p95 against the frozen 3x cap.
+The separately preregistered revised candidate passed its fresh offset-6001
+holdout: 240/240 valid attempts, 40 wins, 0 losses, and every p95 ratio at or
+below 1.370. This clears only the performance/closed-boundary gate; recovery-v2
+has not run, and this is **not**
 broad recovery, production-scale evidence, or permission to activate the R
 default. The R surface therefore remains partial/held with no Rose/G10 promotion
 basis. `single_step()` remains a separate experimental surface.
@@ -148,10 +149,11 @@ Engine evidence now available:
 
 Still planned / coordinated:
 
-- component/allocation profiling on already-open discovery data,
-  output-equivalent performance work, a new preregistration, and a fresh
-  untouched holdout before end-to-end recovery can resume; the narrow R
-  `genomic()` candidate stays held and `single_step()` remains separate;
+- the original untouched performance holdout remains a banked failure
+  (5.99x), while an output-equivalent numerical repair passed a separate fresh
+  holdout. The hash-pinned recovery-v2 design is prepared but unrun; the narrow
+  R `genomic()` candidate therefore stays held and `single_step()` remains
+  separate;
 - a broader construction oracle beyond the completed independent base-R
   reconstruction of the exact candidate kernel. A fresh hash-pinned `blupf90+`
   run now links the

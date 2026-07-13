@@ -22,11 +22,13 @@ public default. A narrow v0.7 R-twin activation candidate maps Gaussian REML
 models with one genomic random intercept from raw markers or supplied `Ginv` to
 the existing supplied-precision estimator, but it remains partial and held. The
 earlier 432-seed diagnostic pilot stopped on convergence/precision blockers. A
-later preregistered closed-boundary repair resolved all 240 sealed holdout
-datasets (30 improvements, 0 losses, 0 invalid), but the conjunctive gate still
-failed because one cell exceeded the frozen 3x p95 runtime cap (5.99x). Those
-holdout seeds are spent; nine-cell end-to-end recovery did not launch. Rose
-review and G10 therefore cannot activate the default route. Production
+later preregistered closed-boundary repair resolved all 240 sealed offset-5001
+holdouts but remains a banked runtime failure because one cell reached 5.99x
+against the frozen 3x p95 cap. The separately preregistered revised candidate
+then passed its untouched offset-6001 holdout: 240/240 valid attempts, 40 wins,
+0 losses, and every p95 ratio at or below 1.370. That clears only the
+performance/closed-boundary gate; recovery-v2 has not run. Rose review and G10
+therefore cannot activate the default route. Production
 high-level genomic fitting remains unimplemented.
 
 - Package loads.
@@ -211,10 +213,10 @@ high-level genomic fitting remains unimplemented.
   common environment, and maternal-genetic effects exist only as the
   experimental engine utilities above, not as a public model-spec.
 - Most public model syntax remains planned. The R twin has an executable narrow
-  genomic candidate whose closed-boundary holdout resolved all 240 datasets and
-  improved 30 classifications with 0 losses, but the conjunctive gate failed
-  because one cell was 5.99x slower at p95 than the frozen 3x cap. It is not an
-  activated default and has no Rose/G10 promotion basis.
+  genomic candidate. Its original offset-5001 holdout remains a 5.99x runtime
+  failure; the revised offset-6001 candidate passed the fresh holdout with
+  240/240 valid attempts, 40 wins, 0 losses, and maximum p95 ratio 1.370. It is
+  still not an activated default because recovery-v2 and Rose/G10 remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -315,21 +317,22 @@ are engine-internal. The v0.7 branch additionally freezes a bridge-facing
 sample-frequency VanRaden-1 construction with `K_lambda = G + 0.01I`, semantic
 fingerprints, and a cross-twin marker-versus-supplied-precision identity fixture;
 the R twin has a matching narrow `genomic()` candidate. Its fail-closed boundary
-wrapper matched an independent base-R oracle on all 240 sealed holdouts, with
-30 corrected classifications and 0 losses. The overall gate was nevertheless
-`BOUNDARY_HOLDOUT_FAIL`: `n120_m600_r050` had a 5.99x candidate/default p95
-runtime ratio against the frozen 3x cap. The 240 seeds are spent, the nine-cell
-recovery campaign did not launch, and activation remains held. A fresh
+wrapper matched an independent base-R oracle on all 240 sealed offset-5001
+holdouts, but that candidate remains a banked `BOUNDARY_HOLDOUT_FAIL` because
+`n120_m600_r050` reached 5.99x against the frozen 3x p95 cap. The separately
+preregistered revised offset-6001 candidate passed its untouched holdout:
+240/240 valid attempts, 40 wins, 0 losses, and every p95 ratio at or below
+1.370. Recovery-v2 has not run and activation remains held. A fresh
 hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. The next debt is output-equivalent performance
-localization on already-open discovery data, a new preregistration, and a fresh
-untouched holdout block. The sealed result and exact stop decision are banked in
-`docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
+`public_covered_count` remains 5. The next debt is the frozen recovery-v2
+campaign, independent three-way recomputation, Rose audit, and G10. The two
+holdout decisions are banked in the original boundary checkpoint and
+`docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.
