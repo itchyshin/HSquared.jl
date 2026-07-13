@@ -31,7 +31,7 @@ admitted future design only.
 Frozen offset-7101 execution identities and hashes are recorded in the R twin's
 matching checkpoint. The repaired Julia recomputer is
 `sim/phase2_v07_genomic_recovery_v2_recompute.jl` at successor-tooling commit
-`c3e62092f351611449092dc7f5a81c272285eabc`, SHA-256
+`c3e62092620eba698d75a02cdc0c8b35802fbb0a`, SHA-256
 `af0d83a638f4060a6464d0fb85e87c262fbeec69af712ca1043821785b6298f1`.
 
 The supplied-precision estimator remains covered. The ordinary R marker route
