@@ -564,8 +564,17 @@ const _GENOMIC_BOUNDARY_DOC46_COMMIT = "fe96a147"
 const _GENOMIC_BOUNDARY_DOC46_SHA256 = "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
 
 function _genomic_boundary_unresolved(ai, reason::AbstractString)
+    fit = if ai === nothing
+        nothing
+    else
+        old = ai.fit
+        AnimalModelFit(old.spec, old.likelihood, old.variance_components, false,
+                       "boundary_unresolved", old.iterations, old.target,
+                       old.dense_validation_path, old.sparse_mme_path,
+                       old.variance_components_source)
+    end
     return (
-        fit = ai.fit,
+        fit = fit,
         boundary = (
             status = "boundary_unresolved",
             reason = String(reason),
@@ -576,8 +585,68 @@ function _genomic_boundary_unresolved(ai, reason::AbstractString)
             lower_derivative_per_observation = nothing,
             upper_derivative_per_observation = nothing,
         ),
-        ai_diagnostics = ai.diagnostics,
+        ai_diagnostics = ai === nothing ? nothing : ai.diagnostics,
     )
+end
+
+function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    n <= _GENOMIC_BOUNDARY_MAX_DENSE_N || return (ok = false, reason = "dense_limit")
+    n > p || return (ok = false, reason = "nonpositive_reml_df")
+    size(spec.Ainv) == (n, n) || return (ok = false, reason = "precision_dimension")
+    size(spec.Z) == (n, n) || return (ok = false, reason = "nonidentity_Z")
+    y = Vector{Float64}(spec.y)
+    X = Matrix{Float64}(spec.X)
+    Q = Matrix{Float64}(spec.Ainv)
+    all(isfinite, y) || return (ok = false, reason = "nonfinite_y")
+    all(isfinite, X) || return (ok = false, reason = "nonfinite_X")
+    all(isfinite, Q) || return (ok = false, reason = "nonfinite_precision")
+    isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) ||
+        return (ok = false, reason = "asymmetric_precision")
+    Z = Matrix{Float64}(spec.Z)
+    all(isfinite, Z) || return (ok = false, reason = "nonfinite_Z")
+    maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
+        return (ok = false, reason = "nonidentity_Z")
+    rank(X) == p || return (ok = false, reason = "rank_deficient_X")
+    qfactor = try
+        cholesky(Symmetric(Q); check = true)
+    catch
+        return (ok = false, reason = "nonpositive_precision")
+    end
+    provenance isa NamedTuple || return (ok = false, reason = "missing_genomic_provenance")
+    required = (:relationship_source, :id_order_fingerprint, :precision_fingerprint)
+    all(hasproperty(provenance, key) for key in required) ||
+        return (ok = false, reason = "missing_genomic_provenance")
+    source = provenance.relationship_source
+    source in ("markers", "supplied_Ginv") ||
+        return (ok = false, reason = "non_genomic_provenance")
+    ids = try
+        _canonical_genomic_ids(spec.ids, n)
+    catch
+        return (ok = false, reason = "invalid_genomic_ids")
+    end
+    _genomic_id_order_fingerprint(ids) == provenance.id_order_fingerprint ||
+        return (ok = false, reason = "id_fingerprint_mismatch")
+    _genomic_matrix_fingerprint("Q_lambda", Q, ids) == provenance.precision_fingerprint ||
+        return (ok = false, reason = "precision_fingerprint_mismatch")
+    K = nothing
+    if source == "markers"
+        kernel === nothing && return (ok = false, reason = "missing_marker_kernel")
+        K = Matrix{Float64}(kernel)
+        size(K) == (n, n) || return (ok = false, reason = "kernel_dimension")
+        all(isfinite, K) || return (ok = false, reason = "nonfinite_kernel")
+        isapprox(K, transpose(K); atol = 1e-12, rtol = 0) ||
+            return (ok = false, reason = "asymmetric_kernel")
+        hasproperty(provenance, :kernel_fingerprint) ||
+            return (ok = false, reason = "missing_kernel_fingerprint")
+        _genomic_matrix_fingerprint("K_lambda", K, ids) == provenance.kernel_fingerprint ||
+            return (ok = false, reason = "kernel_fingerprint_mismatch")
+        maximum(abs, Q * K - Matrix{Float64}(I, n, n)) <= 1e-8 ||
+            return (ok = false, reason = "kernel_precision_mismatch")
+    end
+    return (ok = true, reason = "ok", y = y, X = X, Q = Q, qfactor = qfactor,
+            ids = ids, provenance = provenance, K = K)
 end
 
 function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2)
@@ -595,65 +664,62 @@ function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2
     norm(gradient) / length(spec.y)
 end
 
-function _genomic_profile_reml(spec::AnimalModelSpec, K::Matrix{Float64}, ratio::Real)
-    r = Float64(ratio)
-    0.0 <= r <= 1.0 || return nothing
-    n = length(spec.y)
-    p = size(spec.X, 2)
-    H = Symmetric(r .* K .+ (1.0 - r) .* Matrix{Float64}(I, n, n))
-    factor = try
-        cholesky(H; check = true)
+function _genomic_profile_context(precheck)
+    n = length(precheck.y)
+    K = precheck.K === nothing ?
+        Matrix(precheck.qfactor \ Matrix{Float64}(I, n, n)) : copy(precheck.K)
+    K = (K + transpose(K)) / 2
+    decomposition = try
+        eigen(Symmetric(K))
     catch
         return nothing
     end
-    X = Matrix{Float64}(spec.X)
-    y = Vector{Float64}(spec.y)
-    hi_x = factor \ X
-    hi_y = factor \ y
-    xt_hi_x = Symmetric(transpose(X) * hi_x)
+    all(isfinite, decomposition.values) && all(>(0), decomposition.values) || return nothing
+    vectors_t = transpose(decomposition.vectors)
+    return (eigenvalues = decomposition.values, y = vectors_t * precheck.y,
+            X = vectors_t * precheck.X, n = n, p = size(precheck.X, 2))
+end
+
+function _genomic_profile_reml(context, ratio::Real)
+    r = Float64(ratio)
+    0.0 <= r <= 1.0 || return nothing
+    h = r .* context.eigenvalues .+ (1.0 - r)
+    all(isfinite, h) && all(>(0), h) || return nothing
+    weights = 1.0 ./ h
+    hi_x = weights .* context.X
+    hi_y = weights .* context.y
+    xt_hi_x = Symmetric(transpose(context.X) * hi_x)
     fixed_factor = try
         cholesky(xt_hi_x; check = true)
     catch
         return nothing
     end
-    rhs = transpose(X) * hi_y
-    quad = dot(y, hi_y) - dot(rhs, fixed_factor \ rhs)
-    df = n - p
+    rhs = transpose(context.X) * hi_y
+    quad = dot(context.y, hi_y) - dot(rhs, fixed_factor \ rhs)
+    df = context.n - context.p
     isfinite(quad) && quad > 0 && df > 0 || return nothing
     t_hat = quad / df
-    logdet_h = 2sum(log, diag(factor.U))
+    logdet_h = sum(log, h)
     logdet_fixed = 2sum(log, diag(fixed_factor.U))
     loglik = -0.5 * (df * (1 + log(2pi * t_hat)) + logdet_h + logdet_fixed)
     isfinite(loglik) || return nothing
     return (loglik = loglik, t_hat = t_hat)
 end
 
-function _genomic_boundary_profile(spec::AnimalModelSpec)
+function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
     n = length(spec.y)
-    n <= _GENOMIC_BOUNDARY_MAX_DENSE_N || return (status = "boundary_unresolved", reason = "dense_limit")
-    size(spec.Z) == (n, n) || return (status = "boundary_unresolved", reason = "nonidentity_Z")
-    Z = Matrix{Float64}(spec.Z)
-    maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
-        return (status = "boundary_unresolved", reason = "nonidentity_Z")
-    rank(Matrix{Float64}(spec.X)) == size(spec.X, 2) ||
-        return (status = "boundary_unresolved", reason = "rank_deficient_X")
-    Q = Matrix{Float64}(spec.Ainv)
-    qfactor = try
-        cholesky(Symmetric(Q); check = true)
-    catch
-        return (status = "boundary_unresolved", reason = "nonpositive_precision")
-    end
-    K = Matrix(qfactor \ Matrix{Float64}(I, n, n))
+    context = _genomic_profile_context(precheck)
+    context === nothing && return (status = "boundary_unresolved", reason = "kernel_provenance_or_eigendecomposition")
     grid = collect(0.0:_GENOMIC_BOUNDARY_GRID_STEP:1.0)
-    parts = [_genomic_profile_reml(spec, K, r) for r in grid]
+    parts = [_genomic_profile_reml(context, r) for r in grid]
     any(isnothing, parts) && return (status = "boundary_unresolved", reason = "nonfinite_profile")
     values = [part.loglik for part in parts]
     interior_index = argmax(view(values, 2:(length(values) - 1))) + 1
     lower_r, upper_r = grid[interior_index - 1], grid[interior_index + 1]
-    refined = optimize(r -> -something(_genomic_profile_reml(spec, K, r), (loglik = -Inf,)).loglik,
+    refined = optimize(r -> -something(_genomic_profile_reml(context, r), (loglik = -Inf,)).loglik,
                        lower_r, upper_r; abs_tol = 1e-12)
     interior_r = Optim.minimizer(refined)
-    interior_part = _genomic_profile_reml(spec, K, interior_r)
+    interior_part = _genomic_profile_reml(context, interior_r)
     interior_part === nothing && return (status = "boundary_unresolved", reason = "refinement_failed")
     distinct_interior = _GENOMIC_BOUNDARY_EPSILON < interior_r < 1 - _GENOMIC_BOUNDARY_EPSILON
     if !distinct_interior
@@ -665,8 +731,8 @@ function _genomic_boundary_profile(spec::AnimalModelSpec)
         return (status = "boundary_unresolved", reason = "refinement_regressed")
     lower_part = first(parts)
     upper_part = last(parts)
-    delta_lower = _genomic_profile_reml(spec, K, _GENOMIC_BOUNDARY_DELTA)
-    delta_upper = _genomic_profile_reml(spec, K, 1 - _GENOMIC_BOUNDARY_DELTA)
+    delta_lower = _genomic_profile_reml(context, _GENOMIC_BOUNDARY_DELTA)
+    delta_upper = _genomic_profile_reml(context, 1 - _GENOMIC_BOUNDARY_DELTA)
     (delta_lower === nothing || delta_upper === nothing) &&
         return (status = "boundary_unresolved", reason = "endpoint_derivative_failed")
     d0 = (delta_lower.loglik - lower_part.loglik) / _GENOMIC_BOUNDARY_DELTA / n
@@ -700,14 +766,18 @@ end
 
 function _fit_ai_reml_genomic_boundary(
     spec::AnimalModelSpec;
+    provenance,
+    kernel = nothing,
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     iterations::Integer = 100,
     tol::Real = 1e-8,
     em_warmup::Integer = 0,
 )
+    precheck = _genomic_boundary_precheck(spec, provenance, kernel)
+    precheck.ok || return _genomic_boundary_unresolved(nothing, precheck.reason)
     ai = _fit_ai_reml_diagnostics(spec; initial = initial, iterations = iterations,
                                   tol = tol, em_warmup = em_warmup)
-    profile = _genomic_boundary_profile(spec)
+    profile = _genomic_boundary_profile(spec, precheck)
     profile.status == "boundary_unresolved" &&
         return _genomic_boundary_unresolved(ai, profile.reason)
     if profile.status == "interior_profile"
@@ -716,8 +786,8 @@ function _fit_ai_reml_genomic_boundary(
         oracle_components = (profile.profile_ratio * profile.exact.t_hat,
                              (1 - profile.profile_ratio) * profile.exact.t_hat)
         ai_components = (ai.fit.variance_components.sigma_a2, ai.fit.variance_components.sigma_e2)
-        component_ok = all(abs(a - b) <= 1e-8 + 1e-5abs(b) for (a, b) in zip(ai_components, oracle_components))
-        ratio_ok = abs(ratio_ai - profile.profile_ratio) <= 1e-8 + 1e-5abs(profile.profile_ratio)
+        component_ok = all(abs(a - b) <= 1e-8 + 1e-5 * abs(b) for (a, b) in zip(ai_components, oracle_components))
+        ratio_ok = abs(ratio_ai - profile.profile_ratio) <= 1e-8 + 1e-5 * abs(profile.profile_ratio)
         objective_ok = abs(ai.fit.likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8
         gradient_ok = _genomic_fd_log_gradient_norm(spec, ai_components...) <= 1e-8
         if ai.fit.converged && component_ok && ratio_ok && objective_ok && gradient_ok
@@ -736,6 +806,10 @@ function _fit_ai_reml_genomic_boundary(
         _genomic_fd_log_gradient_norm(spec, sigma_a2, sigma_e2) <= 1e-8 ||
             return _genomic_boundary_unresolved(ai, "interior_profile_gradient")
         likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+        all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_nonfinite")
+        abs(likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8 ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_objective")
         fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
                              true, "interior_rescued", ai.fit.iterations, :variance_components,
                              false, true, :estimated_ai_reml)
@@ -756,6 +830,10 @@ function _fit_ai_reml_genomic_boundary(
     sigma_a2 = numerical_ratio * profile.exact.t_hat
     sigma_e2 = (1 - numerical_ratio) * profile.exact.t_hat
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
+        return _genomic_boundary_unresolved(ai, "boundary_representation_nonfinite")
+    abs(likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8 ||
+        return _genomic_boundary_unresolved(ai, "boundary_representation_objective")
     fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
                          true, profile.status, ai.fit.iterations, :variance_components,
                          false, true, :estimated_ai_reml)

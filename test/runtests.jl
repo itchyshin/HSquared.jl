@@ -3837,7 +3837,7 @@ end
         y = u .+ randn(rng, n) .* sqrt(0.8)
         spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), construction.Q;
                                  ids = ids, method = :REML)
-        return spec
+        return (spec = spec, provenance = construction.provenance, K = construction.K)
     end
 
     @test HSquared._GENOMIC_BOUNDARY_EPSILON == 1e-7
@@ -3848,7 +3848,9 @@ end
     @test HSquared._GENOMIC_BOUNDARY_DOC46_SHA256 ==
           "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
 
-    lower = HSquared._fit_ai_reml_genomic_boundary(boundary_fixture(2027130002))
+    lower_fixture = boundary_fixture(2027130002)
+    lower = HSquared._fit_ai_reml_genomic_boundary(lower_fixture.spec;
+        provenance = lower_fixture.provenance, kernel = lower_fixture.K)
     @test lower.boundary.status == "boundary_lower"
     @test lower.boundary.profile_ratio == 0.0
     @test lower.boundary.numerical_ratio == 1e-7
@@ -3859,7 +3861,9 @@ end
     @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) / 120 <= 1e-8
     @test lower.boundary.lower_derivative_per_observation <= 1e-8
 
-    upper = HSquared._fit_ai_reml_genomic_boundary(boundary_fixture(2027130025))
+    upper_fixture = boundary_fixture(2027130025)
+    upper = HSquared._fit_ai_reml_genomic_boundary(upper_fixture.spec;
+        provenance = upper_fixture.provenance, kernel = upper_fixture.K)
     @test upper.boundary.status == "boundary_upper"
     @test upper.boundary.profile_ratio == 1.0
     @test upper.boundary.numerical_ratio == 1 - 1e-7
@@ -3868,9 +3872,11 @@ end
     @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) / 120 <= 1e-8
     @test upper.boundary.upper_derivative_per_observation >= -1e-8
 
-    interior_spec = boundary_fixture(2027130001)
+    interior_fixture = boundary_fixture(2027130001)
+    interior_spec = interior_fixture.spec
     ordinary = fit_ai_reml(interior_spec)
-    interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec)
+    interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
     @test interior.boundary.status == "interior"
     @test interior.fit.variance_components == ordinary.variance_components
     @test interior.fit.likelihood.loglik == ordinary.likelihood.loglik
@@ -3883,12 +3889,86 @@ end
     bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
         sparse(circshift(Matrix{Float64}(I, 120, 120), (0, 1))), interior_spec.Ainv;
         ids = interior_spec.ids, method = :REML)
-    unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z; iterations = 1)
+    unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
     @test unresolved.boundary.status == "boundary_unresolved"
     @test unresolved.boundary.reason == "nonidentity_Z"
-    @test !unresolved.fit.converged
+    @test unresolved.fit === nothing
     @test unresolved.boundary.profile_ratio === nothing
     @test unresolved.boundary.numerical_ratio === nothing
+
+    rescued = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K,
+        iterations = 1)
+    @test rescued.boundary.status == "interior_rescued"
+    @test rescued.fit.converged
+    @test rescued.fit.optimizer_status == "interior_rescued"
+    @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) / 120 <= 1e-8
+
+    Q = Matrix(interior_spec.Ainv)
+    asymmetric = copy(Q); asymmetric[1, 2] += 0.1
+    asymmetric_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, asymmetric; ids = interior_spec.ids, method = :REML)
+    asymmetric_result = HSquared._fit_ai_reml_genomic_boundary(asymmetric_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test asymmetric_result.fit === nothing
+    @test asymmetric_result.boundary.reason == "asymmetric_precision"
+
+    nonfinite_y = copy(interior_spec.y); nonfinite_y[1] = NaN
+    nonfinite_y_spec = animal_model_spec(nonfinite_y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_y_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_y"
+
+    nonfinite_q = copy(Q); nonfinite_q[1, 1] = NaN
+    nonfinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, nonfinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_precision"
+
+    indefinite_q = copy(Q); indefinite_q[1, 1] = -1
+    indefinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, indefinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(indefinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonpositive_precision"
+
+    rank_bad_X = hcat(interior_spec.X, interior_spec.X)
+    rank_bad_spec = animal_model_spec(interior_spec.y, rank_bad_X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(rank_bad_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "rank_deficient_X"
+
+    wrong_provenance = merge(interior_fixture.provenance,
+        (precision_fingerprint = repeat("0", 64),))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = wrong_provenance, kernel = interior_fixture.K).boundary.reason == "precision_fingerprint_mismatch"
+    nongeno_provenance = merge(interior_fixture.provenance,
+        (relationship_source = "pedigree",))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = nongeno_provenance, kernel = interior_fixture.K).boundary.reason == "non_genomic_provenance"
+
+    tie_ids = ["t$(i)" for i in 1:8]
+    tie_Q = Matrix{Float64}(I, 8, 8)
+    tie_spec = animal_model_spec(collect(1.0:8.0), ones(8, 1),
+        sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
+    tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
+    tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
+        provenance = tie_provenance, iterations = 1)
+    @test tie_result.boundary.status == "boundary_unresolved"
+    @test tie_result.boundary.reason == "endpoint_pair_tie"
+    @test tie_result.fit !== nothing && !tie_result.fit.converged
+    @test tie_result.fit.optimizer_status == "boundary_unresolved"
+
+    big_n = 2001
+    big_ids = ["big$(i)" for i in 1:big_n]
+    big_spec = animal_model_spec(ones(big_n), ones(big_n, 1),
+        sparse(1.0I, big_n, big_n), sparse(1.0I, big_n, big_n);
+        ids = big_ids, method = :REML)
+    big_result = HSquared._fit_ai_reml_genomic_boundary(big_spec;
+        provenance = (relationship_source = "supplied_Ginv",
+            id_order_fingerprint = "not-read", precision_fingerprint = "not-read"))
+    @test big_result.fit === nothing
+    @test big_result.boundary.reason == "dense_limit"
 end
 
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
