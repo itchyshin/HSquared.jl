@@ -307,7 +307,7 @@ function _validate_pilot_source(pilot_dir)
     length(mrows)==9*48 || error("original pilot manifest denominator drift")
     lrows=_read_table(lock,["path","sha256"])
     length(lrows)==9*48 || error("original pilot raw-lock denominator drift")
-    expected_paths=sort(String(r[1]) for r in lrows)
+    expected_paths=sort([String(r[1]) for r in lrows])
     actual_paths=String[]
     rawroot=joinpath(pilot_dir,"raw","pilot")
     for (directory,_,names) in walkdir(rawroot), name in names
