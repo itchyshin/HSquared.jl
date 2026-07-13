@@ -592,23 +592,25 @@ end
 function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
     n = length(spec.y)
     p = size(spec.X, 2)
+    spec.method == :REML || return (ok = false, reason = "non_reml_method")
     n <= _GENOMIC_BOUNDARY_MAX_DENSE_N || return (ok = false, reason = "dense_limit")
     n > p || return (ok = false, reason = "nonpositive_reml_df")
     size(spec.Ainv) == (n, n) || return (ok = false, reason = "precision_dimension")
     size(spec.Z) == (n, n) || return (ok = false, reason = "nonidentity_Z")
-    y = Vector{Float64}(spec.y)
-    X = Matrix{Float64}(spec.X)
-    Q = Matrix{Float64}(spec.Ainv)
+    y = try Vector{Float64}(spec.y) catch; return (ok = false, reason = "nonnumeric_y") end
+    X = try Matrix{Float64}(spec.X) catch; return (ok = false, reason = "nonnumeric_X") end
+    Q = try Matrix{Float64}(spec.Ainv) catch; return (ok = false, reason = "nonnumeric_precision") end
     all(isfinite, y) || return (ok = false, reason = "nonfinite_y")
     all(isfinite, X) || return (ok = false, reason = "nonfinite_X")
     all(isfinite, Q) || return (ok = false, reason = "nonfinite_precision")
     isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) ||
         return (ok = false, reason = "asymmetric_precision")
-    Z = Matrix{Float64}(spec.Z)
+    Z = try Matrix{Float64}(spec.Z) catch; return (ok = false, reason = "nonnumeric_Z") end
     all(isfinite, Z) || return (ok = false, reason = "nonfinite_Z")
     maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
         return (ok = false, reason = "nonidentity_Z")
-    rank(X) == p || return (ok = false, reason = "rank_deficient_X")
+    xrank = try rank(X) catch; return (ok = false, reason = "fixed_effect_rank_failure") end
+    xrank == p || return (ok = false, reason = "rank_deficient_X")
     qfactor = try
         cholesky(Symmetric(Q); check = true)
     catch
@@ -633,7 +635,9 @@ function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
     K = nothing
     if source == "markers"
         kernel === nothing && return (ok = false, reason = "missing_marker_kernel")
-        K = Matrix{Float64}(kernel)
+        K = try Matrix{Float64}(kernel) catch
+            return (ok = false, reason = "nonnumeric_marker_kernel")
+        end
         size(K) == (n, n) || return (ok = false, reason = "kernel_dimension")
         all(isfinite, K) || return (ok = false, reason = "nonfinite_kernel")
         isapprox(K, transpose(K); atol = 1e-12, rtol = 0) ||
@@ -647,6 +651,14 @@ function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
     end
     return (ok = true, reason = "ok", y = y, X = X, Q = Q, qfactor = qfactor,
             ids = ids, provenance = provenance, K = K)
+end
+
+function _genomic_refinement_accepted(converged, minimizer, minimum_value,
+                                      lower, upper, incumbent_loglik, n)
+    all(isfinite, (minimizer, minimum_value, lower, upper, incumbent_loglik)) || return false
+    Bool(converged) || return false
+    lower <= minimizer <= upper || return false
+    -minimum_value + n * 1e-10 >= incumbent_loglik
 end
 
 function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2)
@@ -742,9 +754,22 @@ function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
     values = [part.loglik for part in parts]
     interior_index = argmax(view(values, 2:(length(values) - 1))) + 1
     lower_r, upper_r = grid[interior_index - 1], grid[interior_index + 1]
-    refined = optimize(r -> -something(_genomic_profile_reml(context, r), (loglik = -Inf,)).loglik,
-                       lower_r, upper_r; abs_tol = 1e-12)
-    interior_r = Optim.minimizer(refined)
+    refined = try
+        optimize(r -> -something(_genomic_profile_reml(context, r), (loglik = -Inf,)).loglik,
+                 lower_r, upper_r; abs_tol = 1e-12)
+    catch
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    end
+    refinement = try
+        (converged = Optim.converged(refined), minimizer = Optim.minimizer(refined),
+         minimum = Optim.minimum(refined))
+    catch
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    end
+    _genomic_refinement_accepted(refinement.converged, refinement.minimizer,
+        refinement.minimum, lower_r, upper_r, values[interior_index], n) ||
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    interior_r = refinement.minimizer
     interior_part = _genomic_profile_reml(context, interior_r)
     interior_part === nothing && return (status = "boundary_unresolved", reason = "refinement_failed")
     distinct_interior = _GENOMIC_BOUNDARY_EPSILON < interior_r < 1 - _GENOMIC_BOUNDARY_EPSILON
@@ -752,9 +777,6 @@ function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
         interior_r = grid[interior_index]
         interior_part = parts[interior_index]
     end
-    refined_ll = -Optim.minimum(refined)
-    refined_ll + n * 1e-10 >= values[interior_index] ||
-        return (status = "boundary_unresolved", reason = "refinement_regressed")
     lower_part = first(parts)
     upper_part = last(parts)
     delta_lower = _genomic_profile_reml(context, _GENOMIC_BOUNDARY_DELTA)

@@ -3972,6 +3972,24 @@ end
     @test HSquared._fit_ai_reml_genomic_boundary(rank_bad_spec;
         provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "rank_deficient_X"
 
+    ml_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :ML)
+    ml_result = HSquared._fit_ai_reml_genomic_boundary(ml_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test ml_result.fit === nothing
+    @test ml_result.boundary.reason == "non_reml_method"
+
+    malformed_kernel = fill("not-a-number", size(interior_fixture.K))
+    malformed_kernel_result = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = malformed_kernel)
+    @test malformed_kernel_result.fit === nothing
+    @test malformed_kernel_result.boundary.reason == "nonnumeric_marker_kernel"
+
+    @test HSquared._genomic_refinement_accepted(true, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(false, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, NaN, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, 0.6, -10.0, 0.3, 0.5, 10.0, 120)
+
     wrong_provenance = merge(interior_fixture.provenance,
         (precision_fingerprint = repeat("0", 64),))
     @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
