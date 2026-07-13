@@ -89,6 +89,7 @@ _format(x) = string(x)
 _sha256_file(path) = bytes2hex(sha256(read(path)))
 _cell(id) = only(filter(c -> c.id == id, CELLS))
 _float(x) = parse(Float64, String(x))
+_bool(x::Bool) = x
 _bool(x) = lowercase(String(x)) == "true"
 
 function _read_table(path, columns)
@@ -1121,6 +1122,7 @@ function selftest_mode()
     end
     _p95(collect(1:20))==19||error("nearest-rank p95 drift")
     median([100.0,1,2,3,4])==3||error("median rule drift")
+    _bool(true)&&!_bool(false)&&_bool("true")&&!_bool("false")||error("boolean coercion drift")
     base=Dict{String,String}(field=>"NA" for field in RESULT_FIELDS)
     base["digest_version"]="scientific_result_v1"; base["status"]="interior"
     digest(d)=begin io=IOBuffer(); for f in RESULT_FIELDS; print(io,f,'=',d[f],'\n'); end; bytes2hex(sha256(take!(io))) end
