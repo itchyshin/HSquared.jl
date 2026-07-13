@@ -20,17 +20,18 @@ cap; the maximum requirement is 16,325.
 | `n300_m1000_r050` | 911 | `CONFIRMATION_ELIGIBLE` |
 | `n300_m1000_r080` | 2,021 | `PRECISION_BLOCKER` |
 
-The sealed adjudicator did not mint a receipt: its R driver compared logical
+The sealed offset-7101 adjudicator did not mint a receipt: its R driver compared logical
 `FALSE` in memory with the lower-case TSV text `false` as different strings.
 The three persisted summaries agree numerically; Julia differs from driver R by
-at most `3.33e-16`, below the frozen `1e-10` tolerance. The old root remains
+at most `3.33e-16`, below the frozen `1e-10` tolerance. The offset-7101 root remains
 immutable and unadjudicated. No confirmation manifest exists, offsets
 7101:7148 are retired, and offsets 7201:7248 are reserved for a separately
 admitted future design only.
 
-Frozen old execution identities and hashes are recorded in the R twin's
+Frozen offset-7101 execution identities and hashes are recorded in the R twin's
 matching checkpoint. The repaired Julia recomputer is
-`sim/phase2_v07_genomic_recovery_v2_recompute.jl`, SHA-256
+`sim/phase2_v07_genomic_recovery_v2_recompute.jl` at successor-tooling commit
+`c3e62092f351611449092dc7f5a81c272285eabc`, SHA-256
 `af0d83a638f4060a6464d0fb85e87c262fbeec69af712ca1043821785b6298f1`.
 
 The supplied-precision estimator remains covered. The ordinary R marker route

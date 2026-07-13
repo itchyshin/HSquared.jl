@@ -17,7 +17,7 @@ its summaries, and permit activation only behind every preregistered gate.
 
 - Did not treat 432 successful fits as recovery evidence because the formal
   receipt is absent and five cells exceed the frozen precision cap.
-- Did not monkey-patch the old sealed root or launch partial confirmation.
+- Did not monkey-patch the sealed offset-7101 root or launch partial confirmation.
 - Kept the supplied-precision engine row covered while holding the distinct R
   marker-route activation.
 
@@ -44,8 +44,9 @@ its summaries, and permit activation only behind every preregistered gate.
 
 The Julia recomputer self-test rejects the retired 7101 block and pilot versus
 confirmation tier overlap. The R twin additionally proves logical write/read
-round-trip, valid Boolean inversion, invalid/missing tokens, and old manifest
-rejection. The real old adjudicator stayed red and prevented confirmation.
+round-trip, valid Boolean inversion, invalid/missing tokens, and retired
+offset-7101 manifest rejection. The sealed offset-7101 adjudicator stayed red
+and prevented confirmation.
 
 ## 7a. Issue Ledger
 
