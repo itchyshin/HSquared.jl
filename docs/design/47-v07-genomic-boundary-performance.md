@@ -110,14 +110,14 @@ field. The spent holdout and reserved fresh seeds remain prohibited.
 
 **Frozen 2026-07-13 after the complete discovery-v4 rerun and before the
 create-once fresh-holdout seal or any offset-6001 dataset was generated.** The
-schema-v2 replacement discovery bound candidate commit
+`v07-genomic-boundary-performance-v2` replacement discovery bound candidate commit
 `fc9d39df650b20aa09d769d9f9528eed1b606f1e`, performance-driver SHA-256
 `046eeee7e22032dafd90e0601ac9c688f30f901468e3f7fff269a7bafebc1397`,
 and the unchanged 58-dataset discovery digest
 `33c31a474fc2f0e996d3bd6489a53d055cc753727b69f0625fc30811777c7caf`.
-The frozen summarizer and independent full validator both returned
-`DISCOVERY_SELECTION_PASS`: 870 attempted timings, 58/58 scientific
-equivalences, no error class, and all ten cell/scope timing gates green. The
+The frozen summarizer returned `DISCOVERY_SELECTION_PASS`, and the separate full
+validator returned `discovery profiler validation PASS`: 870 attempted timings,
+58/58 scientific equivalences, no error class, and all ten cell/scope timing gates green. The
 selected discovery-v4 summary hashes are:
 
 - equivalence: `1e5217d9f12d57ada0e6c9b0b8b66585bf960a6991e897df3361b10eb65caf25`;
@@ -127,6 +127,12 @@ selected discovery-v4 summary hashes are:
 - summary lock: `d73b73245985617a48cbbdb31ffa8afa65edb01d6cb26a0d862cdcc506a7180a`;
 - sorted digest of all 870 raw attempt lock files:
   `daa0353237ef00e62c286cb15534a847413f3fe597fdb511aed9f062e035e81a`.
+
+The raw-lock aggregate preimage is exactly 870 UTF-8 lines, one for each
+`attempts/**/files.sha256.tsv`, encoded as
+`relative_path<TAB>sha256(file bytes)<LF>` and bytewise sorted by relative path
+before SHA-256. Paths are relative to the discovery-v4 output root and use `/`
+separators. No sidecar or result file is substituted for its enclosing raw lock.
 
 The formerly failing `n120_m600_r050` matched-control p95 ratio is
 `1.1222112441902519` versus default and `0.92806565212558356` versus the
