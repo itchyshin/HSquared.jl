@@ -659,7 +659,16 @@ function selftest()
     keys=[("pilot","c",1),("pilot","c",2)];allunique(keys)||error("baseline duplicate")
     _must_fail("duplicate attempt") do;allunique([keys[1],keys[1]])||error("duplicate");end
     _must_fail("missing retained failure") do;Set(keys[1:1])==Set(keys)||error("missing");end
-    _must_fail("retired pilot membership") do;(7101 in 7201:7248)||error("retired pilot offset");end
+    retired=mktempdir();try
+        root=realpath(retired);io=IOBuffer();println(io,join(MANIFEST_COLUMNS,'\t'))
+        for c in CELLS, offset in 7101:7148
+            values=("pilot",c.id,c.index,offset,2_027_120_000+10_000*c.index+offset,
+                c.n,c.m,c.ratio,1-c.ratio,c.ratio,RIDGE,c.regime)
+            println(io,join((_format(value) for value in values),'\t'))
+        end
+        _write_once(joinpath(root,"pilot_manifest.tsv"),String(take!(io)))
+        _must_fail("retired pilot manifest") do;_read_manifest(root,"pilot");end
+    finally rm(retired;recursive=true,force=true) end
     _must_fail("seed membership") do;(7201 in 8001:10000)||error("tier membership");end
     println("v0.7 genomic recovery-v2 Julia recomputer selftest: PASS (synthetic only)")
 end

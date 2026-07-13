@@ -350,10 +350,10 @@ not recovery evidence. Production genotype-ID matching at scale, formula-driven 
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. The next debt is the frozen recovery-v2
-campaign, independent three-way recomputation, Rose audit, and G10. The two
-holdout decisions are banked in the original boundary checkpoint and
-`docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
+`public_covered_count` remains 5. The next activation attempt needs a redesigned
+precision experiment, fresh admission, and fresh seeds; Rose and G10 remain
+held. The negative recovery-v2 outcome is banked in
+`docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.

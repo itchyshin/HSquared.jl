@@ -23,6 +23,18 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Current v0.7 recovery status — 2026-07-13
+
+- Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
+- Totoro offset-7101 pilot: 432/432 success and converged.
+- Three independent summaries: `PRECISION_BLOCKER`; five cells exceed the
+  2,000-fit cap, maximum required N 16,325.
+- No adjudication receipt or confirmation manifest; offsets 7101:7148 retired.
+- Ordinary R marker route remains partial/held; supplied-Q estimator remains
+  covered; `public_covered_count` remains 5.
+- Next action: redesign the precision experiment before any fresh 7201 pilot;
+  do not launch more compute under the failed rule.
+
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
 Codex held both twins sequentially for the preregistered doc-46 boundary slice.
