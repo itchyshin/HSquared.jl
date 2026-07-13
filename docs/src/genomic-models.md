@@ -17,8 +17,12 @@ holdout: 240/240 valid attempts, 40 wins, 0 losses, and every p95 ratio at or
 below 1.370. This clears only the performance/closed-boundary gate. The
 offset-7001 infrastructure attempt failed before fitting because the bridge
 package was unavailable; it produced no recovery summary or recovery evidence,
-and offsets 7001:7048 are retired. The amended 7101:7148 pilot has not run, and
-this is **not**
+and offsets 7001:7048 are retired. The offset-7101 pilot completed 432/432
+successful converged fits, but the sealed adjudicator stopped on a logical
+serialization defect before minting a receipt. Its three create-once summaries
+all say `PRECISION_BLOCKER`: five cells require more than the frozen 2,000-fit
+cap, with a maximum of 16,325. No confirmation manifest exists, offsets
+7101:7148 are retired, and this is **not**
 broad recovery, production-scale evidence, or permission to activate the R
 default. The R surface therefore remains partial/held with no Rose/G10 promotion
 basis. `single_step()` remains a separate experimental surface.
@@ -156,8 +160,11 @@ Still planned / coordinated:
   (5.99x), while an output-equivalent numerical repair passed a separate fresh
   holdout. The offset-7001 infrastructure attempt failed before fitting because
   the bridge package was unavailable; it produced no recovery summary or recovery
-  evidence, and offsets 7001:7048 are retired. The amended hash-pinned 7101:7148
-  pilot has not run; the narrow R `genomic()` candidate therefore stays held and
+  evidence, and offsets 7001:7048 are retired. The hash-pinned offset-7101 pilot
+  completed 432/432 successful converged fits but produced no accepted
+  adjudication receipt because of a logical serialization defect; all three
+  summaries say `PRECISION_BLOCKER`, and offsets 7101:7148 are retired. The narrow
+  R `genomic()` candidate therefore stays held and
   `single_step()` remains
   separate;
 - a broader construction oracle beyond the completed independent base-R

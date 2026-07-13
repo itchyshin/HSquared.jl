@@ -30,8 +30,13 @@ then passed its untouched offset-6001 holdout: 240/240 valid attempts, 40 wins,
 performance/closed-boundary gate. The offset-7001 infrastructure attempt failed
 before fitting because the bridge package was unavailable; it produced no
 recovery summary or recovery evidence, and offsets 7001:7048 are retired. The
-amended 7101:7148 pilot has not run. Rose review and G10 therefore cannot
-activate the default route. Production
+offset-7101 pilot then completed 432/432 successful converged fits, but its
+sealed adjudicator stopped on a logical serialization defect before minting a
+receipt. All three create-once summaries say `PRECISION_BLOCKER`: five cells
+require more than the frozen 2,000-replicate cap (maximum 16,325). No
+confirmation manifest exists, offsets 7101:7148 are retired, and this is
+diagnostic rather than accepted recovery evidence. Rose review and G10 therefore
+cannot activate the default route. Production
 high-level genomic fitting remains unimplemented.
 
 - Package loads.
@@ -221,8 +226,12 @@ high-level genomic fitting remains unimplemented.
   240/240 valid attempts, 40 wins, 0 losses, and maximum p95 ratio 1.370. It is
   still not an activated default: the offset-7001 infrastructure attempt failed
   before fitting because the bridge package was unavailable, produced no recovery
-  summary or recovery evidence, and retired offsets 7001:7048; the amended
-  7101:7148 pilot and Rose/G10 remain open.
+  summary or recovery evidence, and retired offsets 7001:7048. The offset-7101
+  pilot completed 432/432 successful converged fits, but its adjudication receipt
+  was withheld by a logical serialization defect; its three summaries all say
+  `PRECISION_BLOCKER`, with five cells above the 2,000-replicate cap. No
+  confirmation manifest exists, offsets 7101:7148 are retired, and Rose/G10
+  remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -330,8 +339,11 @@ preregistered revised offset-6001 candidate passed its untouched holdout:
 240/240 valid attempts, 40 wins, 0 losses, and every p95 ratio at or below
 1.370. The offset-7001 infrastructure attempt failed before fitting because the
 bridge package was unavailable; it produced no recovery summary or recovery
-evidence, and offsets 7001:7048 are retired. The amended 7101:7148 pilot has not
-run and activation remains held. A fresh
+evidence, and offsets 7001:7048 are retired. The offset-7101 pilot completed
+432/432 successful converged fits but produced no accepted adjudication receipt
+because of a logical serialization defect. Its three summaries all say
+`PRECISION_BLOCKER`, five cells exceed the frozen 2,000-fit cap, no confirmation
+manifest exists, and offsets 7101:7148 are retired. Activation remains held. A fresh
 hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model

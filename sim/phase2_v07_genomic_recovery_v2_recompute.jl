@@ -192,9 +192,9 @@ function _read_seal(root)
         error("seal Julia dependency manifest hash drift")
     seal["julia_libunwind_sha256"] == "a88a96958909da84881a565c8ea219535425db20a184b09d25968e45212ced94" ||
         error("seal Julia libunwind hash drift")
-    seal["pilot_offsets"] == "7101:7148" || error("seal pilot offsets drift")
+    seal["pilot_offsets"] == "7201:7248" || error("seal pilot offsets drift")
     seal["confirmation_offsets"] == "8001:10000" || error("seal confirmation offsets drift")
-    seal["excluded_offsets"] == "1:48,1001:3000,5001:5048,6001:6048,7001:7048" ||
+    seal["excluded_offsets"] == "1:48,1001:3000,5001:5048,6001:6048,7001:7048,7101:7148" ||
         error("seal excluded offsets drift")
     seal["output_root"] == root || error("output root differs from seal")
     for key in ("driver_commit", "julia_execution_commit", "r_selected_tree", "julia_selected_tree")
@@ -258,7 +258,7 @@ function _read_manifest(root, tier)
         !isempty(cr) || error("manifest omits cell $(c.id)")
         offsets = getproperty.(cr, :seed_offset)
         if tier == "pilot"
-            offsets == collect(7101:7148) || error("pilot membership/order drift for $(c.id)")
+            offsets == collect(7201:7248) || error("pilot membership/order drift for $(c.id)")
         else
             length(cr) in MIN_CONFIRM:MAX_CONFIRM || error("confirmation size outside 200:2000")
             offsets == collect(8001:(8000 + length(cr))) || error("confirmation prefix drift for $(c.id)")
@@ -659,7 +659,8 @@ function selftest()
     keys=[("pilot","c",1),("pilot","c",2)];allunique(keys)||error("baseline duplicate")
     _must_fail("duplicate attempt") do;allunique([keys[1],keys[1]])||error("duplicate");end
     _must_fail("missing retained failure") do;Set(keys[1:1])==Set(keys)||error("missing");end
-    _must_fail("seed membership") do;(7101 in 8001:10000)||error("tier membership");end
+    _must_fail("retired pilot membership") do;(7101 in 7201:7248)||error("retired pilot offset");end
+    _must_fail("seed membership") do;(7201 in 8001:10000)||error("tier membership");end
     println("v0.7 genomic recovery-v2 Julia recomputer selftest: PASS (synthetic only)")
 end
 
