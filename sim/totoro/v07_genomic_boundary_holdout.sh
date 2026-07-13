@@ -34,23 +34,37 @@ run_oracles() {
   find "$OUT_DIR/packets" -mindepth 2 -maxdepth 2 -type d -print0 |
     sort -z |
     xargs -0 -P "$WORKERS" -n 1 bash -c '
-      packet=$1
+      out_dir=$1
+      r_oracle=$2
+      packet=$3
       cell=$(basename "$(dirname "$packet")")
       seed=$(basename "$packet")
-      output="$2/oracle/$cell/$seed.tsv"
+      output="$out_dir/oracle/$cell/$seed.tsv"
       mkdir -p "$(dirname "$output")"
       if [[ -f "$output" && -f "$output.sha256" ]]; then
-        Rscript "$3" holdout-verify --dataset "$packet" --output "$output"
+        Rscript "$r_oracle" holdout-verify --dataset "$packet" --output "$output"
       else
-        Rscript "$3" holdout-oracle --dataset "$packet" --output "$output"
-        Rscript "$3" holdout-verify --dataset "$packet" --output "$output"
+        Rscript "$r_oracle" holdout-oracle --dataset "$packet" --output "$output"
+        Rscript "$r_oracle" holdout-verify --dataset "$packet" --output "$output"
       fi
-    ' _ {} "$OUT_DIR" "$R_ORACLE"
+    ' _ "$OUT_DIR" "$R_ORACLE"
+}
+
+oracle_argument_selftest() {
+  observed=$(printf '/tmp/sealed-packet\0' |
+    xargs -0 -n 1 bash -c 'printf "%s|%s|%s" "$1" "$2" "$3"' \
+      _ "$OUT_DIR" "$R_ORACLE")
+  expected="$OUT_DIR|$R_ORACLE|/tmp/sealed-packet"
+  [[ "$observed" == "$expected" ]] || {
+    echo "oracle xargs argument wiring failed" >&2
+    exit 1
+  }
 }
 
 action=${1:-selftest}
 case "$action" in
   selftest)
+    oracle_argument_selftest
     "$JULIA_BIN" --project=. "$DRIVER" --mode=selftest
     ;;
   seal)
