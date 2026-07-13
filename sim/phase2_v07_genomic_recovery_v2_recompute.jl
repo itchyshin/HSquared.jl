@@ -11,6 +11,7 @@ using Statistics
 const SCHEMA = "v07-genomic-recovery-v2"
 const RIDGE = 0.01
 const BOUNDARY_EPSILON = 1e-7
+const BOUNDARY_KKT_TOLERANCE = 1e-8
 const Z975 = 1.959963984540054
 const MIN_CONFIRM = 200
 const MAX_CONFIRM = 2000
@@ -21,7 +22,7 @@ const STATUS_REASON = Dict(
     "interior" => "ai_interior",
     "interior_rescued" => "profile_interior",
 )
-const R_COMMIT = "1082d84f4269d4f79fdc248558ec56b8f710b8d2"
+const R_COMMIT = "10efc7c58e94da230cbb224b8d2f0698e2550665"
 const JULIA_SELECTED_COMMIT = "fc9d39df650b20aa09d769d9f9528eed1b606f1e"
 
 const CELLS = [
@@ -41,7 +42,7 @@ const ATTEMPT_COLUMNS = split("tier cell_id cell_index seed_offset seed n m trut
 const SUMMARY_COLUMNS = split("tier cell_id n_expected n_attempted n_converged n_bias_rows n_interior n_interior_rescued n_boundary_lower n_boundary_upper n_unresolved n_error n_resolved_valid convergence_rate wilson_lower wilson_upper target truth mean_estimate bias mcse pilot_sd_upper bias_ci_lower bias_ci_upper margin target_pass required_n_raw required_n cell_status campaign_status failure_classes")
 const CORPUS_COLUMNS = ["relative_path", "sha256"]
 const PACKET_PRIMARIES = ["markers.tsv", "ids.tsv", "phenotype.tsv", "truth.tsv", "packet_files_lock.tsv"]
-const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon resolved_statuses output_absent_before_seal")
+const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
 
 struct TSV
     columns::Vector{String}
@@ -152,6 +153,7 @@ function _read_seal(root)
     seal["relationship_method"] == "vanraden1" || error("seal relationship method drift")
     seal["allele_frequency_source"] == "sample" || error("seal frequency-source drift")
     seal["relationship_scale"] == "K_lambda" || error("seal relationship scale drift")
+    seal["boundary_kkt_tolerance"] == "1e-08" || error("seal boundary KKT tolerance drift")
     seal["resolved_statuses"] == join(RESOLVED, ',') || error("seal resolved-status drift")
     seal["pilot_offsets"] == "7001:7048" || error("seal pilot offsets drift")
     seal["confirmation_offsets"] == "8001:10000" || error("seal confirmation offsets drift")
@@ -353,6 +355,13 @@ function _validate_attempt(ar,mr,audit,seal,seal_hash)
         ar.boundary_status=="boundary_upper" && ar.numerical_ratio!=1-BOUNDARY_EPSILON && error("upper endpoint numerical ratio drift")
         ar.boundary_status in ("interior", "interior_rescued") && !(0 < ar.scientific_ratio < 1) &&
             error("interior scientific ratio is not strictly inside (0,1)")
+        ar.boundary_status=="boundary_lower" && ar.lower_derivative>BOUNDARY_KKT_TOLERANCE &&
+            error("lower-boundary KKT derivative sign drift")
+        ar.boundary_status=="boundary_upper" && ar.upper_derivative < -BOUNDARY_KKT_TOLERANCE &&
+            error("upper-boundary KKT derivative sign drift")
+        ar.boundary_status in ("interior", "interior_rescued") &&
+            !(ar.lower_derivative>BOUNDARY_KKT_TOLERANCE && ar.upper_derivative < -BOUNDARY_KKT_TOLERANCE) &&
+            error("interior KKT derivative signs drift")
         all(x -> isnan(x) || isfinite(x), (ar.iterations, ar.objective, ar.gradient_norm, ar.peak_rss_mb)) ||
             error("retained diagnostic is infinite")
         abs(ar.scientific_ratio-ratio)<=1e-12 && abs(ar.scientific_sigma_g2-ratio*total)<=1e-12 &&
@@ -560,6 +569,8 @@ function selftest()
         ("fingerprint",merge(ar,(id_hash=repeat("0",64),))),
         ("attempt status",merge(ar,(status="fit_error",))),
         ("boundary reason",merge(ar,(boundary_reason="profile_interior",))),
+        ("interior lower KKT sign",merge(ar,(lower_derivative=-1.0,))),
+        ("interior upper KKT sign",merge(ar,(upper_derivative=1.0,))),
         ("tier membership",merge(ar,(tier="confirm",))))
         _must_fail(label) do;_validate_attempt(mutation,mr,audit,seal,sealhash);end
     end
