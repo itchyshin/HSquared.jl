@@ -17,9 +17,11 @@ const DOC47_COMMIT = "457b6baf31951071f9bf7fd153fb3544eb4b227a"
 const DOC47_SHA256 = "eea5d7904c66f9e0210668327d9f638a8dd8b3b5975afdf410fe383d7a433ed2"
 const DOC47_AMENDMENT_COMMIT = "f6ef321f474fd3d4b9aa5597f9edb58516703fc6"
 const DOC47_AMENDMENT_SHA256 = "ebfad48378a646708873e7e5041c68a3ec77b495ffb36bf426c2fb575bddde1f"
+const DOC47_AMENDMENT2_COMMIT = "289679d61c17ff1decab8156f47a65828f14fcdd"
+const DOC47_AMENDMENT2_SHA256 = "4bce29c4ee3ae29d14b7eda41cd91ff99b83db5d1d095520ff43d4e92a0d59c4"
 const REFERENCE_COMMIT = "ecc058f380be71058c9cfde373c345ab7a2f6aba"
 const CANDIDATE_ID = "doc47_boundary_performance_v1"
-const SCHEMA_VERSION = "v07-genomic-boundary-performance-v1"
+const SCHEMA_VERSION = "v07-genomic-boundary-performance-v2"
 const DISCOVERY_MANIFEST_SHA256 = "c1f5e1a284ed815a4457ac214372fb37382ade07fef3eb4abce331343bdd820a"
 const DISCOVERY_ENVIRONMENT_SHA256 = "e8fa53cc1f8eed96a029ad01f6602eb24e9a299d4105f6771eae5a6d010361d0"
 const DISCOVERY_CANDIDATE_SEAL_SHA256 = "8a25266b4a89d26e7f26d060efb577c34c1af125c936e39d00175d4b7cb5a12a"
@@ -55,8 +57,8 @@ const COMPONENT_COLUMNS = split("schema_version cell_id seed role implementation
 const RESULT_FIELDS = split("digest_version status reason converged termination profile_ratio numerical_ratio t_hat profile_loglik d0 d1 sigma_g2 sigma_e2 marker_hash id_hash kernel_hash precision_hash relationship_source relationship_method allele_frequency_source ridge relationship_scale")
 const RESULT_COLUMNS = vcat(RESULT_FIELDS, ["result_digest"])
 const EQUIVALENCE_COLUMNS = split("schema_version cell_id seed role marker_hash id_hash kernel_hash oracle_class reference_precision_hash candidate_precision_hash reference_relationship_source candidate_relationship_source reference_relationship_method candidate_relationship_method reference_allele_frequency_source candidate_allele_frequency_source reference_ridge candidate_ridge reference_relationship_scale candidate_relationship_scale reference_status candidate_status reference_reason candidate_reason reference_converged candidate_converged reference_termination candidate_termination reference_profile_ratio candidate_profile_ratio reference_numerical_ratio candidate_numerical_ratio reference_t_hat candidate_t_hat reference_profile_loglik candidate_profile_loglik reference_d0 candidate_d0 reference_d1 candidate_d1 reference_sigma_g2 candidate_sigma_g2 reference_sigma_e2 candidate_sigma_e2 max_component_difference profile_loglik_difference_per_observation max_derivative_difference reference_result_digest candidate_result_digest equivalent error_class")
-const ADMISSION_ENV_KEYS = split("schema_version candidate_id doc47_original_commit doc47_original_sha256 doc47_amendment_commit doc47_amendment_sha256 reference_commit candidate_commit discovery_manifest_sha256 discovery_digest driver_sha256 host julia_version")
-const ATTEMPT_METADATA_KEYS = split("schema_version candidate_id doc47_original_commit doc47_original_sha256 doc47_amendment_commit doc47_amendment_sha256 driver_sha256 implementation_id implementation_commit repeat_id cycle order_index timed_order host julia_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads")
+const ADMISSION_ENV_KEYS = split("schema_version candidate_id doc47_original_commit doc47_original_sha256 doc47_amendment_commit doc47_amendment_sha256 doc47_amendment2_commit doc47_amendment2_sha256 reference_commit candidate_commit discovery_manifest_sha256 discovery_digest driver_sha256 host julia_version")
+const ATTEMPT_METADATA_KEYS = split("schema_version candidate_id doc47_original_commit doc47_original_sha256 doc47_amendment_commit doc47_amendment_sha256 doc47_amendment2_commit doc47_amendment2_sha256 driver_sha256 implementation_id implementation_commit repeat_id cycle order_index timed_order host julia_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads")
 
 const ARM_IDS = [
     "C100_E0", "C1000_E0", "C100_E5", "C1000_E5",
@@ -197,9 +199,14 @@ function _assert_doc47(root)
     head=_git_head(root)
     success(`git -C $root merge-base --is-ancestor $DOC47_COMMIT $head`)||error("execution does not descend from original doc47 freeze")
     success(`git -C $root merge-base --is-ancestor $DOC47_AMENDMENT_COMMIT $head`)||error("execution does not descend from doc47 Amendment 1")
-    _sha256_file(joinpath(root,DOC47_PATH))==DOC47_AMENDMENT_SHA256||error("amended doc47 bytes drift")
+    success(`git -C $root merge-base --is-ancestor $DOC47_AMENDMENT2_COMMIT $head`)||error("execution does not descend from doc47 Amendment 2")
+    _sha256_file(joinpath(root,DOC47_PATH))==DOC47_AMENDMENT2_SHA256||error("amended doc47 bytes drift")
     original=read(`git -C $root show $(DOC47_COMMIT):$(DOC47_PATH)`)
     bytes2hex(sha256(original))==DOC47_SHA256||error("original doc47 freeze bytes drift")
+    amendment1=read(`git -C $root show $(DOC47_AMENDMENT_COMMIT):$(DOC47_PATH)`)
+    bytes2hex(sha256(amendment1))==DOC47_AMENDMENT_SHA256||error("doc47 Amendment 1 bytes drift")
+    amendment2=read(`git -C $root show $(DOC47_AMENDMENT2_COMMIT):$(DOC47_PATH)`)
+    bytes2hex(sha256(amendment2))==DOC47_AMENDMENT2_SHA256||error("doc47 Amendment 2 bytes drift")
     nothing
 end
 
@@ -444,6 +451,7 @@ function admit_mode(args)
         ["schema_version", SCHEMA_VERSION], ["candidate_id", CANDIDATE_ID],
         ["doc47_original_commit", DOC47_COMMIT], ["doc47_original_sha256", DOC47_SHA256],
         ["doc47_amendment_commit", DOC47_AMENDMENT_COMMIT], ["doc47_amendment_sha256", DOC47_AMENDMENT_SHA256],
+        ["doc47_amendment2_commit", DOC47_AMENDMENT2_COMMIT], ["doc47_amendment2_sha256", DOC47_AMENDMENT2_SHA256],
         ["reference_commit", REFERENCE_COMMIT], ["candidate_commit", candidate_commit],
         ["discovery_manifest_sha256", DISCOVERY_MANIFEST_SHA256],
         ["discovery_digest", DISCOVERY_DIGEST], ["driver_sha256", _sha256_file(@__FILE__)],
@@ -465,6 +473,7 @@ function _admission(outdir)
     expected = Dict("schema_version"=>SCHEMA_VERSION, "candidate_id"=>CANDIDATE_ID,
                     "doc47_original_commit"=>DOC47_COMMIT, "doc47_original_sha256"=>DOC47_SHA256,
                     "doc47_amendment_commit"=>DOC47_AMENDMENT_COMMIT, "doc47_amendment_sha256"=>DOC47_AMENDMENT_SHA256,
+                    "doc47_amendment2_commit"=>DOC47_AMENDMENT2_COMMIT, "doc47_amendment2_sha256"=>DOC47_AMENDMENT2_SHA256,
                     "reference_commit"=>REFERENCE_COMMIT,
                     "discovery_manifest_sha256"=>DISCOVERY_MANIFEST_SHA256,
                     "discovery_digest"=>DISCOVERY_DIGEST,
@@ -579,7 +588,7 @@ function _result_record(implementation, result, data; error_class="none")
     else
         boundary=result.boundary; fit=result.fit
         vc=fit === nothing ? nothing : fit.variance_components
-        numerical=vc === nothing ? nothing : vc.sigma_a2/(vc.sigma_a2+vc.sigma_e2)
+        numerical=boundary.numerical_ratio
         t_hat=(vc === nothing || boundary.status=="boundary_unresolved") ? nothing : vc.sigma_a2+vc.sigma_e2
         merge!(base, Dict("digest_version"=>"scientific_result_v1", "status"=>String(boundary.status),
             "reason"=>String(boundary.reason), "converged"=>_canon_bool(fit===nothing ? false : fit.converged),
@@ -844,7 +853,8 @@ function run_mode(args)
     metadata=[
         ["schema_version",SCHEMA_VERSION],["candidate_id",CANDIDATE_ID],["doc47_original_commit",DOC47_COMMIT],
         ["doc47_original_sha256",DOC47_SHA256],["doc47_amendment_commit",DOC47_AMENDMENT_COMMIT],
-        ["doc47_amendment_sha256",DOC47_AMENDMENT_SHA256],["driver_sha256",_sha256_file(@__FILE__)],
+        ["doc47_amendment_sha256",DOC47_AMENDMENT_SHA256],["doc47_amendment2_commit",DOC47_AMENDMENT2_COMMIT],
+        ["doc47_amendment2_sha256",DOC47_AMENDMENT2_SHA256],["driver_sha256",_sha256_file(@__FILE__)],
         ["implementation_id",implementation],["implementation_commit",head],["repeat_id",string(repeat)],
         ["cycle",string(cycle)],["order_index",string(order_index)],["timed_order",timed_order],
         ["host",readchomp(`hostname`)],["julia_version",string(VERSION)],["julia_num_threads",string(Threads.nthreads())],
@@ -970,6 +980,7 @@ function _validate_attempt(final,implementation,admitted,repeat; expected_candid
     expected_metadata=Dict("schema_version"=>SCHEMA_VERSION,"candidate_id"=>CANDIDATE_ID,
         "doc47_original_commit"=>DOC47_COMMIT,"doc47_original_sha256"=>DOC47_SHA256,
         "doc47_amendment_commit"=>DOC47_AMENDMENT_COMMIT,"doc47_amendment_sha256"=>DOC47_AMENDMENT_SHA256,
+        "doc47_amendment2_commit"=>DOC47_AMENDMENT2_COMMIT,"doc47_amendment2_sha256"=>DOC47_AMENDMENT2_SHA256,
         "driver_sha256"=>_sha256_file(@__FILE__),"implementation_id"=>implementation,
         "repeat_id"=>string(repeat),"host"=>"totoro","julia_version"=>"1.10.10","julia_num_threads"=>"1","openblas_num_threads"=>"1",
         "omp_num_threads"=>"1","veclib_maximum_threads"=>"1")
@@ -1128,6 +1139,45 @@ function selftest_mode()
     digest(d)=begin io=IOBuffer(); for f in RESULT_FIELDS; print(io,f,'=',d[f],'\n'); end; bytes2hex(sha256(take!(io))) end
     digest(base)==digest(copy(base))||error("result digest nondeterminism")
     changed=copy(base); changed["status"]="boundary_lower"; digest(base)!=digest(changed)||error("result mutation stayed green")
+    epsilon=1e-7; total=1.2178803835870546
+    mock_data=(md=Dict("marker_hash"=>"m","id_hash"=>"i","kernel_hash"=>"k"),precision_hash="q")
+    mock_fit=(variance_components=(sigma_a2=epsilon*total,sigma_e2=(1-epsilon)*total),
+              converged=true,optimizer_status="boundary_lower")
+    mock_boundary=(status="boundary_lower",reason="boundary_lower",profile_ratio=0.0,
+        numerical_ratio=epsilon,profile_loglik=-1.0,
+        lower_derivative_per_observation=-0.1,upper_derivative_per_observation=-0.2)
+    endpoint_record=_result_record("candidate_boundary",(fit=mock_fit,boundary=mock_boundary),mock_data)
+    endpoint_record["numerical_ratio"]==@sprintf("%.17g",epsilon)||error("canonical endpoint serialization drift")
+    _record_scale_consistent(endpoint_record)||error("canonical endpoint record is not reflexive")
+    _equivalence_tolerance("boundary_lower","numerical_ratio",epsilon)==0.0||error("endpoint exact gate drift")
+    for adjacent in (prevfloat(epsilon),nextfloat(epsilon))
+        mutated=copy(endpoint_record); mutated["numerical_ratio"]=@sprintf("%.17g",adjacent)
+        !_record_scale_consistent(mutated)||error("adjacent endpoint ratio stayed green")
+    end
+    derived=mock_fit.variance_components.sigma_a2/
+            (mock_fit.variance_components.sigma_a2+mock_fit.variance_components.sigma_e2)
+    derived!=epsilon||error("endpoint roundoff mutation fixture collapsed")
+    derived_record=copy(endpoint_record); derived_record["numerical_ratio"]=@sprintf("%.17g",derived)
+    !_record_scale_consistent(derived_record)||error("component-derived endpoint ratio stayed green")
+    upper_epsilon=1-epsilon; upper_total=1.0597902687089635
+    upper_fit=(variance_components=(sigma_a2=upper_epsilon*upper_total,
+        sigma_e2=epsilon*upper_total),converged=true,optimizer_status="boundary_upper")
+    upper_boundary=(status="boundary_upper",reason="boundary_upper",profile_ratio=1.0,
+        numerical_ratio=upper_epsilon,profile_loglik=-1.0,
+        lower_derivative_per_observation=0.1,upper_derivative_per_observation=0.2)
+    upper_record=_result_record("candidate_boundary",(fit=upper_fit,boundary=upper_boundary),mock_data)
+    upper_record["numerical_ratio"]==@sprintf("%.17g",upper_epsilon)||error("canonical upper serialization drift")
+    _record_scale_consistent(upper_record)||error("canonical upper record is not reflexive")
+    for adjacent in (prevfloat(upper_epsilon),nextfloat(upper_epsilon))
+        mutated=copy(upper_record); mutated["numerical_ratio"]=@sprintf("%.17g",adjacent)
+        !_record_scale_consistent(mutated)||error("adjacent upper ratio stayed green")
+    end
+    upper_derived=upper_fit.variance_components.sigma_a2/
+                  (upper_fit.variance_components.sigma_a2+upper_fit.variance_components.sigma_e2)
+    upper_derived!=upper_epsilon||error("upper roundoff mutation fixture collapsed")
+    upper_derived_record=copy(upper_record)
+    upper_derived_record["numerical_ratio"]=@sprintf("%.17g",upper_derived)
+    !_record_scale_consistent(upper_derived_record)||error("component-derived upper ratio stayed green")
     context=(cell_id="c",seed=1,role="control",implementation="candidate_boundary",repeat=1,timed_order=join(_latin_order(1,1),">"),marker_hash="m",id_hash="i",kernel_hash="k",precision_hash="q",result_digest="d",error_class="none")
     z=_zero_measure(); rows=[_component_row(context,c,"none",c=="grid_401" ? 401 : c=="interior_validation_fd" ? 4 : 1,z,"d") for c in COMPONENTS]
     rows[1][9]="sparse_mme"; rows[2][9]="sparse_mme"; rows[3][9]="dense"
