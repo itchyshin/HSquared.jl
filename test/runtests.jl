@@ -3886,6 +3886,40 @@ end
                          interior.boundary.lower_derivative_per_observation,
                          interior.boundary.upper_derivative_per_observation))
 
+    # The eigen-rotated evaluator is a performance rewrite of the frozen dense-H
+    # formula, so compare the two directly at both endpoints and an interior r.
+    precheck = HSquared._genomic_boundary_precheck(
+        interior_spec, interior_fixture.provenance, interior_fixture.K)
+    context = HSquared._genomic_profile_context(precheck)
+    K_reconstructed = Matrix(precheck.qfactor \ Matrix{Float64}(I, 120, 120))
+    function dense_profile(r)
+        H = Symmetric(r .* K_reconstructed .+ (1-r) .* Matrix{Float64}(I, 120, 120))
+        F = cholesky(H)
+        hi_x = F \ Matrix(interior_spec.X)
+        hi_y = F \ Vector(interior_spec.y)
+        fixed = cholesky(Symmetric(transpose(interior_spec.X) * hi_x))
+        rhs = transpose(interior_spec.X) * hi_y
+        quad = dot(interior_spec.y, hi_y) - dot(rhs, fixed \ rhs)
+        df = 120 - size(interior_spec.X, 2)
+        t_hat = quad / df
+        ll = -0.5 * (df * (1 + log(2pi*t_hat)) +
+            2sum(log, diag(F.U)) + 2sum(log, diag(fixed.U)))
+        (loglik=ll, t_hat=t_hat)
+    end
+    for r in (0.0, 0.37, 1.0)
+        fast = HSquared._genomic_profile_reml(context, r)
+        dense = dense_profile(r)
+        @test fast.loglik ≈ dense.loglik atol=1e-10 rtol=0
+        @test fast.t_hat ≈ dense.t_hat atol=1e-10 rtol=0
+    end
+
+    supplied_provenance = HSquared._genomic_precision_provenance(
+        Matrix(interior_spec.Ainv), interior_spec.ids)
+    supplied_route = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = supplied_provenance)
+    @test supplied_route.boundary.profile_ratio == interior.boundary.profile_ratio
+    @test supplied_route.boundary.profile_loglik == interior.boundary.profile_loglik
+
     bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
         sparse(circshift(Matrix{Float64}(I, 120, 120), (0, 1))), interior_spec.Ainv;
         ids = interior_spec.ids, method = :REML)
@@ -3953,11 +3987,21 @@ end
         sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
     tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
     tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
-        provenance = tie_provenance, iterations = 1)
+        provenance = tie_provenance)
     @test tie_result.boundary.status == "boundary_unresolved"
     @test tie_result.boundary.reason == "endpoint_pair_tie"
     @test tie_result.fit !== nothing && !tie_result.fit.converged
     @test tie_result.fit.optimizer_status == "boundary_unresolved"
+    @test tie_result.ai_diagnostics.termination_reason == "score_tolerance"
+
+    endpoint_interior_tie = HSquared._genomic_boundary_classify_candidates(
+        10.0, 10.0, 9.0, true, -0.1, -0.1, 120)
+    @test endpoint_interior_tie.status == "boundary_unresolved"
+    @test endpoint_interior_tie.reason == "endpoint_interior_tie"
+    reversed_lower_kkt = HSquared._genomic_boundary_classify_candidates(
+        10.0, 9.0, 8.0, true, 0.1, -0.1, 120)
+    @test reversed_lower_kkt.status == "boundary_unresolved"
+    @test reversed_lower_kkt.reason == "classification_disagreement"
 
     big_n = 2001
     big_ids = ["big$(i)" for i in 1:big_n]

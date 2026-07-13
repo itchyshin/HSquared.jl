@@ -666,8 +666,11 @@ end
 
 function _genomic_profile_context(precheck)
     n = length(precheck.y)
-    K = precheck.K === nothing ?
-        Matrix(precheck.qfactor \ Matrix{Float64}(I, n, n)) : copy(precheck.K)
+    # Canonicalize both marker and supplied-Q routes through the exact same Q→K
+    # numerical path. The marker K was already fingerprinted and checked against
+    # Q in precheck; using it here would make the two public routes differ by
+    # inversion roundoff on flat profile likelihoods.
+    K = Matrix(precheck.qfactor \ Matrix{Float64}(I, n, n))
     K = (K + transpose(K)) / 2
     decomposition = try
         eigen(Symmetric(K))
@@ -678,6 +681,29 @@ function _genomic_profile_context(precheck)
     vectors_t = transpose(decomposition.vectors)
     return (eigenvalues = decomposition.values, y = vectors_t * precheck.y,
             X = vectors_t * precheck.X, n = n, p = size(precheck.X, 2))
+end
+
+function _genomic_boundary_classify_candidates(lower_ll, interior_ll, upper_ll,
+                                                distinct_interior, d0, d1, n)
+    tie_tol = n * 1e-10
+    endpoint_pair_tie = abs(lower_ll - upper_ll) <= tie_tol &&
+                        max(lower_ll, upper_ll) + tie_tol >= interior_ll
+    lower_interior_tie = distinct_interior && abs(lower_ll - interior_ll) <= tie_tol
+    upper_interior_tie = distinct_interior && abs(upper_ll - interior_ll) <= tie_tol
+    if !endpoint_pair_tie && !lower_interior_tie &&
+       lower_ll + tie_tol >= max(interior_ll, upper_ll) && d0 <= _GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_lower", reason = "likelihood_and_kkt")
+    elseif !endpoint_pair_tie && !upper_interior_tie &&
+           upper_ll + tie_tol >= max(lower_ll, interior_ll) && d1 >= -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_upper", reason = "likelihood_and_kkt")
+    elseif distinct_interior && interior_ll - max(lower_ll, upper_ll) > tie_tol &&
+           d0 > _GENOMIC_BOUNDARY_KKT_TOL && d1 < -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "interior_profile", reason = "profile_interior")
+    end
+    reason = endpoint_pair_tie ? "endpoint_pair_tie" :
+             (lower_interior_tie || upper_interior_tie) ? "endpoint_interior_tie" :
+             "classification_disagreement"
+    return (status = "boundary_unresolved", reason = reason)
 end
 
 function _genomic_profile_reml(context, ratio::Real)
@@ -737,31 +763,20 @@ function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
         return (status = "boundary_unresolved", reason = "endpoint_derivative_failed")
     d0 = (delta_lower.loglik - lower_part.loglik) / _GENOMIC_BOUNDARY_DELTA / n
     d1 = (upper_part.loglik - delta_upper.loglik) / _GENOMIC_BOUNDARY_DELTA / n
-    tie_tol = n * 1e-10
-    endpoint_pair_tie = abs(lower_part.loglik - upper_part.loglik) <= tie_tol &&
-                        max(lower_part.loglik, upper_part.loglik) + tie_tol >= interior_part.loglik
-    lower_interior_tie = distinct_interior && abs(lower_part.loglik - interior_part.loglik) <= tie_tol
-    upper_interior_tie = distinct_interior && abs(upper_part.loglik - interior_part.loglik) <= tie_tol
-    if !endpoint_pair_tie && !lower_interior_tie &&
-       lower_part.loglik + tie_tol >= max(interior_part.loglik, upper_part.loglik) &&
-       d0 <= _GENOMIC_BOUNDARY_KKT_TOL
+    classification = _genomic_boundary_classify_candidates(
+        lower_part.loglik, interior_part.loglik, upper_part.loglik,
+        distinct_interior, d0, d1, n)
+    if classification.status == "boundary_lower"
         return (status = "boundary_lower", reason = "likelihood_and_kkt", profile_ratio = 0.0,
                 exact = lower_part, d0 = d0, d1 = d1)
-    elseif !endpoint_pair_tie && !upper_interior_tie &&
-           upper_part.loglik + tie_tol >= max(lower_part.loglik, interior_part.loglik) &&
-           d1 >= -_GENOMIC_BOUNDARY_KKT_TOL
+    elseif classification.status == "boundary_upper"
         return (status = "boundary_upper", reason = "likelihood_and_kkt", profile_ratio = 1.0,
                 exact = upper_part, d0 = d0, d1 = d1)
-    elseif distinct_interior &&
-           interior_part.loglik - max(lower_part.loglik, upper_part.loglik) > tie_tol &&
-           d0 > _GENOMIC_BOUNDARY_KKT_TOL && d1 < -_GENOMIC_BOUNDARY_KKT_TOL
+    elseif classification.status == "interior_profile"
         return (status = "interior_profile", reason = "profile_interior", profile_ratio = interior_r,
                 exact = interior_part, d0 = d0, d1 = d1)
     end
-    reason = endpoint_pair_tie ? "endpoint_pair_tie" :
-             (lower_interior_tie || upper_interior_tie) ? "endpoint_interior_tie" :
-             "classification_disagreement"
-    return (status = "boundary_unresolved", reason = reason)
+    return (status = "boundary_unresolved", reason = classification.reason)
 end
 
 function _fit_ai_reml_genomic_boundary(
