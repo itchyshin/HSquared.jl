@@ -2,7 +2,8 @@
 
 **Status:** original preregistration frozen before profiling or implementation at
 commit `457b6baf`; Amendment 1 added after local unit implementation but before
-any discovery profiling. Independent numerical/performance,
+any discovery profiling; Amendment 2 records a post-discovery serialization
+defect without changing an equivalence threshold. Independent numerical/performance,
 preregistration/evidence, and R-contract reviews of the original freeze returned
 `CLEAN`; Amendment 1 is reviewed separately below. This is an engineering study
 on already-open discovery data, not recovery evidence and not authority to
@@ -58,6 +59,52 @@ still tested against the reference implementation, rather than by requiring an
 unused eigen endpoint evaluator to reproduce sparse cancellation. No discovery
 dataset, spent holdout row, or reserved fresh seed was read to make this
 amendment.
+
+### Amendment 2: serialize the production boundary ratio
+
+**Frozen 2026-07-13 after discovery v3 failed verification and before the
+corrected implementation or any replacement discovery run.** Discovery v3 was
+bound to candidate commit `a4729040ba15836c5d45d69787fea4abf076497d`
+and driver SHA-256
+`2db2ffd71109cc8898cced13688f692430af8426ba9011aedecc3daa7b06a13f`.
+All ten cell/scope summary timing gates passed, including the formerly failing
+`n120_m600_r050` control ratio (`1.1152031850317943`), but the gate reported
+only 48/58 equivalent datasets. The validated v3 summary hashes are:
+
+- equivalence: `6063bf5c8f97f8a8f28b47499e579a3bf173cb92074537d41314d9d830a82eb7`;
+- timing: `7cea7894fb8bd229bfe9cb74abbcb8e526b3f3843cacda17355995d2bf096fbd`;
+- gate: `034954ce073cbf143151734bbec58692ecc6dae9a8e2150e271f013f02c64996`.
+
+The immutable local evidence remains at
+`/home/snakagaw/hsq_work/v07_boundary_performance_20260713/results/discovery-v3/`.
+The ten false rows had no status, reason, convergence, termination, or
+profile-ratio mismatch. Their largest reference/candidate derived numerical-ratio
+difference was `1.3234889800848443e-23`; the reconstructed values differed from
+the canonical endpoint by zero to two ulps and therefore failed the exact
+semantic gate. Their largest component difference was
+`8.8817841970012523e-16`, likelihood difference per observation was
+`4.7369515717340012e-16`, and derivative difference was
+`7.1054273576010019e-10`; those three were inside their frozen tolerances. One false row had
+identical reference and candidate scientific-result digests. The defect was in
+the profiler's result serialization: it reconstructed `numerical_ratio` as
+`sigma_g2 / (sigma_g2 + sigma_e2)` after the epsilon components had been
+multiplied, introducing zero-to-two-ulp drift, while the exact semantic field
+already exists as `result.boundary.numerical_ratio`.
+
+The correction is to serialize `boundary.numerical_ratio` directly. Exact
+endpoint comparison remains exact; no equivalence or timing tolerance changes.
+The pre-existing total-variance and derived-ratio arithmetic-consistency checks
+remain unchanged. V3 is preserved as `VERIFIER_INVALID`, never re-labelled
+PASS. Because
+the result preimages, digests, driver SHA, and candidate commit change, all 870
+discovery attempts must be rerun under a new create-once admission. The
+replacement discovery packet schema is
+`v07-genomic-boundary-performance-v2` and must bind this Amendment 2 commit and
+SHA-256 separately from the original freeze and Amendment 1. Mutation tests must
+show that identical endpoint records are reflexive, that replacing the canonical
+epsilon with `prevfloat` or `nextfloat` fails exact comparison, and that the
+component-derived adjacent Float64 cannot substitute for the production boundary
+field. The spent holdout and reserved fresh seeds remain prohibited.
 
 ## Frozen reference and unchanged contracts
 
