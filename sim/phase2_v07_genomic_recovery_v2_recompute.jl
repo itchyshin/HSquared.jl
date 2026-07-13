@@ -44,7 +44,7 @@ const CORPUS_COLUMNS = ["relative_path", "sha256"]
 const REVIEW_COLUMNS = split("schema_version reviewer verdict r_execution_commit julia_execution_commit reviewed_at_utc")
 const ADMISSION_COLUMNS = split("schema_version r_execution_commit julia_execution_commit fisher_review_sha256 fisher_review_path grace_review_sha256 grace_review_path rose_review_sha256 rose_review_path reviewed_at_utc")
 const PACKET_PRIMARIES = ["markers.tsv", "ids.tsv", "phenotype.tsv", "truth.tsv", "packet_files_lock.tsv"]
-const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
+const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version juliacall_version pkgload_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
 
 struct TSV
     columns::Vector{String}
@@ -176,8 +176,12 @@ function _read_seal(root)
     seal["relationship_scale"] == "K_lambda" || error("seal relationship scale drift")
     seal["boundary_kkt_tolerance"] == "1e-08" || error("seal boundary KKT tolerance drift")
     seal["resolved_statuses"] == join(RESOLVED, ',') || error("seal resolved-status drift")
-    seal["pilot_offsets"] == "7001:7048" || error("seal pilot offsets drift")
+    seal["juliacall_version"] == "0.17.6" || error("seal JuliaCall version drift")
+    seal["pkgload_version"] == "1.5.1" || error("seal pkgload version drift")
+    seal["pilot_offsets"] == "7101:7148" || error("seal pilot offsets drift")
     seal["confirmation_offsets"] == "8001:10000" || error("seal confirmation offsets drift")
+    seal["excluded_offsets"] == "1:48,1001:3000,5001:5048,6001:6048,7001:7048" ||
+        error("seal excluded offsets drift")
     seal["output_root"] == root || error("output root differs from seal")
     for key in ("driver_commit", "julia_execution_commit", "r_selected_tree", "julia_selected_tree")
         _hex(seal[key], 40) || error("invalid $key in seal")
@@ -240,7 +244,7 @@ function _read_manifest(root, tier)
         !isempty(cr) || error("manifest omits cell $(c.id)")
         offsets = getproperty.(cr, :seed_offset)
         if tier == "pilot"
-            offsets == collect(7001:7048) || error("pilot membership/order drift for $(c.id)")
+            offsets == collect(7101:7148) || error("pilot membership/order drift for $(c.id)")
         else
             length(cr) in MIN_CONFIRM:MAX_CONFIRM || error("confirmation size outside 200:2000")
             offsets == collect(8001:(8000 + length(cr))) || error("confirmation prefix drift for $(c.id)")
@@ -641,7 +645,7 @@ function selftest()
     keys=[("pilot","c",1),("pilot","c",2)];allunique(keys)||error("baseline duplicate")
     _must_fail("duplicate attempt") do;allunique([keys[1],keys[1]])||error("duplicate");end
     _must_fail("missing retained failure") do;Set(keys[1:1])==Set(keys)||error("missing");end
-    _must_fail("seed membership") do;(7001 in 8001:10000)||error("tier membership");end
+    _must_fail("seed membership") do;(7101 in 8001:10000)||error("tier membership");end
     println("v0.7 genomic recovery-v2 Julia recomputer selftest: PASS (synthetic only)")
 end
 
