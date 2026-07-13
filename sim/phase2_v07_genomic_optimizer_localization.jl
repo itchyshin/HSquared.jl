@@ -99,7 +99,11 @@ _opt(args, key, default=nothing) = begin
     length(hits) <= 1 || error("--$(key) may be supplied only once")
     isempty(hits) ? default : only(hits)
 end
-_required(args, key) = something(_opt(args, key, nothing), error("--$(key) is required"))
+_required(args, key) = begin
+    value = _opt(args, key, nothing)
+    value === nothing && error("--$(key) is required")
+    value
+end
 _bool(args, key, default=true) = lowercase(String(_opt(args, key, string(default)))) in ("1", "true", "yes")
 _format(x::AbstractFloat) = isfinite(x) ? @sprintf("%.17g", x) : string(x)
 _format(x) = string(x)
@@ -714,6 +718,7 @@ function selftest_mode()
     _assert_seed_contract(); length(ATOMIC_ARMS)==16 || error("atomic arm count drift"); length(POLICY_ORDER)==20 || error("policy order drift")
     _opt(["--phase=discovery"],"phase")=="discovery" || error("equals-form parser drift")
     _opt(["--phase","holdout"],"phase")=="holdout" || error("split-form parser drift")
+    _required(["--phase","holdout"],"phase")=="holdout" || error("required parser drift")
     _must_fail("missing split-form value") do
         _opt(["--phase"],"phase")
     end
