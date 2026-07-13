@@ -1,9 +1,12 @@
 # 0.7 genomic boundary performance-localization amendment
 
-**Status:** frozen before profiling or implementation. Independent
-numerical/performance, preregistration/evidence, and R-contract reviews returned
-`CLEAN`. This is an engineering study on already-open discovery data, not
-recovery evidence and not authority to activate the R route.
+**Status:** original preregistration frozen before profiling or implementation at
+commit `457b6baf`; Amendment 1 added after local unit implementation but before
+any discovery profiling. Independent numerical/performance,
+preregistration/evidence, and R-contract reviews of the original freeze returned
+`CLEAN`; Amendment 1 is reviewed separately below. This is an engineering study
+on already-open discovery data, not recovery evidence and not authority to
+activate the R route.
 
 **Depends on:** docs 44--46 and the negative endpoint recorded in
 `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
@@ -28,6 +31,33 @@ that:
 
 The 240 offsets `5001:5048` are spent. They may not be read, profiled, summarized,
 or used to choose or revise this candidate.
+
+### Amendment 1: retain sparse endpoint result assembly
+
+**Frozen 2026-07-13 after unit implementation and before any discovery profiling.**
+The deterministic `boundary_fixture(:upper)` in the testset `v0.7 genomic
+closed-boundary resolution (doc 46)` (`test/runtests.jl`) exposed a numerical
+distinction that the original preregistration had treated as algebraically
+invisible. In one local environment -- Julia 1.10.0, Darwin/aarch64, ILP64
+OpenBLAS -- at the `1 - 1e-7` epsilon representation, the eigen and sparse-MME
+likelihoods differed by `9.788305277425024e-10` per observation and the fixed
+effect by `1.1325918709962087e-11`. At the ordinary interior optimum and all four
+frozen finite-difference perturbations, likelihood agreement was at most
+`3.552713678800501e-16` per observation and fixed-effect agreement was at most
+`8.131192650733818e-18` in that environment.
+
+The upper-endpoint difference is consistent with floating-point cancellation in
+the frozen sparse-MME determinant identity; the unit comparison does not by
+itself establish which representation is more accurate. Replacing the frozen
+sparse reported value with the distinct eigen value would violate this arc's
+output-equivalence purpose. Therefore endpoint result assembly remains on
+`sparse_reml_loglik`; the reused eigen context is eligible only for
+ordinary/rescued interior validation. The four central-
+difference evaluations and step remain unchanged. Endpoint output equivalence is
+still tested against the reference implementation, rather than by requiring an
+unused eigen endpoint evaluator to reproduce sparse cancellation. No discovery
+dataset, spent holdout row, or reserved fresh seed was read to make this
+amendment.
 
 ## Frozen reference and unchanged contracts
 
@@ -293,13 +323,14 @@ synthetic near-tie and near-KKT cases that would expose a classification flip.
 
 An eigen-context finite-difference validator must retain the same central
 difference in both log-variance parameters, step `h=1e-5`, and exactly four
-likelihood evaluations per validation. Before it replaces sparse validation,
-the eigen and `sparse_reml_loglik` values must agree at all four perturbed points
-and at lower-epsilon, interior, and upper-epsilon representations: log likelihood
-within `1e-10` per observation, fixed-effect coefficients within absolute
-`1e-10`, and gradient norm within absolute `1e-10`. The ordinary AI-interior fit
-and variance components remain unchanged; only its validator may use the reused
-eigen context.
+likelihood evaluations per validation. Before it replaces sparse validation for
+an interior result, the eigen and `sparse_reml_loglik` values must agree at the
+interior representation and all four perturbed points: log likelihood within
+`1e-10` per observation, fixed-effect coefficients within absolute `1e-10`, and
+gradient norm within absolute `1e-10`. The ordinary AI-interior fit and variance
+components remain unchanged; only its validator may use the reused eigen context.
+Lower- and upper-epsilon result assembly remains on `sparse_reml_loglik` under
+Amendment 1 and must remain output-equivalent to the reference implementation.
 
 Run all 72 boundary tests, full Julia tests on 1.10 and 1.12, deliberate mutations,
 and the independent R oracle before sealing. Any new specialized path must have a
