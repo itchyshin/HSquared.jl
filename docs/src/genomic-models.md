@@ -14,8 +14,11 @@ identity evidence. The original offset-5001 boundary candidate remains a banked
 runtime failure because one cell reached 5.99x p95 against the frozen 3x cap.
 The separately preregistered revised candidate passed its fresh offset-6001
 holdout: 240/240 valid attempts, 40 wins, 0 losses, and every p95 ratio at or
-below 1.370. This clears only the performance/closed-boundary gate; recovery-v2
-has not run, and this is **not**
+below 1.370. This clears only the performance/closed-boundary gate. The
+offset-7001 infrastructure attempt failed before fitting because the bridge
+package was unavailable; it produced no recovery summary or recovery evidence,
+and offsets 7001:7048 are retired. The amended 7101:7148 pilot has not run, and
+this is **not**
 broad recovery, production-scale evidence, or permission to activate the R
 default. The R surface therefore remains partial/held with no Rose/G10 promotion
 basis. `single_step()` remains a separate experimental surface.
@@ -151,8 +154,11 @@ Still planned / coordinated:
 
 - the original untouched performance holdout remains a banked failure
   (5.99x), while an output-equivalent numerical repair passed a separate fresh
-  holdout. The hash-pinned recovery-v2 design is prepared but unrun; the narrow
-  R `genomic()` candidate therefore stays held and `single_step()` remains
+  holdout. The offset-7001 infrastructure attempt failed before fitting because
+  the bridge package was unavailable; it produced no recovery summary or recovery
+  evidence, and offsets 7001:7048 are retired. The amended hash-pinned 7101:7148
+  pilot has not run; the narrow R `genomic()` candidate therefore stays held and
+  `single_step()` remains
   separate;
 - a broader construction oracle beyond the completed independent base-R
   reconstruction of the exact candidate kernel. A fresh hash-pinned `blupf90+`

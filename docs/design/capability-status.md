@@ -5,8 +5,11 @@
 > 5.99x p95 versus the frozen 3x cap). The separately preregistered revised
 > candidate passed its untouched offset-6001 holdout: 240/240 valid attempts,
 > 40 wins, 0 losses, and every cell at or below 1.370x. This clears only the
-> performance/closed-boundary gate. Recovery-v2 has not run, the ordinary R
-> route remains a held branch candidate, and no capability/count row moved;
+> performance/closed-boundary gate. The offset-7001 infrastructure attempt failed
+> before fitting because the bridge package was unavailable; it produced no
+> recovery summary or recovery evidence, and offsets 7001:7048 are retired. The
+> amended 7101:7148 pilot has not run, the ordinary R route remains a held branch
+> candidate, and no capability/count row moved;
 > `public_covered_count` remains 5. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
 
