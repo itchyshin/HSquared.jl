@@ -572,3 +572,28 @@ function validation_status()
 
     return ValidationStatus(rows)
 end
+
+"""
+    validation_status_counts()
+
+Canonical machine-readable tally of [`validation_status`](@ref) — the SINGLE
+source every downstream count (R docs, README, NEWS, register, dashboard,
+`tools/status_cache.json`) must derive from. Returns a `NamedTuple`:
+`rows` (total), `covered`, `covered_external`,
+`covered_incl_external` (= `covered + covered_external`), `partial`, `planned`.
+Never hand-type these numbers; call this or read the refreshed cache.
+"""
+function validation_status_counts()
+    rows = validation_status().rows
+    tally(s) = count(r -> r.status == s, rows)
+    covered = tally("covered")
+    covered_external = tally("covered_external")
+    return (
+        rows = length(rows),
+        covered = covered,
+        covered_external = covered_external,
+        covered_incl_external = covered + covered_external,
+        partial = tally("partial"),
+        planned = tally("planned"),
+    )
+end
