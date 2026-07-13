@@ -371,6 +371,28 @@ function fit_ai_reml(
     tol::Real = 1e-8,
     em_warmup::Integer = 0,
 )
+    return _fit_ai_reml_diagnostics(
+        spec;
+        initial = initial,
+        iterations = iterations,
+        tol = tol,
+        em_warmup = em_warmup,
+    ).fit
+end
+
+# Instrumented implementation used by the preregistered v0.7 optimizer-
+# localization study.  This is deliberately internal: optimizer controls and
+# the diagnostics payload are not part of the public R/Julia contract.  The
+# public `fit_ai_reml` wrapper above returns only `.fit`, preserving its result
+# type and every fitted value while the study can consume counters recorded at
+# the point where the corresponding event actually occurs.
+function _fit_ai_reml_diagnostics(
+    spec::AnimalModelSpec;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+    em_warmup::Integer = 0,
+)
     spec.method == :REML ||
         throw(ArgumentError("fit_ai_reml requires spec.method == :REML"))
     sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
@@ -384,6 +406,14 @@ function fit_ai_reml(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    factorizations = 0
+    em_steps = 0
+    step_halvings = 0
+    last_relative_change = NaN
+    ai_score_a = NaN
+    ai_score_e = NaN
+    ai_score_norm = NaN
+    termination_reason = "iteration_limit"
 
     # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
     # REML score: σ²a = (u'A⁻¹u + tr(A⁻¹C^uu))/q and σ²e = e'e/(n − p − q + tr(A⁻¹C^uu)/σ²a).
@@ -395,6 +425,7 @@ function fit_ai_reml(
     # and positive, otherwise we stop warming up and let the AI step run.
     for _ in 1:max(0, em_warmup)
         lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factorizations += 1
         factor = try
             cholesky(Symmetric(lhs); check = true)
         catch err
@@ -411,6 +442,7 @@ function fit_ai_reml(
         (isfinite(a_em) && isfinite(e_em) && a_em > 0 && e_em > 0) || break
         rel = max(abs(a_em - sigma_a2) / sigma_a2, abs(e_em - sigma_e2) / sigma_e2)
         sigma_a2, sigma_e2 = a_em, e_em
+        em_steps += 1
         rel < tol && break
     end
 
@@ -419,6 +451,7 @@ function fit_ai_reml(
     for it in 1:iterations
         iters = it
         lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factorizations += 1
         factor = cholesky(Symmetric(lhs); check = true)
         solution = factor \ rhs
         beta = solution[1:nfixed]
@@ -431,8 +464,12 @@ function fit_ai_reml(
         score_e =
             -0.5 / sigma_e2^2 *
             (sigma_e2 * (nobs - nfixed - nrandom + trace_AC / sigma_a2) - dot(e, e))
-        if hypot(score_a, score_e) < tol
+        ai_score_a = score_a
+        ai_score_e = score_e
+        ai_score_norm = hypot(score_a, score_e)
+        if ai_score_norm < tol
             converged = true
+            termination_reason = "score_tolerance"
             break
         end
 
@@ -450,7 +487,10 @@ function fit_ai_reml(
         # *finite* step at the σ²→0 boundary (a step large relative to a tiny σ²a that even 60
         # halvings cannot bring back positive) is NOT handled here — it is caught by the
         # halving-exhaustion `break` just below.
-        all(isfinite, step) || break
+        if !all(isfinite, step)
+            termination_reason = "nonfinite_ai_step"
+            break
+        end
 
         a_new = sigma_a2 + step[1]
         e_new = sigma_e2 + step[2]
@@ -461,28 +501,34 @@ function fit_ai_reml(
             e_new = sigma_e2 + step[2]
             halvings += 1
         end
+        step_halvings += halvings
         # Step-halving cannot keep the variance components positive: σ has been driven to
         # the σ²→0 boundary on a weakly-identified spec (the finite Newton step is large
         # relative to a tiny σ²a, so even 60 halvings cannot recover a positive a_new). Stop
         # at the current finite, positive σ with converged=false — the V1-REML boundary
         # contract ("finite positive ... never NaN") — rather than throwing, which was an
         # intermittent CI failure on degenerate single-step fixtures.
-        (a_new > 0 && e_new > 0) || break
+        if !(a_new > 0 && e_new > 0)
+            termination_reason = "step_halving_exhausted"
+            break
+        end
         # Scale-invariant convergence. The absolute REML score scales with n, so the
         # `hypot(score) < tol` check above becomes unreachable at large q (measured:
         # q=300k ran to the 100-iter cap with σ̂² already at truth). Also stop on the
         # RELATIVE change in the variance components, which is scale-free.
         rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
+        last_relative_change = rel_change
         sigma_a2, sigma_e2 = a_new, e_new
         if rel_change < tol
             converged = true
+            termination_reason = "relative_change_tolerance"
             break
         end
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     status = converged ? "converged" : "not_converged"
-    return AnimalModelFit(
+    fit = AnimalModelFit(
         spec,
         likelihood,
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
@@ -493,6 +539,19 @@ function fit_ai_reml(
         false,
         true,
         :estimated_ai_reml,
+    )
+    return (
+        fit = fit,
+        diagnostics = (
+            termination_reason = termination_reason,
+            em_steps = em_steps,
+            factorizations = factorizations,
+            step_halvings = step_halvings,
+            last_relative_change = last_relative_change,
+            ai_score_a = ai_score_a,
+            ai_score_e = ai_score_e,
+            ai_score_norm = ai_score_norm,
+        ),
     )
 end
 

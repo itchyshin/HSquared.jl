@@ -3766,6 +3766,60 @@ end
     )
 end
 
+@testset "fit_ai_reml internal optimizer-localization diagnostics" begin
+    ids = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "d1", "d1", "d2", "d2", "d3", "d5"],
+        ["0", "0", "d2", "d2", "0", "0", "d4", "d6"],
+    )
+    spec = animal_model_spec(
+        [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5],
+        ones(8, 1),
+        sparse(1.0I, 8, 8),
+        pedigree_inverse(ped);
+        ids = ped.ids,
+        method = :REML,
+    )
+
+    # The public wrapper remains the exact fit half of the internal path.
+    public_fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    internal = HSquared._fit_ai_reml_diagnostics(
+        spec;
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    @test internal.fit.spec === public_fit.spec
+    @test internal.fit.likelihood.loglik == public_fit.likelihood.loglik
+    @test internal.fit.likelihood.beta == public_fit.likelihood.beta
+    @test internal.fit.variance_components == public_fit.variance_components
+    @test internal.fit.converged == public_fit.converged
+    @test internal.fit.optimizer_status == public_fit.optimizer_status
+    @test internal.fit.iterations == public_fit.iterations
+    @test internal.fit.target == public_fit.target
+    @test internal.fit.dense_validation_path == public_fit.dense_validation_path
+    @test internal.fit.sparse_mme_path == public_fit.sparse_mme_path
+    @test internal.fit.variance_components_source == public_fit.variance_components_source
+    @test internal.diagnostics.termination_reason in
+          ("score_tolerance", "relative_change_tolerance")
+    @test internal.diagnostics.factorizations ==
+          internal.fit.iterations + internal.diagnostics.em_steps
+    @test internal.diagnostics.step_halvings >= 0
+    @test isfinite(internal.diagnostics.ai_score_norm)
+    @test all(isfinite, (internal.diagnostics.ai_score_a, internal.diagnostics.ai_score_e))
+
+    capped = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1)
+    @test !capped.fit.converged
+    @test capped.diagnostics.termination_reason == "iteration_limit"
+    @test capped.diagnostics.factorizations == 1
+    @test capped.diagnostics.em_steps == 0
+    @test isfinite(capped.diagnostics.last_relative_change)
+
+    warmed = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1, em_warmup = 5)
+    @test 0 <= warmed.diagnostics.em_steps <= 5
+    @test warmed.diagnostics.factorizations ==
+          warmed.fit.iterations + warmed.diagnostics.em_steps
+end
+
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
