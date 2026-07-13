@@ -36,13 +36,19 @@ const PILOT_COLUMNS_V2 = split("tier cell_id seed n m truth_sigma_g2 truth_sigma
 const PILOT_COLUMNS_LEGACY = split("tier cell_id seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio estimate_sigma_g2 estimate_sigma_e2 estimate_ratio converged iterations objective gradient_norm runtime_seconds peak_rss_mb marker_hash id_hash kernel_hash error_class")
 const PILOT_MANIFEST_COLUMNS = split("tier cell_id seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio ridge regime")
 
-const CELLS = [
+const PILOT_CELLS = [
     (index=1, id="n120_m600_r020", n=120, m=600, ratio=0.2),
     (index=2, id="n120_m600_r050", n=120, m=600, ratio=0.5),
     (index=3, id="n120_m600_r080", n=120, m=600, ratio=0.8),
+    (index=4, id="n300_m150_r020", n=300, m=150, ratio=0.2),
+    (index=5, id="n300_m150_r050", n=300, m=150, ratio=0.5),
+    (index=6, id="n300_m150_r080", n=300, m=150, ratio=0.8),
     (index=7, id="n300_m1000_r020", n=300, m=1000, ratio=0.2),
+    (index=8, id="n300_m1000_r050", n=300, m=1000, ratio=0.5),
     (index=9, id="n300_m1000_r080", n=300, m=1000, ratio=0.8),
 ]
+
+const CELLS = PILOT_CELLS[[1,2,3,7,9]]
 
 const FAILURE_SEEDS = Dict(
     "n120_m600_r020" => [2027130002, 2027130006, 2027130009, 2027130012, 2027130014, 2027130018,
@@ -112,6 +118,12 @@ _sha256_file(path) = bytes2hex(sha256(read(path)))
 function _cell(id)
     matches = filter(c -> c.id == id, CELLS)
     length(matches) == 1 || error("unknown cell $(id)")
+    only(matches)
+end
+
+function _pilot_cell(id)
+    matches = filter(c -> c.id == id, PILOT_CELLS)
+    length(matches) == 1 || error("unknown pilot cell $(id)")
     only(matches)
 end
 
@@ -322,7 +334,7 @@ function _validate_pilot_source(pilot_dir)
     end
     for row in mrows
         d=Dict(PILOT_MANIFEST_COLUMNS .=> row)
-        cell=_cell(d["cell_id"]); seed=parse(Int,d["seed"])
+        cell=_pilot_cell(d["cell_id"]); seed=parse(Int,d["seed"])
         d["tier"]=="pilot" && seed in _pilot_seeds(cell) &&
             parse(Int,d["n"])==cell.n && parse(Int,d["m"])==cell.m &&
             parse(Float64,d["ridge"])==RIDGE ||
