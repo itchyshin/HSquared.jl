@@ -44,7 +44,7 @@ const CORPUS_COLUMNS = ["relative_path", "sha256"]
 const REVIEW_COLUMNS = split("schema_version reviewer verdict r_execution_commit julia_execution_commit reviewed_at_utc")
 const ADMISSION_COLUMNS = split("schema_version r_execution_commit julia_execution_commit fisher_review_sha256 fisher_review_path grace_review_sha256 grace_review_path rose_review_sha256 rose_review_path reviewed_at_utc")
 const PACKET_PRIMARIES = ["markers.tsv", "ids.tsv", "phenotype.tsv", "truth.tsv", "packet_files_lock.tsv"]
-const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version juliacall_version pkgload_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
+const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version r_libs juliacall_version pkgload_version juliacall_source_commit juliacall_source_archive juliacall_source_archive_sha256 juliacall_installed_tree_sha256 julia_dependency_manifest_sha256 julia_libunwind_sha256 julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
 
 struct TSV
     columns::Vector{String}
@@ -178,6 +178,20 @@ function _read_seal(root)
     seal["resolved_statuses"] == join(RESOLVED, ',') || error("seal resolved-status drift")
     seal["juliacall_version"] == "0.17.6" || error("seal JuliaCall version drift")
     seal["pkgload_version"] == "1.5.1" || error("seal pkgload version drift")
+    seal["r_libs"] == "/home/snakagaw/R/v07-lib:/home/snakagaw/R/lib" ||
+        error("seal R library path drift")
+    seal["juliacall_source_commit"] == "947d1f3aaba5fec0f5cf61394869a5a47ffa7551" ||
+        error("seal JuliaCall source commit drift")
+    seal["juliacall_source_archive"] == "/home/snakagaw/R/v07-lib/sources/JuliaCall-947d1f3aaba5fec0f5cf61394869a5a47ffa7551.tar.gz" ||
+        error("seal JuliaCall source archive drift")
+    seal["juliacall_source_archive_sha256"] == "50b64935587342774bb2ee0ebba258af57e161579f858d7de3429034e18756c3" ||
+        error("seal JuliaCall source archive hash drift")
+    seal["juliacall_installed_tree_sha256"] == "811147c85b18af7319084714698f474c7b404d8ba20c0796acfce85c60c7f692" ||
+        error("seal JuliaCall installed tree hash drift")
+    seal["julia_dependency_manifest_sha256"] == "773b0b30edc7c6c799947fda10b24386f2d1b364448df82736b5d0ef909f74dc" ||
+        error("seal Julia dependency manifest hash drift")
+    seal["julia_libunwind_sha256"] == "a88a96958909da84881a565c8ea219535425db20a184b09d25968e45212ced94" ||
+        error("seal Julia libunwind hash drift")
     seal["pilot_offsets"] == "7101:7148" || error("seal pilot offsets drift")
     seal["confirmation_offsets"] == "8001:10000" || error("seal confirmation offsets drift")
     seal["excluded_offsets"] == "1:48,1001:3000,5001:5048,6001:6048,7001:7048" ||
