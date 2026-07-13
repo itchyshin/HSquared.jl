@@ -77,7 +77,9 @@ git -C "/Users/z3437171/Dropbox/Github Local/hsquared" pull --ff-only
 
 ## Verification State
 
-- Julia boundary tests 72/72 and full `Pkg.test()` green.
+- Julia boundary tests 72/72 and full `Pkg.test()` green on Julia 1.10.0 and
+  Julia 1.12.6. Endpoint fixtures are deterministic and do not depend on
+  release-specific RNG streams.
 - R engine-free suite green; commit-pinned live genomic suite 265/0/0/0.
 - R `R CMD check --no-manual` 0 errors / 0 warnings / 0 notes.
 - Julia Documenter and R pkgdown green.
@@ -86,8 +88,10 @@ git -C "/Users/z3437171/Dropbox/Github Local/hsquared" pull --ff-only
 - R PR #136 CI: green.
 - Julia PR #273 initially failed only on Julia 1.10/Linux because the platform's
   default `rank(X)` tolerance accepted an exactly duplicated X column. The
-  precheck now freezes `rtol = sqrt(eps(Float64))`; full local Julia 1.10
-  `Pkg.test()` is green. Confirm the pushed CI rerun before merge with
+  precheck now freezes `rtol = sqrt(eps(Float64))`. Its Julia 1.12 lane then
+  exposed version-dependent seeded boundary fixtures; they now use explicit
+  deterministic `K`, `Q`, and `y`. Full local Julia 1.10.0 and 1.12.6
+  `Pkg.test()` runs are green. Confirm the pushed CI rerun before merge with
   `gh pr checks 273`.
 
 ## Landing State

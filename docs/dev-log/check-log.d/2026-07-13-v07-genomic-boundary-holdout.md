@@ -49,7 +49,17 @@ held.
   is portable again. Full local Julia 1.10 `Pkg.test()` passes, including the
   boundary block 72/72. Independent numerical/Julia review: `CLEAN` (the
   downstream normal equations square `cond(X)`, so the conservative cutoff is
-  appropriate). CI rerun is required before merge.
+  appropriate).
+- The next Julia 1.12 CI lane exposed a test-fixture portability defect rather
+  than an estimator defect: boundary expectations had been regenerated from a
+  seeded `randn` stream whose values differ between Julia 1.10 and 1.12. The
+  endpoint fixtures now use explicit deterministic diagonal `K`, reciprocal
+  `Q`, and signed power-law `y` targets. The epsilon-representation versus
+  exact-endpoint profile-likelihood check was kept tight at `2e-8` per
+  observation after Julia 1.12 produced `1.09e-8`; the independent scientific
+  oracle remains at `1e-8`. Full local `Pkg.test()` is green on Julia 1.10.0
+  and Julia 1.12.6, with the boundary block 72/72 on both. Independent review:
+  `CLEAN`. CI rerun is required before merge.
 
 Full evidence and limitations:
 [`2026-07-13-v07-genomic-boundary-holdout.md`](../recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md).

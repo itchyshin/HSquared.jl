@@ -146,6 +146,7 @@ Exact hashes, commands, versions, and local paths are in the recovery checkpoint
 | One cell exceeded runtime cap | Retained blocker; no activation or rerun. |
 | Broad all-live R suite hit unrelated JuliaCall setup/segfault defects | Not claimed green; dedicated zero-skip genomic live gate is the evidence. |
 | Julia 1.10/Linux default rank tolerance accepted duplicate X columns | Fixed with explicit conservative rank tolerance; full local Julia 1.10 suite green. |
+| Seeded boundary fixtures changed class under Julia 1.12 RNG streams | Replaced with explicit deterministic `K`, `Q`, and `y`; full Julia 1.10 and 1.12 suites green. |
 
 ## 8. Consistency Audit
 
@@ -188,6 +189,10 @@ claims. No new external corpus was needed.
 - PR CI found that Julia 1.10/Linux's default numerical-rank tolerance could
   accept an exactly duplicated fixed-effect column and reach a CHOLMOD throw.
   An explicit fail-closed tolerance repaired the cross-version behavior.
+- The subsequent Julia 1.12 lane showed that the boundary *test data* depended
+  on a release-specific seeded `randn` stream. Deterministic diagonal-kernel
+  fixtures now encode lower/interior/upper targets directly; both Julia 1.10.0
+  and 1.12.6 pass the complete suite and all 72 boundary checks locally.
 - The after-task compiler initially resolved a relative report path against the
   brain repository. The empty generated template was removed immediately and
   the report was written in the project repo.

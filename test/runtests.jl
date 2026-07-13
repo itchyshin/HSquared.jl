@@ -3821,23 +3821,34 @@ end
 end
 
 @testset "v0.7 genomic closed-boundary resolution (doc 46)" begin
-    function boundary_fixture(seed)
-        n, m = 120, 600
-        rng = MersenneTwister(seed)
-        maf = 0.05 .+ 0.45 .* rand(rng, m)
-        markers = Matrix{Float64}(undef, n, m)
-        for j in 1:m, i in 1:n
-            markers[i, j] = (rand(rng) < maf[j]) + (rand(rng) < maf[j])
-        end
-        keep = [maximum(view(markers, :, j)) != minimum(view(markers, :, j)) for j in 1:m]
-        markers = markers[:, keep]
+    function boundary_fixture(mode)
+        # Deliberately construct strong lower/interior/upper profile targets.
+        # Do not regenerate endpoint expectations from a stdlib RNG: randn's
+        # seeded stream changed between Julia 1.10 and 1.12.
+        values = repeat(collect(range(0.25, 4.0; length = 20)), inner = 2)
+        n = length(values)
+        exponent = mode == :lower ? 0.0 : mode == :interior ? 0.3 :
+                   mode == :upper ? 0.75 : error("unknown boundary fixture mode")
+        signs = repeat([1.0, -1.0], n ÷ 2)
+        y = signs .* values .^ exponent
+        K = Matrix(Diagonal(values))
+        Q = Matrix(Diagonal(1 ./ values))
         ids = ["id$(i)" for i in 1:n]
-        construction = HSquared._genomic_activation_construction(markers, ids; ridge = 0.01)
-        u = cholesky(Symmetric(construction.K)).L * randn(rng, n) .* sqrt(0.2)
-        y = u .+ randn(rng, n) .* sqrt(0.8)
-        spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), construction.Q;
+        provenance = (
+            relationship_source = "markers",
+            relationship_method = "deterministic_test_kernel",
+            allele_frequency_source = "deterministic_test",
+            ridge = 0.0,
+            scale_denominator = 1.0,
+            relationship_scale = "K_test",
+            id_order_fingerprint = HSquared._genomic_id_order_fingerprint(ids),
+            marker_content_fingerprint = repeat("0", 64),
+            kernel_fingerprint = HSquared._genomic_matrix_fingerprint("K_lambda", K, ids),
+            precision_fingerprint = HSquared._genomic_matrix_fingerprint("Q_lambda", Q, ids),
+        )
+        spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), Q;
                                  ids = ids, method = :REML)
-        return (spec = spec, provenance = construction.provenance, K = construction.K)
+        return (spec = spec, provenance = provenance, K = K)
     end
 
     @test HSquared._GENOMIC_BOUNDARY_EPSILON == 1e-7
@@ -3848,7 +3859,7 @@ end
     @test HSquared._GENOMIC_BOUNDARY_DOC46_SHA256 ==
           "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
 
-    lower_fixture = boundary_fixture(2027130002)
+    lower_fixture = boundary_fixture(:lower)
     lower = HSquared._fit_ai_reml_genomic_boundary(lower_fixture.spec;
         provenance = lower_fixture.provenance, kernel = lower_fixture.K)
     @test lower.boundary.status == "boundary_lower"
@@ -3858,10 +3869,11 @@ end
     @test lower.fit.optimizer_status == "boundary_lower"
     @test lower.fit.variance_components.sigma_a2 > 0
     @test lower.fit.variance_components.sigma_e2 > 0
-    @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) / 120 <= 1e-8
+    @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) /
+          length(lower_fixture.spec.y) <= 1e-8
     @test lower.boundary.lower_derivative_per_observation <= 1e-8
 
-    upper_fixture = boundary_fixture(2027130025)
+    upper_fixture = boundary_fixture(:upper)
     upper = HSquared._fit_ai_reml_genomic_boundary(upper_fixture.spec;
         provenance = upper_fixture.provenance, kernel = upper_fixture.K)
     @test upper.boundary.status == "boundary_upper"
@@ -3869,10 +3881,14 @@ end
     @test upper.boundary.numerical_ratio == 1 - 1e-7
     @test upper.fit.converged
     @test upper.fit.optimizer_status == "boundary_upper"
-    @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) / 120 <= 1e-8
+    # This compares the epsilon representation (r = 1 - 1e-7) with the exact
+    # r = 1 profile. Its first-order gap is about 1e-8 per observation; Julia
+    # 1.12 BLAS/LAPACK variation raises the observed gap to 1.09e-8.
+    @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) /
+          length(upper_fixture.spec.y) <= 2e-8
     @test upper.boundary.upper_derivative_per_observation >= -1e-8
 
-    interior_fixture = boundary_fixture(2027130001)
+    interior_fixture = boundary_fixture(:interior)
     interior_spec = interior_fixture.spec
     ordinary = fit_ai_reml(interior_spec)
     interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
@@ -3891,16 +3907,18 @@ end
     precheck = HSquared._genomic_boundary_precheck(
         interior_spec, interior_fixture.provenance, interior_fixture.K)
     context = HSquared._genomic_profile_context(precheck)
-    K_reconstructed = Matrix(precheck.qfactor \ Matrix{Float64}(I, 120, 120))
+    n_boundary = length(interior_spec.y)
+    K_reconstructed = Matrix(precheck.qfactor \ Matrix{Float64}(I, n_boundary, n_boundary))
     function dense_profile(r)
-        H = Symmetric(r .* K_reconstructed .+ (1-r) .* Matrix{Float64}(I, 120, 120))
+        H = Symmetric(r .* K_reconstructed .+
+                      (1-r) .* Matrix{Float64}(I, n_boundary, n_boundary))
         F = cholesky(H)
         hi_x = F \ Matrix(interior_spec.X)
         hi_y = F \ Vector(interior_spec.y)
         fixed = cholesky(Symmetric(transpose(interior_spec.X) * hi_x))
         rhs = transpose(interior_spec.X) * hi_y
         quad = dot(interior_spec.y, hi_y) - dot(rhs, fixed \ rhs)
-        df = 120 - size(interior_spec.X, 2)
+        df = n_boundary - size(interior_spec.X, 2)
         t_hat = quad / df
         ll = -0.5 * (df * (1 + log(2pi*t_hat)) +
             2sum(log, diag(F.U)) + 2sum(log, diag(fixed.U)))
@@ -3921,7 +3939,7 @@ end
     @test supplied_route.boundary.profile_loglik == interior.boundary.profile_loglik
 
     bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
-        sparse(circshift(Matrix{Float64}(I, 120, 120), (0, 1))), interior_spec.Ainv;
+        sparse(circshift(Matrix{Float64}(I, n_boundary, n_boundary), (0, 1))), interior_spec.Ainv;
         ids = interior_spec.ids, method = :REML)
     unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z;
         provenance = interior_fixture.provenance, kernel = interior_fixture.K)
@@ -3937,7 +3955,8 @@ end
     @test rescued.boundary.status == "interior_rescued"
     @test rescued.fit.converged
     @test rescued.fit.optimizer_status == "interior_rescued"
-    @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) / 120 <= 1e-8
+    @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) /
+          n_boundary <= 1e-8
 
     Q = Matrix(interior_spec.Ainv)
     asymmetric = copy(Q); asymmetric[1, 2] += 0.1
