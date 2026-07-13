@@ -26,14 +26,21 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-13
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- Totoro offset-7101 pilot: 432/432 success and converged.
-- Three independent summaries: `PRECISION_BLOCKER`; five cells exceed the
-  2,000-fit cap, maximum required N 16,325.
-- No adjudication receipt or confirmation manifest; offsets 7101:7148 retired.
-- Ordinary R marker route remains partial/held; supplied-Q estimator remains
-  covered; `public_covered_count` remains 5.
-- Next action: redesign the precision experiment before any fresh 7201 pilot;
-  do not launch more compute under the failed rule.
+- The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
+  converged, five cells exceed the 2,000-fit cap, and the maximum required N is
+  16,325. Offsets 7101:7148 remain retired.
+- Recovery-v3 doc 49 replaces blind replication with a preregistered
+  spectral-information and sample-size ladder. The official D0 replay at exact
+  R `cdb33dc` and Julia `4c5e54de` admitted all 432 immutable packets and
+  reproduced 103,248 eigenvalues; R--Julia summary differences were below
+  `2.62e-12`.
+- D0 is a corpus/recomputation pass and non-selection diagnostic evidence only.
+  It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
+- Ordinary R marker routing remains partial/held; the supplied-Q estimator
+  remains covered; `public_covered_count` remains 5.
+- Next action: finish and independently audit the D0F fixed-kernel and D1 fresh
+  harnesses, manifests, environment seals, and mutation gates before opening
+  any v3 phenotype seed. Totoro/DRAC only, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
