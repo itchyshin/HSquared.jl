@@ -87,10 +87,17 @@ end
 
 _opt(args, key, default=nothing) = begin
     prefix = "--$(key)="
-    for arg in args
+    hits = String[]
+    for (i, arg) in pairs(args)
         startswith(arg, prefix) && return split(arg, "="; limit=2)[2]
+        if arg == "--$(key)"
+            i < length(args) || error("--$(key) requires a value")
+            startswith(args[i+1], "--") && error("--$(key) requires a value")
+            push!(hits, args[i+1])
+        end
     end
-    default
+    length(hits) <= 1 || error("--$(key) may be supplied only once")
+    isempty(hits) ? default : only(hits)
 end
 _required(args, key) = something(_opt(args, key, nothing), error("--$(key) is required"))
 _bool(args, key, default=true) = lowercase(String(_opt(args, key, string(default)))) in ("1", "true", "yes")
@@ -705,6 +712,11 @@ end
 
 function selftest_mode()
     _assert_seed_contract(); length(ATOMIC_ARMS)==16 || error("atomic arm count drift"); length(POLICY_ORDER)==20 || error("policy order drift")
+    _opt(["--phase=discovery"],"phase")=="discovery" || error("equals-form parser drift")
+    _opt(["--phase","holdout"],"phase")=="holdout" || error("split-form parser drift")
+    _must_fail("missing split-form value") do
+        _opt(["--phase"],"phase")
+    end
     first(getproperty.(POLICY_ORDER,:id))=="C100_E0" && last(getproperty.(POLICY_ORDER,:id))=="M_C1000_E5" || error("policy order endpoints drift")
     length(unique(getproperty.(ATOMIC_ARMS,:arm_id)))==16 || error("duplicate arm IDs")
     sample=Dict(MANIFEST_COLUMNS .=> ["discovery","n120_m600_r020","2027130002","failure","C100_E0","100","0","current","120","600","0.01","m","i","k"])
