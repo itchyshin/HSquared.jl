@@ -555,6 +555,222 @@ function _fit_ai_reml_diagnostics(
     )
 end
 
+const _GENOMIC_BOUNDARY_EPSILON = 1e-7
+const _GENOMIC_BOUNDARY_GRID_STEP = 0.0025
+const _GENOMIC_BOUNDARY_DELTA = 1e-6
+const _GENOMIC_BOUNDARY_KKT_TOL = 1e-8
+const _GENOMIC_BOUNDARY_MAX_DENSE_N = 2_000
+const _GENOMIC_BOUNDARY_DOC46_COMMIT = "fe96a147"
+const _GENOMIC_BOUNDARY_DOC46_SHA256 = "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
+
+function _genomic_boundary_unresolved(ai, reason::AbstractString)
+    return (
+        fit = ai.fit,
+        boundary = (
+            status = "boundary_unresolved",
+            reason = String(reason),
+            profile_ratio = nothing,
+            numerical_ratio = nothing,
+            boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+            profile_loglik = nothing,
+            lower_derivative_per_observation = nothing,
+            upper_derivative_per_observation = nothing,
+        ),
+        ai_diagnostics = ai.diagnostics,
+    )
+end
+
+function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2)
+    eta = log.([Float64(sigma_a2), Float64(sigma_e2)])
+    gradient = zeros(2)
+    h = 1e-5
+    for j in eachindex(gradient)
+        plus = copy(eta); minus = copy(eta)
+        plus[j] += h; minus[j] -= h
+        lp = sparse_reml_loglik(spec, exp(plus[1]), exp(plus[2])).loglik
+        lm = sparse_reml_loglik(spec, exp(minus[1]), exp(minus[2])).loglik
+        all(isfinite, (lp, lm)) || return Inf
+        gradient[j] = (lp - lm) / (2h)
+    end
+    norm(gradient) / length(spec.y)
+end
+
+function _genomic_profile_reml(spec::AnimalModelSpec, K::Matrix{Float64}, ratio::Real)
+    r = Float64(ratio)
+    0.0 <= r <= 1.0 || return nothing
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    H = Symmetric(r .* K .+ (1.0 - r) .* Matrix{Float64}(I, n, n))
+    factor = try
+        cholesky(H; check = true)
+    catch
+        return nothing
+    end
+    X = Matrix{Float64}(spec.X)
+    y = Vector{Float64}(spec.y)
+    hi_x = factor \ X
+    hi_y = factor \ y
+    xt_hi_x = Symmetric(transpose(X) * hi_x)
+    fixed_factor = try
+        cholesky(xt_hi_x; check = true)
+    catch
+        return nothing
+    end
+    rhs = transpose(X) * hi_y
+    quad = dot(y, hi_y) - dot(rhs, fixed_factor \ rhs)
+    df = n - p
+    isfinite(quad) && quad > 0 && df > 0 || return nothing
+    t_hat = quad / df
+    logdet_h = 2sum(log, diag(factor.U))
+    logdet_fixed = 2sum(log, diag(fixed_factor.U))
+    loglik = -0.5 * (df * (1 + log(2pi * t_hat)) + logdet_h + logdet_fixed)
+    isfinite(loglik) || return nothing
+    return (loglik = loglik, t_hat = t_hat)
+end
+
+function _genomic_boundary_profile(spec::AnimalModelSpec)
+    n = length(spec.y)
+    n <= _GENOMIC_BOUNDARY_MAX_DENSE_N || return (status = "boundary_unresolved", reason = "dense_limit")
+    size(spec.Z) == (n, n) || return (status = "boundary_unresolved", reason = "nonidentity_Z")
+    Z = Matrix{Float64}(spec.Z)
+    maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
+        return (status = "boundary_unresolved", reason = "nonidentity_Z")
+    rank(Matrix{Float64}(spec.X)) == size(spec.X, 2) ||
+        return (status = "boundary_unresolved", reason = "rank_deficient_X")
+    Q = Matrix{Float64}(spec.Ainv)
+    qfactor = try
+        cholesky(Symmetric(Q); check = true)
+    catch
+        return (status = "boundary_unresolved", reason = "nonpositive_precision")
+    end
+    K = Matrix(qfactor \ Matrix{Float64}(I, n, n))
+    grid = collect(0.0:_GENOMIC_BOUNDARY_GRID_STEP:1.0)
+    parts = [_genomic_profile_reml(spec, K, r) for r in grid]
+    any(isnothing, parts) && return (status = "boundary_unresolved", reason = "nonfinite_profile")
+    values = [part.loglik for part in parts]
+    interior_index = argmax(view(values, 2:(length(values) - 1))) + 1
+    lower_r, upper_r = grid[interior_index - 1], grid[interior_index + 1]
+    refined = optimize(r -> -something(_genomic_profile_reml(spec, K, r), (loglik = -Inf,)).loglik,
+                       lower_r, upper_r; abs_tol = 1e-12)
+    interior_r = Optim.minimizer(refined)
+    interior_part = _genomic_profile_reml(spec, K, interior_r)
+    interior_part === nothing && return (status = "boundary_unresolved", reason = "refinement_failed")
+    distinct_interior = _GENOMIC_BOUNDARY_EPSILON < interior_r < 1 - _GENOMIC_BOUNDARY_EPSILON
+    if !distinct_interior
+        interior_r = grid[interior_index]
+        interior_part = parts[interior_index]
+    end
+    refined_ll = -Optim.minimum(refined)
+    refined_ll + n * 1e-10 >= values[interior_index] ||
+        return (status = "boundary_unresolved", reason = "refinement_regressed")
+    lower_part = first(parts)
+    upper_part = last(parts)
+    delta_lower = _genomic_profile_reml(spec, K, _GENOMIC_BOUNDARY_DELTA)
+    delta_upper = _genomic_profile_reml(spec, K, 1 - _GENOMIC_BOUNDARY_DELTA)
+    (delta_lower === nothing || delta_upper === nothing) &&
+        return (status = "boundary_unresolved", reason = "endpoint_derivative_failed")
+    d0 = (delta_lower.loglik - lower_part.loglik) / _GENOMIC_BOUNDARY_DELTA / n
+    d1 = (upper_part.loglik - delta_upper.loglik) / _GENOMIC_BOUNDARY_DELTA / n
+    tie_tol = n * 1e-10
+    endpoint_pair_tie = abs(lower_part.loglik - upper_part.loglik) <= tie_tol &&
+                        max(lower_part.loglik, upper_part.loglik) + tie_tol >= interior_part.loglik
+    lower_interior_tie = distinct_interior && abs(lower_part.loglik - interior_part.loglik) <= tie_tol
+    upper_interior_tie = distinct_interior && abs(upper_part.loglik - interior_part.loglik) <= tie_tol
+    if !endpoint_pair_tie && !lower_interior_tie &&
+       lower_part.loglik + tie_tol >= max(interior_part.loglik, upper_part.loglik) &&
+       d0 <= _GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_lower", reason = "likelihood_and_kkt", profile_ratio = 0.0,
+                exact = lower_part, d0 = d0, d1 = d1)
+    elseif !endpoint_pair_tie && !upper_interior_tie &&
+           upper_part.loglik + tie_tol >= max(lower_part.loglik, interior_part.loglik) &&
+           d1 >= -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_upper", reason = "likelihood_and_kkt", profile_ratio = 1.0,
+                exact = upper_part, d0 = d0, d1 = d1)
+    elseif distinct_interior &&
+           interior_part.loglik - max(lower_part.loglik, upper_part.loglik) > tie_tol &&
+           d0 > _GENOMIC_BOUNDARY_KKT_TOL && d1 < -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "interior_profile", reason = "profile_interior", profile_ratio = interior_r,
+                exact = interior_part, d0 = d0, d1 = d1)
+    end
+    reason = endpoint_pair_tie ? "endpoint_pair_tie" :
+             (lower_interior_tie || upper_interior_tie) ? "endpoint_interior_tie" :
+             "classification_disagreement"
+    return (status = "boundary_unresolved", reason = reason)
+end
+
+function _fit_ai_reml_genomic_boundary(
+    spec::AnimalModelSpec;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+    em_warmup::Integer = 0,
+)
+    ai = _fit_ai_reml_diagnostics(spec; initial = initial, iterations = iterations,
+                                  tol = tol, em_warmup = em_warmup)
+    profile = _genomic_boundary_profile(spec)
+    profile.status == "boundary_unresolved" &&
+        return _genomic_boundary_unresolved(ai, profile.reason)
+    if profile.status == "interior_profile"
+        ratio_ai = ai.fit.variance_components.sigma_a2 /
+                   (ai.fit.variance_components.sigma_a2 + ai.fit.variance_components.sigma_e2)
+        oracle_components = (profile.profile_ratio * profile.exact.t_hat,
+                             (1 - profile.profile_ratio) * profile.exact.t_hat)
+        ai_components = (ai.fit.variance_components.sigma_a2, ai.fit.variance_components.sigma_e2)
+        component_ok = all(abs(a - b) <= 1e-8 + 1e-5abs(b) for (a, b) in zip(ai_components, oracle_components))
+        ratio_ok = abs(ratio_ai - profile.profile_ratio) <= 1e-8 + 1e-5abs(profile.profile_ratio)
+        objective_ok = abs(ai.fit.likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8
+        gradient_ok = _genomic_fd_log_gradient_norm(spec, ai_components...) <= 1e-8
+        if ai.fit.converged && component_ok && ratio_ok && objective_ok && gradient_ok
+            return (
+                fit = ai.fit,
+                boundary = (status = "interior", reason = "ai_interior",
+                    profile_ratio = profile.profile_ratio, numerical_ratio = ratio_ai,
+                    boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                    profile_loglik = profile.exact.loglik,
+                    lower_derivative_per_observation = profile.d0,
+                    upper_derivative_per_observation = profile.d1),
+                ai_diagnostics = ai.diagnostics,
+            )
+        end
+        sigma_a2, sigma_e2 = oracle_components
+        _genomic_fd_log_gradient_norm(spec, sigma_a2, sigma_e2) <= 1e-8 ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_gradient")
+        likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+        fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                             true, "interior_rescued", ai.fit.iterations, :variance_components,
+                             false, true, :estimated_ai_reml)
+        return (
+            fit = fit,
+            boundary = (status = "interior_rescued", reason = "profile_interior",
+                profile_ratio = profile.profile_ratio, numerical_ratio = profile.profile_ratio,
+                boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                profile_loglik = profile.exact.loglik,
+                lower_derivative_per_observation = profile.d0,
+                upper_derivative_per_observation = profile.d1),
+            ai_diagnostics = ai.diagnostics,
+        )
+    end
+    ratio = profile.profile_ratio
+    numerical_ratio = profile.status == "boundary_lower" ? _GENOMIC_BOUNDARY_EPSILON :
+                      profile.status == "boundary_upper" ? 1 - _GENOMIC_BOUNDARY_EPSILON : ratio
+    sigma_a2 = numerical_ratio * profile.exact.t_hat
+    sigma_e2 = (1 - numerical_ratio) * profile.exact.t_hat
+    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                         true, profile.status, ai.fit.iterations, :variance_components,
+                         false, true, :estimated_ai_reml)
+    return (
+        fit = fit,
+        boundary = (status = profile.status, reason = profile.status,
+                    profile_ratio = ratio, numerical_ratio = numerical_ratio,
+                    boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                    profile_loglik = profile.exact.loglik,
+                    lower_derivative_per_observation = profile.d0,
+                    upper_derivative_per_observation = profile.d1),
+        ai_diagnostics = ai.diagnostics,
+    )
+end
+
 # Apply the REML projection P to a vector via an MME re-solve that reuses
 # `factor`: P w = (w - X b_w - Z u_w) / sigma_e2, where [b_w; u_w] solves the
 # mixed-model equations with `w` in place of `y`.

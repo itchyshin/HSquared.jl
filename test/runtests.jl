@@ -3820,6 +3820,77 @@ end
           warmed.fit.iterations + warmed.diagnostics.em_steps
 end
 
+@testset "v0.7 genomic closed-boundary resolution (doc 46)" begin
+    function boundary_fixture(seed)
+        n, m = 120, 600
+        rng = MersenneTwister(seed)
+        maf = 0.05 .+ 0.45 .* rand(rng, m)
+        markers = Matrix{Float64}(undef, n, m)
+        for j in 1:m, i in 1:n
+            markers[i, j] = (rand(rng) < maf[j]) + (rand(rng) < maf[j])
+        end
+        keep = [maximum(view(markers, :, j)) != minimum(view(markers, :, j)) for j in 1:m]
+        markers = markers[:, keep]
+        ids = ["id$(i)" for i in 1:n]
+        construction = HSquared._genomic_activation_construction(markers, ids; ridge = 0.01)
+        u = cholesky(Symmetric(construction.K)).L * randn(rng, n) .* sqrt(0.2)
+        y = u .+ randn(rng, n) .* sqrt(0.8)
+        spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), construction.Q;
+                                 ids = ids, method = :REML)
+        return spec
+    end
+
+    @test HSquared._GENOMIC_BOUNDARY_EPSILON == 1e-7
+    @test HSquared._GENOMIC_BOUNDARY_GRID_STEP == 0.0025
+    @test HSquared._GENOMIC_BOUNDARY_DELTA == 1e-6
+    @test HSquared._GENOMIC_BOUNDARY_KKT_TOL == 1e-8
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_COMMIT == "fe96a147"
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_SHA256 ==
+          "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
+
+    lower = HSquared._fit_ai_reml_genomic_boundary(boundary_fixture(2027130002))
+    @test lower.boundary.status == "boundary_lower"
+    @test lower.boundary.profile_ratio == 0.0
+    @test lower.boundary.numerical_ratio == 1e-7
+    @test lower.fit.converged
+    @test lower.fit.optimizer_status == "boundary_lower"
+    @test lower.fit.variance_components.sigma_a2 > 0
+    @test lower.fit.variance_components.sigma_e2 > 0
+    @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) / 120 <= 1e-8
+    @test lower.boundary.lower_derivative_per_observation <= 1e-8
+
+    upper = HSquared._fit_ai_reml_genomic_boundary(boundary_fixture(2027130025))
+    @test upper.boundary.status == "boundary_upper"
+    @test upper.boundary.profile_ratio == 1.0
+    @test upper.boundary.numerical_ratio == 1 - 1e-7
+    @test upper.fit.converged
+    @test upper.fit.optimizer_status == "boundary_upper"
+    @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) / 120 <= 1e-8
+    @test upper.boundary.upper_derivative_per_observation >= -1e-8
+
+    interior_spec = boundary_fixture(2027130001)
+    ordinary = fit_ai_reml(interior_spec)
+    interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec)
+    @test interior.boundary.status == "interior"
+    @test interior.fit.variance_components == ordinary.variance_components
+    @test interior.fit.likelihood.loglik == ordinary.likelihood.loglik
+    @test interior.fit.optimizer_status == ordinary.optimizer_status
+    @test 1e-7 < interior.boundary.profile_ratio < 1 - 1e-7
+    @test all(isfinite, (interior.boundary.profile_loglik,
+                         interior.boundary.lower_derivative_per_observation,
+                         interior.boundary.upper_derivative_per_observation))
+
+    bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
+        sparse(circshift(Matrix{Float64}(I, 120, 120), (0, 1))), interior_spec.Ainv;
+        ids = interior_spec.ids, method = :REML)
+    unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z; iterations = 1)
+    @test unresolved.boundary.status == "boundary_unresolved"
+    @test unresolved.boundary.reason == "nonidentity_Z"
+    @test !unresolved.fit.converged
+    @test unresolved.boundary.profile_ratio === nothing
+    @test unresolved.boundary.numerical_ratio === nothing
+end
+
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
