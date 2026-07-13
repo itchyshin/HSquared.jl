@@ -41,6 +41,15 @@ held.
   compiler green. The R twin regenerated roxygen, completed its full suite
   without failure/warning, passed pkgdown, and passed repaired `R CMD check
   --no-manual` with 0 errors / 0 warnings / 0 notes.
+- PR #273 Julia 1.10/Linux CI then exposed a version-specific fail-closed gap:
+  default `rank(X)` classified an exactly duplicated fixed-effect column as
+  full rank and CHOLMOD threw before the wrapper could return
+  `rank_deficient_X`. The precheck now uses explicit conservative
+  `rtol = sqrt(eps(Float64))`; the existing duplicate-column negative control
+  is portable again. Full local Julia 1.10 `Pkg.test()` passes, including the
+  boundary block 72/72. Independent numerical/Julia review: `CLEAN` (the
+  downstream normal equations square `cond(X)`, so the conservative cutoff is
+  appropriate). CI rerun is required before merge.
 
 Full evidence and limitations:
 [`2026-07-13-v07-genomic-boundary-holdout.md`](../recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md).

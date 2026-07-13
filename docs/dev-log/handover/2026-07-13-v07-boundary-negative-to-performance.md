@@ -84,8 +84,11 @@ git -C "/Users/z3437171/Dropbox/Github Local/hsquared" pull --ff-only
 - Fisher/Darwin negative-endpoint audit: `CLEAN`.
 - Rose final claim audit: `CLEAN`.
 - R PR #136 CI: green.
-- Julia PR #273 CI was still running when this handoff was drafted; check it
-  before merge with `gh pr checks 273`.
+- Julia PR #273 initially failed only on Julia 1.10/Linux because the platform's
+  default `rank(X)` tolerance accepted an exactly duplicated X column. The
+  precheck now freezes `rtol = sqrt(eps(Float64))`; full local Julia 1.10
+  `Pkg.test()` is green. Confirm the pushed CI rerun before merge with
+  `gh pr checks 273`.
 
 ## Landing State
 

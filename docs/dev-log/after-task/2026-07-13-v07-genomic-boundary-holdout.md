@@ -145,6 +145,7 @@ Exact hashes, commands, versions, and local paths are in the recovery checkpoint
 | Oracle xargs passed literal `{}` | Fixed post-seal at `75279136`; negative control added. |
 | One cell exceeded runtime cap | Retained blocker; no activation or rerun. |
 | Broad all-live R suite hit unrelated JuliaCall setup/segfault defects | Not claimed green; dedicated zero-skip genomic live gate is the evidence. |
+| Julia 1.10/Linux default rank tolerance accepted duplicate X columns | Fixed with explicit conservative rank tolerance; full local Julia 1.10 suite green. |
 
 ## 8. Consistency Audit
 
@@ -184,6 +185,9 @@ claims. No new external corpus was needed.
 - The candidate was scientifically superior on the sealed holdout but still
   failed the predeclared performance contract. This is a legitimate negative
   endpoint, not a near-pass.
+- PR CI found that Julia 1.10/Linux's default numerical-rank tolerance could
+  accept an exactly duplicated fixed-effect column and reach a CHOLMOD throw.
+  An explicit fail-closed tolerance repaired the cross-version behavior.
 - The after-task compiler initially resolved a relative report path against the
   brain repository. The empty generated template was removed immediately and
   the report was written in the project repo.

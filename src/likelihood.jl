@@ -609,7 +609,14 @@ function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
     all(isfinite, Z) || return (ok = false, reason = "nonfinite_Z")
     maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
         return (ok = false, reason = "nonidentity_Z")
-    xrank = try rank(X) catch; return (ok = false, reason = "fixed_effect_rank_failure") end
+    # Use an explicit, conservative tolerance so fail-closed rank validation is
+    # stable across LAPACK versions. The default tolerance classified an exact
+    # duplicate fixed-effect column as full rank on Julia 1.10/Linux CI.
+    xrank = try
+        rank(X; rtol = sqrt(eps(Float64)))
+    catch
+        return (ok = false, reason = "fixed_effect_rank_failure")
+    end
     xrank == p || return (ok = false, reason = "rank_deficient_X")
     qfactor = try
         cholesky(Symmetric(Q); check = true)
