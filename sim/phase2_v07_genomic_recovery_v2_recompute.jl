@@ -625,6 +625,13 @@ function selftest()
         p1=run(ignorestatus(cmd);wait=false);p2=run(ignorestatus(cmd);wait=false);wait(p1);wait(p2)
         count(success,(p1,p2))==1||error("concurrent create-once test did not produce exactly one winner")
         _verify_pair(root,contested)
+        review=joinpath(root,"review.tsv")
+        review_text=join(REVIEW_COLUMNS,'\t')*"\n"*
+            "v07-genomic-recovery-v2-review-1\tFisher\tCLEAN\t$(repeat("a",40))\t$(repeat("b",40))\t2026-07-13T20:00:00Z\n"
+        _write_once(review,review_text)
+        length(_read_external_tsv(review,REVIEW_COLUMNS).rows)==1||error("external review receipt selftest")
+        open(review,"w") do io;write(io,"mutated\n");end
+        _must_fail("mutated external review") do;_read_external_tsv(review,REVIEW_COLUMNS);end
         _verify_pair(root,path);open(path,"w") do io;write(io,"y\n");end;_must_fail("checksum corruption") do;_verify_pair(root,path);end
         rm(path*".sha256");_must_fail("orphan primary") do;_verify_pair(root,path);end
         link=joinpath(dir,"link");symlink(path,link);_must_fail("symlink") do;_plain(root,link);end
