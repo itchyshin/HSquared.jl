@@ -3,6 +3,7 @@ module HSquared
 using LinearAlgebra
 using Optim
 using Random
+using SHA
 using SparseArrays
 
 export AMDGPUBackend,

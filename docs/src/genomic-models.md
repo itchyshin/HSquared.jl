@@ -2,12 +2,24 @@
 
 `HSquared.jl` builds the genomic relationship engine on top of the same Henderson
 mixed-model-equation machinery as the pedigree animal model. The functions below
-are **engine APIs** (the Julia package's own functions). They are
-**experimental**, are **not yet wired to the public R `genomic()` /
-`single_step()` formula terms** (those still error as planned), and have **no
-external-comparator parity yet** (AGHmatrix / sommer / BLUPF90 checks live in the
-R lane). The dense paths here are validation-scale only — they do not gain the
-sparse selected-inversion advantage.
+are **engine APIs** (the Julia package's own functions). A narrow R-twin
+public-activation candidate now routes Gaussian REML models with one genomic
+random intercept from raw markers or a supplied `Ginv` into the existing
+supplied-precision solver. For marker input, the internal bridge construction
+freezes sample-frequency, unweighted VanRaden method 1 with
+`K_lambda = G + 0.01I`, and records engine-owned ID, marker, kernel, and precision
+fingerprints. The deterministic cross-twin fixture in
+`test/fixtures/genomic_public_activation_target/` is construction and route-
+identity evidence. A later fail-closed boundary candidate matched an independent
+base-R oracle on all 240 sealed holdouts and corrected 30 classifications with
+0 losses, but the conjunctive gate was still `BOUNDARY_HOLDOUT_FAIL`: one cell
+was 5.99x slower at p95 than the old path, above the frozen 3x cap. The 240 seeds
+are spent, the nine-cell recovery campaign did not launch, and this is **not**
+broad recovery, production-scale evidence, or permission to activate the R
+default. The R surface therefore remains partial/held with no Rose/G10 promotion
+basis. `single_step()` remains a separate experimental surface.
+The dense paths here are validation-scale only — they do not gain the sparse
+selected-inversion advantage.
 
 ## Genomic relationship matrix `G` and its inverse
 
@@ -60,6 +72,11 @@ random-effect design, with an identity prior and per-marker variance `σ²g / k`
 breeding values for the same data — the classic equivalence (verified to machine
 precision via the marginal covariance, the singular-`G`-safe route).
 
+That equivalence applies when the two routes imply the same covariance. The
+activation candidate instead fits `K_lambda = G + 0.01I`; adding the ridge changes
+the covariance kernel, so this evidence does not establish an unqualified exact
+ridge-regularized GBLUP–SNP-BLUP equivalence.
+
 ```@example genomic
 snp = fit_snp_blup(y, X, M, 1.0, 2.0)
 (marker_effects = round.(snp.marker_effects; digits = 4), gebv = round.(snp.gebv; digits = 4))
@@ -101,7 +118,7 @@ or external BLUPF90 evidence by themselves.
 
 ## Validation boundary
 
-Covered now (self-consistent, comparator-free):
+Engine evidence now available:
 
 - VanRaden `G` on a hand-computed fixture (symmetric, PSD, pinned entries);
 - regularized `Ginv` (defining identity `(G + ridge·I)·Ginv ≈ I`, ridge/PD
@@ -114,7 +131,13 @@ Covered now (self-consistent, comparator-free):
   `diag(inv(Ginv)) = diag(G) + ridge` denominator, with selinv PEV matching the
   dense diagonal;
 - genomic REML: AI-REML and NelderMead reach the same optimum, and a seeded
-  simulation recovers the variance components;
+  simulation recovers the variance components; the supplied-`Ginv` estimator is
+  `covered` through the preregistered 48-seed recovery gate and the historical
+  same-precision `blupf90+` comparator;
+- the v0.7 activation fixture freezes the sample-frequency VanRaden-1
+  construction, `K_lambda = G + 0.01I`, `Q_lambda = inv(K_lambda)`, provenance
+  fingerprints, and marker-fed versus supplied-precision fit identity across
+  repeated records, a nonconstant fixed effect, and unphenotyped genotyped IDs;
 - the #49 genomic GBLUP/SNP-BLUP target is mirrored and consumed in the R twin
   (hsquared PR #84) by recomputing supplied-frequency `G`, `Ginv`, GBLUP MME,
   and SNP-BLUP route agreement without live Julia;
@@ -125,8 +148,14 @@ Covered now (self-consistent, comparator-free):
 
 Still planned / coordinated:
 
-- the public R `genomic()` / `single_step()` formula mapping (coordinated with
-  the R twin);
-- external-comparator parity (AGHmatrix / sommer / rrBLUP / BLUPF90) — R lane;
+- component/allocation profiling on already-open discovery data,
+  output-equivalent performance work, a new preregistration, and a fresh
+  untouched holdout before end-to-end recovery can resume; the narrow R
+  `genomic()` candidate stays held and `single_step()` remains separate;
+- a broader construction oracle beyond the completed independent base-R
+  reconstruction of the exact candidate kernel. A fresh hash-pinned `blupf90+`
+  run now links the
+  exact candidate precision to the supplied-precision estimator, but it is one
+  point-estimate comparison rather than recovery or production evidence;
 - sparse / APY `G` and GPU acceleration of the dense products;
 - comparator-validated single-step blending defaults.

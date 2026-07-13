@@ -371,6 +371,28 @@ function fit_ai_reml(
     tol::Real = 1e-8,
     em_warmup::Integer = 0,
 )
+    return _fit_ai_reml_diagnostics(
+        spec;
+        initial = initial,
+        iterations = iterations,
+        tol = tol,
+        em_warmup = em_warmup,
+    ).fit
+end
+
+# Instrumented implementation used by the preregistered v0.7 optimizer-
+# localization study.  This is deliberately internal: optimizer controls and
+# the diagnostics payload are not part of the public R/Julia contract.  The
+# public `fit_ai_reml` wrapper above returns only `.fit`, preserving its result
+# type and every fitted value while the study can consume counters recorded at
+# the point where the corresponding event actually occurs.
+function _fit_ai_reml_diagnostics(
+    spec::AnimalModelSpec;
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+    em_warmup::Integer = 0,
+)
     spec.method == :REML ||
         throw(ArgumentError("fit_ai_reml requires spec.method == :REML"))
     sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
@@ -384,6 +406,14 @@ function fit_ai_reml(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    factorizations = 0
+    em_steps = 0
+    step_halvings = 0
+    last_relative_change = NaN
+    ai_score_a = NaN
+    ai_score_e = NaN
+    ai_score_norm = NaN
+    termination_reason = "iteration_limit"
 
     # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
     # REML score: σ²a = (u'A⁻¹u + tr(A⁻¹C^uu))/q and σ²e = e'e/(n − p − q + tr(A⁻¹C^uu)/σ²a).
@@ -395,6 +425,7 @@ function fit_ai_reml(
     # and positive, otherwise we stop warming up and let the AI step run.
     for _ in 1:max(0, em_warmup)
         lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factorizations += 1
         factor = try
             cholesky(Symmetric(lhs); check = true)
         catch err
@@ -411,6 +442,7 @@ function fit_ai_reml(
         (isfinite(a_em) && isfinite(e_em) && a_em > 0 && e_em > 0) || break
         rel = max(abs(a_em - sigma_a2) / sigma_a2, abs(e_em - sigma_e2) / sigma_e2)
         sigma_a2, sigma_e2 = a_em, e_em
+        em_steps += 1
         rel < tol && break
     end
 
@@ -419,6 +451,7 @@ function fit_ai_reml(
     for it in 1:iterations
         iters = it
         lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        factorizations += 1
         factor = cholesky(Symmetric(lhs); check = true)
         solution = factor \ rhs
         beta = solution[1:nfixed]
@@ -431,8 +464,12 @@ function fit_ai_reml(
         score_e =
             -0.5 / sigma_e2^2 *
             (sigma_e2 * (nobs - nfixed - nrandom + trace_AC / sigma_a2) - dot(e, e))
-        if hypot(score_a, score_e) < tol
+        ai_score_a = score_a
+        ai_score_e = score_e
+        ai_score_norm = hypot(score_a, score_e)
+        if ai_score_norm < tol
             converged = true
+            termination_reason = "score_tolerance"
             break
         end
 
@@ -450,7 +487,10 @@ function fit_ai_reml(
         # *finite* step at the σ²→0 boundary (a step large relative to a tiny σ²a that even 60
         # halvings cannot bring back positive) is NOT handled here — it is caught by the
         # halving-exhaustion `break` just below.
-        all(isfinite, step) || break
+        if !all(isfinite, step)
+            termination_reason = "nonfinite_ai_step"
+            break
+        end
 
         a_new = sigma_a2 + step[1]
         e_new = sigma_e2 + step[2]
@@ -461,28 +501,34 @@ function fit_ai_reml(
             e_new = sigma_e2 + step[2]
             halvings += 1
         end
+        step_halvings += halvings
         # Step-halving cannot keep the variance components positive: σ has been driven to
         # the σ²→0 boundary on a weakly-identified spec (the finite Newton step is large
         # relative to a tiny σ²a, so even 60 halvings cannot recover a positive a_new). Stop
         # at the current finite, positive σ with converged=false — the V1-REML boundary
         # contract ("finite positive ... never NaN") — rather than throwing, which was an
         # intermittent CI failure on degenerate single-step fixtures.
-        (a_new > 0 && e_new > 0) || break
+        if !(a_new > 0 && e_new > 0)
+            termination_reason = "step_halving_exhausted"
+            break
+        end
         # Scale-invariant convergence. The absolute REML score scales with n, so the
         # `hypot(score) < tol` check above becomes unreachable at large q (measured:
         # q=300k ran to the 100-iter cap with σ̂² already at truth). Also stop on the
         # RELATIVE change in the variance components, which is scale-free.
         rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
+        last_relative_change = rel_change
         sigma_a2, sigma_e2 = a_new, e_new
         if rel_change < tol
             converged = true
+            termination_reason = "relative_change_tolerance"
             break
         end
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     status = converged ? "converged" : "not_converged"
-    return AnimalModelFit(
+    fit = AnimalModelFit(
         spec,
         likelihood,
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
@@ -493,6 +539,355 @@ function fit_ai_reml(
         false,
         true,
         :estimated_ai_reml,
+    )
+    return (
+        fit = fit,
+        diagnostics = (
+            termination_reason = termination_reason,
+            em_steps = em_steps,
+            factorizations = factorizations,
+            step_halvings = step_halvings,
+            last_relative_change = last_relative_change,
+            ai_score_a = ai_score_a,
+            ai_score_e = ai_score_e,
+            ai_score_norm = ai_score_norm,
+        ),
+    )
+end
+
+const _GENOMIC_BOUNDARY_EPSILON = 1e-7
+const _GENOMIC_BOUNDARY_GRID_STEP = 0.0025
+const _GENOMIC_BOUNDARY_DELTA = 1e-6
+const _GENOMIC_BOUNDARY_KKT_TOL = 1e-8
+const _GENOMIC_BOUNDARY_MAX_DENSE_N = 2_000
+const _GENOMIC_BOUNDARY_DOC46_COMMIT = "fe96a147"
+const _GENOMIC_BOUNDARY_DOC46_SHA256 = "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
+
+function _genomic_boundary_unresolved(ai, reason::AbstractString)
+    fit = if ai === nothing
+        nothing
+    else
+        old = ai.fit
+        AnimalModelFit(old.spec, old.likelihood, old.variance_components, false,
+                       "boundary_unresolved", old.iterations, old.target,
+                       old.dense_validation_path, old.sparse_mme_path,
+                       old.variance_components_source)
+    end
+    return (
+        fit = fit,
+        boundary = (
+            status = "boundary_unresolved",
+            reason = String(reason),
+            profile_ratio = nothing,
+            numerical_ratio = nothing,
+            boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+            profile_loglik = nothing,
+            lower_derivative_per_observation = nothing,
+            upper_derivative_per_observation = nothing,
+        ),
+        ai_diagnostics = ai === nothing ? nothing : ai.diagnostics,
+    )
+end
+
+function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    spec.method == :REML || return (ok = false, reason = "non_reml_method")
+    n <= _GENOMIC_BOUNDARY_MAX_DENSE_N || return (ok = false, reason = "dense_limit")
+    n > p || return (ok = false, reason = "nonpositive_reml_df")
+    size(spec.Ainv) == (n, n) || return (ok = false, reason = "precision_dimension")
+    size(spec.Z) == (n, n) || return (ok = false, reason = "nonidentity_Z")
+    y = try Vector{Float64}(spec.y) catch; return (ok = false, reason = "nonnumeric_y") end
+    X = try Matrix{Float64}(spec.X) catch; return (ok = false, reason = "nonnumeric_X") end
+    Q = try Matrix{Float64}(spec.Ainv) catch; return (ok = false, reason = "nonnumeric_precision") end
+    all(isfinite, y) || return (ok = false, reason = "nonfinite_y")
+    all(isfinite, X) || return (ok = false, reason = "nonfinite_X")
+    all(isfinite, Q) || return (ok = false, reason = "nonfinite_precision")
+    isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) ||
+        return (ok = false, reason = "asymmetric_precision")
+    Z = try Matrix{Float64}(spec.Z) catch; return (ok = false, reason = "nonnumeric_Z") end
+    all(isfinite, Z) || return (ok = false, reason = "nonfinite_Z")
+    maximum(abs, Z .- Matrix{Float64}(I, n, n)) <= 1e-12 ||
+        return (ok = false, reason = "nonidentity_Z")
+    # Use an explicit, conservative tolerance so fail-closed rank validation is
+    # stable across LAPACK versions. The default tolerance classified an exact
+    # duplicate fixed-effect column as full rank on Julia 1.10/Linux CI.
+    xrank = try
+        rank(X; rtol = sqrt(eps(Float64)))
+    catch
+        return (ok = false, reason = "fixed_effect_rank_failure")
+    end
+    xrank == p || return (ok = false, reason = "rank_deficient_X")
+    qfactor = try
+        cholesky(Symmetric(Q); check = true)
+    catch
+        return (ok = false, reason = "nonpositive_precision")
+    end
+    provenance isa NamedTuple || return (ok = false, reason = "missing_genomic_provenance")
+    required = (:relationship_source, :id_order_fingerprint, :precision_fingerprint)
+    all(hasproperty(provenance, key) for key in required) ||
+        return (ok = false, reason = "missing_genomic_provenance")
+    source = provenance.relationship_source
+    source in ("markers", "supplied_Ginv") ||
+        return (ok = false, reason = "non_genomic_provenance")
+    ids = try
+        _canonical_genomic_ids(spec.ids, n)
+    catch
+        return (ok = false, reason = "invalid_genomic_ids")
+    end
+    _genomic_id_order_fingerprint(ids) == provenance.id_order_fingerprint ||
+        return (ok = false, reason = "id_fingerprint_mismatch")
+    _genomic_matrix_fingerprint("Q_lambda", Q, ids) == provenance.precision_fingerprint ||
+        return (ok = false, reason = "precision_fingerprint_mismatch")
+    K = nothing
+    if source == "markers"
+        kernel === nothing && return (ok = false, reason = "missing_marker_kernel")
+        K = try Matrix{Float64}(kernel) catch
+            return (ok = false, reason = "nonnumeric_marker_kernel")
+        end
+        size(K) == (n, n) || return (ok = false, reason = "kernel_dimension")
+        all(isfinite, K) || return (ok = false, reason = "nonfinite_kernel")
+        isapprox(K, transpose(K); atol = 1e-12, rtol = 0) ||
+            return (ok = false, reason = "asymmetric_kernel")
+        hasproperty(provenance, :kernel_fingerprint) ||
+            return (ok = false, reason = "missing_kernel_fingerprint")
+        _genomic_matrix_fingerprint("K_lambda", K, ids) == provenance.kernel_fingerprint ||
+            return (ok = false, reason = "kernel_fingerprint_mismatch")
+        maximum(abs, Q * K - Matrix{Float64}(I, n, n)) <= 1e-8 ||
+            return (ok = false, reason = "kernel_precision_mismatch")
+    end
+    return (ok = true, reason = "ok", y = y, X = X, Q = Q, qfactor = qfactor,
+            ids = ids, provenance = provenance, K = K)
+end
+
+function _genomic_refinement_accepted(converged, minimizer, minimum_value,
+                                      lower, upper, incumbent_loglik, n)
+    all(isfinite, (minimizer, minimum_value, lower, upper, incumbent_loglik)) || return false
+    Bool(converged) || return false
+    lower <= minimizer <= upper || return false
+    -minimum_value + n * 1e-10 >= incumbent_loglik
+end
+
+function _genomic_fd_log_gradient_norm(spec::AnimalModelSpec, sigma_a2, sigma_e2)
+    eta = log.([Float64(sigma_a2), Float64(sigma_e2)])
+    gradient = zeros(2)
+    h = 1e-5
+    for j in eachindex(gradient)
+        plus = copy(eta); minus = copy(eta)
+        plus[j] += h; minus[j] -= h
+        lp = sparse_reml_loglik(spec, exp(plus[1]), exp(plus[2])).loglik
+        lm = sparse_reml_loglik(spec, exp(minus[1]), exp(minus[2])).loglik
+        all(isfinite, (lp, lm)) || return Inf
+        gradient[j] = (lp - lm) / (2h)
+    end
+    norm(gradient) / length(spec.y)
+end
+
+function _genomic_profile_context(precheck)
+    n = length(precheck.y)
+    # Canonicalize both marker and supplied-Q routes through the exact same Q→K
+    # numerical path. The marker K was already fingerprinted and checked against
+    # Q in precheck; using it here would make the two public routes differ by
+    # inversion roundoff on flat profile likelihoods.
+    K = Matrix(precheck.qfactor \ Matrix{Float64}(I, n, n))
+    K = (K + transpose(K)) / 2
+    decomposition = try
+        eigen(Symmetric(K))
+    catch
+        return nothing
+    end
+    all(isfinite, decomposition.values) && all(>(0), decomposition.values) || return nothing
+    vectors_t = transpose(decomposition.vectors)
+    return (eigenvalues = decomposition.values, y = vectors_t * precheck.y,
+            X = vectors_t * precheck.X, n = n, p = size(precheck.X, 2))
+end
+
+function _genomic_boundary_classify_candidates(lower_ll, interior_ll, upper_ll,
+                                                distinct_interior, d0, d1, n)
+    tie_tol = n * 1e-10
+    endpoint_pair_tie = abs(lower_ll - upper_ll) <= tie_tol &&
+                        max(lower_ll, upper_ll) + tie_tol >= interior_ll
+    lower_interior_tie = distinct_interior && abs(lower_ll - interior_ll) <= tie_tol
+    upper_interior_tie = distinct_interior && abs(upper_ll - interior_ll) <= tie_tol
+    if !endpoint_pair_tie && !lower_interior_tie &&
+       lower_ll + tie_tol >= max(interior_ll, upper_ll) && d0 <= _GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_lower", reason = "likelihood_and_kkt")
+    elseif !endpoint_pair_tie && !upper_interior_tie &&
+           upper_ll + tie_tol >= max(lower_ll, interior_ll) && d1 >= -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "boundary_upper", reason = "likelihood_and_kkt")
+    elseif distinct_interior && interior_ll - max(lower_ll, upper_ll) > tie_tol &&
+           d0 > _GENOMIC_BOUNDARY_KKT_TOL && d1 < -_GENOMIC_BOUNDARY_KKT_TOL
+        return (status = "interior_profile", reason = "profile_interior")
+    end
+    reason = endpoint_pair_tie ? "endpoint_pair_tie" :
+             (lower_interior_tie || upper_interior_tie) ? "endpoint_interior_tie" :
+             "classification_disagreement"
+    return (status = "boundary_unresolved", reason = reason)
+end
+
+function _genomic_profile_reml(context, ratio::Real)
+    r = Float64(ratio)
+    0.0 <= r <= 1.0 || return nothing
+    h = r .* context.eigenvalues .+ (1.0 - r)
+    all(isfinite, h) && all(>(0), h) || return nothing
+    weights = 1.0 ./ h
+    hi_x = weights .* context.X
+    hi_y = weights .* context.y
+    xt_hi_x = Symmetric(transpose(context.X) * hi_x)
+    fixed_factor = try
+        cholesky(xt_hi_x; check = true)
+    catch
+        return nothing
+    end
+    rhs = transpose(context.X) * hi_y
+    quad = dot(context.y, hi_y) - dot(rhs, fixed_factor \ rhs)
+    df = context.n - context.p
+    isfinite(quad) && quad > 0 && df > 0 || return nothing
+    t_hat = quad / df
+    logdet_h = sum(log, h)
+    logdet_fixed = 2sum(log, diag(fixed_factor.U))
+    loglik = -0.5 * (df * (1 + log(2pi * t_hat)) + logdet_h + logdet_fixed)
+    isfinite(loglik) || return nothing
+    return (loglik = loglik, t_hat = t_hat)
+end
+
+function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
+    n = length(spec.y)
+    context = _genomic_profile_context(precheck)
+    context === nothing && return (status = "boundary_unresolved", reason = "kernel_provenance_or_eigendecomposition")
+    grid = collect(0.0:_GENOMIC_BOUNDARY_GRID_STEP:1.0)
+    parts = [_genomic_profile_reml(context, r) for r in grid]
+    any(isnothing, parts) && return (status = "boundary_unresolved", reason = "nonfinite_profile")
+    values = [part.loglik for part in parts]
+    interior_index = argmax(view(values, 2:(length(values) - 1))) + 1
+    lower_r, upper_r = grid[interior_index - 1], grid[interior_index + 1]
+    refined = try
+        optimize(r -> -something(_genomic_profile_reml(context, r), (loglik = -Inf,)).loglik,
+                 lower_r, upper_r; abs_tol = 1e-12)
+    catch
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    end
+    refinement = try
+        (converged = Optim.converged(refined), minimizer = Optim.minimizer(refined),
+         minimum = Optim.minimum(refined))
+    catch
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    end
+    _genomic_refinement_accepted(refinement.converged, refinement.minimizer,
+        refinement.minimum, lower_r, upper_r, values[interior_index], n) ||
+        return (status = "boundary_unresolved", reason = "refinement_failed")
+    interior_r = refinement.minimizer
+    interior_part = _genomic_profile_reml(context, interior_r)
+    interior_part === nothing && return (status = "boundary_unresolved", reason = "refinement_failed")
+    distinct_interior = _GENOMIC_BOUNDARY_EPSILON < interior_r < 1 - _GENOMIC_BOUNDARY_EPSILON
+    if !distinct_interior
+        interior_r = grid[interior_index]
+        interior_part = parts[interior_index]
+    end
+    lower_part = first(parts)
+    upper_part = last(parts)
+    delta_lower = _genomic_profile_reml(context, _GENOMIC_BOUNDARY_DELTA)
+    delta_upper = _genomic_profile_reml(context, 1 - _GENOMIC_BOUNDARY_DELTA)
+    (delta_lower === nothing || delta_upper === nothing) &&
+        return (status = "boundary_unresolved", reason = "endpoint_derivative_failed")
+    d0 = (delta_lower.loglik - lower_part.loglik) / _GENOMIC_BOUNDARY_DELTA / n
+    d1 = (upper_part.loglik - delta_upper.loglik) / _GENOMIC_BOUNDARY_DELTA / n
+    classification = _genomic_boundary_classify_candidates(
+        lower_part.loglik, interior_part.loglik, upper_part.loglik,
+        distinct_interior, d0, d1, n)
+    if classification.status == "boundary_lower"
+        return (status = "boundary_lower", reason = "likelihood_and_kkt", profile_ratio = 0.0,
+                exact = lower_part, d0 = d0, d1 = d1)
+    elseif classification.status == "boundary_upper"
+        return (status = "boundary_upper", reason = "likelihood_and_kkt", profile_ratio = 1.0,
+                exact = upper_part, d0 = d0, d1 = d1)
+    elseif classification.status == "interior_profile"
+        return (status = "interior_profile", reason = "profile_interior", profile_ratio = interior_r,
+                exact = interior_part, d0 = d0, d1 = d1)
+    end
+    return (status = "boundary_unresolved", reason = classification.reason)
+end
+
+function _fit_ai_reml_genomic_boundary(
+    spec::AnimalModelSpec;
+    provenance,
+    kernel = nothing,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 100,
+    tol::Real = 1e-8,
+    em_warmup::Integer = 0,
+)
+    precheck = _genomic_boundary_precheck(spec, provenance, kernel)
+    precheck.ok || return _genomic_boundary_unresolved(nothing, precheck.reason)
+    ai = _fit_ai_reml_diagnostics(spec; initial = initial, iterations = iterations,
+                                  tol = tol, em_warmup = em_warmup)
+    profile = _genomic_boundary_profile(spec, precheck)
+    profile.status == "boundary_unresolved" &&
+        return _genomic_boundary_unresolved(ai, profile.reason)
+    if profile.status == "interior_profile"
+        ratio_ai = ai.fit.variance_components.sigma_a2 /
+                   (ai.fit.variance_components.sigma_a2 + ai.fit.variance_components.sigma_e2)
+        oracle_components = (profile.profile_ratio * profile.exact.t_hat,
+                             (1 - profile.profile_ratio) * profile.exact.t_hat)
+        ai_components = (ai.fit.variance_components.sigma_a2, ai.fit.variance_components.sigma_e2)
+        component_ok = all(abs(a - b) <= 1e-8 + 1e-5 * abs(b) for (a, b) in zip(ai_components, oracle_components))
+        ratio_ok = abs(ratio_ai - profile.profile_ratio) <= 1e-8 + 1e-5 * abs(profile.profile_ratio)
+        objective_ok = abs(ai.fit.likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8
+        gradient_ok = _genomic_fd_log_gradient_norm(spec, ai_components...) <= 1e-8
+        if ai.fit.converged && component_ok && ratio_ok && objective_ok && gradient_ok
+            return (
+                fit = ai.fit,
+                boundary = (status = "interior", reason = "ai_interior",
+                    profile_ratio = profile.profile_ratio, numerical_ratio = ratio_ai,
+                    boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                    profile_loglik = profile.exact.loglik,
+                    lower_derivative_per_observation = profile.d0,
+                    upper_derivative_per_observation = profile.d1),
+                ai_diagnostics = ai.diagnostics,
+            )
+        end
+        sigma_a2, sigma_e2 = oracle_components
+        _genomic_fd_log_gradient_norm(spec, sigma_a2, sigma_e2) <= 1e-8 ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_gradient")
+        likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+        all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_nonfinite")
+        abs(likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8 ||
+            return _genomic_boundary_unresolved(ai, "interior_profile_objective")
+        fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                             true, "interior_rescued", ai.fit.iterations, :variance_components,
+                             false, true, :estimated_ai_reml)
+        return (
+            fit = fit,
+            boundary = (status = "interior_rescued", reason = "profile_interior",
+                profile_ratio = profile.profile_ratio, numerical_ratio = profile.profile_ratio,
+                boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                profile_loglik = profile.exact.loglik,
+                lower_derivative_per_observation = profile.d0,
+                upper_derivative_per_observation = profile.d1),
+            ai_diagnostics = ai.diagnostics,
+        )
+    end
+    ratio = profile.profile_ratio
+    numerical_ratio = profile.status == "boundary_lower" ? _GENOMIC_BOUNDARY_EPSILON :
+                      profile.status == "boundary_upper" ? 1 - _GENOMIC_BOUNDARY_EPSILON : ratio
+    sigma_a2 = numerical_ratio * profile.exact.t_hat
+    sigma_e2 = (1 - numerical_ratio) * profile.exact.t_hat
+    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
+        return _genomic_boundary_unresolved(ai, "boundary_representation_nonfinite")
+    fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                         true, profile.status, ai.fit.iterations, :variance_components,
+                         false, true, :estimated_ai_reml)
+    return (
+        fit = fit,
+        boundary = (status = profile.status, reason = profile.status,
+                    profile_ratio = ratio, numerical_ratio = numerical_ratio,
+                    boundary_epsilon = _GENOMIC_BOUNDARY_EPSILON,
+                    profile_loglik = profile.exact.loglik,
+                    lower_derivative_per_observation = profile.d0,
+                    upper_derivative_per_observation = profile.d1),
+        ai_diagnostics = ai.diagnostics,
     )
 end
 

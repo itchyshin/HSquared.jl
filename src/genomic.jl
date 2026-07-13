@@ -149,6 +149,184 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01, bac
     return inv(regularized)
 end
 
+# Canonical provenance encoding for the v0.7 genomic activation contract. These helpers are
+# intentionally internal: R receives the fingerprints and semantic metadata, but the byte format
+# remains owned by the Julia engine. Integers and Float64 bit patterns are written little-endian so
+# the digest is independent of host byte order.
+const _GENOMIC_PROVENANCE_DOMAIN = "HSquared-provenance-v1\0"
+
+function _provenance_write_u64(io::IO, value::Integer)
+    value >= 0 || throw(ArgumentError("canonical provenance integers must be non-negative"))
+    write(io, htol(UInt64(value)))
+    return io
+end
+
+
+function _provenance_write_string(io::IO, value::AbstractString)
+    bytes = codeunits(String(value))
+    _provenance_write_u64(io, length(bytes))
+    write(io, bytes)
+    return io
+end
+
+
+function _provenance_write_strings(io::IO, values::AbstractVector{<:AbstractString})
+    _provenance_write_u64(io, length(values))
+    for value in values
+        _provenance_write_string(io, value)
+    end
+    return io
+end
+
+
+function _provenance_write_float64(io::IO, value::Real)
+    x = Float64(value)
+    isfinite(x) || throw(ArgumentError("canonical provenance values must be finite"))
+    x == 0.0 && (x = 0.0) # canonicalize -0.0 to +0.0
+    _provenance_write_u64(io, reinterpret(UInt64, x))
+    return io
+end
+
+
+function _provenance_buffer(kind::AbstractString)
+    io = IOBuffer()
+    write(io, codeunits(_GENOMIC_PROVENANCE_DOMAIN))
+    write(io, codeunits(String(kind)))
+    write(io, UInt8(0))
+    return io
+end
+
+
+_provenance_digest(io::IOBuffer) = bytes2hex(SHA.sha256(take!(io)))
+
+
+function _canonical_genomic_ids(ids, n::Integer)
+    length(ids) == n || throw(ArgumentError("ids must have one entry per genomic row"))
+    all(x -> x !== missing && x !== nothing, ids) ||
+        throw(ArgumentError("genomic ids must be non-missing"))
+    values = string.(collect(ids))
+    all(!isempty, values) || throw(ArgumentError("genomic ids must be non-empty"))
+    length(unique(values)) == length(values) || throw(ArgumentError("genomic ids must be unique"))
+    return values
+end
+
+
+function _genomic_id_order_fingerprint(ids::AbstractVector{<:AbstractString})
+    io = _provenance_buffer("id_order")
+    _provenance_write_strings(io, ids)
+    return _provenance_digest(io)
+end
+
+
+function _genomic_marker_fingerprint(markers::AbstractMatrix, ids::AbstractVector{<:AbstractString},
+                                     marker_names)
+    n, m = size(markers)
+    io = _provenance_buffer("markers")
+    _provenance_write_u64(io, n)
+    _provenance_write_u64(io, m)
+    _provenance_write_strings(io, ids)
+    if marker_names === nothing
+        write(io, UInt8(0))
+        _provenance_write_u64(io, m)
+        for j in 1:m
+            _provenance_write_u64(io, j)
+        end
+    else
+        all(x -> x !== missing && x !== nothing, marker_names) ||
+            throw(ArgumentError("marker_names must be non-missing"))
+        names = string.(collect(marker_names))
+        length(names) == m || throw(ArgumentError("marker_names must have one entry per marker"))
+        all(!isempty, names) || throw(ArgumentError("marker_names must be non-empty"))
+        length(unique(names)) == m || throw(ArgumentError("marker_names must be unique"))
+        write(io, UInt8(1))
+        _provenance_write_strings(io, names)
+    end
+    for value in markers # Julia arrays iterate in column-major semantic order
+        _provenance_write_float64(io, value)
+    end
+    return _provenance_digest(io)
+end
+
+
+function _genomic_matrix_fingerprint(kind::AbstractString, matrix::AbstractMatrix,
+                                     ids::AbstractVector{<:AbstractString})
+    n, m = size(matrix)
+    n == m || throw(ArgumentError("$kind must be square"))
+    length(ids) == n || throw(ArgumentError("ids must match $kind dimensions"))
+    io = _provenance_buffer(kind)
+    _provenance_write_u64(io, n)
+    _provenance_write_u64(io, m)
+    _provenance_write_strings(io, ids) # row IDs
+    _provenance_write_strings(io, ids) # column IDs, framed separately by contract
+    for value in matrix
+        _provenance_write_float64(io, value)
+    end
+    return _provenance_digest(io)
+end
+
+
+"""
+    _genomic_precision_provenance(Q, ids)
+
+Internal provenance for a caller-supplied genomic precision. Construction method, allele-frequency
+source, ridge, scale denominator, and covariance-kernel fingerprint are deliberately unknown.
+"""
+function _genomic_precision_provenance(Q::AbstractMatrix, ids)
+    n = size(Q, 1)
+    size(Q, 2) == n || throw(ArgumentError("Q must be square"))
+    values = Matrix{Float64}(Q)
+    all(isfinite, values) || throw(ArgumentError("Q must contain only finite values"))
+    id_values = _canonical_genomic_ids(ids, n)
+    return (
+        relationship_source = "supplied_Ginv",
+        relationship_method = nothing,
+        allele_frequency_source = nothing,
+        ridge = nothing,
+        scale_denominator = nothing,
+        relationship_scale = "inverse_of_supplied_precision",
+        id_order_fingerprint = _genomic_id_order_fingerprint(id_values),
+        marker_content_fingerprint = nothing,
+        kernel_fingerprint = nothing,
+        precision_fingerprint = _genomic_matrix_fingerprint("Q_lambda", values, id_values),
+    )
+end
+
+
+"""
+    _genomic_activation_construction(markers, ids; marker_names = nothing, ridge = 0.01)
+
+Internal, bridge-facing construction for the frozen v0.7 genomic activation route. It uses sample
+allele frequencies, unweighted VanRaden method 1, and the supplied ridge, returning every symbolic
+intermediate plus engine-owned semantic provenance. This is not a new public Julia API.
+"""
+function _genomic_activation_construction(markers::AbstractMatrix, ids;
+                                          marker_names = nothing, ridge::Real = 0.01)
+    ridge_value = Float64(ridge)
+    isfinite(ridge_value) && ridge_value >= 0 ||
+        throw(ArgumentError("ridge must be non-negative and finite"))
+    M = Matrix{Float64}(markers)
+    n, _ = size(M)
+    id_values = _canonical_genomic_ids(ids, n)
+    cm = centered_markers(M)
+    G = genomic_relationship_matrix(M; allele_frequencies = cm.p, method = :vanraden1)
+    K = Matrix{Float64}(G) + ridge_value * I
+    Q = Matrix{Float64}(genomic_relationship_inverse(G; ridge = ridge_value))
+    provenance = (
+        relationship_source = "markers",
+        relationship_method = "vanraden1",
+        allele_frequency_source = "sample",
+        ridge = ridge_value,
+        scale_denominator = cm.k,
+        relationship_scale = "K_lambda",
+        id_order_fingerprint = _genomic_id_order_fingerprint(id_values),
+        marker_content_fingerprint = _genomic_marker_fingerprint(M, id_values, marker_names),
+        kernel_fingerprint = _genomic_matrix_fingerprint("K_lambda", K, id_values),
+        precision_fingerprint = _genomic_matrix_fingerprint("Q_lambda", Q, id_values),
+    )
+    return (p = cm.p, W = cm.W, k = cm.k, G = G, K = K, Q = Q,
+            provenance = provenance)
+end
+
 """
     apy_genomic_relationship_inverse(G, core; ridge = 0.0)
 

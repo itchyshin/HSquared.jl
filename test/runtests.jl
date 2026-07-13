@@ -3766,6 +3766,292 @@ end
     )
 end
 
+@testset "fit_ai_reml internal optimizer-localization diagnostics" begin
+    ids = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "d1", "d1", "d2", "d2", "d3", "d5"],
+        ["0", "0", "d2", "d2", "0", "0", "d4", "d6"],
+    )
+    spec = animal_model_spec(
+        [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5],
+        ones(8, 1),
+        sparse(1.0I, 8, 8),
+        pedigree_inverse(ped);
+        ids = ped.ids,
+        method = :REML,
+    )
+
+    # The public wrapper remains the exact fit half of the internal path.
+    public_fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    internal = HSquared._fit_ai_reml_diagnostics(
+        spec;
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    @test internal.fit.spec === public_fit.spec
+    @test internal.fit.likelihood.loglik == public_fit.likelihood.loglik
+    @test internal.fit.likelihood.beta == public_fit.likelihood.beta
+    @test internal.fit.variance_components == public_fit.variance_components
+    @test internal.fit.converged == public_fit.converged
+    @test internal.fit.optimizer_status == public_fit.optimizer_status
+    @test internal.fit.iterations == public_fit.iterations
+    @test internal.fit.target == public_fit.target
+    @test internal.fit.dense_validation_path == public_fit.dense_validation_path
+    @test internal.fit.sparse_mme_path == public_fit.sparse_mme_path
+    @test internal.fit.variance_components_source == public_fit.variance_components_source
+    @test internal.diagnostics.termination_reason in
+          ("score_tolerance", "relative_change_tolerance")
+    @test internal.diagnostics.factorizations ==
+          internal.fit.iterations + internal.diagnostics.em_steps
+    @test internal.diagnostics.step_halvings >= 0
+    @test isfinite(internal.diagnostics.ai_score_norm)
+    @test all(isfinite, (internal.diagnostics.ai_score_a, internal.diagnostics.ai_score_e))
+
+    capped = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1)
+    @test !capped.fit.converged
+    @test capped.diagnostics.termination_reason == "iteration_limit"
+    @test capped.diagnostics.factorizations == 1
+    @test capped.diagnostics.em_steps == 0
+    @test isfinite(capped.diagnostics.last_relative_change)
+
+    warmed = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1, em_warmup = 5)
+    @test 0 <= warmed.diagnostics.em_steps <= 5
+    @test warmed.diagnostics.factorizations ==
+          warmed.fit.iterations + warmed.diagnostics.em_steps
+end
+
+@testset "v0.7 genomic closed-boundary resolution (doc 46)" begin
+    function boundary_fixture(mode)
+        # Deliberately construct strong lower/interior/upper profile targets.
+        # Do not regenerate endpoint expectations from a stdlib RNG: randn's
+        # seeded stream changed between Julia 1.10 and 1.12.
+        values = repeat(collect(range(0.25, 4.0; length = 20)), inner = 2)
+        n = length(values)
+        exponent = mode == :lower ? 0.0 : mode == :interior ? 0.3 :
+                   mode == :upper ? 0.75 : error("unknown boundary fixture mode")
+        signs = repeat([1.0, -1.0], n ÷ 2)
+        y = signs .* values .^ exponent
+        K = Matrix(Diagonal(values))
+        Q = Matrix(Diagonal(1 ./ values))
+        ids = ["id$(i)" for i in 1:n]
+        provenance = (
+            relationship_source = "markers",
+            relationship_method = "deterministic_test_kernel",
+            allele_frequency_source = "deterministic_test",
+            ridge = 0.0,
+            scale_denominator = 1.0,
+            relationship_scale = "K_test",
+            id_order_fingerprint = HSquared._genomic_id_order_fingerprint(ids),
+            marker_content_fingerprint = repeat("0", 64),
+            kernel_fingerprint = HSquared._genomic_matrix_fingerprint("K_lambda", K, ids),
+            precision_fingerprint = HSquared._genomic_matrix_fingerprint("Q_lambda", Q, ids),
+        )
+        spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), Q;
+                                 ids = ids, method = :REML)
+        return (spec = spec, provenance = provenance, K = K)
+    end
+
+    @test HSquared._GENOMIC_BOUNDARY_EPSILON == 1e-7
+    @test HSquared._GENOMIC_BOUNDARY_GRID_STEP == 0.0025
+    @test HSquared._GENOMIC_BOUNDARY_DELTA == 1e-6
+    @test HSquared._GENOMIC_BOUNDARY_KKT_TOL == 1e-8
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_COMMIT == "fe96a147"
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_SHA256 ==
+          "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
+
+    lower_fixture = boundary_fixture(:lower)
+    lower = HSquared._fit_ai_reml_genomic_boundary(lower_fixture.spec;
+        provenance = lower_fixture.provenance, kernel = lower_fixture.K)
+    @test lower.boundary.status == "boundary_lower"
+    @test lower.boundary.profile_ratio == 0.0
+    @test lower.boundary.numerical_ratio == 1e-7
+    @test lower.fit.converged
+    @test lower.fit.optimizer_status == "boundary_lower"
+    @test lower.fit.variance_components.sigma_a2 > 0
+    @test lower.fit.variance_components.sigma_e2 > 0
+    @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) /
+          length(lower_fixture.spec.y) <= 1e-8
+    @test lower.boundary.lower_derivative_per_observation <= 1e-8
+
+    upper_fixture = boundary_fixture(:upper)
+    upper = HSquared._fit_ai_reml_genomic_boundary(upper_fixture.spec;
+        provenance = upper_fixture.provenance, kernel = upper_fixture.K)
+    @test upper.boundary.status == "boundary_upper"
+    @test upper.boundary.profile_ratio == 1.0
+    @test upper.boundary.numerical_ratio == 1 - 1e-7
+    @test upper.fit.converged
+    @test upper.fit.optimizer_status == "boundary_upper"
+    # This compares the epsilon representation (r = 1 - 1e-7) with the exact
+    # r = 1 profile. Its first-order gap is about 1e-8 per observation; Julia
+    # 1.12 BLAS/LAPACK variation raises the observed gap to 1.09e-8.
+    @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) /
+          length(upper_fixture.spec.y) <= 2e-8
+    @test upper.boundary.upper_derivative_per_observation >= -1e-8
+
+    interior_fixture = boundary_fixture(:interior)
+    interior_spec = interior_fixture.spec
+    ordinary = fit_ai_reml(interior_spec)
+    interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test interior.boundary.status == "interior"
+    @test interior.fit.variance_components == ordinary.variance_components
+    @test interior.fit.likelihood.loglik == ordinary.likelihood.loglik
+    @test interior.fit.optimizer_status == ordinary.optimizer_status
+    @test 1e-7 < interior.boundary.profile_ratio < 1 - 1e-7
+    @test all(isfinite, (interior.boundary.profile_loglik,
+                         interior.boundary.lower_derivative_per_observation,
+                         interior.boundary.upper_derivative_per_observation))
+
+    # The eigen-rotated evaluator is a performance rewrite of the frozen dense-H
+    # formula, so compare the two directly at both endpoints and an interior r.
+    precheck = HSquared._genomic_boundary_precheck(
+        interior_spec, interior_fixture.provenance, interior_fixture.K)
+    context = HSquared._genomic_profile_context(precheck)
+    n_boundary = length(interior_spec.y)
+    K_reconstructed = Matrix(precheck.qfactor \ Matrix{Float64}(I, n_boundary, n_boundary))
+    function dense_profile(r)
+        H = Symmetric(r .* K_reconstructed .+
+                      (1-r) .* Matrix{Float64}(I, n_boundary, n_boundary))
+        F = cholesky(H)
+        hi_x = F \ Matrix(interior_spec.X)
+        hi_y = F \ Vector(interior_spec.y)
+        fixed = cholesky(Symmetric(transpose(interior_spec.X) * hi_x))
+        rhs = transpose(interior_spec.X) * hi_y
+        quad = dot(interior_spec.y, hi_y) - dot(rhs, fixed \ rhs)
+        df = n_boundary - size(interior_spec.X, 2)
+        t_hat = quad / df
+        ll = -0.5 * (df * (1 + log(2pi*t_hat)) +
+            2sum(log, diag(F.U)) + 2sum(log, diag(fixed.U)))
+        (loglik=ll, t_hat=t_hat)
+    end
+    for r in (0.0, 0.37, 1.0)
+        fast = HSquared._genomic_profile_reml(context, r)
+        dense = dense_profile(r)
+        @test fast.loglik ≈ dense.loglik atol=1e-10 rtol=0
+        @test fast.t_hat ≈ dense.t_hat atol=1e-10 rtol=0
+    end
+
+    supplied_provenance = HSquared._genomic_precision_provenance(
+        Matrix(interior_spec.Ainv), interior_spec.ids)
+    supplied_route = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = supplied_provenance)
+    @test supplied_route.boundary.profile_ratio == interior.boundary.profile_ratio
+    @test supplied_route.boundary.profile_loglik == interior.boundary.profile_loglik
+
+    bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
+        sparse(circshift(Matrix{Float64}(I, n_boundary, n_boundary), (0, 1))), interior_spec.Ainv;
+        ids = interior_spec.ids, method = :REML)
+    unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test unresolved.boundary.status == "boundary_unresolved"
+    @test unresolved.boundary.reason == "nonidentity_Z"
+    @test unresolved.fit === nothing
+    @test unresolved.boundary.profile_ratio === nothing
+    @test unresolved.boundary.numerical_ratio === nothing
+
+    rescued = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K,
+        iterations = 1)
+    @test rescued.boundary.status == "interior_rescued"
+    @test rescued.fit.converged
+    @test rescued.fit.optimizer_status == "interior_rescued"
+    @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) /
+          n_boundary <= 1e-8
+
+    Q = Matrix(interior_spec.Ainv)
+    asymmetric = copy(Q); asymmetric[1, 2] += 0.1
+    asymmetric_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, asymmetric; ids = interior_spec.ids, method = :REML)
+    asymmetric_result = HSquared._fit_ai_reml_genomic_boundary(asymmetric_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test asymmetric_result.fit === nothing
+    @test asymmetric_result.boundary.reason == "asymmetric_precision"
+
+    nonfinite_y = copy(interior_spec.y); nonfinite_y[1] = NaN
+    nonfinite_y_spec = animal_model_spec(nonfinite_y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_y_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_y"
+
+    nonfinite_q = copy(Q); nonfinite_q[1, 1] = NaN
+    nonfinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, nonfinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_precision"
+
+    indefinite_q = copy(Q); indefinite_q[1, 1] = -1
+    indefinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, indefinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(indefinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonpositive_precision"
+
+    rank_bad_X = hcat(interior_spec.X, interior_spec.X)
+    rank_bad_spec = animal_model_spec(interior_spec.y, rank_bad_X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(rank_bad_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "rank_deficient_X"
+
+    ml_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :ML)
+    ml_result = HSquared._fit_ai_reml_genomic_boundary(ml_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test ml_result.fit === nothing
+    @test ml_result.boundary.reason == "non_reml_method"
+
+    malformed_kernel = fill("not-a-number", size(interior_fixture.K))
+    malformed_kernel_result = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = malformed_kernel)
+    @test malformed_kernel_result.fit === nothing
+    @test malformed_kernel_result.boundary.reason == "nonnumeric_marker_kernel"
+
+    @test HSquared._genomic_refinement_accepted(true, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(false, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, NaN, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, 0.6, -10.0, 0.3, 0.5, 10.0, 120)
+
+    wrong_provenance = merge(interior_fixture.provenance,
+        (precision_fingerprint = repeat("0", 64),))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = wrong_provenance, kernel = interior_fixture.K).boundary.reason == "precision_fingerprint_mismatch"
+    nongeno_provenance = merge(interior_fixture.provenance,
+        (relationship_source = "pedigree",))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = nongeno_provenance, kernel = interior_fixture.K).boundary.reason == "non_genomic_provenance"
+
+    tie_ids = ["t$(i)" for i in 1:8]
+    tie_Q = Matrix{Float64}(I, 8, 8)
+    tie_spec = animal_model_spec(collect(1.0:8.0), ones(8, 1),
+        sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
+    tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
+    tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
+        provenance = tie_provenance)
+    @test tie_result.boundary.status == "boundary_unresolved"
+    @test tie_result.boundary.reason == "endpoint_pair_tie"
+    @test tie_result.fit !== nothing && !tie_result.fit.converged
+    @test tie_result.fit.optimizer_status == "boundary_unresolved"
+    @test tie_result.ai_diagnostics.termination_reason == "score_tolerance"
+
+    endpoint_interior_tie = HSquared._genomic_boundary_classify_candidates(
+        10.0, 10.0, 9.0, true, -0.1, -0.1, 120)
+    @test endpoint_interior_tie.status == "boundary_unresolved"
+    @test endpoint_interior_tie.reason == "endpoint_interior_tie"
+    reversed_lower_kkt = HSquared._genomic_boundary_classify_candidates(
+        10.0, 9.0, 8.0, true, 0.1, -0.1, 120)
+    @test reversed_lower_kkt.status == "boundary_unresolved"
+    @test reversed_lower_kkt.reason == "classification_disagreement"
+
+    big_n = 2001
+    big_ids = ["big$(i)" for i in 1:big_n]
+    big_spec = animal_model_spec(ones(big_n), ones(big_n, 1),
+        sparse(1.0I, big_n, big_n), sparse(1.0I, big_n, big_n);
+        ids = big_ids, method = :REML)
+    big_result = HSquared._fit_ai_reml_genomic_boundary(big_spec;
+        provenance = (relationship_source = "supplied_Ginv",
+            id_order_fingerprint = "not-read", precision_fingerprint = "not-read"))
+    @test big_result.fit === nothing
+    @test big_result.boundary.reason == "dense_limit"
+end
+
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
@@ -7130,6 +7416,225 @@ end
     corrupted_gebv = copy(gebv_expected[:, 1])
     corrupted_gebv[1] += 0.1
     @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
+end
+
+@testset "v0.7 genomic public-activation construction and provenance" begin
+    # Independent Python struct.pack('<Q', ...) + hashlib.sha256 golden for the canonical
+    # id-order byte stream. This pins framing and byte order, not merely digest shape.
+    golden_bytes = "48537175617265642d70726f76656e616e63652d76310069645f6f7264657200" *
+                   "02000000000000000500000000000000616c7068610300000000000000696432"
+    golden_digest = "e91221fde844edffa91e7d4701b28ecbfe2176eacb2eb341d062597726e2c4dc"
+    io = HSquared._provenance_buffer("id_order")
+    HSquared._provenance_write_strings(io, ["alpha", "id2"])
+    @test bytes2hex(take!(io)) == golden_bytes
+    @test HSquared._genomic_id_order_fingerprint(["alpha", "id2"]) == golden_digest
+
+    # Independently generated with Python struct.pack('<Q'/'<d') + hashlib.sha256.
+    # This pins dimensions, row/column ID framing, Float64 byte order, column-major
+    # semantic order, negative non-integers, and -0.0 -> +0.0 canonicalization.
+    numeric_golden_bytes =
+        "48537175617265642d70726f76656e616e63652d7631004b5f6c616d62646100" *
+        "020000000000000002000000000000000200000000000000010000000000000061" *
+        "01000000000000006202000000000000000100000000000000610100000000000000" *
+        "62000000000000f03f00000000000004c000000000000000000000000000000000"
+    numeric_golden_digest = "2c21985923be46408dd7d1c9387a9faac9c167b75e677bd952dfef6e7fc7221e"
+    numeric_matrix = [1.0 -0.0; -2.5 0.0]
+    numeric_io = HSquared._provenance_buffer("K_lambda")
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    for value in numeric_matrix
+        HSquared._provenance_write_float64(numeric_io, value)
+    end
+    @test bytes2hex(take!(numeric_io)) == numeric_golden_bytes
+    @test HSquared._genomic_matrix_fingerprint("K_lambda", numeric_matrix, ["a", "b"]) ==
+          numeric_golden_digest
+
+    tiny_ids = ["a", "b", "c", "d"]
+    tiny_markers = [0.0 1.0 2.0; 2.0 1.0 0.0; 1.0 0.0 1.0; 0.0 2.0 1.0]
+    tiny_names = ["m1", "m2", "m3"]
+    tiny = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names,
+    )
+    @test tiny.p ≈ vec(sum(tiny_markers, dims = 1)) ./ (2 * length(tiny_ids))
+    @test tiny.W ≈ tiny_markers .- 2 .* transpose(tiny.p)
+    @test tiny.k ≈ 2 * sum(tiny.p .* (1 .- tiny.p))
+    @test tiny.G ≈ tiny.W * transpose(tiny.W) / tiny.k
+    @test tiny.K ≈ tiny.G + 0.01I
+    @test tiny.K * tiny.Q ≈ I(4)
+
+    # Tests of the tests: each frozen estimand choice changes the construction.
+    half_p = fill(0.5, size(tiny_markers, 2))
+    half_p_G = genomic_relationship_matrix(tiny_markers; allele_frequencies = half_p)
+    @test maximum(abs.(half_p_G .- tiny.G)) > 1e-6
+    wrong_denominator_G = tiny.W * transpose(tiny.W) / (tiny.k + 1.0)
+    @test maximum(abs.(wrong_denominator_G .- tiny.G)) > 1e-6
+    zero_ridge = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.0,
+    )
+    @test zero_ridge.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test zero_ridge.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+    @test tiny.provenance.relationship_source == "markers"
+    @test tiny.provenance.relationship_method == "vanraden1"
+    @test tiny.provenance.allele_frequency_source == "sample"
+    @test tiny.provenance.relationship_scale == "K_lambda"
+    @test tiny.provenance.ridge == 0.01
+    @test tiny.provenance.scale_denominator == tiny.k
+    for name in (:id_order_fingerprint, :marker_content_fingerprint,
+                 :kernel_fingerprint, :precision_fingerprint)
+        digest = getproperty(tiny.provenance, name)
+        @test occursin(r"^[0-9a-f]{64}$", digest)
+    end
+
+    # +0.0 and -0.0 have one semantic fingerprint. Every other declared mutation is visible.
+    signed_zero = copy(tiny_markers)
+    signed_zero[1, 1] = -0.0
+    zero_twin = HSquared._genomic_activation_construction(
+        signed_zero, tiny_ids; marker_names = tiny_names,
+    )
+    @test zero_twin.provenance.marker_content_fingerprint ==
+          tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers[:, 1:2], tiny_ids; marker_names = tiny_names[1:2],
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, reverse(tiny_ids); marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = reverse(tiny_names),
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    changed_value = copy(tiny_markers); changed_value[1, 1] = 0.25
+    @test HSquared._genomic_activation_construction(
+        changed_value, tiny_ids; marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    ridge_twin = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.02,
+    )
+    @test ridge_twin.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test ridge_twin.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+
+    supplied = HSquared._genomic_precision_provenance(tiny.Q, tiny_ids)
+    @test supplied.relationship_source == "supplied_Ginv"
+    @test supplied.relationship_method === nothing
+    @test supplied.allele_frequency_source === nothing
+    @test supplied.ridge === nothing
+    @test supplied.scale_denominator === nothing
+    @test supplied.relationship_scale == "inverse_of_supplied_precision"
+    @test supplied.id_order_fingerprint == tiny.provenance.id_order_fingerprint
+    @test supplied.precision_fingerprint == tiny.provenance.precision_fingerprint
+    @test supplied.marker_content_fingerprint === nothing
+    @test supplied.kernel_fingerprint === nothing
+
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, ["a", "a", "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", missing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", nothing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = ["m1", "m1", "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = Any["m1", missing, "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = Inf,
+    )
+    @test_throws ArgumentError HSquared._genomic_precision_provenance(
+        [1.0 NaN; NaN 1.0], ["a", "b"],
+    )
+
+    fixture_dir = joinpath(@__DIR__, "fixtures", "genomic_public_activation_target")
+    marker_header, marker_rows = _csv_strings_for_test(joinpath(fixture_dir, "markers.csv"))
+    ids = vec(marker_rows[:, 1])
+    marker_names = marker_header[2:end]
+    markers = parse.(Float64, marker_rows[:, 2:end])
+    construction = HSquared._genomic_activation_construction(
+        markers, ids; marker_names = marker_names,
+    )
+
+    # Stream the large long-form target so the test never duplicates all matrices in strings.
+    max_construction_diff = 0.0
+    open(joinpath(fixture_dir, "expected_construction.csv"), "r") do fixture
+        readline(fixture) == "quantity,row,column,value" || error("bad construction fixture header")
+        for line in eachline(fixture)
+            quantity, row, column, stored = split(line, ",")
+            i = parse(Int, row); j = parse(Int, column); expected = parse(Float64, stored)
+            observed = if quantity == "k"
+                construction.k
+            elseif quantity == "p"
+                construction.p[i]
+            else
+                getproperty(construction, Symbol(quantity))[i, j]
+            end
+            max_construction_diff = max(max_construction_diff, abs(observed - expected))
+        end
+    end
+    @test max_construction_diff <= 1e-10
+
+    _, phenotype_rows = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_ids = vec(phenotype_rows[:, 2])
+    x = parse.(Float64, phenotype_rows[:, 3])
+    y = parse.(Float64, phenotype_rows[:, 4])
+    id_to_row = Dict(id => i for (i, id) in enumerate(ids))
+    record_rows = [id_to_row[id] for id in record_ids]
+    X = hcat(ones(length(y)), x)
+    Z = sparse(1:length(y), record_rows, 1.0, length(y), length(ids))
+    marker_fit = fit_gblup_reml(y, X, Z, construction.Q; ids = ids)
+    supplied_Q = genomic_relationship_inverse(
+        genomic_relationship_matrix(markers); ridge = 0.01,
+    )
+    supplied_fit = fit_gblup_reml(y, X, Z, supplied_Q; ids = ids)
+    @test marker_fit.converged && supplied_fit.converged
+    @test breeding_values(marker_fit).ids == ids
+    @test breeding_values(supplied_fit).ids == ids
+    @test marker_fit.variance_components.sigma_a2 ≈
+          supplied_fit.variance_components.sigma_a2 atol = 1e-10
+    @test marker_fit.variance_components.sigma_e2 ≈
+          supplied_fit.variance_components.sigma_e2 atol = 1e-10
+    @test marker_fit.likelihood.beta ≈ supplied_fit.likelihood.beta atol = 1e-10
+    @test breeding_values(marker_fit).values ≈ breeding_values(supplied_fit).values atol = 1e-10
+    @test HSquared._genomic_precision_provenance(supplied_Q, ids).precision_fingerprint ==
+          construction.provenance.precision_fingerprint
+
+    _, fit_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_fit.csv"))
+    scalar = Dict(fit_rows[i, 1] => fit_rows[i, 3]
+                  for i in axes(fit_rows, 1) if isempty(fit_rows[i, 2]))
+    @test parse(Int, scalar["seed"]) == 20270701
+    @test parse(Int, scalar["n_genotyped"]) == 120
+    @test parse(Int, scalar["n_markers"]) == 600
+    @test parse(Int, scalar["n_records"]) == 120
+    @test parse(Float64, scalar["sigma_g2"]) ≈ marker_fit.variance_components.sigma_a2 atol = 1e-8
+    @test parse(Float64, scalar["sigma_e2"]) ≈ marker_fit.variance_components.sigma_e2 atol = 1e-8
+    @test parse(Float64, scalar["genomic_variance_ratio"]) ≈ heritability(marker_fit) atol = 1e-8
+    @test scalar["id_order_fingerprint"] == construction.provenance.id_order_fingerprint
+    @test scalar["marker_content_fingerprint"] == construction.provenance.marker_content_fingerprint
+    # The stored matrix hashes record the generator run. BLAS/LAPACK-last-bit differences can
+    # change exact Float64 fingerprints across processes even when the serialized numeric target
+    # agrees to tolerance; route identity is therefore pinned above within one engine run.
+    @test occursin(r"^[0-9a-f]{64}$", scalar["kernel_fingerprint"])
+    @test occursin(r"^[0-9a-f]{64}$", scalar["precision_fingerprint"])
+    expected_gebv = Dict(fit_rows[i, 2] => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "gebv")
+    expected_beta = Dict(parse(Int, fit_rows[i, 2]) => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "beta")
+    @test maximum(abs.(marker_fit.likelihood.beta .-
+                       [expected_beta[j] for j in eachindex(marker_fit.likelihood.beta)])) <= 1e-8
+    @test maximum(abs.(breeding_values(marker_fit).values .-
+                       [expected_gebv[id] for id in ids])) <= 1e-8
+
+    # The old unregularized SNP-BLUP identity is not an identity for K = G + 0.01I.
+    y_one = 1.0 .+ construction.W[:, 1] .+ collect(range(-0.2, 0.2; length = length(ids)))
+    X_one = ones(length(ids), 1)
+    Z_one = sparse(1.0I, length(ids), length(ids))
+    ridged_gblup = fit_gblup(y_one, X_one, Z_one, construction.Q, 0.5, 0.5; ids = ids)
+    unregularized_snp = fit_snp_blup(y_one, X_one, markers, 0.5, 0.5;
+                                    ids = marker_names)
+    @test maximum(abs.(breeding_values(ridged_gblup).values .- unregularized_snp.gebv)) > 1e-6
 end
 
 @testset "Sire-model fitted target fixture (#16)" begin
