@@ -832,8 +832,6 @@ function _fit_ai_reml_genomic_boundary(
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     all(isfinite, (likelihood.loglik, sigma_a2, sigma_e2)) ||
         return _genomic_boundary_unresolved(ai, "boundary_representation_nonfinite")
-    abs(likelihood.loglik - profile.exact.loglik) / length(spec.y) <= 1e-8 ||
-        return _genomic_boundary_unresolved(ai, "boundary_representation_objective")
     fit = AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
                          true, profile.status, ai.fit.iterations, :variance_components,
                          false, true, :estimated_ai_reml)
