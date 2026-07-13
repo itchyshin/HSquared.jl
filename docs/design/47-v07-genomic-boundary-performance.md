@@ -106,6 +106,49 @@ epsilon with `prevfloat` or `nextfloat` fails exact comparison, and that the
 component-derived adjacent Float64 cannot substitute for the production boundary
 field. The spent holdout and reserved fresh seeds remain prohibited.
 
+### Amendment 3: bind the selected candidate and close the packet-identity tolerance
+
+**Frozen 2026-07-13 after the complete discovery-v4 rerun and before the
+create-once fresh-holdout seal or any offset-6001 dataset was generated.** The
+schema-v2 replacement discovery bound candidate commit
+`fc9d39df650b20aa09d769d9f9528eed1b606f1e`, performance-driver SHA-256
+`046eeee7e22032dafd90e0601ac9c688f30f901468e3f7fff269a7bafebc1397`,
+and the unchanged 58-dataset discovery digest
+`33c31a474fc2f0e996d3bd6489a53d055cc753727b69f0625fc30811777c7caf`.
+The frozen summarizer and independent full validator both returned
+`DISCOVERY_SELECTION_PASS`: 870 attempted timings, 58/58 scientific
+equivalences, no error class, and all ten cell/scope timing gates green. The
+selected discovery-v4 summary hashes are:
+
+- equivalence: `1e5217d9f12d57ada0e6c9b0b8b66585bf960a6991e897df3361b10eb65caf25`;
+- timing: `e1581626c588b6d65240f5a35fbac0ebf4ed442210de15ad2157d29345480101`;
+- selection gate: `62bd5f2016a00289b66a6d30cbc0ed6b4917d6b561b735c48daedca7a5e548c6`;
+- admission lock: `d7783c84e0ea8d3824c7c9a98dc8e51daef4bf4caa7e4427d83c5f67d246501b`;
+- summary lock: `d73b73245985617a48cbbdb31ffa8afa65edb01d6cb26a0d862cdcc506a7180a`;
+- sorted digest of all 870 raw attempt lock files:
+  `daa0353237ef00e62c286cb15534a847413f3fe597fdb511aed9f062e035e81a`.
+
+The formerly failing `n120_m600_r050` matched-control p95 ratio is
+`1.1222112441902519` versus default and `0.92806565212558356` versus the
+reference boundary wrapper. This is engineering-selection evidence only; it is
+not recovery or public-capability evidence.
+
+Doc 47 originally required the v2 packet readers to verify the `Q*K` identity
+“within the frozen tolerance” without naming that tolerance. The missing value
+is now frozen as
+
+```text
+maximum(abs.(Q * K - I)) <= 1e-10
+```
+
+using the deserialized packet matrices in their sealed ID order. Julia and the
+independent base-R reader must both recompute this quantity, the ID-order hash,
+the `K_lambda` hash, and the `Q_lambda` hash. Changing `1e-10`, omitting either
+matrix, trusting metadata instead of recomputing the hashes, or accepting a
+row/column permutation must turn the v2 gate red. This amendment changes no
+estimator, timing threshold, scientific tolerance, seed, or public claim. The
+fresh offsets `6001:6048` remained unopened when it was written.
+
 ## Frozen reference and unchanged contracts
 
 The scientific reference is Julia commit
