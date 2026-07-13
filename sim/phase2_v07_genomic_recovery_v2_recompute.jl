@@ -41,6 +41,8 @@ const MANIFEST_COLUMNS = split("tier cell_id cell_index seed_offset seed n m tru
 const ATTEMPT_COLUMNS = split("tier cell_id cell_index seed_offset seed n m truth_sigma_g2 truth_sigma_e2 truth_ratio ridge attempted status error_class converged boundary_status boundary_reason boundary_epsilon scientific_sigma_g2 scientific_sigma_e2 scientific_ratio fitted_total_variance numerical_sigma_g2 numerical_sigma_e2 numerical_ratio profile_loglik lower_derivative_per_observation upper_derivative_per_observation iterations objective gradient_norm runtime_seconds peak_rss_mb relationship_source relationship_method allele_frequency_source relationship_scale scale_denominator marker_hash id_hash kernel_hash precision_hash route r_implementation_commit julia_implementation_commit driver_commit seal_sha256")
 const SUMMARY_COLUMNS = split("tier cell_id n_expected n_attempted n_converged n_bias_rows n_interior n_interior_rescued n_boundary_lower n_boundary_upper n_unresolved n_error n_resolved_valid convergence_rate wilson_lower wilson_upper target truth mean_estimate bias mcse pilot_sd_upper bias_ci_lower bias_ci_upper margin target_pass required_n_raw required_n cell_status campaign_status failure_classes")
 const CORPUS_COLUMNS = ["relative_path", "sha256"]
+const REVIEW_COLUMNS = split("schema_version reviewer verdict r_execution_commit julia_execution_commit reviewed_at_utc")
+const ADMISSION_COLUMNS = split("schema_version r_execution_commit julia_execution_commit fisher_review_sha256 fisher_review_path grace_review_sha256 grace_review_path rose_review_sha256 rose_review_path reviewed_at_utc")
 const PACKET_PRIMARIES = ["markers.tsv", "ids.tsv", "phenotype.tsv", "truth.tsv", "packet_files_lock.tsv"]
 const SEAL_KEYS = split("schema_version driver_commit julia_execution_commit r_selected_tree julia_selected_tree driver_sha256 launcher_sha256 doc48_sha256 r_auto_route_commit r_oracle_commit julia_candidate_commit julia_holdout_commit holdout_checkpoint_commit candidate_seal_sha256 holdout_gate_sha256 holdout_timing_sha256 summary_files_lock_sha256 holdout_checkpoint_doc_sha256 holdout_checklog_sha256 r_recomputer_sha256 julia_recomputer_sha256 admission_receipt_sha256 admission_receipt_path output_root driver_root r_root julia_root host cpu_model machine kernel arch julia_version r_version julia_num_threads openblas_num_threads omp_num_threads veclib_maximum_threads seed_formula pilot_offsets confirmation_offsets excluded_offsets ridge relationship_method allele_frequency_source relationship_scale boundary_epsilon boundary_kkt_tolerance resolved_statuses output_absent_before_seal")
 
@@ -117,6 +119,25 @@ function _read_tsv(root, path, columns)
     TSV(header, rows)
 end
 
+function _read_external_tsv(path, columns)
+    isabspath(path) && isfile(path) && !islink(path) && realpath(path) == path ||
+        error("external receipt path is not canonical: $path")
+    sidecar = path * ".sha256"
+    isfile(sidecar) && !islink(sidecar) && realpath(sidecar) == sidecar ||
+        error("external receipt sidecar is not canonical: $sidecar")
+    read(sidecar, String) == "$(_sha256(path))  $(basename(path))\n" ||
+        error("external receipt checksum mismatch: $path")
+    bytes = read(path)
+    !isempty(bytes) && bytes[end] == 0x0a || error("external receipt must end in LF: $path")
+    0x0d in bytes && error("CR bytes are forbidden in external receipt: $path")
+    lines = split(chop(String(bytes); tail=1), '\n'; keepempty=true)
+    header = split(lines[1], '\t'; keepempty=true)
+    header == columns || error("external receipt schema drift: $path")
+    rows = [split(line, '\t'; keepempty=true) for line in lines[2:end]]
+    all(length(row) == length(columns) for row in rows) || error("malformed external receipt row: $path")
+    TSV(header, rows)
+end
+
 function _dict(table::TSV, row::Vector{String})
     Dict(table.columns[i] => row[i] for i in eachindex(table.columns))
 end
@@ -169,6 +190,29 @@ function _read_seal(root)
     isabspath(admission)&&isfile(admission)&&!islink(admission)&&realpath(admission)==admission||
         error("execution admission receipt path is not canonical")
     _sha256(admission)==seal["admission_receipt_sha256"]||error("execution admission receipt differs from seal")
+    atable = _read_external_tsv(admission, ADMISSION_COLUMNS)
+    length(atable.rows) == 1 || error("execution admission must contain one row")
+    a = _dict(atable, only(atable.rows))
+    a["schema_version"] == "v07-genomic-recovery-v2-admission-2" || error("admission schema drift")
+    a["r_execution_commit"] == seal["driver_commit"] &&
+        a["julia_execution_commit"] == seal["julia_execution_commit"] ||
+        error("admission execution-commit drift")
+    occursin(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$", a["reviewed_at_utc"]) ||
+        error("admission review time drift")
+    for (key, label) in (("fisher", "Fisher"), ("grace", "Grace"), ("rose", "Rose"))
+        path = a["$(key)_review_path"]
+        _hex(a["$(key)_review_sha256"], 64) && _sha256(path) == a["$(key)_review_sha256"] ||
+            error("$label review hash drift")
+        rtable = _read_external_tsv(path, REVIEW_COLUMNS)
+        length(rtable.rows) == 1 || error("$label review must contain one row")
+        review = _dict(rtable, only(rtable.rows))
+        review["schema_version"] == "v07-genomic-recovery-v2-review-1" &&
+            review["reviewer"] == label && review["verdict"] == "CLEAN" &&
+            review["r_execution_commit"] == seal["driver_commit"] &&
+            review["julia_execution_commit"] == seal["julia_execution_commit"] &&
+            occursin(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$", review["reviewed_at_utc"]) ||
+            error("$label review does not attest CLEAN for sealed commits")
+    end
     _sha256(abspath(@__FILE__)) == seal["julia_recomputer_sha256"] || error("Julia recomputer differs from seal")
     realpath(dirname(dirname(abspath(@__FILE__)))) == seal["julia_root"] || error("Julia recomputer checkout path differs from seal")
     seal
