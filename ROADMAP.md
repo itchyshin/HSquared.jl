@@ -18,8 +18,11 @@ validation-scale Julia engine utilities (pedigree/Ainv, supplied-variance and
 REML/AI-REML Gaussian animal-model fitting, the VanRaden genomic engine with
 GBLUP/SNP-BLUP/single-step `H`-inverse, and the repeatability / two-random-effect
 standard quantitative-genetic models). These are engine-internal and not the
-public default; production high-level fitting and the public R model-spec remain
-unimplemented.
+public default. A narrow v0.7 R-twin activation candidate now maps Gaussian REML
+models with one genomic random intercept from raw markers or supplied `Ginv` to
+the existing supplied-precision estimator, but it remains partial pending its
+recovery campaign, independent audits, Rose review, and G10. Production
+high-level genomic fitting remains unimplemented.
 
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
@@ -115,6 +118,14 @@ unimplemented.
   marker-variance contribution summaries, nominal returned-marker-set
   significance summaries, and a
   genomic-inflation diagnostic.
+  The v0.7 activation branch also adds an internal bridge-facing construction
+  that freezes sample-frequency, unweighted VanRaden method 1 with
+  `K_lambda = G + 0.01I`, records engine-owned semantic fingerprints, and is
+  pinned by `test/fixtures/genomic_public_activation_target/`. The R twin has a
+  matching narrow route candidate. This is construction and route-identity
+  evidence only: `V2-GRM` and `V2-GINV` remain partial, `V2-GREML` remains
+  covered only for the supplied-`Ginv` estimator, the R surface remains partial,
+  and `public_covered_count` remains 5.
   `mixed_model_marker_scan` adds a dense
   validation-scale, supplied-variance GLS marker scan with relationship
   correction from a supplied marginal covariance.
@@ -129,8 +140,8 @@ unimplemented.
   hsquared PR #84 (`52507da`) mirrors and consumes that fixture with a
   Julia-free R recomputation, still without external comparator evidence.
   These remain experimental supplied-variance / validation-scale engine utilities.
-  No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan; not
-  the public default.
+  No production genomic fitting, mixed-model marker scan, or QTL/eQTL scan. The
+  narrow R genomic route is a held activation candidate, not the public default.
 - Experimental standard quantitative-genetic models (Phase 3): repeatability /
   permanent-environment (`repeatability_mme`, `fit_repeatability_reml`) and a
   general two-random-effect model for common-environment / maternal-genetic
@@ -175,7 +186,8 @@ unimplemented.
 - R head `2c18b30` records the expanded genomics/QTL/GLLVM/GPU/HPC plan; Julia
   mirrors it as roadmap and algorithm/backend documentation only.
 - Production high-level formula fitting and production R bridge execution are
-  not implemented.
+  not implemented; the narrow genomic activation candidate is validation-scale
+  and does not change that production boundary.
 - Backend execution dispatch, runtime backend availability probing, GPU
   execution, backend benchmarking, and CPU/GPU numerical agreement tests are
   not implemented.
@@ -185,14 +197,17 @@ unimplemented.
   production-scale, sparse, large-pedigree fitting.
 - Mixed-model marker scans and QTL/eQTL scans are not implemented. Genomic
   prediction, single-step `H`-inverse, marker-effect estimation, and a
-  fixed-effect single-marker scan exist only as the experimental engine
-  utilities above, not as production genomic fitting.
+  fixed-effect single-marker scan remain validation-scale. The narrow marker-to-
+  supplied-precision R candidate does not establish production genomic fitting,
+  APY activation, calibrated intervals, or broad recovery.
 - Paternal effects, cytoplasmic inheritance, imprinting, dominance, epistasis,
   sire models, random regression, unknown-parent groups, and custom
   relationship/precision kernels are not implemented. Permanent environment,
   common environment, and maternal-genetic effects exist only as the
   experimental engine utilities above, not as a public model-spec.
-- Public model syntax is planned, not executable.
+- Most public model syntax remains planned. The R twin has an executable narrow
+  genomic activation candidate, held behind recovery, audits, Rose review, and
+  G10 rather than treated as an activated default.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -289,10 +304,18 @@ positive-definite supplied-frequency VanRaden `G`, `Ginv`, beta, GEBVs, and
 SNP-BLUP marker effects as a Julia-native comparator target. The R twin mirrors
 and consumes that target in hsquared PR #84 (`52507da`), which is internal route
 evidence rather than an AGHmatrix/rrBLUP/sommer/JWAS/BLUPF90 comparator. These
-are engine-internal;
-production genotype-ID matching at scale, formula-driven mixed-model marker
-scans, public LOCO workflow defaults, QTL/eQTL scans, a public genomic
-model-spec, and external comparator parity remain open.
+are engine-internal. The v0.7 branch additionally freezes a bridge-facing
+sample-frequency VanRaden-1 construction with `K_lambda = G + 0.01I`, semantic
+fingerprints, and a cross-twin marker-versus-supplied-precision identity fixture;
+the R twin has a matching narrow `genomic()` candidate. Merge/activation remains
+open pending independent construction, the preregistered nine-cell recovery
+campaign, Rose audit, and G10. A fresh hash-pinned `blupf90+` run has discharged
+the exact-candidate-precision comparator link as a single point-estimate result,
+not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
+marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
+routing, and broader comparator parity also remain open. The supplied-`Ginv`
+REML estimator alone remains covered; the R surface is partial and
+`public_covered_count` remains 5.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
 style comparator checks before public fitting claims.

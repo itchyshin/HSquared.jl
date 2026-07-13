@@ -7132,6 +7132,225 @@ end
     @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
 end
 
+@testset "v0.7 genomic public-activation construction and provenance" begin
+    # Independent Python struct.pack('<Q', ...) + hashlib.sha256 golden for the canonical
+    # id-order byte stream. This pins framing and byte order, not merely digest shape.
+    golden_bytes = "48537175617265642d70726f76656e616e63652d76310069645f6f7264657200" *
+                   "02000000000000000500000000000000616c7068610300000000000000696432"
+    golden_digest = "e91221fde844edffa91e7d4701b28ecbfe2176eacb2eb341d062597726e2c4dc"
+    io = HSquared._provenance_buffer("id_order")
+    HSquared._provenance_write_strings(io, ["alpha", "id2"])
+    @test bytes2hex(take!(io)) == golden_bytes
+    @test HSquared._genomic_id_order_fingerprint(["alpha", "id2"]) == golden_digest
+
+    # Independently generated with Python struct.pack('<Q'/'<d') + hashlib.sha256.
+    # This pins dimensions, row/column ID framing, Float64 byte order, column-major
+    # semantic order, negative non-integers, and -0.0 -> +0.0 canonicalization.
+    numeric_golden_bytes =
+        "48537175617265642d70726f76656e616e63652d7631004b5f6c616d62646100" *
+        "020000000000000002000000000000000200000000000000010000000000000061" *
+        "01000000000000006202000000000000000100000000000000610100000000000000" *
+        "62000000000000f03f00000000000004c000000000000000000000000000000000"
+    numeric_golden_digest = "2c21985923be46408dd7d1c9387a9faac9c167b75e677bd952dfef6e7fc7221e"
+    numeric_matrix = [1.0 -0.0; -2.5 0.0]
+    numeric_io = HSquared._provenance_buffer("K_lambda")
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    for value in numeric_matrix
+        HSquared._provenance_write_float64(numeric_io, value)
+    end
+    @test bytes2hex(take!(numeric_io)) == numeric_golden_bytes
+    @test HSquared._genomic_matrix_fingerprint("K_lambda", numeric_matrix, ["a", "b"]) ==
+          numeric_golden_digest
+
+    tiny_ids = ["a", "b", "c", "d"]
+    tiny_markers = [0.0 1.0 2.0; 2.0 1.0 0.0; 1.0 0.0 1.0; 0.0 2.0 1.0]
+    tiny_names = ["m1", "m2", "m3"]
+    tiny = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names,
+    )
+    @test tiny.p ≈ vec(sum(tiny_markers, dims = 1)) ./ (2 * length(tiny_ids))
+    @test tiny.W ≈ tiny_markers .- 2 .* transpose(tiny.p)
+    @test tiny.k ≈ 2 * sum(tiny.p .* (1 .- tiny.p))
+    @test tiny.G ≈ tiny.W * transpose(tiny.W) / tiny.k
+    @test tiny.K ≈ tiny.G + 0.01I
+    @test tiny.K * tiny.Q ≈ I(4)
+
+    # Tests of the tests: each frozen estimand choice changes the construction.
+    half_p = fill(0.5, size(tiny_markers, 2))
+    half_p_G = genomic_relationship_matrix(tiny_markers; allele_frequencies = half_p)
+    @test maximum(abs.(half_p_G .- tiny.G)) > 1e-6
+    wrong_denominator_G = tiny.W * transpose(tiny.W) / (tiny.k + 1.0)
+    @test maximum(abs.(wrong_denominator_G .- tiny.G)) > 1e-6
+    zero_ridge = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.0,
+    )
+    @test zero_ridge.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test zero_ridge.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+    @test tiny.provenance.relationship_source == "markers"
+    @test tiny.provenance.relationship_method == "vanraden1"
+    @test tiny.provenance.allele_frequency_source == "sample"
+    @test tiny.provenance.relationship_scale == "K_lambda"
+    @test tiny.provenance.ridge == 0.01
+    @test tiny.provenance.scale_denominator == tiny.k
+    for name in (:id_order_fingerprint, :marker_content_fingerprint,
+                 :kernel_fingerprint, :precision_fingerprint)
+        digest = getproperty(tiny.provenance, name)
+        @test occursin(r"^[0-9a-f]{64}$", digest)
+    end
+
+    # +0.0 and -0.0 have one semantic fingerprint. Every other declared mutation is visible.
+    signed_zero = copy(tiny_markers)
+    signed_zero[1, 1] = -0.0
+    zero_twin = HSquared._genomic_activation_construction(
+        signed_zero, tiny_ids; marker_names = tiny_names,
+    )
+    @test zero_twin.provenance.marker_content_fingerprint ==
+          tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers[:, 1:2], tiny_ids; marker_names = tiny_names[1:2],
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, reverse(tiny_ids); marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = reverse(tiny_names),
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    changed_value = copy(tiny_markers); changed_value[1, 1] = 0.25
+    @test HSquared._genomic_activation_construction(
+        changed_value, tiny_ids; marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    ridge_twin = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.02,
+    )
+    @test ridge_twin.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test ridge_twin.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+
+    supplied = HSquared._genomic_precision_provenance(tiny.Q, tiny_ids)
+    @test supplied.relationship_source == "supplied_Ginv"
+    @test supplied.relationship_method === nothing
+    @test supplied.allele_frequency_source === nothing
+    @test supplied.ridge === nothing
+    @test supplied.scale_denominator === nothing
+    @test supplied.relationship_scale == "inverse_of_supplied_precision"
+    @test supplied.id_order_fingerprint == tiny.provenance.id_order_fingerprint
+    @test supplied.precision_fingerprint == tiny.provenance.precision_fingerprint
+    @test supplied.marker_content_fingerprint === nothing
+    @test supplied.kernel_fingerprint === nothing
+
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, ["a", "a", "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", missing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", nothing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = ["m1", "m1", "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = Any["m1", missing, "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = Inf,
+    )
+    @test_throws ArgumentError HSquared._genomic_precision_provenance(
+        [1.0 NaN; NaN 1.0], ["a", "b"],
+    )
+
+    fixture_dir = joinpath(@__DIR__, "fixtures", "genomic_public_activation_target")
+    marker_header, marker_rows = _csv_strings_for_test(joinpath(fixture_dir, "markers.csv"))
+    ids = vec(marker_rows[:, 1])
+    marker_names = marker_header[2:end]
+    markers = parse.(Float64, marker_rows[:, 2:end])
+    construction = HSquared._genomic_activation_construction(
+        markers, ids; marker_names = marker_names,
+    )
+
+    # Stream the large long-form target so the test never duplicates all matrices in strings.
+    max_construction_diff = 0.0
+    open(joinpath(fixture_dir, "expected_construction.csv"), "r") do fixture
+        readline(fixture) == "quantity,row,column,value" || error("bad construction fixture header")
+        for line in eachline(fixture)
+            quantity, row, column, stored = split(line, ",")
+            i = parse(Int, row); j = parse(Int, column); expected = parse(Float64, stored)
+            observed = if quantity == "k"
+                construction.k
+            elseif quantity == "p"
+                construction.p[i]
+            else
+                getproperty(construction, Symbol(quantity))[i, j]
+            end
+            max_construction_diff = max(max_construction_diff, abs(observed - expected))
+        end
+    end
+    @test max_construction_diff <= 1e-10
+
+    _, phenotype_rows = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_ids = vec(phenotype_rows[:, 2])
+    x = parse.(Float64, phenotype_rows[:, 3])
+    y = parse.(Float64, phenotype_rows[:, 4])
+    id_to_row = Dict(id => i for (i, id) in enumerate(ids))
+    record_rows = [id_to_row[id] for id in record_ids]
+    X = hcat(ones(length(y)), x)
+    Z = sparse(1:length(y), record_rows, 1.0, length(y), length(ids))
+    marker_fit = fit_gblup_reml(y, X, Z, construction.Q; ids = ids)
+    supplied_Q = genomic_relationship_inverse(
+        genomic_relationship_matrix(markers); ridge = 0.01,
+    )
+    supplied_fit = fit_gblup_reml(y, X, Z, supplied_Q; ids = ids)
+    @test marker_fit.converged && supplied_fit.converged
+    @test breeding_values(marker_fit).ids == ids
+    @test breeding_values(supplied_fit).ids == ids
+    @test marker_fit.variance_components.sigma_a2 ≈
+          supplied_fit.variance_components.sigma_a2 atol = 1e-10
+    @test marker_fit.variance_components.sigma_e2 ≈
+          supplied_fit.variance_components.sigma_e2 atol = 1e-10
+    @test marker_fit.likelihood.beta ≈ supplied_fit.likelihood.beta atol = 1e-10
+    @test breeding_values(marker_fit).values ≈ breeding_values(supplied_fit).values atol = 1e-10
+    @test HSquared._genomic_precision_provenance(supplied_Q, ids).precision_fingerprint ==
+          construction.provenance.precision_fingerprint
+
+    _, fit_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_fit.csv"))
+    scalar = Dict(fit_rows[i, 1] => fit_rows[i, 3]
+                  for i in axes(fit_rows, 1) if isempty(fit_rows[i, 2]))
+    @test parse(Int, scalar["seed"]) == 20270701
+    @test parse(Int, scalar["n_genotyped"]) == 120
+    @test parse(Int, scalar["n_markers"]) == 600
+    @test parse(Int, scalar["n_records"]) == 120
+    @test parse(Float64, scalar["sigma_g2"]) ≈ marker_fit.variance_components.sigma_a2 atol = 1e-8
+    @test parse(Float64, scalar["sigma_e2"]) ≈ marker_fit.variance_components.sigma_e2 atol = 1e-8
+    @test parse(Float64, scalar["genomic_variance_ratio"]) ≈ heritability(marker_fit) atol = 1e-8
+    @test scalar["id_order_fingerprint"] == construction.provenance.id_order_fingerprint
+    @test scalar["marker_content_fingerprint"] == construction.provenance.marker_content_fingerprint
+    # The stored matrix hashes record the generator run. BLAS/LAPACK-last-bit differences can
+    # change exact Float64 fingerprints across processes even when the serialized numeric target
+    # agrees to tolerance; route identity is therefore pinned above within one engine run.
+    @test occursin(r"^[0-9a-f]{64}$", scalar["kernel_fingerprint"])
+    @test occursin(r"^[0-9a-f]{64}$", scalar["precision_fingerprint"])
+    expected_gebv = Dict(fit_rows[i, 2] => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "gebv")
+    expected_beta = Dict(parse(Int, fit_rows[i, 2]) => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "beta")
+    @test maximum(abs.(marker_fit.likelihood.beta .-
+                       [expected_beta[j] for j in eachindex(marker_fit.likelihood.beta)])) <= 1e-8
+    @test maximum(abs.(breeding_values(marker_fit).values .-
+                       [expected_gebv[id] for id in ids])) <= 1e-8
+
+    # The old unregularized SNP-BLUP identity is not an identity for K = G + 0.01I.
+    y_one = 1.0 .+ construction.W[:, 1] .+ collect(range(-0.2, 0.2; length = length(ids)))
+    X_one = ones(length(ids), 1)
+    Z_one = sparse(1.0I, length(ids), length(ids))
+    ridged_gblup = fit_gblup(y_one, X_one, Z_one, construction.Q, 0.5, 0.5; ids = ids)
+    unregularized_snp = fit_snp_blup(y_one, X_one, markers, 0.5, 0.5;
+                                    ids = marker_names)
+    @test maximum(abs.(breeding_values(ridged_gblup).values .- unregularized_snp.gebv)) > 1e-6
+end
+
 @testset "Sire-model fitted target fixture (#16)" begin
     fixture_dir = joinpath(@__DIR__, "fixtures", "sire_model_fitted_target")
     _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
