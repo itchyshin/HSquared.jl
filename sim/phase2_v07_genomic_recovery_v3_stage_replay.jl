@@ -23,6 +23,8 @@ const RIDGE = 0.01
 const BOUNDARY_EPSILON = 1e-7
 const KKT_TOLERANCE = 1e-8
 const REPLAY_ROUTE = "julia_profile_replay"
+const R_RECOMPUTER_BASENAME = "v07_genomic_recovery_v3_recompute.R"
+const R_D0_RECOMPUTER_BASENAME = "v07_genomic_recovery_v3_d0_recompute.R"
 const PUBLIC_ROUTE = "ordinary_auto_genomic"
 const D0_CORPUS_ROOT_HASHES = (
     manifest="1264e87eeea10bf8dd9d6197a0f2ef865a2cd541e085bde22a655730ef894f61",
@@ -314,6 +316,14 @@ function _host_matches(expected;hostname=gethostname(),cluster=get(ENV,"SLURM_CL
     expected=_canonical_host_label(expected)
     lowercase(strip(String(cluster)))==expected||_canonical_host_label(hostname)==expected
 end
+function _assert_execution_context(;hostname=gethostname(),cluster=get(ENV,"SLURM_CLUSTER_NAME",""),job_id=get(ENV,"SLURM_JOB_ID",""),github_actions=get(ENV,"GITHUB_ACTIONS",""),ci=get(ENV,"CI",""))
+    lowercase(strip(String(github_actions)))=="true"&&error("recovery-v3 replay is forbidden on GitHub Actions or CI")
+    lowercase(strip(String(ci)))=="true"&&error("recovery-v3 replay is forbidden on GitHub Actions or CI")
+    host=_canonical_host_label(hostname);cluster=lowercase(strip(String(cluster)))
+    admitted=cluster in ("fir","nibi","rorqual","trillium","narval")&&occursin(r"^[1-9][0-9]*$",strip(String(job_id)))
+    (host=="totoro"||admitted)||error("recovery-v3 replay requires Totoro or a live admitted DRAC SLURM allocation")
+    nothing
+end
 function _validate_environment(root,path,stage)
     t=_read_tsv(root,path,["key","value"]);length(t.rows)==length(ENVIRONMENT_KEYS)&&getindex.(t.rows,1)==ENVIRONMENT_KEYS||error("environment key/order drift")
     e=Dict(r[1]=>r[2] for r in t.rows);e["stage"]==stage&&e["host"] in ("totoro","fir","nibi","rorqual","trillium","narval")||error("environment stage/host drift")
@@ -347,7 +357,7 @@ function _preseal_input_files(stage)
 end
 function _validate_preseal_tree(root,stage;postrun=false,replay=false,summary=false,final=false)
     final&& !summary&&error("final tree validation requires both summaries")
-    final&&error("final adjudication admission is disabled until a schema-bound operational adjudicator exists")
+    final&&error("final adjudication is owned by the schema-bound operational R adjudicator")
     files=_preseal_input_files(stage);dirs=["receipts"]
     postrun&&(append!(files,["stage_corpus_lock.tsv","stage_corpus_lock.tsv.sha256"]);append!(dirs,["attempts","packets"]))
     replay&&push!(dirs,"julia_replay")
@@ -365,7 +375,7 @@ function _validate_preseal_tree(root,stage;postrun=false,replay=false,summary=fa
         (ispath(joinpath(root,jsummary))||ispath(joinpath(root,jsummary*".sha256")))&&error("Julia summary exists before final summary-tree validation")
     end
     receipt="stage_adjudication_receipt.tsv";receipt_present=ispath(joinpath(root,receipt))||ispath(joinpath(root,receipt*".sha256"))
-    receipt_present&&error("adjudication receipt is not admissible before a schema-bound operational adjudicator exists")
+    receipt_present&&error("adjudication receipt validation is owned by the schema-bound operational R adjudicator")
     _root_members(root,files,dirs)
     receipt_files=sort(vcat(["$r.tsv" for r in REVIEWERS],["$r.tsv.sha256" for r in REVIEWERS]));_exact_tree(root,joinpath(root,"receipts"),receipt_files)
 end
@@ -393,19 +403,18 @@ function _preseal(root,stage,manifest,manifest_path)
     for reviewer in REVIEWERS;_validate_receipt(root,joinpath(root,"receipts","$reviewer.tsv"),reviewer,p);end
     replay_tool=abspath(@__FILE__);julia_root=_git(dirname(replay_tool),"rev-parse","--show-toplevel");_git(julia_root,"rev-parse","HEAD")==p["julia_replay_commit"]||error("Julia checkout differs from preseal")
     _require_ancestor(julia_root,p["julia_candidate_commit"],p["julia_replay_commit"],"Julia candidate/replay")
-    d0tool=joinpath(@__DIR__,"phase2_v07_genomic_recovery_v3_spectral_replay.jl")
     _verify_bound_tool(julia_root,replay_tool,p["julia_replay_commit"],p["julia_replay_sha256"],"Julia replay tool")
-    _verify_bound_tool(julia_root,d0tool,p["julia_replay_commit"],p["d0_recomputer_sha256"],"D0 recomputer")
     julia_surfaces=joinpath.(Ref(julia_root),["src","ext","Project.toml","Manifest.toml"])
     _require_git_unchanged(julia_root,p["julia_candidate_commit"],p["julia_replay_commit"],julia_surfaces,"Julia candidate implementation")
     _require_git_clean(julia_root,"Julia bound implementation")
     rroot_expected=joinpath(dirname(julia_root),"hsquared");_safe_dir(rroot_expected,"deployed sibling R root")
-    r_driver_path=joinpath(rroot_expected,"tools","v07_genomic_recovery_v3.R");r_recomputer_path=joinpath(rroot_expected,"tools","v07_genomic_recovery_v3_preseal.R")
-    rroot=_git(dirname(r_driver_path),"rev-parse","--show-toplevel");_git(dirname(r_recomputer_path),"rev-parse","--show-toplevel")==rroot||error("R tools are not in one git root")
+    r_driver_path=joinpath(rroot_expected,"tools","v07_genomic_recovery_v3.R");r_recomputer_path=joinpath(rroot_expected,"tools",R_RECOMPUTER_BASENAME);r_d0_recomputer_path=joinpath(rroot_expected,"tools",R_D0_RECOMPUTER_BASENAME)
+    rroot=_git(dirname(r_driver_path),"rev-parse","--show-toplevel");_git(dirname(r_recomputer_path),"rev-parse","--show-toplevel")==rroot&&_git(dirname(r_d0_recomputer_path),"rev-parse","--show-toplevel")==rroot||error("R tools are not in one git root")
     head=_git(rroot,"rev-parse","HEAD");head==p["r_driver_commit"]&&head==p["r_recomputer_commit"]||error("R deployed checkout differs from preseal")
     _require_ancestor(rroot,p["r_auto_route_commit"],p["r_driver_commit"],"R auto-route/driver")
     _verify_bound_tool(rroot,r_driver_path,p["r_driver_commit"],p["r_driver_sha256"],"R driver")
     _verify_bound_tool(rroot,r_recomputer_path,p["r_recomputer_commit"],p["r_recomputer_sha256"],"R recomputer")
+    _verify_bound_tool(rroot,r_d0_recomputer_path,p["r_recomputer_commit"],p["d0_recomputer_sha256"],"R D0 recomputer")
     r_surfaces=joinpath.(Ref(rroot),["R","DESCRIPTION","NAMESPACE"])
     _require_git_unchanged(rroot,p["r_auto_route_commit"],p["r_driver_commit"],r_surfaces,"R auto-route implementation")
     _require_git_clean(rroot,"R bound implementation")
@@ -776,7 +785,7 @@ function summarize(root,stage;bootstrap=nothing)
 end
 
 function validate_final(root,stage)
-    error("validate-final is fail-closed until a schema-bound operational adjudicator exists")
+    error("validate-final is owned by the schema-bound operational R adjudicator")
 end
 
 function _canonical_r_d0f_parity_text(component)
@@ -845,7 +854,15 @@ function selftest()
     marker_tolerance=copy(_cell_table());marker_tolerance[1]=merge(marker_tolerance[1],(marker_ratio=marker_tolerance[1].marker_ratio+5e-13,));_validate_cell_rows(marker_tolerance)
     length(PRESEAL_KEYS)==39&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0 diagnostics preseal binding drift")
     RECEIPT_COLUMNS==split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")||error("review receipt schema drift")
+    R_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_recompute.R"&&R_RECOMPUTER_BASENAME!="v07_genomic_recovery_v3_preseal.R"||error("operational R recomputer binding drift")
+    R_D0_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_d0_recompute.R"||error("R D0 recomputer binding drift")
     _host_matches("totoro";hostname="totoro.biology.ualberta.ca",cluster="")&&_host_matches("fir";hostname="compute-node",cluster="fir")&&_host_matches("fir";hostname="fir.alliancecan.ca",cluster="")&&!_host_matches("totoro";hostname="laptop",cluster="")&&!_host_matches("fir";hostname="notfir-laptop",cluster="notfir")||error("live host binding selftest")
+    _assert_execution_context(hostname="totoro",cluster="",job_id="",github_actions="false",ci="false")
+    _assert_execution_context(hostname="cn001",cluster="fir",job_id="123456",github_actions="false",ci="false")
+    _must_fail("DRAC login-node execution") do;_assert_execution_context(hostname="login1",cluster="fir",job_id="",github_actions="false",ci="false");end
+    _must_fail("malformed SLURM allocation") do;_assert_execution_context(hostname="cn001",cluster="fir",job_id="interactive",github_actions="false",ci="false");end
+    _must_fail("GitHub Actions execution") do;_assert_execution_context(hostname="totoro",cluster="",job_id="",github_actions="true",ci="false");end
+    _must_fail("generic CI execution") do;_assert_execution_context(hostname="totoro",cluster="",job_id="",github_actions="false",ci="TRUE");end
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
@@ -948,7 +965,7 @@ function selftest()
         _must_fail("final summary without base-R tree") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true);end
         _write_once(joinpath(stage_root,"d1_summary_r.tsv"),"x\n");_must_fail("R summary without base-R subtree") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true);end
         base_r=joinpath(stage_root,"base_r_recompute");mkdir(base_r);_write_once(joinpath(base_r,"member.tsv"),"x\n");_write_once(joinpath(stage_root,"d1_summary_julia.tsv"),"x\n")
-        _validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true);_must_fail("final admission disabled without adjudicator") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true,final=true);end
+        _validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true);_must_fail("final admission remains R-owned") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true,final=true);end
         _write_once(joinpath(stage_root,"stage_adjudication_receipt.tsv"),"x\n");_must_fail("arbitrary adjudication receipt") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true,final=true);end
         operational=joinpath(root,"operational");mkdir(operational);oprow=d1[1];op_preseal=joinpath(operational,"stage_preseal.tsv");op_manifest=joinpath(operational,"d1_manifest.tsv");_write_once(op_preseal,"preseal\n");_write_once(op_manifest,"manifest\n")
         op_attempt=_attempt_path(operational,"d1",oprow);_write_once(op_attempt,"attempt\n");op_packet=_packet_dir(operational,"d1",oprow)
@@ -979,6 +996,7 @@ end
 
 function main(args=ARGS)
     mode=_option(args,"mode";default="replay");mode=="selftest"&&return selftest()
+    _assert_execution_context()
     stage=lowercase(_required(args,"stage"));stage in ("d0f","d1")||error("--stage must be d0f or d1")
     root=_required(args,"out-dir")
     if mode=="replay"

@@ -26,13 +26,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-13
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- The pure D0F/D1 preseal layer and the operational Julia replay are now
-  independently CLEAN: 39-key
+- The pure D0F/D1 preseal layer, operational Julia replay, and operational R
+  generator/recomputer/launcher are now independently CLEAN: 39-key
   acyclic contract, exact D0 diagnostics, typed D0F/D1 parity, live
-  environment/Git/tree gates, and mutation-red controls. This is prospective
-  integrity tooling, not recovery evidence. The operational R driver,
-  R generator, recomputer, launcher, adjudicator, exact receipts, and all fresh
-  phenotypes remain pending; final admission fails closed. The replay worker is
+  environment/Git/tree gates, native K/Q provenance with `1e-10` numerical
+  parity, and mutation-red controls. This is prospective integrity tooling, not
+  recovery evidence. Exact committed tool hashes, preseal receipts, and all
+  fresh phenotypes remain pending; final admission fails closed. The replay worker is
   parallel-safe by construction: target-local writes during fan-out, exact-tree
   verification only after quiescence.
 - The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
@@ -47,9 +47,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: finish and independently audit the D0F fixed-kernel and D1 fresh
-  harnesses, manifests, environment seals, and mutation gates before opening
-  any v3 phenotype seed. Totoro/DRAC only, never GitHub Actions.
+- Next action: commit and push the independently audited harnesses, mint exact
+  receipt/tool hashes, and accept the immutable preseal before opening any v3
+  phenotype seed. Totoro/DRAC only, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 

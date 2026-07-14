@@ -10,6 +10,11 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
 - Bound D0F replay to the frozen D0 diagnostic corpus actually present on
   Totoro.
 - Added per-row replay, quiescent replay verification, and summary execution.
+- Added an in-tool Totoro/live-SLURM guard so direct replay cannot bypass the
+  launcher on GitHub Actions, generic CI, or a DRAC login node.
+- Aligned the R tool binding with the operational independent recomputer rather
+  than the earlier pure preseal helper, and aligned the D0 tool key with the R
+  D0 recomputer that the preseal actually hashes.
 - Preserved official-R performance sourcing and fail-closed final admission.
 - Removed whole-mutable-tree scans from parallel workers and retained them at
   the post-fan-out verification boundary.
@@ -22,8 +27,8 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
   independent and should remain parallel.
 - Rejected replay performance as a scientific substitute for public-route R
   timing/RSS.
-- Kept `validate-final` disabled until the independent R adjudicator can bind
-  the complete evidence graph.
+- Kept final adjudication R-owned: the operational R adjudicator binds the
+  complete evidence graph, while Julia independently replays and summarizes.
 
 ## 4. Files Touched
 
@@ -53,7 +58,9 @@ pair.
 | --- | --- |
 | Obsolete D0 source layout expected | Fixed against the exact pinned diagnostic corpus. |
 | Parallel worker scanned another worker's temporary state | Fixed by moving whole-tree validation to quiescence. |
-| Final adjudicator unavailable | Intentionally fail-closed; carried to the R operational slice. |
+| Julia expected the pure preseal helper at the operational recomputer slot | Fixed to bind the deployed independent recomputer. |
+| Final adjudication ownership | Operational R adjudicator owns the final receipt; Julia final mode stays explicitly R-owned. |
+| Direct replay could bypass launcher compute guards | Added the same Totoro/live-SLURM and no-CI guard inside the Julia tool. |
 
 ## 8. Consistency Audit
 
@@ -72,8 +79,8 @@ repaired before deployment or official data generation.
 
 ## 10. Known Residuals
 
-- The official R generator/fitter, base-R recomputer, launcher, preseal, and
-  final adjudicator are not yet sealed.
+- The official R generator/fitter, base-R recomputer, launcher, and final
+  adjudicator exist but are not yet committed or presealed.
 - No D0F/D1 output exists, and D2-D4 remain conditional on the earlier stages.
 - Public activation and capability/count changes remain held.
 

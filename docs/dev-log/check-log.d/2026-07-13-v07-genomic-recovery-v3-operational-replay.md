@@ -8,15 +8,25 @@ Date: 2026-07-13
 - Added operational `replay`, quiescent `verify-replay`, and `summarize` gates.
   Each replay binds the official R attempt, packet, manifest, preseal, corpus
   lock, Julia tool bytes, and Julia commit.
+- Direct non-selftest entry now rejects GitHub Actions, generic CI, DRAC login
+  nodes, malformed job IDs, and unadmitted hosts before reading a stage root.
 - Kept official R runtime/RSS as the scientific summary source. Julia replay
   performance remains diagnostic only.
 - Fixed a parallel-worker race found by independent Grace review. A worker now
   validates immutable inputs plus only its own create-once output pair. Exact
   mutable-subtree validation occurs only after fan-out is quiescent.
+- Fixed a cross-twin seal mismatch found by Fisher review: Julia now verifies
+  the deployed operational `v07_genomic_recovery_v3_recompute.R`, not the pure
+  preseal helper, against `r_recomputer_commit` and `r_recomputer_sha256`.
+  The single `d0_recomputer_sha256` key likewise now verifies the same R D0
+  recomputer bound by the R preseal, rather than an unrelated Julia helper.
 - Mutation controls prove that an unrelated in-flight worker does not fail a
   valid row, while quiescent verification rejects an in-flight primary,
   unexpected member, empty directory, corrupted packet, changed D0 fingerprint,
   or incomplete replay denominator.
+- Direct-execution mutations prove Totoro and a numeric-job DRAC allocation are
+  admitted while login-node, malformed-job, GitHub Actions, and generic-CI
+  contexts are rejected.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no sim/phase2_v07_genomic_recovery_v3_stage_replay.jl --mode=selftest`:
   PASS; no official RNG or seed consumed.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no -e 'using Pkg; Pkg.test()'`:
@@ -24,6 +34,6 @@ Date: 2026-07-13
 - `git diff --check`: PASS.
 - Independent Grace re-review after the concurrency repair: `CLEAN`.
 - Final tool SHA-256 before commit:
-  `c78603258f7cc9efbceab21a53842e29841976e98884d491159839bc991dd532`.
+  `f2676c33df0c648bc3f153c40d296eddf73e269ef497fc87620f2df3d5647411`.
 - Boundary: no official phenotype, fit, replay row, summary, adjudication,
   recovery claim, activation, capability move, or count change was produced.
