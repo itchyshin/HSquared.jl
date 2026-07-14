@@ -469,6 +469,14 @@ function _preseal(root,stage,manifest,manifest_path)
     p,path,d0root
 end
 
+function preflight(root,stage)
+    root=_safe_dir(root,"output root")
+    manifest,manifest_path=_manifest(root,stage)
+    _preseal(root,stage,manifest,manifest_path)
+    _validate_preseal_tree(root,stage)
+    println("v0.7 genomic recovery-v3 $stage Julia preflight: PASS (sealed inputs only; no official RNG or seed consumed)")
+end
+
 function _group(row,stage);stage=="d0f" ? row.design_id : row.cell_id;end
 function _key(row,stage);(_group(row,stage),row.seed);end
 function _find_manifest(rows,stage,group,seed)
@@ -1074,7 +1082,9 @@ function main(args=ARGS)
     _assert_execution_context()
     stage=lowercase(_required(args,"stage"));stage in ("d0f","d1")||error("--stage must be d0f or d1")
     root=_required(args,"out-dir")
-    if mode=="replay"
+    if mode=="preflight"
+        preflight(root,stage)
+    elseif mode=="replay"
         group=_required(args,stage=="d0f" ? "design" : "cell");seed=parse(Int,_required(args,"seed"))
         replay_one(root,stage,group,seed)
     elseif mode=="verify-replay"
@@ -1084,7 +1094,7 @@ function main(args=ARGS)
     elseif mode=="validate-final"
         validate_final(root,stage)
     else
-        error("--mode must be replay, verify-replay, summarize, validate-final, or selftest")
+        error("--mode must be preflight, replay, verify-replay, summarize, validate-final, or selftest")
     end
 end
 

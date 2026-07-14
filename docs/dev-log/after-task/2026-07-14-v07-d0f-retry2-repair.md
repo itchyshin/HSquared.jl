@@ -10,7 +10,9 @@ contract fail closed before any further seed is opened.
 
 The stage replay tool now returns concrete Git strings, constructs every
 command with `String[...]`, and tests the exact `SubString` Git-root type that
-failed on Totoro. The R twin retires retry-2 seeds, reserves disjoint retry-3
+failed on Totoro. It also exposes a zero-seed `--mode=preflight` that validates
+the sealed tree and executes the exact Julia-side Git/blob checks before any
+phenotype is generated. The R twin retires retry-2 seeds, reserves disjoint retry-3
 bases `2034000000` / `2035000000`, and freezes exact downstream schemas,
 histories, summaries, reviews, paths, and deployed Git provenance.
 
@@ -31,6 +33,9 @@ not landed or evidence.
 ## 5. Checks Run
 
 - Julia stage-replay selftest: PASS.
+- Updated Julia script/sidecar, Bash syntax, and launcher guard selftest: PASS
+  locally; the actual zero-seed preflight remains a live Julia 1.10 retry-3
+  admission gate.
 - Full Julia `Pkg.test()`: PASS.
 - Julia tool sidecar and `git diff --check`: PASS.
 - R tooling 52/52, preseal 218/218, downstream 156/156: PASS.

@@ -16,17 +16,18 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 REPAIR READY TO LAND; NOT ACTIVATED).**
-  D0F retry 2 completed 576 official R fits and 576 base-R recomputations but
-  the exact Julia replay failed before row 1 with
-  `Cmd(::Vector{AbstractString})`. Both D0F roots are permanently
-  unadjudicated; both 576-seed phenotype spaces and bootstrap spaces are
-  retired. The prospective concrete-string repair and disjoint retry-3 bases
-  `2034000000` / `2035000000` pass focused twin checks, full Julia `Pkg.test()`,
-  and Fisher/Grace/Noether review. No D1/D2 seed has been consumed, default R
-  routing remains held, and `public_covered_count` remains **5**. The untracked
-  downstream Julia replay is still an incomplete non-evidence scaffold. START
-  HERE: `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry2-infrastructure-blocker.md`.
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 PRESEAL ADMISSION; NOT ACTIVATED).**
+  Both blocked D0F roots and their phenotype/bootstrap seed spaces remain
+  permanently retired. The prospective concrete-string repair and disjoint
+  retry-3 bases `2034000000` / `2035000000` are committed and pushed; focused
+  twin checks and package checks are green. A zero-seed Julia 1.10 preflight
+  now opens the exact sealed tree and exercises commit/blob/sidecar/ancestry/
+  clean-tree checks before any phenotype can be generated. NEXT: obtain five
+  fresh exact CLEAN receipts, deploy the bound commits to Totoro, mint a new
+  D0F root/preseal, and run that preflight. No D1/D2 seed has been consumed,
+  default R routing remains held, and `public_covered_count` remains **5**. The
+  untracked downstream Julia replay remains an incomplete non-evidence
+  scaffold. START HERE: `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry2-infrastructure-blocker.md`.
 
 ## Core Scope
 

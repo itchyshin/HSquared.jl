@@ -4,6 +4,9 @@
   replay rows.
 - Julia command construction now forces concrete strings and reproduces the
   exact `SubString` Git-root runtime type.
+- Added a zero-seed `preflight` mode that opens only the sealed inputs and
+  executes exact Julia commit/blob/sidecar/ancestry/clean-tree checks before
+  smoke or official fitting.
 - R freezes disjoint retry-3 seeds and hardened downstream evidence schemas,
   history, summaries, reviews, canonical paths, and deployed Git state.
 - Checks: Julia selftest/full `Pkg.test()` PASS; R 52 + 218 + 156 focused
