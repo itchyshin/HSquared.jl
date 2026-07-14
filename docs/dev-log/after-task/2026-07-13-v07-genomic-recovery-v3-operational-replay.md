@@ -26,6 +26,9 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
   rows per panel before selecting phenotype rank 1 as the panel-level
   representative. The fresh retry uses phenotype seed base `2032000000`; the
   failed root remains immutable and unadjudicated.
+- Upgraded the stage-preseal schema so D1 is mechanically impossible without a
+  hash-bound, external D0F adjudication receipt that says `PASS` and
+  `COMPLETE`; merely documenting the dependency is no longer sufficient.
 
 ## 3a. Decisions and Rejected Alternatives
 
@@ -60,7 +63,9 @@ turns red for a changed fixed-panel precision hash, duplicate/missing phenotype
 rank, or a changed rank-8 panel fingerprint; the valid 576-to-72 projection
 would have failed under the original cardinality bug. It separately
 demonstrates that the same unrelated in-flight window does not fail a parallel
-worker's own valid pair.
+worker's own valid pair. The D1 predecessor gate additionally turns red for a
+non-COMPLETE receipt, a wrong receipt hash, a nested root, or the known blocked
+D0F root.
 
 ## 7a. Issue Ledger
 
@@ -73,6 +78,7 @@ worker's own valid pair.
 | Direct replay could bypass launcher compute guards | Added the same Totoro/live-SLURM and no-CI guard inside the Julia tool. |
 | R 4.5/4.6 generated fixture bytes differed at last-bit quantiles | Kept exact schema/tool binding and typed semantic parity; raw generated hash is descriptive. |
 | D0F fixed-panel validator expected one phenotype-manifest row per panel | Fixed to require eight unique ranks with common panel fields/fingerprints, then select rank 1 as the canonical representative. The old root stays immutable and unadjudicated. |
+| D1 sequencing existed only in prose | Stage-preseal schema 2 now requires an exact external D0F PASS/COMPLETE adjudication receipt before D1 preparation or preseal. |
 
 ## 8. Consistency Audit
 
@@ -100,6 +106,9 @@ unadjudicated evidence; the repair is bound to a fresh seed base rather than
 silently changing that root. The first post-reseed selftest then correctly
 turned red on the old cross-twin bootstrap-manifest hash; Julia now pins the
 fresh R-owned `2033000000` bootstrap fixture instead of weakening parity.
+The first exact Fisher review of the retry then found that D1 sequencing was
+not fail-closed in tooling. That review set was invalidated; the schema-2 repair
+must receive five new exact-commit reviews.
 
 ## 10. Known Residuals
 

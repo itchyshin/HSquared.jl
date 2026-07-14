@@ -49,6 +49,17 @@ Date: 2026-07-13
   precision hash, duplicate/missing phenotype rank, and changed precision hash
   on phenotype rank 8 each turn the gate red. The positive test would fail at
   the original `only()` call before reaching content validation.
+- Fisher's exact-commit review found that D1 was only described as conditional:
+  its tooling could still prepare or preseal before D0F had a final admissible
+  decision. The stage-preseal contract is now schema version 2. D1 must bind an
+  external canonical D0F adjudication root and exact receipt hash, and the
+  receipt must be an ordered `v07-genomic-recovery-v3-adjudication-1` record
+  with `stage=d0f`, `verdict=PASS`, `stage_decision=COMPLETE`, parity maxima no
+  greater than `1e-10`, complete provenance, and canonical post-run reviews.
+  D0F records the new predecessor fields as `NA`.
+- Mutation controls make the D1 gate red for a non-COMPLETE predecessor,
+  changed receipt hash, nested predecessor root, or the known immutable blocked
+  D0F root. A valid synthetic predecessor passes.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no sim/phase2_v07_genomic_recovery_v3_stage_replay.jl --mode=selftest`:
   PASS; no official RNG or seed consumed.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no -e 'using Pkg; Pkg.test()'`:
@@ -59,8 +70,10 @@ Date: 2026-07-13
   PASS.
 - `git diff --check`: PASS.
 - Independent Grace re-review after the concurrency repair: `CLEAN`.
-- Final tool SHA-256 before commit:
-  `ee78223a7f301a51e2d82564d3c21c185696755f782363ec3da79bae3f6b3125`.
+- The earlier Fisher/Noether/Hopper receipts were invalidated by the schema-2
+  repair; five fresh reviews are required on the new exact commits.
+- Current pre-commit tool SHA-256:
+  `73f5cb44b85ff3cf60d4b87767d284ff345317a79ecd3c7a8fc86664ce25fc94`.
 - Boundary: this repair consumed no seed. The failed root contains official R
   D0F output but no admitted Julia replay or adjudication; it remains immutable
   and unadjudicated. No recovery claim, activation, capability move, or count

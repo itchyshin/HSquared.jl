@@ -39,7 +39,10 @@ grid at base `2029000000` and the three original bootstrap seeds at base
 
 Before any retry phenotype, both repaired twins must be committed, five fresh
 hash-bound Fisher/Noether/Hopper/Grace/Rose receipts must pass, and a new root
-and preseal must be minted. D1 remains paused until fresh D0F independent
-recomputation and adjudication pass. No recovery, activation, capability move,
+and preseal must be minted. The first review set was invalidated after Fisher
+found that D1 sequencing was prose-only. Stage-preseal schema 2 now requires
+D1 to bind the exact receipt of an external fresh-D0F `PASS`/`COMPLETE`
+adjudication; the known blocked root and nested roots are rejected. Five fresh
+exact-commit reviews remain required. No recovery, activation, capability move,
 G10, release, or count change follows from this checkpoint;
 `public_covered_count` remains 5.

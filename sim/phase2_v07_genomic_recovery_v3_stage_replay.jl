@@ -16,7 +16,7 @@ module D0Support
 include(joinpath(@__DIR__, "phase2_v07_genomic_recovery_v3_spectral_replay.jl"))
 end
 
-const SCHEMA = "v07-genomic-recovery-v3-stage-preseal-1"
+const SCHEMA = "v07-genomic-recovery-v3-stage-preseal-2"
 const PACKET_SCHEMA = "v07-genomic-recovery-v3-packet-1"
 const TRUTH_SCHEMA = "v07-genomic-recovery-v3-truth-1"
 const RIDGE = 0.01
@@ -35,6 +35,8 @@ const D0_OFFICIAL_ROOT = "/home/snakagaw/hsq_work/v07-genomic-recovery-v3-d0-off
 const D0_RECEIPT_SHA256 = "190b6546fab8caeec24683c4f7bee8063ada671c220852c9372e5db194b2886a"
 const D0_DIAGNOSTICS_RELATIVE_PATH = joinpath("r", "d0_packet_diagnostics_base_r.tsv")
 const D0_DIAGNOSTICS_SHA256 = "7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"
+const D0F_BLOCKED_ROOT = "/home/snakagaw/hsq_work/v07-genomic-recovery-v3-d0f-official-0a9d882-1a538212"
+const D0F_ADJUDICATION_SCHEMA = "v07-genomic-recovery-v3-adjudication-1"
 const RESOLVED = ("boundary_lower", "boundary_upper", "interior", "interior_rescued")
 const RESOLVED_REASONS = Dict("boundary_lower"=>"boundary_lower","boundary_upper"=>"boundary_upper","interior"=>"ai_interior","interior_rescued"=>"profile_interior")
 const D0F_DESIGNS = [
@@ -55,11 +57,12 @@ const FULL_RESULT_COLUMNS = split("attempted status error_class converged bounda
 const REPLAY_BINDING_COLUMNS = split("source_r_attempt_sha256 source_r_max_abs_difference replay_julia_commit replay_driver_sha256 manifest_sha256 preseal_sha256 corpus_lock_sha256")
 const PACKET_PRIMARIES = ["markers.tsv","ids.tsv","phenotype.tsv","truth.tsv","packet_files_lock.tsv"]
 const CORPUS_COLUMNS = ["relative_path","sha256"]
-const PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_indices_sha256 fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
+const PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 d0f_adjudication_root d0f_adjudication_receipt_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_indices_sha256 fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
 const CELL_TABLE_COLUMNS = split("cell_id cell_index n m marker_ratio marker_ratio_code truth_sigma_g2 truth_sigma_e2 truth_ratio ridge")
 const ENVIRONMENT_KEYS = split("stage host r_version r_rng_kind r_normal_kind r_sample_kind julia_version openblas_num_threads julia_num_threads max_workers")
 const REVIEWERS = ("fisher","noether","hopper","grace","rose")
 const RECEIPT_COLUMNS = split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")
+const D0F_ADJUDICATION_COLUMNS = vcat(split("schema_version stage verdict stage_decision attempt_max_diff summary_max_diff preseal_sha256 corpus_lock_sha256 manifest_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 base_r_inventory_sha256 julia_replay_inventory_sha256 r_summary_sha256 julia_summary_sha256"),reduce(vcat,[["$(r)_review_path","$(r)_review_sha256"] for r in REVIEWERS]))
 const D0F_FIXED_COLUMNS = split("stage design_id design_index source_cell_id panel_rank panel_source_seed n m marker_ratio truth_sigma_g2 truth_sigma_e2 truth_ratio ridge retained_m marker_hash id_hash kernel_hash precision_hash")
 const TRUTH_PROVENANCE_COLUMNS = split("packet_schema_version truth_schema_version scale_denominator relationship_source relationship_method allele_frequency_source relationship_scale preseal_sha256 r_implementation_commit julia_implementation_commit driver_commit")
 const D0F_BOOTSTRAP_COLUMNS = vcat(split("design_id design_index bootstrap_rep panel_slot panel_rank"),[@sprintf("phenotype_%02d",i) for i in 1:8])
@@ -358,6 +361,26 @@ function _validate_receipt(root,path,reviewer,p)
     d["reviewer"]==reviewer&&d["verdict"]=="CLEAN"&&d["doc49_sha256"]==p["doc49_sha256"]&&d["r_driver_commit"]==p["r_driver_commit"]&&d["r_recomputer_commit"]==p["r_recomputer_commit"]&&d["julia_replay_commit"]==p["julia_replay_commit"]&&d["r_auto_route_commit"]==p["r_auto_route_commit"]&&d["julia_candidate_commit"]==p["julia_candidate_commit"]||error("$reviewer receipt binding drift")
     nothing
 end
+function _validate_d0f_predecessor(stage_root,p)
+    d0froot=_safe_dir(p["d0f_adjudication_root"],"fresh D0F adjudication root")
+    d0froot==D0F_BLOCKED_ROOT&&error("blocked unadjudicated D0F root cannot admit D1")
+    _is_nested(stage_root,d0froot)&&error("D1 and fresh D0F roots must be distinct and nonnested")
+    expected=p["d0f_adjudication_receipt_sha256"]
+    _hex(expected)||error("fresh D0F adjudication receipt hash is invalid")
+    path=_verify_external_pair(joinpath(d0froot,"stage_adjudication_receipt.tsv"),expected)
+    t=_read_tsv(d0froot,path,D0F_ADJUDICATION_COLUMNS);length(t.rows)==1||error("fresh D0F adjudication receipt row drift")
+    d=_dict(t,only(t.rows))
+    d["schema_version"]==D0F_ADJUDICATION_SCHEMA&&d["stage"]=="d0f"&&d["verdict"]=="PASS"&&d["stage_decision"]=="COMPLETE"||error("fresh D0F receipt is not PASS/COMPLETE")
+    for field in ("attempt_max_diff","summary_max_diff")
+        value=_float(d[field],field);0<=value<=1e-10||error("fresh D0F adjudication parity exceeds 1e-10")
+    end
+    for field in filter(x->endswith(x,"_sha256"),D0F_ADJUDICATION_COLUMNS);_hex(d[field])||error("fresh D0F adjudication hash drift: $field");end
+    for field in filter(x->endswith(x,"_commit"),D0F_ADJUDICATION_COLUMNS);_hex(d[field],40)||error("fresh D0F adjudication commit drift: $field");end
+    for reviewer in REVIEWERS
+        d["$(reviewer)_review_path"]==joinpath("postrun_receipts","$reviewer.tsv")||error("fresh D0F post-run review path drift")
+    end
+    nothing
+end
 function _preseal_input_files(stage)
     names=["doc49.md","cell_table.tsv","historical_seed_lock.tsv","$(stage)_manifest.tsv","environment_manifest.tsv","stage_preseal.tsv"]
     stage=="d0f"&&append!(names,["d0f_fixed_panel_manifest.tsv","d0f_bootstrap_indices.tsv"])
@@ -403,8 +426,13 @@ function _preseal(root,stage,manifest,manifest_path)
     _verify_external_pair(joinpath(d0root,D0_DIAGNOSTICS_RELATIVE_PATH),D0_DIAGNOSTICS_SHA256)
     bindings=Dict("doc49_sha256"=>"doc49.md","cell_table_sha256"=>"cell_table.tsv","manifest_sha256"=>"$(stage)_manifest.tsv","environment_manifest_sha256"=>"environment_manifest.tsv","historical_seed_lock_sha256"=>"historical_seed_lock.tsv")
     for reviewer in REVIEWERS;bindings["$(reviewer)_receipt_sha256"]="receipts/$reviewer.tsv";end
-    if stage=="d0f";bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv";bindings["d0f_bootstrap_indices_sha256"]="d0f_bootstrap_indices.tsv"
-    else;p["d0f_fixed_panel_manifest_sha256"]=="NA"&&p["d0f_bootstrap_indices_sha256"]=="NA"||error("D1 must not bind D0F inputs");end
+    if stage=="d0f"
+        bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv";bindings["d0f_bootstrap_indices_sha256"]="d0f_bootstrap_indices.tsv"
+        p["d0f_adjudication_root"]=="NA"&&p["d0f_adjudication_receipt_sha256"]=="NA"||error("D0F must not bind a D0F predecessor")
+    else
+        p["d0f_fixed_panel_manifest_sha256"]=="NA"&&p["d0f_bootstrap_indices_sha256"]=="NA"||error("D1 must not bind D0F inputs")
+        _validate_d0f_predecessor(root,p)
+    end
     for (key,name) in bindings;_sha256(_verify_pair(root,joinpath(root,name)))==p[key]||error("preseal primary binding drift: $key");end
     _canonical_text(joinpath(root,"doc49.md"),"doc49 copy");_canonical_text(joinpath(root,"historical_seed_lock.tsv"),"historical seed lock");_validate_cell_table(root,joinpath(root,"cell_table.tsv"));_validate_environment(root,joinpath(root,"environment_manifest.tsv"),stage)
     stage=="d0f"&&_validate_fixed_panels(root,joinpath(root,"d0f_fixed_panel_manifest.tsv"),manifest)
@@ -860,7 +888,7 @@ function selftest()
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared");actual_cell_table=joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv");_read_cell_table(dirname(actual_cell_table),actual_cell_table;verify=false)
     _validate_cell_rows(_cell_table());_must_fail("sub-tolerance truth mutation") do;x=copy(_cell_table());x[1]=merge(x[1],(truth_ratio=x[1].truth_ratio+5e-13,));_validate_cell_rows(x);end
     marker_tolerance=copy(_cell_table());marker_tolerance[1]=merge(marker_tolerance[1],(marker_ratio=marker_tolerance[1].marker_ratio+5e-13,));_validate_cell_rows(marker_tolerance)
-    length(PRESEAL_KEYS)==39&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0 diagnostics preseal binding drift")
+    length(PRESEAL_KEYS)==41&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&PRESEAL_KEYS[10]=="d0f_adjudication_root"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0/D0F predecessor preseal binding drift")
     RECEIPT_COLUMNS==split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")||error("review receipt schema drift")
     R_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_recompute.R"&&R_RECOMPUTER_BASENAME!="v07_genomic_recovery_v3_preseal.R"||error("operational R recomputer binding drift")
     R_D0_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_d0_recompute.R"||error("R D0 recomputer binding drift")
@@ -975,6 +1003,22 @@ function selftest()
         _write_once(joinpath(tree,"extra.tsv"),"extra\n");_must_fail("extra exact-tree member") do;_exact_tree(root,tree,["a.tsv","a.tsv.sha256"]);end
         sy=joinpath(root,"sy.tsv");open(sy,"w") do io;write(io,"sy\n");end;side_target=joinpath(root,"side.txt");open(side_target,"w") do io;print(io,"$(_sha256(sy))  sy.tsv\n");end;symlink(side_target,sy*".sha256")
         _must_fail("symlinked sidecar") do;_verify_pair(root,sy);end
+        function synthetic_d0f_predecessor(name;decision="COMPLETE",verdict="PASS")
+            pred=joinpath(root,name);mkdir(pred);values=Dict(c=>repeat("a",64) for c in D0F_ADJUDICATION_COLUMNS)
+            values["schema_version"]=D0F_ADJUDICATION_SCHEMA;values["stage"]="d0f";values["verdict"]=verdict;values["stage_decision"]=decision
+            values["attempt_max_diff"]="0";values["summary_max_diff"]="0"
+            for field in filter(x->endswith(x,"_commit"),D0F_ADJUDICATION_COLUMNS);values[field]=repeat("b",40);end
+            for reviewer in REVIEWERS;values["$(reviewer)_review_path"]=joinpath("postrun_receipts","$reviewer.tsv");end
+            row=NamedTuple{Tuple(Symbol.(D0F_ADJUDICATION_COLUMNS))}(Tuple(values[c] for c in D0F_ADJUDICATION_COLUMNS))
+            path=joinpath(pred,"stage_adjudication_receipt.tsv");_write_once(path,_table_text(D0F_ADJUDICATION_COLUMNS,[row]));(root=pred,sha=_sha256(path))
+        end
+        d1stage=joinpath(root,"d1-stage");mkdir(d1stage);valid_pred=synthetic_d0f_predecessor("d0f-predecessor")
+        _validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>valid_pred.root,"d0f_adjudication_receipt_sha256"=>valid_pred.sha))
+        failed_pred=synthetic_d0f_predecessor("d0f-failed";decision="D0F_FIT_BLOCKER")
+        _must_fail("non-COMPLETE D0F predecessor") do;_validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>failed_pred.root,"d0f_adjudication_receipt_sha256"=>failed_pred.sha));end
+        _must_fail("wrong D0F predecessor hash") do;_validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>valid_pred.root,"d0f_adjudication_receipt_sha256"=>repeat("0",64)));end
+        nested_stage=joinpath(valid_pred.root,"nested-d1");mkdir(nested_stage)
+        _must_fail("nested D0F/D1 roots") do;_validate_d0f_predecessor(nested_stage,Dict("d0f_adjudication_root"=>valid_pred.root,"d0f_adjudication_receipt_sha256"=>valid_pred.sha));end
         stage_root=joinpath(root,"stage");mkdir(stage_root);mkdir(joinpath(stage_root,"receipts"))
         for name in ("doc49.md","cell_table.tsv","historical_seed_lock.tsv","d1_manifest.tsv","environment_manifest.tsv","stage_preseal.tsv");_write_once(joinpath(stage_root,name),"x\n");end
         for reviewer in REVIEWERS;_write_once(joinpath(stage_root,"receipts","$reviewer.tsv"),"x\n");end
