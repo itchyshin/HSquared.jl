@@ -26,6 +26,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-13
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
+- The pure D0F/D1 preseal/replay layer is now independently CLEAN: 39-key
+  acyclic contract, exact D0 diagnostics, typed D0F/D1 parity, live
+  environment/Git/tree gates, and mutation-red controls. This is prospective
+  integrity tooling, not recovery evidence. The operational R driver,
+  recomputer, launcher, adjudicator, exact receipts, and all fresh phenotypes
+  remain pending; final/official modes fail closed.
 - The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
   converged, five cells exceed the 2,000-fit cap, and the maximum required N is
   16,325. Offsets 7101:7148 remain retired.

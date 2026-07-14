@@ -5272,3 +5272,12 @@ Newest entries go at the top.
 - Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
   after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
   Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
+## 2026-07-13 — v0.7 genomic recovery-v3 pure preseal replay layer
+
+- Added the no-RNG Julia packet/replay/summary verifier for the prospective
+  24x8 D0F and 12-cell D1 stages.
+- Direct selftest, typed D0F/D1 parity, full `Pkg.test()`, mutation controls,
+  and diff checks pass; Hopper/Grace verdicts are CLEAN.
+- No official preseal, data, fit, recovery result, promotion, count change, or
+  Actions campaign exists. Full log:
+  `docs/dev-log/check-log.d/2026-07-13-v07-genomic-recovery-v3-preseal.md`.
