@@ -392,6 +392,11 @@ function _preseal_input_files(stage)
     stage=="d0f"&&append!(names,["d0f_fixed_panel_manifest.tsv","d0f_bootstrap_indices.tsv"])
     vcat(names,names.*".sha256")
 end
+function _validate_preseal_only_tree(root,stage)
+    _root_members(root,_preseal_input_files(stage),["receipts"])
+    receipt_files=sort(vcat(["$r.tsv" for r in REVIEWERS],["$r.tsv.sha256" for r in REVIEWERS]))
+    _exact_tree(root,joinpath(root,"receipts"),receipt_files)
+end
 function _validate_preseal_tree(root,stage;postrun=false,replay=false,summary=false,final=false)
     final&& !summary&&error("final tree validation requires both summaries")
     final&&error("final adjudication is owned by the schema-bound operational R adjudicator")
@@ -473,7 +478,7 @@ function preflight(root,stage)
     root=_safe_dir(root,"output root")
     manifest,manifest_path=_manifest(root,stage)
     _preseal(root,stage,manifest,manifest_path)
-    _validate_preseal_tree(root,stage)
+    _validate_preseal_only_tree(root,stage)
     println("v0.7 genomic recovery-v3 $stage Julia preflight: PASS (sealed inputs only; no official RNG or seed consumed)")
 end
 
@@ -1041,6 +1046,17 @@ function selftest()
         stage_root=joinpath(root,"stage");mkdir(stage_root);mkdir(joinpath(stage_root,"receipts"))
         for name in ("doc49.md","cell_table.tsv","historical_seed_lock.tsv","d1_manifest.tsv","environment_manifest.tsv","stage_preseal.tsv");_write_once(joinpath(stage_root,name),"x\n");end
         for reviewer in REVIEWERS;_write_once(joinpath(stage_root,"receipts","$reviewer.tsv"),"x\n");end
+        _validate_preseal_only_tree(stage_root,"d1")
+        for name in ("attempts","packets","base_r_recompute","julia_replay")
+            path=joinpath(stage_root,name);mkdir(path);_write_once(joinpath(path,"unexpected.tsv"),"x\n")
+            _must_fail("preflight rejects $name subtree") do;_validate_preseal_only_tree(stage_root,"d1");end
+            rm(path;recursive=true)
+        end
+        for name in ("d1_summary_r.tsv","d1_summary_julia.tsv","stage_corpus_lock.tsv","stage_adjudication_receipt.tsv")
+            _write_once(joinpath(stage_root,name),"x\n")
+            _must_fail("preflight rejects $name") do;_validate_preseal_only_tree(stage_root,"d1");end
+            rm(joinpath(stage_root,name));rm(joinpath(stage_root,name*".sha256"))
+        end
         for name in ("attempts","packets","julia_replay");dirpath=joinpath(stage_root,name);mkdir(dirpath);_write_once(joinpath(dirpath,"member.tsv"),"x\n");end
         _write_once(joinpath(stage_root,"stage_corpus_lock.tsv"),"x\n");_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true)
         _must_fail("final summary without base-R tree") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true);end

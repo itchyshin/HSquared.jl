@@ -38,10 +38,12 @@ not landed or evidence.
   admission gate.
 - Full Julia `Pkg.test()`: PASS.
 - Julia tool sidecar and `git diff --check`: PASS.
-- R tooling 52/52, preseal 218/218, downstream 156/156: PASS.
+- R tooling 52/52, preseal 222/222, downstream 157/157: PASS.
 - Built-package R `R CMD check --no-manual`: 0 errors, 0 warnings, 0 notes.
 - R selftests and sidecar/diff checks: PASS.
-- Fisher, Grace, and Noether final reviews: `CLEAN`.
+- Earlier Fisher/Grace/Noether repair reviews: `CLEAN`; fresh exact preflight
+  review was Grace `CLEAN`, Fisher/Noether `BLOCKED`, and exposed the two
+  neighbouring defects above. Exact review renewal is pending the landed fix.
 
 ## 6. Tests of the Tests
 
@@ -58,6 +60,8 @@ reviewers, stale driver commits, broken counts, and skipped history.
 | Retry-2 completed R work but no Julia replay | Retire the entire root; no partial admission. |
 | A matching blob did not bind deployed state | R contract now requires HEAD, ancestry, clean trees, and unchanged fitted surfaces. |
 | Downstream scaffold names differ from frozen R schema | Keep it untracked/non-evidence; reconcile before sidecar or commit. |
+| Preflight admitted an existing base-R output subtree | Add a strict preseal-only tree validator and mutation-test every output subtree and summary. |
+| D1 producer and downstream admission disagreed at 0–1 successful fits | Preserve `summary_nonfinite` as a secondary reason under low-convergence precedence and add a cross-layer regression. |
 
 ## 8. Consistency Audit
 
