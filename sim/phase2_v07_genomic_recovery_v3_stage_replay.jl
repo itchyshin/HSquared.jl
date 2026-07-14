@@ -44,8 +44,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
-const D0F_PHENOTYPE_SEED_BASE = 2_032_000_000
-const D0F_PARITY_BOOTSTRAP_SHA256 = "609db9dbb3ba023728249645e14e13e579d7dd9cc1917a9241bcf9f3c1d60c4c"
+const D0F_PHENOTYPE_SEED_BASE = 2_034_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "ff85a98bf160967f9699d01c53ed927c874d65c1f386780c3e62f43ef08cdef0"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -117,17 +117,17 @@ function _is_nested(a,b)
     a=normpath(a);b=normpath(b);a==b||startswith(a,b*Base.Filesystem.path_separator)||startswith(b,a*Base.Filesystem.path_separator)
 end
 function _git(root,args...)
-    readchomp(Cmd(String["git","-C",root,String.(args)...]))
+    String(readchomp(Cmd(String["git","-C",root,String.(args)...])))
 end
 _git_success(root,args...)=success(Cmd(String["git","-C",root,String.(args)...]))
 function _git_blob_sha256(root,path,commit)
     root=_safe_dir(root,"git root");path=abspath(path);prefix=root*Base.Filesystem.path_separator
     startswith(path,prefix)||error("bound tool is outside git root: $path")
-    relative=relpath(path,root);bytes=read(Cmd(["git","-C",root,"show","$commit:$relative"]))
+    relative=relpath(path,root);bytes=read(Cmd(String["git","-C",root,"show","$commit:$relative"]))
     bytes2hex(sha256(bytes))
 end
 function _require_git_clean(root,label)
-    output=readchomp(Cmd(["git","-C",root,"status","--porcelain=v1","--untracked-files=all"]))
+    output=readchomp(Cmd(String["git","-C",root,"status","--porcelain=v1","--untracked-files=all"]))
     isempty(output)||error("$label checkout has uncommitted or untracked changes anywhere in the repository")
     nothing
 end
@@ -337,7 +337,7 @@ function _validate_environment(root,path,stage)
     1<=_int(e["max_workers"],"max workers")<=96||error("worker cap drift");all(!isempty(e[k]) for k in ("r_version","julia_version"))||error("version manifest drift")
     _host_matches(e["host"])||error("live host differs from environment manifest")
     e["julia_version"]==string(VERSION)&&Threads.nthreads()==1&&get(ENV,"OPENBLAS_NUM_THREADS","")=="1"&&BLAS.get_num_threads()==1||error("live Julia version/BLAS/thread state differs from manifest")
-    rstate=split(readchomp(Cmd(["Rscript","--vanilla","-e","cat(c(as.character(getRversion()), RNGkind()), sep='\\t')"])), '\t')
+    rstate=split(readchomp(Cmd(String["Rscript","--vanilla","-e","cat(c(as.character(getRversion()), RNGkind()), sep='\\t')"])), '\t')
     length(rstate)==4&&rstate[1]==e["r_version"]&&rstate[2]==e["r_rng_kind"]&&rstate[3]==e["r_normal_kind"]&&rstate[4]==e["r_sample_kind"]||error("live R version/RNG state differs from manifest");nothing
 end
 function _validate_fixed_panels(root,path,manifest)
@@ -383,7 +383,7 @@ function _validate_d0f_predecessor(stage_root,p)
 end
 function _validate_d0f_final_tree(r_recomputer_path,d0froot)
     expression="args <- commandArgs(TRUE); source(args[[1L]], local=.GlobalEnv); v3r_validate_final(args[[2L]], 'd0f')"
-    cmd=Cmd(["Rscript","--vanilla","-e",expression,r_recomputer_path,d0froot])
+    cmd=Cmd(String["Rscript","--vanilla","-e",expression,r_recomputer_path,d0froot])
     success(pipeline(cmd,stdout=devnull,stderr=devnull))||error("fresh D0F exact final-tree validation failed")
     nothing
 end
@@ -845,7 +845,7 @@ function _canonical_r_d0f_parity_text(component)
         "fixture <- v3p_d0f_summary_parity_fixture(b)",
         "cat(v07d_tsv_text(fixture\$$component))",
     ],"\n")
-    read(Cmd(Cmd(["Rscript","--vanilla","-e",code]);dir=rroot),String)
+    read(Cmd(Cmd(String["Rscript","--vanilla","-e",code]);dir=rroot),String)
 end
 function _canonical_r_d1_parity_text()
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared")
@@ -857,7 +857,7 @@ function _canonical_r_d1_parity_text()
         "b <- list(preseal_sha256=h64(\"e\"), manifest_sha256=h64(\"f\"), corpus_lock_sha256=h64(\"a\"), r_auto_route_commit=h40(\"a\"), julia_candidate_commit=h40(\"b\"), r_driver_commit=h40(\"c\"), julia_replay_commit=h40(\"d\"), julia_replay_sha256=h64(\"b\"))",
         "cat(v07d_tsv_text(v3p_d1_summary_parity_fixture(b)\$summary))",
     ],"\n")
-    read(Cmd(Cmd(["Rscript","--vanilla","-e",code]);dir=rroot),String)
+    read(Cmd(Cmd(String["Rscript","--vanilla","-e",code]);dir=rroot),String)
 end
 function _parse_tsv_text(text,columns)
     !isempty(text)&&endswith(text,'\n')&&!occursin('\r',text)||error("canonical R parity TSV byte drift")
@@ -911,7 +911,7 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
-    D0F_PHENOTYPE_SEED_BASE==2_032_000_000||error("fresh D0F phenotype seed-base drift")
+    D0F_PHENOTYPE_SEED_BASE==2_034_000_000||error("fresh D0F phenotype seed-base drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
         source=2_027_120_000+10_000*d.source_index+7100+panel;seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
@@ -1051,15 +1051,17 @@ function selftest()
         _verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows)
         unexpected=joinpath(quiescent,"julia_replay","unexpected.tsv");_write_once(unexpected,"unexpected\n");_must_fail("quiescent unexpected replay member") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end;rm(unexpected);rm(unexpected*".sha256")
         empty=joinpath(quiescent,"julia_replay","empty");mkdir(empty);_must_fail("quiescent empty replay directory") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end
-        repo=joinpath(root,"repo");mkdir(repo);run(Cmd(["git","-C",repo,"init","--quiet"]));run(Cmd(["git","-C",repo,"config","user.email","synthetic@example.invalid"]));run(Cmd(["git","-C",repo,"config","user.name","synthetic"]));mkdir(joinpath(repo,"src"));mkdir(joinpath(repo,"ext"));mkdir(joinpath(repo,"R"));engine=joinpath(repo,"src","engine.jl");write(engine,"engine v1\n");write(joinpath(repo,"ext","extension.jl"),"extension v1\n");write(joinpath(repo,"R","surface.R"),"surface v1\n");write(joinpath(repo,"Project.toml"),"name = \"Synthetic\"\n");write(joinpath(repo,"Manifest.toml"),"manifest_format = \"2.0\"\n");write(joinpath(repo,"DESCRIPTION"),"Package: synthetic\n");write(joinpath(repo,"NAMESPACE"),"exportPattern(\"^[^.]\")\n");tool=joinpath(repo,"replay.jl");_write_once(tool,"replay v1\n");run(Cmd(["git","-C",repo,"add","src","ext","R","Project.toml","Manifest.toml","DESCRIPTION","NAMESPACE","replay.jl","replay.jl.sha256"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","candidate"]));candidate=_git(repo,"rev-parse","HEAD")
-        note=joinpath(repo,"replay-note.txt");write(note,"replay layer\n");run(Cmd(["git","-C",repo,"add","replay-note.txt"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","replay"]));replay_commit=_git(repo,"rev-parse","HEAD");tool_hash=_sha256(tool)
+        repo=joinpath(root,"repo");mkdir(repo);run(Cmd(String["git","-C",repo,"init","--quiet"]));run(Cmd(String["git","-C",repo,"config","user.email","synthetic@example.invalid"]));run(Cmd(String["git","-C",repo,"config","user.name","synthetic"]));mkdir(joinpath(repo,"src"));mkdir(joinpath(repo,"ext"));mkdir(joinpath(repo,"R"));engine=joinpath(repo,"src","engine.jl");write(engine,"engine v1\n");write(joinpath(repo,"ext","extension.jl"),"extension v1\n");write(joinpath(repo,"R","surface.R"),"surface v1\n");write(joinpath(repo,"Project.toml"),"name = \"Synthetic\"\n");write(joinpath(repo,"Manifest.toml"),"manifest_format = \"2.0\"\n");write(joinpath(repo,"DESCRIPTION"),"Package: synthetic\n");write(joinpath(repo,"NAMESPACE"),"exportPattern(\"^[^.]\")\n");tool=joinpath(repo,"replay.jl");_write_once(tool,"replay v1\n");run(Cmd(String["git","-C",repo,"add","src","ext","R","Project.toml","Manifest.toml","DESCRIPTION","NAMESPACE","replay.jl","replay.jl.sha256"]));run(Cmd(String["git","-C",repo,"commit","--quiet","-m","candidate"]));candidate=_git(repo,"rev-parse","HEAD")
+        note=joinpath(repo,"replay-note.txt");write(note,"replay layer\n");run(Cmd(String["git","-C",repo,"add","replay-note.txt"]));run(Cmd(String["git","-C",repo,"commit","--quiet","-m","replay"]));replay_commit=_git(repo,"rev-parse","HEAD");tool_hash=_sha256(tool)
+        candidate isa String&&replay_commit isa String||error("git helper must return a concrete String")
+        substring_root=SubString(repo,firstindex(repo),lastindex(repo));_git_blob_sha256(substring_root,tool,replay_commit)==tool_hash||error("SubString git root regression")
         _require_ancestor(repo,candidate,replay_commit,"synthetic candidate");_must_fail("reversed candidate ancestry") do;_require_ancestor(repo,replay_commit,candidate,"synthetic candidate");end
         _verify_bound_tool(repo,tool,replay_commit,tool_hash,"synthetic replay tool");_require_git_unchanged(repo,candidate,replay_commit,[engine],"synthetic engine")
         unrelated=joinpath(repo,"unrelated.tmp");write(unrelated,"untracked\n");_must_fail("untracked unrelated repository file") do;_require_git_clean(repo,"synthetic repository");end;rm(unrelated)
         side=tool*".sha256";side_text=read(side,String);rm(side);_must_fail("bound tool missing sidecar") do;_verify_bound_tool(repo,tool,replay_commit,tool_hash,"synthetic replay tool");end;write(side,side_text)
-        rm(joinpath(repo,"R","surface.R"));run(Cmd(["git","-C",repo,"add","-u","R"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","delete R surface"]));r_deleted=_git(repo,"rev-parse","HEAD")
+        rm(joinpath(repo,"R","surface.R"));run(Cmd(String["git","-C",repo,"add","-u","R"]));run(Cmd(String["git","-C",repo,"commit","--quiet","-m","delete R surface"]));r_deleted=_git(repo,"rev-parse","HEAD")
         _must_fail("deleted R implementation surface") do;_require_git_unchanged(repo,candidate,r_deleted,joinpath.(Ref(repo),["R","DESCRIPTION","NAMESPACE"]),"synthetic R implementation");end
-        rm(joinpath(repo,"ext","extension.jl"));run(Cmd(["git","-C",repo,"add","-u","ext"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","delete Julia surface"]));julia_deleted=_git(repo,"rev-parse","HEAD")
+        rm(joinpath(repo,"ext","extension.jl"));run(Cmd(String["git","-C",repo,"add","-u","ext"]));run(Cmd(String["git","-C",repo,"commit","--quiet","-m","delete Julia surface"]));julia_deleted=_git(repo,"rev-parse","HEAD")
         _must_fail("deleted Julia implementation surface") do;_require_git_unchanged(repo,replay_commit,julia_deleted,joinpath.(Ref(repo),["src","ext","Project.toml","Manifest.toml"]),"synthetic Julia implementation");end
         write(engine,"dirty engine\n");_must_fail("dirty bound implementation") do;_require_git_clean(repo,"synthetic engine");end
     finally rm(dir;recursive=true,force=true);end

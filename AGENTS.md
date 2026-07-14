@@ -16,18 +16,17 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-14 (v0.7 genomic public-activation arc — PAUSED FOR CLAUDE HANDOVER; NOT ACTIVATED).**
-  Both twins are on `codex/2026-07-13-v07-performance-localization`: Julia
-  `9d1527e9` (draft PR #274) and R `120d04d` (draft PR #137). The latest
-  pushed checks are green. Totoro's D0F recomputation remains live with 16
-  workers; the last durable checkpoint was 432/576 recomputations after all
-  576/576 official fits completed successfully. No D1 or D2 seed has been
-  consumed, D0F is not adjudicated, default R routing remains held, and
-  `public_covered_count` remains **5**. CARRIED-OVER: a four-file prospective R
-  downstream-contract amendment awaiting fresh Noether/Hopper/Fisher review,
-  plus an untracked Julia downstream-replay scaffold that is not evidence.
-  Preserve both dirty working trees and the live Totoro process. START HERE:
-  `docs/dev-log/handover/2026-07-14-claude-handover.md`.
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 REPAIR READY TO LAND; NOT ACTIVATED).**
+  D0F retry 2 completed 576 official R fits and 576 base-R recomputations but
+  the exact Julia replay failed before row 1 with
+  `Cmd(::Vector{AbstractString})`. Both D0F roots are permanently
+  unadjudicated; both 576-seed phenotype spaces and bootstrap spaces are
+  retired. The prospective concrete-string repair and disjoint retry-3 bases
+  `2034000000` / `2035000000` pass focused twin checks, full Julia `Pkg.test()`,
+  and Fisher/Grace/Noether review. No D1/D2 seed has been consumed, default R
+  routing remains held, and `public_covered_count` remains **5**. The untracked
+  downstream Julia replay is still an incomplete non-evidence scaffold. START
+  HERE: `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry2-infrastructure-blocker.md`.
 
 ## Core Scope
 

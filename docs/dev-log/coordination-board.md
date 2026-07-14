@@ -1155,3 +1155,13 @@ JOINT contract task per AGENTS.md rule 2.
   evidence rules, and cross-project scout cadence.
 - `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
   fitted/planned/missing separation.
+
+## 2026-07-14 — D0F retry-2 blocker / retry-3 prospective repair
+
+- Lane: R + Julia validation on `codex/2026-07-13-v07-performance-localization`.
+- Result: retry 2 retired after 576 R fits, 576 base-R recomputations, and zero
+  Julia replay rows; prospective concrete-string repair and disjoint retry-3
+  seeds are green under focused/full checks and Fisher/Grace/Noether review.
+- Guard: no D1/D2 seed, recovery, activation, count move, release, or G10.
+- Next: land both repairs, live Julia 1.10 preflight, fresh exact receipts, then
+  mint the retry-3 preseal/root.

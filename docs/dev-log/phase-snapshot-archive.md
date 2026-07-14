@@ -765,3 +765,16 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   **Before trusting a green, make it go red on purpose — including the gate you just repaired.**
   Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
   START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
+
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — PAUSED FOR CLAUDE HANDOVER; NOT ACTIVATED).**
+  Both twins are on `codex/2026-07-13-v07-performance-localization`: Julia
+  `9d1527e9` (draft PR #274) and R `120d04d` (draft PR #137). The latest
+  pushed checks are green. Totoro's D0F recomputation remains live with 16
+  workers; the last durable checkpoint was 432/576 recomputations after all
+  576/576 official fits completed successfully. No D1 or D2 seed has been
+  consumed, D0F is not adjudicated, default R routing remains held, and
+  `public_covered_count` remains **5**. CARRIED-OVER: a four-file prospective R
+  downstream-contract amendment awaiting fresh Noether/Hopper/Fisher review,
+  plus an untracked Julia downstream-replay scaffold that is not evidence.
+  Preserve both dirty working trees and the live Totoro process. START HERE:
+  `docs/dev-log/handover/2026-07-14-claude-handover.md`.

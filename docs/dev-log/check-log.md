@@ -5316,3 +5316,15 @@ Newest entries go at the top.
 - `handoff_gate.sh` returned nonzero as expected because the R amendment and
   Julia numerical replay scaffold are explicitly `CARRIED-OVER` in
   `docs/dev-log/handover/2026-07-14-claude-handover.md`.
+
+## 2026-07-14 — v0.7 D0F retry-2 blocker and retry-3 repair
+
+- Retry 2 completed 576 official fits and 576 base-R recomputations but wrote
+  zero Julia replay rows because of `Cmd(::Vector{AbstractString})`; the root
+  and seed spaces are retired and unadjudicated.
+- The prospective repair forces concrete Julia command strings, tests the live
+  `SubString` root type, and reserves disjoint retry-3 bases `2034000000` /
+  `2035000000` in the R twin.
+- Julia selftest/full `Pkg.test()`, R focused gates and built-package check
+  0/0/0, sidecars, diff checks, and Fisher/Grace/Noether reviews are green. No
+  recovery or activation exists.
