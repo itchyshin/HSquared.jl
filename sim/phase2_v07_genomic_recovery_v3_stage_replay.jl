@@ -42,6 +42,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
+const D0F_PHENOTYPE_SEED_BASE = 2_032_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "609db9dbb3ba023728249645e14e13e579d7dd9cc1917a9241bcf9f3c1d60c4c"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -276,7 +278,7 @@ function _validate_manifest(rows,stage;cells=_cell_table())
         expected=Tuple[]
         for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
             source=2_027_120_000+10_000*d.source_index+7100+panel
-            seed=2_029_000_000+100_000*d.index+1000panel+rep
+            seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
             push!(expected,(d.id,d.index,@sprintf("%s_p%02d",d.id,panel),panel,d.source_cell,source,rep,seed,d.n,d.m,d.marker_ratio))
         end
         observed=[(r.design_id,r.design_index,r.panel_id,r.panel_rank,r.source_cell_id,r.panel_source_seed,r.phenotype_rank,r.seed,r.n,r.m,r.marker_ratio) for r in rows]
@@ -337,7 +339,13 @@ function _validate_environment(root,path,stage)
 end
 function _validate_fixed_panels(root,path,manifest)
     t=_read_tsv(root,path,D0F_FIXED_COLUMNS);length(t.rows)==72||error("D0F fixed-panel manifest must have 72 rows")
-    expected=[only(filter(r->r.design_index==d.index&&r.panel_rank==panel,manifest)) for d in D0F_DESIGNS for panel in 1:24]
+    shared=Symbol.(D0F_FIXED_COLUMNS);expected=NamedTuple[]
+    for d in D0F_DESIGNS,panel in 1:24
+        rr=filter(r->r.design_index==d.index&&r.panel_rank==panel,manifest)
+        length(rr)==8&&sort(getproperty.(rr,:phenotype_rank))==collect(1:8)||error("D0F panel phenotype denominator/rank drift")
+        all(f->length(unique(getproperty.(rr,f)))==1,shared)||error("D0F panel identity/fingerprint drift")
+        push!(expected,only(filter(r->r.phenotype_rank==1,rr)))
+    end
     for (raw,row) in zip(t.rows,expected)
         d=_dict(t,raw);values=(stage=row.stage,design_id=row.design_id,design_index=row.design_index,source_cell_id=row.source_cell_id,panel_rank=row.panel_rank,panel_source_seed=row.panel_source_seed,n=row.n,m=row.m,marker_ratio=row.marker_ratio,truth_sigma_g2=row.truth_sigma_g2,truth_sigma_e2=row.truth_sigma_e2,truth_ratio=row.truth_ratio,ridge=row.ridge,retained_m=row.retained_m,marker_hash=row.marker_hash,id_hash=row.id_hash,kernel_hash=row.kernel_hash,precision_hash=row.precision_hash)
         text=filter(c->c in ("stage","design_id","source_cell_id","marker_hash","id_hash","kernel_hash","precision_hash"),D0F_FIXED_COLUMNS);ints=filter(c->c in ("design_index","panel_rank","panel_source_seed","n","m","retained_m"),D0F_FIXED_COLUMNS);floats=filter(c->!(c in text||c in ints),D0F_FIXED_COLUMNS)
@@ -866,17 +874,23 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
+    D0F_PHENOTYPE_SEED_BASE==2_032_000_000||error("fresh D0F phenotype seed-base drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
-        source=2_027_120_000+10_000*d.source_index+7100+panel;seed=2_029_000_000+100_000*d.index+1000panel+rep
+        source=2_027_120_000+10_000*d.source_index+7100+panel;seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
         hashes=(marker_hash=bytes2hex(sha256("marker-$(d.index)-$panel")),id_hash=bytes2hex(sha256("ids-$(d.index)-$panel")),kernel_hash=bytes2hex(sha256("kernel-$(d.index)-$panel")),precision_hash=bytes2hex(sha256("precision-$(d.index)-$panel")))
         push!(d0f,(stage="d0f",design_id=d.id,design_index=d.index,panel_id=@sprintf("%s_p%02d",d.id,panel),panel_rank=panel,source_cell_id=d.source_cell,panel_source_seed=source,phenotype_rank=rep,seed=seed,n=d.n,m=d.m,marker_ratio=d.marker_ratio,retained_m=d.m,truth_sigma_g2=.5,truth_sigma_e2=.5,truth_ratio=.5,ridge=RIDGE,hashes...))
     end
     _validate_manifest(d0f,"d0f")
     _must_fail("D0F seed") do;x=copy(d0f);x[1]=merge(x[1],(seed=x[1].seed+1,));_validate_manifest(x,"d0f");end
     _must_fail("D0F source panel") do;x=copy(d0f);x[1]=merge(x[1],(panel_source_seed=x[1].panel_source_seed+1,));_validate_manifest(x,"d0f");end
-    _must_fail("D0F repeated-panel hash") do;x=copy(d0f);x[1]=merge(x[1],(kernel_hash=repeat("0",64),));_validate_manifest(x,"d0f");end
+    _must_fail("D0F duplicate/missing phenotype rank") do;x=copy(d0f);x[2]=merge(x[2],(phenotype_rank=1,));_validate_manifest(x,"d0f");end
+    _must_fail("D0F non-rank1 repeated-panel hash") do;x=copy(d0f);x[8]=merge(x[8],(kernel_hash=repeat("0",64),));_validate_manifest(x,"d0f");end
     _must_fail("D0F ridge") do;x=copy(d0f);x[1]=merge(x[1],(ridge=.02,));_validate_manifest(x,"d0f");end
+    d0f_fixed=[begin
+        row=only(filter(r->r.design_index==d.index&&r.panel_rank==panel&&r.phenotype_rank==1,d0f))
+        NamedTuple{Tuple(Symbol.(D0F_FIXED_COLUMNS))}(Tuple(getproperty(row,Symbol(c)) for c in D0F_FIXED_COLUMNS))
+    end for d in D0F_DESIGNS for panel in 1:24]
     d1=NamedTuple[];for c in _d1_cells(),off in 101:148;push!(d1,(stage="d1",cell_id=c.cell_id,cell_index=c.cell_index,seed_offset=off,seed=2_028_000_000+10_000*c.cell_index+off,n=c.n,m=c.m,marker_ratio=c.marker_ratio,marker_ratio_code=c.marker_ratio_code,truth_sigma_g2=.5,truth_sigma_e2=.5,truth_ratio=.5,ridge=RIDGE));end;_validate_manifest(d1,"d1")
     _must_fail("D1 seed") do;x=copy(d1);x[1]=merge(x[1],(seed=x[1].seed+1,));_validate_manifest(x,"d1");end
     _must_fail("D1 stage") do;x=copy(d1);x[1]=merge(x[1],(stage="d2",));_validate_manifest(x,"d1");end
@@ -889,7 +903,7 @@ function selftest()
         push!(d0f_parity,(manifest=mr,converged=true,boundary_status="interior",error_class="none",scientific_ratio=estimate,runtime_seconds=.1,peak_rss_mb=100.0))
     end
     d0f_bootstrap_text=_canonical_r_d0f_parity_text("bootstrap");d0f_bootstrap=TSV(D0F_BOOTSTRAP_COLUMNS,_parse_tsv_text(d0f_bootstrap_text,D0F_BOOTSTRAP_COLUMNS))
-    d0f_summary=_d0f_summary_impl(d0f_parity,d0f_bootstrap,"5baf6a576d9575555e71b3c163b15a365be5293fb921a873041c6a1ee1473594",5);length(D0F_SUMMARY_COLUMNS)==38||error("D0F summary width drift");_verify_full_r_d0f_parity(d0f_summary)
+    d0f_summary=_d0f_summary_impl(d0f_parity,d0f_bootstrap,D0F_PARITY_BOOTSTRAP_SHA256,5);length(D0F_SUMMARY_COLUMNS)==38||error("D0F summary width drift");_verify_full_r_d0f_parity(d0f_summary)
     _must_fail("D0F full typed R parity mutation") do;x=copy(d0f_summary);x[1]=merge(x[1],(variance_between=x[1].variance_between+1e-4,));_verify_full_r_d0f_parity(x);end
     C=D0Support._helmert(8);M=[Float64(mod(i+j,3)) for i in 1:8,j in 1:12];ids=[@sprintf("g%06d",i) for i in 1:8];p=vec(sum(M,dims=1))./16;W=M.-2 .* transpose(p);k=2sum(p.*(1 .- p));K=(W*transpose(W))./k+RIDGE*I;Q=Matrix(inv(Symmetric(K)));s=D0Support._spectral(Matrix(K),C)
     packet=(M=M,ids=ids,names=[@sprintf("m%06d",j) for j in 1:12],y=[-1.2,.2,.8,-.4,1.1,-.7,.5,-.3],k=k,K=Matrix(K),Q=Q,retained_m=12,marker_hash=D0Support._marker_hash(M,ids,[@sprintf("m%06d",j) for j in 1:12]),id_hash=D0Support._id_hash(ids),kernel_hash=D0Support._matrix_hash("K_lambda",K,ids),precision_hash=D0Support._matrix_hash("Q_lambda",Q,ids),spectrum=s)
@@ -953,6 +967,10 @@ function selftest()
     dir=mktempdir();try
         root=realpath(dir);p=joinpath(root,"x.tsv");_write_once(p,"x\n");_verify_pair(root,p);_must_fail("create once") do;_write_once(p,"x\n");end
         open(p,"w") do io;write(io,"mutated\n");end;_must_fail("checksum") do;_verify_pair(root,p);end;rm(p;force=true);rm(p*".sha256";force=true)
+        fixed=joinpath(root,"d0f_fixed_panel_manifest.tsv");_write_once(fixed,_table_text(D0F_FIXED_COLUMNS,d0f_fixed));_validate_fixed_panels(root,fixed,d0f)
+        bad_fixed=copy(d0f_fixed);bad_fixed[1]=merge(bad_fixed[1],(precision_hash=repeat("0",64),));bad_fixed_path=joinpath(root,"d0f_fixed_panel_manifest_bad.tsv");_write_once(bad_fixed_path,_table_text(D0F_FIXED_COLUMNS,bad_fixed));_must_fail("D0F fixed-panel hash") do;_validate_fixed_panels(root,bad_fixed_path,d0f);end
+        bad_ranks=copy(d0f);bad_ranks[2]=merge(bad_ranks[2],(phenotype_rank=1,));_must_fail("D0F fixed validator duplicate/missing phenotype rank") do;_validate_fixed_panels(root,fixed,bad_ranks);end
+        bad_nonrank1=copy(d0f);bad_nonrank1[8]=merge(bad_nonrank1[8],(precision_hash=repeat("0",64),));_must_fail("D0F fixed validator non-rank1 identity") do;_validate_fixed_panels(root,fixed,bad_nonrank1);end
         tree=joinpath(root,"tree");mkdir(tree);_write_once(joinpath(tree,"a.tsv"),"a\n");_exact_tree(root,tree,["a.tsv","a.tsv.sha256"])
         _write_once(joinpath(tree,"extra.tsv"),"extra\n");_must_fail("extra exact-tree member") do;_exact_tree(root,tree,["a.tsv","a.tsv.sha256"]);end
         sy=joinpath(root,"sy.tsv");open(sy,"w") do io;write(io,"sy\n");end;side_target=joinpath(root,"side.txt");open(side_target,"w") do io;print(io,"$(_sha256(sy))  sy.tsv\n");end;symlink(side_target,sy*".sha256")

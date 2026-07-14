@@ -22,6 +22,10 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
 - Replaced platform-fragile raw hashes of generated R parity fixtures with the
   existing typed exact/`1e-10` field comparison, while retaining exact hashes
   for the presealed R tool bytes.
+- Repaired the live D0F fixed-panel projection to validate all eight phenotype
+  rows per panel before selecting phenotype rank 1 as the panel-level
+  representative. The fresh retry uses phenotype seed base `2032000000`; the
+  failed root remains immutable and unadjudicated.
 
 ## 3a. Decisions and Rejected Alternatives
 
@@ -51,9 +55,12 @@ Exact commands and the tool hash are in the matching check-log entry.
 
 The suite turns red for a changed frozen-D0 packet fingerprint, corrupted
 corpus member, missing/extra replay, unexpected member, empty directory, and an
-in-flight primary at the quiescent gate. It separately demonstrates that the
-same unrelated in-flight window does not fail a parallel worker's own valid
-pair.
+in-flight primary at the quiescent gate. The D0F fixed-panel gate additionally
+turns red for a changed fixed-panel precision hash, duplicate/missing phenotype
+rank, or a changed rank-8 panel fingerprint; the valid 576-to-72 projection
+would have failed under the original cardinality bug. It separately
+demonstrates that the same unrelated in-flight window does not fail a parallel
+worker's own valid pair.
 
 ## 7a. Issue Ledger
 
@@ -65,6 +72,7 @@ pair.
 | Final adjudication ownership | Operational R adjudicator owns the final receipt; Julia final mode stays explicitly R-owned. |
 | Direct replay could bypass launcher compute guards | Added the same Totoro/live-SLURM and no-CI guard inside the Julia tool. |
 | R 4.5/4.6 generated fixture bytes differed at last-bit quantiles | Kept exact schema/tool binding and typed semantic parity; raw generated hash is descriptive. |
+| D0F fixed-panel validator expected one phenotype-manifest row per panel | Fixed to require eight unique ranks with common panel fields/fingerprints, then select rank 1 as the canonical representative. The old root stays immutable and unadjudicated. |
 
 ## 8. Consistency Audit
 
@@ -74,18 +82,31 @@ summary performance provenance, create-once semantics, and final-admission
 negative space. The R twin's forthcoming worker and recomputer were explicitly
 warned to use the same quiescent-tree pattern.
 
+Memory receipt: the repository `AGENTS.md`, validation-canon skill, and
+after-task protocol shaped the fail-closed evidence and negative-space audit.
+`route.py` returned no repository LOAD-FIRST manifest, so repository code and
+docs remained technical truth. This was a live manifest-cardinality defect, not
+a memory-retrieval regression. Golden Set: not run because the defect did not
+involve indexed recall or a known retrieval regression.
+
 ## 9. What Did Not Go Smoothly
 
 The first operational implementation inherited an obsolete D0 layout
 assumption. A later ordinary-green worker implementation also contained a real
-parallel race that only an adversarial interleaving review exposed. Both were
-repaired before deployment or official data generation.
+parallel race that only an adversarial interleaving review exposed. The first
+live D0F replay then exposed a missing phenotype-rank discriminator in the
+fixed-panel projection. The failed root is retained as immutable,
+unadjudicated evidence; the repair is bound to a fresh seed base rather than
+silently changing that root. The first post-reseed selftest then correctly
+turned red on the old cross-twin bootstrap-manifest hash; Julia now pins the
+fresh R-owned `2033000000` bootstrap fixture instead of weakening parity.
 
 ## 10. Known Residuals
 
-- The official R generator/fitter, base-R recomputer, launcher, and final
-  adjudicator exist but are not yet committed or presealed.
-- No D0F/D1 output exists, and D2-D4 remain conditional on the earlier stages.
+- The first official D0F root contains R output but is immutable and
+  unadjudicated because the Julia replay admission failed before any replay row
+  was accepted. A fresh D0F retry is required under the new seed base.
+- D1 and D2-D4 remain conditional on a clean fresh D0F adjudication.
 - Public activation and capability/count changes remain held.
 
 ## 11. Team Learning

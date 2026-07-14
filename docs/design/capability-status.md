@@ -16,6 +16,11 @@
 > capability/count row moved;
 > `public_covered_count` remains 5. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`;
+> recovery-v3 D0F subsequently completed 576 R fits and 576 base-R
+> recomputations, but its presealed Julia replay failed before writing a row.
+> That root is permanently unadjudicated; its seeds are retired, a fresh
+> disjoint retry is not yet presealed, and D1 remains paused. See
+> `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-replay-infrastructure-blocker.md`;
 > the earlier performance decision remains in
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
 

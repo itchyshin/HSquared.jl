@@ -26,15 +26,21 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-13
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- The pure D0F/D1 preseal layer, operational Julia replay, and operational R
-  generator/recomputer/launcher are now independently CLEAN: 39-key
-  acyclic contract, exact D0 diagnostics, typed D0F/D1 parity, live
-  environment/Git/tree gates, native K/Q provenance with `1e-10` numerical
-  parity, and mutation-red controls. This is prospective integrity tooling, not
-  recovery evidence. Exact committed tool hashes, preseal receipts, and all
-  fresh phenotypes remain pending; final admission fails closed. The replay worker is
-  parallel-safe by construction: target-local writes during fan-out, exact-tree
-  verification only after quiescence.
+- The first official D0F root is immutable and unadjudicated: its R output was
+  generated, but Julia replay admission found that the 576-row phenotype
+  manifest was projected to 72 fixed panels without selecting one of the eight
+  phenotype ranks. No Julia replay row was admitted. The repaired validator now
+  requires exactly ranks `1:8`, common panel fields/fingerprints, and uses rank
+  1 only as the canonical comparison row. The fresh retry phenotype seed base
+  is `2032000000`; the R-owned bootstrap base is `2033000000`.
+- Apart from that repaired cardinality defect, the pure D0F/D1 preseal layer,
+  operational Julia replay, and operational R generator/recomputer/launcher
+  retain the 39-key acyclic contract, exact D0 diagnostics, typed D0F/D1
+  parity, live environment/Git/tree gates, native K/Q provenance with `1e-10`
+  numerical parity, and mutation-red controls. This is integrity tooling, not
+  recovery evidence. Final admission remains fail-closed. The replay worker is
+  parallel-safe by construction: target-local writes during fan-out,
+  exact-tree verification only after quiescence.
 - The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
   converged, five cells exceed the 2,000-fit cap, and the maximum required N is
   16,325. Offsets 7101:7148 remain retired.
@@ -47,9 +53,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: commit and push the independently audited harnesses, mint exact
-  receipt/tool hashes, and accept the immutable preseal before opening any v3
-  phenotype seed. Totoro/DRAC only, never GitHub Actions.
+- Next action: land and re-audit the Julia validator/seed-contract repair, mint
+  fresh exact receipts and preseal, and run the new D0F seeds on Totoro/DRAC
+  only, never GitHub Actions. Never mutate or adjudicate the failed D0F root.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
