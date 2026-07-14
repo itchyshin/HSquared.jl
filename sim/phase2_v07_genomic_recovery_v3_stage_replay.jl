@@ -442,6 +442,7 @@ function _replay_tree(root,stage,manifest;complete=true)
     files=String[];for row in manifest;rp=relpath(_replay_path(root,stage,row),joinpath(root,"julia_replay"));append!(files,[rp,rp*".sha256"]);end
     _exact_tree(root,joinpath(root,"julia_replay"),files;complete=complete)
 end
+_verify_replay_tree_quiescent(root,stage,manifest)=_replay_tree(root,stage,manifest;complete=true)
 function _base_r_tree(root,stage,manifest)
     files=String[];for row in manifest;rp=joinpath(stage,_group(row,stage),"$(row.seed).tsv");append!(files,[rp,rp*".sha256"]);end
     _exact_tree(root,joinpath(root,"base_r_recompute"),files)
@@ -608,22 +609,30 @@ function _summary_performance(source,replay_runtime,replay_rss)
 end
 
 function _validate_d0f_source(d0root,row,packet)
-    _safe_dir(d0root,"D0 corpus root");D0Support._verify_seal(d0root);old=D0Support._manifest(d0root);source=only(filter(r->r.cell_id==row.source_cell_id&&r.seed==row.panel_source_seed,old))
-    p=D0Support._packet(d0root,source,D0Support._helmert(source.n))
-    for (field,value) in ((:marker_hash,p.marker_hash),(:id_hash,p.id_hash),(:kernel_hash,p.kernel_hash),(:precision_hash,p.precision_hash));getproperty(row,field)==value&&getproperty(packet,field)==value||error("D0F fixed-panel $field drift");end
+    _safe_dir(d0root,"D0 evidence root")
+    path=joinpath(d0root,D0_DIAGNOSTICS_RELATIVE_PATH);table=_read_tsv(d0root,path,D0Support.PACKET_COLUMNS)
+    hits=filter(raw->raw[1]==row.source_cell_id&&_int(raw[3],"D0 diagnostic seed")==row.panel_source_seed,table.rows)
+    length(hits)==1||error("D0F source diagnostic is not exactly one frozen D0 row")
+    _validate_d0f_diagnostic_row(_dict(table,only(hits)),row,packet)
+end
+function _validate_d0f_diagnostic_row(d,row,packet)
+    d["cell_id"]==row.source_cell_id&&_int(d["seed"],"D0 diagnostic seed")==row.panel_source_seed&&_int(d["cell_index"],"D0 diagnostic cell index") in 1:9||error("D0F source diagnostic identity drift")
+    _int(d["n"],"D0 diagnostic n")==row.n&&_int(d["m"],"D0 diagnostic m")==row.m&&_float(d["truth_ratio"],"D0 diagnostic truth ratio")==row.truth_ratio&&_int(d["retained_m"],"D0 diagnostic retained_m")==row.retained_m&&_float(d["ridge"],"D0 diagnostic ridge")==row.ridge||error("D0F source diagnostic scientific contract drift")
+    for field in (:marker_hash,:id_hash,:kernel_hash,:precision_hash)
+        value=d[string(field)];_hex(value)&&getproperty(row,field)==value&&getproperty(packet,field)==value||error("D0F fixed-panel $field drift")
+    end
     nothing
 end
 
 function replay_one(root,stage,group,seed)
     root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath)
-    isdir(joinpath(root,"base_r_recompute"))&&_base_r_tree(root,stage,manifest);_validate_preseal_tree(root,stage;postrun=true,replay=isdir(joinpath(root,"julia_replay")))
     row=_find_manifest(manifest,stage,group,seed);outpath=_replay_path(root,stage,row);(ispath(outpath)||ispath(outpath*".sha256"))&&error("create-once replay exists")
     preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath);packet=_packet(root,stage,row,preseal,preseal_sha);stage=="d0f"&&_validate_d0f_source(d0root,row,packet)
     attempt=_read_attempt(root,stage,row,preseal,preseal_sha,packet);replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay);isfinite(diff)&&diff<=1e-10||error("official route and Julia replay differ beyond 1e-10")
     replay=merge(replay,(r_implementation_commit=preseal["r_auto_route_commit"],julia_implementation_commit=preseal["julia_candidate_commit"],driver_commit=preseal["julia_replay_commit"],preseal_sha256=preseal_sha))
     common=merge(_manifest_values(row,stage),replay,(source_r_attempt_sha256=_sha256(attempt.path),source_r_max_abs_difference=diff,replay_julia_commit=preseal["julia_replay_commit"],replay_driver_sha256=_sha256(abspath(@__FILE__)),manifest_sha256=_sha256(mpath),preseal_sha256=preseal_sha,corpus_lock_sha256=corpus_sha))
     columns=_replay_columns(stage)
-    _write_once(outpath,_table_text(columns,[common]));_replay_tree(root,stage,manifest;complete=false);_validate_preseal_tree(root,stage;postrun=true,replay=true)
+    _write_once(outpath,_table_text(columns,[common]));_verify_pair(root,outpath)
     println("wrote Julia $stage replay $group/$seed source_max_abs_difference=$(_format(diff))")
 end
 
@@ -651,6 +660,14 @@ function _read_replays(root,stage,manifest,preseal,mpath,ppath,cpath,d0root)
         push!(rows,merge(parsed,(manifest=mr,dict=d,path=path)))
     end
     length(rows)==length(manifest)||error("replay denominator drift");rows
+end
+
+function verify_replay(root,stage)
+    root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath)
+    _verify_replay_tree_quiescent(root,stage,manifest);_validate_preseal_tree(root,stage;postrun=true,replay=true)
+    rows=_read_replays(root,stage,manifest,preseal,mpath,ppath,cpath,d0root)
+    println("verified complete quiescent Julia $stage replay rows=$(length(rows))")
+    rows
 end
 
 function _external_indices(path,expected,columns)
@@ -744,7 +761,7 @@ function _d1_summary(rows)
 end
 
 function summarize(root,stage;bootstrap=nothing)
-    root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath);_replay_tree(root,stage,manifest)
+    root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath);_verify_replay_tree_quiescent(root,stage,manifest)
     isdir(joinpath(root,"base_r_recompute"))||error("Julia summary requires complete base_r_recompute")
     _base_r_tree(root,stage,manifest);_verify_pair(root,joinpath(root,"$(stage)_summary_r.tsv"));_validate_preseal_tree(root,stage;postrun=true,replay=true)
     rows=_read_replays(root,stage,manifest,preseal,mpath,ppath,cpath,d0root)
@@ -859,6 +876,9 @@ function selftest()
     _must_fail("D0F full typed R parity mutation") do;x=copy(d0f_summary);x[1]=merge(x[1],(variance_between=x[1].variance_between+1e-4,));_verify_full_r_d0f_parity(x);end
     C=D0Support._helmert(8);M=[Float64(mod(i+j,3)) for i in 1:8,j in 1:12];ids=[@sprintf("g%06d",i) for i in 1:8];p=vec(sum(M,dims=1))./16;W=M.-2 .* transpose(p);k=2sum(p.*(1 .- p));K=(W*transpose(W))./k+RIDGE*I;Q=Matrix(inv(Symmetric(K)));s=D0Support._spectral(Matrix(K),C)
     packet=(M=M,ids=ids,names=[@sprintf("m%06d",j) for j in 1:12],y=[-1.2,.2,.8,-.4,1.1,-.7,.5,-.3],k=k,K=Matrix(K),Q=Q,retained_m=12,marker_hash=D0Support._marker_hash(M,ids,[@sprintf("m%06d",j) for j in 1:12]),id_hash=D0Support._id_hash(ids),kernel_hash=D0Support._matrix_hash("K_lambda",K,ids),precision_hash=D0Support._matrix_hash("Q_lambda",Q,ids),spectrum=s)
+    d0row=merge(d0f[1],(retained_m=packet.retained_m,marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash))
+    diagnostic=Dict("cell_id"=>d0row.source_cell_id,"cell_index"=>"2","seed"=>string(d0row.panel_source_seed),"n"=>string(d0row.n),"m"=>string(d0row.m),"truth_ratio"=>_format(d0row.truth_ratio),"retained_m"=>string(d0row.retained_m),"ridge"=>_format(d0row.ridge),"marker_hash"=>d0row.marker_hash,"id_hash"=>d0row.id_hash,"kernel_hash"=>d0row.kernel_hash,"precision_hash"=>d0row.precision_hash)
+    _validate_d0f_diagnostic_row(diagnostic,d0row,packet);_must_fail("D0F frozen diagnostic packet hash") do;x=copy(diagnostic);x["precision_hash"]=repeat("0",64);_validate_d0f_diagnostic_row(x,d0row,packet);end
     replay=_profile_replay(d1[1],packet);replay.route==REPLAY_ROUTE&&replay.relationship_method=="vanraden1"||error("profile replay selftest")
     parity=NamedTuple[]
     for mr in d1
@@ -930,6 +950,17 @@ function selftest()
         base_r=joinpath(stage_root,"base_r_recompute");mkdir(base_r);_write_once(joinpath(base_r,"member.tsv"),"x\n");_write_once(joinpath(stage_root,"d1_summary_julia.tsv"),"x\n")
         _validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true);_must_fail("final admission disabled without adjudicator") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true,final=true);end
         _write_once(joinpath(stage_root,"stage_adjudication_receipt.tsv"),"x\n");_must_fail("arbitrary adjudication receipt") do;_validate_preseal_tree(stage_root,"d1";postrun=true,replay=true,summary=true,final=true);end
+        operational=joinpath(root,"operational");mkdir(operational);oprow=d1[1];op_preseal=joinpath(operational,"stage_preseal.tsv");op_manifest=joinpath(operational,"d1_manifest.tsv");_write_once(op_preseal,"preseal\n");_write_once(op_manifest,"manifest\n")
+        op_attempt=_attempt_path(operational,"d1",oprow);_write_once(op_attempt,"attempt\n");op_packet=_packet_dir(operational,"d1",oprow)
+        for name in PACKET_PRIMARIES;_write_once(joinpath(op_packet,name),"$name\n");end
+        locked=vcat([op_preseal,op_manifest,op_attempt],joinpath.(Ref(op_packet),PACKET_PRIMARIES));lock_rows=sort([(relative_path=relpath(path,operational),sha256=_sha256(path)) for path in locked];by=x->x.relative_path);_write_once(joinpath(operational,"stage_corpus_lock.tsv"),_table_text(CORPUS_COLUMNS,lock_rows));_corpus_lock(operational,"d1",[oprow],op_preseal)
+        open(joinpath(op_packet,"markers.tsv"),"w") do io;write(io,"mutated packet\n");end;_must_fail("operational corpus packet mutation") do;_corpus_lock(operational,"d1",[oprow],op_preseal);end
+        quiescent=joinpath(root,"quiescent-replay");mkdir(quiescent);quiescent_rows=d1[1:2];for row in quiescent_rows;_write_once(_replay_path(quiescent,"d1",row),"replay\n");end
+        own_pair=_replay_path(quiescent,"d1",quiescent_rows[1]);inflight=joinpath(quiescent,"julia_replay","d1","other-worker");mkdir(inflight);write(joinpath(inflight,"primary-without-sidecar.tsv"),"in flight\n");_verify_pair(quiescent,own_pair)
+        _must_fail("quiescent in-flight replay window") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end;rm(inflight;recursive=true)
+        _verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows)
+        unexpected=joinpath(quiescent,"julia_replay","unexpected.tsv");_write_once(unexpected,"unexpected\n");_must_fail("quiescent unexpected replay member") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end;rm(unexpected);rm(unexpected*".sha256")
+        empty=joinpath(quiescent,"julia_replay","empty");mkdir(empty);_must_fail("quiescent empty replay directory") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end
         repo=joinpath(root,"repo");mkdir(repo);run(Cmd(["git","-C",repo,"init","--quiet"]));run(Cmd(["git","-C",repo,"config","user.email","synthetic@example.invalid"]));run(Cmd(["git","-C",repo,"config","user.name","synthetic"]));mkdir(joinpath(repo,"src"));mkdir(joinpath(repo,"ext"));mkdir(joinpath(repo,"R"));engine=joinpath(repo,"src","engine.jl");write(engine,"engine v1\n");write(joinpath(repo,"ext","extension.jl"),"extension v1\n");write(joinpath(repo,"R","surface.R"),"surface v1\n");write(joinpath(repo,"Project.toml"),"name = \"Synthetic\"\n");write(joinpath(repo,"Manifest.toml"),"manifest_format = \"2.0\"\n");write(joinpath(repo,"DESCRIPTION"),"Package: synthetic\n");write(joinpath(repo,"NAMESPACE"),"exportPattern(\"^[^.]\")\n");tool=joinpath(repo,"replay.jl");_write_once(tool,"replay v1\n");run(Cmd(["git","-C",repo,"add","src","ext","R","Project.toml","Manifest.toml","DESCRIPTION","NAMESPACE","replay.jl","replay.jl.sha256"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","candidate"]));candidate=_git(repo,"rev-parse","HEAD")
         note=joinpath(repo,"replay-note.txt");write(note,"replay layer\n");run(Cmd(["git","-C",repo,"add","replay-note.txt"]));run(Cmd(["git","-C",repo,"commit","--quiet","-m","replay"]));replay_commit=_git(repo,"rev-parse","HEAD");tool_hash=_sha256(tool)
         _require_ancestor(repo,candidate,replay_commit,"synthetic candidate");_must_fail("reversed candidate ancestry") do;_require_ancestor(repo,replay_commit,candidate,"synthetic candidate");end
@@ -953,12 +984,14 @@ function main(args=ARGS)
     if mode=="replay"
         group=_required(args,stage=="d0f" ? "design" : "cell");seed=parse(Int,_required(args,"seed"))
         replay_one(root,stage,group,seed)
+    elseif mode=="verify-replay"
+        verify_replay(root,stage)
     elseif mode=="summarize"
         summarize(root,stage;bootstrap=_option(args,"bootstrap-indices"))
     elseif mode=="validate-final"
         validate_final(root,stage)
     else
-        error("--mode must be replay, summarize, validate-final, or selftest")
+        error("--mode must be replay, verify-replay, summarize, validate-final, or selftest")
     end
 end
 
