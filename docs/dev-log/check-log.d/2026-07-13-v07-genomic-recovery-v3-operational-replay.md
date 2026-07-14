@@ -27,6 +27,11 @@ Date: 2026-07-13
 - Direct-execution mutations prove Totoro and a numeric-job DRAC allocation are
   admitted while login-node, malformed-job, GitHub Actions, and generic-CI
   contexts are rejected.
+- Clean Totoro deployment exposed R 4.5.3 versus local R 4.6.0 raw D0F fixture
+  hash drift. A direct diff localized it to last-bit bootstrap quantile/SD
+  serialization (maximum far below `1e-10`); all schemas and typed fields agree.
+  Generated fixture hashes are now descriptive, while presealed R tool hashes
+  and typed exact/`1e-10` parity remain mandatory.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no sim/phase2_v07_genomic_recovery_v3_stage_replay.jl --mode=selftest`:
   PASS; no official RNG or seed consumed.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no -e 'using Pkg; Pkg.test()'`:
@@ -34,6 +39,6 @@ Date: 2026-07-13
 - `git diff --check`: PASS.
 - Independent Grace re-review after the concurrency repair: `CLEAN`.
 - Final tool SHA-256 before commit:
-  `f2676c33df0c648bc3f153c40d296eddf73e269ef497fc87620f2df3d5647411`.
+  `c8b4d2ceb4c01f807efa610002763fc1f5416c35a666427975a7f7972a3b0826`.
 - Boundary: no official phenotype, fit, replay row, summary, adjudication,
   recovery claim, activation, capability move, or count change was produced.

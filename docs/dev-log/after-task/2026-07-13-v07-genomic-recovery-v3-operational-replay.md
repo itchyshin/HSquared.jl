@@ -19,6 +19,9 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
 - Removed whole-mutable-tree scans from parallel workers and retained them at
   the post-fan-out verification boundary.
 - Added the exact tool SHA-256 sidecar required by deployment admission.
+- Replaced platform-fragile raw hashes of generated R parity fixtures with the
+  existing typed exact/`1e-10` field comparison, while retaining exact hashes
+  for the presealed R tool bytes.
 
 ## 3a. Decisions and Rejected Alternatives
 
@@ -61,6 +64,7 @@ pair.
 | Julia expected the pure preseal helper at the operational recomputer slot | Fixed to bind the deployed independent recomputer. |
 | Final adjudication ownership | Operational R adjudicator owns the final receipt; Julia final mode stays explicitly R-owned. |
 | Direct replay could bypass launcher compute guards | Added the same Totoro/live-SLURM and no-CI guard inside the Julia tool. |
+| R 4.5/4.6 generated fixture bytes differed at last-bit quantiles | Kept exact schema/tool binding and typed semantic parity; raw generated hash is descriptive. |
 
 ## 8. Consistency Audit
 

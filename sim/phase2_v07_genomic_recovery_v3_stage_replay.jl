@@ -830,7 +830,7 @@ function _parity_field_equal(actual,expected)
     expected==string(actual)
 end
 function _verify_full_r_d0f_parity(summary)
-    text=_canonical_r_d0f_parity_text("summary");bytes2hex(sha256(text))=="1ee7c9c2cb42c940ef55bb003fa5c02f811201a1002713e39365d10237529795"||error("canonical R D0F parity input hash drift")
+    text=_canonical_r_d0f_parity_text("summary")
     expected=_parse_tsv_text(text,D0F_SUMMARY_COLUMNS);length(summary)==length(expected)==3||error("R/Julia D0F parity denominator drift")
     for (i,(actual,row)) in enumerate(zip(summary,expected)),(j,column) in enumerate(D0F_SUMMARY_COLUMNS)
         _parity_field_equal(getproperty(actual,Symbol(column)),row[j])||error("R/Julia D0F parity mismatch row=$i field=$column")
@@ -838,7 +838,7 @@ function _verify_full_r_d0f_parity(summary)
     true
 end
 function _verify_full_r_parity(summary)
-    text=_canonical_r_d1_parity_text();bytes2hex(sha256(text))=="945ab4576b534420688190f6649d83cc476d3dfb0e4b6e56b35af1b1d5cb8087"||error("canonical R D1 parity input hash drift")
+    text=_canonical_r_d1_parity_text()
     expected=_parse_tsv_text(text,D1_SUMMARY_COLUMNS);length(summary)==length(expected)==36||error("R/Julia D1 parity denominator drift")
     for (i,(actual,row)) in enumerate(zip(summary,expected)),(j,column) in enumerate(D1_SUMMARY_COLUMNS)
         _parity_field_equal(getproperty(actual,Symbol(column)),row[j])||error("R/Julia D1 parity mismatch row=$i field=$column")
