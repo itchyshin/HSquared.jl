@@ -24,7 +24,7 @@ The sealed offset-7101 adjudicator did not mint a receipt: its R driver compared
 `FALSE` in memory with the lower-case TSV text `false` as different strings.
 The three persisted summaries agree numerically; Julia differs from driver R by
 at most `3.33e-16`, below the frozen `1e-10` tolerance. The offset-7101 root remains
-immutable and unadjudicated. No confirmation manifest exists, offsets
+hash-locked, logically frozen, retired, and unadjudicated. No confirmation manifest exists, offsets
 7101:7148 are retired, and offsets 7201:7248 are reserved for a separately
 admitted future design only.
 

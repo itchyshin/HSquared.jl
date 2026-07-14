@@ -460,7 +460,7 @@ function _preseal(root,stage,manifest,manifest_path)
     r_surfaces=joinpath.(Ref(rroot),["R","DESCRIPTION","NAMESPACE"])
     _require_git_unchanged(rroot,p["r_auto_route_commit"],p["r_driver_commit"],r_surfaces,"R auto-route implementation")
     _require_git_clean(rroot,"R bound implementation")
-    if stage=="d1"&&get(ENV,"V3D_D0F_PREDECESSOR_VALIDATED_SHA256","")!=p["d0f_adjudication_receipt_sha256"]
+    if stage=="d1"
         _validate_d0f_final_tree(r_recomputer_path,p["d0f_adjudication_root"])
     end
     external_doc=joinpath(rroot,"docs","design","49-v07-genomic-recovery-v3-sample-size-ladder.md");_sha256(external_doc)==p["doc49_sha256"]||error("stage doc49 copy differs from deployed R repo")

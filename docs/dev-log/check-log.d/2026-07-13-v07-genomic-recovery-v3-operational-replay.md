@@ -62,9 +62,9 @@ Date: 2026-07-13
   D0F root. A valid synthetic predecessor passes.
 - A second Rose/Fisher/Noether review found that receipt syntax was still
   insufficient: a forged receipt-only root passed. The Julia preseal now calls
-  the sibling operational R exact final-tree validator unless the official
-  launcher has just validated that same preseal-bound receipt hash. A forged
-  receipt-only root is a direct red mutation.
+  the sibling operational R exact final-tree validator for every D1 worker. A
+  forged receipt-only root is a direct red mutation; no caller-controlled
+  attestation shortcut is accepted.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no sim/phase2_v07_genomic_recovery_v3_stage_replay.jl --mode=selftest`:
   PASS; no official RNG or seed consumed.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no -e 'using Pkg; Pkg.test()'`:
@@ -78,7 +78,7 @@ Date: 2026-07-13
 - The earlier Fisher/Noether/Hopper receipts were invalidated by the schema-2
   repair; five fresh reviews are required on the new exact commits.
 - Current pre-commit tool SHA-256:
-  `bfbf0692fd19c1bfe79e23bfb6212a1288ecd99425467f2b9dff764141f169ff`.
+  `8aac6c50775fcb0f5ebcd15235b2d2979bc2ac50a7b7006165342f8208d9d7de`.
 - Boundary: this repair consumed no seed. The failed root contains official R
   D0F output but no admitted Julia replay or adjudication; it remains hash-locked,
   retired, and unadjudicated. No recovery claim, activation, capability move, or count

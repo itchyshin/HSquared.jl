@@ -79,7 +79,7 @@ D0F root.
 | R 4.5/4.6 generated fixture bytes differed at last-bit quantiles | Kept exact schema/tool binding and typed semantic parity; raw generated hash is descriptive. |
 | D0F fixed-panel validator expected one phenotype-manifest row per panel | Fixed to require eight unique ranks with common panel fields/fingerprints, then select rank 1 as the canonical representative. The old root stays hash-locked, retired, and unadjudicated. |
 | D1 sequencing existed only in prose | Stage-preseal schema 2 now requires an exact external D0F PASS/COMPLETE adjudication receipt before D1 preparation or preseal. |
-| A forged receipt-only predecessor passed schema-2 syntax checks | Julia now delegates to the sibling R exact final-tree validator unless the official launcher has just attested the same bound receipt hash; the receipt-only mutation is red. |
+| A forged receipt-only predecessor passed schema-2 syntax checks | Every Julia D1 worker now delegates to the sibling R exact final-tree validator; the receipt-only mutation is red and no caller-controlled attestation shortcut exists. |
 
 ## 8. Consistency Audit
 
