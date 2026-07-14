@@ -38,7 +38,7 @@ Date: 2026-07-13
   validator now requires exactly the unique phenotype ranks `1:8`, verifies
   every panel-level field and fingerprint is common across the eight rows, and
   selects rank 1 only as the canonical 72-row comparison representative.
-- The failed D0F root remains immutable and unadjudicated. The fresh retry uses
+- The failed D0F root remains hash-locked, retired, and unadjudicated. The fresh retry uses
   the newly frozen Julia phenotype-seed base `2032000000`; Julia contains no
   bootstrap-seed generator and consumes the R-presealed bootstrap-index
   manifest, whose fresh R base is `2033000000`. The cross-twin synthetic
@@ -58,8 +58,13 @@ Date: 2026-07-13
   greater than `1e-10`, complete provenance, and canonical post-run reviews.
   D0F records the new predecessor fields as `NA`.
 - Mutation controls make the D1 gate red for a non-COMPLETE predecessor,
-  changed receipt hash, nested predecessor root, or the known immutable blocked
+  changed receipt hash, nested predecessor root, or the known hash-locked retired
   D0F root. A valid synthetic predecessor passes.
+- A second Rose/Fisher/Noether review found that receipt syntax was still
+  insufficient: a forged receipt-only root passed. The Julia preseal now calls
+  the sibling operational R exact final-tree validator unless the official
+  launcher has just validated that same preseal-bound receipt hash. A forged
+  receipt-only root is a direct red mutation.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no sim/phase2_v07_genomic_recovery_v3_stage_replay.jl --mode=selftest`:
   PASS; no official RNG or seed consumed.
 - `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 ~/.juliaup/bin/julia --project=. --startup-file=no -e 'using Pkg; Pkg.test()'`:
@@ -73,8 +78,8 @@ Date: 2026-07-13
 - The earlier Fisher/Noether/Hopper receipts were invalidated by the schema-2
   repair; five fresh reviews are required on the new exact commits.
 - Current pre-commit tool SHA-256:
-  `73f5cb44b85ff3cf60d4b87767d284ff345317a79ecd3c7a8fc86664ce25fc94`.
+  `bfbf0692fd19c1bfe79e23bfb6212a1288ecd99425467f2b9dff764141f169ff`.
 - Boundary: this repair consumed no seed. The failed root contains official R
-  D0F output but no admitted Julia replay or adjudication; it remains immutable
-  and unadjudicated. No recovery claim, activation, capability move, or count
+  D0F output but no admitted Julia replay or adjudication; it remains hash-locked,
+  retired, and unadjudicated. No recovery claim, activation, capability move, or count
   change was produced.

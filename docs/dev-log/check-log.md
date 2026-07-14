@@ -5287,7 +5287,7 @@ Newest entries go at the top.
 - The first official D0F Julia replay failed closed before producing a row:
   the 576-row phenotype manifest has eight rows per fixed panel, but the
   validator's `only()` filter omitted phenotype rank. The old root remains
-  immutable and unadjudicated.
+  hash-locked, retired, and unadjudicated.
 - The repaired validator requires exact ranks `1:8` plus common fixed-panel
   fields/fingerprints before canonical rank-1 projection. The fresh D0F seed
   base is `2032000000`, and the cross-twin bootstrap fixture now binds the

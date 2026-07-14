@@ -6,7 +6,7 @@ The first official D0F corpus is complete on the R side but permanently
 **unadjudicated**. It is a `REPLAY_INFRASTRUCTURE_BLOCKER`, not recovery
 evidence and not a negative estimator result.
 
-## Immutable blocked corpus
+## Hash-locked retired corpus
 
 - Totoro root: `/home/snakagaw/hsq_work/v07-genomic-recovery-v3-d0f-official-0a9d882-1a538212`
 - Official R attempts and base-R recomputations: 576/576 each.
@@ -21,6 +21,8 @@ The replay preflight called `only()` on the eight phenotype rows belonging to
 each fixed panel and stopped before inspecting or writing a replay estimate.
 Because the old preseal binds those exact broken bytes, no repaired post-hoc
 replay can admit that corpus.
+The Totoro filesystem remains writable; the recorded exact hashes provide
+tamper detection, and the root is logically frozen and never reused.
 
 ## Prospective repair
 
@@ -42,7 +44,9 @@ hash-bound Fisher/Noether/Hopper/Grace/Rose receipts must pass, and a new root
 and preseal must be minted. The first review set was invalidated after Fisher
 found that D1 sequencing was prose-only. Stage-preseal schema 2 now requires
 D1 to bind the exact receipt of an external fresh-D0F `PASS`/`COMPLETE`
-adjudication; the known blocked root and nested roots are rejected. Five fresh
-exact-commit reviews remain required. No recovery, activation, capability move,
+adjudication; the known blocked root and nested roots are rejected. The exact
+operational final-tree validator—not receipt syntax alone—must admit the D0F
+predecessor before D1 fan-out. Five fresh exact-commit reviews remain required.
+No recovery, activation, capability move,
 G10, release, or count change follows from this checkpoint;
 `public_covered_count` remains 5.

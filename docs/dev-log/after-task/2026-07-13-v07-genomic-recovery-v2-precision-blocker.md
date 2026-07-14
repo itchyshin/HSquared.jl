@@ -53,7 +53,7 @@ and prevented confirmation.
 | Issue | Disposition |
 | --- | --- |
 | Lower-case Boolean serialization blocked adjudication | R comparators repaired and mutation-tested. |
-| Old root sealed to defective driver | Preserved immutable; no post-hoc receipt. |
+| Old root sealed to defective driver | Preserved hash-locked and retired; no post-hoc receipt. |
 | Five cells require N above 2,000 | Campaign-wide precision blocker; no confirmation. |
 | Stale Julia status said pilot had not run | Corrected across ROADMAP, manual, capability, and validation debt. |
 

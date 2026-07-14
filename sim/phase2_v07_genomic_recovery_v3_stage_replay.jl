@@ -381,6 +381,12 @@ function _validate_d0f_predecessor(stage_root,p)
     end
     nothing
 end
+function _validate_d0f_final_tree(r_recomputer_path,d0froot)
+    expression="args <- commandArgs(TRUE); source(args[[1L]], local=.GlobalEnv); v3r_validate_final(args[[2L]], 'd0f')"
+    cmd=Cmd(["Rscript","--vanilla","-e",expression,r_recomputer_path,d0froot])
+    success(pipeline(cmd,stdout=devnull,stderr=devnull))||error("fresh D0F exact final-tree validation failed")
+    nothing
+end
 function _preseal_input_files(stage)
     names=["doc49.md","cell_table.tsv","historical_seed_lock.tsv","$(stage)_manifest.tsv","environment_manifest.tsv","stage_preseal.tsv"]
     stage=="d0f"&&append!(names,["d0f_fixed_panel_manifest.tsv","d0f_bootstrap_indices.tsv"])
@@ -454,6 +460,9 @@ function _preseal(root,stage,manifest,manifest_path)
     r_surfaces=joinpath.(Ref(rroot),["R","DESCRIPTION","NAMESPACE"])
     _require_git_unchanged(rroot,p["r_auto_route_commit"],p["r_driver_commit"],r_surfaces,"R auto-route implementation")
     _require_git_clean(rroot,"R bound implementation")
+    if stage=="d1"&&get(ENV,"V3D_D0F_PREDECESSOR_VALIDATED_SHA256","")!=p["d0f_adjudication_receipt_sha256"]
+        _validate_d0f_final_tree(r_recomputer_path,p["d0f_adjudication_root"])
+    end
     external_doc=joinpath(rroot,"docs","design","49-v07-genomic-recovery-v3-sample-size-ladder.md");_sha256(external_doc)==p["doc49_sha256"]||error("stage doc49 copy differs from deployed R repo")
     _sha256(joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv"))==p["cell_table_sha256"]||error("stage cell table differs from deployed R repo")
     _sha256(joinpath(rroot,"docs","design","historical_seed_lock.tsv"))==p["historical_seed_lock_sha256"]||error("stage historical seed lock differs from deployed R repo")
@@ -1014,6 +1023,8 @@ function selftest()
         end
         d1stage=joinpath(root,"d1-stage");mkdir(d1stage);valid_pred=synthetic_d0f_predecessor("d0f-predecessor")
         _validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>valid_pred.root,"d0f_adjudication_receipt_sha256"=>valid_pred.sha))
+        r_recomputer=joinpath(rroot,"tools",R_RECOMPUTER_BASENAME)
+        _must_fail("forged receipt-only D0F predecessor") do;_validate_d0f_final_tree(r_recomputer,valid_pred.root);end
         failed_pred=synthetic_d0f_predecessor("d0f-failed";decision="D0F_FIT_BLOCKER")
         _must_fail("non-COMPLETE D0F predecessor") do;_validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>failed_pred.root,"d0f_adjudication_receipt_sha256"=>failed_pred.sha));end
         _must_fail("wrong D0F predecessor hash") do;_validate_d0f_predecessor(d1stage,Dict("d0f_adjudication_root"=>valid_pred.root,"d0f_adjudication_receipt_sha256"=>repeat("0",64)));end

@@ -26,7 +26,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-13
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- The first official D0F root is immutable and unadjudicated: its R output was
+- The first official D0F root is hash-locked, retired, and unadjudicated: its R output was
   generated, but Julia replay admission found that the 576-row phenotype
   manifest was projected to 72 fixed panels without selecting one of the eight
   phenotype ranks. No Julia replay row was admitted. The repaired validator now

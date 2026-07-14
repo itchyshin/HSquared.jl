@@ -25,7 +25,7 @@ forthcoming parallel D0F/D1 corpus without consuming an official seed.
 - Repaired the live D0F fixed-panel projection to validate all eight phenotype
   rows per panel before selecting phenotype rank 1 as the panel-level
   representative. The fresh retry uses phenotype seed base `2032000000`; the
-  failed root remains immutable and unadjudicated.
+  failed root remains hash-locked, retired, and unadjudicated.
 - Upgraded the stage-preseal schema so D1 is mechanically impossible without a
   hash-bound, external D0F adjudication receipt that says `PASS` and
   `COMPLETE`; merely documenting the dependency is no longer sufficient.
@@ -77,8 +77,9 @@ D0F root.
 | Final adjudication ownership | Operational R adjudicator owns the final receipt; Julia final mode stays explicitly R-owned. |
 | Direct replay could bypass launcher compute guards | Added the same Totoro/live-SLURM and no-CI guard inside the Julia tool. |
 | R 4.5/4.6 generated fixture bytes differed at last-bit quantiles | Kept exact schema/tool binding and typed semantic parity; raw generated hash is descriptive. |
-| D0F fixed-panel validator expected one phenotype-manifest row per panel | Fixed to require eight unique ranks with common panel fields/fingerprints, then select rank 1 as the canonical representative. The old root stays immutable and unadjudicated. |
+| D0F fixed-panel validator expected one phenotype-manifest row per panel | Fixed to require eight unique ranks with common panel fields/fingerprints, then select rank 1 as the canonical representative. The old root stays hash-locked, retired, and unadjudicated. |
 | D1 sequencing existed only in prose | Stage-preseal schema 2 now requires an exact external D0F PASS/COMPLETE adjudication receipt before D1 preparation or preseal. |
+| A forged receipt-only predecessor passed schema-2 syntax checks | Julia now delegates to the sibling R exact final-tree validator unless the official launcher has just attested the same bound receipt hash; the receipt-only mutation is red. |
 
 ## 8. Consistency Audit
 
@@ -101,7 +102,7 @@ The first operational implementation inherited an obsolete D0 layout
 assumption. A later ordinary-green worker implementation also contained a real
 parallel race that only an adversarial interleaving review exposed. The first
 live D0F replay then exposed a missing phenotype-rank discriminator in the
-fixed-panel projection. The failed root is retained as immutable,
+fixed-panel projection. The failed root is retained as hash-locked and retired,
 unadjudicated evidence; the repair is bound to a fresh seed base rather than
 silently changing that root. The first post-reseed selftest then correctly
 turned red on the old cross-twin bootstrap-manifest hash; Julia now pins the
@@ -112,7 +113,7 @@ must receive five new exact-commit reviews.
 
 ## 10. Known Residuals
 
-- The first official D0F root contains R output but is immutable and
+- The first official D0F root contains R output but is hash-locked, retired, and
   unadjudicated because the Julia replay admission failed before any replay row
   was accepted. A fresh D0F retry is required under the new seed base.
 - D1 and D2-D4 remain conditional on a clean fresh D0F adjudication.
