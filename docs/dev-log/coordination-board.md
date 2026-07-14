@@ -1135,6 +1135,18 @@ heritability interval, and a high-condition dense-inverse stress test. R-lane
 activation (model-specs, bridge targets, the dead R extractor fields) remains a
 JOINT contract task per AGENTS.md rule 2.
 
+## 2026-07-14 — Codex paused; Claude owns the next sequential turn
+
+- Platform order remains sequential. Codex stopped on Shinichi's explicit
+  token-limit request; Claude may now resume both the R and Julia lanes.
+- Active branch in both repos:
+  `codex/2026-07-13-v07-performance-localization`.
+- Landed heads: R `120d04d` / draft PR #137; Julia `9d1527e9` / draft PR #274.
+- Carried over: four-file R prospective downstream amendment; one untracked
+  Julia numerical replay scaffold; live 16-worker Totoro D0F recomputation.
+- No capability/count change, no activation merge, and no D1/D2 seed.
+- Start at `docs/dev-log/handover/2026-07-14-claude-handover.md`.
+
 ## Sister References
 
 - `DRM.jl`: Julia twin discipline, DocumenterVitepress structure, bridge

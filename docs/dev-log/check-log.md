@@ -5298,3 +5298,21 @@ Newest entries go at the top.
 - No fresh seed, replay result, recovery claim, activation, capability/count
   move, or GitHub Actions campaign occurred. Full checkpoint:
   `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-replay-infrastructure-blocker.md`.
+
+## 2026-07-14 — v0.7 genomic activation pause and Claude handoff
+
+- Julia branch `codex/2026-07-13-v07-performance-localization` is pushed at
+  `9d1527e9`; PR #274 has green Julia 1.10/current and Documenter checks.
+- R twin branch is pushed at `120d04d`; PR #137 R-CMD-check run 29329417997
+  is green. The landed downstream contract self-test and 80 focused assertions
+  pass.
+- Prospective R amendment remains carried over uncommitted. Tool SHA
+  `556956873cdd3f2dcd7b5a022a518d021b8dd2edd553f5e0dff6505d5aeb23c6`;
+  self-test plus 93 focused assertions pass. Final Noether/Hopper/Fisher review
+  was interrupted and must be rerun before landing.
+- Fresh D0F official fits are 576/576 complete. At 05:58 MDT the live Totoro
+  base-R recomputation had 432/576 primaries, 432/576 sidecars, zero partials,
+  and 16 workers. D0F remains unadjudicated; no D1/D2 seed was consumed.
+- `handoff_gate.sh` returned nonzero as expected because the R amendment and
+  Julia numerical replay scaffold are explicitly `CARRIED-OVER` in
+  `docs/dev-log/handover/2026-07-14-claude-handover.md`.
