@@ -16,12 +16,13 @@ module D0Support
 include(joinpath(@__DIR__, "phase2_v07_genomic_recovery_v3_spectral_replay.jl"))
 end
 
-const SCHEMA = "v07-genomic-recovery-v3-stage-preseal-2"
+const SCHEMA = "v07-genomic-recovery-v3-stage-preseal-3"
 const PACKET_SCHEMA = "v07-genomic-recovery-v3-packet-1"
 const TRUTH_SCHEMA = "v07-genomic-recovery-v3-truth-1"
 const RIDGE = 0.01
 const BOUNDARY_EPSILON = 1e-7
 const KKT_TOLERANCE = 1e-8
+const COMPONENT_RATIO_TOLERANCE = 1e-12
 const REPLAY_ROUTE = "julia_profile_replay"
 const R_RECOMPUTER_BASENAME = "v07_genomic_recovery_v3_recompute.R"
 const R_D0_RECOMPUTER_BASENAME = "v07_genomic_recovery_v3_d0_recompute.R"
@@ -44,8 +45,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
-const D0F_PHENOTYPE_SEED_BASE = 2_036_000_000
-const D0F_PARITY_BOOTSTRAP_SHA256 = "e5649184fcee3749203207deb82f20de9fba7183e6a029396ee385c2656975ef"
+const D0F_PHENOTYPE_SEED_BASE = 2_038_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "0bd4293d14c76df136432ad098df6145cffa67c53ea0649091b1aafe648eb5e9"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -59,7 +60,18 @@ const PACKET_PRIMARIES = ["markers.tsv","ids.tsv","phenotype.tsv","truth.tsv","p
 const CORPUS_COLUMNS = ["relative_path","sha256"]
 const BATCH_SCHEMA = "v07-genomic-recovery-v3-replay-batch-1"
 const BATCH_COLUMNS = split("schema_version stage batch_index batch_count manifest_rank group_id seed manifest_sha256 preseal_sha256 corpus_lock_sha256")
-const PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 d0f_adjudication_root d0f_adjudication_receipt_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_indices_sha256 fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
+const PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 d0f_adjudication_root d0f_adjudication_receipt_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_seed_base d0f_bootstrap_indices_absent_before_preseal fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
+const RETRY4_PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 d0f_adjudication_root d0f_adjudication_receipt_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_indices_sha256 fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
+const RETRY4_ROOT = "/home/snakagaw/hsq_work/v07-genomic-recovery-v3-d0f-retry-r4-83d19e8-e5d4a0aa"
+const RETRY4_PRESEAL_SHA256 = "3f49e658f1bd83cc4f4f1bd37f967b501d11c5b1c67a18bf1eb35ae02a31faca"
+const RETRY4_CORPUS_LOCK_SHA256 = "0aceb6853e8e7389218314d55218c05650b66594876d908ae140c6b72c67dafd"
+const RETRY4_PHENOTYPE_SEED_BASE = 2_036_000_000
+const RETRY4_PREFLIGHT_SEEDS = (
+    2_036_103_006, 2_036_103_008, 2_036_107_005, 2_036_108_001,
+    2_036_109_002, 2_036_113_007, 2_036_114_005, 2_036_115_002,
+    2_036_119_001, 2_036_119_002, 2_036_119_004, 2_036_120_002,
+    2_036_123_007, 2_036_101_001, 2_036_201_001, 2_036_301_001,
+)
 const CELL_TABLE_COLUMNS = split("cell_id cell_index n m marker_ratio marker_ratio_code truth_sigma_g2 truth_sigma_e2 truth_ratio ridge")
 const ENVIRONMENT_KEYS = split("stage host r_version r_rng_kind r_normal_kind r_sample_kind julia_version openblas_num_threads julia_num_threads max_workers")
 const REVIEWERS = ("fisher","noether","hopper","grace","rose")
@@ -284,14 +296,14 @@ function _manifest(root,stage;exact=true)
     rows,path
 end
 
-function _validate_manifest(rows,stage;cells=_cell_table())
+function _validate_manifest(rows,stage;cells=_cell_table(),d0f_seed_base=D0F_PHENOTYPE_SEED_BASE)
     length(rows)==576||error("$stage manifest must contain 576 rows")
     allunique((stage,r.seed) for r in rows)||error("duplicate manifest seed")
     if stage=="d0f"
         expected=Tuple[]
         for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
             source=2_027_120_000+10_000*d.source_index+7100+panel
-            seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
+            seed=d0f_seed_base+100_000*d.index+1000panel+rep
             push!(expected,(d.id,d.index,@sprintf("%s_p%02d",d.id,panel),panel,d.source_cell,source,rep,seed,d.n,d.m,d.marker_ratio))
         end
         observed=[(r.design_id,r.design_index,r.panel_id,r.panel_rank,r.source_cell_id,r.panel_source_seed,r.phenotype_rank,r.seed,r.n,r.m,r.marker_ratio) for r in rows]
@@ -448,10 +460,12 @@ function _preseal(root,stage,manifest,manifest_path)
     bindings=Dict("doc49_sha256"=>"doc49.md","cell_table_sha256"=>"cell_table.tsv","manifest_sha256"=>"$(stage)_manifest.tsv","environment_manifest_sha256"=>"environment_manifest.tsv","historical_seed_lock_sha256"=>"historical_seed_lock.tsv")
     for reviewer in REVIEWERS;bindings["$(reviewer)_receipt_sha256"]="receipts/$reviewer.tsv";end
     if stage=="d0f"
-        bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv";bindings["d0f_bootstrap_indices_sha256"]="d0f_bootstrap_indices.tsv"
+        bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv"
+        p["d0f_bootstrap_seed_base"]=="2039000000"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="true"||error("D0F bootstrap preseal contract drift")
+        _verify_pair(root,joinpath(root,"d0f_bootstrap_indices.tsv"))
         p["d0f_adjudication_root"]=="NA"&&p["d0f_adjudication_receipt_sha256"]=="NA"||error("D0F must not bind a D0F predecessor")
     else
-        p["d0f_fixed_panel_manifest_sha256"]=="NA"&&p["d0f_bootstrap_indices_sha256"]=="NA"||error("D1 must not bind D0F inputs")
+        p["d0f_fixed_panel_manifest_sha256"]=="NA"&&p["d0f_bootstrap_seed_base"]=="NA"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="NA"||error("D1 must not bind D0F inputs")
         _validate_d0f_predecessor(root,p)
     end
     for (key,name) in bindings;_sha256(_verify_pair(root,joinpath(root,name)))==p[key]||error("preseal primary binding drift: $key");end
@@ -540,6 +554,86 @@ function _corpus_digest_map(lock::TSV)
     paths=getindex.(lock.rows,1);allunique(paths)||error("duplicate corpus-lock member")
     all(r->length(r)==2&&!isempty(r[1])&&_hex(r[2]),lock.rows)||error("malformed corpus-lock digest row")
     Dict(r[1]=>r[2] for r in lock.rows)
+end
+
+function _immutable_tree_digest(root)
+    root=_safe_dir(root,"immutable diagnostic root")
+    rows=String[]
+    for (dir,dirs,files) in walkdir(root;follow_symlinks=false)
+        sort!(dirs);sort!(files)
+        for name in vcat(dirs,files)
+            path=joinpath(dir,name);islink(path)&&error("symlink in immutable diagnostic root: $path")
+            (isdir(path)||isfile(path))||error("special member in immutable diagnostic root: $path")
+        end
+        for name in files
+            path=joinpath(dir,name);isfile(path)&&realpath(path)==path||error("noncanonical diagnostic file: $path")
+            push!(rows,"$(relpath(path,root))\t$(filesize(path))\t$(_sha256(path))")
+        end
+    end
+    bytes2hex(sha256(join(rows,'\n')))
+end
+
+function _retry4_preseal(root,manifest,manifest_path)
+    root==RETRY4_ROOT||error("Retry-4 diagnostic preflight is pinned to the retired immutable root")
+    path=joinpath(root,"stage_preseal.tsv")
+    _sha256(_verify_pair(root,path))==RETRY4_PRESEAL_SHA256||error("Retry-4 preseal hash drift")
+    t=_read_tsv(root,path,["key","value"])
+    length(t.rows)==length(RETRY4_PRESEAL_KEYS)&&getindex.(t.rows,1)==RETRY4_PRESEAL_KEYS&&allunique(getindex.(t.rows,1))||error("Retry-4 preseal key/order drift")
+    p=Dict(r[1]=>r[2] for r in t.rows)
+    p["schema_version"]=="v07-genomic-recovery-v3-stage-preseal-2"&&p["stage"]=="d0f"&&p["output_root"]==root||error("Retry-4 preseal schema/stage/root drift")
+    p["official_route"]==PUBLIC_ROUTE&&p["replay_route"]==REPLAY_ROUTE&&p["packet_schema_version"]==PACKET_SCHEMA&&p["truth_schema_version"]==TRUTH_SCHEMA||error("Retry-4 route or packet/truth schema drift")
+    p["relationship_source"]=="markers"&&p["relationship_method"]=="vanraden1"&&p["allele_frequency_source"]=="sample"&&p["relationship_scale"]=="K_lambda"||error("Retry-4 relationship contract drift")
+    p["ridge"]=="0.01"&&p["boundary_epsilon"]=="1e-07"&&p["boundary_kkt_tolerance"]=="1e-08"&&p["output_subtrees_absent_before_preseal"]=="true"||error("Retry-4 numeric/preseal absence drift")
+    p["d0_output_root"]==D0_OFFICIAL_ROOT&&p["d0_adjudication_receipt_sha256"]==D0_RECEIPT_SHA256&&p["d0_diagnostics_sha256"]==D0_DIAGNOSTICS_SHA256||error("Retry-4 frozen D0 binding drift")
+    p["d0f_adjudication_root"]=="NA"&&p["d0f_adjudication_receipt_sha256"]=="NA"||error("Retry-4 predecessor drift")
+    d0root=_safe_dir(p["d0_output_root"],"Retry-4 D0 output root")
+    _verify_external_pair(joinpath(d0root,"receipt","d0-check-log.md"),D0_RECEIPT_SHA256)
+    _verify_external_pair(joinpath(d0root,D0_DIAGNOSTICS_RELATIVE_PATH),D0_DIAGNOSTICS_SHA256)
+    bindings=Dict(
+        "doc49_sha256"=>"doc49.md", "cell_table_sha256"=>"cell_table.tsv",
+        "manifest_sha256"=>"d0f_manifest.tsv", "environment_manifest_sha256"=>"environment_manifest.tsv",
+        "historical_seed_lock_sha256"=>"historical_seed_lock.tsv",
+        "d0f_fixed_panel_manifest_sha256"=>"d0f_fixed_panel_manifest.tsv",
+        "d0f_bootstrap_indices_sha256"=>"d0f_bootstrap_indices.tsv",
+    )
+    for reviewer in REVIEWERS;bindings["$(reviewer)_receipt_sha256"]="receipts/$reviewer.tsv";end
+    for (key,name) in bindings
+        _hex(p[key])&&_sha256(_verify_pair(root,joinpath(root,name)))==p[key]||error("Retry-4 preseal primary binding drift: $key")
+    end
+    _sha256(manifest_path)==p["manifest_sha256"]||error("Retry-4 manifest argument drift")
+    _validate_fixed_panels(root,joinpath(root,"d0f_fixed_panel_manifest.tsv"),manifest)
+    p,path,d0root
+end
+
+function retry5_mechanism_preflight(root)
+    root=_safe_dir(root,"Retry-4 diagnostic root")
+    root==RETRY4_ROOT||error("diagnostic mechanism preflight accepts only the retired Retry-4 root")
+    before=_immutable_tree_digest(root)
+    manifest,mpath=_manifest(root,"d0f";exact=false)
+    _validate_manifest(manifest,"d0f";d0f_seed_base=RETRY4_PHENOTYPE_SEED_BASE)
+    preseal,ppath,d0root=_retry4_preseal(root,manifest,mpath)
+    lock,cpath=_corpus_lock(root,"d0f",manifest,ppath)
+    _sha256(cpath)==RETRY4_CORPUS_LOCK_SHA256||error("Retry-4 corpus-lock hash drift")
+    digests=_corpus_digest_map(lock);preseal_sha=_sha256(ppath)
+    length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)||error("Retry-4 diagnostic seed inventory drift")
+    max_source_diff=0.0;max_component_diff=0.0
+    for (rank,seed) in enumerate(RETRY4_PREFLIGHT_SEEDS)
+        hits=filter(row->row.seed==seed,manifest);length(hits)==1||error("Retry-4 diagnostic seed is not exactly one manifest row: $seed")
+        row=only(hits);_verify_locked_seed_inputs(root,"d0f",row,digests)
+        packet=_packet(root,"d0f",row,preseal,preseal_sha);_validate_d0f_source(d0root,row,packet)
+        attempt=_read_attempt(root,"d0f",row,preseal,preseal_sha,packet)
+        expected_status=rank<=13 ? ("boundary_lower","boundary_upper") : ("interior","interior_rescued")
+        attempt.dict["boundary_status"] in expected_status||error("Retry-4 diagnostic seed class drift: $seed")
+        replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay)
+        isfinite(diff)&&diff<=1e-10||error("Retry-4 diagnostic source/replay parity exceeds 1e-10: $seed")
+        component_ratio=replay.numerical_sigma_g2/(replay.numerical_sigma_g2+replay.numerical_sigma_e2)
+        component_diff=abs(replay.numerical_ratio-component_ratio)
+        component_diff<=COMPONENT_RATIO_TOLERANCE||error("Retry-4 diagnostic endpoint/component parity exceeds 1e-12: $seed")
+        max_source_diff=max(max_source_diff,diff);max_component_diff=max(max_component_diff,component_diff)
+    end
+    after=_immutable_tree_digest(root);after==before||error("retired Retry-4 root changed during diagnostic preflight")
+    println("Retry-5 mechanism preflight: PASS (retired Retry-4 diagnostic only; rows=16; source_max_abs_difference=$(_format(max_source_diff)); component_max_abs_difference=$(_format(max_component_diff)); no RNG or seed consumed; no evidence emitted)")
+    nothing
 end
 function _verify_locked_pair(root,path,digests)
     relative=relpath(path,root);haskey(digests,relative)||error("seed input is absent from corpus lock: $relative")
@@ -679,9 +773,10 @@ function _validate_resolved(d)
     ratio=_float(d["scientific_ratio"],"scientific_ratio");nr=_float(d["numerical_ratio"],"numerical_ratio");total=_float(d["fitted_total_variance"],"total")
     sg=_float(d["scientific_sigma_g2"],"scientific sg");se=_float(d["scientific_sigma_e2"],"scientific se")
     ng=_float(d["numerical_sigma_g2"],"numerical sg");ne=_float(d["numerical_sigma_e2"],"numerical se")
+    ntotal=ng+ne;ntotal>0||error("nonpositive numerical component total")
     d0=_float(d["lower_derivative_per_observation"],"lower derivative");d1=_float(d["upper_derivative_per_observation"],"upper derivative")
     status=="boundary_lower"&&(ratio==0&&nr==BOUNDARY_EPSILON&&d0<=KKT_TOLERANCE)||status=="boundary_upper"&&(ratio==1&&nr==1-BOUNDARY_EPSILON&&d1>=-KKT_TOLERANCE)||status in ("interior","interior_rescued")&&(0<ratio<1&&d0>KKT_TOLERANCE&&d1< -KKT_TOLERANCE)||error("boundary/KKT representation drift")
-    abs(sg-ratio*total)<=1e-12&&abs(se-(1-ratio)*total)<=1e-12&&abs(ng+ne-total)<=1e-12&&abs(nr-ng/(ng+ne))<=1e-12||error("scientific/numerical component drift")
+    abs(sg-ratio*total)<=1e-12&&abs(se-(1-ratio)*total)<=1e-12&&abs(ntotal-total)<=COMPONENT_RATIO_TOLERANCE&&abs(nr-ng/ntotal)<=COMPONENT_RATIO_TOLERANCE||error("scientific/numerical component drift")
     _float(d["boundary_epsilon"],"boundary epsilon")==BOUNDARY_EPSILON||error("boundary epsilon drift")
     for f in ("profile_loglik","objective","gradient_norm");isfinite(_float(d[f],f))||error("nonfinite successful $f");end
     _int(d["iterations"],"iterations")>=0||error("negative successful iterations")
@@ -711,26 +806,29 @@ function _profile_replay(row,packet)
     base=(attempted=true,status="fit_error",error_class="unclassified_replay_error",converged=false,boundary_status="NA",boundary_reason="NA",boundary_epsilon=NaN,
         scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN,numerical_sigma_g2=NaN,numerical_sigma_e2=NaN,numerical_ratio=NaN,profile_loglik=NaN,lower_derivative_per_observation=NaN,upper_derivative_per_observation=NaN,iterations=NaN,objective=NaN,gradient_norm=NaN)
     result=base
-    try
-        spec=animal_model_spec(packet.y,ones(row.n,1),sparse(1.0I,row.n,row.n),packet.Q;ids=packet.ids,method=:REML)
-        provenance=(relationship_source="markers",id_order_fingerprint=packet.id_hash,precision_fingerprint=packet.precision_hash,kernel_fingerprint=packet.kernel_hash)
-        out=HSquared._fit_ai_reml_genomic_boundary(spec;provenance=provenance,kernel=packet.K)
+    spec=animal_model_spec(packet.y,ones(row.n,1),sparse(1.0I,row.n,row.n),packet.Q;ids=packet.ids,method=:REML)
+    provenance=(relationship_source="markers",id_order_fingerprint=packet.id_hash,precision_fingerprint=packet.precision_hash,kernel_fingerprint=packet.kernel_hash)
+    out=try
+        HSquared._fit_ai_reml_genomic_boundary(spec;provenance=provenance,kernel=packet.K)
+    catch err
+        result=merge(base,(error_class=_error_class(err),))
+        nothing
+    end
+    if out!==nothing
         b=out.boundary;status=String(b.status);fit=out.fit
         if fit===nothing
             status=="boundary_unresolved" ? (result=merge(base,(error_class=String(b.reason),boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation)))) : (result=merge(base,(error_class=String(b.reason),)))
         else
-            vc=fit.variance_components;total=vc.sigma_a2+vc.sigma_e2;nr=vc.sigma_a2/total
+            vc=fit.variance_components;total=vc.sigma_a2+vc.sigma_e2
+            nr=b.numerical_ratio===nothing ? NaN : Float64(b.numerical_ratio)
             pr=b.profile_ratio===nothing ? NaN : Float64(b.profile_ratio);good=status in RESOLVED&&fit.converged&&isfinite(pr)&&isfinite(total)&&total>0
             grad=hasproperty(out.ai_diagnostics,:ai_score_norm) ? Float64(out.ai_diagnostics.ai_score_norm) : NaN
             if good
                 result=(attempted=true,status="success",error_class="none",converged=true,boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),scientific_sigma_g2=pr*total,scientific_sigma_e2=(1-pr)*total,scientific_ratio=pr,fitted_total_variance=total,numerical_sigma_g2=vc.sigma_a2,numerical_sigma_e2=vc.sigma_e2,numerical_ratio=nr,profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation),iterations=fit.iterations,objective=-fit.likelihood.loglik,gradient_norm=grad)
-                _validate_resolved(Dict(string(k)=>_format(v) for (k,v) in pairs(result)))
             else
                 result=merge(base,(error_class="replay_not_resolved",))
             end
         end
-    catch err
-        result=merge(base,(error_class=_error_class(err),))
     end
     runtime=(time_ns()-started)/1e9;rss=max(rss0,Sys.maxrss())/1024^2
     final=merge(result,(runtime_seconds=runtime,peak_rss_mb=rss,retained_m=packet.retained_m,scale_denominator=packet.k,
@@ -972,7 +1070,7 @@ function summarize(root,stage;bootstrap=nothing)
     path=joinpath(root,"$(stage)_summary_julia.tsv");(ispath(path)||ispath(path*".sha256"))&&error("create-once summary exists")
     if stage=="d0f"
         canonical=joinpath(root,"d0f_bootstrap_indices.tsv");bootstrap!==nothing&&bootstrap!=canonical&&error("D0F summary accepts only the canonical stage-root bootstrap manifest")
-        idx=_external_indices(canonical,preseal["d0f_bootstrap_indices_sha256"],D0F_BOOTSTRAP_COLUMNS);summary=_d0f_summary(rows,idx,preseal["d0f_bootstrap_indices_sha256"]);_write_once(path,_table_text(D0F_SUMMARY_COLUMNS,summary))
+        bootstrap_sha=_sha256(_verify_pair(root,canonical));idx=_external_indices(canonical,bootstrap_sha,D0F_BOOTSTRAP_COLUMNS);summary=_d0f_summary(rows,idx,bootstrap_sha);_write_once(path,_table_text(D0F_SUMMARY_COLUMNS,summary))
     else
         summary=_d1_summary(rows);_write_once(path,_table_text(D1_SUMMARY_COLUMNS,summary))
     end
@@ -1102,7 +1200,7 @@ function selftest()
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared");actual_cell_table=joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv");_read_cell_table(dirname(actual_cell_table),actual_cell_table;verify=false)
     _validate_cell_rows(_cell_table());_must_fail("sub-tolerance truth mutation") do;x=copy(_cell_table());x[1]=merge(x[1],(truth_ratio=x[1].truth_ratio+5e-13,));_validate_cell_rows(x);end
     marker_tolerance=copy(_cell_table());marker_tolerance[1]=merge(marker_tolerance[1],(marker_ratio=marker_tolerance[1].marker_ratio+5e-13,));_validate_cell_rows(marker_tolerance)
-    length(PRESEAL_KEYS)==41&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&PRESEAL_KEYS[10]=="d0f_adjudication_root"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0/D0F predecessor preseal binding drift")
+    length(PRESEAL_KEYS)==42&&length(RETRY4_PRESEAL_KEYS)==41&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&PRESEAL_KEYS[10]=="d0f_adjudication_root"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0/D0F predecessor preseal binding drift")
     RECEIPT_COLUMNS==split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")||error("review receipt schema drift")
     R_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_recompute.R"&&R_RECOMPUTER_BASENAME!="v07_genomic_recovery_v3_preseal.R"||error("operational R recomputer binding drift")
     R_D0_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_d0_recompute.R"||error("R D0 recomputer binding drift")
@@ -1116,7 +1214,8 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
-    D0F_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh D0F phenotype seed-base drift")
+    D0F_PHENOTYPE_SEED_BASE==2_038_000_000&&RETRY4_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh/retired D0F phenotype seed-base drift")
+    length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)&&RETRY4_PREFLIGHT_SEEDS[1]==2_036_103_006&&RETRY4_PREFLIGHT_SEEDS[end]==2_036_301_001||error("Retry-4 diagnostic seed inventory drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
         source=2_027_120_000+10_000*d.source_index+7100+panel;seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
@@ -1161,7 +1260,23 @@ function selftest()
     d0row=merge(d0f[1],(retained_m=packet.retained_m,marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash))
     diagnostic=Dict("cell_id"=>d0row.source_cell_id,"cell_index"=>"2","seed"=>string(d0row.panel_source_seed),"n"=>string(d0row.n),"m"=>string(d0row.m),"truth_ratio"=>_format(d0row.truth_ratio),"retained_m"=>string(d0row.retained_m),"ridge"=>_format(d0row.ridge),"marker_hash"=>d0row.marker_hash,"id_hash"=>d0row.id_hash,"kernel_hash"=>d0row.kernel_hash,"precision_hash"=>d0row.precision_hash)
     _validate_d0f_diagnostic_row(diagnostic,d0row,packet);_must_fail("D0F frozen diagnostic packet hash") do;x=copy(diagnostic);x["precision_hash"]=repeat("0",64);_validate_d0f_diagnostic_row(x,d0row,packet);end
-    replay=_profile_replay(d1[1],packet);replay.route==REPLAY_ROUTE&&replay.relationship_method=="vanraden1"||error("profile replay selftest")
+    synthetic_replay_row=merge(d1[1],(n=length(packet.y),m=size(packet.M,2)))
+    replay=_profile_replay(synthetic_replay_row,packet);replay.route==REPLAY_ROUTE&&replay.relationship_method=="vanraden1"||error("profile replay selftest")
+    lower_component=prevfloat(BOUNDARY_EPSILON)
+    lower=merge(replay,(boundary_status="boundary_lower",boundary_reason="boundary_lower",scientific_sigma_g2=0.0,scientific_sigma_e2=1.0,scientific_ratio=0.0,fitted_total_variance=1.0,numerical_sigma_g2=lower_component,numerical_sigma_e2=1-lower_component,numerical_ratio=BOUNDARY_EPSILON,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0))
+    _validate_generated_replay(lower);lower.numerical_ratio==BOUNDARY_EPSILON||error("lower endpoint declaration was rederived")
+    upper_declared=1-BOUNDARY_EPSILON;upper_component=prevfloat(upper_declared)
+    upper=merge(replay,(boundary_status="boundary_upper",boundary_reason="boundary_upper",scientific_sigma_g2=1.0,scientific_sigma_e2=0.0,scientific_ratio=1.0,fitted_total_variance=1.0,numerical_sigma_g2=upper_component,numerical_sigma_e2=1-upper_component,numerical_ratio=upper_declared,lower_derivative_per_observation=1.0,upper_derivative_per_observation=0.0))
+    _validate_generated_replay(upper);upper.numerical_ratio==upper_declared||error("upper endpoint declaration was rederived")
+    _must_fail("just-outside endpoint/component mutation escapes as infrastructure error") do
+        _validate_generated_replay(merge(lower,(numerical_sigma_g2=BOUNDARY_EPSILON+2e-12,numerical_sigma_e2=1-(BOUNDARY_EPSILON+2e-12),)))
+    end
+    _must_fail("substantive endpoint/component mutation escapes as infrastructure error") do
+        _validate_generated_replay(merge(upper,(numerical_sigma_g2=upper_declared-1e-8,numerical_sigma_e2=1-(upper_declared-1e-8),)))
+    end
+    _must_fail("missing declared endpoint escapes as infrastructure error") do
+        _validate_generated_replay(merge(lower,(numerical_ratio=NaN,)))
+    end
     parity=NamedTuple[]
     for mr in d1
         rep=mr.seed_offset-100;dev=(rep-24.5)*1e-4;boundary=rep==1 ? "boundary_lower" : rep==2 ? "boundary_upper" : rep==3 ? "interior_rescued" : "interior";ratio=rep==1 ? 0.0 : rep==2 ? 1.0 : .5+dev
@@ -1330,6 +1445,7 @@ function main(args=ARGS)
     mode=_option(args,"mode";default="replay");mode=="selftest"&&return selftest()
     mode=="batch-selftest"&&return batch_selftest()
     _assert_execution_context()
+    mode=="retry5-mechanism-preflight"&&return retry5_mechanism_preflight(_required(args,"out-dir"))
     stage=lowercase(_required(args,"stage"));stage in ("d0f","d1")||error("--stage must be d0f or d1")
     root=_required(args,"out-dir")
     if mode=="preflight"
@@ -1351,7 +1467,7 @@ function main(args=ARGS)
     elseif mode=="validate-final"
         validate_final(root,stage)
     else
-        error("--mode must be preflight, write-batch-manifests, replay-batch, replay, verify-replay, summarize, validate-final, or selftest")
+        error("--mode must be retry5-mechanism-preflight, preflight, write-batch-manifests, replay-batch, replay, verify-replay, summarize, validate-final, or selftest")
     end
 end
 
