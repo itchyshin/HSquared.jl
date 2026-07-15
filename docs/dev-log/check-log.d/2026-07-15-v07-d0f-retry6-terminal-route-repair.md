@@ -19,3 +19,10 @@
   historical seeds and 3,456 retired D0F seeds.
 - Public boundary: no Retry-6 adjudication, D1, D2, activation, capability move,
   merge, release, G10, or `public_covered_count` change.
+- Julia exact-head CI initially exposed a pre-existing platform-sensitive
+  boundary contract: Linux/Julia 1.10 returned finite-difference SEs for an
+  almost rank-one fitted covariance that local Julia 1.10 rejected. The SE
+  path now directly rejects fitted genetic or residual correlations within
+  `1e-6` of `-1` or `1`, before relying on the finite-difference information
+  matrix. Full local Julia 1.10 `Pkg.test()` passed after the repair; the
+  original exact-head run was green on current Julia and red only on 1.10.

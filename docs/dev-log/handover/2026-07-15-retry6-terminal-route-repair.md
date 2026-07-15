@@ -38,6 +38,12 @@ The R twin has a seed-free prospective repair:
 Synthetic tests prove correct-route green and wrong-route/wrong-driver red.
 This repair changes no scientific or public contract and cannot pass Retry 6.
 
+The first exact-head Julia CI also exposed a platform-sensitive existing test:
+Linux/Julia 1.10 treated an almost rank-one covariance as finite-information
+while local Julia 1.10 rejected it. The Julia SE path now directly enforces its
+documented covariance-boundary rejection before the finite-difference Hessian.
+Full local Julia 1.10 `Pkg.test()` is green after that seed-free hardening.
+
 ## Hard guards
 
 1. Spend no fresh seed. There is no successor D0F base.
@@ -79,7 +85,7 @@ legacy branches; the active heads themselves were pushed.
 
 ## Next immediate steps
 
-1. Wait for exact-head R CI and final Julia docs/package/preamble checks.
-2. Land and push the cross-twin terminal closeout; keep both PRs draft.
+1. Wait for final Julia exact-head package CI after the boundary hardening.
+2. Keep both PRs draft and preserve all declared carried-over state.
 3. Stop. Do not mint a Retry-7 contract or seed allocation without a distinct
    next goal and fresh review cycle.

@@ -26,7 +26,8 @@ repair is synthetic/test-only and cannot retroactively adjudicate Retry 6.
 
 - Julia: `AGENTS.md`, `ROADMAP.md`, capability status, coordination board,
   phase-snapshot archive, this report, the terminal checkpoint, check receipt,
-  and handover.
+  handover, and `src/multivariate.jl` (deterministic covariance-boundary guard
+  discovered by exact-head CI).
 - R twin: route-aware preseal/recompute helpers and tests, recomputer sidecar,
   seed-lock registry and tests, doc 49, roadmap/capability/coordination status,
   and matching closeout documents.
@@ -45,8 +46,11 @@ repair is synthetic/test-only and cannot retroactively adjudicate Retry 6.
   root worker.
 - Cross-twin `handoff_gate.sh`: exit 1 only for the declared H2-2 drafts,
   quarantined scaffold, and pre-existing legacy branches; active heads pushed.
-- Julia package/docs/preamble and final R CI are recorded when the closeout
-  commits are validated.
+- Julia 1.10 full local `Pkg.test()`: pass after the explicit near-correlation
+  boundary guard. The original exact-head CI was green on current Julia and
+  red on Julia 1.10 at the existing boundary test; R CI and Julia Documenter
+  were green. Final Julia exact-head CI is recorded when the repair commit is
+  validated.
 
 ## 6. Tests of the Tests
 
@@ -65,6 +69,7 @@ retry stage exists.
 | H2-2 and this task briefly appeared concurrent | H2-2 archived; this task is the sole lane; lesson recorded in durable user memory. |
 | One verification command used a stale driver filename | Corrected immediately to the live tool names; the preceding route-only suite was green. |
 | Full-suite validation fixture lost its test-only helper | Added a defensive local helper load in the R twin; no package behavior changed. |
+| Julia 1.10 Linux treated the nearly rank-one covariance fixture as finite-information | Made the already documented boundary rejection explicit and platform-independent; full local Julia 1.10 suite passes. |
 
 ## 8. Consistency Audit
 
@@ -90,8 +95,8 @@ non-product exit after the full test family had passed.
 
 Retry 6 has no formal adjudication and never can. D1-D4, final Rose activation
 audit, G10, merge, release, and public activation remain outstanding. The
-prospective repair still requires final CI at its exact head. No successor
-contract or seed base exists.
+prospective repair and the Julia boundary hardening still require final CI at
+their exact heads. No successor contract or seed base exists.
 
 ## 11. Team Learning
 
