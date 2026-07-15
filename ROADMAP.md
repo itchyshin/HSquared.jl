@@ -39,10 +39,12 @@ diagnostic rather than accepted recovery evidence. Recovery-v3 then produced
 three separate 576-fit D0F corpora whose exact Julia replay stopped before row
 1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
 successful-gradient contract failures. All three roots and phenotype/bootstrap
-seed spaces are permanently unadjudicated and retired. Retry 4 has disjoint
-seeds and committed finite-gradient, batch-safe tooling, but it is not presealed
-or run. Fresh admitted retry-4 recovery, Rose review, and G10 therefore remain
-open; the default route is not activated. Production high-level genomic fitting
+seed spaces are permanently unadjudicated and retired. Retry 4 completed 576
+official fits and 576 independent base-R recomputations, but exact Julia replay
+stopped after 455 admitted rows on a one-ULP endpoint-representation contract
+defect. Its root and seeds are retired and unadjudicated; D1/D2 never opened.
+Fresh prospective repair, Retry 5, Rose review, and G10 therefore remain open;
+the default route is not activated. Production high-level genomic fitting
 remains unimplemented.
 
 - Package loads.
@@ -240,9 +242,11 @@ remains unimplemented.
   then produced three separate 576-fit D0F corpora whose exact Julia replay
   stopped before row 1 for fixed-panel cardinality, concrete-`Cmd` typing, and
   missing successful-gradient contract failures; every root and observed
-  phenotype/bootstrap seed is retired. Retry 4 has disjoint seeds and committed
-  finite-gradient, batch-safe tooling but is not presealed or run. Fresh
-  admitted retry-4 recovery, Rose, and G10 remain open.
+  phenotype/bootstrap seed is retired. Retry 4 completed 576 official fits and
+  576 independent base-R recomputations, but exact Julia replay stopped after
+  455 admitted rows on a one-ULP endpoint-representation contract defect. Its
+  root and seeds are retired and unadjudicated; D1/D2 never opened. Fresh
+  prospective repair, Retry 5, Rose, and G10 remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -359,16 +363,18 @@ three separate 576-fit D0F corpora whose exact Julia replay stopped before row
 1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
 successful-gradient contract failures. All three roots and observed
 phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
-has disjoint seeds and committed finite-gradient, batch-safe tooling but is not
-presealed or run. Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
+completed 576 official fits and 576 independent base-R recomputations, but
+exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
+representation contract defect. Its root and seeds are retired and
+unadjudicated; D1/D2 never opened. Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. The next activation attempt is the frozen
-recovery-v3 retry 4 and needs fresh admission and fresh seeds; Rose and G10
-remain held. The negative recovery-v2 outcome is banked in
+`public_covered_count` remains 5. Any next activation attempt requires a newly
+preregistered endpoint-representation repair and fresh disjoint Retry-5 seeds;
+Rose and G10 remain held. The negative recovery-v2 outcome is banked in
 `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90

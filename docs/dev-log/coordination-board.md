@@ -26,17 +26,18 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-14
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- Three separate 576-fit D0F roots are hash-locked, retired, and
-  unadjudicated. Exact Julia replay stopped before row 1 for fixed-panel
-  cardinality, concrete-`Cmd` typing, and missing successful-gradient contract
-  failures. Every observed phenotype/bootstrap seed is retired; none of the
-  provisional summaries is recovery evidence.
-- Retry 4 freezes disjoint phenotype/bootstrap bases `2036000000` /
-  `2037000000`, carries the boundary AI score norm through the R bridge, rejects
-  successful nonfinite gradients before publication and at admission, and uses
-  deterministic external R/Julia batches with once-per-batch corpus validation,
-  per-row locked-input reauthentication, create-once writes, and freshly
-  checked complete-prefix resume. This is integrity tooling, not recovery.
+- Four separate 576-fit D0F roots are hash-locked, retired, and
+  unadjudicated. The first three stopped before exact Julia replay row 1 for
+  fixed-panel cardinality, concrete-`Cmd` typing, and missing successful-
+  gradient contracts. Retry 4 completed 576 official fits and 576 independent
+  base-R recomputations, but exact Julia replay stopped after 455 admitted rows
+  on a one-ULP endpoint-representation contract defect. Four batches stopped
+  fail-closed and 121 later rows have no replay output.
+- Retry 4 is classified `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`.
+  No Julia summary or adjudication receipt exists. Its root and disjoint
+  `2036000000` / `2037000000` phenotype/bootstrap seed spaces are permanently
+  retired; D1/D2 never opened. The raw `fit_error`/KKT label is a validator
+  misclassification, not solver, gradient, convergence, or recovery evidence.
 - The preseal layer and operational R/Julia tools retain exact D0 diagnostics,
   typed D0F/D1 parity, live environment/Git/tree gates, native K/Q provenance
   with `1e-10` numerical parity, and mutation-red controls. Final admission
@@ -53,10 +54,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: bind five fresh exact reviews to the corrected doc-49 hash and
-  final deployed heads, then mint a new retry-4 preseal and run the zero-seed
-  preflight. Only after those gates may retry-4 D0F run on Totoro/DRAC, never
-  GitHub Actions. Never mutate or adjudicate any failed D0F root.
+- Next action: do not replay or salvage Retry 4. Any continuation requires a
+  newly preregistered endpoint-representation repair, lower/upper one-ULP
+  regression mutations, a diagnostic preflight over all 13 retired boundary
+  packets, exact reviews/preseal, and fresh disjoint Retry-5 seeds on
+  Totoro/DRAC, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 

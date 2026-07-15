@@ -28,9 +28,12 @@ three separate 576-fit D0F corpora whose exact Julia replay stopped before row
 1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
 successful-gradient contract failures. All three roots and observed
 phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
-has disjoint seeds and committed finite-gradient, batch-safe tooling but is not
-presealed or run. The R surface therefore remains partial/held pending fresh
-admitted retry-4 recovery, Rose, and G10. `single_step()` remains a separate
+completed 576 official fits and 576 independent base-R recomputations, but
+exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
+representation contract defect. Its root and seeds are retired and
+unadjudicated; D1/D2 never opened. The R surface therefore remains
+partial/held pending fresh prospective repair, Retry 5, Rose, and G10.
+`single_step()` remains a separate
 experimental surface.
 The dense paths here are validation-scale only — they do not gain the sparse
 selected-inversion advantage.
@@ -174,9 +177,11 @@ Still planned / coordinated:
   Julia replay stopped before row 1 for fixed-panel cardinality,
   concrete-`Cmd` typing, and missing successful-gradient contract failures.
   All three roots and observed phenotype/bootstrap seeds are retired. Retry 4
-  has disjoint seeds and committed finite-gradient, batch-safe tooling but is
-  not presealed or run. The narrow R `genomic()` candidate therefore stays held
-  and `single_step()` remains separate;
+  completed 576 official fits and 576 independent base-R recomputations, but
+  exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
+  representation contract defect. Its root and seeds are retired and
+  unadjudicated; D1/D2 never opened. The narrow R `genomic()` candidate
+  therefore stays held and `single_step()` remains separate;
 - a broader construction oracle beyond the completed independent base-R
   reconstruction of the exact candidate kernel. A fresh hash-pinned `blupf90+`
   run now links the

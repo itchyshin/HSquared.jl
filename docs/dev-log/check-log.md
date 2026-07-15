@@ -5346,3 +5346,15 @@ Newest entries go at the top.
   change, release, or Actions campaign exists. Full checkpoint and report:
   `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry3-gradient-contract-blocker.md`;
   `docs/dev-log/after-task/2026-07-14-v07-d0f-retry3-gradient-batch-repair.md`.
+
+## 2026-07-14 — v0.7 D0F retry-4 endpoint-representation blocker
+
+- Retry 4 completed 576 official fits and 576 independent base-R
+  recomputations. Exact Julia replay stopped fail-closed after 455 admitted
+  rows; four strided batches left 121 later rows without replay output.
+- Five of 13 boundary packets expose a one-ULP endpoint reconstruction
+  difference under the bit-exact replay validator. This is a replay contract
+  and error-classification defect, not solver/KKT/gradient/recovery failure.
+- Root and seeds are retired and unadjudicated; D1/D2 never opened; activation
+  and count remain held. Detail:
+  `docs/dev-log/check-log.d/2026-07-14-v07-d0f-retry4-endpoint-representation-blocker.md`.

@@ -16,6 +16,22 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 
 ---
 
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-4 PRESEED REVIEW; NOT ACTIVATED).**
+  Three separate 576-fit D0F corpora are permanently unadjudicated after exact
+  Julia replay stopped before row 1 for fixed-panel cardinality, concrete-`Cmd`
+  typing, and missing successful-gradient contract failures. All observed
+  phenotype/bootstrap seeds are retired. Retry-4 bases `2036000000` /
+  `2037000000`, finite-gradient admission, and batch-safe R/Julia replay are
+  committed with local and CI gates green. NEXT: obtain five fresh exact CLEAN
+  reviews bound to the final deployed heads and corrected doc-49 hash, then
+  create a new preseal and run the zero-seed preflight. No retry-4 phenotype or
+  D1/D2 seed exists, default R routing remains held, and
+  `public_covered_count` remains **5**. The untracked downstream Julia replay
+  remains an incomplete non-evidence scaffold. START HERE: the hash-bound
+  execution contract in the R twin,
+  `docs/design/49-v07-genomic-recovery-v3-sample-size-ladder.md`.
+
+
 - **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;
   Claude solo (Opus), autonomous; `/goal` "finish everything left in doc-25"; rows **55** / covered
   **13** / `public_covered_count` **5** UNCHANGED throughout).** The doc-25 numbered map is CLEARED.
