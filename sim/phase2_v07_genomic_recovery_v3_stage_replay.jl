@@ -44,8 +44,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
-const D0F_PHENOTYPE_SEED_BASE = 2_034_000_000
-const D0F_PARITY_BOOTSTRAP_SHA256 = "ff85a98bf160967f9699d01c53ed927c874d65c1f386780c3e62f43ef08cdef0"
+const D0F_PHENOTYPE_SEED_BASE = 2_036_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "e5649184fcee3749203207deb82f20de9fba7183e6a029396ee385c2656975ef"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -57,6 +57,8 @@ const FULL_RESULT_COLUMNS = split("attempted status error_class converged bounda
 const REPLAY_BINDING_COLUMNS = split("source_r_attempt_sha256 source_r_max_abs_difference replay_julia_commit replay_driver_sha256 manifest_sha256 preseal_sha256 corpus_lock_sha256")
 const PACKET_PRIMARIES = ["markers.tsv","ids.tsv","phenotype.tsv","truth.tsv","packet_files_lock.tsv"]
 const CORPUS_COLUMNS = ["relative_path","sha256"]
+const BATCH_SCHEMA = "v07-genomic-recovery-v3-replay-batch-1"
+const BATCH_COLUMNS = split("schema_version stage batch_index batch_count manifest_rank group_id seed manifest_sha256 preseal_sha256 corpus_lock_sha256")
 const PRESEAL_KEYS = split("schema_version stage doc49_sha256 cell_table_sha256 manifest_sha256 environment_manifest_sha256 d0_output_root d0_adjudication_receipt_sha256 d0_diagnostics_sha256 d0f_adjudication_root d0f_adjudication_receipt_sha256 historical_seed_lock_sha256 d0f_fixed_panel_manifest_sha256 d0f_bootstrap_indices_sha256 fisher_receipt_sha256 noether_receipt_sha256 hopper_receipt_sha256 grace_receipt_sha256 rose_receipt_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 d0_recomputer_sha256 output_root official_route replay_route packet_schema_version truth_schema_version relationship_source relationship_method allele_frequency_source relationship_scale ridge boundary_epsilon boundary_kkt_tolerance output_subtrees_absent_before_preseal")
 const CELL_TABLE_COLUMNS = split("cell_id cell_index n m marker_ratio marker_ratio_code truth_sigma_g2 truth_sigma_e2 truth_ratio ridge")
 const ENVIRONMENT_KEYS = split("stage host r_version r_rng_kind r_normal_kind r_sample_kind julia_version openblas_num_threads julia_num_threads max_workers")
@@ -110,6 +112,14 @@ function _verify_external_pair(path,expected)
     side=path*".sha256"
     isfile(side)&&!islink(side)&&realpath(side)==side||error("external sidecar is not a canonical plain file: $side")
     digest=_sha256(path);digest==expected||error("external primary hash drift: $path")
+    read(side,String)=="$digest  $(basename(path))\n"||error("external sidecar mismatch: $path")
+    path
+end
+function _verify_external_pair(path)
+    isabspath(path)&&normpath(path)==path&&isfile(path)&&!islink(path)&&realpath(path)==path||error("external primary is not a canonical plain file: $path")
+    side=path*".sha256"
+    isfile(side)&&!islink(side)&&realpath(side)==side||error("external sidecar is not a canonical plain file: $side")
+    digest=_sha256(path)
     read(side,String)=="$digest  $(basename(path))\n"||error("external sidecar mismatch: $path")
     path
 end
@@ -526,6 +536,79 @@ function _corpus_lock(root,stage,manifest,preseal_path)
     t,path
 end
 
+function _corpus_digest_map(lock::TSV)
+    paths=getindex.(lock.rows,1);allunique(paths)||error("duplicate corpus-lock member")
+    all(r->length(r)==2&&!isempty(r[1])&&_hex(r[2]),lock.rows)||error("malformed corpus-lock digest row")
+    Dict(r[1]=>r[2] for r in lock.rows)
+end
+function _verify_locked_pair(root,path,digests)
+    relative=relpath(path,root);haskey(digests,relative)||error("seed input is absent from corpus lock: $relative")
+    _sha256(_verify_pair(root,path))==digests[relative]||error("seed input differs from retained corpus-lock digest: $relative")
+    path
+end
+function _verify_locked_seed_inputs(root,stage,row,digests)
+    _verify_locked_pair(root,_attempt_path(root,stage,row),digests)
+    packet=_packet_dir(root,stage,row)
+    for name in PACKET_PRIMARIES;_verify_locked_pair(root,joinpath(packet,name),digests);end
+    nothing
+end
+
+function _batch_partition(manifest,batch_index,batch_count)
+    1<=batch_count<=min(96,length(manifest))||error("batch count must be in 1:min(96, manifest rows)")
+    1<=batch_index<=batch_count||error("batch index must be in 1:batch_count")
+    [(rank=rank,row=manifest[rank]) for rank in batch_index:batch_count:length(manifest)]
+end
+_batch_basename(stage,batch_index,batch_count)=@sprintf("%s-batch-%03d-of-%03d.tsv",stage,batch_index,batch_count)
+function _batch_rows(stage,manifest,batch_index,batch_count;manifest_sha,preseal_sha,corpus_sha)
+    [(schema_version=BATCH_SCHEMA,stage=stage,batch_index=batch_index,batch_count=batch_count,manifest_rank=x.rank,
+        group_id=_group(x.row,stage),seed=x.row.seed,manifest_sha256=manifest_sha,preseal_sha256=preseal_sha,
+        corpus_lock_sha256=corpus_sha) for x in _batch_partition(manifest,batch_index,batch_count)]
+end
+function _write_batch_manifests(root,stage,batch_dir,batch_count)
+    root=_safe_dir(root,"output root");batch_dir=_safe_dir(batch_dir,"external batch directory")
+    _is_nested(root,batch_dir)&&error("batch directory must be external to the evidence root")
+    isempty(readdir(batch_dir))||error("external batch directory must be empty before deterministic batch generation")
+    manifest,mpath=_manifest(root,stage);_,ppath,_=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath)
+    _batch_partition(manifest,1,batch_count) # validate before the first external write
+    manifest_sha=_sha256(mpath);preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath)
+    for batch_index in 1:batch_count
+        path=joinpath(batch_dir,_batch_basename(stage,batch_index,batch_count))
+        rows=_batch_rows(stage,manifest,batch_index,batch_count;manifest_sha=manifest_sha,preseal_sha=preseal_sha,corpus_sha=corpus_sha)
+        _write_once(path,_table_text(BATCH_COLUMNS,rows))
+    end
+    println("wrote $batch_count deterministic external Julia $stage replay batch manifests rows=$(length(manifest))")
+end
+function _read_batch_manifest(root,path,stage,manifest;manifest_sha,preseal_sha,corpus_sha)
+    isabspath(path)||error("batch manifest must be absolute")
+    path=normpath(path);_is_nested(root,path)&&error("batch manifest must be external to the evidence root")
+    _verify_external_pair(path)
+    t=_read_tsv(dirname(path),path,BATCH_COLUMNS);isempty(t.rows)&&error("batch manifest is empty")
+    firstrow=_dict(t,first(t.rows));batch_index=_int(firstrow["batch_index"],"batch index");batch_count=_int(firstrow["batch_count"],"batch count")
+    basename(path)==_batch_basename(stage,batch_index,batch_count)||error("batch manifest filename is not deterministic")
+    expected=_batch_rows(stage,manifest,batch_index,batch_count;manifest_sha=manifest_sha,preseal_sha=preseal_sha,corpus_sha=corpus_sha)
+    expected_text=_table_text(BATCH_COLUMNS,expected)
+    read(path,String)==expected_text||error("batch manifest membership, uniqueness, order, or binding drift")
+    (rows=[manifest[x.manifest_rank] for x in expected],batch_index=batch_index,batch_count=batch_count,path=path)
+end
+
+function _batch_target_prefix(root,stage,rows;resume_complete_prefix=true)
+    prefix=0;missing_seen=false
+    for row in rows
+        path=_replay_path(root,stage,row);primary=ispath(path);sidecar=ispath(path*".sha256")
+        primary==sidecar||error("partial replay primary/sidecar pair: $path")
+        if primary
+            resume_complete_prefix||error("create-once replay target exists: $path")
+            missing_seen&&error("existing replay is not a complete resumable prefix: $path")
+            _verify_pair(root,path);t=_read_tsv(root,path,_replay_columns(stage));length(t.rows)==1||error("resumable replay row count drift")
+            d=_dict(t,only(t.rows));d["stage"]==stage&&d[stage=="d0f" ? "design_id" : "cell_id"]==_group(row,stage)&&_int(d["seed"],"resumable seed")==row.seed||error("resumable replay identity drift")
+            prefix+=1
+        else
+            missing_seen=true
+        end
+    end
+    prefix
+end
+
 _truth_columns(stage)=vcat(stage=="d0f" ? D0F_MANIFEST_COLUMNS : vcat(D1_MANIFEST_COLUMNS,D1_CONSTRUCTION_COLUMNS),TRUTH_PROVENANCE_COLUMNS)
 function _packet(root,stage,row,preseal,preseal_sha)
     dir=_packet_dir(root,stage,row);actual=sort(readdir(_plain(root,dir;directory=true)))
@@ -692,15 +775,69 @@ function _validate_d0f_diagnostic_row(d,row,packet)
 end
 
 function replay_one(root,stage,group,seed)
-    root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);_,cpath=_corpus_lock(root,stage,manifest,ppath)
-    row=_find_manifest(manifest,stage,group,seed);outpath=_replay_path(root,stage,row);(ispath(outpath)||ispath(outpath*".sha256"))&&error("create-once replay exists")
+    root=_safe_dir(root,"output root");manifest,mpath=_manifest(root,stage);preseal,ppath,d0root=_preseal(root,stage,manifest,mpath);lock,cpath=_corpus_lock(root,stage,manifest,ppath)
+    row=_find_manifest(manifest,stage,group,seed);digests=_corpus_digest_map(lock)
+    _replay_prepared_one(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+end
+
+function _prepared_replay_row(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+    _verify_locked_seed_inputs(root,stage,row,digests)
     preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath);packet=_packet(root,stage,row,preseal,preseal_sha);stage=="d0f"&&_validate_d0f_source(d0root,row,packet)
     attempt=_read_attempt(root,stage,row,preseal,preseal_sha,packet);replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay);isfinite(diff)&&diff<=1e-10||error("official route and Julia replay differ beyond 1e-10")
     replay=merge(replay,(r_implementation_commit=preseal["r_auto_route_commit"],julia_implementation_commit=preseal["julia_candidate_commit"],driver_commit=preseal["julia_replay_commit"],preseal_sha256=preseal_sha))
     common=merge(_manifest_values(row,stage),replay,(source_r_attempt_sha256=_sha256(attempt.path),source_r_max_abs_difference=diff,replay_julia_commit=preseal["julia_replay_commit"],replay_driver_sha256=_sha256(abspath(@__FILE__)),manifest_sha256=_sha256(mpath),preseal_sha256=preseal_sha,corpus_lock_sha256=corpus_sha))
-    columns=_replay_columns(stage)
+    (columns=_replay_columns(stage),row=common,diff=diff)
+end
+
+function _replay_prepared_one(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+    outpath=_replay_path(root,stage,row);(ispath(outpath)||ispath(outpath*".sha256"))&&error("create-once replay exists")
+    prepared=_prepared_replay_row(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+    columns=prepared.columns;common=prepared.row;diff=prepared.diff
     _write_once(outpath,_table_text(columns,[common]));_verify_pair(root,outpath)
-    println("wrote Julia $stage replay $group/$seed source_max_abs_difference=$(_format(diff))")
+    println("wrote Julia $stage replay $(_group(row,stage))/$(row.seed) source_max_abs_difference=$(_format(diff))")
+    nothing
+end
+
+function _validate_resumable_row(observed,columns,expected_row)
+    length(observed)==length(columns)||error("resumable replay row width drift")
+    expected=split(chomp(_table_text(columns,[expected_row])),'\n')[2]
+    expected=split(expected,'\t';keepempty=true)
+    for (index,column) in enumerate(columns)
+        column in ("runtime_seconds","peak_rss_mb")&&continue
+        observed[index]==expected[index]||error("resumable replay differs from fresh recomputation in $column")
+    end
+    values=Dict(zip(columns,observed))
+    for column in ("runtime_seconds","peak_rss_mb")
+        value=_float(values[column],"resumable $column")
+        isfinite(value)&&value>=0||error("resumable replay $column is invalid")
+    end
+    nothing
+end
+
+function _validate_existing_batch_replay(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+    prepared=_prepared_replay_row(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+    path=_replay_path(root,stage,row);t=_read_tsv(root,path,prepared.columns);length(t.rows)==1||error("resumable replay row count drift")
+    _validate_resumable_row(only(t.rows),prepared.columns,prepared.row)
+    nothing
+end
+
+function replay_batch(root,stage,batch_manifest_path;resume_complete_prefix=true)
+    root=_safe_dir(root,"output root")
+    manifest,mpath=_manifest(root,stage)
+    preseal,ppath,d0root=_preseal(root,stage,manifest,mpath)
+    lock,cpath=_corpus_lock(root,stage,manifest,ppath) # exactly one full corpus validation for this batch
+    digests=_corpus_digest_map(lock)
+    batch=_read_batch_manifest(root,batch_manifest_path,stage,manifest;manifest_sha=_sha256(mpath),preseal_sha=_sha256(ppath),corpus_sha=_sha256(cpath))
+    prefix=_batch_target_prefix(root,stage,batch.rows;resume_complete_prefix=resume_complete_prefix)
+    for (index,row) in enumerate(batch.rows)
+        if index<=prefix
+            _validate_existing_batch_replay(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+        else
+            _replay_prepared_one(root,stage,row,preseal,mpath,ppath,cpath,d0root,digests)
+        end
+    end
+    println("completed Julia $stage replay batch $(batch.batch_index)/$(batch.batch_count) rows=$(length(batch.rows)) resumed_prefix=$prefix")
+    nothing
 end
 
 function _validate_replay_bindings(d;source_sha,replay_commit,replay_sha,manifest_sha,preseal_sha,corpus_sha)
@@ -905,6 +1042,61 @@ function _verify_full_r_parity(summary)
 end
 
 function _must_fail(label,f);failed=false;try f() catch;failed=true end;failed||error("mutation stayed green: $label");end
+function batch_selftest()
+    manifest=[(stage="d1",cell_id=@sprintf("synthetic_%02d",i),seed=9000+i,truth_ratio=.5) for i in 1:12]
+    partitions=[_batch_partition(manifest,i,5) for i in 1:5]
+    ranks=reduce(vcat,[[x.rank for x in part] for part in partitions])
+    sort(ranks)==collect(1:12)&&allunique(ranks)||error("focused batch exact-union selftest")
+    reversed=reduce(vcat,[[x.rank for x in part] for part in reverse(partitions)])
+    Dict(i=>(manifest[i].cell_id,manifest[i].seed,manifest[i].truth_ratio) for i in ranks)==Dict(i=>(manifest[i].cell_id,manifest[i].seed,manifest[i].truth_ratio) for i in reversed)||error("focused batch order-invariance selftest")
+    resume_columns=["stage","scientific_ratio","runtime_seconds","peak_rss_mb"]
+    resume_expected=(stage="d1",scientific_ratio=.5,runtime_seconds=1.0,peak_rss_mb=2.0)
+    _validate_resumable_row(["d1","0.5","99","88"],resume_columns,resume_expected)
+    _must_fail("focused resumed scientific mutation") do;_validate_resumable_row(["d1","0.6","99","88"],resume_columns,resume_expected);end
+    _must_fail("focused resumed invalid runtime") do;_validate_resumable_row(["d1","0.5","NA","88"],resume_columns,resume_expected);end
+    dir=mktempdir()
+    try
+        root=realpath(dir);evidence=joinpath(root,"evidence");external=joinpath(root,"external");mkdir(evidence);mkdir(external)
+        mh=repeat("a",64);ph=repeat("b",64);ch=repeat("c",64);index=2;count=5
+        rows=_batch_rows("d1",manifest,index,count;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch)
+        path=joinpath(external,_batch_basename("d1",index,count));_write_once(path,_table_text(BATCH_COLUMNS,rows))
+        parsed=_read_batch_manifest(evidence,path,"d1",manifest;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch)
+        parsed.rows==[x.row for x in _batch_partition(manifest,index,count)]||error("focused batch parse selftest")
+        function bad_manifest(name,badrows)
+            sub=joinpath(root,name);mkdir(sub);p=joinpath(sub,_batch_basename("d1",index,count));_write_once(p,_table_text(BATCH_COLUMNS,badrows));p
+        end
+        duplicate=copy(rows);duplicate[2]=duplicate[1]
+        _must_fail("focused duplicate batch") do;_read_batch_manifest(evidence,bad_manifest("duplicate",duplicate),"d1",manifest;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        unknown=copy(rows);unknown[1]=merge(unknown[1],(seed=typemax(Int),))
+        _must_fail("focused unknown batch") do;_read_batch_manifest(evidence,bad_manifest("unknown",unknown),"d1",manifest;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        _must_fail("focused reversed batch") do;_read_batch_manifest(evidence,bad_manifest("reversed",reverse(rows)),"d1",manifest;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        inside=joinpath(evidence,_batch_basename("d1",index,count));_write_once(inside,_table_text(BATCH_COLUMNS,rows))
+        _must_fail("focused batch wrong root") do;_read_batch_manifest(evidence,inside,"d1",manifest;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+
+        locked=joinpath(root,"locked");mkdir(locked);lockrow=manifest[1]
+        locked_paths=[_attempt_path(locked,"d1",lockrow);joinpath.(_packet_dir(locked,"d1",lockrow),PACKET_PRIMARIES)]
+        for p in locked_paths;_write_once(p,"$(basename(p))\n");end
+        digests=Dict(relpath(p,locked)=>_sha256(p) for p in locked_paths);_verify_locked_seed_inputs(locked,"d1",lockrow,digests)
+        mutated=joinpath(_packet_dir(locked,"d1",lockrow),"markers.tsv");write(mutated,"mutated after preparation\n");write(mutated*".sha256","$(_sha256(mutated))  $(basename(mutated))\n")
+        _must_fail("focused post-preparation mutation") do;_verify_locked_seed_inputs(locked,"d1",lockrow,digests);end
+
+        targets=joinpath(root,"targets");mkdir(targets);targetrows=manifest[1:2];columns=_replay_columns("d1")
+        values=Dict(c=>"NA" for c in columns);values["stage"]="d1";values["cell_id"]=targetrows[1].cell_id;values["seed"]=string(targetrows[1].seed)
+        target_text=join(columns,'\t')*"\n"*join([values[c] for c in columns],'\t')*"\n"
+        _write_once(_replay_path(targets,"d1",targetrows[1]),target_text)
+        _batch_target_prefix(targets,"d1",targetrows;resume_complete_prefix=true)==1||error("focused resumable-prefix selftest")
+        _must_fail("focused existing target") do;_batch_target_prefix(targets,"d1",targetrows;resume_complete_prefix=false);end
+        partial=_replay_path(targets,"d1",targetrows[2]);mkpath(dirname(partial));write(partial,"partial\n")
+        _must_fail("focused partial pair") do;_batch_target_prefix(targets,"d1",targetrows;resume_complete_prefix=true);end
+
+        nonprefix=joinpath(root,"nonprefix");mkdir(nonprefix);values["cell_id"]=targetrows[2].cell_id;values["seed"]=string(targetrows[2].seed)
+        target_text=join(columns,'\t')*"\n"*join([values[c] for c in columns],'\t')*"\n";_write_once(_replay_path(nonprefix,"d1",targetrows[2]),target_text)
+        _must_fail("focused non-prefix existing target") do;_batch_target_prefix(nonprefix,"d1",targetrows;resume_complete_prefix=true);end
+    finally
+        rm(dir;recursive=true,force=true)
+    end
+    println("v0.7 genomic recovery-v3 Julia replay batching selftest: PASS (synthetic only; no official RNG or seed consumed)")
+end
 function selftest()
     length(_d1_cells())==12&&length(_cell_table())==36||error("cell-table selftest")
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared");actual_cell_table=joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv");_read_cell_table(dirname(actual_cell_table),actual_cell_table;verify=false)
@@ -924,7 +1116,7 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
-    D0F_PHENOTYPE_SEED_BASE==2_034_000_000||error("fresh D0F phenotype seed-base drift")
+    D0F_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh D0F phenotype seed-base drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
         source=2_027_120_000+10_000*d.source_index+7100+panel;seed=D0F_PHENOTYPE_SEED_BASE+100_000*d.index+1000panel+rep
@@ -946,6 +1138,15 @@ function selftest()
     _must_fail("D1 stage") do;x=copy(d1);x[1]=merge(x[1],(stage="d2",));_validate_manifest(x,"d1");end
     _must_fail("D1 cell") do;x=copy(d1);x[1]=merge(x[1],(cell_id="mutated",));_validate_manifest(x,"d1");end
     _must_fail("D1 ridge") do;x=copy(d1);x[1]=merge(x[1],(ridge=.02,));_validate_manifest(x,"d1");end
+    partitions=[_batch_partition(d1,i,7) for i in 1:7]
+    ranks=reduce(vcat,[[x.rank for x in part] for part in partitions]);sort(ranks)==collect(1:length(d1))&&allunique(ranks)||error("batch partitions are not an exact disjoint manifest union")
+    reversed_ranks=reduce(vcat,[[x.rank for x in part] for part in reverse(partitions)]);sort(reversed_ranks)==sort(ranks)||error("reversed batch order changed scientific membership")
+    canonical_science=Dict(i=>(_group(d1[i],"d1"),d1[i].seed,d1[i].truth_ratio) for i in ranks)
+    reversed_science=Dict(i=>(_group(d1[i],"d1"),d1[i].seed,d1[i].truth_ratio) for i in reversed_ranks)
+    canonical_science==reversed_science||error("batch execution order changed scientific inputs")
+    _must_fail("batch count over worker cap") do;_batch_partition(d1,1,97);end
+    _must_fail("zero batch count") do;_batch_partition(d1,1,0);end
+    _must_fail("unknown batch index") do;_batch_partition(d1,0,7);end
     d0f_parity=NamedTuple[]
     phenotype_effect=collect(range(-.015,.015;length=8));panel_effect=collect(range(-.01,.01;length=24))
     for mr in d0f
@@ -1069,6 +1270,38 @@ function selftest()
         for name in PACKET_PRIMARIES;_write_once(joinpath(op_packet,name),"$name\n");end
         locked=vcat([op_preseal,op_manifest,op_attempt],joinpath.(Ref(op_packet),PACKET_PRIMARIES));lock_rows=sort([(relative_path=relpath(path,operational),sha256=_sha256(path)) for path in locked];by=x->x.relative_path);_write_once(joinpath(operational,"stage_corpus_lock.tsv"),_table_text(CORPUS_COLUMNS,lock_rows));_corpus_lock(operational,"d1",[oprow],op_preseal)
         open(joinpath(op_packet,"markers.tsv"),"w") do io;write(io,"mutated packet\n");end;_must_fail("operational corpus packet mutation") do;_corpus_lock(operational,"d1",[oprow],op_preseal);end
+        locked=joinpath(root,"locked-row");mkdir(locked);lockrow=d1[1]
+        locked_paths=[_attempt_path(locked,"d1",lockrow);joinpath.(_packet_dir(locked,"d1",lockrow),PACKET_PRIMARIES)]
+        for path in locked_paths;_write_once(path,"$(basename(path))\n");end
+        locked_map=Dict(relpath(path,locked)=>_sha256(path) for path in locked_paths);_verify_locked_seed_inputs(locked,"d1",lockrow,locked_map)
+        mutated=joinpath(_packet_dir(locked,"d1",lockrow),"markers.tsv");write(mutated,"post-preparation mutation\n");write(mutated*".sha256","$(_sha256(mutated))  $(basename(mutated))\n")
+        _must_fail("post-preparation primary plus regenerated sidecar") do;_verify_locked_seed_inputs(locked,"d1",lockrow,locked_map);end
+
+        batch_evidence=joinpath(root,"batch-evidence");mkdir(batch_evidence);batch_external=joinpath(root,"batch-external");mkdir(batch_external)
+        mh=repeat("a",64);ph=repeat("b",64);ch=repeat("c",64);batch_count=7;batch_index=3
+        valid_batch_rows=_batch_rows("d1",d1,batch_index,batch_count;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch)
+        valid_batch=joinpath(batch_external,_batch_basename("d1",batch_index,batch_count));_write_once(valid_batch,_table_text(BATCH_COLUMNS,valid_batch_rows))
+        parsed_batch=_read_batch_manifest(batch_evidence,valid_batch,"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch)
+        parsed_batch.rows==[x.row for x in _batch_partition(d1,batch_index,batch_count)]||error("valid batch parse changed canonical members")
+        function malformed_batch(name,rows)
+            dir=joinpath(root,name);mkdir(dir);path=joinpath(dir,_batch_basename("d1",batch_index,batch_count));_write_once(path,_table_text(BATCH_COLUMNS,rows));path
+        end
+        duplicate_rows=copy(valid_batch_rows);duplicate_rows[2]=duplicate_rows[1]
+        _must_fail("duplicate batch member before writes") do;_read_batch_manifest(batch_evidence,malformed_batch("batch-duplicate",duplicate_rows),"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        unknown_rows=copy(valid_batch_rows);unknown_rows[1]=merge(unknown_rows[1],(group_id="unknown",))
+        _must_fail("unknown batch member before writes") do;_read_batch_manifest(batch_evidence,malformed_batch("batch-unknown",unknown_rows),"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        _must_fail("reversed batch order before writes") do;_read_batch_manifest(batch_evidence,malformed_batch("batch-reversed",reverse(valid_batch_rows)),"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+        inside=joinpath(batch_evidence,_batch_basename("d1",batch_index,batch_count));_write_once(inside,_table_text(BATCH_COLUMNS,valid_batch_rows))
+        _must_fail("batch manifest inside evidence root") do;_read_batch_manifest(batch_evidence,inside,"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
+
+        targets=joinpath(root,"batch-targets");mkdir(targets);target_rows=d1[1:2];h=repeat("a",64)
+        target_replay=merge(_manifest_values(target_rows[1],"d1"),replay,(r_implementation_commit=repeat("b",40),julia_implementation_commit=repeat("c",40),driver_commit=repeat("d",40),preseal_sha256=h,
+            source_r_attempt_sha256=h,source_r_max_abs_difference=0.0,replay_julia_commit=repeat("d",40),replay_driver_sha256=h,manifest_sha256=h,corpus_lock_sha256=h))
+        _write_once(_replay_path(targets,"d1",target_rows[1]),_table_text(_replay_columns("d1"),[target_replay]))
+        _batch_target_prefix(targets,"d1",target_rows;resume_complete_prefix=true)==1||error("complete replay prefix is not resumable")
+        _must_fail("existing target before writes") do;_batch_target_prefix(targets,"d1",target_rows;resume_complete_prefix=false);end
+        partial=_replay_path(targets,"d1",target_rows[2]);mkpath(dirname(partial));write(partial,"partial\n")
+        _must_fail("partial replay pair before writes") do;_batch_target_prefix(targets,"d1",target_rows;resume_complete_prefix=true);end
         quiescent=joinpath(root,"quiescent-replay");mkdir(quiescent);quiescent_rows=d1[1:2];for row in quiescent_rows;_write_once(_replay_path(quiescent,"d1",row),"replay\n");end
         own_pair=_replay_path(quiescent,"d1",quiescent_rows[1]);inflight=joinpath(quiescent,"julia_replay","d1","other-worker");mkdir(inflight);write(joinpath(inflight,"primary-without-sidecar.tsv"),"in flight\n");_verify_pair(quiescent,own_pair)
         _must_fail("quiescent in-flight replay window") do;_verify_replay_tree_quiescent(quiescent,"d1",quiescent_rows);end;rm(inflight;recursive=true)
@@ -1095,11 +1328,19 @@ end
 
 function main(args=ARGS)
     mode=_option(args,"mode";default="replay");mode=="selftest"&&return selftest()
+    mode=="batch-selftest"&&return batch_selftest()
     _assert_execution_context()
     stage=lowercase(_required(args,"stage"));stage in ("d0f","d1")||error("--stage must be d0f or d1")
     root=_required(args,"out-dir")
     if mode=="preflight"
         preflight(root,stage)
+    elseif mode=="write-batch-manifests"
+        batch_dir=_required(args,"batch-dir");batch_count=parse(Int,_required(args,"batch-count"))
+        _write_batch_manifests(root,stage,batch_dir,batch_count)
+    elseif mode=="replay-batch"
+        batch_manifest=_required(args,"batch-manifest")
+        resume=_bool(_option(args,"resume-complete-prefix";default="true"),"resume-complete-prefix")
+        replay_batch(root,stage,batch_manifest;resume_complete_prefix=resume)
     elseif mode=="replay"
         group=_required(args,stage=="d0f" ? "design" : "cell");seed=parse(Int,_required(args,"seed"))
         replay_one(root,stage,group,seed)
@@ -1110,7 +1351,7 @@ function main(args=ARGS)
     elseif mode=="validate-final"
         validate_final(root,stage)
     else
-        error("--mode must be preflight, replay, verify-replay, summarize, validate-final, or selftest")
+        error("--mode must be preflight, write-batch-manifests, replay-batch, replay, verify-replay, summarize, validate-final, or selftest")
     end
 end
 

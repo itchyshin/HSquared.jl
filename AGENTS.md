@@ -16,18 +16,20 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 PRESEAL ADMISSION; NOT ACTIVATED).**
-  Both blocked D0F roots and their phenotype/bootstrap seed spaces remain
-  permanently retired. The prospective concrete-string repair and disjoint
-  retry-3 bases `2034000000` / `2035000000` are committed and pushed; focused
-  twin checks and package checks are green. A zero-seed Julia 1.10 preflight
-  now opens the exact sealed tree and exercises commit/blob/sidecar/ancestry/
-  clean-tree checks before any phenotype can be generated. NEXT: obtain five
-  fresh exact CLEAN receipts, deploy the bound commits to Totoro, mint a new
-  D0F root/preseal, and run that preflight. No D1/D2 seed has been consumed,
-  default R routing remains held, and `public_covered_count` remains **5**. The
-  untracked downstream Julia replay remains an incomplete non-evidence
-  scaffold. START HERE: `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry2-infrastructure-blocker.md`.
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 RETIRED; RETRY-4 REPAIR IN PROGRESS; NOT ACTIVATED).**
+  Retry 3 completed 576 official fits and 576 base-R recomputations but wrote
+  zero Julia replay rows: the R bridge discarded the boundary solver's finite
+  AI score norm and official attempts stored `gradient_norm=NA`, which the
+  exact Julia replay correctly rejected. The sealed root and its
+  `2034000000` / `2035000000` phenotype/bootstrap spaces are permanently
+  retired and non-evidence. The prospective bridge/admission repair passes
+  focused pure-R tests and a live R-to-Julia boundary test. NEXT: freeze
+  disjoint retry-4 seeds, batch-safe replay/recomputation, five fresh exact
+  reviews, a new preseal, and a zero-seed preflight. No D1/D2 seed has been
+  consumed, default R routing remains held, and `public_covered_count` remains
+  **5**. The untracked downstream Julia replay remains an incomplete
+  non-evidence scaffold. START HERE:
+  `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry3-gradient-contract-blocker.md`.
 
 ## Core Scope
 

@@ -5328,3 +5328,21 @@ Newest entries go at the top.
 - Julia selftest/full `Pkg.test()`, R focused gates and built-package check
   0/0/0, sidecars, diff checks, and Fisher/Grace/Noether reviews are green. No
   recovery or activation exists.
+
+## 2026-07-14 — v0.7 D0F retry-3 gradient blocker and batch-safe retry-4 repair
+
+- Retry 3 is permanently unadjudicated: 576 official R fits and 576 base-R
+  recomputations exist, but every success stored `gradient_norm=NA`, so the
+  exact Julia replay failed before row 1 and produced no replay pair.
+- The R twin now surfaces the boundary AI score norm and reserves disjoint
+  retry-4 seed bases. Julia adds deterministic external replay batches, one
+  full corpus authentication per batch, per-row locked-input reauthentication,
+  create-once writes, and strict complete-prefix resume with fresh scientific
+  recomputation.
+- Batch/full replay selftests, full `Pkg.test()`, sidecar verification,
+  Documenter, preamble cap, and diff checks pass. The R twin's focused/live
+  tests and built-package check pass.
+- No retry-4 seed, recovery evidence, D1/D2 seed, activation, capability/count
+  change, release, or Actions campaign exists. Full checkpoint and report:
+  `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry3-gradient-contract-blocker.md`;
+  `docs/dev-log/after-task/2026-07-14-v07-d0f-retry3-gradient-batch-repair.md`.
