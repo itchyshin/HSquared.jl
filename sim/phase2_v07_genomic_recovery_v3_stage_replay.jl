@@ -801,10 +801,32 @@ function _validate_generated_replay(result)
     result
 end
 
+function _replay_base()
+    (attempted=true,status="fit_error",error_class="unclassified_replay_error",converged=false,boundary_status="NA",boundary_reason="NA",boundary_epsilon=NaN,
+        scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN,numerical_sigma_g2=NaN,numerical_sigma_e2=NaN,numerical_ratio=NaN,profile_loglik=NaN,lower_derivative_per_observation=NaN,upper_derivative_per_observation=NaN,iterations=NaN,objective=NaN,gradient_norm=NaN)
+end
+
+function _replay_engine_payload(out,base)
+    b=out.boundary;status=String(b.status);fit=out.fit
+    if fit===nothing
+        status=="boundary_unresolved"||error("resolved or unknown boundary payload returned without a fit")
+        return merge(base,(error_class=String(b.reason),boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation)))
+    end
+    status in RESOLVED||error("fit-bearing engine payload has an unresolved or unknown boundary status")
+    fit.converged||return merge(base,(error_class="replay_not_converged",))
+    vc=fit.variance_components;total=Float64(vc.sigma_a2)+Float64(vc.sigma_e2)
+    pr=b.profile_ratio===nothing ? NaN : Float64(b.profile_ratio)
+    nr=b.numerical_ratio===nothing ? NaN : Float64(b.numerical_ratio)
+    isfinite(pr)&&0<=pr<=1||error("resolved engine payload has an invalid profile ratio")
+    isfinite(total)&&total>0||error("resolved engine payload has an invalid numerical component total")
+    isfinite(nr)&&0<=nr<=1||error("resolved engine payload has an invalid declared numerical ratio")
+    grad=hasproperty(out.ai_diagnostics,:ai_score_norm) ? Float64(out.ai_diagnostics.ai_score_norm) : NaN
+    (attempted=true,status="success",error_class="none",converged=true,boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),scientific_sigma_g2=pr*total,scientific_sigma_e2=(1-pr)*total,scientific_ratio=pr,fitted_total_variance=total,numerical_sigma_g2=Float64(vc.sigma_a2),numerical_sigma_e2=Float64(vc.sigma_e2),numerical_ratio=nr,profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation),iterations=fit.iterations,objective=-fit.likelihood.loglik,gradient_norm=grad)
+end
+
 function _profile_replay(row,packet)
     started=time_ns();rss0=Sys.maxrss();s=packet.spectrum
-    base=(attempted=true,status="fit_error",error_class="unclassified_replay_error",converged=false,boundary_status="NA",boundary_reason="NA",boundary_epsilon=NaN,
-        scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN,numerical_sigma_g2=NaN,numerical_sigma_e2=NaN,numerical_ratio=NaN,profile_loglik=NaN,lower_derivative_per_observation=NaN,upper_derivative_per_observation=NaN,iterations=NaN,objective=NaN,gradient_norm=NaN)
+    base=_replay_base()
     result=base
     spec=animal_model_spec(packet.y,ones(row.n,1),sparse(1.0I,row.n,row.n),packet.Q;ids=packet.ids,method=:REML)
     provenance=(relationship_source="markers",id_order_fingerprint=packet.id_hash,precision_fingerprint=packet.precision_hash,kernel_fingerprint=packet.kernel_hash)
@@ -814,22 +836,7 @@ function _profile_replay(row,packet)
         result=merge(base,(error_class=_error_class(err),))
         nothing
     end
-    if out!==nothing
-        b=out.boundary;status=String(b.status);fit=out.fit
-        if fit===nothing
-            status=="boundary_unresolved" ? (result=merge(base,(error_class=String(b.reason),boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation)))) : (result=merge(base,(error_class=String(b.reason),)))
-        else
-            vc=fit.variance_components;total=vc.sigma_a2+vc.sigma_e2
-            nr=b.numerical_ratio===nothing ? NaN : Float64(b.numerical_ratio)
-            pr=b.profile_ratio===nothing ? NaN : Float64(b.profile_ratio);good=status in RESOLVED&&fit.converged&&isfinite(pr)&&isfinite(total)&&total>0
-            grad=hasproperty(out.ai_diagnostics,:ai_score_norm) ? Float64(out.ai_diagnostics.ai_score_norm) : NaN
-            if good
-                result=(attempted=true,status="success",error_class="none",converged=true,boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),scientific_sigma_g2=pr*total,scientific_sigma_e2=(1-pr)*total,scientific_ratio=pr,fitted_total_variance=total,numerical_sigma_g2=vc.sigma_a2,numerical_sigma_e2=vc.sigma_e2,numerical_ratio=nr,profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation),iterations=fit.iterations,objective=-fit.likelihood.loglik,gradient_norm=grad)
-            else
-                result=merge(base,(error_class="replay_not_resolved",))
-            end
-        end
-    end
+    out!==nothing&&(result=_replay_engine_payload(out,base))
     runtime=(time_ns()-started)/1e9;rss=max(rss0,Sys.maxrss())/1024^2
     final=merge(result,(runtime_seconds=runtime,peak_rss_mb=rss,retained_m=packet.retained_m,scale_denominator=packet.k,
         eigen_cv_population=s.cv,effective_rank=s.effective_rank,information_r020=s.information[1],se_info_r020=s.se[1],information_r050=s.information[2],se_info_r050=s.se[2],information_r080=s.information[3],se_info_r080=s.se[3],relationship_source="markers",relationship_method="vanraden1",allele_frequency_source="sample",relationship_scale="K_lambda",marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash,route=REPLAY_ROUTE))
@@ -1277,6 +1284,22 @@ function selftest()
     _must_fail("missing declared endpoint escapes as infrastructure error") do
         _validate_generated_replay(merge(lower,(numerical_ratio=NaN,)))
     end
+    payload_boundary=(status=:boundary_lower,reason=:boundary_lower,boundary_epsilon=BOUNDARY_EPSILON,profile_loglik=-1.0,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0,profile_ratio=0.0,numerical_ratio=BOUNDARY_EPSILON)
+    payload_fit=(converged=true,variance_components=(sigma_a2=lower_component,sigma_e2=1-lower_component),iterations=2,likelihood=(loglik=-1.0,))
+    payload_out=(boundary=payload_boundary,fit=payload_fit,ai_diagnostics=(ai_score_norm=0.0,))
+    _validate_generated_replay(_replay_engine_payload(payload_out,_replay_base()))
+    _must_fail("resolved boundary without fit escapes as infrastructure error") do
+        _replay_engine_payload(merge(payload_out,(fit=nothing,)),_replay_base())
+    end
+    _must_fail("resolved nonfinite profile escapes as infrastructure error") do
+        bad=merge(payload_out,(boundary=merge(payload_boundary,(profile_ratio=NaN,)),));_replay_engine_payload(bad,_replay_base())
+    end
+    _must_fail("resolved nonpositive total escapes as infrastructure error") do
+        badfit=merge(payload_fit,(variance_components=(sigma_a2=0.0,sigma_e2=0.0),));_replay_engine_payload(merge(payload_out,(fit=badfit,)),_replay_base())
+    end
+    unresolved_boundary=merge(payload_boundary,(status=:boundary_unresolved,reason=:profile_flat,profile_ratio=nothing,numerical_ratio=nothing))
+    unresolved_payload=_replay_engine_payload((boundary=unresolved_boundary,fit=nothing,ai_diagnostics=(ai_score_norm=NaN,)),_replay_base())
+    unresolved_payload.status=="fit_error"&&unresolved_payload.boundary_status=="boundary_unresolved"||error("legitimate unresolved engine result classification drift")
     parity=NamedTuple[]
     for mr in d1
         rep=mr.seed_offset-100;dev=(rep-24.5)*1e-4;boundary=rep==1 ? "boundary_lower" : rep==2 ? "boundary_upper" : rep==3 ? "interior_rescued" : "interior";ratio=rep==1 ? 0.0 : rep==2 ? 1.0 : .5+dev
