@@ -45,8 +45,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
-const D0F_PHENOTYPE_SEED_BASE = 2_038_000_000
-const D0F_PARITY_BOOTSTRAP_SHA256 = "0bd4293d14c76df136432ad098df6145cffa67c53ea0649091b1aafe648eb5e9"
+const D0F_PHENOTYPE_SEED_BASE = 2_040_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "1b2dd8d0d6fc52997c99d5a8945ce4fd1e0f2042ca7ea69a44d0cfd5d8002fb3"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -82,6 +82,11 @@ const TRUTH_PROVENANCE_COLUMNS = split("packet_schema_version truth_schema_versi
 const D0F_BOOTSTRAP_COLUMNS = vcat(split("design_id design_index bootstrap_rep panel_slot panel_rank"),[@sprintf("phenotype_%02d",i) for i in 1:8])
 const D0F_SUMMARY_COLUMNS = split("stage design_id design_index n m n_panels phenotypes_per_panel n_expected n_attempted n_converged n_interior n_interior_rescued n_boundary_lower n_boundary_upper n_unresolved n_error failure_classes convergence_rate d0f_status fit_blocker bootstrap_sha256 variance_within variance_within_bootstrap_lower variance_within_bootstrap_upper variance_between variance_between_bootstrap_lower variance_between_bootstrap_upper mean_ratio mcse_mean_ratio empirical_sd_ratio boundary_lower_proportion boundary_upper_proportion mcse_boundary_lower mcse_boundary_upper median_runtime_seconds p95_runtime_seconds median_peak_rss_mb p95_peak_rss_mb")
 const D1_SUMMARY_COLUMNS = split("stage cell_id cell_index n m marker_ratio truth_ratio n_expected n_attempted n_converged n_bias_rows n_interior n_interior_rescued n_boundary_lower n_boundary_upper n_unresolved n_error convergence_rate wilson_lower wilson_upper target truth mean_estimate bias mcse bias_ci_lower bias_ci_upper margin rmse mcse_rmse empirical_sd pilot_sd_upper required_n_raw required_n low_convergence summary_nonfinite precision_blocked futility_stopped target_futile cell_eligible cell_status median_runtime_seconds p95_runtime_seconds median_peak_rss_mb p95_peak_rss_mb rms_se_info empirical_sd_over_rms_se_info predicted_boundary_lower predicted_boundary_upper observed_boundary_lower observed_boundary_upper mcse_boundary_lower mcse_boundary_upper mean_spectral_cv mean_effective_rank failure_classes")
+
+struct ReplayContractError <: Exception
+    message::String
+end
+Base.showerror(io::IO, error::ReplayContractError) = print(io, error.message)
 
 struct TSV
     columns::Vector{String}
@@ -461,7 +466,7 @@ function _preseal(root,stage,manifest,manifest_path)
     for reviewer in REVIEWERS;bindings["$(reviewer)_receipt_sha256"]="receipts/$reviewer.tsv";end
     if stage=="d0f"
         bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv"
-        p["d0f_bootstrap_seed_base"]=="2039000000"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="true"||error("D0F bootstrap preseal contract drift")
+        p["d0f_bootstrap_seed_base"]=="2041000000"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="true"||error("D0F bootstrap preseal contract drift")
         _verify_pair(root,joinpath(root,"d0f_bootstrap_indices.tsv"))
         p["d0f_adjudication_root"]=="NA"&&p["d0f_adjudication_receipt_sha256"]=="NA"||error("D0F must not bind a D0F predecessor")
     else
@@ -609,30 +614,38 @@ function retry5_mechanism_preflight(root)
     root=_safe_dir(root,"Retry-4 diagnostic root")
     root==RETRY4_ROOT||error("diagnostic mechanism preflight accepts only the retired Retry-4 root")
     before=_immutable_tree_digest(root)
-    manifest,mpath=_manifest(root,"d0f";exact=false)
-    _validate_manifest(manifest,"d0f";d0f_seed_base=RETRY4_PHENOTYPE_SEED_BASE)
-    preseal,ppath,d0root=_retry4_preseal(root,manifest,mpath)
-    lock,cpath=_corpus_lock(root,"d0f",manifest,ppath)
-    _sha256(cpath)==RETRY4_CORPUS_LOCK_SHA256||error("Retry-4 corpus-lock hash drift")
-    digests=_corpus_digest_map(lock);preseal_sha=_sha256(ppath)
-    length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)||error("Retry-4 diagnostic seed inventory drift")
-    max_source_diff=0.0;max_component_diff=0.0
-    for (rank,seed) in enumerate(RETRY4_PREFLIGHT_SEEDS)
-        hits=filter(row->row.seed==seed,manifest);length(hits)==1||error("Retry-4 diagnostic seed is not exactly one manifest row: $seed")
-        row=only(hits);_verify_locked_seed_inputs(root,"d0f",row,digests)
-        packet=_packet(root,"d0f",row,preseal,preseal_sha);_validate_d0f_source(d0root,row,packet)
-        attempt=_read_attempt(root,"d0f",row,preseal,preseal_sha,packet)
-        expected_status=rank<=13 ? ("boundary_lower","boundary_upper") : ("interior","interior_rescued")
-        attempt.dict["boundary_status"] in expected_status||error("Retry-4 diagnostic seed class drift: $seed")
-        replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay)
-        isfinite(diff)&&diff<=1e-10||error("Retry-4 diagnostic source/replay parity exceeds 1e-10: $seed")
-        component_ratio=replay.numerical_sigma_g2/(replay.numerical_sigma_g2+replay.numerical_sigma_e2)
-        component_diff=abs(replay.numerical_ratio-component_ratio)
-        component_diff<=COMPONENT_RATIO_TOLERANCE||error("Retry-4 diagnostic endpoint/component parity exceeds 1e-12: $seed")
-        max_source_diff=max(max_source_diff,diff);max_component_diff=max(max_component_diff,component_diff)
+    result=try
+        manifest,mpath=_manifest(root,"d0f";exact=false)
+        _validate_manifest(manifest,"d0f";d0f_seed_base=RETRY4_PHENOTYPE_SEED_BASE)
+        preseal,ppath,d0root=_retry4_preseal(root,manifest,mpath)
+        lock,cpath=_corpus_lock(root,"d0f",manifest,ppath)
+        _sha256(cpath)==RETRY4_CORPUS_LOCK_SHA256||error("Retry-4 corpus-lock hash drift")
+        digests=_corpus_digest_map(lock);preseal_sha=_sha256(ppath)
+        length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)||error("Retry-4 diagnostic seed inventory drift")
+        expected_boundaries=sort!(collect(RETRY4_PREFLIGHT_SEEDS[1:13]))
+        _retry4_boundary_inventory(root,manifest,digests)==expected_boundaries||error("Retry-4 selected boundaries are not the complete locked boundary inventory")
+        max_source_diff=0.0;max_component_diff=0.0;interiors=NamedTuple[]
+        for (rank,seed) in enumerate(RETRY4_PREFLIGHT_SEEDS)
+            hits=filter(row->row.seed==seed,manifest);length(hits)==1||error("Retry-4 diagnostic seed is not exactly one manifest row: $seed")
+            row=only(hits);_verify_locked_seed_inputs(root,"d0f",row,digests)
+            packet=_packet(root,"d0f",row,preseal,preseal_sha);_validate_d0f_source(d0root,row,packet)
+            attempt=_read_attempt(root,"d0f",row,preseal,preseal_sha,packet)
+            expected_status=rank<=13 ? ("boundary_lower","boundary_upper") : ("interior","interior_rescued")
+            attempt.dict["boundary_status"] in expected_status||error("Retry-4 diagnostic seed class drift: $seed")
+            rank>13&&push!(interiors,row)
+            replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay)
+            isfinite(diff)&&diff<=1e-10||error("Retry-4 diagnostic source/replay parity exceeds 1e-10: $seed")
+            component_ratio=replay.numerical_sigma_g2/(replay.numerical_sigma_g2+replay.numerical_sigma_e2)
+            component_diff=abs(replay.numerical_ratio-component_ratio)
+            component_diff<=COMPONENT_RATIO_TOLERANCE||error("Retry-4 diagnostic endpoint/component parity exceeds 1e-12: $seed")
+            max_source_diff=max(max_source_diff,diff);max_component_diff=max(max_component_diff,component_diff)
+        end
+        sort(getproperty.(interiors,:design_index))==collect(1:3)&&all(row->row.panel_rank==1&&row.phenotype_rank==1,interiors)||error("Retry-4 interior representatives drifted from rank 1 of each design")
+        (max_source_diff=max_source_diff,max_component_diff=max_component_diff)
+    finally
+        _immutable_tree_digest(root)==before||error("retired Retry-4 root changed during diagnostic preflight")
     end
-    after=_immutable_tree_digest(root);after==before||error("retired Retry-4 root changed during diagnostic preflight")
-    println("Retry-5 mechanism preflight: PASS (retired Retry-4 diagnostic only; rows=16; source_max_abs_difference=$(_format(max_source_diff)); component_max_abs_difference=$(_format(max_component_diff)); no RNG or seed consumed; no evidence emitted)")
+    println("Retry-5 mechanism preflight: PASS (retired Retry-4 diagnostic only; rows=16; source_max_abs_difference=$(_format(result.max_source_diff)); component_max_abs_difference=$(_format(result.max_component_diff)); no RNG or seed consumed; no evidence emitted)")
     nothing
 end
 function _verify_locked_pair(root,path,digests)
@@ -645,6 +658,20 @@ function _verify_locked_seed_inputs(root,stage,row,digests)
     packet=_packet_dir(root,stage,row)
     for name in PACKET_PRIMARIES;_verify_locked_pair(root,joinpath(packet,name),digests);end
     nothing
+end
+
+function _retry4_boundary_inventory(root,manifest,digests)
+    seeds=Int[]
+    for row in manifest
+        path=_verify_locked_pair(root,_attempt_path(root,"d0f",row),digests)
+        table=_read_tsv(root,path,_attempt_columns("d0f"));length(table.rows)==1||error("Retry-4 attempt row count drift")
+        attempt=_dict(table,only(table.rows))
+        attempt["stage"]=="d0f"&&_int(attempt["seed"],"Retry-4 attempt seed")==row.seed||error("Retry-4 attempt identity drift")
+        attempt["status"]=="success"&&_bool(attempt["converged"],"Retry-4 converged")||error("Retry-4 diagnostic inventory contains a nonsuccess")
+        status=attempt["boundary_status"];status in RESOLVED||error("Retry-4 diagnostic inventory contains an unresolved class")
+        status in ("boundary_lower","boundary_upper")&&push!(seeds,row.seed)
+    end
+    sort!(seeds)
 end
 
 function _batch_partition(manifest,batch_index,batch_count)
@@ -797,7 +824,12 @@ function _validate_unsuccessful(d)
 end
 function _validate_generated_replay(result)
     validation=Dict(string(k)=>_format(v) for (k,v) in pairs(result))
-    result.status=="success" ? _validate_resolved(validation) : _validate_unsuccessful(validation)
+    try
+        result.status=="success" ? _validate_resolved(validation) : _validate_unsuccessful(validation)
+    catch error
+        error isa ReplayContractError&&rethrow()
+        throw(ReplayContractError("generated replay failed contract validation: $(sprint(showerror,error))"))
+    end
     result
 end
 
@@ -807,36 +839,43 @@ function _replay_base()
 end
 
 function _replay_engine_payload(out,base)
-    b=out.boundary;status=String(b.status);fit=out.fit
-    if fit===nothing
-        status=="boundary_unresolved"||error("resolved or unknown boundary payload returned without a fit")
-        return merge(base,(error_class=String(b.reason),boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation)))
+    try
+        b=out.boundary;status=String(b.status);fit=out.fit
+        if fit===nothing
+            status=="boundary_unresolved"||error("resolved or unknown boundary payload returned without a fit")
+            return merge(base,(error_class=String(b.reason),boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation)))
+        end
+        status in RESOLVED||error("fit-bearing engine payload has an unresolved or unknown boundary status")
+        fit.converged||return merge(base,(error_class="replay_not_converged",))
+        vc=fit.variance_components;total=Float64(vc.sigma_a2)+Float64(vc.sigma_e2)
+        pr=b.profile_ratio===nothing ? NaN : Float64(b.profile_ratio)
+        nr=b.numerical_ratio===nothing ? NaN : Float64(b.numerical_ratio)
+        isfinite(pr)&&0<=pr<=1||error("resolved engine payload has an invalid profile ratio")
+        isfinite(total)&&total>0||error("resolved engine payload has an invalid numerical component total")
+        isfinite(nr)&&0<=nr<=1||error("resolved engine payload has an invalid declared numerical ratio")
+        grad=hasproperty(out.ai_diagnostics,:ai_score_norm) ? Float64(out.ai_diagnostics.ai_score_norm) : NaN
+        (attempted=true,status="success",error_class="none",converged=true,boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),scientific_sigma_g2=pr*total,scientific_sigma_e2=(1-pr)*total,scientific_ratio=pr,fitted_total_variance=total,numerical_sigma_g2=Float64(vc.sigma_a2),numerical_sigma_e2=Float64(vc.sigma_e2),numerical_ratio=nr,profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation),iterations=fit.iterations,objective=-fit.likelihood.loglik,gradient_norm=grad)
+    catch error
+        error isa ReplayContractError&&rethrow()
+        throw(ReplayContractError("resolved engine payload failed contract validation: $(sprint(showerror,error))"))
     end
-    status in RESOLVED||error("fit-bearing engine payload has an unresolved or unknown boundary status")
-    fit.converged||return merge(base,(error_class="replay_not_converged",))
-    vc=fit.variance_components;total=Float64(vc.sigma_a2)+Float64(vc.sigma_e2)
-    pr=b.profile_ratio===nothing ? NaN : Float64(b.profile_ratio)
-    nr=b.numerical_ratio===nothing ? NaN : Float64(b.numerical_ratio)
-    isfinite(pr)&&0<=pr<=1||error("resolved engine payload has an invalid profile ratio")
-    isfinite(total)&&total>0||error("resolved engine payload has an invalid numerical component total")
-    isfinite(nr)&&0<=nr<=1||error("resolved engine payload has an invalid declared numerical ratio")
-    grad=hasproperty(out.ai_diagnostics,:ai_score_norm) ? Float64(out.ai_diagnostics.ai_score_norm) : NaN
-    (attempted=true,status="success",error_class="none",converged=true,boundary_status=status,boundary_reason=String(b.reason),boundary_epsilon=Float64(b.boundary_epsilon),scientific_sigma_g2=pr*total,scientific_sigma_e2=(1-pr)*total,scientific_ratio=pr,fitted_total_variance=total,numerical_sigma_g2=Float64(vc.sigma_a2),numerical_sigma_e2=Float64(vc.sigma_e2),numerical_ratio=nr,profile_loglik=b.profile_loglik===nothing ? NaN : Float64(b.profile_loglik),lower_derivative_per_observation=b.lower_derivative_per_observation===nothing ? NaN : Float64(b.lower_derivative_per_observation),upper_derivative_per_observation=b.upper_derivative_per_observation===nothing ? NaN : Float64(b.upper_derivative_per_observation),iterations=fit.iterations,objective=-fit.likelihood.loglik,gradient_norm=grad)
+end
+
+function _run_replay_engine(call,base)
+    out=try
+        call()
+    catch error
+        return merge(base,(error_class=_error_class(error),))
+    end
+    _replay_engine_payload(out,base)
 end
 
 function _profile_replay(row,packet)
     started=time_ns();rss0=Sys.maxrss();s=packet.spectrum
     base=_replay_base()
-    result=base
     spec=animal_model_spec(packet.y,ones(row.n,1),sparse(1.0I,row.n,row.n),packet.Q;ids=packet.ids,method=:REML)
     provenance=(relationship_source="markers",id_order_fingerprint=packet.id_hash,precision_fingerprint=packet.precision_hash,kernel_fingerprint=packet.kernel_hash)
-    out=try
-        HSquared._fit_ai_reml_genomic_boundary(spec;provenance=provenance,kernel=packet.K)
-    catch err
-        result=merge(base,(error_class=_error_class(err),))
-        nothing
-    end
-    out!==nothing&&(result=_replay_engine_payload(out,base))
+    result=_run_replay_engine(() -> HSquared._fit_ai_reml_genomic_boundary(spec;provenance=provenance,kernel=packet.K),base)
     runtime=(time_ns()-started)/1e9;rss=max(rss0,Sys.maxrss())/1024^2
     final=merge(result,(runtime_seconds=runtime,peak_rss_mb=rss,retained_m=packet.retained_m,scale_denominator=packet.k,
         eigen_cv_population=s.cv,effective_rank=s.effective_rank,information_r020=s.information[1],se_info_r020=s.se[1],information_r050=s.information[2],se_info_r050=s.se[2],information_r080=s.information[3],se_info_r080=s.se[3],relationship_source="markers",relationship_method="vanraden1",allele_frequency_source="sample",relationship_scale="K_lambda",marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash,route=REPLAY_ROUTE))
@@ -1146,7 +1185,16 @@ function _verify_full_r_parity(summary)
     true
 end
 
-function _must_fail(label,f);failed=false;try f() catch;failed=true end;failed||error("mutation stayed green: $label");end
+function _must_fail(f,label);failed=false;try f() catch;failed=true end;failed||error("mutation stayed green: $label");end
+function _must_contract_fail(f,label)
+    try
+        f()
+    catch error
+        error isa ReplayContractError||throw(ErrorException("mutation failed with the wrong exception type: $label ($(typeof(error)))"))
+        return nothing
+    end
+    error("mutation stayed green: $label")
+end
 function batch_selftest()
     manifest=[(stage="d1",cell_id=@sprintf("synthetic_%02d",i),seed=9000+i,truth_ratio=.5) for i in 1:12]
     partitions=[_batch_partition(manifest,i,5) for i in 1:5]
@@ -1203,6 +1251,9 @@ function batch_selftest()
     println("v0.7 genomic recovery-v3 Julia replay batching selftest: PASS (synthetic only; no official RNG or seed consumed)")
 end
 function selftest()
+    generic_gate_red=try;_must_fail(() -> nothing,"generic mutation-gate negative control");false catch error;occursin("mutation stayed green",sprint(showerror,error));end
+    contract_gate_red=try;_must_contract_fail(() -> nothing,"contract mutation-gate negative control");false catch error;occursin("mutation stayed green",sprint(showerror,error));end
+    generic_gate_red&&contract_gate_red||error("mutation-gate negative control stayed green")
     length(_d1_cells())==12&&length(_cell_table())==36||error("cell-table selftest")
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared");actual_cell_table=joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv");_read_cell_table(dirname(actual_cell_table),actual_cell_table;verify=false)
     _validate_cell_rows(_cell_table());_must_fail("sub-tolerance truth mutation") do;x=copy(_cell_table());x[1]=merge(x[1],(truth_ratio=x[1].truth_ratio+5e-13,));_validate_cell_rows(x);end
@@ -1221,7 +1272,7 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
-    D0F_PHENOTYPE_SEED_BASE==2_038_000_000&&RETRY4_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh/retired D0F phenotype seed-base drift")
+    D0F_PHENOTYPE_SEED_BASE==2_040_000_000&&RETRY4_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh/retired D0F phenotype seed-base drift")
     length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)&&RETRY4_PREFLIGHT_SEEDS[1]==2_036_103_006&&RETRY4_PREFLIGHT_SEEDS[end]==2_036_301_001||error("Retry-4 diagnostic seed inventory drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
@@ -1275,28 +1326,33 @@ function selftest()
     upper_declared=1-BOUNDARY_EPSILON;upper_component=prevfloat(upper_declared)
     upper=merge(replay,(boundary_status="boundary_upper",boundary_reason="boundary_upper",scientific_sigma_g2=1.0,scientific_sigma_e2=0.0,scientific_ratio=1.0,fitted_total_variance=1.0,numerical_sigma_g2=upper_component,numerical_sigma_e2=1-upper_component,numerical_ratio=upper_declared,lower_derivative_per_observation=1.0,upper_derivative_per_observation=0.0))
     _validate_generated_replay(upper);upper.numerical_ratio==upper_declared||error("upper endpoint declaration was rederived")
-    _must_fail("just-outside endpoint/component mutation escapes as infrastructure error") do
+    _must_contract_fail("just-outside endpoint/component mutation escapes as infrastructure error") do
         _validate_generated_replay(merge(lower,(numerical_sigma_g2=BOUNDARY_EPSILON+2e-12,numerical_sigma_e2=1-(BOUNDARY_EPSILON+2e-12),)))
     end
-    _must_fail("substantive endpoint/component mutation escapes as infrastructure error") do
+    _must_contract_fail("substantive endpoint/component mutation escapes as infrastructure error") do
         _validate_generated_replay(merge(upper,(numerical_sigma_g2=upper_declared-1e-8,numerical_sigma_e2=1-(upper_declared-1e-8),)))
     end
-    _must_fail("missing declared endpoint escapes as infrastructure error") do
+    _must_contract_fail("missing declared endpoint escapes as infrastructure error") do
         _validate_generated_replay(merge(lower,(numerical_ratio=NaN,)))
     end
     payload_boundary=(status=:boundary_lower,reason=:boundary_lower,boundary_epsilon=BOUNDARY_EPSILON,profile_loglik=-1.0,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0,profile_ratio=0.0,numerical_ratio=BOUNDARY_EPSILON)
     payload_fit=(converged=true,variance_components=(sigma_a2=lower_component,sigma_e2=1-lower_component),iterations=2,likelihood=(loglik=-1.0,))
     payload_out=(boundary=payload_boundary,fit=payload_fit,ai_diagnostics=(ai_score_norm=0.0,))
     _validate_generated_replay(_replay_engine_payload(payload_out,_replay_base()))
-    _must_fail("resolved boundary without fit escapes as infrastructure error") do
+    _must_contract_fail("resolved boundary without fit escapes as infrastructure error") do
         _replay_engine_payload(merge(payload_out,(fit=nothing,)),_replay_base())
     end
-    _must_fail("resolved nonfinite profile escapes as infrastructure error") do
+    _must_contract_fail("resolved nonfinite profile escapes as infrastructure error") do
         bad=merge(payload_out,(boundary=merge(payload_boundary,(profile_ratio=NaN,)),));_replay_engine_payload(bad,_replay_base())
     end
-    _must_fail("resolved nonpositive total escapes as infrastructure error") do
+    _must_contract_fail("resolved nonpositive total escapes as infrastructure error") do
         badfit=merge(payload_fit,(variance_components=(sigma_a2=0.0,sigma_e2=0.0),));_replay_engine_payload(merge(payload_out,(fit=badfit,)),_replay_base())
     end
+    _must_contract_fail("malformed returned payload was caught as a scientific engine failure") do
+        bad=merge(payload_out,(boundary=merge(payload_boundary,(numerical_ratio=NaN,)),));_run_replay_engine(() -> bad,_replay_base())
+    end
+    engine_failure=_run_replay_engine(() -> error("synthetic engine failure"),_replay_base())
+    engine_failure.status=="fit_error"&&engine_failure.error_class=="synthetic_engine_failure"||error("genuine engine failure classification drift")
     unresolved_boundary=merge(payload_boundary,(status=:boundary_unresolved,reason=:profile_flat,profile_ratio=nothing,numerical_ratio=nothing))
     unresolved_payload=_replay_engine_payload((boundary=unresolved_boundary,fit=nothing,ai_diagnostics=(ai_score_norm=NaN,)),_replay_base())
     unresolved_payload.status=="fit_error"&&unresolved_payload.boundary_status=="boundary_unresolved"||error("legitimate unresolved engine result classification drift")
