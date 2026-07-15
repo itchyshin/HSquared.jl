@@ -1168,3 +1168,15 @@ JOINT contract task per AGENTS.md rule 2.
 - Guard: no D1/D2 seed, recovery, activation, count move, release, or G10.
 - Next: land both repairs, live Julia 1.10 preflight, fresh exact receipts, then
   mint the retry-3 preseal/root.
+
+## 2026-07-15 — Codex handoff; Retry-4 negative endpoint frozen
+
+- Platform order remains sequential. The next Codex session owns both twin live-toolchain
+  needs for the prospective Retry-5 endpoint-contract repair.
+- Active branch: `codex/2026-07-13-v07-performance-localization`; Julia `41219ce1` /
+  draft PR #274 and R `31befc0` / draft PR #137 were pushed and CI-green at the sweep.
+- Totoro has no active v0.7 worker. Retry-4 remains permanently retired and
+  unadjudicated; D1/D2 never opened; activation and `public_covered_count` remain held.
+- `CARRIED-OVER`: one quarantined untracked Julia downstream-replay scaffold, plus
+  unrelated pre-existing local branches/worktree/stash left for their owners.
+- Start at `docs/dev-log/handover/2026-07-15-codex-handover.md`.

@@ -16,18 +16,18 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-4 NEGATIVE ENDPOINT; NOT ACTIVATED).**
-  Retry 4 completed 576 official fits and 576 independent base-R
-  recomputations, but exact Julia replay stopped after 455 admitted rows on a
-  one-ULP endpoint-representation contract defect. Four batches stopped
-  fail-closed and 121 later rows have no replay output. No Julia summary or
-  adjudication receipt exists. The root and `2036000000` / `2037000000` seed
-  spaces are permanently retired and unadjudicated; D1/D2 never opened.
-  Classification: `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`,
-  not solver, KKT, gradient, convergence, or recovery failure. Default R
-  routing remains held and `public_covered_count` remains **5**; only the
+- **As of 2026-07-15 (v0.7 genomic public-activation arc — CODEX HANDOFF; NOT ACTIVATED).**
+  Retry 4 is a permanently retired diagnostic root classified
+  `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`: 576 official fits
+  and 576 base-R recomputations completed, while exact Julia replay stopped
+  after 455 admitted rows on a one-ULP endpoint representation defect. No
+  compute is live, no Julia summary or adjudication receipt exists, and D1/D2
+  never opened. Both twins are pushed on
+  `codex/2026-07-13-v07-performance-localization` at Julia `41219ce1` (draft
+  PR #274) and R `31befc0` (draft PR #137), with green CI. Default R routing
+  remains held and `public_covered_count` remains **5**; only the
   supplied-`Ginv` estimator remains covered. START HERE:
-  `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry4-boundary-parity-blocker.md`.
+  `docs/dev-log/handover/2026-07-15-codex-handover.md`.
 
 ## Core Scope
 

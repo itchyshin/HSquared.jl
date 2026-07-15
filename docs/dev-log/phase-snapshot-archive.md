@@ -834,3 +834,16 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   **5**. The untracked downstream Julia replay remains an incomplete
   non-evidence scaffold. START HERE:
   `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry3-gradient-contract-blocker.md`.
+
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-4 NEGATIVE ENDPOINT; NOT ACTIVATED).**
+  Retry 4 completed 576 official fits and 576 independent base-R
+  recomputations, but exact Julia replay stopped after 455 admitted rows on a
+  one-ULP endpoint-representation contract defect. Four batches stopped
+  fail-closed and 121 later rows have no replay output. No Julia summary or
+  adjudication receipt exists. The root and `2036000000` / `2037000000` seed
+  spaces are permanently retired and unadjudicated; D1/D2 never opened.
+  Classification: `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`,
+  not solver, KKT, gradient, convergence, or recovery failure. Default R
+  routing remains held and `public_covered_count` remains **5**; only the
+  supplied-`Ginv` estimator remains covered. START HERE:
+  `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry4-boundary-parity-blocker.md`.
