@@ -43,6 +43,8 @@ repair is synthetic/test-only and cannot retroactively adjudicate Retry 6.
   verification passed; `git diff --check` passed.
 - Totoro freeze audit: root digest unchanged, all members read-only, no live
   root worker.
+- Cross-twin `handoff_gate.sh`: exit 1 only for the declared H2-2 drafts,
+  quarantined scaffold, and pre-existing legacy branches; active heads pushed.
 - Julia package/docs/preamble and final R CI are recorded when the closeout
   commits are validated.
 

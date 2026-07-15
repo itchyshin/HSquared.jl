@@ -62,6 +62,21 @@ and whether the source task is being archived; otherwise the user can
 reasonably interpret it as a concurrent lane. The durable memory note is
 `20260715-072226-h2-single-thread-handoff-guard.md`.
 
+## Landing state
+
+`handoff_gate.sh` was run across both twins after the closeout pushes. It
+returned 1 only for the declared carried-over state below and pre-existing
+legacy branches; the active heads themselves were pushed.
+
+| Artifact | State | Why / resume command |
+| --- | --- | --- |
+| Julia active branch through `3ca85ef2` | LANDED: committed, pushed, draft PR #274 | Continue only under a new explicit goal. |
+| R active branch through `5a5103a` | LANDED: committed, pushed, draft PR #137 | Keep ordinary marker routing held. |
+| Two Retry-5 H2-2 drafts in each twin | CARRIED-OVER: modified, unstaged | User/H2-2 work; preserve and inspect only if that archived task is deliberately resumed. |
+| Julia downstream scaffold | CARRIED-OVER: untracked, quarantined | Preserve SHA-256 `30838979…6155`; never bulk-stage. |
+| Julia legacy local branches | CARRIED-OVER: pre-existing, 21 commits unreachable from remotes | Exact branch inventory is unchanged from `docs/dev-log/handover/2026-07-15-codex-handover.md`; re-enumerate with `bash /Users/z3437171/shinichi-brain/tools/handoff_gate.sh "$PWD"`. Do not delete or push as part of this arc. |
+| R legacy local branches | CARRIED-OVER: pre-existing, 41 commits unreachable from remotes | Exact branch inventory is in the prior cross-twin handover and current gate output; re-enumerate by passing the R twin path to `handoff_gate.sh`. Do not delete or push as part of this arc. |
+
 ## Next immediate steps
 
 1. Wait for exact-head R CI and final Julia docs/package/preamble checks.
