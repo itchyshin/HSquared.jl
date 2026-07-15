@@ -326,6 +326,9 @@ git -C '/Users/z3437171/Dropbox/Github Local/hsquared' diff --name-only origin/m
 - `julia` may be off a non-interactive shell's `PATH`; it is installed under
   `~/.juliaup/bin`.
 - Totoro's `pgrep` probe can match its own shell; inspect the command, not only the count.
+- When posting with `gh pr comment --body`, do not place Markdown backticks inside a
+  double-quoted shell argument: the shell executes them as command substitution. Use a
+  single-quoted plain-text body or a safely prepared body file.
 - Never run simulations/recovery on GitHub Actions or store raw campaign artifacts there.
 
 ## Live Environment and Verification Recipe

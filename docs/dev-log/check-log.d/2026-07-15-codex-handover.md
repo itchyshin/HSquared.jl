@@ -12,5 +12,7 @@
   from the handoff commit.
 - No simulation, fit, capability/status change, count change, activation, or merge
   occurred in this handoff slice.
+- A malformed PR comment caused by shell-interpreted Markdown backticks was deleted and
+  replaced immediately with a safe plain-text comment.
 - Authoritative continuation:
   `docs/dev-log/handover/2026-07-15-codex-handover.md`.

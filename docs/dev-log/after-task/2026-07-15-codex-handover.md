@@ -71,7 +71,9 @@ The landing gate reports historical unpushed branches across both repos in addit
 the current lane's real untracked scaffold. These were separated carefully into declared
 out-of-scope state rather than being mistaken for current-session work. Totoro `pgrep`
 also matched the probe shell itself, so the command text was inspected to confirm there
-was no real worker.
+was no real worker. The first PR-comment command placed Markdown backticks inside a
+double-quoted shell argument, so command substitution mangled the posted text. That
+comment was deleted immediately and replaced with a plain-text, single-quoted comment.
 
 ## 10. Known Residuals
 
