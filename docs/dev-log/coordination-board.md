@@ -26,33 +26,32 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-15
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- Retry 5 is permanently
-  `UNADJUDICATED — POST-PRESEAL TREE-VALIDATION BLOCKER (ADMISSION CONTRACT NOT PROVEN)`.
-  Its schema-3 preseal and bootstrap manifest completed, and seed `2038101001`
-  produced one valid successful official fit. Before the second seed was
-  selected, the bound-stage validator reapplied the pristine-tree predicate
-  and rejected the legitimate first `attempts/` and `packets/` members.
-- The Totoro root is frozen unchanged at 38 files and nine directories, with
-  19/19 sidecar pairs valid and sorted tree digest
-  `f97d1c15600307238eef794c80bfc3644715421ee93f0812527f951727cc1b02`.
-  No Retry-5 process, second phenotype, corpus lock, base-R/Julia summary,
-  replay, adjudication receipt, D1, or D2 exists. The complete `2038000000` /
-  `2039000000` spaces are retired, including unused members.
-- A strict chronology audit found the deployed Julia head `06941997` lacked
-  the required typed infrastructure-error mutation gate. Its do-block mutation
-  helper could pass by catching an unrelated `MethodError`; exact-head CI did
-  not run the standalone replay selftest. The five CLEAN receipts exist, but
-  durable proof of the fixed 16-packet run and two review batches does not.
-  The first draw therefore did not have the required admission proof.
-- The retired Retry-1 through Retry-4 roots and offset-7101 precision blocker
-  remain unchanged. D0 remains diagnostic/non-selection evidence only.
+- Retry 6 is permanently
+  `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER`. Every pre-RNG gate was
+  green; 576 official fits, 576 independent base-R recomputations, and 576
+  exact Julia replays completed. The three create-once summaries are complete
+  and agree, including maximum attempt parity `3.19e-12` and summary parity
+  `7.11e-15`.
+- The first post-run Fisher receipt writer stopped before writing any receipt:
+  Julia replay rows were correctly admitted as `julia_profile_replay`, then
+  summary reconstruction re-admitted them under `ordinary_auto_genomic` and
+  reported malformed scientific output. Exact clause diagnostics found zero
+  malformed official, base-R, or Julia rows. No adjudication receipt exists;
+  D1/D2 never opened.
+- The Totoro root is frozen read-only at 9,248 files / 598 directories, with
+  content digest `148da8ef…d754f` unchanged and no live worker. Its complete
+  `2040000000` / `2041000000` phenotype/bootstrap spaces are retired.
+- R head `562b93e` contains a seed-free prospective repair: route-aware D0F/D1
+  summary reconstruction plus explicit retirement of Retry-6 seeds. It cannot
+  repair, resume, subset, pool, or adjudicate Retry 6.
+- The earlier retired roots and offset-7101 precision blocker remain unchanged.
+  D0 remains diagnostic/non-selection evidence only.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: do not repair or reuse Retry 5. Prospective Retry 6 is separate
-  carried-over work and must land typed mutation controls, runtime projection
-  validation, durable preflight/review-batch evidence, exact reviews, clean
-  deployment, and preseal before any disjoint `2040000000` / `2041000000` RNG.
-  Totoro/DRAC only, never GitHub Actions.
+- Next action: finish CI and closeout for the seed-free repair. Do not allocate
+  or consume a successor seed until a new contract, mutation controls, exact
+  reviews, clean deployment, preseal, and explicit seed-lock amendment are all
+  green. Totoro/DRAC only, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 

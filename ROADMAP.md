@@ -43,13 +43,18 @@ seed spaces are permanently unadjudicated and retired. Retry 4 completed 576
 official fits and 576 independent base-R recomputations, but exact Julia replay
 stopped after 455 admitted rows on a one-ULP endpoint-representation contract
 defect. Its root and seeds are retired and unadjudicated; D1/D2 never opened.
-Retry 5 then stopped after one successful official D0F fit because the
-post-preseal validator reapplied the pristine-tree predicate before selecting
-the second seed. Its root and complete seed spaces are retired. A strict
-post-run audit also found the typed Julia mutation gate absent and durable
-16-packet/two-batch proof incomplete at the first draw. Retry 6, Rose review,
-and G10 therefore remain open; the default route is not activated. Production
-high-level genomic fitting remains unimplemented.
+Retry 5 then stopped after one successful official D0F fit on a post-preseal
+tree-validation blocker. Retry 6 repaired that infrastructure prospectively,
+passed every pre-RNG gate, and completed 576 official fits, 576 independent
+base-R recomputations, and 576 exact Julia replays. Its three complete summaries
+agree, but the first post-run receipt writer exposed a route-binding defect in
+summary reconstruction before any receipt was written. Retry 6 is permanently
+`UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER`; its root and complete seed
+spaces are retired, and D1/D2 never opened. A seed-free prospective R repair
+threads the declared route through both D0F and D1 summaries and retires the
+seed spaces, but cannot adjudicate Retry 6. Rose activation review and G10
+remain open; the default route is not activated. Production high-level genomic
+fitting remains unimplemented.
 
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
@@ -252,7 +257,9 @@ high-level genomic fitting remains unimplemented.
   root and seeds are retired and unadjudicated; D1/D2 never opened. Retry 5
   stopped after one successful fit on a post-preseal runtime-tree blocker and
   is also not contract-clean under the post-run admission audit. Its complete
-  seed spaces are retired; Retry 6, Rose, and G10 remain open.
+  seed spaces are retired. Retry 6 later completed all three evidence routes
+  but remains unadjudicated on a post-run adjudicator route-binding blocker;
+  Rose activation review and G10 remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -373,17 +380,19 @@ completed 576 official fits and 576 independent base-R recomputations, but
 exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
 representation contract defect. Its root and seeds are retired and
 unadjudicated; D1/D2 never opened. Retry 5 stopped before its second phenotype
-on a post-preseal tree-validation blocker; the root is immutable, all Retry-5
-seed spaces are retired, and the admission chronology is not proven clean.
-Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
+on a post-preseal tree-validation blocker. Retry 6 then completed 576 official,
+576 base-R, and 576 Julia replay rows with three complete agreeing summaries,
+but its first post-run receipt writer failed on an adjudicator route-binding
+defect before any receipt existed. Both roots and their complete seed spaces
+are retired; D1/D2 never opened. Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. Any next activation attempt requires the
-preregistered runtime-tree and typed-mutation repair, durable preflight/review-
-batch evidence, and fresh disjoint Retry-6 seeds; Rose and G10 remain held. The
+`public_covered_count` remains 5. Any next activation attempt requires a new
+preregistered contract, fresh exact-head reviews, clean deployment and preseal,
+and newly allocated disjoint seeds; none exists yet. Rose and G10 remain held. The
 negative recovery-v2 outcome is banked in
 `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`.
 

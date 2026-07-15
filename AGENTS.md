@@ -16,19 +16,21 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-15 (v0.7 genomic public-activation arc — RETRY-5 RETIRED; NOT ACTIVATED).**
-  Retry 5 stopped after one valid official D0F fit at the post-preseal runtime-
-  tree validator and is permanently
-  `UNADJUDICATED — POST-PRESEAL TREE-VALIDATION BLOCKER`. A post-run admission
-  audit also found that deployed Julia head `06941997` lacked the required
-  typed infrastructure-error mutation gate, while durable proof of the fixed
-  16-packet run and two review batches is absent. The root is frozen unchanged
-  at 38 files / nine directories; all Retry-5 phenotype/bootstrap spaces are
-  retired; no corpus lock, summary, Julia replay, adjudication receipt, D1, or
-  D2 exists. Default R routing remains held and `public_covered_count` remains
-  **5**; only the supplied-`Ginv` estimator remains covered. Prospective Retry-6
-  work is carried over and cannot cure Retry 5 retroactively. START HERE:
-  `docs/dev-log/recovery-checkpoints/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`.
+- **As of 2026-07-15 (v0.7 genomic public-activation arc — RETRY-6 RETIRED; NOT ACTIVATED).**
+  Retry 6 passed every pre-RNG gate and completed 576 official fits, 576
+  independent base-R recomputations, and 576 exact Julia replays. All three
+  create-once summaries are complete and mutually agree, but the first
+  post-run receipt writer stopped before writing a receipt because summary
+  reconstruction rebound Julia rows to the ordinary-R route. Classification:
+  `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER`. The 9,248-file root and
+  complete `2040000000` / `2041000000` seed spaces are permanently retired;
+  no post-run review receipt, adjudication receipt, D1, or D2 exists. A
+  seed-free prospective R repair at `562b93e` threads the declared route
+  through D0F and D1 summary reconstruction and retires the seed spaces; it
+  does not repair or adjudicate Retry 6. Default R routing remains held and
+  `public_covered_count` remains **5**; only the supplied-`Ginv` estimator
+  remains covered. START HERE:
+  `docs/dev-log/handover/2026-07-15-retry6-terminal-route-repair.md`.
 
 ## Core Scope
 
