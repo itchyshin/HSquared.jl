@@ -16,20 +16,20 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-3 RETIRED; RETRY-4 REPAIR IN PROGRESS; NOT ACTIVATED).**
-  Retry 3 completed 576 official fits and 576 base-R recomputations but wrote
-  zero Julia replay rows: the R bridge discarded the boundary solver's finite
-  AI score norm and official attempts stored `gradient_norm=NA`, which the
-  exact Julia replay correctly rejected. The sealed root and its
-  `2034000000` / `2035000000` phenotype/bootstrap spaces are permanently
-  retired and non-evidence. The prospective bridge/admission repair passes
-  focused pure-R tests and a live R-to-Julia boundary test. NEXT: freeze
-  disjoint retry-4 seeds, batch-safe replay/recomputation, five fresh exact
-  reviews, a new preseal, and a zero-seed preflight. No D1/D2 seed has been
-  consumed, default R routing remains held, and `public_covered_count` remains
-  **5**. The untracked downstream Julia replay remains an incomplete
-  non-evidence scaffold. START HERE:
-  `docs/dev-log/recovery-checkpoints/2026-07-14-v07-d0f-retry3-gradient-contract-blocker.md`.
+- **As of 2026-07-14 (v0.7 genomic public-activation arc — RETRY-4 PRESEED REVIEW; NOT ACTIVATED).**
+  Three separate 576-fit D0F corpora are permanently unadjudicated after exact
+  Julia replay stopped before row 1 for fixed-panel cardinality, concrete-`Cmd`
+  typing, and missing successful-gradient contract failures. All observed
+  phenotype/bootstrap seeds are retired. Retry-4 bases `2036000000` /
+  `2037000000`, finite-gradient admission, and batch-safe R/Julia replay are
+  committed with local and CI gates green. NEXT: obtain five fresh exact CLEAN
+  reviews bound to the final deployed heads and corrected doc-49 hash, then
+  create a new preseal and run the zero-seed preflight. No retry-4 phenotype or
+  D1/D2 seed exists, default R routing remains held, and
+  `public_covered_count` remains **5**. The untracked downstream Julia replay
+  remains an incomplete non-evidence scaffold. START HERE: the hash-bound
+  execution contract in the R twin,
+  `docs/design/49-v07-genomic-recovery-v3-sample-size-ladder.md`.
 
 ## Core Scope
 

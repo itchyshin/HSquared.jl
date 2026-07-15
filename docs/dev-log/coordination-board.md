@@ -23,24 +23,24 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-## Current v0.7 recovery status — 2026-07-13
+## Current v0.7 recovery status — 2026-07-14
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- The first official D0F root is hash-locked, retired, and unadjudicated: its R output was
-  generated, but Julia replay admission found that the 576-row phenotype
-  manifest was projected to 72 fixed panels without selecting one of the eight
-  phenotype ranks. No Julia replay row was admitted. The repaired validator now
-  requires exactly ranks `1:8`, common panel fields/fingerprints, and uses rank
-  1 only as the canonical comparison row. The fresh retry phenotype seed base
-  is `2032000000`; the R-owned bootstrap base is `2033000000`.
-- Apart from that repaired cardinality defect, the pure D0F/D1 preseal layer,
-  operational Julia replay, and operational R generator/recomputer/launcher
-  retain the 39-key acyclic contract, exact D0 diagnostics, typed D0F/D1
-  parity, live environment/Git/tree gates, native K/Q provenance with `1e-10`
-  numerical parity, and mutation-red controls. This is integrity tooling, not
-  recovery evidence. Final admission remains fail-closed. The replay worker is
-  parallel-safe by construction: target-local writes during fan-out,
-  exact-tree verification only after quiescence.
+- Three separate 576-fit D0F roots are hash-locked, retired, and
+  unadjudicated. Exact Julia replay stopped before row 1 for fixed-panel
+  cardinality, concrete-`Cmd` typing, and missing successful-gradient contract
+  failures. Every observed phenotype/bootstrap seed is retired; none of the
+  provisional summaries is recovery evidence.
+- Retry 4 freezes disjoint phenotype/bootstrap bases `2036000000` /
+  `2037000000`, carries the boundary AI score norm through the R bridge, rejects
+  successful nonfinite gradients before publication and at admission, and uses
+  deterministic external R/Julia batches with once-per-batch corpus validation,
+  per-row locked-input reauthentication, create-once writes, and freshly
+  checked complete-prefix resume. This is integrity tooling, not recovery.
+- The preseal layer and operational R/Julia tools retain exact D0 diagnostics,
+  typed D0F/D1 parity, live environment/Git/tree gates, native K/Q provenance
+  with `1e-10` numerical parity, and mutation-red controls. Final admission
+  remains fail-closed.
 - The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
   converged, five cells exceed the 2,000-fit cap, and the maximum required N is
   16,325. Offsets 7101:7148 remain retired.
@@ -53,9 +53,10 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: land and re-audit the Julia validator/seed-contract repair, mint
-  fresh exact receipts and preseal, and run the new D0F seeds on Totoro/DRAC
-  only, never GitHub Actions. Never mutate or adjudicate the failed D0F root.
+- Next action: bind five fresh exact reviews to the corrected doc-49 hash and
+  final deployed heads, then mint a new retry-4 preseal and run the zero-seed
+  preflight. Only after those gates may retry-4 D0F run on Totoro/DRAC, never
+  GitHub Actions. Never mutate or adjudicate any failed D0F root.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
