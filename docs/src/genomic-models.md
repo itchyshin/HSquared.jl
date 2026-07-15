@@ -31,8 +31,11 @@ phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
 completed 576 official fits and 576 independent base-R recomputations, but
 exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
 representation contract defect. Its root and seeds are retired and
-unadjudicated; D1/D2 never opened. The R surface therefore remains
-partial/held pending fresh prospective repair, Retry 5, Rose, and G10.
+unadjudicated; D1/D2 never opened. Retry 5 then stopped after one successful
+official fit on a post-preseal runtime-tree blocker. Its immutable root and
+complete seed spaces are retired, and a post-run audit found the admission
+proof not contract-clean. The R surface therefore remains partial/held pending
+the prospective Retry-6 repair, durable admission evidence, Rose, and G10.
 `single_step()` remains a separate
 experimental surface.
 The dense paths here are validation-scale only — they do not gain the sparse

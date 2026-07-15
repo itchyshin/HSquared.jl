@@ -16,18 +16,19 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-15 (v0.7 genomic public-activation arc — CODEX HANDOFF; NOT ACTIVATED).**
-  Retry 4 is a permanently retired diagnostic root classified
-  `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`: 576 official fits
-  and 576 base-R recomputations completed, while exact Julia replay stopped
-  after 455 admitted rows on a one-ULP endpoint representation defect. No
-  compute is live, no Julia summary or adjudication receipt exists, and D1/D2
-  never opened. Both twins are pushed on
-  `codex/2026-07-13-v07-performance-localization` at Julia `41219ce1` (draft
-  PR #274) and R `31befc0` (draft PR #137), with green CI. Default R routing
-  remains held and `public_covered_count` remains **5**; only the
-  supplied-`Ginv` estimator remains covered. START HERE:
-  `docs/dev-log/handover/2026-07-15-codex-handover.md`.
+- **As of 2026-07-15 (v0.7 genomic public-activation arc — RETRY-5 RETIRED; NOT ACTIVATED).**
+  Retry 5 stopped after one valid official D0F fit at the post-preseal runtime-
+  tree validator and is permanently
+  `UNADJUDICATED — POST-PRESEAL TREE-VALIDATION BLOCKER`. A post-run admission
+  audit also found that deployed Julia head `06941997` lacked the required
+  typed infrastructure-error mutation gate, while durable proof of the fixed
+  16-packet run and two review batches is absent. The root is frozen unchanged
+  at 38 files / nine directories; all Retry-5 phenotype/bootstrap spaces are
+  retired; no corpus lock, summary, Julia replay, adjudication receipt, D1, or
+  D2 exists. Default R routing remains held and `public_covered_count` remains
+  **5**; only the supplied-`Ginv` estimator remains covered. Prospective Retry-6
+  work is carried over and cannot cure Retry 5 retroactively. START HERE:
+  `docs/dev-log/recovery-checkpoints/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`.
 
 ## Core Scope
 

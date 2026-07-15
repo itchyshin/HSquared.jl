@@ -23,42 +23,36 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-## Current v0.7 recovery status — 2026-07-14
+## Current v0.7 recovery status — 2026-07-15
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- Four separate 576-fit D0F roots are hash-locked, retired, and
-  unadjudicated. The first three stopped before exact Julia replay row 1 for
-  fixed-panel cardinality, concrete-`Cmd` typing, and missing successful-
-  gradient contracts. Retry 4 completed 576 official fits and 576 independent
-  base-R recomputations, but exact Julia replay stopped after 455 admitted rows
-  on a one-ULP endpoint-representation contract defect. Four batches stopped
-  fail-closed and 121 later rows have no replay output.
-- Retry 4 is classified `UNADJUDICATED — REPLAY_ENDPOINT_REPRESENTATION_BLOCKER`.
-  No Julia summary or adjudication receipt exists. Its root and disjoint
-  `2036000000` / `2037000000` phenotype/bootstrap seed spaces are permanently
-  retired; D1/D2 never opened. The raw `fit_error`/KKT label is a validator
-  misclassification, not solver, gradient, convergence, or recovery evidence.
-- The preseal layer and operational R/Julia tools retain exact D0 diagnostics,
-  typed D0F/D1 parity, live environment/Git/tree gates, native K/Q provenance
-  with `1e-10` numerical parity, and mutation-red controls. Final admission
-  remains fail-closed.
-- The retired offset-7101 pilot remains a `PRECISION_BLOCKER`: 432/432 fits
-  converged, five cells exceed the 2,000-fit cap, and the maximum required N is
-  16,325. Offsets 7101:7148 remain retired.
-- Recovery-v3 doc 49 replaces blind replication with a preregistered
-  spectral-information and sample-size ladder. The official D0 replay at exact
-  R `cdb33dc` and Julia `4c5e54de` admitted all 432 immutable packets and
-  reproduced 103,248 eigenvalues; R--Julia summary differences were below
-  `2.62e-12`.
-- D0 is a corpus/recomputation pass and non-selection diagnostic evidence only.
-  It is not recovery and does not admit fresh D0F/D1 phenotypes by itself.
+- Retry 5 is permanently
+  `UNADJUDICATED — POST-PRESEAL TREE-VALIDATION BLOCKER (ADMISSION CONTRACT NOT PROVEN)`.
+  Its schema-3 preseal and bootstrap manifest completed, and seed `2038101001`
+  produced one valid successful official fit. Before the second seed was
+  selected, the bound-stage validator reapplied the pristine-tree predicate
+  and rejected the legitimate first `attempts/` and `packets/` members.
+- The Totoro root is frozen unchanged at 38 files and nine directories, with
+  19/19 sidecar pairs valid and sorted tree digest
+  `f97d1c15600307238eef794c80bfc3644715421ee93f0812527f951727cc1b02`.
+  No Retry-5 process, second phenotype, corpus lock, base-R/Julia summary,
+  replay, adjudication receipt, D1, or D2 exists. The complete `2038000000` /
+  `2039000000` spaces are retired, including unused members.
+- A strict chronology audit found the deployed Julia head `06941997` lacked
+  the required typed infrastructure-error mutation gate. Its do-block mutation
+  helper could pass by catching an unrelated `MethodError`; exact-head CI did
+  not run the standalone replay selftest. The five CLEAN receipts exist, but
+  durable proof of the fixed 16-packet run and two review batches does not.
+  The first draw therefore did not have the required admission proof.
+- The retired Retry-1 through Retry-4 roots and offset-7101 precision blocker
+  remain unchanged. D0 remains diagnostic/non-selection evidence only.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: do not replay or salvage Retry 4. Any continuation requires a
-  newly preregistered endpoint-representation repair, lower/upper one-ULP
-  regression mutations, a diagnostic preflight over all 13 retired boundary
-  packets, exact reviews/preseal, and fresh disjoint Retry-5 seeds on
-  Totoro/DRAC, never GitHub Actions.
+- Next action: do not repair or reuse Retry 5. Prospective Retry 6 is separate
+  carried-over work and must land typed mutation controls, runtime projection
+  validation, durable preflight/review-batch evidence, exact reviews, clean
+  deployment, and preseal before any disjoint `2040000000` / `2041000000` RNG.
+  Totoro/DRAC only, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 

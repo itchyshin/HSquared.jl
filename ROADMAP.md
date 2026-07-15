@@ -43,9 +43,13 @@ seed spaces are permanently unadjudicated and retired. Retry 4 completed 576
 official fits and 576 independent base-R recomputations, but exact Julia replay
 stopped after 455 admitted rows on a one-ULP endpoint-representation contract
 defect. Its root and seeds are retired and unadjudicated; D1/D2 never opened.
-Fresh prospective repair, Retry 5, Rose review, and G10 therefore remain open;
-the default route is not activated. Production high-level genomic fitting
-remains unimplemented.
+Retry 5 then stopped after one successful official D0F fit because the
+post-preseal validator reapplied the pristine-tree predicate before selecting
+the second seed. Its root and complete seed spaces are retired. A strict
+post-run audit also found the typed Julia mutation gate absent and durable
+16-packet/two-batch proof incomplete at the first draw. Retry 6, Rose review,
+and G10 therefore remain open; the default route is not activated. Production
+high-level genomic fitting remains unimplemented.
 
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
@@ -245,8 +249,10 @@ remains unimplemented.
   phenotype/bootstrap seed is retired. Retry 4 completed 576 official fits and
   576 independent base-R recomputations, but exact Julia replay stopped after
   455 admitted rows on a one-ULP endpoint-representation contract defect. Its
-  root and seeds are retired and unadjudicated; D1/D2 never opened. Fresh
-  prospective repair, Retry 5, Rose, and G10 remain open.
+  root and seeds are retired and unadjudicated; D1/D2 never opened. Retry 5
+  stopped after one successful fit on a post-preseal runtime-tree blocker and
+  is also not contract-clean under the post-run admission audit. Its complete
+  seed spaces are retired; Retry 6, Rose, and G10 remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -366,15 +372,19 @@ phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
 completed 576 official fits and 576 independent base-R recomputations, but
 exact Julia replay stopped after 455 admitted rows on a one-ULP endpoint-
 representation contract defect. Its root and seeds are retired and
-unadjudicated; D1/D2 never opened. Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
+unadjudicated; D1/D2 never opened. Retry 5 stopped before its second phenotype
+on a post-preseal tree-validation blocker; the root is immutable, all Retry-5
+seed spaces are retired, and the admission chronology is not proven clean.
+Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. Any next activation attempt requires a newly
-preregistered endpoint-representation repair and fresh disjoint Retry-5 seeds;
-Rose and G10 remain held. The negative recovery-v2 outcome is banked in
+`public_covered_count` remains 5. Any next activation attempt requires the
+preregistered runtime-tree and typed-mutation repair, durable preflight/review-
+batch evidence, and fresh disjoint Retry-6 seeds; Rose and G10 remain held. The
+negative recovery-v2 outcome is banked in
 `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
