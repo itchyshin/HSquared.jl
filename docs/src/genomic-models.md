@@ -22,10 +22,16 @@ successful converged fits, but the sealed adjudicator stopped on a logical
 serialization defect before minting a receipt. Its three create-once summaries
 all say `PRECISION_BLOCKER`: five cells require more than the frozen 2,000-fit
 cap, with a maximum of 16,325. No confirmation manifest exists, offsets
-7101:7148 are retired, and this is **not**
-broad recovery, production-scale evidence, or permission to activate the R
-default. The R surface therefore remains partial/held with no Rose/G10 promotion
-basis. `single_step()` remains a separate experimental surface.
+7101:7148 are retired, and this is **not** broad recovery, production-scale
+evidence, or permission to activate the R default. Recovery-v3 then produced
+three separate 576-fit D0F corpora whose exact Julia replay stopped before row
+1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
+successful-gradient contract failures. All three roots and observed
+phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
+has disjoint seeds and committed finite-gradient, batch-safe tooling but is not
+presealed or run. The R surface therefore remains partial/held pending fresh
+admitted retry-4 recovery, Rose, and G10. `single_step()` remains a separate
+experimental surface.
 The dense paths here are validation-scale only — they do not gain the sparse
 selected-inversion advantage.
 
@@ -163,10 +169,14 @@ Still planned / coordinated:
   evidence, and offsets 7001:7048 are retired. The hash-pinned offset-7101 pilot
   completed 432/432 successful converged fits but produced no accepted
   adjudication receipt because of a logical serialization defect; all three
-  summaries say `PRECISION_BLOCKER`, and offsets 7101:7148 are retired. The narrow
-  R `genomic()` candidate therefore stays held and
-  `single_step()` remains
-  separate;
+  summaries say `PRECISION_BLOCKER`, and offsets 7101:7148 are retired.
+  Recovery-v3 then produced three separate 576-fit D0F corpora whose exact
+  Julia replay stopped before row 1 for fixed-panel cardinality,
+  concrete-`Cmd` typing, and missing successful-gradient contract failures.
+  All three roots and observed phenotype/bootstrap seeds are retired. Retry 4
+  has disjoint seeds and committed finite-gradient, batch-safe tooling but is
+  not presealed or run. The narrow R `genomic()` candidate therefore stays held
+  and `single_step()` remains separate;
 - a broader construction oracle beyond the completed independent base-R
   reconstruction of the exact candidate kernel. A fresh hash-pinned `blupf90+`
   run now links the

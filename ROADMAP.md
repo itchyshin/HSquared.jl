@@ -35,9 +35,15 @@ sealed adjudicator stopped on a logical serialization defect before minting a
 receipt. All three create-once summaries say `PRECISION_BLOCKER`: five cells
 require more than the frozen 2,000-replicate cap (maximum 16,325). No
 confirmation manifest exists, offsets 7101:7148 are retired, and this is
-diagnostic rather than accepted recovery evidence. Rose review and G10 therefore
-cannot activate the default route. Production
-high-level genomic fitting remains unimplemented.
+diagnostic rather than accepted recovery evidence. Recovery-v3 then produced
+three separate 576-fit D0F corpora whose exact Julia replay stopped before row
+1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
+successful-gradient contract failures. All three roots and phenotype/bootstrap
+seed spaces are permanently unadjudicated and retired. Retry 4 has disjoint
+seeds and committed finite-gradient, batch-safe tooling, but it is not presealed
+or run. Fresh admitted retry-4 recovery, Rose review, and G10 therefore remain
+open; the default route is not activated. Production high-level genomic fitting
+remains unimplemented.
 
 - Package loads.
 - Control/backend placeholders exist for the shared planned vocabulary:
@@ -230,8 +236,13 @@ high-level genomic fitting remains unimplemented.
   pilot completed 432/432 successful converged fits, but its adjudication receipt
   was withheld by a logical serialization defect; its three summaries all say
   `PRECISION_BLOCKER`, with five cells above the 2,000-replicate cap. No
-  confirmation manifest exists, offsets 7101:7148 are retired, and Rose/G10
-  remain open.
+  confirmation manifest exists and offsets 7101:7148 are retired. Recovery-v3
+  then produced three separate 576-fit D0F corpora whose exact Julia replay
+  stopped before row 1 for fixed-panel cardinality, concrete-`Cmd` typing, and
+  missing successful-gradient contract failures; every root and observed
+  phenotype/bootstrap seed is retired. Retry 4 has disjoint seeds and committed
+  finite-gradient, batch-safe tooling but is not presealed or run. Fresh
+  admitted retry-4 recovery, Rose, and G10 remain open.
 - `itchyshin/HSquared.jl` is public and GitHub Actions CI is green.
 - Matching labels, Phase 0-8 milestones, and issues #1-#7 exist.
 
@@ -343,16 +354,21 @@ evidence, and offsets 7001:7048 are retired. The offset-7101 pilot completed
 432/432 successful converged fits but produced no accepted adjudication receipt
 because of a logical serialization defect. Its three summaries all say
 `PRECISION_BLOCKER`, five cells exceed the frozen 2,000-fit cap, no confirmation
-manifest exists, and offsets 7101:7148 are retired. Activation remains held. A fresh
-hash-pinned `blupf90+` run has discharged
+manifest exists, and offsets 7101:7148 are retired. Recovery-v3 then produced
+three separate 576-fit D0F corpora whose exact Julia replay stopped before row
+1 for fixed-panel cardinality, concrete-`Cmd` typing, and missing
+successful-gradient contract failures. All three roots and observed
+phenotype/bootstrap seeds are permanently unadjudicated and retired. Retry 4
+has disjoint seeds and committed finite-gradient, batch-safe tooling but is not
+presealed or run. Activation remains held. A fresh hash-pinned `blupf90+` run has discharged
 the exact-candidate-precision comparator link as a single point-estimate result,
 not recovery evidence. Production genotype-ID matching at scale, formula-driven mixed-model
 marker scans, public LOCO workflow defaults, QTL/eQTL scans, APY production
 routing, and broader comparator parity also remain open. The supplied-`Ginv`
 REML estimator alone remains covered; the R surface is partial and
-`public_covered_count` remains 5. The next activation attempt needs a redesigned
-precision experiment, fresh admission, and fresh seeds; Rose and G10 remain
-held. The negative recovery-v2 outcome is banked in
+`public_covered_count` remains 5. The next activation attempt is the frozen
+recovery-v3 retry 4 and needs fresh admission and fresh seeds; Rose and G10
+remain held. The negative recovery-v2 outcome is banked in
 `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-recovery-v2-precision-blocker.md`.
 
 Gate: Jason scout plus Rose license/claim audit, with JWAS/sommer/BLUPF90
