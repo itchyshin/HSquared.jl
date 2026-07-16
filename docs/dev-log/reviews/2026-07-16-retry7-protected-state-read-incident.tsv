@@ -1,0 +1,2 @@
+schema_version	incident_at_utc	affected_path	exposure	mutation_status	attestation_status	recovery_scope
+1	2026-07-16T19:55:59Z	../hsquared/docs/dev-log/check-log.d/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md	broad_rg_output_exposure	NO_WRITE; NO_STAGE; NO_HASH; NO_DELETE	SUPERSEDES prior NOT_READ_NOT_HASHED attestation	fresh Batch A then Batch B review receipts required; Totoro remains blocked pending re-clearance
