@@ -37,7 +37,7 @@ const D0_RECEIPT_SHA256 = "190b6546fab8caeec24683c4f7bee8063ada671c220852c9372e5
 const D0_DIAGNOSTICS_RELATIVE_PATH = joinpath("r", "d0_packet_diagnostics_base_r.tsv")
 const D0_DIAGNOSTICS_SHA256 = "7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"
 const D0F_BLOCKED_ROOT = "/home/snakagaw/hsq_work/v07-genomic-recovery-v3-d0f-official-0a9d882-1a538212"
-const D0F_ADJUDICATION_SCHEMA = "v07-genomic-recovery-v3-adjudication-1"
+const D0F_ADJUDICATION_SCHEMA = "v07-genomic-recovery-v3-adjudication-2"
 const RESOLVED = ("boundary_lower", "boundary_upper", "interior", "interior_rescued")
 const RESOLVED_REASONS = Dict("boundary_lower"=>"boundary_lower","boundary_upper"=>"boundary_upper","interior"=>"ai_interior","interior_rescued"=>"profile_interior")
 const D0F_DESIGNS = [
@@ -45,8 +45,8 @@ const D0F_DESIGNS = [
     (id="d0f_n0300_m0150", index=2, n=300, m=150, marker_ratio=0.5, source_cell="n300_m150_r050", source_index=5),
     (id="d0f_n0300_m1000", index=3, n=300, m=1000, marker_ratio=10/3, source_cell="n300_m1000_r050", source_index=8),
 ]
-const D0F_PHENOTYPE_SEED_BASE = 2_040_000_000
-const D0F_PARITY_BOOTSTRAP_SHA256 = "1b2dd8d0d6fc52997c99d5a8945ce4fd1e0f2042ca7ea69a44d0cfd5d8002fb3"
+const D0F_PHENOTYPE_SEED_BASE = 2_042_000_000
+const D0F_PARITY_BOOTSTRAP_SHA256 = "ca36ab28d928788c81b52ff713bfb9d424dfc0b2997c9b445d12839be2a92be4"
 const N_LEVELS = (120,300,600,1200)
 const MARKER_RATIOS = (0.5,10/3,5.0)
 const TRUTH_LEVELS = (0.2,0.5,0.8)
@@ -75,8 +75,8 @@ const RETRY4_PREFLIGHT_SEEDS = (
 const CELL_TABLE_COLUMNS = split("cell_id cell_index n m marker_ratio marker_ratio_code truth_sigma_g2 truth_sigma_e2 truth_ratio ridge")
 const ENVIRONMENT_KEYS = split("stage host r_version r_rng_kind r_normal_kind r_sample_kind julia_version openblas_num_threads julia_num_threads max_workers")
 const REVIEWERS = ("fisher","noether","hopper","grace","rose")
-const RECEIPT_COLUMNS = split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")
-const D0F_ADJUDICATION_COLUMNS = vcat(split("schema_version stage verdict stage_decision attempt_max_diff summary_max_diff preseal_sha256 corpus_lock_sha256 manifest_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 base_r_inventory_sha256 julia_replay_inventory_sha256 r_summary_sha256 julia_summary_sha256"),reduce(vcat,[["$(r)_review_path","$(r)_review_sha256"] for r in REVIEWERS]))
+const RECEIPT_COLUMNS = split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256")
+const D0F_ADJUDICATION_COLUMNS = vcat(split("schema_version stage verdict stage_decision attempt_max_diff summary_max_diff preseal_sha256 corpus_lock_sha256 manifest_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256 base_r_inventory_sha256 julia_replay_inventory_sha256 r_summary_sha256 julia_summary_sha256 route_lineage_sha256 adjudication_key_sha256"),reduce(vcat,[["$(r)_review_path","$(r)_review_sha256"] for r in REVIEWERS]))
 const D0F_FIXED_COLUMNS = split("stage design_id design_index source_cell_id panel_rank panel_source_seed n m marker_ratio truth_sigma_g2 truth_sigma_e2 truth_ratio ridge retained_m marker_hash id_hash kernel_hash precision_hash")
 const TRUTH_PROVENANCE_COLUMNS = split("packet_schema_version truth_schema_version scale_denominator relationship_source relationship_method allele_frequency_source relationship_scale preseal_sha256 r_implementation_commit julia_implementation_commit driver_commit")
 const D0F_BOOTSTRAP_COLUMNS = vcat(split("design_id design_index bootstrap_rep panel_slot panel_rank"),[@sprintf("phenotype_%02d",i) for i in 1:8])
@@ -87,6 +87,47 @@ struct ReplayContractError <: Exception
     message::String
 end
 Base.showerror(io::IO, error::ReplayContractError) = print(io, error.message)
+
+# Route identity is admitted once at the TSV boundary and carried as a type
+# until it is serialized again.  The payload deliberately has no route field,
+# so internal reconstruction cannot silently replace one route label with the
+# other.
+abstract type EvidenceRoute end
+struct OrdinaryAutoGenomic <: EvidenceRoute end
+struct JuliaProfileReplay <: EvidenceRoute end
+
+struct EvidenceRow{R<:EvidenceRoute,T}
+    _payload::T
+    EvidenceRow{R,T}(::Val{:admitted}, payload::T) where {R<:EvidenceRoute,T} = new{R,T}(payload)
+end
+
+_route_label(::Type{OrdinaryAutoGenomic}) = PUBLIC_ROUTE
+_route_label(::Type{JuliaProfileReplay}) = REPLAY_ROUTE
+_payload(row::EvidenceRow) = getfield(row, :_payload)
+_payload_has_route(payload::NamedTuple) = hasproperty(payload, :route)
+_payload_has_route(payload::AbstractDict) = haskey(payload, "route") || haskey(payload, :route)
+_payload_has_route(payload) = hasproperty(payload, :route)
+function _evidence(::Type{R}, payload) where {R<:EvidenceRoute}
+    _payload_has_route(payload) && error("typed evidence payload must not contain a route field")
+    EvidenceRow{R,typeof(payload)}(Val(:admitted), payload)
+end
+_merge_evidence(row::EvidenceRow{R}, additions::NamedTuple) where {R<:EvidenceRoute} =
+    _evidence(R, merge(_payload(row), additions))
+function _admit_route(::Type{R}, raw::AbstractDict) where {R<:EvidenceRoute}
+    get(raw, "route", nothing) == _route_label(R) || error("evidence route admission drift")
+    payload = copy(raw)
+    delete!(payload, "route")
+    _payload_has_route(payload) && error("admitted evidence retained a route field")
+    payload
+end
+function Base.getproperty(row::EvidenceRow{R}, name::Symbol) where {R<:EvidenceRoute}
+    name === :route && return _route_label(R)
+    getproperty(_payload(row), name)
+end
+function Base.propertynames(row::EvidenceRow, private::Bool=false)
+    names = propertynames(_payload(row), private)
+    :route in names ? names : (names..., :route)
+end
 
 struct TSV
     columns::Vector{String}
@@ -385,7 +426,7 @@ function _validate_fixed_panels(root,path,manifest)
 end
 function _validate_receipt(root,path,reviewer,p)
     t=_read_tsv(root,path,RECEIPT_COLUMNS);length(t.rows)==1||error("$reviewer receipt row drift");d=_dict(t,only(t.rows))
-    d["reviewer"]==reviewer&&d["verdict"]=="CLEAN"&&d["doc49_sha256"]==p["doc49_sha256"]&&d["r_driver_commit"]==p["r_driver_commit"]&&d["r_recomputer_commit"]==p["r_recomputer_commit"]&&d["julia_replay_commit"]==p["julia_replay_commit"]&&d["r_auto_route_commit"]==p["r_auto_route_commit"]&&d["julia_candidate_commit"]==p["julia_candidate_commit"]||error("$reviewer receipt binding drift")
+    d["reviewer"]==reviewer&&d["verdict"]=="CLEAN"&&d["doc49_sha256"]==p["doc49_sha256"]&&d["r_driver_commit"]==p["r_driver_commit"]&&d["r_recomputer_commit"]==p["r_recomputer_commit"]&&d["julia_replay_commit"]==p["julia_replay_commit"]&&d["r_auto_route_commit"]==p["r_auto_route_commit"]&&d["julia_candidate_commit"]==p["julia_candidate_commit"]&&d["r_driver_sha256"]==p["r_driver_sha256"]&&d["r_recomputer_sha256"]==p["r_recomputer_sha256"]&&d["julia_replay_sha256"]==p["julia_replay_sha256"]||error("$reviewer receipt binding drift")
     nothing
 end
 function _validate_d0f_predecessor(stage_root,p)
@@ -466,7 +507,7 @@ function _preseal(root,stage,manifest,manifest_path)
     for reviewer in REVIEWERS;bindings["$(reviewer)_receipt_sha256"]="receipts/$reviewer.tsv";end
     if stage=="d0f"
         bindings["d0f_fixed_panel_manifest_sha256"]="d0f_fixed_panel_manifest.tsv"
-        p["d0f_bootstrap_seed_base"]=="2041000000"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="true"||error("D0F bootstrap preseal contract drift")
+        p["d0f_bootstrap_seed_base"]=="2043000000"&&p["d0f_bootstrap_indices_absent_before_preseal"]=="true"||error("D0F bootstrap preseal contract drift")
         _verify_pair(root,joinpath(root,"d0f_bootstrap_indices.tsv"))
         p["d0f_adjudication_root"]=="NA"&&p["d0f_adjudication_receipt_sha256"]=="NA"||error("D0F must not bind a D0F predecessor")
     else
@@ -791,7 +832,7 @@ function _read_attempt(root,stage,row,preseal,preseal_sha,packet)
     runtime=_float(d["runtime_seconds"],"runtime");rss=_float(d["peak_rss_mb"],"rss");runtime>=0&&rss>=0||error("attempt runtime/RSS drift")
     good=d["status"]=="success";good==converged&&(good ? d["error_class"]=="none" : d["error_class"]!="none")||error("attempt status drift")
     good ? _validate_resolved(d) : _validate_unsuccessful(d)
-    (dict=d,path=path,good=good)
+    _evidence(OrdinaryAutoGenomic,(dict=_admit_route(OrdinaryAutoGenomic,d),path=path,good=good))
 end
 
 function _validate_resolved(d)
@@ -822,8 +863,8 @@ function _validate_unsuccessful(d)
     end
     true
 end
-function _validate_generated_replay(result)
-    validation=Dict(string(k)=>_format(v) for (k,v) in pairs(result))
+function _validate_generated_replay(result::EvidenceRow{JuliaProfileReplay})
+    validation=Dict(string(k)=>_format(v) for (k,v) in pairs(_payload(result)))
     try
         result.status=="success" ? _validate_resolved(validation) : _validate_unsuccessful(validation)
     catch error
@@ -878,8 +919,8 @@ function _profile_replay(row,packet)
     result=_run_replay_engine(() -> HSquared._fit_ai_reml_genomic_boundary(spec;provenance=provenance,kernel=packet.K),base)
     runtime=(time_ns()-started)/1e9;rss=max(rss0,Sys.maxrss())/1024^2
     final=merge(result,(runtime_seconds=runtime,peak_rss_mb=rss,retained_m=packet.retained_m,scale_denominator=packet.k,
-        eigen_cv_population=s.cv,effective_rank=s.effective_rank,information_r020=s.information[1],se_info_r020=s.se[1],information_r050=s.information[2],se_info_r050=s.se[2],information_r080=s.information[3],se_info_r080=s.se[3],relationship_source="markers",relationship_method="vanraden1",allele_frequency_source="sample",relationship_scale="K_lambda",marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash,route=REPLAY_ROUTE))
-    _validate_generated_replay(final)
+        eigen_cv_population=s.cv,effective_rank=s.effective_rank,information_r020=s.information[1],se_info_r020=s.se[1],information_r050=s.information[2],se_info_r050=s.se[2],information_r080=s.information[3],se_info_r080=s.se[3],relationship_source="markers",relationship_method="vanraden1",allele_frequency_source="sample",relationship_scale="K_lambda",marker_hash=packet.marker_hash,id_hash=packet.id_hash,kernel_hash=packet.kernel_hash,precision_hash=packet.precision_hash))
+    _validate_generated_replay(_evidence(JuliaProfileReplay,final))
 end
 
 function _numeric_difference(text,value,field)
@@ -889,13 +930,13 @@ function _numeric_difference(text,value,field)
     value isa Real&&isfinite(value)||return Inf
     abs(_float(text,field)-Float64(value))
 end
-function _source_difference(attempt,replay)
+function _source_difference(attempt::EvidenceRow{OrdinaryAutoGenomic},replay::EvidenceRow{JuliaProfileReplay})
     d=attempt.dict
     d["status"]==replay.status&&d["error_class"]==replay.error_class&&_bool(d["converged"],"converged")==replay.converged&&d["boundary_status"]==replay.boundary_status&&d["boundary_reason"]==replay.boundary_reason||return Inf
     fields=("boundary_epsilon","scientific_sigma_g2","scientific_sigma_e2","scientific_ratio","fitted_total_variance","numerical_sigma_g2","numerical_sigma_e2","numerical_ratio","profile_loglik","lower_derivative_per_observation","upper_derivative_per_observation","iterations","objective","gradient_norm","scale_denominator","eigen_cv_population","effective_rank","information_r020","se_info_r020","information_r050","se_info_r050","information_r080","se_info_r080")
     maximum(_numeric_difference(d[f],getproperty(replay,Symbol(f)),f) for f in fields)
 end
-function _summary_performance(source,replay_runtime,replay_rss)
+function _summary_performance(source::EvidenceRow{OrdinaryAutoGenomic},replay_runtime,replay_rss)
     replay_runtime>=0&&replay_rss>=0||error("replay runtime/RSS drift")
     runtime=_float(source.dict["runtime_seconds"],"source R runtime");rss=_float(source.dict["peak_rss_mb"],"source R RSS")
     runtime>=0&&rss>=0||error("source R runtime/RSS drift")
@@ -928,8 +969,8 @@ function _prepared_replay_row(root,stage,row,preseal,mpath,ppath,cpath,d0root,di
     _verify_locked_seed_inputs(root,stage,row,digests)
     preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath);packet=_packet(root,stage,row,preseal,preseal_sha);stage=="d0f"&&_validate_d0f_source(d0root,row,packet)
     attempt=_read_attempt(root,stage,row,preseal,preseal_sha,packet);replay=_profile_replay(row,packet);diff=_source_difference(attempt,replay);isfinite(diff)&&diff<=1e-10||error("official route and Julia replay differ beyond 1e-10")
-    replay=merge(replay,(r_implementation_commit=preseal["r_auto_route_commit"],julia_implementation_commit=preseal["julia_candidate_commit"],driver_commit=preseal["julia_replay_commit"],preseal_sha256=preseal_sha))
-    common=merge(_manifest_values(row,stage),replay,(source_r_attempt_sha256=_sha256(attempt.path),source_r_max_abs_difference=diff,replay_julia_commit=preseal["julia_replay_commit"],replay_driver_sha256=_sha256(abspath(@__FILE__)),manifest_sha256=_sha256(mpath),preseal_sha256=preseal_sha,corpus_lock_sha256=corpus_sha))
+    replay=_merge_evidence(replay,(r_implementation_commit=preseal["r_auto_route_commit"],julia_implementation_commit=preseal["julia_candidate_commit"],driver_commit=preseal["julia_replay_commit"],preseal_sha256=preseal_sha))
+    common=_evidence(JuliaProfileReplay,merge(_manifest_values(row,stage),_payload(replay),(source_r_attempt_sha256=_sha256(attempt.path),source_r_max_abs_difference=diff,replay_julia_commit=preseal["julia_replay_commit"],replay_driver_sha256=_sha256(abspath(@__FILE__)),manifest_sha256=_sha256(mpath),preseal_sha256=preseal_sha,corpus_lock_sha256=corpus_sha)))
     (columns=_replay_columns(stage),row=common,diff=diff)
 end
 
@@ -990,7 +1031,7 @@ function _validate_replay_bindings(d;source_sha,replay_commit,replay_sha,manifes
 end
 
 function _read_replays(root,stage,manifest,preseal,mpath,ppath,cpath,d0root)
-    columns=_replay_columns(stage);rows=NamedTuple[];preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath)
+    columns=_replay_columns(stage);rows=EvidenceRow{JuliaProfileReplay}[];preseal_sha=_sha256(ppath);corpus_sha=_sha256(cpath)
     for mr in manifest
         path=_replay_path(root,stage,mr);t=_read_tsv(root,path,columns);length(t.rows)==1||error("replay row count drift");d=_dict(t,only(t.rows));mv=_manifest_values(mr,stage)
         for c in (stage=="d0f" ? D0F_MANIFEST_COLUMNS : D1_MANIFEST_COLUMNS);d[c] in (string(getproperty(mv,Symbol(c))),_format(getproperty(mv,Symbol(c))))||error("replay/manifest mismatch in $c");end
@@ -1002,10 +1043,10 @@ function _read_replays(root,stage,manifest,preseal,mpath,ppath,cpath,d0root)
         _validate_replay_bindings(d;source_sha=_sha256(source.path),replay_commit=preseal["julia_replay_commit"],replay_sha=_sha256(abspath(@__FILE__)),manifest_sha=_sha256(mpath),preseal_sha=preseal_sha,corpus_sha=corpus_sha)
         converged=_bool(d["converged"],"converged");good=d["status"]=="success";good==converged&&(good ? d["error_class"]=="none" : d["error_class"]!="none")||error("replay status drift");good ? _validate_resolved(d) : _validate_unsuccessful(d)
         replay_runtime=_float(d["runtime_seconds"],"replay runtime");replay_rss=_float(d["peak_rss_mb"],"replay RSS");performance=_summary_performance(source,replay_runtime,replay_rss)
-        parsed=(attempted=_bool(d["attempted"],"attempted"),status=d["status"],error_class=d["error_class"],converged=converged,boundary_status=d["boundary_status"],boundary_reason=d["boundary_reason"],boundary_epsilon=_float(d["boundary_epsilon"],"boundary epsilon";missing=true),scientific_sigma_g2=_float(d["scientific_sigma_g2"],"sg";missing=true),scientific_sigma_e2=_float(d["scientific_sigma_e2"],"se";missing=true),scientific_ratio=_float(d["scientific_ratio"],"ratio";missing=true),fitted_total_variance=_float(d["fitted_total_variance"],"total";missing=true),numerical_sigma_g2=_float(d["numerical_sigma_g2"],"nsg";missing=true),numerical_sigma_e2=_float(d["numerical_sigma_e2"],"nse";missing=true),numerical_ratio=_float(d["numerical_ratio"],"nr";missing=true),profile_loglik=_float(d["profile_loglik"],"profile";missing=true),lower_derivative_per_observation=_float(d["lower_derivative_per_observation"],"lower";missing=true),upper_derivative_per_observation=_float(d["upper_derivative_per_observation"],"upper";missing=true),iterations=_float(d["iterations"],"iterations";missing=true),objective=_float(d["objective"],"objective";missing=true),gradient_norm=_float(d["gradient_norm"],"gradient";missing=true),runtime_seconds=performance.runtime_seconds,peak_rss_mb=performance.peak_rss_mb,replay_runtime_seconds=performance.replay_runtime_seconds,replay_peak_rss_mb=performance.replay_peak_rss_mb,retained_m=packet.retained_m,scale_denominator=_float(d["scale_denominator"],"scale"),eigen_cv_population=_float(d["eigen_cv_population"],"CV"),effective_rank=_float(d["effective_rank"],"rank"),information_r020=_float(d["information_r020"],"info020"),se_info_r020=_float(d["se_info_r020"],"se020"),information_r050=_float(d["information_r050"],"info050"),se_info_r050=_float(d["se_info_r050"],"se050"),information_r080=_float(d["information_r080"],"info080"),se_info_r080=_float(d["se_info_r080"],"se080"))
+        parsed=_evidence(JuliaProfileReplay,(attempted=_bool(d["attempted"],"attempted"),status=d["status"],error_class=d["error_class"],converged=converged,boundary_status=d["boundary_status"],boundary_reason=d["boundary_reason"],boundary_epsilon=_float(d["boundary_epsilon"],"boundary epsilon";missing=true),scientific_sigma_g2=_float(d["scientific_sigma_g2"],"sg";missing=true),scientific_sigma_e2=_float(d["scientific_sigma_e2"],"se";missing=true),scientific_ratio=_float(d["scientific_ratio"],"ratio";missing=true),fitted_total_variance=_float(d["fitted_total_variance"],"total";missing=true),numerical_sigma_g2=_float(d["numerical_sigma_g2"],"nsg";missing=true),numerical_sigma_e2=_float(d["numerical_sigma_e2"],"nse";missing=true),numerical_ratio=_float(d["numerical_ratio"],"nr";missing=true),profile_loglik=_float(d["profile_loglik"],"profile";missing=true),lower_derivative_per_observation=_float(d["lower_derivative_per_observation"],"lower";missing=true),upper_derivative_per_observation=_float(d["upper_derivative_per_observation"],"upper";missing=true),iterations=_float(d["iterations"],"iterations";missing=true),objective=_float(d["objective"],"objective";missing=true),gradient_norm=_float(d["gradient_norm"],"gradient";missing=true),runtime_seconds=performance.runtime_seconds,peak_rss_mb=performance.peak_rss_mb,replay_runtime_seconds=performance.replay_runtime_seconds,replay_peak_rss_mb=performance.replay_peak_rss_mb,retained_m=packet.retained_m,scale_denominator=_float(d["scale_denominator"],"scale"),eigen_cv_population=_float(d["eigen_cv_population"],"CV"),effective_rank=_float(d["effective_rank"],"rank"),information_r020=_float(d["information_r020"],"info020"),se_info_r020=_float(d["se_info_r020"],"se020"),information_r050=_float(d["information_r050"],"info050"),se_info_r050=_float(d["se_info_r050"],"se050"),information_r080=_float(d["information_r080"],"info080"),se_info_r080=_float(d["se_info_r080"],"se080")))
         parsed.attempted||error("replay attempted drift")
         diff=_source_difference(source,parsed);stored=_float(d["source_r_max_abs_difference"],"source diff");isfinite(diff)&&diff<=1e-10&&abs(stored-diff)<=1e-12||error("replay source comparison drift")
-        push!(rows,merge(parsed,(manifest=mr,dict=d,path=path)))
+        push!(rows,_merge_evidence(parsed,(manifest=mr,dict=_admit_route(JuliaProfileReplay,d),path=path)))
     end
     length(rows)==length(manifest)||error("replay denominator drift");rows
 end
@@ -1024,7 +1065,7 @@ function _external_indices(path,expected,columns)
 end
 
 function _quantile7(x,p);y=sort(Float64.(x));h=(length(y)-1)*p+1;lo=floor(Int,h);hi=ceil(Int,h);lo==hi ? y[lo] : y[lo]+(h-lo)*(y[hi]-y[lo]);end
-function _d0f_summary_impl(rows,indices,bootstrap_sha,bootstrap_reps)
+function _d0f_summary_impl(rows::AbstractVector{<:EvidenceRow{JuliaProfileReplay}},indices,bootstrap_sha,bootstrap_reps)
     bootstrap_reps isa Int&&bootstrap_reps>=1||error("D0F bootstrap replicate count drift")
     length(rows)==576||error("D0F replay denominator drift");length(indices.rows)==3*bootstrap_reps*24||error("D0F bootstrap row count drift");cursor=1;out=NamedTuple[]
     corpus_complete=all(x->x.converged&&isfinite(x.scientific_ratio),rows)
@@ -1052,7 +1093,7 @@ function _d0f_summary_impl(rows,indices,bootstrap_sha,bootstrap_reps)
     cursor==length(indices.rows)+1||error("D0F bootstrap cursor drift")
     out
 end
-_d0f_summary(rows,indices,bootstrap_sha)=_d0f_summary_impl(rows,indices,bootstrap_sha,10_000)
+_d0f_summary(rows::AbstractVector{<:EvidenceRow{JuliaProfileReplay}},indices,bootstrap_sha)=_d0f_summary_impl(rows,indices,bootstrap_sha,10_000)
 
 # Dependency-free distribution helpers, retained here so summary decisions are
 # independent of the R state machine.
@@ -1077,7 +1118,7 @@ function _chisq_quantile(p,df);lo=0.0;hi=max(1.0,Float64(df));while _chisq_cdf(h
 function _wilson(k,n);z=1.959963984540054;p=k/n;den=1+z^2/n;center=(p+z^2/(2n))/den;half=z*sqrt(p*(1-p)/n+z^2/(4n^2))/den;(center-half,center+half);end
 function _percentile(x,p);_quantile7(x,p);end
 
-function _d1_summary(rows)
+function _d1_summary(rows::AbstractVector{<:EvidenceRow{JuliaProfileReplay}})
     out=NamedTuple[]
     cells=NamedTuple[];seen=Set{String}();for x in rows;if !(x.manifest.cell_id in seen);push!(seen,x.manifest.cell_id);push!(cells,x.manifest);end;end
     length(cells)==12||error("D1 summary cell-table projection drift")
@@ -1254,12 +1295,20 @@ function selftest()
     generic_gate_red=try;_must_fail(() -> nothing,"generic mutation-gate negative control");false catch error;occursin("mutation stayed green",sprint(showerror,error));end
     contract_gate_red=try;_must_contract_fail(() -> nothing,"contract mutation-gate negative control");false catch error;occursin("mutation stayed green",sprint(showerror,error));end
     generic_gate_red&&contract_gate_red||error("mutation-gate negative control stayed green")
+    typed_probe=_evidence(JuliaProfileReplay,(value=1,));probe_columns=["route","value"]
+    probe_text=_table_text(probe_columns,[typed_probe]);probe_text=="route\tvalue\njulia_profile_replay\t1\n"||error("typed route serialization drift")
+    probe_raw=Dict(zip(probe_columns,only(_parse_tsv_text(probe_text,probe_columns))));admitted_probe=_admit_route(JuliaProfileReplay,probe_raw)
+    !haskey(admitted_probe,"route")&&admitted_probe["value"]=="1"&&!hasproperty(_payload(typed_probe),:route)||error("route admission retained or changed raw route state")
+    roundtrip_probe=_evidence(JuliaProfileReplay,(value=_int(admitted_probe["value"],"typed probe"),))
+    _table_text(probe_columns,[roundtrip_probe])==probe_text||error("typed route TSV round-trip drift")
+    _must_fail("typed route admission accepted the ordinary route") do;_admit_route(JuliaProfileReplay,Dict("route"=>PUBLIC_ROUTE));end
+    _must_fail("typed evidence payload accepted a route field") do;_evidence(JuliaProfileReplay,(route=REPLAY_ROUTE,value=1));end
     length(_d1_cells())==12&&length(_cell_table())==36||error("cell-table selftest")
     julia_root=_git(dirname(abspath(@__FILE__)),"rev-parse","--show-toplevel");rroot=joinpath(dirname(julia_root),"hsquared");actual_cell_table=joinpath(rroot,"docs","design","v07_genomic_recovery_v3_cell_table.tsv");_read_cell_table(dirname(actual_cell_table),actual_cell_table;verify=false)
     _validate_cell_rows(_cell_table());_must_fail("sub-tolerance truth mutation") do;x=copy(_cell_table());x[1]=merge(x[1],(truth_ratio=x[1].truth_ratio+5e-13,));_validate_cell_rows(x);end
     marker_tolerance=copy(_cell_table());marker_tolerance[1]=merge(marker_tolerance[1],(marker_ratio=marker_tolerance[1].marker_ratio+5e-13,));_validate_cell_rows(marker_tolerance)
     length(PRESEAL_KEYS)==42&&length(RETRY4_PRESEAL_KEYS)==41&&PRESEAL_KEYS[9]=="d0_diagnostics_sha256"&&PRESEAL_KEYS[10]=="d0f_adjudication_root"&&D0_DIAGNOSTICS_RELATIVE_PATH==joinpath("r","d0_packet_diagnostics_base_r.tsv")&&D0_DIAGNOSTICS_SHA256=="7c1cbc165df90e844bd4fdc7fc6ffb6dcbb8343c0d5ca9e7a588e4ca6d48c370"||error("frozen D0/D0F predecessor preseal binding drift")
-    RECEIPT_COLUMNS==split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit")||error("review receipt schema drift")
+    RECEIPT_COLUMNS==split("reviewer verdict doc49_sha256 r_driver_commit r_recomputer_commit julia_replay_commit r_auto_route_commit julia_candidate_commit r_driver_sha256 r_recomputer_sha256 julia_replay_sha256")||error("review receipt schema drift")
     R_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_recompute.R"&&R_RECOMPUTER_BASENAME!="v07_genomic_recovery_v3_preseal.R"||error("operational R recomputer binding drift")
     R_D0_RECOMPUTER_BASENAME=="v07_genomic_recovery_v3_d0_recompute.R"||error("R D0 recomputer binding drift")
     _host_matches("totoro";hostname="totoro.biology.ualberta.ca",cluster="")&&_host_matches("fir";hostname="compute-node",cluster="fir")&&_host_matches("fir";hostname="fir.alliancecan.ca",cluster="")&&!_host_matches("totoro";hostname="laptop",cluster="")&&!_host_matches("fir";hostname="notfir-laptop",cluster="notfir")||error("live host binding selftest")
@@ -1272,7 +1321,7 @@ function selftest()
     BLAS.get_num_threads()==1||error("selftest requires one live BLAS thread")
     allunique(_attempt_columns("d0f"))&&allunique(_attempt_columns("d1"))&&allunique(_replay_columns("d0f"))&&allunique(_replay_columns("d1"))&&allunique(_truth_columns("d0f"))&&allunique(_truth_columns("d1"))||error("ordered schema duplicates")
     length(D0F_BOOTSTRAP_COLUMNS)==13||error("24x8 D0F bootstrap schema drift")
-    D0F_PHENOTYPE_SEED_BASE==2_040_000_000&&RETRY4_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh/retired D0F phenotype seed-base drift")
+    D0F_PHENOTYPE_SEED_BASE==2_042_000_000&&RETRY4_PHENOTYPE_SEED_BASE==2_036_000_000||error("fresh/retired D0F phenotype seed-base drift")
     length(RETRY4_PREFLIGHT_SEEDS)==16&&allunique(RETRY4_PREFLIGHT_SEEDS)&&RETRY4_PREFLIGHT_SEEDS[1]==2_036_103_006&&RETRY4_PREFLIGHT_SEEDS[end]==2_036_301_001||error("Retry-4 diagnostic seed inventory drift")
     d0f=NamedTuple[]
     for d in D0F_DESIGNS,panel in 1:24,rep in 1:8
@@ -1304,14 +1353,16 @@ function selftest()
     _must_fail("batch count over worker cap") do;_batch_partition(d1,1,97);end
     _must_fail("zero batch count") do;_batch_partition(d1,1,0);end
     _must_fail("unknown batch index") do;_batch_partition(d1,0,7);end
-    d0f_parity=NamedTuple[]
+    d0f_parity=EvidenceRow{JuliaProfileReplay}[]
     phenotype_effect=collect(range(-.015,.015;length=8));panel_effect=collect(range(-.01,.01;length=24))
     for mr in d0f
         estimate=.5+phenotype_effect[mr.phenotype_rank]+panel_effect[mr.panel_rank]
-        push!(d0f_parity,(manifest=mr,converged=true,boundary_status="interior",error_class="none",scientific_ratio=estimate,runtime_seconds=.1,peak_rss_mb=100.0))
+        push!(d0f_parity,_evidence(JuliaProfileReplay,(manifest=mr,converged=true,boundary_status="interior",error_class="none",scientific_ratio=estimate,runtime_seconds=.1,peak_rss_mb=100.0)))
     end
     d0f_bootstrap_text=_canonical_r_d0f_parity_text("bootstrap");d0f_bootstrap=TSV(D0F_BOOTSTRAP_COLUMNS,_parse_tsv_text(d0f_bootstrap_text,D0F_BOOTSTRAP_COLUMNS))
     d0f_summary=_d0f_summary_impl(d0f_parity,d0f_bootstrap,D0F_PARITY_BOOTSTRAP_SHA256,5);length(D0F_SUMMARY_COLUMNS)==38||error("D0F summary width drift");_verify_full_r_d0f_parity(d0f_summary)
+    _must_fail("D0F summary admitted raw untyped rows") do;_d0f_summary_impl(_payload.(d0f_parity),d0f_bootstrap,D0F_PARITY_BOOTSTRAP_SHA256,5);end
+    _must_fail("D0F summary admitted ordinary-route rows") do;_d0f_summary_impl([_evidence(OrdinaryAutoGenomic,_payload(x)) for x in d0f_parity],d0f_bootstrap,D0F_PARITY_BOOTSTRAP_SHA256,5);end
     _must_fail("D0F full typed R parity mutation") do;x=copy(d0f_summary);x[1]=merge(x[1],(variance_between=x[1].variance_between+1e-4,));_verify_full_r_d0f_parity(x);end
     C=D0Support._helmert(8);M=[Float64(mod(i+j,3)) for i in 1:8,j in 1:12];ids=[@sprintf("g%06d",i) for i in 1:8];p=vec(sum(M,dims=1))./16;W=M.-2 .* transpose(p);k=2sum(p.*(1 .- p));K=(W*transpose(W))./k+RIDGE*I;Q=Matrix(inv(Symmetric(K)));s=D0Support._spectral(Matrix(K),C)
     packet=(M=M,ids=ids,names=[@sprintf("m%06d",j) for j in 1:12],y=[-1.2,.2,.8,-.4,1.1,-.7,.5,-.3],k=k,K=Matrix(K),Q=Q,retained_m=12,marker_hash=D0Support._marker_hash(M,ids,[@sprintf("m%06d",j) for j in 1:12]),id_hash=D0Support._id_hash(ids),kernel_hash=D0Support._matrix_hash("K_lambda",K,ids),precision_hash=D0Support._matrix_hash("Q_lambda",Q,ids),spectrum=s)
@@ -1321,24 +1372,24 @@ function selftest()
     synthetic_replay_row=merge(d1[1],(n=length(packet.y),m=size(packet.M,2)))
     replay=_profile_replay(synthetic_replay_row,packet);replay.route==REPLAY_ROUTE&&replay.relationship_method=="vanraden1"||error("profile replay selftest")
     lower_component=prevfloat(BOUNDARY_EPSILON)
-    lower=merge(replay,(boundary_status="boundary_lower",boundary_reason="boundary_lower",scientific_sigma_g2=0.0,scientific_sigma_e2=1.0,scientific_ratio=0.0,fitted_total_variance=1.0,numerical_sigma_g2=lower_component,numerical_sigma_e2=1-lower_component,numerical_ratio=BOUNDARY_EPSILON,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0))
+    lower=_merge_evidence(replay,(boundary_status="boundary_lower",boundary_reason="boundary_lower",scientific_sigma_g2=0.0,scientific_sigma_e2=1.0,scientific_ratio=0.0,fitted_total_variance=1.0,numerical_sigma_g2=lower_component,numerical_sigma_e2=1-lower_component,numerical_ratio=BOUNDARY_EPSILON,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0))
     _validate_generated_replay(lower);lower.numerical_ratio==BOUNDARY_EPSILON||error("lower endpoint declaration was rederived")
     upper_declared=1-BOUNDARY_EPSILON;upper_component=prevfloat(upper_declared)
-    upper=merge(replay,(boundary_status="boundary_upper",boundary_reason="boundary_upper",scientific_sigma_g2=1.0,scientific_sigma_e2=0.0,scientific_ratio=1.0,fitted_total_variance=1.0,numerical_sigma_g2=upper_component,numerical_sigma_e2=1-upper_component,numerical_ratio=upper_declared,lower_derivative_per_observation=1.0,upper_derivative_per_observation=0.0))
+    upper=_merge_evidence(replay,(boundary_status="boundary_upper",boundary_reason="boundary_upper",scientific_sigma_g2=1.0,scientific_sigma_e2=0.0,scientific_ratio=1.0,fitted_total_variance=1.0,numerical_sigma_g2=upper_component,numerical_sigma_e2=1-upper_component,numerical_ratio=upper_declared,lower_derivative_per_observation=1.0,upper_derivative_per_observation=0.0))
     _validate_generated_replay(upper);upper.numerical_ratio==upper_declared||error("upper endpoint declaration was rederived")
     _must_contract_fail("just-outside endpoint/component mutation escapes as infrastructure error") do
-        _validate_generated_replay(merge(lower,(numerical_sigma_g2=BOUNDARY_EPSILON+2e-12,numerical_sigma_e2=1-(BOUNDARY_EPSILON+2e-12),)))
+        _validate_generated_replay(_merge_evidence(lower,(numerical_sigma_g2=BOUNDARY_EPSILON+2e-12,numerical_sigma_e2=1-(BOUNDARY_EPSILON+2e-12),)))
     end
     _must_contract_fail("substantive endpoint/component mutation escapes as infrastructure error") do
-        _validate_generated_replay(merge(upper,(numerical_sigma_g2=upper_declared-1e-8,numerical_sigma_e2=1-(upper_declared-1e-8),)))
+        _validate_generated_replay(_merge_evidence(upper,(numerical_sigma_g2=upper_declared-1e-8,numerical_sigma_e2=1-(upper_declared-1e-8),)))
     end
     _must_contract_fail("missing declared endpoint escapes as infrastructure error") do
-        _validate_generated_replay(merge(lower,(numerical_ratio=NaN,)))
+        _validate_generated_replay(_merge_evidence(lower,(numerical_ratio=NaN,)))
     end
     payload_boundary=(status=:boundary_lower,reason=:boundary_lower,boundary_epsilon=BOUNDARY_EPSILON,profile_loglik=-1.0,lower_derivative_per_observation=0.0,upper_derivative_per_observation=-1.0,profile_ratio=0.0,numerical_ratio=BOUNDARY_EPSILON)
     payload_fit=(converged=true,variance_components=(sigma_a2=lower_component,sigma_e2=1-lower_component),iterations=2,likelihood=(loglik=-1.0,))
     payload_out=(boundary=payload_boundary,fit=payload_fit,ai_diagnostics=(ai_score_norm=0.0,))
-    _validate_generated_replay(_replay_engine_payload(payload_out,_replay_base()))
+    _validate_generated_replay(_evidence(JuliaProfileReplay,_replay_engine_payload(payload_out,_replay_base())))
     _must_contract_fail("resolved boundary without fit escapes as infrastructure error") do
         _replay_engine_payload(merge(payload_out,(fit=nothing,)),_replay_base())
     end
@@ -1356,22 +1407,24 @@ function selftest()
     unresolved_boundary=merge(payload_boundary,(status=:boundary_unresolved,reason=:profile_flat,profile_ratio=nothing,numerical_ratio=nothing))
     unresolved_payload=_replay_engine_payload((boundary=unresolved_boundary,fit=nothing,ai_diagnostics=(ai_score_norm=NaN,)),_replay_base())
     unresolved_payload.status=="fit_error"&&unresolved_payload.boundary_status=="boundary_unresolved"||error("legitimate unresolved engine result classification drift")
-    parity=NamedTuple[]
+    parity=EvidenceRow{JuliaProfileReplay}[]
     for mr in d1
         rep=mr.seed_offset-100;dev=(rep-24.5)*1e-4;boundary=rep==1 ? "boundary_lower" : rep==2 ? "boundary_upper" : rep==3 ? "interior_rescued" : "interior";ratio=rep==1 ? 0.0 : rep==2 ? 1.0 : .5+dev
-        push!(parity,(manifest=mr,attempted=true,converged=true,status="success",error_class="none",boundary_status=boundary,scientific_sigma_g2=ratio,scientific_sigma_e2=1-ratio,scientific_ratio=ratio,fitted_total_variance=1.0,runtime_seconds=Float64(rep),peak_rss_mb=100.0+rep,se_info_r050=.1,eigen_cv_population=.5,effective_rank=50.0))
+        push!(parity,_evidence(JuliaProfileReplay,(manifest=mr,attempted=true,converged=true,status="success",error_class="none",boundary_status=boundary,scientific_sigma_g2=ratio,scientific_sigma_e2=1-ratio,scientific_ratio=ratio,fitted_total_variance=1.0,runtime_seconds=Float64(rep),peak_rss_mb=100.0+rep,se_info_r050=.1,eigen_cv_population=.5,effective_rank=50.0)))
     end
     function performance_rows(source_shift,replay_shift)
         [begin
-            source=(dict=Dict("runtime_seconds"=>_format(x.runtime_seconds+source_shift),"peak_rss_mb"=>_format(x.peak_rss_mb+source_shift)),)
+            source=_evidence(OrdinaryAutoGenomic,(dict=Dict("runtime_seconds"=>_format(x.runtime_seconds+source_shift),"peak_rss_mb"=>_format(x.peak_rss_mb+source_shift)),))
             perf=_summary_performance(source,x.runtime_seconds+replay_shift,x.peak_rss_mb+replay_shift)
-            merge(x,perf)
+            _merge_evidence(x,perf)
         end for x in parity]
     end
     performance_baseline=performance_rows(0.0,1000.0);performance_replay_mutation=performance_rows(0.0,2000.0);performance_source_mutation=performance_rows(1.0,1000.0)
     _table_text(D1_SUMMARY_COLUMNS,_d1_summary(performance_baseline))==_table_text(D1_SUMMARY_COLUMNS,_d1_summary(performance_replay_mutation))||error("replay performance leaked into scientific summary")
     _table_text(D1_SUMMARY_COLUMNS,_d1_summary(performance_baseline))!=_table_text(D1_SUMMARY_COLUMNS,_d1_summary(performance_source_mutation))||error("source R performance mutation did not change scientific summary")
     ps=_d1_summary(parity);req=maximum(x.required_n_raw for x in ps[1:3]);length(ps)==36&&all(x->x.required_n==max(200,req)&&x.cell_status=="ELIGIBLE"&&x.failure_classes=="none=48",ps)||error("D1 summary parity fixture decision drift")
+    _must_fail("D1 summary admitted raw untyped rows") do;_d1_summary(_payload.(parity));end
+    _must_fail("D1 summary admitted ordinary-route rows") do;_d1_summary([_evidence(OrdinaryAutoGenomic,_payload(x)) for x in parity]);end
     firstps=ps[1];firstps.n_interior==45&&firstps.n_interior_rescued==1&&firstps.n_boundary_lower==1&&firstps.n_boundary_upper==1&&firstps.n_unresolved==0&&firstps.n_error==0&&firstps.median_runtime_seconds==24.5||error("D1 summary parity fixture count/runtime drift")
     firstps.observed_boundary_lower==1/48&&firstps.observed_boundary_upper==1/48&&abs(firstps.mcse_boundary_lower-sqrt((1/48)*(47/48)/48))<1e-15||error("D1 boundary summary parity drift")
     # Independent base-R fixture (36 x 56 TSV; SHA-256
@@ -1389,24 +1442,25 @@ function selftest()
     for successes in (0,1)
         low=copy(parity)
         for i in (successes+1):48
-            low[i]=merge(low[i],(converged=false,status="fit_error",error_class="synthetic_low_convergence",boundary_status="NA",scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN))
+            low[i]=_merge_evidence(low[i],(converged=false,status="fit_error",error_class="synthetic_low_convergence",boundary_status="NA",scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN))
         end
         low_summary=_d1_summary(low)[1:3]
         all(x->x.low_convergence&&x.summary_nonfinite&&!x.precision_blocked&&!x.futility_stopped&&!x.cell_eligible&&x.cell_status=="STOP_LOW_PILOT_CONVERGENCE"&&isinf(x.required_n),low_summary)||error("D1 $successes-success low-convergence semantics drift")
     end
-    _must_fail("zero SE_info summary") do;x=copy(parity);for i in 1:48;x[i]=merge(x[i],(se_info_r050=0.0,));end;_d1_summary(x);end
-    _must_fail("nonfinite SE_info/predicted boundary") do;x=copy(parity);x[1]=merge(x[1],(se_info_r050=NaN,));_d1_summary(x);end
+    _must_fail("zero SE_info summary") do;x=copy(parity);for i in 1:48;x[i]=_merge_evidence(x[i],(se_info_r050=0.0,));end;_d1_summary(x);end
+    _must_fail("nonfinite SE_info/predicted boundary") do;x=copy(parity);x[1]=_merge_evidence(x[1],(se_info_r050=NaN,));_d1_summary(x);end
     _bool("true","x")&&!_bool("false","x")||error("Boolean selftest");_must_fail("logical TRUE") do;_bool("TRUE","x");end
     _must_fail("fingerprint mutation") do;packet.marker_hash==repeat("0",64)||error("fingerprint");end
     failfields=split("scientific_sigma_g2 scientific_sigma_e2 scientific_ratio fitted_total_variance numerical_sigma_g2 numerical_sigma_e2 numerical_ratio iterations objective gradient_norm");unresolved=Dict(f=>"NA" for f in failfields);merge!(unresolved,Dict("status"=>"fit_error","boundary_status"=>"boundary_unresolved","boundary_reason"=>"profile_flat","boundary_epsilon"=>"9.9999999999999995e-08","profile_loglik"=>"-12","lower_derivative_per_observation"=>"0","upper_derivative_per_observation"=>"0"));_validate_unsuccessful(unresolved)
     ordinary=copy(unresolved);for f in ("boundary_status","boundary_reason","boundary_epsilon","profile_loglik","lower_derivative_per_observation","upper_derivative_per_observation");ordinary[f]="NA";end;_validate_unsuccessful(ordinary)
     _must_fail("partial unresolved evidence") do;x=copy(unresolved);x["profile_loglik"]="NA";_validate_unsuccessful(x);end
-    malformed_generated=merge(replay,(status="fit_error",error_class="synthetic_failure",converged=false))
+    malformed_generated=_merge_evidence(replay,(status="fit_error",error_class="synthetic_failure",converged=false))
     _must_fail("generated replay failure retains successful fields") do;_validate_generated_replay(malformed_generated);end
-    generated_failure=merge(replay,(status="fit_error",error_class="profile_flat",converged=false,boundary_status="boundary_unresolved",boundary_reason="profile_flat",boundary_epsilon=BOUNDARY_EPSILON,scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN,numerical_sigma_g2=NaN,numerical_sigma_e2=NaN,numerical_ratio=NaN,profile_loglik=-12.0,lower_derivative_per_observation=0.0,upper_derivative_per_observation=0.0,iterations=NaN,objective=NaN,gradient_norm=NaN))
-    _validate_generated_replay(generated_failure);source_failure=(dict=Dict(string(k)=>_format(v) for (k,v) in pairs(generated_failure)),good=false)
+    generated_failure=_merge_evidence(replay,(status="fit_error",error_class="profile_flat",converged=false,boundary_status="boundary_unresolved",boundary_reason="profile_flat",boundary_epsilon=BOUNDARY_EPSILON,scientific_sigma_g2=NaN,scientific_sigma_e2=NaN,scientific_ratio=NaN,fitted_total_variance=NaN,numerical_sigma_g2=NaN,numerical_sigma_e2=NaN,numerical_ratio=NaN,profile_loglik=-12.0,lower_derivative_per_observation=0.0,upper_derivative_per_observation=0.0,iterations=NaN,objective=NaN,gradient_norm=NaN))
+    _validate_generated_replay(generated_failure);source_failure=_evidence(OrdinaryAutoGenomic,(dict=Dict(string(k)=>_format(v) for (k,v) in pairs(_payload(generated_failure))),good=false))
     _source_difference(source_failure,generated_failure)==0||error("identical unresolved evidence differs")
-    _source_difference(source_failure,merge(generated_failure,(profile_loglik=-11.0,)))>0||error("unresolved profile evidence was not compared")
+    _source_difference(source_failure,_merge_evidence(generated_failure,(profile_loglik=-11.0,)))>0||error("unresolved profile evidence was not compared")
+    _must_fail("typed source comparison admitted a Julia route as the official source") do;_source_difference(generated_failure,generated_failure);end
     h=repeat("a",64);binding=Dict("source_r_attempt_sha256"=>h,"replay_julia_commit"=>repeat("b",40),"replay_driver_sha256"=>h,"manifest_sha256"=>h,"preseal_sha256"=>h,"corpus_lock_sha256"=>h);_validate_replay_bindings(binding;source_sha=h,replay_commit=repeat("b",40),replay_sha=h,manifest_sha=h,preseal_sha=h,corpus_sha=h)
     _must_fail("forged replay binding") do;x=copy(binding);x["source_r_attempt_sha256"]=repeat("0",64);_validate_replay_bindings(x;source_sha=h,replay_commit=repeat("b",40),replay_sha=h,manifest_sha=h,preseal_sha=h,corpus_sha=h);end
     dir=mktempdir();try
@@ -1489,8 +1543,8 @@ function selftest()
         _must_fail("batch manifest inside evidence root") do;_read_batch_manifest(batch_evidence,inside,"d1",d1;manifest_sha=mh,preseal_sha=ph,corpus_sha=ch);end
 
         targets=joinpath(root,"batch-targets");mkdir(targets);target_rows=d1[1:2];h=repeat("a",64)
-        target_replay=merge(_manifest_values(target_rows[1],"d1"),replay,(r_implementation_commit=repeat("b",40),julia_implementation_commit=repeat("c",40),driver_commit=repeat("d",40),preseal_sha256=h,
-            source_r_attempt_sha256=h,source_r_max_abs_difference=0.0,replay_julia_commit=repeat("d",40),replay_driver_sha256=h,manifest_sha256=h,corpus_lock_sha256=h))
+        target_replay=_evidence(JuliaProfileReplay,merge(_manifest_values(target_rows[1],"d1"),_payload(replay),(r_implementation_commit=repeat("b",40),julia_implementation_commit=repeat("c",40),driver_commit=repeat("d",40),preseal_sha256=h,
+            source_r_attempt_sha256=h,source_r_max_abs_difference=0.0,replay_julia_commit=repeat("d",40),replay_driver_sha256=h,manifest_sha256=h,corpus_lock_sha256=h)))
         _write_once(_replay_path(targets,"d1",target_rows[1]),_table_text(_replay_columns("d1"),[target_replay]))
         _batch_target_prefix(targets,"d1",target_rows;resume_complete_prefix=true)==1||error("complete replay prefix is not resumable")
         _must_fail("existing target before writes") do;_batch_target_prefix(targets,"d1",target_rows;resume_complete_prefix=false);end
