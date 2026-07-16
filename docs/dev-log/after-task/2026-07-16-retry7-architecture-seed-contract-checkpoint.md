@@ -48,6 +48,10 @@ edited, staged, or included.
 - `julia --project=docs docs/make.jl`: PASS with pre-existing docstring/assets
   warnings and no deployment.
 - Replay sidecar and `git diff --check`: PASS.
+- The formal twin handoff gates were run after push. They returned the expected
+  nonzero status for the declared protected drafts/quarantined scaffold and
+  unrelated historical unpushed branches; the handover's Landing State ledger
+  records them as `CARRIED-OVER`.
 - Cross-language canonical lifecycle: D0F `PASS/COMPLETE` and D1
   `PASS/ELIGIBLE=12`, each with five CLEAN reviews, exact receipt retry, and
   final validation.

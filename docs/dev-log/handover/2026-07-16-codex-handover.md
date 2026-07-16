@@ -57,6 +57,23 @@ every pre-RNG gate below is green.
   `0e76c985` and `6092ba72`.
 - Draft PRs remain #137 (R) and #274 (Julia). Do not merge them in this arc.
 
+## Landing State ledger
+
+The current Retry-7 branches are landed and pushed. The formal handoff gate was
+run after both pushes. It returned nonzero only because the following state is
+deliberately carried over; none belongs to this checkpoint:
+
+| Repo / state | Classification | Why not landed here | Safe resume / inspection |
+| --- | --- | --- | --- |
+| Julia current branch: two modified Retry-5 drafts and one untracked downstream replay scaffold | `CARRIED-OVER` | H2-2 foreign drafts plus a quarantined non-evidence scaffold; this arc is forbidden to absorb or delete them | `git status --short --branch` from the Julia repo; leave the three paths untouched |
+| R current branch: two modified Retry-5 drafts | `CARRIED-OVER` | H2-2 foreign drafts; this arc is forbidden to absorb or delete them | `git status --short --branch` from the R repo; leave the two paths untouched |
+| Julia: 21 commits reported unpushed across historical non-current branches | `CARRIED-OVER` | Pre-existing work owned by other lanes, unrelated to Retry-7; branch publication is outside this task's authority | `git branch -vv | rg 'ahead'`; inspect only, then return to `codex/2026-07-13-v07-performance-localization` |
+| R: 41 commits reported unpushed across historical non-current branches | `CARRIED-OVER` | Pre-existing work owned by other lanes, unrelated to Retry-7; branch publication is outside this task's authority | `git branch -vv | rg 'ahead'`; inspect only, then return to `codex/2026-07-13-v07-performance-localization` |
+
+Thus the gate's nonzero exit is expected and fully declared. Do not attempt to
+make either repository globally clean by editing protected files, deleting
+branches, or pushing work owned by other lanes.
+
 ## What is implemented
 
 ### R adjudication boundary
