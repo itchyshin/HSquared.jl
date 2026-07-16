@@ -5358,3 +5358,13 @@ Newest entries go at the top.
 - Root and seeds are retired and unadjudicated; D1/D2 never opened; activation
   and count remain held. Detail:
   `docs/dev-log/check-log.d/2026-07-14-v07-d0f-retry4-endpoint-representation-blocker.md`.
+
+## 2026-07-16 — Retry-7 architecture and seed-contract checkpoint
+
+- The tracked replay now has typed route admission and v2 predecessor/review
+  bindings; Retry-7 seed constants and the R-owned deterministic bootstrap pin
+  agree cross-language.
+- Julia replay selftest, full `Pkg.test()`, docs, sidecar, and diff checks pass.
+- No `src/` or public-engine surface changed and no official RNG was invoked.
+  Full report:
+  `docs/dev-log/after-task/2026-07-16-retry7-architecture-seed-contract-checkpoint.md`.

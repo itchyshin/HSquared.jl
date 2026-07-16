@@ -1173,3 +1173,20 @@ JOINT contract task per AGENTS.md rule 2.
 - `CARRIED-OVER`: one quarantined untracked Julia downstream-replay scaffold, plus
   unrelated pre-existing local branches/worktree/stash left for their owners.
 - Start at `docs/dev-log/handover/2026-07-15-codex-handover.md`.
+
+## 2026-07-16 — Retry-7 Sol architecture checkpoint; Terra implementation next
+
+- The Sol lane completed the research-informed route-safe admission,
+  weighted-lineage, exact-receipt, synthetic-lifecycle, and disjoint seed-contract
+  checkpoint across both twins. Hopper/Noether, Gauss/Karpinski, and Grace/Rose
+  architecture reviews are CLEAN.
+- Retry-7 phenotype/bootstrap bases `2042000000` / `2043000000` are reserved and
+  unspent. No official RNG, preseal, fit, activation, count change, merge, or
+  release occurred; `public_covered_count` remains **5**.
+- Platform ownership remains sequential. After this checkpoint is committed and
+  pushed, one fresh Codex Terra/high task owns `R CMD check`, exact-head checks,
+  deployment rehearsal, and the route toward preseal. Sol is reserved for explicit
+  seed-contract, adjudication, and final adversarial-gate jobs.
+- `CARRIED-OVER`: the two protected Retry-5 drafts and the quarantined untracked
+  downstream-replay scaffold remain untouched. Start at
+  `docs/dev-log/handover/2026-07-16-codex-handover.md`.
