@@ -10,7 +10,10 @@ invoked.
 - Julia 1.10 `OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using Pkg; Pkg.test()'`:
   PASS.
 - `julia --project=docs docs/make.jl`: PASS. Existing docstring/assets and
-  local no-deployment warnings remain; no documentation deployment occurred.
+  local no-deployment warnings remain. This local build did not deploy. The
+  later exact-head Documenter CI run deployed its normal PR #274 preview
+  (`15a272da`, `previews/PR274`); that documentation-only preview is not
+  campaign compute or a campaign artifact.
 - `julia --project=. sim/phase2_v07_genomic_recovery_v3_stage_replay.jl
   --mode=selftest`: PASS, explicitly synthetic-only with no official RNG.
 - `tools/preamble_cap.sh`: PASS (one live snapshot).
