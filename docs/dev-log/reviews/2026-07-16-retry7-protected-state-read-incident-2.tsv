@@ -1,0 +1,2 @@
+schema_version	incident_at_utc	affected_path	exposure	mutation_status	attestation_status	recovery_scope
+1	2026-07-16T20:16:00Z	protected Retry-5 material (path intentionally not repeated)	targeted diagnostic search output exposure reported by independent reviewer	NO_WRITE; NO_STAGE; NO_HASH; NO_DELETE	SUPERSEDES all prior no-inspection attestations	S7 remains blocked; no Totoro retry, source repair, seed-contract, preseal, or official RNG without a fresh user-authorized recovery plan
