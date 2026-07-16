@@ -1,0 +1,4 @@
+schema_version	path	status_only	content_handling	purpose
+1	docs/dev-log/after-task/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md	modified	NOT_READ_NOT_HASHED_NOT_STAGED	declared carried-over Retry-5 draft
+1	docs/dev-log/check-log.d/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md	modified	NOT_READ_NOT_HASHED_NOT_STAGED	declared carried-over Retry-5 draft
+1	sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl	untracked	NOT_READ_NOT_HASHED_NOT_STAGED	declared quarantined scaffold
