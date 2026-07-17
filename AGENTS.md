@@ -16,23 +16,22 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-8 admission PASS; draw BLOCKED by a JuliaCall precompile env issue).**
-  Retry-8 repaired the two defects Retry-7's draw surfaced — the run-one
-  `expected_route` arity bug (`hsquared` `96529fd`, Rose PROMOTE + RED→GREEN test)
-  and a stale driver checksum sidecar (`a23b15b`) — and rebuilt a fresh sealed
-  root under the repaired head: write-review×5 → prepare → preseal →
-  materialize-bootstrap → **zero-seed preflight PASS** (manifest 576, bootstrap
-  720000 byte-identical to `-c`; seed bases 2042/2043 reused since `-c` was
-  pristine). Pre-registration `6d82b7ac`. The user authorized the draw; it is
-  **BLOCKED (infrastructure, not science):** `run-one` builds K/Q via **JuliaCall**,
-  whose lazy `using HSquared` fails to precompile on the fresh copied `HSquared.jl`
-  deployment (`compilecache`/`mkpidlock`; worker error swallowed). A stable
-  `TMPDIR` is necessary but not sufficient; `-c` only worked because its cache was
-  pre-built by the original deployment. **NO seed spent — both roots PRISTINE.**
-  `public_covered_count` stays **5**; route not activated. Recovery = clean-slate
-  the Julia depot cache + one clean JuliaCall `Pkg.precompile`, or reconcile the
-  original deployment's Julia/JuliaCall build. START HERE:
-  `docs/dev-log/check-log.d/2026-07-17-retry8-draw-blocked-juliacall-precompile.md`.
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-8 admission PASS; draw blocked by Totoro JuliaCall env; HANDOVER to next Claude).**
+  Retry-8 fixed the two defects Retry-7's draw surfaced — the run-one
+  `expected_route` arity bug (`hsquared` `96529fd`, Rose PROMOTE) + a stale driver
+  checksum sidecar (`a23b15b`) — rebuilt a fresh sealed root under the repaired
+  head, and **PASSED the admission gate** (write-review×5 → prepare → preseal →
+  materialize-bootstrap → zero-seed preflight PASS; manifest 576, bootstrap 720000;
+  seed bases 2042/2043 reused since `-c` was pristine; pre-reg `6d82b7ac`). The
+  draw is blocked ONLY by Totoro's fresh Julia 1.10.10 **JuliaCall/RCall
+  embedded-precompile being broken** — and the KEY new evidence is that **the same
+  JuliaCall path WORKS on the Mac (1.10.0)**, so it is a **fixable Totoro env
+  problem, not a code/version defect** (~17 tweaks failed; the untried fix is
+  `Pkg.build("RCall")`). **NO seed spent — both roots PRISTINE.**
+  `public_covered_count` stays **5**; route not activated. NEXT Claude: fix the
+  Totoro JuliaCall env → fresh pre-draw GO → `run-official` smoke-first through
+  `adjudicate`+`validate-final` on the `retry8-prep` root → spawned-Rose close-out.
+  START HERE: `docs/dev-log/handover/2026-07-17-retry8-claude-handover.md`.
 
 ## Core Scope
 
