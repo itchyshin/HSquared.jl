@@ -1,5 +1,19 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 ADMISSION GATE PASSED; HARD STOP).**
+  Claude ran the gate live on Totoro (execution reassigned to Claude). Chronology
+  audit L1–L5 PASS (hashes byte-identical; preseal precedes bootstrap;
+  create-once; no live worker; sole canonical root `-c`, with sibling `-b`
+  recorded as the retired zero-fit SYNTHETIC lifecycle). Env unblocked (Julia
+  1.10.10 installed + `-c` checkout instantiated; tree stayed clean). **Zero-seed
+  Julia preflight `--stage=d0f` against the canonical root: PASS ("sealed inputs
+  only; no official RNG or seed consumed"), exit 0, no mutation.** No phenotype
+  drawn; no campaign run. Default R routing remains held and
+  `public_covered_count` remains **5**; only the supplied-`Ginv` estimator is
+  covered. NEXT (separately authorized, own ultra-plan): phenotype generation +
+  576-fit campaign. START HERE:
+  `docs/dev-log/check-log.d/2026-07-17-retry7-admission-gate-preflight.md`.
+
 - **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 ADMISSION GATE AUTHORIZED + PLANNED; HARD STOP).**
   Rose read-only pre-admission audit PASSED (sole ownership, canonical root,
   exact preseal/manifest/sidecar hashes byte-identical, no forbidden output;
