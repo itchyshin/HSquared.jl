@@ -16,24 +16,23 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 D0F CAMPAIGN BLOCKED at run-one; banked negative).**
-  Admission gate + full pre-seed de-risk PASSED (PRE-0 pre-registration; PRE-1
-  route-repair `b8096e5` in bound head; PRE-2/3 tail regression tests 209/0 with
-  Rose PROMOTE + Hopper SOUND; PRE-4 real 720000-row bootstrap consumable; PRE-5
-  preflight re-PASS). User authorized the draw; the smoke caught two issues
-  BEFORE any seed was persistently drawn: (1) a JuliaCall precompile failure
-  under R's ephemeral `TMPDIR` — FIXED by exporting a stable `TMPDIR` (env only);
-  (2) **a CONFIRMED BOUND-TOOL DEFECT — `v3d_validate_attempt`
-  (`v07_genomic_recovery_v3.R:1162`) calls `v3p_validate_results` without the
-  now-required `expected_route` arg (route-repair `b8096e5` missed this run-one
-  call site; synthetic lifecycle + preflight + tail-tests all bypass run-one, so
-  none caught it).** Every official fit fails-closed. The sealed `-c` root is
-  **PRISTINE** (preflight re-PASS; hashes unchanged; no attempts/packets) — no
-  seed spent, NOT forfeit. Fixing the bound driver invalidates the sealed
-  preseal, so recovery is a **repaired-head rebuild** (fix `v3d_validate_attempt`
-  + add a run-one entry regression test + rebuild preseal + re-admit), not a draw
-  on `-c`. `public_covered_count` stays **5**; route not activated. START HERE:
-  `docs/dev-log/check-log.d/2026-07-17-retry7-d0f-campaign-run-one-blocker.md`.
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-8 admission PASS; draw BLOCKED by a JuliaCall precompile env issue).**
+  Retry-8 repaired the two defects Retry-7's draw surfaced — the run-one
+  `expected_route` arity bug (`hsquared` `96529fd`, Rose PROMOTE + RED→GREEN test)
+  and a stale driver checksum sidecar (`a23b15b`) — and rebuilt a fresh sealed
+  root under the repaired head: write-review×5 → prepare → preseal →
+  materialize-bootstrap → **zero-seed preflight PASS** (manifest 576, bootstrap
+  720000 byte-identical to `-c`; seed bases 2042/2043 reused since `-c` was
+  pristine). Pre-registration `6d82b7ac`. The user authorized the draw; it is
+  **BLOCKED (infrastructure, not science):** `run-one` builds K/Q via **JuliaCall**,
+  whose lazy `using HSquared` fails to precompile on the fresh copied `HSquared.jl`
+  deployment (`compilecache`/`mkpidlock`; worker error swallowed). A stable
+  `TMPDIR` is necessary but not sufficient; `-c` only worked because its cache was
+  pre-built by the original deployment. **NO seed spent — both roots PRISTINE.**
+  `public_covered_count` stays **5**; route not activated. Recovery = clean-slate
+  the Julia depot cache + one clean JuliaCall `Pkg.precompile`, or reconcile the
+  original deployment's Julia/JuliaCall build. START HERE:
+  `docs/dev-log/check-log.d/2026-07-17-retry8-draw-blocked-juliacall-precompile.md`.
 
 ## Core Scope
 
