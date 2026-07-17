@@ -16,20 +16,16 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-16 (v0.7 genomic public-activation arc — RETRY-7 ARCHITECTURE + SEED CONTRACT COMPLETE; NO RNG).**
-  Research-informed route-safe R admission, weighted D0F/D1 route-lineage
-  conservation, adjudication schema v2, exact idempotent receipt recognition,
-  and Julia replay route typing are implemented. A full-cardinality synthetic
-  D0F-to-D1 lifecycle and mutation campaign passed, and Hopper/Noether,
-  Gauss/Karpinski, and Grace/Rose architecture reviews are CLEAN. Disjoint
-  Retry-7 phenotype/bootstrap bases `2042000000` / `2043000000` are reserved
-  but unspent. Exact-head `R CMD check`, CI, clean Totoro deployment rehearsal,
-  preseal, chronology audit, official compute, and adjudication remain pending.
-  Default R routing remains held and `public_covered_count` remains **5**; only
-  the supplied-`Ginv` estimator is covered. Platform ownership is sequential:
-  one fresh Terra/high Codex task continues implementation; use Sol only for
-  explicit seed-contract, adjudication, and final adversarial-gate jobs. START
-  HERE: `docs/dev-log/handover/2026-07-16-codex-handover.md`.
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 BOOTSTRAP RECEIPT; HARD STOP).**
+  The repaired exact head passed R/Julia checks, R CI, clean Totoro deployment,
+  and zero-fit synthetic lifecycle. A fresh D0F preseal then materialized only
+  the bound bootstrap index manifest at the canonical Totoro root; exact bytes
+  reproduced and all phenotype/attempt/fit/adjudication namespaces remain
+  absent. Default R routing remains held and `public_covered_count` remains
+  **5**; only the supplied-`Ginv` estimator is covered. Next is a separately
+  authorized phenotype-admission gate (Julia zero-seed preflight + post-bootstrap
+  chronology audit), not phenotype generation. START HERE:
+  `docs/dev-log/handover/2026-07-17-claude-handover.md`.
 
 ## Core Scope
 

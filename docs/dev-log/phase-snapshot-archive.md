@@ -890,3 +890,18 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   `public_covered_count` remains **5**; only the supplied-`Ginv` estimator
   remains covered. START HERE:
   `docs/dev-log/handover/2026-07-15-retry6-terminal-route-repair.md`.
+
+- **As of 2026-07-16 (v0.7 genomic public-activation arc — RETRY-7 ARCHITECTURE + SEED CONTRACT COMPLETE; NO RNG).**
+  Research-informed route-safe R admission, weighted D0F/D1 route-lineage
+  conservation, adjudication schema v2, exact idempotent receipt recognition,
+  and Julia replay route typing are implemented. A full-cardinality synthetic
+  D0F-to-D1 lifecycle and mutation campaign passed, and Hopper/Noether,
+  Gauss/Karpinski, and Grace/Rose architecture reviews are CLEAN. Disjoint
+  Retry-7 phenotype/bootstrap bases `2042000000` / `2043000000` are reserved
+  but unspent. Exact-head `R CMD check`, CI, clean Totoro deployment rehearsal,
+  preseal, chronology audit, official compute, and adjudication remain pending.
+  Default R routing remains held and `public_covered_count` remains **5**; only
+  the supplied-`Ginv` estimator is covered. Platform ownership is sequential:
+  one fresh Terra/high Codex task continues implementation; use Sol only for
+  explicit seed-contract, adjudication, and final adversarial-gate jobs. START
+  HERE: `docs/dev-log/handover/2026-07-16-codex-handover.md`.
