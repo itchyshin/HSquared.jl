@@ -119,9 +119,29 @@ had synthetic material, and it is distinct-hashed.
   validate the full sealed-input contract with zero RNG — the correct admission
   gate before any phenotype draw.
 
+Memory receipt: loaded and applied the codex-handover plan, AGENTS.md hard-stop
+discipline, the Rose claim-vs-evidence gate, the smoke-first guardrail (caught
+the Julia-version and flag-form failures), and the Totoro passwordless-socket
+runbook. The evidence-first "repo state is truth" rule shaped every verdict.
+
+Golden Set: not in scope — this gate is a Julia-lane provenance/readiness check,
+not a statistical estimator change; no known-mistake regression class applied.
+
 ## 12. Cross-Product Coverage
 
 Julia-lane (HSquared.jl) only. The R twin (`hsquared`) owns the D0F materializer
 and preseal; this gate consumed its sealed outputs read-only and made no R-lane
-change. No cross-twin contract was altered; `public_covered_count` (the R-public
-surface) unchanged at 5.
+change. No cross-twin contract was altered.
+
+Cross-cutting flags touched — **genomic engine / REML / D0F-provenance**. This
+arc COVERS: the read-only zero-seed preflight contract (manifest, preseal incl.
+`d0f_bootstrap_seed_base`/`bootstrap-indices-absent`, preseal-only tree,
+git-clean bound Julia+R checkouts, env pin) against the canonical `-c/d0f` root,
+plus the chronology audit of the sealed bootstrap-index materialization.
+
+It **does NOT cover**: phenotype generation; the 576-fit official campaign; the
+base-R recompute or exact Julia replay of any fit; sealed adjudication or receipt
+minting; activation/merge/release of the ordinary no-control R route; production
+sparse genomic fitting, APY, `V2-GRM`/`V2-GINV`, or calibrated intervals. The
+R-public surface `public_covered_count` is unchanged at 5 and is NOT advanced by
+this gate.
