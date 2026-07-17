@@ -16,16 +16,18 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 BOOTSTRAP RECEIPT; HARD STOP).**
-  The repaired exact head passed R/Julia checks, R CI, clean Totoro deployment,
-  and zero-fit synthetic lifecycle. A fresh D0F preseal then materialized only
-  the bound bootstrap index manifest at the canonical Totoro root; exact bytes
-  reproduced and all phenotype/attempt/fit/adjudication namespaces remain
-  absent. Default R routing remains held and `public_covered_count` remains
-  **5**; only the supplied-`Ginv` estimator is covered. Next is a separately
-  authorized phenotype-admission gate (Julia zero-seed preflight + post-bootstrap
-  chronology audit), not phenotype generation. START HERE:
-  `docs/dev-log/handover/2026-07-17-claude-handover.md`.
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 ADMISSION GATE AUTHORIZED + PLANNED; HARD STOP).**
+  Rose read-only pre-admission audit PASSED (sole ownership, canonical root,
+  exact preseal/manifest/sidecar hashes byte-identical, no forbidden output;
+  live no-worker leg delegated to Codex). The phenotype-admission gate is
+  authorized and planned as a **zero-seed Julia preflight** (eight contract
+  checks, each targeting a documented prior-retry failure) **+ post-bootstrap
+  chronology audit**, both handed to Codex for live Totoro execution. No
+  phenotype drawn; no campaign run. Default R routing remains held and
+  `public_covered_count` remains **5**; only the supplied-`Ginv` estimator is
+  covered. Hard stop after preflight+audit review; phenotype generation and the
+  576-fit campaign need separate authorization. START HERE:
+  `docs/dev-log/handover/2026-07-17-codex-handover.md`.
 
 ## Core Scope
 

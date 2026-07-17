@@ -1,5 +1,16 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-7 BOOTSTRAP RECEIPT; HARD STOP).**
+  The repaired exact head passed R/Julia checks, R CI, clean Totoro deployment,
+  and zero-fit synthetic lifecycle. A fresh D0F preseal then materialized only
+  the bound bootstrap index manifest at the canonical Totoro root; exact bytes
+  reproduced and all phenotype/attempt/fit/adjudication namespaces remain
+  absent. Default R routing remains held and `public_covered_count` remains
+  **5**; only the supplied-`Ginv` estimator is covered. Next is a separately
+  authorized phenotype-admission gate (Julia zero-seed preflight + post-bootstrap
+  chronology audit), not phenotype generation. START HERE:
+  `docs/dev-log/handover/2026-07-17-claude-handover.md`.
+
 Thirty entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
 2026-06-20). **Nothing is summarised; nothing is deleted.**
 
