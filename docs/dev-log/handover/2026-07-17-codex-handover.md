@@ -5,6 +5,14 @@
 **Date:** 2026-07-17
 **State:** admission gate authorized and planned; **hard stop before phenotype admission**.
 
+> **SUPERSEDED 2026-07-17 — the gate was executed by CLAUDE, not Codex.** Live
+> execution was reassigned to Claude. The zero-seed Julia preflight (`--stage=d0f`,
+> canonical `-c/d0f`, Julia 1.10.10) and chronology audit both **PASSED** with no
+> mutation; verdict recorded in
+> `docs/dev-log/check-log.d/2026-07-17-retry7-admission-gate-preflight.md`. **Do
+> NOT re-run the preflight.** The plan below is retained for provenance only. The
+> next arc (phenotype generation + 576-fit campaign) remains unauthorized.
+
 ## Critical context
 
 Retry-7 is NOT activated. The sole official RNG operation to date is the
