@@ -1,8 +1,15 @@
-# Retry-7 D0F campaign arc — ultra-plan (planning only; execution NOT yet authorized)
+# Retry-7 D0F campaign arc — ultra-plan
 
-**Date:** 2026-07-17 · **Author:** Claude (planning lane) · **Status:** PLAN. The admission
-gate closed PASS; the phenotype draw + 576-fit campaign need their **own express authorization**
-before any slice below executes. Nothing here has been run; no phenotype has been drawn.
+**Date:** 2026-07-17 · **Author:** Claude · **Status:** AUTHORIZED (execution). The admission gate
+closed PASS; the user expressly authorized the phenotype draw + 576-fit campaign on 2026-07-17.
+No phenotype has been drawn yet — the draw stays behind the pre-seed green-gate + an explicit GO.
+
+> **EXECUTOR CORRECTION 2026-07-17 — CLAUDE, not Codex.** This doc's GOAL block originally named
+> Codex as executor; the user chose to run the campaign **here on Claude** (this in-session platform
+> owns both twins, sequentially). The corrected, guarded, Claude-executed authority is the plan file
+> `foamy-squishing-crayon.md` (executor swap + guards: test-only-vs-bound-tool edit classification,
+> path-scoped commits, no-concurrent-Codex, baseline R-env trust, a SPAWNED Rose close-out, and the
+> shown pre-draw GREEN assertion + explicit user GO). Read that file's guards alongside this DAG.
 
 Built from a read-only 8-agent research+design+critique workflow (failure-history, Julia-harness
 contract, R↔Julia handoff/covered-bar, brain/scout sweep; risk-first + throughput-first design;
@@ -11,11 +18,12 @@ CONDITIONAL GO** — corrections folded in below.
 
 ---
 
-## 🎯 GOAL (paste-to-set the execution session's goal — AFTER you authorize the campaign)
+## 🎯 GOAL (paste-to-set the execution session's goal)
 
 ```
-Execute the Retry-7 D0F campaign on ONE platform — CODEX (live R/TMB + Julia + Totoro toolchain);
-Claude plans and read-only-verifies. DELIVERABLE: a sealed, byte-identical D0F adjudication receipt
+Execute the Retry-7 D0F campaign HERE on CLAUDE (this in-session platform owns both twins,
+sequentially — no Codex; the brain's timing rule: the in-session platform runs the work itself).
+DELIVERABLE: a sealed, byte-identical D0F adjudication receipt
 (schema v07-genomic-recovery-v3-adjudication-2) that survives its own validate-final — WHATEVER its
 verdict — plus a repo-visible close-out. HEADLINE: DE-RISK THE ADJUDICATION TAIL BEFORE SPENDING ONE
 OFFICIAL SEED. Four of the last attempts computed all 576 fits correctly and died in the R
@@ -152,10 +160,15 @@ verifies. **All PRE-* slices must be green before any phenotype seed is drawn.**
 
 ## Cross-twin ownership
 
-The tail fixes/tests (PRE-1/2/3b) and the R driver/adjudicator (C1, C2, C3, C7, C9, C10) live in
-**hsquared (R lane)** — Claude does not edit the R repo from here; those are Codex/R-session work. The
-Julia harness is **replay-only and already zero-seed-validated — reuse, do not rewrite.** Every
-compute slice is a Codex/Totoro hand-off; Claude's lane is read-only planning + evidence verification.
+The tail tests (PRE-2/3) and the R driver/adjudicator (C1, C2, C3, C7, C9, C10) live in **hsquared
+(R lane)**. **Under the user's express authorization (2026-07-17), Claude owns BOTH lanes this
+session** — a logged, deliberate exception to the CLAUDE.md operator note ("do not edit the R repo
+from here"), valid only while no concurrent Codex/R session is live and only for THIS arc. The
+Julia harness is **replay-only and already zero-seed-validated — reuse, do not rewrite.** The R tail
+work is **test-only** (never edit bound tools recompute.R/v3.R/preseal.R on the sealed root). Live
+compute runs on Totoro from this session; the three witnesses (official-R / base-R / Julia) stay
+blind re-derivations, and the mandatory close-out Rose audit is a **spawned fresh context**, not
+this authoring session — preserving author≠reviewer.
 
 ## What is NOT in this arc
 

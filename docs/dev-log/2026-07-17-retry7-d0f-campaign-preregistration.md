@@ -72,9 +72,12 @@ moves no count.
 
 ## 7. Lane + point of no return
 
-Live execution (phenotype draw, fits, base-R recompute, adjudication, receipt) is the R/Julia +
+Live execution (phenotype draw, fits, base-R recompute, adjudication, receipt) uses the R/Julia +
 Totoro toolchain — the R twin (`hsquared`) owns markers/phenotypes/official fits/base-R
-recompute/adjudication; `HSquared.jl` replays only. The **phenotype draw (C1) is the point of no
-return** under the root-forfeit rule and stays LAST, after the green-gate. Compute: Totoro,
+recompute/adjudication; `HSquared.jl` replays only. **EXECUTOR (corrected 2026-07-17): CLAUDE runs
+both lanes this session under the user's express authorization** (logged exception to the "no R
+edits from here" operator note; R tail work is test-only; no concurrent Codex session). The
+**phenotype draw (C1) is the point of no return** under the root-forfeit rule and stays LAST, after
+the green-gate and an explicit shown pre-draw GREEN assertion + user GO. Compute: Totoro,
 `OPENBLAS_NUM_THREADS=1`, JULIA threads=1, ≤90-96 workers, resume via complete-prefix only,
 bootstrap immutable.
