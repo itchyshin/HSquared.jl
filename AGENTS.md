@@ -16,22 +16,23 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-8 admission PASS; draw blocked by Totoro JuliaCall env; HANDOVER to next Claude).**
-  Retry-8 fixed the two defects Retry-7's draw surfaced — the run-one
-  `expected_route` arity bug (`hsquared` `96529fd`, Rose PROMOTE) + a stale driver
-  checksum sidecar (`a23b15b`) — rebuilt a fresh sealed root under the repaired
-  head, and **PASSED the admission gate** (write-review×5 → prepare → preseal →
-  materialize-bootstrap → zero-seed preflight PASS; manifest 576, bootstrap 720000;
-  seed bases 2042/2043 reused since `-c` was pristine; pre-reg `6d82b7ac`). The
-  draw is blocked ONLY by Totoro's fresh Julia 1.10.10 **JuliaCall/RCall
-  embedded-precompile being broken** — and the KEY new evidence is that **the same
-  JuliaCall path WORKS on the Mac (1.10.0)**, so it is a **fixable Totoro env
-  problem, not a code/version defect** (~17 tweaks failed; the untried fix is
-  `Pkg.build("RCall")`). **NO seed spent — both roots PRISTINE.**
-  `public_covered_count` stays **5**; route not activated. NEXT Claude: fix the
-  Totoro JuliaCall env → fresh pre-draw GO → `run-official` smoke-first through
-  `adjudicate`+`validate-final` on the `retry8-prep` root → spawned-Rose close-out.
-  START HERE: `docs/dev-log/handover/2026-07-17-retry8-claude-handover.md`.
+- **As of 2026-07-18 (v0.7 genomic public-activation arc — RETRY-8 D0F ADJUDICATION RECEIPT: PASS / COMPLETE, byte-reproducible).**
+  The **first COMPLETE D0F adjudicated receipt** across the whole recovery arc
+  (retries 4–7 all died in this tail). `retry8-prep/d0f/stage_adjudication_receipt.tsv`:
+  `v07-genomic-recovery-v3-adjudication-2`, **`verdict=PASS`, `stage_decision=COMPLETE`**,
+  receipt sha `04cc0740…`; `validate-final` re-derived it **byte-identical** (RC=0).
+  576 official fits (all converged; 556 interior / 10 lower / 10 upper) + 576 base-R
+  recomputations + 576 exact Julia replays in triple parity (attempt max-diff 3.18e-12,
+  summary 7.11e-15, ≤1e-10); 5 bound post-run reviews (all CLEAN). The 8-retry Totoro
+  JuliaCall blocker was root-caused to a **global-vs-project OrderedCollections version
+  split** (1.8.2 vs 2.0.1) — NOT TMPDIR — and fixed with **no seal/tracked-file change**
+  (deployed `Project.toml` byte-identical to sealed `976814`; fix in the non-sealed global
+  bridge env + gitignored Manifest). Both lanes git-clean. Per the pre-registration this
+  COMPLETE receipt **only opens D1/D2**: `public_covered_count` stays **5**,
+  `ordinary_auto_genomic` route NOT activated, V2-GRM/V2-GINV stay partial. **Spawned-Rose
+  close-out CONFIRMED** (claim-vs-evidence, bounds respected, nothing overstated). NEXT:
+  D1/D2 are now open. START HERE:
+  `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.
 
 ## Core Scope
 

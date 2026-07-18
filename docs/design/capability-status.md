@@ -36,6 +36,26 @@
 > Retry 6 is permanently `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER`;
 > its root and complete seed spaces are retired, and D1/D2 never opened. See
 > `docs/dev-log/recovery-checkpoints/2026-07-15-v07-d0f-retry6-postrun-adjudicator-route-blocker.md`;
+> Retry 7's draw was blocked pre-fit by a bound-tool arity defect in the
+> run-one attempt validator (banked negative, no seed spent). **Retry 8
+> (2026-07-18) is the first to complete the full validated pipeline and mint an
+> adjudicated receipt: `v07-genomic-recovery-v3-adjudication-2`, `verdict=PASS`,
+> `stage_decision=COMPLETE`** — 576 official fits (all converged: 556 interior,
+> 10 boundary-lower, 10 boundary-upper), 576 independent base-R recomputations
+> and 576 exact Julia replays in triple parity (attempt max-diff 3.18e-12,
+> summary max-diff 7.11e-15, both ≤ 1e-10), five bound post-run review receipts
+> (fisher/noether/hopper/grace/rose, all CLEAN), and a `validate-final` that
+> re-derived the receipt byte-identical (sha256 `04cc0740…`). The Totoro
+> JuliaCall precompile blocker that stopped retries 4–7 was root-caused to a
+> global-vs-project OrderedCollections version split and fixed with **no
+> tracked-file or seal change** (deployed `HSquared.jl` `Project.toml` byte-identical
+> to sealed `976814`; the fix lives in the non-sealed global bridge env and the
+> gitignored Manifest). Per its pre-registration this COMPLETE receipt only
+> **opens D1/D2**: it does not activate/merge/release the `ordinary_auto_genomic`
+> route, does not discharge V2-GRM/V2-GINV (both remain partial), and does **not**
+> move `public_covered_count` off 5. Spawned-Rose close-out CONFIRMED
+> (claim-vs-evidence, bounds respected). See
+> `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`;
 > the earlier performance decision remains in
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
 
