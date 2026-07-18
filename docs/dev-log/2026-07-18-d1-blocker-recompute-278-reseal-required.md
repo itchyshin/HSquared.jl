@@ -81,6 +81,4 @@ identity-only; never feeds a fit/recompute/parity/adjudication path). Two correc
   the D1 pre-registration, the handover doc, the D1 pre-draw audit, check-log.md, the D0F retry8 after-task,
   and its check-log.d sibling. Post-reseal wording must say "identical fits, new receipt identity" — never
   "receipt 04cc0740 re-derived byte-identical". A spawned-Rose close-out re-confirms PASS/COMPLETE + that every
-  `04cc0740`/`a23b15b`/`cef0b993` citation has moved and the new receipt's id label is not falsely `04cc0740`.</new_string>
-</invoke>
-
+  `04cc0740`/`a23b15b`/`cef0b993` citation has moved and the new receipt's id label is not falsely `04cc0740`.
