@@ -94,6 +94,27 @@ depot change, re-run envfix2 + envfix3 before relaunching a fan-out.
 - Session scratchpad scripts (Totoro copies exist): `d1_predraw*.sh`, `reseal_prerun_reviews.sh`,
   `reseal_d0f_block1.sh`, `reseal_d0f_smoke2.sh`, `reseal_d0f_block2.sh`, `envfix2.sh`, `envfix3.sh`.
 
+## PROGRESS UPDATE (2026-07-18, later in session)
+
+- **Block 2 COMPLETE (rc=0):** 576 official + 576 base-R + 576 Julia replay; verify-replay "complete quiescent
+  rows=576". The re-run reproduces retry8's D0F scientific core **exactly** — a diff of `reseal-d0f/d0f_summary_r.tsv`
+  vs `retry8-prep/d0f/d0f_summary_r.tsv` shows 0 non-provenance diffs; tally **556 interior / 10 lower / 10 upper**
+  == `04cc0740`. Noether's independent tri-lane recomputation over all 576: scientific core bit-identical,
+  derived fields max **3.18e-12** (== retry8's `attempt_max_diff`), 0/576 seed-formula mismatches.
+- **Post-run 5-lens gate: 5/5 CLEAN** (fisher/noether/hopper/grace/rose — genuine reviews of the actual corpus).
+- **Block 3 RUNNING** (`reseal_d0f_block3.sh`, marker `reseal_d0f_block3.DONE`, log `reseal_d0f_block3.log`):
+  writes the 5 post-run receipts (all CLEAN, reviewed-at-utc) → `adjudicate` → `validate-final` → **new D0F
+  receipt** at `reseal-d0f/stage_adjudication_receipt.tsv`. **~3.5h** (each review/adjudicate/validate-final
+  re-runs the full adjudication ~30 min single-threaded). A background watch (`buuxtm2l1`) is armed for its DONE.
+- **When Block 3 lands:** confirm the new receipt = `verdict=PASS, stage_decision=COMPLETE`, byte-reproduced by
+  validate-final; **record its ACTUAL sha** (do NOT pre-write). Then spawned-Rose close-out + the 12-doc supersede.
+- **Rose wording correction (use this):** do NOT say "only 5 receipt fields change" — that undercounts. Say:
+  "the scientific fields + PASS verdict reproduce exactly; the provenance/identity set changes by design"
+  (r_driver_commit, r_recomputer_commit, r_recomputer_sha256, preseal_sha256, r_summary_sha256,
+  julia_summary_sha256, base_r_inventory_sha256, corpus_lock_sha256, adjudication_key_sha256 — all provenance).
+- **D1 optimization:** the 5 post-run reviews are independent/parallel-safe — for D1, run write-postrun-review
+  in parallel (and the 5 review lenses concurrently) to cut ~2h off the final phase.
+
 ## Guardrails
 
 - `public_covered_count` STAYS 5. A COMPLETE new D0F receipt only OPENS D1/D2 (like 04cc0740). D1 alone moves
