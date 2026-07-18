@@ -5368,3 +5368,18 @@ Newest entries go at the top.
 - No `src/` or public-engine surface changed and no official RNG was invoked.
   Full report:
   `docs/dev-log/after-task/2026-07-16-retry7-architecture-seed-contract-checkpoint.md`.
+
+## 2026-07-18 — Retry-8 D0F adjudication receipt PASS/COMPLETE (byte-reproducible)
+
+- First COMPLETE D0F genomic-recovery-v3 receipt across the arc:
+  `v07-genomic-recovery-v3-adjudication-2`, verdict **PASS**, decision **COMPLETE**,
+  re-derived byte-identical by `validate-final` (receipt sha `04cc0740…`).
+- 576 fits (all converged) + 576 base-R recompute + 576 exact Julia replay in triple
+  parity (attempt 3.18e-12, summary 7.11e-15, ≤1e-10); 5 CLEAN post-run reviews;
+  spawned-Rose close-out CONFIRMED. Both lanes git-clean at sealed heads.
+- The 8-retry Totoro JuliaCall blocker root-caused to a global-vs-project
+  OrderedCollections version split (not TMPDIR) and fixed with no seal/tracked change.
+- Only opens D1/D2: `public_covered_count` stays **5**, route not activated,
+  V2-GRM/V2-GINV stay partial. Detail:
+  `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`;
+  full report: `docs/dev-log/after-task/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.

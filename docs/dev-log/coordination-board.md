@@ -1190,3 +1190,20 @@ JOINT contract task per AGENTS.md rule 2.
 - `CARRIED-OVER`: the two protected Retry-5 drafts and the quarantined untracked
   downstream-replay scaffold remain untouched. Start at
   `docs/dev-log/handover/2026-07-16-codex-handover.md`.
+
+## 2026-07-18 — Retry-8 D0F adjudicated: PASS/COMPLETE
+
+- Retry-8 drew phenotype/bootstrap bases `2042000000` / `2043000000` (now SPENT) and
+  ran the full validated pipeline to the first COMPLETE D0F adjudication receipt:
+  verdict **PASS**, byte-reproducible under `validate-final` (sha `04cc0740…`).
+  Spawned-Rose close-out CONFIRMED.
+- Bounds respected: `public_covered_count` remains **5**; `ordinary_auto_genomic`
+  route NOT activated/merged/released; V2-GRM/V2-GINV stay partial. The COMPLETE
+  receipt only **opens D1/D2**.
+- The Totoro JuliaCall precompile blocker (retries 4–7) was root-caused to a
+  global-vs-project OrderedCollections version split and fixed with NO seal/tracked
+  change (deployed `Project.toml` byte-identical to sealed 976814; fix in the
+  non-sealed global bridge env + gitignored Manifest). Nothing for the R twin to mirror.
+- `CARRIED-OVER` (unchanged): the two protected Retry-5 drafts + the untracked
+  downstream-replay scaffold remain untouched. Detail:
+  `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.
