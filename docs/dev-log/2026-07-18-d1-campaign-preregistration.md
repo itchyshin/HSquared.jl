@@ -21,9 +21,14 @@ NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it si
 > binding below is corrected to the sanctioned D0F-seal heads. No seed was ever drawn.
 
 **STATUS (2026-07-18): HELD at the S4 admission gate; pre-registration REVISED after audit.** Julia-side
-env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present. **Blocked on a
-Totoro re-deployment to the sanctioned heads** (the auto-discovered `code-d3835fe-1a538212` is stale
-pre-fix code and must not be used) **+ R-twin certification** (§ certification-evidence, below). No
+env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present. **The sanctioned
+deployment ALREADY EXISTS and is certified by live repo evidence (2026-07-18):**
+`~/hsq_work/retry8-prep/{hsquared@a23b15b, HSquared.jl@976814}` — the tree that produced the D0F PASS — is
+git-clean; its Julia driver has `_validate_d0f_predecessor` (6 hits) + `adjudication-2` +
+`COMPONENT_RATIO_TOLERANCE`; its R side has `admission.R`/`downstream_contract.R`/`preseal.R`/`recompute.R`
+all at `adjudication-2`. **No re-deployment/clone needed.** The auto-discovered `code-d3835fe-1a538212`
+remains stale pre-fix and must not be used. Remaining before the draw: PRE-1 dry `validate-final` (D0F
+re-derives `04cc0740` byte-identical) + the live adversarial panel + explicit user GO. No
 `prepare`/`preseal`/draw has run; no seed drawn.
 
 **Bound heads — D1 runs on the sanctioned D0F-seal heads (or descendants that keep the gate + schema-2):**

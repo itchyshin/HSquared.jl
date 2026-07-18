@@ -55,7 +55,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
   The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
   (git-proven ANCESTORS of the seal, NOT descendants; gate + schema-2 + `admission.R`/`downstream_contract.R`
-  absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. D1's S4 admission gate
+  absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. **RESOLVED (2026-07-18):
+  the sanctioned deployment already exists** — `retry8-prep/{hsquared@a23b15b, HSquared.jl@976814}`, git-clean,
+  with `_validate_d0f_predecessor` + `adjudication-2` + `admission.R` present (certified by live repo
+  evidence); no re-clone needed — use it as R_ROOT/JULIA_ROOT with RECEIPT_ROOT=`retry8-prep/d0f`,
+  OUT=`retry8-prep/d1`. D1's S4 admission gate
   (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
   env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present; pre-reg =
   `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
