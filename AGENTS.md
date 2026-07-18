@@ -30,9 +30,12 @@ engine reality.
   bridge env + gitignored Manifest). Both lanes git-clean. Per the pre-registration this
   COMPLETE receipt **only opens D1/D2**: `public_covered_count` stays **5**,
   `ordinary_auto_genomic` route NOT activated, V2-GRM/V2-GINV stay partial. **Spawned-Rose
-  close-out CONFIRMED** (claim-vs-evidence, bounds respected, nothing overstated). NEXT:
-  D1/D2 are now open. START HERE:
-  `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.
+  close-out CONFIRMED** (claim-vs-evidence, bounds respected, nothing overstated). NEXT lane
+  = **D1** (open): ultra-plan → pre-register (fresh seeds; 2042/2043 are spent) → adversarial
+  pre-draw panel → draw → same validated pipeline → adjudicate/validate-final → Rose. The
+  Totoro JuliaCall env fix (global-env OrderedCollections 2.0.1 + gitignored RCall-free
+  Manifest) is persistent — VERIFY `ok=TRUE` before D1. START HERE:
+  `docs/dev-log/handover/2026-07-18-claude-handover.md`.
 
 ## Core Scope
 
