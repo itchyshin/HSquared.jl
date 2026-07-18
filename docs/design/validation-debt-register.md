@@ -1,5 +1,11 @@
 # Validation Debt Register
 
+> **UPDATE 2026-07-18 — D0F COMPLETE/PASS (Retry-8), byte-reproducible; D1/D2 now OPEN.** The 2026-07-13
+> banner below is superseded on status only: the Retry-8 D0F receipt reached `verdict=PASS,
+> stage_decision=COMPLETE` (sha `04cc0740`). Dispositions UNCHANGED: `V2-GRM`/`V2-GINV` stay partial,
+> `V2-GREML` covered only for the supplied-`Ginv` estimator, `public_covered_count` stays **5**. A COMPLETE
+> D0F PASS only opens D1/D2; D1 (interior recovery pilot) is the next lane and moves no count by itself.
+
 > **v0.7 genomic activation debt update (2026-07-13):** the original
 > offset-5001 candidate remains a banked 5.99x runtime-gate failure. The
 > separately preregistered revised offset-6001 candidate passed its fresh

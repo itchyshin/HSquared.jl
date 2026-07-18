@@ -23,11 +23,11 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-## Current v0.7 recovery status — 2026-07-15
+## Current v0.7 recovery status — 2026-07-18
 
-- Branch: `codex/2026-07-13-v07-performance-localization` in both twins.
-- Retry 6 is permanently
-  `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER`. Every pre-RNG gate was
+- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` 976814, `hsquared` a23b15b.
+- Retry 6's earlier
+  `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER` (superseded at Retry-8): every pre-RNG gate was
   green; 576 official fits, 576 independent base-R recomputations, and 576
   exact Julia replays completed. The three create-once summaries are complete
   and agree, including maximum attempt parity `3.19e-12` and summary parity
@@ -36,8 +36,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Julia replay rows were correctly admitted as `julia_profile_replay`, then
   summary reconstruction re-admitted them under `ordinary_auto_genomic` and
   reported malformed scientific output. Exact clause diagnostics found zero
-  malformed official, base-R, or Julia rows. No adjudication receipt exists;
-  D1/D2 never opened.
+  malformed official, base-R, or Julia rows. The route-repair reached a COMPLETE PASS receipt at Retry-8 (2026-07-18); D1/D2 are now OPEN.
 - The Totoro root is frozen read-only at 9,248 files / 598 directories, with
   content digest `148da8ef…d754f` unchanged and no live worker. Its complete
   `2040000000` / `2041000000` phenotype/bootstrap spaces are retired.
@@ -48,7 +47,19 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   D0 remains diagnostic/non-selection evidence only.
 - Ordinary R marker routing remains partial/held; the supplied-Q estimator
   remains covered; `public_covered_count` remains 5.
-- Next action: finish CI and closeout for the seed-free repair. Do not allocate
+- **R-twin item (owed):** the seed-lock `v07_genomic_recovery_v3_seed_lock.R` still labels bases
+  `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
+  amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
+- **R-twin item (owed — GATES D1, user decision 2026-07-18):** certify that hsquared `d3835fe` is the
+  sanctioned D1 R head and that Totoro `v07-genomic-recovery-v3-code-d3835fe-1a538212` is the intended D1
+  deployment. The Julia lane cannot certify the R head; local `hsquared` HEAD is `a23b15b` (BEHIND
+  `d3835fe`, which carries D1's typed-parity + compute-guard commits). D1's S4 admission gate
+  (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
+  env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present; pre-reg =
+  `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
+</invoke>
+
+- Next action: run D1 (interior recovery pilot) through the validated pipeline to its adjudicated receipt; pre-registration `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`. Do not allocate
   or consume a successor seed until a new contract, mutation controls, exact
   reviews, clean deployment, preseal, and explicit seed-lock amendment are all
   green. Totoro/DRAC only, never GitHub Actions.
