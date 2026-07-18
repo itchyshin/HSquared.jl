@@ -56,3 +56,31 @@ seal. So the fix cannot be applied without re-sealing D0F.
 stays **5** throughout; no seed is drawn by the re-seal (D0F seeds `2042/2043` reproduce deterministically).
 
 Session-local detail: `scratchpad/d1_prepare_rootcause.md`, `scratchpad/d1_seal_preserving_eval.md`.
+
+## Review corrections (Rose + Gauss, 2026-07-18) — fix committed as hsquared `5325e95` (C_fix)
+
+The fix (`recompute.R:278` → derive `r_recomputer_path` by name) was reviewed read-only before commit:
+**Rose = CLEAN** (minimal, integrity-preserving; it makes the recomputer's validator agree with the driver's
+sealer at `v07_genomic_recovery_v3.R:340`) and **Gauss = NO-NUMERIC-CHANGE** (`r_recomputer_path` is
+identity-only; never feeds a fit/recompute/parity/adjudication path). Two corrections to the wording above:
+
+- **Reproduction claim (Gauss).** The "576 fits reproduce byte-identically" phrasing is too strong. What
+  reproduces EXACTLY is the **scientific-numeric core** (sigma/ratio/loglik/gradient/objective/iterations/
+  variance components/info matrices) and therefore the parity max-diffs + the PASS/COMPLETE verdict. The
+  attempt/summary TSVs are **NOT** byte-identical cross-run: they carry `driver_commit`/`preseal_sha256`
+  (which change because the commit moves HEAD and the preseal identity changes) and per-run
+  `runtime_seconds`/`peak_rss_mb`. The pipeline excludes exactly these from parity (`recompute.R:1546-1549`).
+- **Receipt delta (Gauss).** The new D0F receipt changes **five** identity fields, not two:
+  `r_driver_commit`, `r_recomputer_commit`, `r_recomputer_sha256`, `preseal_sha256`, `adjudication_key_sha256`
+  (`r_driver_commit` also advances because for a single-repo D0F run `driver_root == r_root`). The driver
+  **content** sha stays `d1a7d930` (driver bytes unchanged); the recomputer sha moves `cef0b993 → eb29c8f4`
+  and the regenerated tracked sidecar `recompute.R.sha256` ships in the same commit.
+- **Supersede ledger (Rose).** When the new receipt is minted, ALL of these HSquared.jl docs that cite
+  `04cc0740`/`a23b15b`/`cef0b993`/`adjudication-2` must move (12, not the 4 named in step 4 above): ROADMAP.md,
+  AGENTS.md snapshot, capability-status.md, validation-debt-register.md, coordination-board.md, this file,
+  the D1 pre-registration, the handover doc, the D1 pre-draw audit, check-log.md, the D0F retry8 after-task,
+  and its check-log.d sibling. Post-reseal wording must say "identical fits, new receipt identity" — never
+  "receipt 04cc0740 re-derived byte-identical". A spawned-Rose close-out re-confirms PASS/COMPLETE + that every
+  `04cc0740`/`a23b15b`/`cef0b993` citation has moved and the new receipt's id label is not falsely `04cc0740`.</new_string>
+</invoke>
+
