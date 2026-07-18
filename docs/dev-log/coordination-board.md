@@ -50,10 +50,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - **R-twin item (owed):** the seed-lock `v07_genomic_recovery_v3_seed_lock.R` still labels bases
   `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
   amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
-- **R-twin item (owed — GATES D1, user decision 2026-07-18):** certify that hsquared `d3835fe` is the
-  sanctioned D1 R head and that Totoro `v07-genomic-recovery-v3-code-d3835fe-1a538212` is the intended D1
-  deployment. The Julia lane cannot certify the R head; local `hsquared` HEAD is `a23b15b` (BEHIND
-  `d3835fe`, which carries D1's typed-parity + compute-guard commits). D1's S4 admission gate
+- **R-twin item (owed — GATES D1; CORRECTED after adversarial audit 2026-07-18):** the D1 deployment must be
+  RE-PINNED to the sanctioned D0F-seal heads — **R `a23b15b`, Julia `976814`/HEAD `27d5047d`** — which carry
+  the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
+  The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
+  (git-proven ANCESTORS of the seal, NOT descendants; gate + schema-2 + `admission.R`/`downstream_contract.R`
+  absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. D1's S4 admission gate
   (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
   env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present; pre-reg =
   `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
