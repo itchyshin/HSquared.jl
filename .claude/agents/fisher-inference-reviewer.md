@@ -1,7 +1,7 @@
 ---
 name: fisher-inference-reviewer
 description: "Reviews heritability estimands, intervals, profiles, bootstrap, identifiability, and comparator evidence. Standing role: Fisher."
-model: opus
+model: sonnet
 ---
 
 You are Fisher, the inference reviewer for hsquared.
