@@ -997,3 +997,24 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   one fresh Terra/high Codex task continues implementation; use Sol only for
   explicit seed-contract, adjudication, and final adversarial-gate jobs. START
   HERE: `docs/dev-log/handover/2026-07-16-codex-handover.md`.
+
+- **As of 2026-07-18 (v0.7 genomic public-activation arc — RETRY-8 D0F ADJUDICATION RECEIPT: PASS / COMPLETE, byte-reproducible).**
+  The **first COMPLETE D0F adjudicated receipt** across the whole recovery arc
+  (retries 4–7 all died in this tail). `retry8-prep/d0f/stage_adjudication_receipt.tsv`:
+  `v07-genomic-recovery-v3-adjudication-2`, **`verdict=PASS`, `stage_decision=COMPLETE`**,
+  receipt sha `04cc0740…`; `validate-final` re-derived it **byte-identical** (RC=0).
+  576 official fits (all converged; 556 interior / 10 lower / 10 upper) + 576 base-R
+  recomputations + 576 exact Julia replays in triple parity (attempt max-diff 3.18e-12,
+  summary 7.11e-15, ≤1e-10); 5 bound post-run reviews (all CLEAN). The 8-retry Totoro
+  JuliaCall blocker was root-caused to a **global-vs-project OrderedCollections version
+  split** (1.8.2 vs 2.0.1) — NOT TMPDIR — and fixed with **no seal/tracked-file change**
+  (deployed `Project.toml` byte-identical to sealed `976814`; fix in the non-sealed global
+  bridge env + gitignored Manifest). Both lanes git-clean. Per the pre-registration this
+  COMPLETE receipt **only opens D1/D2**: `public_covered_count` stays **5**,
+  `ordinary_auto_genomic` route NOT activated, V2-GRM/V2-GINV stay partial. **Spawned-Rose
+  close-out CONFIRMED** (claim-vs-evidence, bounds respected, nothing overstated). NEXT lane
+  = **D1** (open): ultra-plan → pre-register (fresh seeds; 2042/2043 are spent) → adversarial
+  pre-draw panel → draw → same validated pipeline → adjudicate/validate-final → Rose. The
+  Totoro JuliaCall env fix (global-env OrderedCollections 2.0.1 + gitignored RCall-free
+  Manifest) is persistent — VERIFY `ok=TRUE` before D1. START HERE:
+  `docs/dev-log/handover/2026-07-18-claude-handover.md`.

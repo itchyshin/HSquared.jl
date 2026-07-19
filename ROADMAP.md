@@ -15,8 +15,8 @@ Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the ge
 
 > **UPDATE 2026-07-18 — D0F is COMPLETE/PASS (Retry-8), byte-reproducible; D1/D2 are now OPEN.**
 > The "D1/D2 never opened" narrative below is pre-Retry-8 history. Current truth: the Retry-8 D0F
-> adjudication receipt is `verdict=PASS, stage_decision=COMPLETE` (sha `04cc0740`), re-derived
-> byte-identical by `validate-final`, Rose-CONFIRMED. A COMPLETE D0F PASS **only opens D1/D2**:
+> adjudication receipt is `verdict=PASS, stage_decision=COMPLETE` (sha `0f5fbb54`) — identical fits, new
+> receipt identity, confirmed by `validate-final`, Rose-CONFIRMED. A COMPLETE D0F PASS **only opens D1/D2**:
 > `public_covered_count` stays **5**, the `ordinary_auto_genomic` route stays held, V2-GRM/V2-GINV stay
 > partial. D1 (interior recovery pilot) is the next lane. Authoritative: `docs/design/capability-status.md`
 > + the 2026-07-18 dev-log entries + `docs/dev-log/coordination-board.md`.

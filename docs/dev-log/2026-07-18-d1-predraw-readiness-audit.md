@@ -21,7 +21,7 @@ sanctioned heads, which is live work gated on the R-twin certification + the use
 **B-1 — the pre-reg bound stale pre-fix ancestor code.** The first draft bound deployment
 `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) and asserted these were *descendants* of the D0F
 seal. `git merge-base` refutes it: **both are older ANCESTORS** — Julia `1a538212` is an ancestor of `976814`
-(~29 commits / 3 days); R `d3835fe` is an ancestor of `a23b15b` (~53 commits / 4 days). At those heads:
+(~29 commits / 3 days); R `d3835fe` is an ancestor of `5325e95` (ancestry count stale after re-seal). At those heads:
 - Julia `1a538212` LACKS `_validate_d0f_predecessor`, `D0F_ADJUDICATION_SCHEMA`, `EvidenceRoute`,
   `COMPONENT_RATIO_TOLERANCE` (the §1 gate + acceptance-predicate machinery, added later by `e45dbe0a`); its
   preseal errors if a receipt is present.
@@ -29,14 +29,14 @@ seal. `git merge-base` refutes it: **both are older ANCESTORS** — Julia `1a538
   it predates route-repair `b8096e5` and fail-closed fix `96529fd`. ⇒ the D0F re-derivation preflight
   (`v3r_validate_final(retry8-prep/d0f,'d0f')`) aborts on schema mismatch, so PRE-1 is unattainable there.
 
-**Correct heads:** R `a23b15b`, Julia `976814`/HEAD `27d5047d` — they contain the gate + schema-2 and already
+**Correct heads:** R `5325e95`, Julia `976814`/HEAD `27d5047d` — they contain the gate + schema-2 and already
 earned the D0F PASS byte-reproducibly. Fix = re-pin + rebuild/rename the Totoro checkout (live work).
 
 **B-2 — the pre-reg stamped a git-refuted ancestry "verified."** The ⚠ OPEN flag asked only to "confirm
 d3835fe is the sanctioned R head" while asserting the false ancestry as fact — a remediation path that would
 have produced a false-positive certification. Fix (done) = corrected ancestry + rewrote the flag to require
-the deployed driver to *contain* the gate + schema-2, git-evidenced, plus a dry `validate-final` re-emitting
-`04cc0740…` byte-identical.
+the deployed driver to *contain* the gate + schema-2, git-evidenced, plus a dry `validate-final` confirming
+identical fits, new receipt identity (sha `0f5fbb54…`).
 
 **B-3 — PRE-4 "smoke" would draw official seeds before the GO.** `smoke-n-ladder`/`smoke-16` use the same
 `run-one` RNG path as `run-official` on real `2028000000/101:148` seeds; the zero-seed gate is the Julia
@@ -86,7 +86,7 @@ PRE-2 `preflight` is the pre-draw gate; smoke removed from PRE-1..PRE-N.
 The plan measures the right thing with the right seeds and correct bounds, and the correct deployment code
 already exists and already passed D0F — but the first draft bound 4-day-older pre-fix ancestor code that
 cannot enforce its own §1 gate, stamped a git-refuted ancestry as "verified," and listed a "smoke" gate that
-draws seeds. Doc blockers fixed; the live remediation is a Totoro re-pin to R `a23b15b` / Julia `976814`,
+draws seeds. Doc blockers fixed; the live remediation is a Totoro re-pin to R `5325e95` / Julia `976814`,
 after which PRE-1..PRE-6 + the live adversarial panel + user GO gate the draw. The user's decision to pause
 "R twin confirms first" is what kept S4 from running on the broken deployment.
 

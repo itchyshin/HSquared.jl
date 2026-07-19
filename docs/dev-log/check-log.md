@@ -5383,3 +5383,24 @@ Newest entries go at the top.
   V2-GRM/V2-GINV stay partial. Detail:
   `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`;
   full report: `docs/dev-log/after-task/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.
+
+## 2026-07-19 — v0.7 D0F RE-SEALED at C_fix 5325e95 (recompute.R:278 fix): PASS/COMPLETE, identical fits
+
+- The D0F stage was re-sealed to fold in the hsquared `recompute.R:278` fix (derive `r_recomputer_path`
+  by name; two git-identity gates forced a full 576-fit re-run). **New receipt**
+  `reseal-d0f/stage_adjudication_receipt.tsv`: `v07-genomic-recovery-v3-adjudication-2`, verdict **PASS**,
+  decision **COMPLETE**, sha `0f5fbb54…` (supersedes retry8 `04cc0740…`); `validate-final` re-derived the
+  **new** receipt byte-identical (RC=0).
+- **Identical fits, new receipt identity** — NOT byte-identical to `04cc0740`: attempt max-diff
+  `3.18e-12` bit-identical to retry8; tally 556 interior / 10 lower / 10 upper identical; 5 post-run
+  reviews CLEAN. Receipt identity fields advanced by design (`5325e95` / `eb29c8f4` / `b209ec0c` /
+  `88d4cf2f`); driver bytes `d1a7d930` + Julia replay `976814` unchanged.
+- **summary max-diff moved 7.11e-15 → 2.27e-13** — a benign 1-ULP reshuffle on re-measured runtime/RSS
+  medians (both exact powers of two, ratio 32); Gauss: no scientific quantity moved, `recompute.R:278`
+  identity-only. Both ≪ 1e-10.
+- Spawned-Rose close-out **CONFIRMED-WITH-CAVEATS**; 12-doc supersede applied (live citations
+  `04cc0740→0f5fbb54`, `a23b15b→5325e95`, `summary 7.11e-15→2.27e-13`); frozen/archive docs untouched.
+- Only opens D1/D2: `public_covered_count` stays **5**, route not activated, V2-GRM/V2-GINV stay partial.
+  No seed drawn. Detail:
+  `docs/dev-log/check-log.d/2026-07-19-v07-d0f-reseal-recompute278.md`;
+  full report: `docs/dev-log/after-task/2026-07-19-v07-d0f-reseal-recompute278.md`.

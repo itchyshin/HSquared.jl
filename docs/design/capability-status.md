@@ -43,9 +43,10 @@
 > `stage_decision=COMPLETE`** — 576 official fits (all converged: 556 interior,
 > 10 boundary-lower, 10 boundary-upper), 576 independent base-R recomputations
 > and 576 exact Julia replays in triple parity (attempt max-diff 3.18e-12,
-> summary max-diff 7.11e-15, both ≤ 1e-10), five bound post-run review receipts
-> (fisher/noether/hopper/grace/rose, all CLEAN), and a `validate-final` that
-> re-derived the receipt byte-identical (sha256 `04cc0740…`). The Totoro
+> summary max-diff 2.27e-13, both ≤ 1e-10 — the summary shift is a benign 1-ULP
+> reshuffle on re-measured runtime/RSS medians; no scientific quantity moved), five bound post-run review receipts
+> (fisher/noether/hopper/grace/rose, all CLEAN), and a `validate-final` confirming
+> identical fits, new receipt identity (sha256 `0f5fbb54…`). The Totoro
 > JuliaCall precompile blocker that stopped retries 4–7 was root-caused to a
 > global-vs-project OrderedCollections version split and fixed with **no
 > tracked-file or seal change** (deployed `HSquared.jl` `Project.toml` byte-identical

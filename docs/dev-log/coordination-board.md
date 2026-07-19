@@ -25,7 +25,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 
 ## Current v0.7 recovery status — 2026-07-18
 
-- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` 976814, `hsquared` a23b15b.
+- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` 976814, `hsquared` 5325e95.
 - Retry 6's earlier
   `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER` (superseded at Retry-8): every pre-RNG gate was
   green; 576 official fits, 576 independent base-R recomputations, and 576
@@ -51,17 +51,17 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
   amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
 - **R-twin item (owed — GATES D1; CORRECTED after adversarial audit 2026-07-18):** the D1 deployment must be
-  RE-PINNED to the sanctioned D0F-seal heads — **R `a23b15b`, Julia `976814`/HEAD `27d5047d`** — which carry
+  RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `976814`/HEAD `27d5047d`** — which carry
   the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
   The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
   (git-proven ANCESTORS of the seal, NOT descendants; gate + schema-2 + `admission.R`/`downstream_contract.R`
   absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. **RESOLVED (2026-07-18):
-  the sanctioned deployment already exists** — `retry8-prep/{hsquared@a23b15b, HSquared.jl@976814}`, git-clean,
+  the sanctioned deployment already exists** — `retry8-prep/{hsquared@5325e95, HSquared.jl@976814}`, git-clean,
   with `_validate_d0f_predecessor` + `adjudication-2` + `admission.R` present (certified by live repo
   evidence); no re-clone needed — use it as R_ROOT/JULIA_ROOT with RECEIPT_ROOT=`retry8-prep/d0f`,
   OUT=`retry8-prep/d1`. D1's S4 admission gate
   (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
-  env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `04cc0740` present; pre-reg =
+  env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `0f5fbb54` present; pre-reg =
   `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
 </invoke>
 
@@ -1212,7 +1212,7 @@ JOINT contract task per AGENTS.md rule 2.
 
 - Retry-8 drew phenotype/bootstrap bases `2042000000` / `2043000000` (now SPENT) and
   ran the full validated pipeline to the first COMPLETE D0F adjudication receipt:
-  verdict **PASS**, byte-reproducible under `validate-final` (sha `04cc0740…`).
+  verdict **PASS**, identical fits, new receipt identity (sha `0f5fbb54…`).
   Spawned-Rose close-out CONFIRMED.
 - Bounds respected: `public_covered_count` remains **5**; `ordinary_auto_genomic`
   route NOT activated/merged/released; V2-GRM/V2-GINV stay partial. The COMPLETE

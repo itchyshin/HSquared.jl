@@ -16,26 +16,27 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-18 (v0.7 genomic public-activation arc — RETRY-8 D0F ADJUDICATION RECEIPT: PASS / COMPLETE, byte-reproducible).**
-  The **first COMPLETE D0F adjudicated receipt** across the whole recovery arc
-  (retries 4–7 all died in this tail). `retry8-prep/d0f/stage_adjudication_receipt.tsv`:
-  `v07-genomic-recovery-v3-adjudication-2`, **`verdict=PASS`, `stage_decision=COMPLETE`**,
-  receipt sha `04cc0740…`; `validate-final` re-derived it **byte-identical** (RC=0).
-  576 official fits (all converged; 556 interior / 10 lower / 10 upper) + 576 base-R
-  recomputations + 576 exact Julia replays in triple parity (attempt max-diff 3.18e-12,
-  summary 7.11e-15, ≤1e-10); 5 bound post-run reviews (all CLEAN). The 8-retry Totoro
-  JuliaCall blocker was root-caused to a **global-vs-project OrderedCollections version
-  split** (1.8.2 vs 2.0.1) — NOT TMPDIR — and fixed with **no seal/tracked-file change**
-  (deployed `Project.toml` byte-identical to sealed `976814`; fix in the non-sealed global
-  bridge env + gitignored Manifest). Both lanes git-clean. Per the pre-registration this
-  COMPLETE receipt **only opens D1/D2**: `public_covered_count` stays **5**,
-  `ordinary_auto_genomic` route NOT activated, V2-GRM/V2-GINV stay partial. **Spawned-Rose
-  close-out CONFIRMED** (claim-vs-evidence, bounds respected, nothing overstated). NEXT lane
-  = **D1** (open): ultra-plan → pre-register (fresh seeds; 2042/2043 are spent) → adversarial
-  pre-draw panel → draw → same validated pipeline → adjudicate/validate-final → Rose. The
-  Totoro JuliaCall env fix (global-env OrderedCollections 2.0.1 + gitignored RCall-free
-  Manifest) is persistent — VERIFY `ok=TRUE` before D1. START HERE:
-  `docs/dev-log/handover/2026-07-18-claude-handover.md`.
+- **As of 2026-07-19 (v0.7 genomic public-activation arc — D0F RE-SEALED at C_fix `5325e95`: PASS / COMPLETE, identical fits, new receipt identity).**
+  The D0F stage was re-sealed to fold in the hsquared `recompute.R:278` fix (`r_recomputer_path`
+  derived by name, not `= script`; two unconditional git-identity gates bind the sealed R head, so
+  the fix forced a full 576-fit re-run). New receipt `reseal-d0f/stage_adjudication_receipt.tsv`:
+  `v07-genomic-recovery-v3-adjudication-2`, **`verdict=PASS`, `stage_decision=COMPLETE`**, sha
+  `0f5fbb54…` (supersedes retry8 `04cc0740…`); `validate-final` re-derived the **new** receipt
+  byte-identical (RC=0). **Identical fits, new receipt identity** — NOT byte-identical to `04cc0740`:
+  attempt max-diff `3.18e-12` bit-identical to retry8, tally 556 interior / 10 lower / 10 upper
+  identical, 5 bound post-run reviews CLEAN. summary max-diff moved `7.11e-15 → 2.27e-13` — a benign
+  1-ULP reshuffle on re-measured runtime/RSS medians (Gauss: no scientific quantity moved;
+  `recompute.R:278` is identity-only), both ≪1e-10. Receipt identity fields advanced by design
+  (`r_driver`/`r_recomputer_commit` `5325e95`, `r_recomputer_sha` `eb29c8f4`, `preseal` `b209ec0c`,
+  `adjudication_key` `88d4cf2f`); driver bytes (`d1a7d930`) and Julia replay (`976814`) unchanged.
+  **Spawned-Rose close-out CONFIRMED-WITH-CAVEATS** (PASS holds; summary figure + Gauss caveat
+  folded in; 12-doc supersede ledger sound). Per the pre-registration this COMPLETE receipt **only
+  opens D1/D2**: `public_covered_count` stays **5**, `ordinary_auto_genomic` route NOT activated,
+  V2-GRM/V2-GINV stay partial. NEXT lane = **D1** (open): the pre-reg predecessor is repointed to
+  `0f5fbb54`; preflight → adversarial pre-draw panel → (if GREEN) the irreversible 576-fit draw
+  (base `2_028_000_000`, offsets 101:148 × 12 interior cells) → same validated pipeline →
+  adjudicate/validate-final → Rose. Both lanes git-clean. START HERE:
+  `docs/dev-log/after-task/2026-07-19-v07-d0f-reseal-recompute278.md`.
 
 ## Core Scope
 
