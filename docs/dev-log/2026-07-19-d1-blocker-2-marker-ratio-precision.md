@@ -64,6 +64,23 @@ drawn; old `d1/`+`d1-reviews/` already removed. The marker_ratio fix is correct 
 (`fa409fe6`), but running D1 needs the D0F predecessor re-sealed at that Julia head first.
 `public_covered_count` stays **5**.
 
+## Blocker #3 — stale `.sha256` integrity-pin sidecar (the incomplete tail of fix #2; no seed)
+
+The re-seal at `fa409fe6` (reseal2) then aborted at **`preseal`** (rc=12), ~1 min in, fail-closed:
+```
+Error: sidecar mismatch: .../HSquared.jl/sim/phase2_v07_genomic_recovery_v3_stage_replay.jl
+```
+**Root cause:** `stage_replay.jl` carries a **git-tracked** companion pin
+`phase2_v07_genomic_recovery_v3_stage_replay.jl.sha256`. Commit `fa409fe6` (and its local twin `8f214eb3`)
+edited the `.jl` (new hash `36a264b2…`) but **did not regenerate the sidecar**, which still pinned the
+pre-fix hash `fb5d5dff…`. `preseal` verifies the sidecar against the file's actual bytes → mismatch. Not a
+new logical bug — the *incomplete commit of blocker #2*. Rose sweep of ALL `.sha256` sidecars in both repos:
+exactly this one stale, sibling `confirm_replay.jl.sha256` + 8 review-TSV sidecars all OK.
+**Fix:** regenerated the sidecar to `36a264b2…` and committed in **both** repos (Totoro `8092fcb6`, local
+`512d7ca7`); the commit moves the Julia head once more (`fa409fe6`→`8092fcb6` on Totoro). Re-seal relaunched
+as **reseal3** (`reseal3_all.sh`, OUT `reseal3-d0f`, pins `JREPLAY=JCAND=8092fcb6`, `JREPSHA=36a264b2`); it
+cleared `prepare`+`preseal`+`materialize-bootstrap` and is in the pipeline. `public_covered_count` stays **5**.
+
 ## Owed follow-ups (not blocking the run)
 
 - Unit test for the `marker_ratio` tolerance path in `_validate_manifest`.

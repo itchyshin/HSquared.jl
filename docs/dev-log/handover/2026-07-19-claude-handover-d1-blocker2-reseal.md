@@ -31,20 +31,29 @@ validation-only), so it's a "new receipt identity, identical fits" re-seal.
 - Totoro `~/hsq_work/retry8-prep/HSquared.jl` @ **`fa409fe6`** (clean; has the marker_ratio fix)
 - `~/hsq_work/reseal-d0f` = old D0F receipt `0f5fbb54` (julia `976814`) — **will be superseded**.
 
-## ⏳ STEP 1 IS ALREADY RUNNING (launched 2026-07-19 ~17:45 UTC)
+## ⏳ STEP 1 IS RUNNING as **reseal3** (relaunched 2026-07-19 ~19:20 UTC after clearing blocker #3)
 
-The 3rd D0F re-seal is DETACHED on Totoro right now: `~/hsq_work/reseal2_all.sh` (pid 1665521), log
-`~/hsq_work/reseal2_all.log`, completion marker `~/hsq_work/reseal2_all.DONE`, output tree
-`~/hsq_work/reseal2-d0f`, pre-run reviews `~/hsq_work/reseal2-reviews`. Deployed Julia sha =
-`36a264b282c1d6640b2bcc6ab20b9125a29ad297bb7908739e4413ea6560a76a`. All 5 pre-run reviews written (CLEAN,
-bound to `fa409fe6`); Block-1 `prepare` in progress. ETA ~5–8 h.
+**Blocker #3 (stale sidecar) intervened + is FIXED.** reseal2 aborted at `preseal` (rc=12): the git-tracked
+`stage_replay.jl.sha256` integrity pin still held the pre-fix hash because commit `fa409fe6`/`8f214eb3`
+edited the `.jl` without regenerating its sidecar (the incomplete tail of blocker #2; see
+`docs/dev-log/2026-07-19-d1-blocker-2-marker-ratio-precision.md` §"Blocker #3"). Fixed: sidecar regenerated
+to `36a264b2…` + committed in both repos → **Totoro Julia head `fa409fe6`→`8092fcb6`**, local `8f214eb3`
+line → `512d7ca7`. No seed drawn.
 
-**Resume for the fresh session:** poll `cat ~/hsq_work/reseal2_all.DONE` (RC=0 = success). Then verify the
-new receipt `reseal2-d0f/stage_adjudication_receipt.tsv`: `verdict=PASS`, `stage_decision=COMPLETE`,
-`julia_replay_commit=fa409fe6`, `attempt_max_diff` bit-identical to `0f5fbb54` (~3.18e-12), tally 556/10/10,
-`adjudicate` sha == `validate-final` sha. Spawned-Rose close-out. THEN do Step 2 (supersede) + Step 3 (D1
-admission, `D0F_ADJ=reseal2-d0f`) + Step 4 (panel → conditional draw). If `reseal2_all.DONE` shows RC≠0, read
-`reseal2_all.log` for the failed stage (fail-closed; no seed drawn — D0F seeds reproduce deterministically).
+The re-seal is DETACHED on Totoro now: `~/hsq_work/reseal3_all.sh`, log `~/hsq_work/reseal3_all.log`,
+completion marker `~/hsq_work/reseal3_all.DONE`, output tree `~/hsq_work/reseal3-d0f`, pre-run reviews
+`~/hsq_work/reseal3-reviews`. Pins `JREPLAY=JCAND=8092fcb6`, deployed stage_replay sha `36a264b2…`
+(`JREPSHA`, unchanged — sidecar commit doesn't change file bytes). Cleared `prepare`+`preseal`+
+`materialize-bootstrap`; in the pipeline. ETA ~5–8 h. (Cosmetic: log banner still echoes "@ Julia fa409fe6";
+the real `JL HEAD=8092fcb6` line is correct.)
+
+**Resume for the fresh session:** poll `cat ~/hsq_work/reseal3_all.DONE` (RC=0 = success). Then verify the
+new receipt `reseal3-d0f/stage_adjudication_receipt.tsv`: `verdict=PASS`, `stage_decision=COMPLETE`,
+`julia_replay_commit=8092fcb6`, `attempt_max_diff` bit-identical to `0f5fbb54` (~3.18e-12), tally 556/10/10,
+`adjudicate` sha == `validate-final` sha. Spawned-Rose close-out. THEN do Step 2 (supersede → bind
+`reseal3-d0f`, julia `8092fcb6`) + Step 3 (D1 admission, `D0F_ADJ=reseal3-d0f`, `JCC=8092fcb6`) + Step 4
+(panel → conditional draw). If `reseal3_all.DONE` shows RC≠0, read `reseal3_all.log` for the failed stage
+(fail-closed; no seed drawn — D0F seeds reproduce deterministically).
 
 ## THE RECIPE (reference — Step 1 already launched per above)
 
