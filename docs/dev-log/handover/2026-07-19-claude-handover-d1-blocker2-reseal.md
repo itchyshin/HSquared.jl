@@ -31,7 +31,22 @@ validation-only), so it's a "new receipt identity, identical fits" re-seal.
 - Totoro `~/hsq_work/retry8-prep/HSquared.jl` @ **`fa409fe6`** (clean; has the marker_ratio fix)
 - `~/hsq_work/reseal-d0f` = old D0F receipt `0f5fbb54` (julia `976814`) — **will be superseded**.
 
-## THE RECIPE
+## ⏳ STEP 1 IS ALREADY RUNNING (launched 2026-07-19 ~17:45 UTC)
+
+The 3rd D0F re-seal is DETACHED on Totoro right now: `~/hsq_work/reseal2_all.sh` (pid 1665521), log
+`~/hsq_work/reseal2_all.log`, completion marker `~/hsq_work/reseal2_all.DONE`, output tree
+`~/hsq_work/reseal2-d0f`, pre-run reviews `~/hsq_work/reseal2-reviews`. Deployed Julia sha =
+`36a264b282c1d6640b2bcc6ab20b9125a29ad297bb7908739e4413ea6560a76a`. All 5 pre-run reviews written (CLEAN,
+bound to `fa409fe6`); Block-1 `prepare` in progress. ETA ~5–8 h.
+
+**Resume for the fresh session:** poll `cat ~/hsq_work/reseal2_all.DONE` (RC=0 = success). Then verify the
+new receipt `reseal2-d0f/stage_adjudication_receipt.tsv`: `verdict=PASS`, `stage_decision=COMPLETE`,
+`julia_replay_commit=fa409fe6`, `attempt_max_diff` bit-identical to `0f5fbb54` (~3.18e-12), tally 556/10/10,
+`adjudicate` sha == `validate-final` sha. Spawned-Rose close-out. THEN do Step 2 (supersede) + Step 3 (D1
+admission, `D0F_ADJ=reseal2-d0f`) + Step 4 (panel → conditional draw). If `reseal2_all.DONE` shows RC≠0, read
+`reseal2_all.log` for the failed stage (fail-closed; no seed drawn — D0F seeds reproduce deterministically).
+
+## THE RECIPE (reference — Step 1 already launched per above)
 
 ### Step 1 — 3rd D0F re-seal at `fa409fe6` (fresh tree, e.g. `~/hsq_work/reseal2-d0f`)
 Mirror the recompute.R:278 re-seal scripts (`~/hsq_work/reseal_d0f_block1/2/3.sh` + `reseal_prerun_reviews.sh`),
