@@ -41,7 +41,7 @@ engine reality.
   **Spawned-Rose close-out CONFIRMED-WITH-CAVEATS** (PASS holds; summary figure + Gauss caveat
   folded in; 12-doc supersede ledger sound). Per the pre-registration this COMPLETE receipt **only
   opens D1/D2**: `public_covered_count` stays **5**, `ordinary_auto_genomic` route NOT activated,
-  V2-GRM/V2-GINV stay partial. **D1 STATUS (2026-07-19): two latent D1-ONLY blockers found + fixed, both
+  V2-GRM/V2-GINV stay partial. **D1 STATUS (2026-07-19): three latent D1-ONLY blockers found + fixed, all
   fail-closed pre-draw — ZERO seed drawn.** (1) `recompute.R:278` → the `0f5fbb54` re-seal above.
   (2) `marker_ratio` float-precision drift in Julia `_validate_manifest` (R serializes `10/3` at 14 digits in
   `cell_table.tsv` vs full Float64 in the manifest; the exact `==` drifted) → **fixed** (local `8f214eb3`,
