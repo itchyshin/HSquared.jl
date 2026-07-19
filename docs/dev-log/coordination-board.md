@@ -4,12 +4,23 @@
 
 - **Totoro** — Shinichi's own server (`snakagaw@totoro.biology.ualberta.ca`): **384 cores, ~1 TB RAM, no
   GPU, NO queue/wait**. Default for quick big-CPU calibration/recovery campaigns. **Keep ≤ 100 cores at a
-  time** (shared lab box). Attach over the ControlMaster socket
-  (`ssh -o ControlPath="$HOME/.ssh/cm/snakagaw@totoro.biology.ualberta.ca:22" -o ControlMaster=no totoro …`);
+  time** (shared lab box). **No Duo** — attach over the passwordless ControlMaster socket
+  (`SOCK=$(ls ~/.ssh/cm-*totoro* | head -1)`; `ssh -o ControlPath="$SOCK" -o ControlMaster=no -o BatchMode=yes totoro …` — note **`cm-`**, not `cm/`);
   set up Julia+repo under `~/hsq_work`; pin `OPENBLAS_NUM_THREADS=1`, `addprocs(96)`. Runbook:
   `~/shinichi-brain/tools/totoro-setup.md`.
-- **DRAC** clusters — when you need GPUs, >100 cores, multi-node job arrays, or a long queued campaign
-  (`~/shinichi-brain/tools/drac-setup.md`).
+- **DRAC** clusters — for GPUs, >100 cores, multi-node job arrays, or a long queued campaign. **Duo is
+  once-a-day, not per-login (brain D-64):** Shinichi's morning `ssh` opens the `ControlMaster` sockets
+  (~12 h), so DRAC is reachable all day via those live sockets — **reuse them, don't ask him to
+  re-authenticate**; if a socket is down, flag once and ask him to re-Duo (never nag, never silently fail).
+  Runbook: `~/shinichi-brain/tools/drac-setup.md`.
+- **Which machine, wisely:** the decision table + trigger live in
+  `~/shinichi-brain/projects/COMPUTE-PLAYBOOK.md` — fast CPU ≤100 cores → Totoro; replicated multi-seed /
+  GPU → DRAC arrays. Before any heavy run, ask *"Totoro or DRAC?"* and scale out (never laptop-scale).
+
+> **Heads-up (2026-07-19):** a LOAD-FIRST manifest is now embedded at the **top** of `AGENTS.md` in both
+> `HSquared.jl` and `hsquared` (commits `b6382ab9` / `3bf07ff`, on the current feature branch, unpushed).
+> Line 1 is the compute trigger above — the first thing both Claude (`@import`) and Codex (native) load.
+> Doc-only, no code impact. Refresh: `python3 ~/shinichi-brain/tools/route.py HSquared.jl` (or `hsquared`).
 
 ## Active Lane Split
 
