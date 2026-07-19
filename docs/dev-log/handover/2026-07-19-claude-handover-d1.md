@@ -47,11 +47,23 @@ preflight OUT d1 R_ROOT JULIA_ROOT
 ```
 `R_ROOT=~/hsq_work/retry8-prep/hsquared`, `JULIA_ROOT=~/hsq_work/retry8-prep/HSquared.jl`, `OUT=~/hsq_work/d1`.
 
-**⚠ RESOLVE THESE EXACT ARGS BEFORE RUNNING** (do not guess — cross-ref the D0F re-seal block scripts
-`~/hsq_work/reseal_d0f_block1.sh` which hold the D0F prepare/preseal invocations, + the pre-reg):
-- `prepare` **RECEIPT_ROOT** (= the D0-official root path) and **MAX_WORKERS** (D0F used ≤96).
-- `preseal` **R_AUTO_ROUTE_COMMIT** and **JULIA_CANDIDATE_COMMIT** (deployment is now `5325e95`/`976814`;
-  the D0F re-seal preseal used specific commits — mirror that pattern for D1).
+**RESOLVED ARGS (driver-verified against `v07_genomic_recovery_v3.R:305-313`; supersedes the stale
+coordination-board `RECEIPT_ROOT=retry8-prep/d0f`, which is WRONG):**
+- `prepare` **RECEIPT_ROOT** = **a fresh dir of 5 pre-run review receipts** (`fisher/noether/hopper/grace/
+  rose.tsv` + `.sha256`), created via the orchestrator `write-review` mode — mirror
+  `~/hsq_work/reseal_prerun_reviews.sh` (the D0F re-seal's, which built `~/hsq_work/reseal-reviews`), updating
+  only the deployed commit/sha values for the current `5325e95`/`976814` heads. The driver copies these into
+  `OUT/receipts/`. **It is NOT the D0F corpus.** `MAX_WORKERS` = 96 (D0F used 96).
+- `prepare`/`preseal` **D0F_ADJUDICATION_ROOT** = `~/hsq_work/reseal-d0f` (the re-seal predecessor, sha
+  `0f5fbb54`). **Never `retry8-prep/d0f`** (old `04cc0740`, `a23b15b`/`cef0b993` — re-triggers the blocker).
+- `preseal` **R_AUTO_ROUTE_COMMIT** = `01ad843c8a2968b9180188f70bf9955cf433908c` (fixed provenance commit;
+  the D0F re-seal used it even at head `5325e95`), **JULIA_CANDIDATE_COMMIT** = `976814393043d3a4af5ce343d8ac4b05c43eac41`.
+- **STILL TO READ (classifier permitting):** the exact `write-review` 13-arg values from
+  `~/hsq_work/reseal_prerun_reviews.sh` (doc49 sha + the driver/recomputer/replay commits+shas at the current
+  heads). Then build `d1-reviews/` and run `prepare … RECEIPT_ROOT=~/hsq_work/d1-reviews … reseal-d0f`.
+- **`OUT` = `~/hsq_work/d1`** (distinct+non-nested from `reseal-d0f`).
+- **NOTE (pre-reg §8):** `smoke-n-ladder` DRAWS official seeds — it is the FIRST irreversible command, POST-GO,
+  immediately before `run-official`. It is NOT a pre-draw probe. The zero-seed pre-draw gate is `preflight`.
 
 **Green-gate PRE-1…PRE-6 (pre-reg §3; ALL zero-seed, all fail-closed):** PRE-1 dry `v3r_validate_final`
 on `reseal-d0f` (identical fits, sha `0f5fbb54`); PRE-2 driver `preflight` (the real pre-draw gate,
