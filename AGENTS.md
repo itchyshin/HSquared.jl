@@ -50,8 +50,10 @@ engine reality.
   edit changed the file but not its git-tracked pin, so `preseal` refused → **fixed** (local `512d7ca7`,
   deployed `8092fcb6`; sidecar regenerated to `36a264b2`; Rose-swept all sidecars, only this one stale).
   Each fix moves a head, and the admission hard-binds deployed julia == the D0F predecessor's
-  `julia_replay_commit`, so a **3rd D0F re-seal (`reseal3` @ Julia `8092fcb6`)** is RUNNING detached on
-  Totoro (byte-identical fits, new receipt identity); then D1 admission (bind the NEW `reseal3-d0f`) →
+  `julia_replay_commit`, so a **3rd D0F re-seal (`reseal3` @ Julia `8092fcb6`) is DONE — PASS/COMPLETE**
+  (2026-07-19 23:33 UTC), receipt `2903dd16…` (supersedes `0f5fbb54`), `attempt_max_diff` bit-identical
+  (`3.183e-12`) → identical fits / new receipt identity, tally 576/556/10/10, byte-reproduced by
+  `validate-final`, 5 reviews CLEAN. **NEXT = supersede, then D1 admission** (bind the NEW `reseal3-d0f`) →
   PRE-gate → panel → conditional draw. `public_covered_count` stays **5**. START HERE:
   `docs/dev-log/handover/2026-07-19-codex-handover.md` (full recipe:
   `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`).

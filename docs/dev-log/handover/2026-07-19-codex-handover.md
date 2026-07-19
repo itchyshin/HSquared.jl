@@ -8,8 +8,13 @@ This doc stands alone — you will not see the authoring chat. Read `AGENTS.md` 
 
 ## Critical Context (read or you will go wrong)
 
-1. **A D0F re-seal (`reseal3`) is RUNNING DETACHED on Totoro right now** (~5–8 h). It is the *only* thing
-   gating D1. Do **not** start anything downstream until it lands. Poll `~/hsq_work/reseal3_all.DONE`.
+1. **`reseal3` is DONE — PASS/COMPLETE (verified 2026-07-19 23:33 UTC).** `~/hsq_work/reseal3_all.DONE` =
+   `RC=0`. New D0F receipt `~/hsq_work/reseal3-d0f/stage_adjudication_receipt.tsv`, sha **`2903dd16…`**
+   (supersedes `0f5fbb54`), `julia_replay_commit=8092fcb6`, `attempt_max_diff=3.1832314562052488e-12`
+   (bit-identical to prior seals → **identical fits, new receipt identity**), tally **576/556/10/10, 0
+   unresolved, 0 error**, R & Julia summaries agree exactly, `validate-final` re-derived it byte-identical,
+   5 post-run reviews CLEAN. `summary_max_diff=2.22e-16` (1 ULP, smallest of the three seals; benign
+   runtime/RSS-median reshuffle, ≪1e-10). **Step 1 below is COMPLETE — start at Step 2 (supersede).**
 2. **The branch is PUSHED and fully landed** (Shinichi authorised it 2026-07-19):
    the branch tip is on `origin/codex/2026-07-13-v07-performance-localization`. Every commit described here
    — the three blocker fixes (`8f214eb3`, `512d7ca7`), the sidecar regeneration, this handover — is on
@@ -51,8 +56,8 @@ Rose-swept **every** `.sha256` sidecar in both repos after #3: only `stage_repla
 
 - **Working:** `reseal3` pipeline advancing on Totoro; both local + deployed repos git-clean at their heads;
   all sidecars verified OK; env `ok=TRUE`, seed-lock `v07s_selftest` PASS (done earlier this arc).
-- **In progress:** `reseal3` — the 3rd D0F re-seal, at Julia `8092fcb6` + R `5325e95`. Byte-identical fits
-  expected (all three fixes are validation-only; none touches D0F fits). ETA ~5–8 h.
+- **Done:** `reseal3` — the 3rd D0F re-seal, at Julia `8092fcb6` + R `5325e95`: **PASS/COMPLETE**, receipt
+  `2903dd16…`, byte-reproduced. Confirmed byte-identical fits (all three fixes were validation-only).
 - **Blocked / pending:** D1 admission (`prepare d1` → `preseal` → `preflight`) is HELD until `reseal3` mints
   the new D0F predecessor. Two R-twin items owed (below). (Origin push: **done** — branch is on `origin`.)
 
@@ -99,13 +104,15 @@ the two `M` retry5 docs (`2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md
 
 ## Next Immediate Steps (ordered)
 
-1. **Wait + verify `reseal3`.** Poll `cat ~/hsq_work/reseal3_all.DONE` → `RC=0`. Then verify
+1. ~~**Wait + verify `reseal3`.**~~ **DONE 2026-07-19 23:33 UTC — PASS/COMPLETE, receipt `2903dd16…`,
+   all checks green (see Critical Context 1). Skip to Step 2.** *(Original instructions retained below for
+   reference / in case a further re-seal is ever needed.)* Poll `cat ~/hsq_work/reseal3_all.DONE` → `RC=0`. Then verify
    `reseal3-d0f/stage_adjudication_receipt.tsv`: `verdict=PASS`, `stage_decision=COMPLETE`,
    `julia_replay_commit=8092fcb6`, `attempt_max_diff` bit-identical to `0f5fbb54` (~`3.18e-12`), tally
    **556 interior / 10 lower / 10 upper**, `adjudicate` sha == `validate-final` sha. Spawned-Rose close-out.
    If `RC≠0`, read `~/hsq_work/reseal3_all.log` for the failed stage (fail-closed; no seed — D0F seeds
    reproduce deterministically). It may be **blocker #4** — same "fix → re-seal" loop applies.
-2. **Supersede** `reseal-d0f`/`0f5fbb54`/`976814` → `reseal3-d0f`/`<new sha>`/`8092fcb6` in the live docs
+2. **← START HERE. Supersede** `reseal-d0f`/`0f5fbb54`/`976814` → `reseal3-d0f`/**`2903dd16…`**/`8092fcb6` in the live docs
    (pattern: `scratchpad/d0f-reseal-supersede-applylist.md` if present, else the D1 pre-reg + coordination
    board). Update D1 pre-reg **PRE-4** (`976814`→`8092fcb6`) and the canonical-D0F-root (`reseal-d0f`→`reseal3-d0f`).
 3. **D1 admission.** Edit `~/hsq_work/d1_admission.sh`: `D0F_ADJ=~/hsq_work/reseal3-d0f`, `JCC=8092fcb6…`,
