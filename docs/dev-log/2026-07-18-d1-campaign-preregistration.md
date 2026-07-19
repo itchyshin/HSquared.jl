@@ -73,7 +73,10 @@ D1's preseal binds the canonical D0F root **and** its receipt SHA-256. The check
 *(Line refs are to the sanctioned Julia head `976814`/HEAD `27d5047d`, which contain the gate — NOT the
 stale `1a538212`, where it is absent.)*
 
-- **Canonical D0F root:** `retry8-prep/d0f/` (Totoro). **Receipt** `stage_adjudication_receipt.tsv` sha256
+- **Canonical D0F root:** `reseal-d0f/` (Totoro; the re-seal output — a distinct, non-nested root; the old
+  `retry8-prep/d0f/` still holds the superseded `04cc0740` receipt built at `a23b15b` and must NOT be bound,
+  as its frozen `cef0b993` recomputer sha would mismatch the deployed `eb29c8f4` and re-trigger the blocker).
+  **Receipt** `stage_adjudication_receipt.tsv` sha256
   `0f5fbb5437b30a09cd80e62e0ebd017e4b0b54121d259a1f8fd07dc06c87cd56`.
 - **Receipt must verify:** schema `v07-genomic-recovery-v3-adjudication-2` (the value pinned in code as
   `D0F_ADJUDICATION_SCHEMA`, `:40`), `stage == d0f`, `verdict == PASS`, `stage_decision == COMPLETE`,
@@ -117,7 +120,7 @@ stale `1a538212`, where it is absent.)*
 Every PRE-item below is executable with **no official RNG consumed**. Smoke is deliberately NOT here (§8).
 
 - **PRE-1 — fresh-D0F checkpoint GREEN:** §1 full re-derivation preflight passes on the deployed R head; a
-  dry `v3r_validate_final(retry8-prep/d0f,'d0f')` confirms identical fits, new receipt identity (sha
+  dry `v3r_validate_final(reseal-d0f,'d0f')` confirms identical fits, new receipt identity (sha
   `0f5fbb54…`) and the whole D0F final tree validates; predecessor bound in the D1 preseal. *(Attainable only on the
   sanctioned schema-2 R head; impossible at the stale `d3835fe`.)*
 - **PRE-2 — D1 driver preflight PASS (the real zero-seed pre-draw gate):** driver `preflight` mode
@@ -221,7 +224,7 @@ Before S4 the R twin (and the live Totoro checkout) must show:
    `recompute.R` schema `adjudication-2`; `admission.R` + `downstream_contract.R` present; sidecar sha matches.
 2. Deployed Julia head = `976814`/`27d5047d`: contains `_validate_d0f_predecessor` (`:432-450`) +
    `D0F_ADJUDICATION_SCHEMA="…adjudication-2"` (`:40`); sidecar sha matches.
-3. Dry `v3r_validate_final(retry8-prep/d0f,'d0f')` under the deployed R head confirms identical fits, new
+3. Dry `v3r_validate_final(reseal-d0f,'d0f')` under the deployed R head confirms identical fits, new
    receipt identity (sha `0f5fbb54…`) (impossible under `d3835fe`).
 4. Live `git -C <checkout> rev-parse HEAD` printed for both trees, matching the sanctioned SHAs; deployment
    directory renamed to `code-<sanctioned-Rhead>-<sanctioned-Juliahead>`.

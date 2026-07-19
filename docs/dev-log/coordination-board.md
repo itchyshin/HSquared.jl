@@ -58,8 +58,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. **RESOLVED (2026-07-18):
   the sanctioned deployment already exists** — `retry8-prep/{hsquared@5325e95, HSquared.jl@976814}`, git-clean,
   with `_validate_d0f_predecessor` + `adjudication-2` + `admission.R` present (certified by live repo
-  evidence); no re-clone needed — use it as R_ROOT/JULIA_ROOT with RECEIPT_ROOT=`retry8-prep/d0f`,
-  OUT=`retry8-prep/d1`. D1's S4 admission gate
+  evidence); no re-clone needed — use it as R_ROOT/JULIA_ROOT. **D1 `prepare` args (driver-verified against
+  `v07_genomic_recovery_v3.R:305-313`): RECEIPT_ROOT = a fresh dir of 5 pre-run review receipts
+  (`fisher/noether/hopper/grace/rose.tsv`, created like the D0F re-seal's `reseal-reviews` — it is the
+  reviews dir the driver copies into `receipts/`, NOT the D0F corpus); D0F_ADJUDICATION_ROOT=`reseal-d0f`
+  (the re-seal predecessor, sha `0f5fbb54`, NOT `retry8-prep/d0f` which holds the superseded `04cc0740`);
+  OUT=`d1`.** D1's S4 admission gate
   (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
   env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `0f5fbb54` present; pre-reg =
   `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
