@@ -1,5 +1,14 @@
 Read first: /Users/z3437171/shinichi-brain/AGENTS.md
 
+## LOAD-FIRST manifest
+<!-- Generated from the brain dossier; refresh with `python3 ~/shinichi-brain/tools/route.py HSquared.jl`.
+     Kept at the top for salience (both Claude via @import and Codex native); drift-checked by `route.py`. -->
+- Compute is a default condition — before any heavy calibration/recovery/perf run ask *"Totoro or DRAC?"* (fast CPU ≤100 cores → Totoro; replicated multi-seed / GPU → DRAC arrays); scale out, never laptop-scale. Playbook: `~/shinichi-brain/projects/COMPUTE-PLAYBOOK.md`.
+- Trust recovery-to-truth and run the sample-size ladder before changing an estimator verdict.
+- Diff main before building; write symbolic alignment before adding an estimand or scale.
+- Load `validation-harness` and the repo's own instructions below; preserve the R-public/Julia-engine boundary.
+- A `partial` row must state what it does NOT cover; no covered flip without predeclared evidence.
+
 # HSquared.jl Agent Instructions
 
 `HSquared.jl` is the Julia computational twin of the R package `hsquared`.
