@@ -45,12 +45,16 @@ engine reality.
   fail-closed pre-draw — ZERO seed drawn.** (1) `recompute.R:278` → the `0f5fbb54` re-seal above.
   (2) `marker_ratio` float-precision drift in Julia `_validate_manifest` (R serializes `10/3` at 14 digits in
   `cell_table.tsv` vs full Float64 in the manifest; the exact `==` drifted) → **fixed** (local `8f214eb3`,
-  deployed `fa409fe6`; now tolerant `≤1e-12` like `_read_cell_table`; membership/order/seed stay exact).
-  Running D1 needs a **3rd D0F re-seal at Julia `fa409fe6`** (the admission hard-binds deployed julia ==
-  the D0F predecessor's `julia_replay_commit`; byte-identical fits, new receipt identity), then D1 admission
-  (bind the NEW `reseal2-d0f`, NOT `reseal-d0f`) → PRE-gate → panel → conditional draw. `public_covered_count`
-  stays **5**. START HERE:
-  `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`.
+  now tolerant `≤1e-12` like `_read_cell_table`; membership/order/seed stay exact).
+  (3) stale `.sha256` **integrity-pin sidecar** on `stage_replay.jl` — the incomplete tail of fix (2): the
+  edit changed the file but not its git-tracked pin, so `preseal` refused → **fixed** (local `512d7ca7`,
+  deployed `8092fcb6`; sidecar regenerated to `36a264b2`; Rose-swept all sidecars, only this one stale).
+  Each fix moves a head, and the admission hard-binds deployed julia == the D0F predecessor's
+  `julia_replay_commit`, so a **3rd D0F re-seal (`reseal3` @ Julia `8092fcb6`)** is RUNNING detached on
+  Totoro (byte-identical fits, new receipt identity); then D1 admission (bind the NEW `reseal3-d0f`) →
+  PRE-gate → panel → conditional draw. `public_covered_count` stays **5**. START HERE:
+  `docs/dev-log/handover/2026-07-19-codex-handover.md` (full recipe:
+  `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`).
 
 ## Core Scope
 

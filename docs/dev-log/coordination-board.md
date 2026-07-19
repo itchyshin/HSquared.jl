@@ -77,9 +77,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   OUT=`d1`.** D1's S4 admission gate
   (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
   env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `0f5fbb54` present; pre-reg =
-  `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.</new_string>
-</invoke>
-
+  `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.
 - Next action: run D1 (interior recovery pilot) through the validated pipeline to its adjudicated receipt; pre-registration `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`. Do not allocate
   or consume a successor seed until a new contract, mutation controls, exact
   reviews, clean deployment, preseal, and explicit seed-lock amendment are all
