@@ -34,9 +34,9 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-## Current v0.7 recovery status — 2026-07-18
+## Current v0.7 recovery status — 2026-07-19
 
-- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` 976814, `hsquared` 5325e95.
+- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` `8092fcb6`, `hsquared` `5325e95`.
 - Retry 6's earlier
   `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER` (superseded at Retry-8): every pre-RNG gate was
   green; 576 official fits, 576 independent base-R recomputations, and 576
@@ -62,21 +62,22 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
   amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
 - **R-twin item (owed — GATES D1; CORRECTED after adversarial audit 2026-07-18):** the D1 deployment must be
-  RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `976814`/HEAD `27d5047d`** — which carry
+  RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `8092fcb6`** — which carry
   the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
   The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
   (git-proven ANCESTORS of the seal, NOT descendants; gate + schema-2 + `admission.R`/`downstream_contract.R`
   absent — the D0F re-derivation preflight would abort on it) and MUST NOT run D1. **RESOLVED (2026-07-18):
-  the sanctioned deployment already exists** — `retry8-prep/{hsquared@5325e95, HSquared.jl@976814}`, git-clean,
+  the sanctioned deployment already exists** — `retry8-prep/{hsquared@5325e95, HSquared.jl@8092fcb6}`, git-clean,
   with `_validate_d0f_predecessor` + `adjudication-2` + `admission.R` present (certified by live repo
   evidence); no re-clone needed — use it as R_ROOT/JULIA_ROOT. **D1 `prepare` args (driver-verified against
   `v07_genomic_recovery_v3.R:305-313`): RECEIPT_ROOT = a fresh dir of 5 pre-run review receipts
   (`fisher/noether/hopper/grace/rose.tsv`, created like the D0F re-seal's `reseal-reviews` — it is the
-  reviews dir the driver copies into `receipts/`, NOT the D0F corpus); D0F_ADJUDICATION_ROOT=`reseal-d0f`
-  (the re-seal predecessor, sha `0f5fbb54`, NOT `retry8-prep/d0f` which holds the superseded `04cc0740`);
-  OUT=`d1`.** D1's S4 admission gate
-  (`prepare d1` → `preseal`) is HELD until this is confirmed. Julia-side pre-draw verification is done:
-  env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `0f5fbb54` present; pre-reg =
+  reviews dir the driver copies into `receipts/`, NOT the D0F corpus); D0F_ADJUDICATION_ROOT=`reseal3-d0f`
+  (the re-seal3 predecessor, sha `2903dd16`, NOT `retry8-prep/d0f` which holds the superseded `04cc0740`);
+  OUT=`d1-reseal3` with fresh review dir `d1-reseal3-reviews` (the older `d1-reviews` is preserved).
+  **D1's S4 admission gate (`prepare d1` → `preseal` → `preflight`) is now authorized.** Julia-side
+  pre-draw verification is done: env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt
+  `2903dd16` re-derived byte-identically; pre-reg =
   `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.
 - Next action: run D1 (interior recovery pilot) through the validated pipeline to its adjudicated receipt; pre-registration `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`. Do not allocate
   or consume a successor seed until a new contract, mutation controls, exact

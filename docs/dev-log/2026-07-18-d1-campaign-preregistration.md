@@ -6,10 +6,11 @@ document is outcome-neutral and fixes every predicate in advance so no threshold
 It follows the Retry-7/Retry-8 D0F PRE-0 template (`docs/dev-log/2026-07-17-retry7-d0f-campaign-preregistration.md`,
 `…retry8-…md`), carried forward unchanged except where a D1-specific difference is noted.
 
-**Authorization.** The phenotype+marker draw (§8, point of no return) requires a **separate fresh
-in-session user GO** after a shown-GREEN adversarial pre-draw panel. This pre-registration authorizes only
-the reversible pre-draw work (predecessor checkpoint, green-gate, zero-seed preflight, panel). **Smoke is
-NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it sits AFTER the GO.
+**Authorization.** The phenotype+marker draw (§8, point of no return) remains conditional on a
+shown-GREEN adversarial pre-draw panel. Shinichi's standing 2026-07-19 authorization directs Codex to
+proceed automatically only after an unanimously GREEN panel and to halt on any flag. This
+pre-registration authorizes only the reversible pre-draw work until that condition is met. **Smoke is
+NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it sits AFTER the panel.
 
 > **REVISION (2026-07-18, after adversarial pre-draw audit — 6 lenses, 25 agents, 3 blockers found).**
 > An earlier draft of this pre-registration bound the WRONG deployment (`code-d3835fe-1a538212`, Julia
@@ -20,27 +21,27 @@ NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it si
 > `adjudication-1` with `admission.R`/`downstream_contract.R` absent. That deployment CANNOT run D1. The
 > binding below is corrected to the sanctioned D0F-seal heads. No seed was ever drawn.
 
-**STATUS (2026-07-18): HELD at the S4 admission gate; pre-registration REVISED after audit.** Julia-side
-env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor receipt `0f5fbb54` present. **The sanctioned
-deployment ALREADY EXISTS and is certified by live repo evidence (2026-07-18):**
-`~/hsq_work/retry8-prep/{hsquared@5325e95, HSquared.jl@976814}` — the tree that produced the D0F PASS — is
+**STATUS (2026-07-19): RESEALED predecessor accepted; HELD at zero-seed D1 admission.** Reseal3
+`~/hsq_work/reseal3-d0f` is PASS/COMPLETE and its `validate-final` re-derived receipt sha
+`2903dd160024cb2aa75ab8cfe52df6d05fe3bb830a64a7d639ebac34ece9eb36` byte-identically. Julia-side
+env `ok=TRUE`, seed-lock `v07s_selftest` PASS. **The sanctioned deployment is certified by the reseal3
+receipt:** `~/hsq_work/retry8-prep/{hsquared@5325e95, HSquared.jl@8092fcb6}` — the tree that produced the D0F PASS — is
 git-clean; its Julia driver has `_validate_d0f_predecessor` (6 hits) + `adjudication-2` +
 `COMPONENT_RATIO_TOLERANCE`; its R side has `admission.R`/`downstream_contract.R`/`preseal.R`/`recompute.R`
 all at `adjudication-2`. **No re-deployment/clone needed.** The auto-discovered `code-d3835fe-1a538212`
-remains stale pre-fix and must not be used. Remaining before the draw: PRE-1 dry `validate-final` (D0F —
-identical fits, new receipt identity, sha `0f5fbb54`) + the live adversarial panel + explicit user GO. No
-`prepare`/`preseal`/draw has run; no seed drawn.
+remains stale pre-fix and must not be used. Remaining before the draw: seed-free `prepare → preseal →
+preflight` and the live adversarial panel. No D1 seed has been drawn.
 
 **Bound heads — D1 runs on the sanctioned D0F-seal heads (or descendants that keep the gate + schema-2):**
 - **R:** `5325e9532f93117a47b26acf7b126f02a74d0d5a` (`5325e95`) — schema `adjudication-2`; `admission.R` +
   `downstream_contract.R` present; post route-repair `b8096e5` + fail-closed fix `96529fd`. This is the head
-  that produced the D0F PASS (`r_driver_commit` in receipt `0f5fbb54`).
-- **Julia:** `976814393043d3a4af5ce343d8ac4b05c43eac41` (`976814`, the D0F seal; == receipt `julia_replay_commit`)
-  or branch HEAD `27d5047d` (driver byte-identical to `976814`; later commits are docs-only). Both are
+  that produced the D0F PASS (`r_driver_commit` in receipt `2903dd16`).
+- **Julia:** `8092fcb6e2269116075403e5fd910cd1a60718fe` (`8092fcb6`, the reseal3 D0F seal; == receipt
+  `julia_replay_commit`). It contains
   `≥ e45dbe0a` "enforce D0F predecessor before D1", so the driver CONTAINS `_validate_d0f_predecessor`
   (`sim/phase2_v07_genomic_recovery_v3_stage_replay.jl:432-450`) and `D0F_ADJUDICATION_SCHEMA="…adjudication-2"`
   (`:40`).
-- The **D0F predecessor** is bound by receipt sha `0f5fbb54`, **not** by head-equality; the D1 deployment
+- The **D0F predecessor** is bound by receipt sha `2903dd16`, **not** by head-equality; the D1 deployment
   heads are newer-or-equal to the receipt's commits and MUST contain the gate.
 - **DO NOT USE** `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`): stale pre-fix ancestors, gate +
   schema-2 absent, `admission.R`/`downstream_contract.R` missing on the R side. A directory literally named
@@ -70,14 +71,14 @@ runtime, peak RSS.
 
 D1's preseal binds the canonical D0F root **and** its receipt SHA-256. The checkpoint is enforced by
 `_validate_d0f_predecessor` (`sim/phase2_v07_genomic_recovery_v3_stage_replay.jl:432-450`) + doc49 §D1.
-*(Line refs are to the sanctioned Julia head `976814`/HEAD `27d5047d`, which contain the gate — NOT the
+*(Line refs are to the sanctioned Julia head `8092fcb6`, which contains the gate — NOT the
 stale `1a538212`, where it is absent.)*
 
-- **Canonical D0F root:** `reseal-d0f/` (Totoro; the re-seal output — a distinct, non-nested root; the old
+- **Canonical D0F root:** `reseal3-d0f/` (Totoro; the re-seal output — a distinct, non-nested root; the old
   `retry8-prep/d0f/` still holds the superseded `04cc0740` receipt built at `a23b15b` and must NOT be bound,
   as its frozen `cef0b993` recomputer sha would mismatch the deployed `eb29c8f4` and re-trigger the blocker).
   **Receipt** `stage_adjudication_receipt.tsv` sha256
-  `0f5fbb5437b30a09cd80e62e0ebd017e4b0b54121d259a1f8fd07dc06c87cd56`.
+  `2903dd160024cb2aa75ab8cfe52df6d05fe3bb830a64a7d639ebac34ece9eb36`.
 - **Receipt must verify:** schema `v07-genomic-recovery-v3-adjudication-2` (the value pinned in code as
   `D0F_ADJUDICATION_SCHEMA`, `:40`), `stage == d0f`, `verdict == PASS`, `stage_decision == COMPLETE`,
   parity maxima ≤ `1e-10`, all provenance digests/commits valid, five post-run review paths present.
@@ -120,8 +121,8 @@ stale `1a538212`, where it is absent.)*
 Every PRE-item below is executable with **no official RNG consumed**. Smoke is deliberately NOT here (§8).
 
 - **PRE-1 — fresh-D0F checkpoint GREEN:** §1 full re-derivation preflight passes on the deployed R head; a
-  dry `v3r_validate_final(reseal-d0f,'d0f')` confirms identical fits, new receipt identity (sha
-  `0f5fbb54…`) and the whole D0F final tree validates; predecessor bound in the D1 preseal. *(Attainable only on the
+  dry `v3r_validate_final(reseal3-d0f,'d0f')` confirms the reseal3 receipt (sha
+  `2903dd16…`) and the whole D0F final tree validates; predecessor bound in the D1 preseal. *(Attainable only on the
   sanctioned schema-2 R head; impossible at the stale `d3835fe`.)*
 - **PRE-2 — D1 driver preflight PASS (the real zero-seed pre-draw gate):** driver `preflight` mode
   (`stage_replay.jl:547-552`) validates sealed inputs, preseal key/order, predecessor, and seed-lock with
@@ -130,7 +131,7 @@ Every PRE-item below is executable with **no official RNG consumed**. Smoke is d
   (DONE — PASS); the 2042/2043 retirement is reconciled or verified non-blocking.
 - **PRE-4 — deployment head sanctioned (the B-1/B-2 gate):** on the LIVE Totoro checkout,
   `git -C <deployed-hsquared> rev-parse HEAD` = `5325e95` (or descendant, schema-2, files present) and
-  `git -C <deployed-HSquared.jl> rev-parse HEAD` = `976814`/`27d5047d` (contains `_validate_d0f_predecessor`);
+  `git -C <deployed-HSquared.jl> rev-parse HEAD` = `8092fcb6` (contains `_validate_d0f_predecessor`);
   the deployment directory is renamed/rebuilt to `code-<sanctioned-Rhead>-<sanctioned-Juliahead>`; both
   trees git-clean; driver/recomputer sidecar shas match the sanctioned heads. **NOT `code-d3835fe-1a538212`.**
 - **PRE-5 — route-repair + adjudicator-tail regression GREEN for D1:** the D1-parametrized mutation/route
@@ -200,10 +201,10 @@ audit costs no seed). A completed-but-unadjudicated corpus is diagnostic and mov
 ## 8. Lane + point of no return (smoke is INSIDE this, behind the GO)
 
 The R twin (`hsquared`) owns markers/phenotypes/official fits/base-R recompute/summarize-r/adjudication;
-`HSquared.jl` replays + summarizes-julia + validate-final. **Executor: CLAUDE runs both lanes this session
-under the user's express authorization** (sequential; no concurrent Codex). The **draw (official RNG over
-`2028000000/101:148`) is the point of no return** under the root-forfeit rule and stays LAST, after the
-green-gate and a shown-GREEN adversarial pre-draw panel + an explicit in-session user GO.
+`HSquared.jl` replays + summarizes-julia + validate-final. **Executor: Codex is the sole Totoro driver**
+(no concurrent Claude or other driver). The **draw (official RNG over `2028000000/101:148`) is the point
+of no return** under the root-forfeit rule and stays LAST, after the green-gate and a unanimously GREEN
+adversarial pre-draw panel under Shinichi's documented conditional authorization.
 
 **Smoke draws official seeds — it is part of the draw, not a pre-draw gate.** `smoke-n-ladder`/`smoke-16`
 pipe manifest rows into the same `run-one` RNG path as `run-official` (`set.seed(row$seed); rnorm(...)` on
@@ -222,10 +223,10 @@ The audit's answer to the earlier OPEN question: **`d3835fe`/`1a538212` are NOT 
 Before S4 the R twin (and the live Totoro checkout) must show:
 1. Deployed R head = `5325e95` (or descendant): `git merge-base --is-ancestor 5325e95 <head>` = YES;
    `recompute.R` schema `adjudication-2`; `admission.R` + `downstream_contract.R` present; sidecar sha matches.
-2. Deployed Julia head = `976814`/`27d5047d`: contains `_validate_d0f_predecessor` (`:432-450`) +
+2. Deployed Julia head = `8092fcb6`: contains `_validate_d0f_predecessor` (`:432-450`) +
    `D0F_ADJUDICATION_SCHEMA="…adjudication-2"` (`:40`); sidecar sha matches.
-3. Dry `v3r_validate_final(reseal-d0f,'d0f')` under the deployed R head confirms identical fits, new
-   receipt identity (sha `0f5fbb54…`) (impossible under `d3835fe`).
+3. Dry `v3r_validate_final(reseal3-d0f,'d0f')` under the deployed R head confirms the reseal3 receipt
+   identity (sha `2903dd16…`) (impossible under `d3835fe`).
 4. Live `git -C <checkout> rev-parse HEAD` printed for both trees, matching the sanctioned SHAs; deployment
    directory renamed to `code-<sanctioned-Rhead>-<sanctioned-Juliahead>`.
 5. OrderedCollections: clean precompile (no version-mismatch warning) + byte-identical serialized
