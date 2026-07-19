@@ -361,12 +361,19 @@ function _validate_manifest(rows,stage;cells=_cell_table(),d0f_seed_base=D0F_PHE
             all(f->length(unique(getproperty.(rr,f)))==1,(:panel_source_seed,:retained_m,:marker_hash,:id_hash,:kernel_hash,:precision_hash))||error("D0F panel redrawing/hash drift")
         end
     else
+        d1c=collect(_d1_cells(cells))
         expected=Tuple[]
-        for c in _d1_cells(cells),off in 101:148
-            push!(expected,(c.cell_id,c.cell_index,off,2_028_000_000+10_000*c.cell_index+off,c.n,c.m,c.marker_ratio,c.marker_ratio_code))
+        for c in d1c,off in 101:148
+            push!(expected,(c.cell_id,c.cell_index,off,2_028_000_000+10_000*c.cell_index+off,c.n,c.m,c.marker_ratio_code))
         end
-        observed=[(r.cell_id,r.cell_index,r.seed_offset,r.seed,r.n,r.m,r.marker_ratio,r.marker_ratio_code) for r in rows]
+        observed=[(r.cell_id,r.cell_index,r.seed_offset,r.seed,r.n,r.m,r.marker_ratio_code) for r in rows]
         observed==expected||error("D1 membership/order/seed formula drift")
+        # marker_ratio is a derived m/n float (e.g. 10/3, not exactly representable) that R may serialize at
+        # differing precision in cell_table.tsv vs the manifest; compare it with the SAME <=1e-12 tolerance
+        # _read_cell_table uses (see :311), not exact == — cell_index/n/m above already pin membership exactly.
+        for (k,r) in enumerate(rows)
+            abs(r.marker_ratio-d1c[(k-1)÷48+1].marker_ratio)<=1e-12||error("D1 marker-ratio drift")
+        end
         all(r->r.stage=="d1"&&r.truth_sigma_g2==0.5&&r.truth_sigma_e2==0.5&&r.truth_ratio==0.5&&r.ridge==RIDGE,rows)||error("D1 scientific contract drift")
     end
     nothing
