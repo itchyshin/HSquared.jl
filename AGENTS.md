@@ -41,11 +41,16 @@ engine reality.
   **Spawned-Rose close-out CONFIRMED-WITH-CAVEATS** (PASS holds; summary figure + Gauss caveat
   folded in; 12-doc supersede ledger sound). Per the pre-registration this COMPLETE receipt **only
   opens D1/D2**: `public_covered_count` stays **5**, `ordinary_auto_genomic` route NOT activated,
-  V2-GRM/V2-GINV stay partial. NEXT lane = **D1** (open): the pre-reg predecessor is repointed to
-  `0f5fbb54`; preflight → adversarial pre-draw panel → (if GREEN) the irreversible 576-fit draw
-  (base `2_028_000_000`, offsets 101:148 × 12 interior cells) → same validated pipeline →
-  adjudicate/validate-final → Rose. Both lanes git-clean. START HERE:
-  `docs/dev-log/after-task/2026-07-19-v07-d0f-reseal-recompute278.md`.
+  V2-GRM/V2-GINV stay partial. **D1 STATUS (2026-07-19): two latent D1-ONLY blockers found + fixed, both
+  fail-closed pre-draw — ZERO seed drawn.** (1) `recompute.R:278` → the `0f5fbb54` re-seal above.
+  (2) `marker_ratio` float-precision drift in Julia `_validate_manifest` (R serializes `10/3` at 14 digits in
+  `cell_table.tsv` vs full Float64 in the manifest; the exact `==` drifted) → **fixed** (local `8f214eb3`,
+  deployed `fa409fe6`; now tolerant `≤1e-12` like `_read_cell_table`; membership/order/seed stay exact).
+  Running D1 needs a **3rd D0F re-seal at Julia `fa409fe6`** (the admission hard-binds deployed julia ==
+  the D0F predecessor's `julia_replay_commit`; byte-identical fits, new receipt identity), then D1 admission
+  (bind the NEW `reseal2-d0f`, NOT `reseal-d0f`) → PRE-gate → panel → conditional draw. `public_covered_count`
+  stays **5**. START HERE:
+  `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`.
 
 ## Core Scope
 
