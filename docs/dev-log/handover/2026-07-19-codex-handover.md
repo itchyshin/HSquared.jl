@@ -10,11 +10,12 @@ This doc stands alone — you will not see the authoring chat. Read `AGENTS.md` 
 
 1. **A D0F re-seal (`reseal3`) is RUNNING DETACHED on Totoro right now** (~5–8 h). It is the *only* thing
    gating D1. Do **not** start anything downstream until it lands. Poll `~/hsq_work/reseal3_all.DONE`.
-2. **This branch is 24 commits AHEAD of `origin` and UNPUSHED.** The push is **HELD pending Shinichi**
-   (Grace flag). Shinichi runs Claude/Codex **sequentially on the same local checkout**, so if you open
-   `/Users/z3437171/Dropbox/Github Local/HSquared.jl` you see all 24 commits locally. **If you (or a fresh
-   clone) read `origin` instead, none of the D0F/D1 work exists.** Confirm you are on the local checkout at
-   HEAD `2ebd8b56` before trusting any state below. Do not push without Shinichi's explicit OK.
+2. **The branch is PUSHED and fully landed** (Shinichi authorised it 2026-07-19):
+   `origin/codex/2026-07-13-v07-performance-localization` @ **`36c73e22`**, ahead 0. Every commit described
+   here — the three blocker fixes, the sidecar regeneration, this handover — is on `origin`. **A fresh clone
+   works**; you are not tied to Shinichi's local checkout. Verify with
+   `git rev-parse --short origin/codex/2026-07-13-v07-performance-localization` → `36c73e22`.
+   No PR opened; **do not merge to `main`** without Shinichi.
 3. **ZERO official seed has ever been drawn.** Every D1 blocker so far was caught **pre-draw, fail-closed**.
    `public_covered_count` **STAYS 5** — D1 authorises no route/count move. Rose gates every public claim.
 4. **The irreversible DRAW stays LAST**, behind a GREEN adversarial pre-draw panel **and** Shinichi's
@@ -53,7 +54,7 @@ Rose-swept **every** `.sha256` sidecar in both repos after #3: only `stage_repla
 - **In progress:** `reseal3` — the 3rd D0F re-seal, at Julia `8092fcb6` + R `5325e95`. Byte-identical fits
   expected (all three fixes are validation-only; none touches D0F fits). ETA ~5–8 h.
 - **Blocked / pending:** D1 admission (`prepare d1` → `preseal` → `preflight`) is HELD until `reseal3` mints
-  the new D0F predecessor. Origin push HELD (Shinichi). Two R-twin items owed (below).
+  the new D0F predecessor. Two R-twin items owed (below). (Origin push: **done** — branch is on `origin`.)
 
 ---
 
@@ -78,11 +79,14 @@ Rose-swept **every** `.sha256` sidecar in both repos after #3: only `stage_repla
 
 | Artifact / branch | Committed | Pushed | PR | State |
 |---|---|---|---|---|
-| `HSquared.jl` `codex/2026-07-13-v07-performance-localization` `2ebd8b56` (ahead 24) | y | **n** | none | **CARRIED-OVER** — push HELD pending Shinichi; visible only on the local checkout |
-| Sidecar fix `512d7ca7` + blocker-3 docs `2ebd8b56` (this session) | y | n | none | CARRIED-OVER (in the 24) |
+| `HSquared.jl` `codex/2026-07-13-v07-performance-localization` `36c73e22` | y | **y** | none (do not merge) | **LANDED** — `origin` @ `36c73e22`, ahead 0 |
+| Sidecar fix `512d7ca7` · blocker-3 docs `2ebd8b56` · this handover `36c73e22` | y | y | none | LANDED |
 | Totoro `reseal3` live state (`~/hsq_work/reseal3_all.sh`, `reseal3-d0f/`, `reseal3-reviews/`, deployed `HSquared.jl@8092fcb6`, `hsquared@5325e95`) | n/a (compute) | n/a | n/a | **LIVE on Totoro** — not in git; reach via ssh |
+| 2 protected retry5 `M` docs + 2 untracked files (see below) | n | n | none | **CARRIED-OVER by design** — protected/foreign state, deliberately never staged |
 
-**Resume command for the branch:** you are already on it locally; `git -C "/Users/z3437171/Dropbox/Github Local/HSquared.jl" log --oneline -1` must show `2ebd8b56`. If it shows something older, you are on the wrong tree.
+**Resume command for the branch:**
+`git fetch origin && git checkout codex/2026-07-13-v07-performance-localization` — HEAD must be `36c73e22`.
+(Shinichi's local checkout is at the same sha; a fresh clone is equally valid now that it is pushed.)
 
 **Never commit / never touch** (untracked or protected — leave alone):
 `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl` (D2/D3/D4, not D1) ·
@@ -121,8 +125,8 @@ the two `M` retry5 docs (`2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md
 
 ## Blockers / Open Questions
 
-- **Origin push HELD** — Shinichi's call. If a fresh clone (not the local checkout) ever needs this work,
-  it must be pushed first. Flag it; don't push unasked.
+- ~~Origin push HELD~~ → **RESOLVED 2026-07-19**: Shinichi authorised it; branch pushed, `origin` @
+  `36c73e22`. No PR opened — **do not merge to `main`** without him.
 - **Possible blocker #4** — unknown until `reseal3` completes and D1 admission/preflight runs for real. The
   three so far were each invisible until the fail-closed pipeline hit them.
 - **R-twin owed (coordination, not this repo):** (a) seed-lock `v07_genomic_recovery_v3_seed_lock.R` still
@@ -131,7 +135,7 @@ the two `M` retry5 docs (`2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md
   `retry8-prep/{hsquared@5325e95, HSquared.jl@8092fcb6}` tree — **RESOLVED**, that tree is on Totoro.
 - **Owed follow-ups (non-blocking):** unit test for the `marker_ratio` tolerance path in
   `_validate_manifest`; Gauss/Rose lens on the validation-contract change; capability-status + validation-
-  debt rows; reconcile Totoro `8092fcb6` ↔ local `512d7ca7` via GitHub when push is authorised.
+  debt rows; reconcile Totoro `8092fcb6` ↔ pushed `512d7ca7` via GitHub (branch is now on `origin`).
 
 ---
 
@@ -188,7 +192,7 @@ panel + Shinichi's explicit GO.
 
 | Repo | Branch / origin / CI | What shipped this session | Plan by leverage |
 |---|---|---|---|
-| **HSquared.jl** (Julia engine) | `codex/2026-07-13-…` @ `2ebd8b56` · **ahead 24, UNPUSHED** · CI n/a (docs-only) | 3 D1 blockers found+fixed (all pre-draw, 0 seed); sidecar regenerated; `reseal3` D0F re-seal relaunched at `8092fcb6` | **1.** `reseal3` → new D0F predecessor · **2.** D1 admission → preflight · **3.** panel → conditional draw → D1 receipt · **4.** (later) D2 downstream |
+| **HSquared.jl** (Julia engine) | `codex/2026-07-13-…` @ `36c73e22` · **PUSHED to origin, ahead 0** · CI n/a (docs-only) | 3 D1 blockers found+fixed (all pre-draw, 0 seed); sidecar regenerated; `reseal3` D0F re-seal relaunched at `8092fcb6` | **1.** `reseal3` → new D0F predecessor · **2.** D1 admission → preflight · **3.** panel → conditional draw → D1 receipt · **4.** (later) D2 downstream |
 | **hsquared** (R twin) | same branch; deployed `5325e95` | — (Julia-lane session) | owed: seed-lock 2042/2043 retirement amendment (non-blocking) |
 
 **Covered surface:** `public_covered_count = 5` (unchanged; D1 authorises no move). Engine ~70% / R public
