@@ -45,6 +45,13 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `2028000000/101:148` are permanently retired and retained as negative evidence. Do not repair/restart or
   consume a successor seed without a new preregistered contract. No capability/count/route move;
   `public_covered_count=5`.
+- **D1 static diagnosis (2026-07-20):** the source-level failure is named
+  `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`. The controller supplied `16` where
+  `smoke-n-ladder` reads a worker count, so its unique-`n` selector emitted four rows; it then called
+  `recommend-workers`, whose first requirement is 16 attempt files. This resolves the four-versus-sixteen
+  discrepancy without touching the retired root or seeds. D1 nevertheless remains paused: this is not a
+  repair design or successor authorization. See
+  `docs/dev-log/recovery-checkpoints/2026-07-20-d1-smoke-contract-arity-diagnosis.md`.
 - **D1 admission halt (zero-seed):** `d1-reseal3` completed `prepare → preseal`, then Julia preflight
   returned `RC=13` before any attempt/packet/summary/lock or official RNG existed. Its wrapper invoked the
   R recomputer with `Rscript -e`; R then lacked the runtime Julia `PATH` and the recomputer's `--file`

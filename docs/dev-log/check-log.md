@@ -13,6 +13,9 @@ Newest entries go at the top.
   completed smoke attempts`. `d1-reseal4` and the entire D1 `2028000000/101:148` seed space are retired
   negative evidence; no corpus, receipt, public route, or capability/count move exists. Detail:
   `docs/dev-log/check-log.d/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
+- Follow-up static diagnosis named the deterministic launcher/controller defect
+  `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`; no compute or seed use occurred. Detail:
+  `docs/dev-log/check-log.d/2026-07-20-v07-d1-smoke-contract-arity-diagnosis.md`.
 
 ## 2026-06-18 Phase 6 non-Gaussian fitted-object API (NonGaussianFit struct + extractors)
 

@@ -61,7 +61,9 @@ only four. This is a post-draw campaign failure, not a pre-draw warning, and was
 
 ## Known limitations and next actions
 
-The exact launcher/contract mismatch needs a new, separately preregistered investigation. Do not use the
-retired root or `2028000000/101:148` for diagnosis or a successor. Any successor needs fresh seed allocation,
-fresh preseal/admission, mutation controls, a new panel, and explicit authorization. The failed root remains
+The static investigation has named the immediate failure
+`SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`; see
+`docs/dev-log/recovery-checkpoints/2026-07-20-d1-smoke-contract-arity-diagnosis.md`. Do not use the retired
+root or `2028000000/101:148` for diagnosis or a successor. Any successor needs fresh seed allocation, fresh
+preseal/admission, mutation controls, a new panel, and explicit authorization. The failed root remains
 preserved on Totoro as negative evidence.
