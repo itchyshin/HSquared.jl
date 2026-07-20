@@ -29,6 +29,23 @@ Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the ge
 > separately authorized and preregistered task, and the retired root/seed space stay untouched. Detail:
 > `docs/dev-log/recovery-checkpoints/2026-07-20-d1-smoke-contract-arity-diagnosis.md`. Brain:
 > `DECISIONS.md` D-68.
+>
+> **PLANNING-ONLY REMEDIATION 2026-07-20 — one successor precondition satisfied; FIVE REMAIN OPEN.**
+> An owner-authorized planning-only slice swept producer/consumer row cardinality across **every** mode
+> of the sealed launcher and produced a declared arity contract plus pre-declared acceptance criteria
+> (`docs/design/50-recovery-v3-arity-contract.tsv` / `.md`;
+> `docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`). This satisfies
+> **exactly ONE** of the six preconditions the retirement handover names for any successor —
+> **"launcher contract investigation"**
+> (`docs/dev-log/handover/2026-07-20-d1-reseal4-postdraw-retirement.md:27-28`). The other **FIVE remain
+> OPEN**: a new root; a disjoint allocation; a new pre-registration; fresh mutation
+> controls/reviews/preseal; and explicit authorization. **This is not repair authority and not a
+> successor design.** `attempts_per_rung = 4` in those artifacts is an **owner decision of 2026-07-20**,
+> not intent recovered from the failed campaign. The contract targets an **R-repo** file, so the **R
+> twin must mirror it before any implementation**; `hsquared` was not modified and no seed was drawn.
+> **D1 remains PAUSED**; `public_covered_count=5`, `ordinary_auto_genomic` held, V2-GRM/V2-GINV partial.
+> Close-out: `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`. Brain:
+> `DECISIONS.md` D-71.
 
 Phase 0 public scaffold is complete.
  Phases 1-3 have landed as experimental,

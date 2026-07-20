@@ -52,6 +52,18 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   discrepancy without touching the retired root or seeds. D1 nevertheless remains paused: this is not a
   repair design or successor authorization. See
   `docs/dev-log/recovery-checkpoints/2026-07-20-d1-smoke-contract-arity-diagnosis.md`.
+- **Smoke-Gate Contract Remediation (planning-only, 2026-07-20):** an owner-authorized planning-only slice
+  swept producer/consumer row cardinality across **every** launcher mode and produced a declared arity
+  contract (`docs/design/50-recovery-v3-arity-contract.tsv` / `.md`) plus pre-declared acceptance criteria
+  C1–C5 (`docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`). It
+  satisfies **exactly ONE of six** successor preconditions — **"launcher contract investigation"**
+  (`docs/dev-log/handover/2026-07-20-d1-reseal4-postdraw-retirement.md:27-28`); the other **FIVE remain
+  OPEN** (new root; disjoint allocation; new pre-registration; fresh mutation controls/reviews/preseal;
+  explicit authorization). Not repair authority, not a successor design. `attempts_per_rung = 4` is an
+  **owner decision**, not recovered intent. The contract targets an **R-repo** file — the **R twin must
+  mirror it before any implementation**; `hsquared` was not modified, no seed drawn. D1 stays PAUSED; no
+  capability/count/route move (`public_covered_count=5`). Close-out:
+  `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`; brain `DECISIONS.md` D-71.
 - **D1 admission halt (zero-seed):** `d1-reseal3` completed `prepare → preseal`, then Julia preflight
   returned `RC=13` before any attempt/packet/summary/lock or official RNG existed. Its wrapper invoked the
   R recomputer with `Rscript -e`; R then lacked the runtime Julia `PATH` and the recomputer's `--file`
