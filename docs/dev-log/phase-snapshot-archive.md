@@ -1051,3 +1051,17 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   PRE-gate → panel → conditional draw. `public_covered_count` stays **5**. START HERE:
   `docs/dev-log/handover/2026-07-19-codex-handover.md` (full recipe:
   `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`).
+
+- **As of 2026-07-20 (v0.7 D1 reseal4 post-draw terminal failure — root and seed space retired).**
+  Canonical D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`.
+  D1 `d1-reseal4` passed its seed-free admission and unanimous read-only GREEN panel, then its sole Totoro
+  controller drew four official smoke seeds and terminated at `RC=21`: **`fewer than 16 completed smoke
+  attempts`**. The controller wrote `POSTDRAW_TERMINAL_FAILURE`; no full corpus, lock, recomputation,
+  Julia replay, summary, review, adjudication, or final D1 receipt exists. `/home/snakagaw/hsq_work/d1-reseal4`
+  and **the entire** `2028000000/101:148` D1 seed space are immutable retired negative evidence: never
+  repair/restart/resume/subset/pool them. `public_covered_count` remains **5**;
+  `ordinary_auto_genomic` remains held; V2-GRM/V2-GINV remain partial. The D1 marker-ratio manifest
+  regression suite landed in `21fd2425` and passed its synthetic selftest. **The D1 lane is PAUSED by
+  owner directive (Shinichi, 2026-07-20; brain D-68): the next slice DIAGNOSES why smoke attempts fail
+  at all — do not design attempt five until the failure mode is named.** START HERE:
+  `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.

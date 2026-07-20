@@ -25,19 +25,16 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-20 (v0.7 D1 reseal4 post-draw terminal failure — root and seed space retired).**
-  Canonical D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`.
-  D1 `d1-reseal4` passed its seed-free admission and unanimous read-only GREEN panel, then its sole Totoro
-  controller drew four official smoke seeds and terminated at `RC=21`: **`fewer than 16 completed smoke
-  attempts`**. The controller wrote `POSTDRAW_TERMINAL_FAILURE`; no full corpus, lock, recomputation,
-  Julia replay, summary, review, adjudication, or final D1 receipt exists. `/home/snakagaw/hsq_work/d1-reseal4`
-  and **the entire** `2028000000/101:148` D1 seed space are immutable retired negative evidence: never
-  repair/restart/resume/subset/pool them. `public_covered_count` remains **5**;
-  `ordinary_auto_genomic` remains held; V2-GRM/V2-GINV remain partial. The D1 marker-ratio manifest
-  regression suite landed in `21fd2425` and passed its synthetic selftest. **The D1 lane is PAUSED by
-  owner directive (Shinichi, 2026-07-20; brain D-68): the next slice DIAGNOSES why smoke attempts fail
-  at all — do not design attempt five until the failure mode is named.** START HERE:
-  `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
+- **As of 2026-07-20 (v0.7 D1 recovery-v3 — terminal root retired; static cause named; lane remains paused).**
+  D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`. D1
+  `d1-reseal4` passed seed-free admission and a unanimous read-only GREEN panel, drew four official smoke
+  seeds, and then stopped `RC=21` (`fewer than 16 completed smoke attempts`); no D1 corpus or final receipt
+  exists. The root and entire `2028000000/101:148` space are immutable retired negative evidence. The
+  source-level cause is `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`: the controller passed
+  `16` as workers to a mode that emitted four unique-`n` rows, then invoked a consumer requiring 16 files.
+  This is **not** repair authority: D1 remains paused pending a separately authorized/pre-registered successor
+  plan. `public_covered_count=5`; `ordinary_auto_genomic` held; V2-GRM/V2-GINV partial. START HERE:
+  `docs/dev-log/handover/2026-07-20-claude-handover.md`.
 
 ## Core Scope
 
