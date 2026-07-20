@@ -1,5 +1,16 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-20 (v0.7 D1 recovery-v3 — terminal root retired; static cause named; lane remains paused).**
+  D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`. D1
+  `d1-reseal4` passed seed-free admission and a unanimous read-only GREEN panel, drew four official smoke
+  seeds, and then stopped `RC=21` (`fewer than 16 completed smoke attempts`); no D1 corpus or final receipt
+  exists. The root and entire `2028000000/101:148` space are immutable retired negative evidence. The
+  source-level cause is `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`: the controller passed
+  `16` as workers to a mode that emitted four unique-`n` rows, then invoked a consumer requiring 16 files.
+  This is **not** repair authority: D1 remains paused pending a separately authorized/pre-registered successor
+  plan. `public_covered_count=5`; `ordinary_auto_genomic` held; V2-GRM/V2-GINV partial. START HERE:
+  `docs/dev-log/handover/2026-07-20-claude-handover.md`.
+
 - **As of 2026-07-17 (v0.7 genomic public-activation arc — RETRY-8 admission PASS; draw blocked by Totoro JuliaCall env; HANDOVER to next Claude).**
   Retry-8 fixed the two defects Retry-7's draw surfaced — the run-one
   `expected_route` arity bug (`hsquared` `96529fd`, Rose PROMOTE) + a stale driver

@@ -25,16 +25,22 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-20 (v0.7 D1 recovery-v3 — terminal root retired; static cause named; lane remains paused).**
-  D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`. D1
-  `d1-reseal4` passed seed-free admission and a unanimous read-only GREEN panel, drew four official smoke
-  seeds, and then stopped `RC=21` (`fewer than 16 completed smoke attempts`); no D1 corpus or final receipt
-  exists. The root and entire `2028000000/101:148` space are immutable retired negative evidence. The
-  source-level cause is `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH`: the controller passed
-  `16` as workers to a mode that emitted four unique-`n` rows, then invoked a consumer requiring 16 files.
-  This is **not** repair authority: D1 remains paused pending a separately authorized/pre-registered successor
-  plan. `public_covered_count=5`; `ordinary_auto_genomic` held; V2-GRM/V2-GINV partial. START HERE:
-  `docs/dev-log/handover/2026-07-20-claude-handover.md`.
+- **As of 2026-07-20 (v0.7 D1 smoke-gate contract remediation DESIGNED + mirrored + Gauss RSS risk measured; H2 lane PAUSED by owner to focus on DRM/GLLVM).**
+  The `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH` that killed D1 now has an owner-authorized,
+  three-lens-reviewed **planning-only** remediation: a declared arity contract as data
+  (`docs/design/50-recovery-v3-arity-contract.{tsv,md}`), the C1–C6 implementation gate incl. the composed
+  seed-free regression test (`docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`),
+  brain `D-71`. **Mirrored** to the R twin (`hsquared@f5c0d46`, byte-identical bodies). **Gauss's RSS
+  order-statistic risk MEASURED on Totoro (48 fits) → SAFE-AS-IS**, `attempts_per_rung=4` retained
+  (`docs/dev-log/recovery-checkpoints/2026-07-21-smoke-rss-order-statistic-characterization-predeclaration.md`).
+  Design satisfies **ONE of six** successor preconditions; **five remain open** (new root, disjoint
+  allocation, fresh preregistration, mutation controls/reviews/preseal, explicit authorization). D0F reseal4
+  stays PASS/COMPLETE; the retired `d1-reseal4` root and `2028000000/101:148` space stay immutable negative
+  evidence. `public_covered_count=5`; `ordinary_auto_genomic` held; V2-GRM/V2-GINV partial.
+  **NEXT ARC (owner decision, made fresh — not on momentum): go/no-go on whether to CONTINUE the genomic-recovery
+  campaign at all.** If GO → implement the C1–C6 gate in the R launcher+tests (fresh scoped arc), then assemble
+  a fresh D1 successor across all six preconditions. If NO-GO → freeze the D1/genomic-recovery line and pivot
+  H2 elsewhere. START HERE: `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`.
 
 ## Core Scope
 
