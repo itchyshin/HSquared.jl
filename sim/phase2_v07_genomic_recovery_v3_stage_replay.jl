@@ -1355,6 +1355,15 @@ function selftest()
         NamedTuple{Tuple(Symbol.(D0F_FIXED_COLUMNS))}(Tuple(getproperty(row,Symbol(c)) for c in D0F_FIXED_COLUMNS))
     end for d in D0F_DESIGNS for panel in 1:24]
     d1=NamedTuple[];for c in _d1_cells(),off in 101:148;push!(d1,(stage="d1",cell_id=c.cell_id,cell_index=c.cell_index,seed_offset=off,seed=2_028_000_000+10_000*c.cell_index+off,n=c.n,m=c.m,marker_ratio=c.marker_ratio,marker_ratio_code=c.marker_ratio_code,truth_sigma_g2=.5,truth_sigma_e2=.5,truth_ratio=.5,ridge=RIDGE));end;_validate_manifest(d1,"d1")
+    marker_ratio_tolerated=copy(d1);marker_ratio_tolerated[1]=merge(marker_ratio_tolerated[1],(marker_ratio=marker_ratio_tolerated[1].marker_ratio+5e-13,));_validate_manifest(marker_ratio_tolerated,"d1")
+    _must_fail("D1 marker-ratio above tolerance") do;x=copy(d1);x[1]=merge(x[1],(marker_ratio=x[1].marker_ratio+1.1e-12,));_validate_manifest(x,"d1");end
+    _must_fail("D1 non-finite marker-ratio") do;x=copy(d1);x[1]=merge(x[1],(marker_ratio=NaN,));_validate_manifest(x,"d1");end
+    _must_fail("D1 n") do;x=copy(d1);x[1]=merge(x[1],(n=x[1].n+1,));_validate_manifest(x,"d1");end
+    _must_fail("D1 m") do;x=copy(d1);x[1]=merge(x[1],(m=x[1].m+1,));_validate_manifest(x,"d1");end
+    _must_fail("D1 marker-ratio code") do;x=copy(d1);x[1]=merge(x[1],(marker_ratio_code="mutated",));_validate_manifest(x,"d1");end
+    _must_fail("D1 order") do;x=copy(d1);x[1],x[2]=x[2],x[1];_validate_manifest(x,"d1");end
+    _must_fail("D1 duplicate seed") do;x=copy(d1);x[2]=merge(x[2],(seed=x[1].seed,));_validate_manifest(x,"d1");end
+    _must_fail("D1 missing row") do;x=copy(d1);pop!(x);_validate_manifest(x,"d1");end
     _must_fail("D1 seed") do;x=copy(d1);x[1]=merge(x[1],(seed=x[1].seed+1,));_validate_manifest(x,"d1");end
     _must_fail("D1 stage") do;x=copy(d1);x[1]=merge(x[1],(stage="d2",));_validate_manifest(x,"d1");end
     _must_fail("D1 cell") do;x=copy(d1);x[1]=merge(x[1],(cell_id="mutated",));_validate_manifest(x,"d1");end
