@@ -34,7 +34,9 @@ engine reality.
   and **the entire** `2028000000/101:148` D1 seed space are immutable retired negative evidence: never
   repair/restart/resume/subset/pool them. `public_covered_count` remains **5**;
   `ordinary_auto_genomic` remains held; V2-GRM/V2-GINV remain partial. The D1 marker-ratio manifest
-  regression suite landed in `21fd2425` and passed its synthetic selftest. START HERE:
+  regression suite landed in `21fd2425` and passed its synthetic selftest. **The D1 lane is PAUSED by
+  owner directive (Shinichi, 2026-07-20; brain D-68): the next slice DIAGNOSES why smoke attempts fail
+  at all — do not design attempt five until the failure mode is named.** START HERE:
   `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
 
 ## Core Scope

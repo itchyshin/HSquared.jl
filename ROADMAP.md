@@ -20,6 +20,13 @@ Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the ge
 > no public capability: `public_covered_count=5`, `ordinary_auto_genomic` stays held, V2-GRM/V2-GINV stay
 > partial. Any successor is a fresh separately preregistered task, not a retry. Authoritative:
 > `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
+>
+> **OWNER DIRECTIVE 2026-07-20 (Shinichi) — the D1 lane is PAUSED.** The next HSquared.jl slice is a
+> **diagnosis of why the smoke attempts fail at all**, not the construction of attempt five. Failing
+> *after* seed-free admission and a unanimous GREEN read-only panel both passed is evidence the
+> pre-checks do not test the failing thing; four sealed attempts locate the defect in **harness
+> design, not seeds**. No successor D1 attempt may be designed until the diagnosis names the failure
+> mode. Nothing downstream is blocked by the pause. Brain: `DECISIONS.md` D-68.
 
 Phase 0 public scaffold is complete.
  Phases 1-3 have landed as experimental,
