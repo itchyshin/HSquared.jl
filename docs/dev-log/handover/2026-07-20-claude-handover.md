@@ -98,7 +98,7 @@ unrelated unpushed branches; none belongs to this D1 handover.
 | Artifact / branch | Committed | Pushed | PR | State |
 |---|---:|---:|---|---|
 | D1 retirement + diagnosis, `codex/2026-07-13-v07-performance-localization` @ `e7187d58` | yes | yes | do not open/merge for this D1 handover | LANDED |
-| This handover + snapshot refresh, same branch | pending | pending | do not open/merge for this D1 handover | will land with this handover |
+| This handover + snapshot refresh, same branch | yes | yes | do not open/merge for this D1 handover | LANDED; branch push verified |
 | Retry-5 protected docs (two modified files below) | no | no | none | CARRIED-OVER — foreign protected work; leave untouched |
 | `docs/dev-log/2026-07-18-two-lever-news-fit-laplace-reml-is-the-cox-reid-lever.md` | no | no | none | CARRIED-OVER — foreign untracked WIP; leave untouched |
 | `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl` | no | no | none | CARRIED-OVER — D2/D3/D4 scaffold; explicitly out of scope |
