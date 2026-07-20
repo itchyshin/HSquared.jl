@@ -40,7 +40,11 @@ engine reality.
   **NEXT ARC (owner decision, made fresh — not on momentum): go/no-go on whether to CONTINUE the genomic-recovery
   campaign at all.** If GO → implement the C1–C6 gate in the R launcher+tests (fresh scoped arc), then assemble
   a fresh D1 successor across all six preconditions. If NO-GO → freeze the D1/genomic-recovery line and pivot
-  H2 elsewhere. START HERE: `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`.
+  H2 elsewhere. **OWNER LEANS GO (Shinichi, 2026-07-20):** on pausing to focus on DRM/GLLVM, his stated
+  inclination is to continue — implement C1–C6, then build the successor. **Resume TOWARD GO by default**, but
+  re-confirm it fresh before committing compute: this is a leaning recorded at his request, NOT a standing
+  authorization to run (the campaign has died at eight-plus distinct stages; the retirement fence and D-71
+  planning-only boundary stand). START HERE: `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`.
 
 ## Core Scope
 
