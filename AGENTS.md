@@ -25,38 +25,17 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-19 (v0.7 genomic public-activation arc — D0F RE-SEALED at C_fix `5325e95`: PASS / COMPLETE, identical fits, new receipt identity).**
-  The D0F stage was re-sealed to fold in the hsquared `recompute.R:278` fix (`r_recomputer_path`
-  derived by name, not `= script`; two unconditional git-identity gates bind the sealed R head, so
-  the fix forced a full 576-fit re-run). New receipt `reseal-d0f/stage_adjudication_receipt.tsv`:
-  `v07-genomic-recovery-v3-adjudication-2`, **`verdict=PASS`, `stage_decision=COMPLETE`**, sha
-  `0f5fbb54…` (supersedes retry8 `04cc0740…`); `validate-final` re-derived the **new** receipt
-  byte-identical (RC=0). **Identical fits, new receipt identity** — NOT byte-identical to `04cc0740`:
-  attempt max-diff `3.18e-12` bit-identical to retry8, tally 556 interior / 10 lower / 10 upper
-  identical, 5 bound post-run reviews CLEAN. summary max-diff moved `7.11e-15 → 2.27e-13` — a benign
-  1-ULP reshuffle on re-measured runtime/RSS medians (Gauss: no scientific quantity moved;
-  `recompute.R:278` is identity-only), both ≪1e-10. Receipt identity fields advanced by design
-  (`r_driver`/`r_recomputer_commit` `5325e95`, `r_recomputer_sha` `eb29c8f4`, `preseal` `b209ec0c`,
-  `adjudication_key` `88d4cf2f`); driver bytes (`d1a7d930`) and Julia replay (`976814`) unchanged.
-  **Spawned-Rose close-out CONFIRMED-WITH-CAVEATS** (PASS holds; summary figure + Gauss caveat
-  folded in; 12-doc supersede ledger sound). Per the pre-registration this COMPLETE receipt **only
-  opens D1/D2**: `public_covered_count` stays **5**, `ordinary_auto_genomic` route NOT activated,
-  V2-GRM/V2-GINV stay partial. **D1 STATUS (2026-07-19): three latent D1-ONLY blockers found + fixed, all
-  fail-closed pre-draw — ZERO seed drawn.** (1) `recompute.R:278` → the `0f5fbb54` re-seal above.
-  (2) `marker_ratio` float-precision drift in Julia `_validate_manifest` (R serializes `10/3` at 14 digits in
-  `cell_table.tsv` vs full Float64 in the manifest; the exact `==` drifted) → **fixed** (local `8f214eb3`,
-  now tolerant `≤1e-12` like `_read_cell_table`; membership/order/seed stay exact).
-  (3) stale `.sha256` **integrity-pin sidecar** on `stage_replay.jl` — the incomplete tail of fix (2): the
-  edit changed the file but not its git-tracked pin, so `preseal` refused → **fixed** (local `512d7ca7`,
-  deployed `8092fcb6`; sidecar regenerated to `36a264b2`; Rose-swept all sidecars, only this one stale).
-  Each fix moves a head, and the admission hard-binds deployed julia == the D0F predecessor's
-  `julia_replay_commit`, so a **3rd D0F re-seal (`reseal3` @ Julia `8092fcb6`) is DONE — PASS/COMPLETE**
-  (2026-07-19 23:33 UTC), receipt `2903dd16…` (supersedes `0f5fbb54`), `attempt_max_diff` bit-identical
-  (`3.183e-12`) → identical fits / new receipt identity, tally 576/556/10/10, byte-reproduced by
-  `validate-final`, 5 reviews CLEAN. **NEXT = supersede, then D1 admission** (bind the NEW `reseal3-d0f`) →
-  PRE-gate → panel → conditional draw. `public_covered_count` stays **5**. START HERE:
-  `docs/dev-log/handover/2026-07-19-codex-handover.md` (full recipe:
-  `docs/dev-log/handover/2026-07-19-claude-handover-d1-blocker2-reseal.md`).
+- **As of 2026-07-20 (v0.7 D1 reseal4 post-draw terminal failure — root and seed space retired).**
+  Canonical D0F reseal4 remains PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`.
+  D1 `d1-reseal4` passed its seed-free admission and unanimous read-only GREEN panel, then its sole Totoro
+  controller drew four official smoke seeds and terminated at `RC=21`: **`fewer than 16 completed smoke
+  attempts`**. The controller wrote `POSTDRAW_TERMINAL_FAILURE`; no full corpus, lock, recomputation,
+  Julia replay, summary, review, adjudication, or final D1 receipt exists. `/home/snakagaw/hsq_work/d1-reseal4`
+  and **the entire** `2028000000/101:148` D1 seed space are immutable retired negative evidence: never
+  repair/restart/resume/subset/pool them. `public_covered_count` remains **5**;
+  `ordinary_auto_genomic` remains held; V2-GRM/V2-GINV remain partial. The D1 marker-ratio manifest
+  regression suite landed in `21fd2425` and passed its synthetic selftest. START HERE:
+  `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
 
 ## Core Scope
 

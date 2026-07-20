@@ -35,7 +35,12 @@ unadjudicated; D1/D2 never opened. Retry 5 then stopped after one successful
 official fit on a post-preseal runtime-tree blocker. Its immutable root and
 complete seed spaces are retired, and a post-run audit found the admission
 proof not contract-clean. The R surface therefore remains partial/held pending
-the prospective Retry-6 repair, durable admission evidence, Rose, and G10.
+the prospective Retry-6 repair, durable admission evidence, Rose, and G10. Retry 8 subsequently minted
+the first D0F PASS/COMPLETE receipt, opening a D1 attempt but not a public route. That fresh D1 reseal4
+attempt passed seed-free admission and its GREEN panel, drew four official smoke seeds, then terminated
+`RC=21` because fewer than 16 smoke attempts completed. Its root and entire `2028000000/101:148` seed
+space are retired/unadjudicated; there is no D1 corpus or receipt, no retry authorization, and no change
+to `public_covered_count = 5`, V2-GRM/V2-GINV, or the held R route.
 `single_step()` remains a separate
 experimental surface.
 The dense paths here are validation-scale only — they do not gain the sparse

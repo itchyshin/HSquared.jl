@@ -4,7 +4,12 @@
 > banner below is superseded on status only: the Retry-8 D0F receipt reached `verdict=PASS,
 > stage_decision=COMPLETE` (sha `0f5fbb54`). Dispositions UNCHANGED: `V2-GRM`/`V2-GINV` stay partial,
 > `V2-GREML` covered only for the supplied-`Ginv` estimator, `public_covered_count` stays **5**. A COMPLETE
-> D0F PASS only opens D1/D2; D1 (interior recovery pilot) is the next lane and moves no count by itself.
+> D0F PASS opened D1/D2 in principle; the first D1 root is now retired post-draw, so no D1 campaign is
+> active and any successor requires a fresh contract. Neither fact moves any count.
+> **D1 update (2026-07-20):** the first admitted `d1-reseal4` drew four official smoke seeds but then
+> terminated `RC=21` because the smoke controller required 16 completed attempts. Its root and complete
+> `2028000000/101:148` seed space are permanently retired/unadjudicated; a successor requires a new
+> preregistered contract. No D1 evidence discharges this debt or moves `public_covered_count` from **5**.
 
 > **v0.7 genomic activation debt update (2026-07-13):** the original
 > offset-5001 candidate remains a banked 5.99x runtime-gate failure. The

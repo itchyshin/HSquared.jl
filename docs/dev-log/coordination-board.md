@@ -37,13 +37,22 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ## Current v0.7 recovery status — 2026-07-20
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed repair heads: `HSquared.jl` `418be984`, `hsquared` `5325e95`.
+- **D1 reseal4 terminal post-draw failure (2026-07-20):** the sole Totoro controller began `smoke-n-ladder`
+  at 08:36:12 UTC after the documented all-GREEN panel. Four official smoke attempts completed, but the
+  smoke verifier/controller then returned `RC=21` at 10:48:17 UTC: `Error: fewer than 16 completed smoke
+  attempts`. It wrote `POSTDRAW_TERMINAL_FAILURE`; no full 576-fit corpus, lock, recomputation, replay,
+  summary, adjudication, or receipt exists. `/home/snakagaw/hsq_work/d1-reseal4` and **all** D1 offsets
+  `2028000000/101:148` are permanently retired and retained as negative evidence. Do not repair/restart or
+  consume a successor seed without a new preregistered contract. No capability/count/route move;
+  `public_covered_count=5`.
 - **D1 admission halt (zero-seed):** `d1-reseal3` completed `prepare → preseal`, then Julia preflight
   returned `RC=13` before any attempt/packet/summary/lock or official RNG existed. Its wrapper invoked the
   R recomputer with `Rscript -e`; R then lacked the runtime Julia `PATH` and the recomputer's `--file`
   identity. Julia `418be984` fixes the wrapper and regenerates its replay sidecar (`03bda8b8…`). The full
   fresh `reseal4-d0f` is now PASS/COMPLETE at R `5325e95` / Julia `418be984`, receipt `e88207e5…`, with
-  controller and independent frozen-CLI final-tree re-derivations both `RC=0`. The next root is fresh
-  `d1-reseal4`; `2028000000/101:148` remains unspent; no panel or draw is authorized.
+  controller and independent frozen-CLI final-tree re-derivations both `RC=0`. That admission history is
+  superseded by the terminal `d1-reseal4` post-draw retirement above; `2028000000/101:148` is spent and
+  retired, and no panel/draw remains authorized for this root.
 - Retry 6's earlier
   `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER` (superseded at Retry-8): every pre-RNG gate was
   green; 576 official fits, 576 independent base-R recomputations, and 576
@@ -54,7 +63,9 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   Julia replay rows were correctly admitted as `julia_profile_replay`, then
   summary reconstruction re-admitted them under `ordinary_auto_genomic` and
   reported malformed scientific output. Exact clause diagnostics found zero
-  malformed official, base-R, or Julia rows. The route-repair reached a COMPLETE PASS receipt at Retry-8 (2026-07-18); D1/D2 are now OPEN.
+  malformed official, base-R, or Julia rows. The route-repair reached a COMPLETE PASS receipt at Retry-8
+  (2026-07-18), which opened D1/D2 in principle; the first D1 root has since been retired post-draw and
+  does not create D1 acceptance or a new D2 authorization.
 - The Totoro root is frozen read-only at 9,248 files / 598 directories, with
   content digest `148da8ef…d754f` unchanged and no live worker. Its complete
   `2040000000` / `2041000000` phenotype/bootstrap spaces are retired.
@@ -68,7 +79,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - **R-twin item (owed):** the seed-lock `v07_genomic_recovery_v3_seed_lock.R` still labels bases
   `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
   amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
-- **R-twin item (owed — GATES D1; CORRECTED after adversarial audit 2026-07-18):** the D1 deployment must be
+- **R-twin item (historical D1 admission record; no longer an authorization):** the D1 deployment had to be
   RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `418be984` after reseal4** — which carry
   the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
   The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
@@ -81,15 +92,11 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   (`fisher/noether/hopper/grace/rose.tsv`, created like the D0F re-seal's `reseal-reviews` — it is the
   reviews dir the driver copies into `receipts/`, NOT the D0F corpus); D0F_ADJUDICATION_ROOT=`reseal4-d0f`
   (the canonical re-seal4 predecessor, sha `e88207e5`, NOT `retry8-prep/d0f` which holds the superseded
-  `04cc0740`); OUT=`d1-reseal4` with fresh review dir `d1-reseal4-reviews` (the older D1 roots remain
-  immutable evidence). **D1's S4 admission gate (`prepare d1` → `preseal` → `preflight`) is now authorized.**
-  Julia-side pre-draw verification is done: env `ok=TRUE`, seed-lock `v07s_selftest` PASS, D0F predecessor
-  receipt `e88207e5` re-derived byte-identically; pre-reg =
-  `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`.
-- Next action: run D1 (interior recovery pilot) through the validated pipeline to its adjudicated receipt; pre-registration `docs/dev-log/2026-07-18-d1-campaign-preregistration.md`. Do not allocate
-  or consume a successor seed until a new contract, mutation controls, exact
-  reviews, clean deployment, preseal, and explicit seed-lock amendment are all
-  green. Totoro/DRAC only, never GitHub Actions.
+  `04cc0740`); OUT was `d1-reseal4` with fresh review dir `d1-reseal4-reviews`. Its S4 admission did pass,
+  but this history does **not** authorize a rerun after the post-draw retirement.
+- Next action: bank the D1 negative evidence and make a separate, fresh successor plan only after an exact
+  contract/launcher investigation, a new disjoint seed allocation, preregistration, reviews, preseal, and
+  explicit authorization. Totoro/DRAC only, never GitHub Actions.
 
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 

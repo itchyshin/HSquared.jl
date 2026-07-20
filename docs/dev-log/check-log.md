@@ -7,6 +7,13 @@
 
 Newest entries go at the top.
 
+## 2026-07-20 — D1 reseal4 post-draw smoke terminal failure
+
+- The sole Totoro controller drew four official smoke attempts, then wrote `RC=21` / `fewer than 16
+  completed smoke attempts`. `d1-reseal4` and the entire D1 `2028000000/101:148` seed space are retired
+  negative evidence; no corpus, receipt, public route, or capability/count move exists. Detail:
+  `docs/dev-log/check-log.d/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`.
+
 ## 2026-06-18 Phase 6 non-Gaussian fitted-object API (NonGaussianFit struct + extractors)
 
 - Goal: give the just-exported non-Gaussian fitter a proper fitted-object with the

@@ -21,7 +21,19 @@ NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it si
 > `adjudication-1` with `admission.R`/`downstream_contract.R` absent. That deployment CANNOT run D1. The
 > binding below is corrected to the sanctioned D0F-seal heads. No seed was ever drawn.
 
-**STATUS (2026-07-20): D1 admission HALTED pre-draw; reseal4 is the canonical predecessor.** The prior
+**TERMINAL STATUS (2026-07-20): D1 `d1-reseal4` is RETIRED POST-DRAW, UNADJUDICATED.** After a seed-free
+`prepare → preseal → preflight` and a unanimously GREEN adversarial panel, its unique Totoro controller
+started `smoke-n-ladder` at 08:36:12 UTC. Four official smoke attempts drew and completed (seeds
+`2028020101`, `2028110101`, `2028200101`, `2028290101`); the controller then stopped at 10:48:17 UTC,
+`RC=21`, with **`Error: fewer than 16 completed smoke attempts`** and its explicit
+`POSTDRAW_TERMINAL_FAILURE` retirement line. No full corpus, corpus lock, base-R recomputation, Julia
+replay, summaries, reviews, adjudication, or final receipt exists. Per §7, the immutable root
+`/home/snakagaw/hsq_work/d1-reseal4` and the entire `2028000000/101:148` D1 seed space are retired; do
+not repair, resume, subset, pool, or reuse them. This is negative evidence only: `public_covered_count`
+remains **5**, `ordinary_auto_genomic` remains held, and V2-GRM/V2-GINV remain partial. The failed tree is
+preserved with its four attempt/packet pairs for audit.
+
+**Superseded pre-draw status (2026-07-20):** D1 admission HALTED pre-draw; reseal4 is the canonical predecessor. The prior
 reseal3 receipt `2903dd16…` remains superseded history. Reseal4
 `~/hsq_work/reseal4-d0f` is PASS/COMPLETE; its controller (`RC=0`) and a separate post-controller
 `validate-final` both re-derived receipt sha
@@ -204,6 +216,10 @@ could reuse the D0F 2042/2043 space after a pre-draw blocker; and why the deploy
 audit costs no seed). A completed-but-unadjudicated corpus is diagnostic and moves no count.
 
 ## 8. Lane + point of no return (smoke is INSIDE this, behind the GO)
+
+> **SUPERSEDED FOR `d1-reseal4`:** the GO below was consumed by its four official smoke draws. The terminal
+> `RC=21` retirement at the top of this document revokes this operational instruction for the retired root
+> and seed window; it is retained only as the predeclared protocol record.
 
 The R twin (`hsquared`) owns markers/phenotypes/official fits/base-R recompute/summarize-r/adjudication;
 `HSquared.jl` replays + summarizes-julia + validate-final. **Executor: Codex is the sole Totoro driver**

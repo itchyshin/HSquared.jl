@@ -59,6 +59,11 @@
 > `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`;
 > the earlier performance decision remains in
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-performance-holdout.md`.
+> **D1 negative result (2026-07-20; applies to the detailed Genomic REML evidence row below):** after a seed-free admission and unanimously GREEN pre-draw panel,
+> `d1-reseal4` drew four official smoke seeds then terminated `RC=21` (`fewer than 16 completed smoke
+> attempts`). Its root and the complete D1 `2028000000/101:148` seed space are retired, unadjudicated,
+> and preserved; no full D1 corpus or receipt exists. This does not change any capability status,
+> `ordinary_auto_genomic`, V2-GRM/V2-GINV, or `public_covered_count` (**5**).
 
 | Capability | Status | Evidence |
 | --- | --- | --- |

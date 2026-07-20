@@ -38,8 +38,12 @@ mutated a Totoro stage.
 
 ## Authorization and next action
 
-Shinichi's documented standing authorization applies because every panel verdict is
-GREEN. The first irreversible official seed is therefore **only** `smoke-n-ladder`;
-the official controller must immediately continue the declared phase order. Any
+> **SUPERSEDED POST-DRAW (2026-07-20):** this panel was GREEN and correctly opened the first official
+> smoke draw, but `d1-reseal4` then terminated `RC=21`. Its root and full `2028000000/101:148` seed space
+> are retired. The authorization below is historical only and must not be used to launch, resume, or repair.
+
+Historically, Shinichi's documented standing authorization applied because every panel verdict was
+GREEN. The first irreversible official seed was therefore `smoke-n-ladder`; the controller then followed
+the declared phase order until its terminal failure. Any
 terminal post-draw failure retires this D1 root and the whole `2028000000/101:148`
 space; there is no in-place repair or public promotion.
