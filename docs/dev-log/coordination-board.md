@@ -34,9 +34,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-## Current v0.7 recovery status — 2026-07-19
+## Current v0.7 recovery status — 2026-07-20
 
-- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed sealed heads: `HSquared.jl` `8092fcb6`, `hsquared` `5325e95`.
+- Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed repair heads: `HSquared.jl` `418be984`, `hsquared` `5325e95`.
+- **D1 admission halt (zero-seed):** `d1-reseal3` completed `prepare → preseal`, then Julia preflight
+  returned `RC=13` before any attempt/packet/summary/lock or official RNG existed. Its wrapper invoked the
+  R recomputer with `Rscript -e`; R then lacked the runtime Julia `PATH` and the recomputer's `--file`
+  identity. The canonical frozen CLI validation passes on `reseal3-d0f`. Julia `418be984` fixes the wrapper
+  and regenerates its replay sidecar (`03bda8b8…`), so a full fresh `reseal4-d0f` is mandatory before a
+  fresh `d1-reseal4` admission. `2028000000/101:148` remains unspent; no panel or draw is authorized.
 - Retry 6's earlier
   `UNADJUDICATED_POSTRUN_ADJUDICATOR_ROUTE_BLOCKER` (superseded at Retry-8): every pre-RNG gate was
   green; 576 official fits, 576 independent base-R recomputations, and 576
@@ -62,7 +68,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   `2042000000`/`2043000000` as reserved `D0F_RETRY7`; Retry-8 SPENT them 2026-07-18 — retirement
   amendment owed. Verified non-blocking for D1 (its `2028000000`/`101:148` space does not collide).
 - **R-twin item (owed — GATES D1; CORRECTED after adversarial audit 2026-07-18):** the D1 deployment must be
-  RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `8092fcb6`** — which carry
+  RE-PINNED to the sanctioned D0F-seal heads — **R `5325e95`, Julia `418be984` after reseal4** — which carry
   the D0F-predecessor gate (`_validate_d0f_predecessor`) + `adjudication-2` schema and earned the D0F PASS.
   The auto-discovered `code-d3835fe-1a538212` (Julia `1a538212` / R `d3835fe`) is **stale pre-fix code**
   (git-proven ANCESTORS of the seal, NOT descendants; gate + schema-2 + `admission.R`/`downstream_contract.R`

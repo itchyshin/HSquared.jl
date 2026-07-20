@@ -21,23 +21,26 @@ NOT pre-draw** — see §3/§8: the smoke tooling draws official seeds, so it si
 > `adjudication-1` with `admission.R`/`downstream_contract.R` absent. That deployment CANNOT run D1. The
 > binding below is corrected to the sanctioned D0F-seal heads. No seed was ever drawn.
 
-**STATUS (2026-07-19): RESEALED predecessor accepted; HELD at zero-seed D1 admission.** Reseal3
-`~/hsq_work/reseal3-d0f` is PASS/COMPLETE and its `validate-final` re-derived receipt sha
-`2903dd160024cb2aa75ab8cfe52df6d05fe3bb830a64a7d639ebac34ece9eb36` byte-identically. Julia-side
-env `ok=TRUE`, seed-lock `v07s_selftest` PASS. **The sanctioned deployment is certified by the reseal3
-receipt:** `~/hsq_work/retry8-prep/{hsquared@5325e95, HSquared.jl@8092fcb6}` — the tree that produced the D0F PASS — is
-git-clean; its Julia driver has `_validate_d0f_predecessor` (6 hits) + `adjudication-2` +
-`COMPONENT_RATIO_TOLERANCE`; its R side has `admission.R`/`downstream_contract.R`/`preseal.R`/`recompute.R`
-all at `adjudication-2`. **No re-deployment/clone needed.** The auto-discovered `code-d3835fe-1a538212`
-remains stale pre-fix and must not be used. Remaining before the draw: seed-free `prepare → preseal →
-preflight` and the live adversarial panel. No D1 seed has been drawn.
+**STATUS (2026-07-20): D1 admission HALTED pre-draw; reseal4 is required.** Reseal3
+`~/hsq_work/reseal3-d0f` remains PASS/COMPLETE and its `validate-final` re-derived receipt sha
+`2903dd160024cb2aa75ab8cfe52df6d05fe3bb830a64a7d639ebac34ece9eb36` byte-identically. The fresh,
+non-nested `d1-reseal3` root completed `prepare → preseal` but its Julia `preflight` failed (`RC=13`)
+before any attempt, packet, summary, lock, or official RNG existed. The failure was fail-closed: the Julia
+wrapper used `Rscript -e` to source the recomputer, leaving R without both a discoverable Julia executable
+on `PATH` and the recomputer's `--file` identity. The canonical frozen-environment command
+`Rscript …/v07_genomic_recovery_v3_recompute.R --mode=validate-final …` passes on `reseal3-d0f`.
+Julia commit `418be984` repairs that wrapper (explicit one-thread environment, runtime Julia `PATH`, native
+recomputer CLI) and its tracked replay sidecar is `03bda8b8…`. Because this changes sealed Julia bytes,
+**`reseal4-d0f` at Julia `418be984` must fully re-seal before a fresh `d1-reseal4` admission;** neither the
+failed root nor any prior D1 receipt directory may be reused. The D1 `2028000000/101:148` space remains
+unspent and unretired. No D1 seed has been drawn.
 
 **Bound heads — D1 runs on the sanctioned D0F-seal heads (or descendants that keep the gate + schema-2):**
 - **R:** `5325e9532f93117a47b26acf7b126f02a74d0d5a` (`5325e95`) — schema `adjudication-2`; `admission.R` +
   `downstream_contract.R` present; post route-repair `b8096e5` + fail-closed fix `96529fd`. This is the head
   that produced the D0F PASS (`r_driver_commit` in receipt `2903dd16`).
-- **Julia:** `8092fcb6e2269116075403e5fd910cd1a60718fe` (`8092fcb6`, the reseal3 D0F seal; == receipt
-  `julia_replay_commit`). It contains
+- **Julia (next sealed deployment):** `418be98432d1e6fea3615d3bfa37194f84253c07` (`418be984`; replay
+  sidecar `03bda8b8144d4dac51182b30f23cc039bf1a2f68770251be497276f2d58e9b51`). It contains
   `≥ e45dbe0a` "enforce D0F predecessor before D1", so the driver CONTAINS `_validate_d0f_predecessor`
   (`sim/phase2_v07_genomic_recovery_v3_stage_replay.jl:432-450`) and `D0F_ADJUDICATION_SCHEMA="…adjudication-2"`
   (`:40`).
@@ -71,7 +74,7 @@ runtime, peak RSS.
 
 D1's preseal binds the canonical D0F root **and** its receipt SHA-256. The checkpoint is enforced by
 `_validate_d0f_predecessor` (`sim/phase2_v07_genomic_recovery_v3_stage_replay.jl:432-450`) + doc49 §D1.
-*(Line refs are to the sanctioned Julia head `8092fcb6`, which contains the gate — NOT the
+*(Line refs are to the next sanctioned Julia head `418be984`, which contains the gate — NOT the
 stale `1a538212`, where it is absent.)*
 
 - **Canonical D0F root:** `reseal3-d0f/` (Totoro; the re-seal output — a distinct, non-nested root; the old
