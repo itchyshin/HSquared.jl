@@ -457,8 +457,16 @@ function _validate_d0f_predecessor(stage_root,p)
     nothing
 end
 function _validate_d0f_final_tree(r_recomputer_path,d0froot)
-    expression="args <- commandArgs(TRUE); source(args[[1L]], local=.GlobalEnv); v3r_validate_final(args[[2L]], 'd0f')"
-    cmd=Cmd(String["Rscript","--vanilla","-e",expression,r_recomputer_path,d0froot])
+    rscript=Sys.which("Rscript")
+    isempty(rscript)&&error("Rscript is required for fresh D0F final-tree validation")
+    env=copy(ENV)
+    julia_dir=dirname(first(Base.julia_cmd().exec))
+    env["PATH"]=string(julia_dir, Sys.iswindows() ? ";" : ":", get(env,"PATH",""))
+    for key in ("OPENBLAS_NUM_THREADS","OMP_NUM_THREADS","MKL_NUM_THREADS",
+                "VECLIB_MAXIMUM_THREADS","NUMEXPR_NUM_THREADS","JULIA_NUM_THREADS")
+        env[key]="1"
+    end
+    cmd=setenv(`$rscript --vanilla $r_recomputer_path --mode=validate-final --output-root=$d0froot --stage=d0f`,env)
     success(pipeline(cmd,stdout=devnull,stderr=devnull))||error("fresh D0F exact final-tree validation failed")
     nothing
 end
