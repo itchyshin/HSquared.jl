@@ -271,8 +271,12 @@ first drafted). This list is part of the gate: it must be carried forward, not d
    the D1 failure.
 5. **`--print-plan` remains unresolved** — even after this ships, there is still no pre-draw plan
    check, so a future campaign can still discover a cardinality mismatch only after spending seeds.
-6. **The RSS order-statistic risk is unquantified** (Gauss) — 4 draws per rung raise expected
-   `max(rss)`, lowering recommended workers and increasing exposure to the `workers < 1` floor stop.
+6. **The RSS order-statistic risk — MEASURED 2026-07-20, SAFE-AS-IS** (was Gauss's open flag). A
+   48-fit Totoro characterization
+   (`docs/dev-log/recovery-checkpoints/2026-07-21-smoke-rss-order-statistic-characterization-predeclaration.md`)
+   found the 4-vs-1 inflation ≈ 12 MB (1.5% of the 783 MB top-rung RSS); on Totoro the RSS-derived
+   worker count stays ~4× below the cap, so RSS is not binding. `attempts_per_rung = 4` retained,
+   with a bounded-memory caveat (RSS binds only below ~106 GB available). No longer an open risk.
 
 ## 3. Skeleton (SKELETON — never executed, not committed to hsquared by this slice)
 

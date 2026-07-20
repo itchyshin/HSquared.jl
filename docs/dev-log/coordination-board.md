@@ -55,7 +55,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 - **Smoke-Gate Contract Remediation (planning-only, 2026-07-20):** an owner-authorized planning-only slice
   swept producer/consumer row cardinality across **every** launcher mode and produced a declared arity
   contract (`docs/design/50-recovery-v3-arity-contract.tsv` / `.md`) plus pre-declared acceptance criteria
-  C1–C5 (`docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`). It
+  C1–C6 (`docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`; C6 =
+  composed seed-free regression test, regression case constructible against sealed source today). It
   satisfies **exactly ONE of six** successor preconditions — **"launcher contract investigation"**
   (`docs/dev-log/handover/2026-07-20-d1-reseal4-postdraw-retirement.md:27-28`); the other **FIVE remain
   OPEN** (new root; disjoint allocation; new pre-registration; fresh mutation controls/reviews/preseal;
@@ -64,6 +65,12 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
   mirror it before any implementation**; `hsquared` was not modified, no seed drawn. D1 stays PAUSED; no
   capability/count/route move (`public_covered_count=5`). Close-out:
   `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`; brain `DECISIONS.md` D-71.
+  **Mirror DONE (2026-07-20):** design mirrored to the R twin at `hsquared@26950bc`, bodies byte-identical.
+  **Gauss RSS risk DISCHARGED (2026-07-20, measured on Totoro):** 48-fit characterization
+  (`docs/dev-log/recovery-checkpoints/2026-07-21-smoke-rss-order-statistic-characterization-predeclaration.md`
+  RESULT + `…-evidence.tsv`) — top-rung peak RSS 783 MB (sd 11), 4-vs-1 order-statistic inflation ~12 MB
+  (1.5%); on Totoro the RSS-derived worker count (~365) stays ~4× below the 96 cap, so RSS is not binding.
+  **SAFE-AS-IS: `attempts_per_rung = 4` retained**, bounded-memory caveat = RSS binds only below ~106 GB avail.
 - **D1 admission halt (zero-seed):** `d1-reseal3` completed `prepare → preseal`, then Julia preflight
   returned `RC=13` before any attempt/packet/summary/lock or official RNG existed. Its wrapper invoked the
   R recomputer with `Rscript -e`; R then lacked the runtime Julia `PATH` and the recomputer's `--file`

@@ -246,7 +246,15 @@ Why derived beats literal:
   rung — the rung-coverage check becomes a corroborating assertion on the same
   derived quantity rather than an independent, coincidentally-related check.
 
-> **OPEN NUMERICAL RISK — NOT YET QUANTIFIED. The 16-row layout may trade the count guard
+> **RESOLVED 2026-07-20 — MEASURED, SAFE-AS-IS.** A 48-fit Totoro characterization
+> (`docs/dev-log/recovery-checkpoints/2026-07-21-smoke-rss-order-statistic-characterization-predeclaration.md`,
+> RESULT) confirms the order-statistic inflation is real but small: top-rung peak RSS is 783 MB
+> (sd 11), the 4-vs-1 inflation is ~12 MB (1.5%), and on Totoro the RSS-derived worker count (~365)
+> stays ~4× below the 96 cap — RSS is not the binding term. `attempts_per_rung = 4` stands. Bounded-
+> memory caveat: RSS only binds below ~106 GB available, and the `workers<1` floor only below ~1.1 GB.
+> The original (pre-measurement) risk statement is retained below for the record.
+
+> **ORIGINAL OPEN-RISK STATEMENT (now discharged by the measurement above). The 16-row layout may trade the count guard
 > for the RSS floor guard.** `recommend_workers()`'s `max(rss)`
 > (`tools/run-v07-genomic-recovery-v3.sh:559,575`) is a maximum over *every* attempt
 > counted, not a per-`n` maximum. RSS at fixed `n` is a random variable (allocator jitter,
