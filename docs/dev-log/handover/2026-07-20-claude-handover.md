@@ -19,7 +19,8 @@ drew four official smoke seeds and stopped at `RC=21`: `fewer than 16 completed 
 evidence: do not repair, restart, resume, subset, pool, read as a diagnostic input, or reuse them.
 
 The durable governing decision is brain **D-68**: D1 is paused; no fifth attempt may be designed until the
-failure mode is named. That source-level diagnosis is now complete, but it does **not** authorize a successor.
+failure mode is named. Brain **D-70** now preserves the verified failure mechanism and retirement boundary.
+That source-level diagnosis is complete, but it does **not** authorize a successor.
 
 ## What was accomplished
 
@@ -151,7 +152,7 @@ part of this D1 handover. The standing D1 instruction is no new PR / no merge to
 - `docs/dev-log/after-task/2026-07-20-v07-d1-smoke-contract-arity-diagnosis.md`
 - `docs/dev-log/after-task/2026-07-20-v07-d1-reseal4-postdraw-smoke-retirement.md`
 - `docs/dev-log/handover/2026-07-20-d1-reseal4-postdraw-retirement.md`
-- Brain: `[[DECISIONS#D-68]]`, `[[journal/2026-07-20]]`, and `[[AGENT_LOG]]`.
+- Brain: `[[DECISIONS#D-68]]`, `[[DECISIONS#D-70]]`, `[[journal/2026-07-20]]`, and `[[AGENT_LOG]]`.
 
 ## How to resume
 
