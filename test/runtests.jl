@@ -4234,6 +4234,182 @@ end
     end
 end
 
+@testset "fit_ai_reml graceful stop on indefinite MME (non-positive-definite precision)" begin
+    # A supplied precision with a negative eigenvalue — e.g. a numerically non-positive-definite
+    # genomic Ginv (common for unblended G matrices) — makes the mixed-model-equation coefficient
+    # matrix indefinite, so the main AI-Newton loop's `cholesky(...; check = true)` throws
+    # PosDefException. Before the guard this crashed `fit_ai_reml` with an UNCAUGHT exception; it
+    # must instead STOP GRACEFULLY — finite positive variance components, converged = false,
+    # termination_reason "nonpositive_definite_mme" — mirroring the EM-warmup loop's existing
+    # PosDefException guard and the other boundary graceful-stops (step_halving_exhausted,
+    # nonfinite_ai_step). Diagnosed 2026-07-24 (Gauss audit §4).
+    n = 6
+    indef_Ainv = Matrix(Diagonal([1.0, 1.0, 1.0, 1.0, 1.0, -5.0]))   # symmetric, indefinite
+    @test !isposdef(Symmetric(indef_Ainv))
+    Xi = ones(n, 1); Zi = sparse(1.0I, n, n); yi = collect(1.0:n)
+    ispec = animal_model_spec(yi, Xi, Zi, indef_Ainv; ids = 1:n, method = :REML)
+
+    res = HSquared._fit_ai_reml_diagnostics(ispec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test res.diagnostics.termination_reason == "nonpositive_definite_mme"
+    @test res.fit.converged == false
+    @test res.fit.optimizer_status == "not_converged"
+    # V1-REML boundary contract: finite, POSITIVE variance components, never NaN
+    @test isfinite(res.fit.variance_components.sigma_a2) && res.fit.variance_components.sigma_a2 > 0
+    @test isfinite(res.fit.variance_components.sigma_e2) && res.fit.variance_components.sigma_e2 > 0
+
+    # the public wrapper must also return gracefully rather than throw
+    pub = fit_ai_reml(ispec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test pub.converged == false
+    @test isfinite(pub.variance_components.sigma_a2) && pub.variance_components.sigma_a2 > 0
+    @test isfinite(pub.variance_components.sigma_e2) && pub.variance_components.sigma_e2 > 0
+end
+
+@testset "fit_sparse_multi_effect_aireml graceful stop on indefinite MME (sibling guard)" begin
+    # Sibling of the single-effect guard above: the MULTI-effect AI-REML fit's main-loop Cholesky
+    # must also catch PosDefException from an indefinite multi-effect MME — a non-positive-definite
+    # supplied precision in one effect — and stop gracefully (finite positive variance components,
+    # converged = false, NaN loglik) instead of crashing with an uncaught exception. Its EM-warmup
+    # loop already guarded this; the main loop did not until 2026-07-24 (Gauss audit §4 sibling).
+    nm = 6
+    indef = Matrix(Diagonal([1.0, 1.0, 1.0, 1.0, 1.0, -5.0]))   # indefinite precision, effect 1
+    pd = Matrix(1.0I, nm, nm)                                    # valid PD precision, effect 2
+    @test !isposdef(Symmetric(indef))
+    Zm = sparse(1.0I, nm, nm); Xm = ones(nm, 1); ym = collect(1.0:nm)
+    res = fit_sparse_multi_effect_aireml(ym, Xm, [(Zm, indef), (Zm, pd)]; initial = [1.0, 1.0, 1.0])
+    @test res.converged == false
+    @test res.status == "not_converged"
+    # finite, POSITIVE variance components, never NaN (boundary contract)
+    @test all(isfinite, res.variance_components.sigmas) && all(>(0), res.variance_components.sigmas)
+    @test isfinite(res.variance_components.sigma_e2) && res.variance_components.sigma_e2 > 0
+end
+
+@testset "fit_ai_reml iteration-count guard (well-identified real signal converges fast)" begin
+    # Regression guard for CONVERGENCE SPEED on a WELL-IDENTIFIED problem. A prior
+    # `@test ai.iterations < 50` was removed (commit 1808e802) because a deliberately FLAT-ridge
+    # 8-animal fixture legitimately needs ~69 iterations — which left nothing to catch a silent
+    # convergence-speed regression (e.g. the scale-invariant #180 relative-change criterion being
+    # broken, which would send a well-identified fit to the 100-iteration cap). This fixture has
+    # REAL h²≈0.4 genetic signal — breeding values Mendelian-sampled down the pedigree — so the
+    # REML optimum is INTERIOR and the AI/Newton step converges in a handful of iterations.
+    # Deterministic (seeded). Measured: 11 iterations at n=300. Diagnosed 2026-07-24 (Gauss audit
+    # "Validation gap"; docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md).
+    rng = MersenneTwister(20260724)
+    ni = 300
+    si = zeros(Int, ni); di = zeros(Int, ni)
+    for i in 3:ni
+        si[i] = rand(rng, 1:i-1); di[i] = rand(rng, 1:i-1)
+        while di[i] == si[i]; di[i] = rand(rng, 1:i-1); end
+    end
+    Ai = pedigree_inverse(collect(1:ni), si, di)
+    ui = zeros(ni)
+    for i in 1:ni
+        if si[i] == 0 && di[i] == 0
+            ui[i] = sqrt(0.4) * randn(rng)                              # founder breeding value, var σ²a
+        else
+            ui[i] = 0.5 * (ui[si[i]] + ui[di[i]]) + sqrt(0.2) * randn(rng)   # Mendelian sampling
+        end
+    end
+    yi = 10.0 .+ ui .+ sqrt(0.6) .* randn(rng, ni)                      # h² = 0.4 / (0.4 + 0.6)
+    Xi = ones(ni, 1); Zi = sparse(1.0I, ni, ni)
+    spec = animal_model_spec(yi, Xi, Zi, Ai; ids = 1:ni, method = :REML)
+
+    res = HSquared._fit_ai_reml_diagnostics(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    @test res.fit.converged
+    @test res.diagnostics.termination_reason == "relative_change_tolerance"
+    @test res.fit.iterations <= 15                                      # measured 11; margin, but well under the 100 cap
+    # interior, well-identified optimum: both variance components bounded away from 0
+    @test res.fit.variance_components.sigma_a2 > 0.05
+    @test res.fit.variance_components.sigma_e2 > 0.05
+end
+
+@testset "fit_eigen_reml (one-factorization single-effect REML) matches AI-REML" begin
+    # The eigen-once fitter (eigendecompose A once, profile the variance ratio) must recover the
+    # SAME variance components as fit_ai_reml on the standard Z=I animal model, and honor its
+    # preconditions (Z=I, dense-size guard). Validated numerically off-CI (bench_eigen.jl: Δσ² ~1e-8,
+    # eigen wins 6.95× at random n=10000); this pins the equivalence + guards in-CI. Deterministic.
+    rng = MersenneTwister(20260724)
+    ne = 300
+    se_ = zeros(Int, ne); de_ = zeros(Int, ne)
+    for i in 3:ne
+        se_[i] = rand(rng, 1:i-1); de_[i] = rand(rng, 1:i-1)
+        while de_[i] == se_[i]; de_[i] = rand(rng, 1:i-1); end
+    end
+    Ae = pedigree_inverse(collect(1:ne), se_, de_)
+    ue = zeros(ne)
+    for i in 1:ne
+        (se_[i] == 0 && de_[i] == 0) ? (ue[i] = sqrt(0.4) * randn(rng)) :
+            (ue[i] = 0.5 * (ue[se_[i]] + ue[de_[i]]) + sqrt(0.2) * randn(rng))
+    end
+    ye = 10.0 .+ ue .+ sqrt(0.6) .* randn(rng, ne)
+    Xe = ones(ne, 1); Ze = sparse(1.0I, ne, ne)
+    spec = animal_model_spec(ye, Xe, Ze, Ae; ids = 1:ne, method = :REML)
+
+    fe = fit_eigen_reml(spec)
+    fa = fit_ai_reml(spec; initial = (sigma_a2 = 0.8, sigma_e2 = 0.8))
+
+    # (a) eigen-once recovers the SAME optimum as sparse AI-REML
+    @test fe.converged
+    @test fe.variance_components.sigma_a2 ≈ fa.variance_components.sigma_a2 rtol = 1e-6
+    @test fe.variance_components.sigma_e2 ≈ fa.variance_components.sigma_e2 rtol = 1e-6
+    @test fe.target == :eigen_reml
+
+    # (b) the standard AnimalModelFit extractors work on the eigen fit
+    @test length(breeding_values(fe).values) == ne
+    @test length(fixed_effects(fe)) == 1
+
+    # (c) precondition: Z ≠ I is rejected with a clear error (general design → fit_ai_reml)
+    Znot = sparse(1.0I, ne, ne); Znot[1, 1] = 2.0
+    spec_bad = animal_model_spec(ye, Xe, Znot, Ae; ids = 1:ne, method = :REML)
+    @test_throws ArgumentError fit_eigen_reml(spec_bad)
+
+    # (d) dense-size guard fires below the threshold
+    @test_throws ArgumentError fit_eigen_reml(spec; max_dense_n = 10)
+
+    # (e) fit_animal_model(target = :eigen) routes to fit_eigen_reml (explicit; NOT :auto)
+    fe2 = fit_animal_model(spec; target = :eigen)
+    @test fe2.target == :eigen_reml
+    @test fe2.variance_components.sigma_a2 ≈ fe.variance_components.sigma_a2 rtol = 1e-10
+    @test_throws ArgumentError fit_animal_model(spec; target = :not_a_target)
+end
+
+@testset "fit_animal_model target = :auto routes eigen-vs-sparse by fill-in (not n)" begin
+    # :auto picks the eigen-once path ONLY on a dense-feasible Z=I animal model whose MME is
+    # HIGH-FILL-IN (nnz(L)/n > threshold); everything else → sparse AI-REML. Routing is by the fill
+    # proxy, not n (eigen loses on well-structured pedigrees at every n). Measured crossover:
+    # well-structured nnz(L)/n≈17-19 (sparse wins), random ≥76 (eigen wins). Diagnosed 2026-07-24.
+    function _ped(n; window, seed = 7)
+        rng = MersenneTwister(seed); s = zeros(Int, n); d = zeros(Int, n)
+        for i in 3:n
+            lo = window > 0 ? max(1, i - window) : 1
+            s[i] = rand(rng, lo:i-1); d[i] = rand(rng, lo:i-1)
+            while d[i] == s[i]; d[i] = rand(rng, lo:i-1); end
+        end
+        Ainv = pedigree_inverse(collect(1:n), s, d); u = zeros(n)
+        for i in 1:n
+            (s[i] == 0 && d[i] == 0) ? (u[i] = sqrt(0.4) * randn(rng)) :
+                (u[i] = 0.5 * (u[s[i]] + u[d[i]]) + sqrt(0.2) * randn(rng))
+        end
+        y = 10.0 .+ u .+ sqrt(0.6) .* randn(rng, n)
+        animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), Ainv; ids = collect(1:n), method = :REML)
+    end
+    low = _ped(500; window = 50)     # well-structured, low fill → sparse AI-REML
+    high = _ped(2000; window = 0)    # random, high fill         → eigen-once
+
+    @test HSquared._auto_reml_route(low) == :ai_reml
+    @test HSquared._auto_reml_route(high) == :eigen_reml
+    @test fit_animal_model(low; target = :auto).target == :ai_reml
+    @test fit_animal_model(high; target = :auto).target == :eigen_reml
+
+    # non-Z=I never routes to the dense eigen path (eigen requires Z=I)
+    nlo = length(low.y)
+    Zbad = sparse(1.0I, nlo, nlo); Zbad[1, 1] = 2.0
+    badspec = animal_model_spec(low.y, ones(nlo, 1), Zbad, low.Ainv; ids = 1:nlo, method = :REML)
+    @test HSquared._auto_reml_route(badspec) == :ai_reml
+
+    # :auto is zero-config (it selects the fitter), so optimizer kwargs are rejected
+    @test_throws ArgumentError fit_animal_model(low; target = :auto, iterations = 50)
+end
+
 @testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin
     # Deterministic ~420-animal half-sib pedigree. The existing AI-REML / selinv tests
     # use ≤110 animals; this hardens the SPARSE fit path (`fit_ai_reml` → sparse CHOLMOD

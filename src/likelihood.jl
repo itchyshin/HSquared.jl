@@ -333,6 +333,102 @@ function fit_sparse_reml(
 end
 
 """
+    fit_eigen_reml(spec; max_dense_n = 20_000)
+
+Estimate the single-effect Gaussian animal-model variance components by a **one-factorization**
+eigendecomposition path (the EMMA/GEMMA-style canonical transformation).
+
+`A = Ainv⁻¹` is eigendecomposed **once** (`A = U Λ Uᵀ`; the eigenvectors of `A` are the eigenvectors of
+`Ainv` and the eigenvalues are reciprocated), `y` and `X` are rotated by `Uᵀ`, and the REML profile
+log-likelihood is then a sum over `n` scalars `σ²a·λᵢ + σ²e` — so every objective evaluation is `O(n)`
+with NO mixed-model-equation factorization and NO selected inverse. A 1-D optimisation over the variance
+ratio recovers the same optimum as [`fit_ai_reml`](@ref) (validated to ~1e-8).
+
+Because the eigendecomposition is dense `O(n³)` and INDEPENDENT of the pedigree sparsity, this path beats
+the sparse AI-REML iteration exactly when the sparse factorization / selected inverse blow up (high fill-in
+or poorly-structured pedigrees at moderate `n`) and loses on well-structured pedigrees or large `n` (dense
+`n³` + memory). Experimental, REML-only, and restricted to `Z = I` (one record per animal); use
+[`fit_ai_reml`](@ref) for the general design or large sparse pedigrees. `max_dense_n` guards the dense path.
+"""
+function fit_eigen_reml(spec::AnimalModelSpec; max_dense_n::Integer = 20_000)
+    spec.method == :REML ||
+        throw(ArgumentError("fit_eigen_reml requires spec.method == :REML"))
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    p < n ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    n <= max_dense_n ||
+        throw(ArgumentError("fit_eigen_reml densely eigendecomposes A (O(n^3)); n=$n exceeds " *
+                            "max_dense_n=$max_dense_n — use fit_ai_reml for large sparse pedigrees"))
+    Z = sparse(Float64.(spec.Z))
+    Z == sparse(1.0I, n, n) ||
+        throw(ArgumentError("fit_eigen_reml requires Z = I (one record per animal); " *
+                            "use fit_ai_reml for the general design"))
+
+    # THE one dense factorization: eigen(Ainv). Eigenvectors of A = Ainv⁻¹ are those of Ainv;
+    # eigenvalues of A are the reciprocals. Independent of the variance components, so it is done once.
+    decomposition = eigen(Symmetric(Matrix(Float64.(spec.Ainv))))
+    all(>(0), decomposition.values) ||
+        throw(ArgumentError("Ainv must be positive definite"))
+    vectors_t = transpose(decomposition.vectors)
+    context = (eigenvalues = 1.0 ./ decomposition.values,
+               y = vectors_t * Float64.(spec.y),
+               X = vectors_t * Matrix(Float64.(spec.X)), n = n, p = p)
+
+    objective(r) = (part = _genomic_profile_reml(context, r); part === nothing ? Inf : -part.loglik)
+    result = optimize(objective, 1e-8, 1.0 - 1e-8; abs_tol = 1e-12)
+    ratio = Optim.minimizer(result)
+    part = _genomic_profile_reml(context, ratio)
+    part === nothing &&
+        throw(ArgumentError("eigen REML profile is non-finite at the optimum"))
+    sigma_a2 = ratio * part.t_hat
+    sigma_e2 = (1.0 - ratio) * part.t_hat
+    converged = Optim.converged(result)
+    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+
+    return AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+        converged,
+        converged ? "converged" : "not_converged",
+        Optim.iterations(result),
+        :eigen_reml,
+        true,
+        false,
+        :estimated_eigen_reml,
+    )
+end
+
+# Heuristic route for `fit_animal_model(...; target = :auto)`: choose the eigen-once single-effect
+# path (`fit_eigen_reml`) over sparse AI-REML ONLY when it is expected to win — a dense-feasible
+# `Z = I` animal model whose MME is HIGH-FILL-IN. Fill is measured by `nnz(L)/n` of the
+# (variance-independent) MME Cholesky, NOT by `n`: eigen-once loses on well-structured pedigrees at
+# every `n`. Measured crossover (2026-07-24, `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`
+# + fill scan): well-structured pedigrees sit at `nnz(L)/n ≈ 17–19` and sparse AI-REML wins; the
+# eigen-once path wins on random/high-fill pedigrees at `nnz(L)/n ≥ 76` (n=2000..10000). The
+# threshold sits conservatively inside that gap, biased toward the validated sparse default —
+# mis-routing to sparse is a modest slowdown, mis-routing to eigen wastes the O(n³) dense path.
+# EXPERIMENTAL first-pass heuristic; the exact crossover is a joint fill×n surface (V1-EIGEN-REML).
+const _AUTO_EIGEN_FILL_THRESHOLD = 60.0
+
+function _auto_reml_route(spec::AnimalModelSpec;
+                          max_dense_n::Integer = 20_000,
+                          fill_threshold::Real = _AUTO_EIGEN_FILL_THRESHOLD)
+    n = length(spec.y)
+    # eigen-once is only a candidate for the dense-feasible standard Z = I animal model
+    (n <= max_dense_n && sparse(Float64.(spec.Z)) == sparse(1.0I, n, n)) || return :ai_reml
+    lhs, _, _ = _sparse_mme_system(spec, 1.0, 1.0)   # MME sparsity pattern is variance-independent
+    factor = try
+        cholesky(Symmetric(lhs); check = true)
+    catch err
+        err isa LinearAlgebra.PosDefException || rethrow(err)
+        return :ai_reml                              # indefinite MME → let the sparse path report it
+    end
+    return (nnz(sparse(factor.L)) / n) > fill_threshold ? :eigen_reml : :ai_reml
+end
+
+"""
     fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
                 iterations = 100, tol = 1e-8)
 
@@ -446,13 +542,32 @@ function _fit_ai_reml_diagnostics(
         rel < tol && break
     end
 
+    # Per-iteration score-norm + variance-component trajectory (v0.7 optimizer-localization
+    # diagnostics). Append-only: the public `fit_ai_reml` wrapper returns only `.fit`, so this
+    # adds nothing to the public path. It distinguishes a healthy interior fit (score falls and
+    # the relative-change criterion trips within a few iterations) from σ²→0 boundary behaviour
+    # (a monotone march to the edge that exhausts step-halving). One row per Newton iteration:
+    # (iter, score-norm at the entry σ², σ²a, σ²e, relative change that produced this entry).
+    score_trace = Tuple{Int,Float64,Float64,Float64,Float64}[]
     converged = false
     iters = 0
     for it in 1:iterations
         iters = it
         lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
         factorizations += 1
-        factor = cholesky(Symmetric(lhs); check = true)
+        # Guard the main-loop factorization the same way the EM-warmup loop above does. An
+        # indefinite mixed-model-equation coefficient matrix — e.g. from a numerically non-
+        # positive-definite supplied precision such as an unblended genomic Ginv — makes
+        # cholesky(...; check = true) throw PosDefException. Stop gracefully at the current
+        # finite, positive variance components with converged = false (the V1-REML boundary
+        # contract), rather than crashing fit_ai_reml with an uncaught exception.
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            termination_reason = "nonpositive_definite_mme"
+            break
+        end
         solution = factor \ rhs
         beta = solution[1:nfixed]
         u = solution[(nfixed + 1):end]
@@ -467,6 +582,7 @@ function _fit_ai_reml_diagnostics(
         ai_score_a = score_a
         ai_score_e = score_e
         ai_score_norm = hypot(score_a, score_e)
+        push!(score_trace, (it, ai_score_norm, sigma_a2, sigma_e2, last_relative_change))
         if ai_score_norm < tol
             converged = true
             termination_reason = "score_tolerance"
@@ -526,7 +642,16 @@ function _fit_ai_reml_diagnostics(
         end
     end
 
-    likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    # On the indefinite-MME stop the coefficient matrix is not positive definite at these
+    # variance components, so sparse_reml_loglik would itself throw the same PosDefException.
+    # Report a NaN loglik alongside the finite, positive variance components and
+    # converged = false, instead of crashing; every other path keeps the exact original
+    # likelihood computation (byte-identical).
+    likelihood = if termination_reason == "nonpositive_definite_mme"
+        GaussianLikelihoodResult(NaN, fill(NaN, nfixed), sigma_a2, sigma_e2, :REML, nobs, nfixed)
+    else
+        sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    end
     status = converged ? "converged" : "not_converged"
     fit = AnimalModelFit(
         spec,
@@ -551,6 +676,7 @@ function _fit_ai_reml_diagnostics(
             ai_score_a = ai_score_a,
             ai_score_e = ai_score_e,
             ai_score_norm = ai_score_norm,
+            score_trace = score_trace,
         ),
     )
 end
@@ -2015,10 +2141,22 @@ function fit_sparse_multi_effect_aireml(
 
     converged = false
     iters = 0
+    mme_indefinite = false
     for it in 1:iterations
         iters = it
         lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
-        factor = cholesky(Symmetric(lhs); check = true)
+        # Guard the main-loop factorization the same way the EM-warmup loop above does. An
+        # indefinite multi-effect MME — e.g. from a non-positive-definite supplied precision —
+        # makes cholesky(...; check = true) throw PosDefException. Stop gracefully at the current
+        # finite, positive variance components with converged = false, mirroring the single-effect
+        # fit_ai_reml guard, rather than crashing with an uncaught exception.
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            mme_indefinite = true
+            break
+        end
         solution = factor \ rhs
         urand = solution[(nfixed + 1):end]
         e = yv .- Xs * solution[1:nfixed] .- Zf * urand
@@ -2076,7 +2214,14 @@ function fit_sparse_multi_effect_aireml(
         end
     end
 
-    loglik, beta, us = sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)
+    # On the indefinite-MME stop, sparse_multi_reml_loglik would rethrow the same
+    # PosDefException; report a NaN loglik / EBVs alongside the finite, positive variance
+    # components and converged = false instead of crashing. Every other path is unchanged.
+    loglik, beta, us = if mme_indefinite
+        (NaN, fill(NaN, nfixed), [fill(NaN, qs[i]) for i in 1:K])
+    else
+        sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)
+    end
     total = sum(sigmas) + sigma_e2
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
     status = converged ? "converged" : "not_converged"
@@ -2528,6 +2673,21 @@ function fit_animal_model(
         variance_components === nothing ||
             throw(ArgumentError("variance_components is not used when target = :ai_reml"))
         return fit_ai_reml(spec; kwargs...)
+    end
+
+    if normalized_target == :eigen_reml
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is not used when target = :eigen_reml"))
+        return fit_eigen_reml(spec; kwargs...)
+    end
+
+    if normalized_target == :auto
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is not used when target = :auto"))
+        isempty(kwargs) ||
+            throw(ArgumentError("target = :auto selects the fitter and its defaults; pass " *
+                                "target = :eigen or :ai_reml to set optimizer keyword arguments"))
+        return _auto_reml_route(spec) == :eigen_reml ? fit_eigen_reml(spec) : fit_ai_reml(spec)
     end
 
     isempty(kwargs) ||
@@ -3251,8 +3411,10 @@ function _coerce_fit_target(target::Symbol)
     target in (:variance_components, :dense_validation) && return :variance_components
     target in (:sparse_reml, :sparse_reml_validation) && return :sparse_reml
     target in (:ai_reml, :ai_reml_validation) && return :ai_reml
+    target in (:eigen, :eigen_reml) && return :eigen_reml
+    target == :auto && return :auto
     target == :henderson_mme && return :henderson_mme
-    throw(ArgumentError("target must be :variance_components, :sparse_reml, :ai_reml, or :henderson_mme"))
+    throw(ArgumentError("target must be :variance_components, :sparse_reml, :ai_reml, :eigen_reml, :auto, or :henderson_mme"))
 end
 
 function _coerce_fit_target(target::AbstractString)
