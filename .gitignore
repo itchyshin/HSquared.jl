@@ -33,6 +33,7 @@
 /comparator/blupf90_direct_maternal/
 /comparator/blupf90_neffect/
 /comparator/sommer_neffect/
+/comparator/sommer_eigen/
 /comparator/sommer_rr/
 /comparator/bin/
 /sim/*.log.txt
