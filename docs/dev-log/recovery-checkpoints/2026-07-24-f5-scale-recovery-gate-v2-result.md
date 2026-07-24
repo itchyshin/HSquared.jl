@@ -41,6 +41,22 @@ evidence package is **complete**. It still promotes NOTHING — a production-def
 G10 + the R bridge; scope stays the low-fill regime (the high-fill n>20k tail is the documented,
 deferred F6 follow-on).
 
+## Integrity check + residual scope notes (for G10)
+A fresh spawned Rose audit of the **v1→v2 re-declaration** returned **LEGITIMATE CORRECTION** — v1's
+banked negative is preserved, the recovery legs (A/B/X) are byte-identical, only the mis-specified
+Leg-C criterion changed (plus fresh disjoint seeds), frozen before running, fences held (count 5, no
+flip, foreign files untouched). It is disciplined self-correction, not a post-hoc relaxation. Three
+residual notes it raised, for the owner to weigh at G10:
+- **Leg C tests the graceful boundary CONTRACT** (finite · non-throwing · non-negative), NOT boundary
+  ACCURACY — a finite-but-wrong σ̂² would pass the contract test. The per-seed σ²a≈1e-14 / σ²e≈0.01
+  detail above shows the boundary values ARE correct here, transparently, but boundary accuracy is not
+  itself a gate criterion.
+- The gate run logs are committed for reproducibility (`sim/drac/results/f5_gate_v1.log`,
+  `…f5_gate_v2.log`); both gate scripts are deterministic + frozen (v1 `77ecad3a`, v2 `4fb6fb66`).
+- The row-108 `converged=false` boundary wording (#182 part ii) is regime-specific to the
+  *exactly-degenerate* fixture; the near-constant-y (1e-6-noise) DGP legitimately admits a tiny
+  positive optimum, which is why v2's Leg C tests the finite/non-throwing/non-negative contract.
+
 > Related: `2026-07-24-f5-scale-recovery-gate-v2-predeclaration.md` · v1 (banked negative)
 > `2026-07-24-f5-scale-recovery-gate-result.md` · `2026-07-24-f8-sommer-aireml-comparator.md` ·
 > `2026-07-24-f0-adversarial-highfill-decision.md`.

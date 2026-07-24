@@ -10,7 +10,9 @@ The production-scale sparse-fitting **evidence package for `fit_ai_reml` is asse
 and STAGED — NOTHING promoted.** `public_covered_count` stays **5**; the capability-status row stays
 `experimental`. The headline science is strong, and after a corrected re-declaration the pre-declared
 gate **PASSES** (v2) — so the package is complete and gate-supported, pending only the owner's G10 +
-the R bridge.
+the R bridge. Two fresh spawned Rose audits back it: the package audit (CLEAR-WITH-CHANGES, applied)
+and a dedicated **v1→v2 integrity audit** that returned **LEGITIMATE CORRECTION** (not a relaxation),
+with 3 residual scope notes recorded for G10.
 
 ## What the owner (G10) is looking at — honest
 - **Strong positive evidence:** `fit_ai_reml` recovers truth at **q=100,000 to 0.49%/0.05%** (F5 Leg

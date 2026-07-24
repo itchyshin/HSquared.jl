@@ -1,0 +1,2 @@
+q	nnz_Ainv	fill_nnzL_over_n	ainv_s	chol_s	fit_s	pcg_s	selinvPEV_s	peakRSS_MB	sigma_a2	sigma_e2	converged	nfounder_frac	host	julia
+20000	139366	471.101	0.1299	0.3464	1528.7535	0.0123	380.9847	1313.6	0.975194	1.027814	true	0.0050	totoro	1.12.6

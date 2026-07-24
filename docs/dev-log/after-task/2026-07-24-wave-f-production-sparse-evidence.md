@@ -58,7 +58,12 @@ became: **measure the real scale behaviour, gate recovery at scale, and stage** 
   untouched, nothing promoted, F6 honestly deferred). Applied its 3 fixes: 2 F0 wording softenings
   (dropped "already production-scale"; named the eigen-`:auto` mitigation's unproven->60 caveat) +
   the F5 frozen-header erratum (Leg A is the executed `:relative` recovery test, not bias/MCSE).
-  Rose's pending-dependency (the F5 B/C/X legs) has since resolved to the banked-negative above.
+  Rose's pending-dependency (the F5 B/C/X legs) resolved: v1 banked negative, then the corrected v2
+  PASSED. A SECOND fresh spawned Rose audit — of the v1→v2 re-declaration specifically — returned
+  **LEGITIMATE CORRECTION** (v1 preserved, recovery legs byte-identical, only the mis-specified Leg-C
+  criterion + fresh seeds changed, frozen before running, fences held): disciplined self-correction,
+  not a relaxation. 3 residual scope notes recorded for G10 (in the v2 result doc). Gate run logs
+  committed for reproducibility.
 
 ## Evidence inventory (STAGED, nothing promoted)
 | Leg | Artifact | Result |

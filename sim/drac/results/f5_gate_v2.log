@@ -1,0 +1,122 @@
+F5 v2 (corrected) production-scale recovery gate — truth (σ²a,σ²e)=(1.0,1.5) h²=0.4
+host=totoro julia=1.12.6 threads=1
+  A(scale q=100000) seed 20268500 (1/48): σ²a=1.0094 σ²e=1.4915 conv=true
+  A(scale q=100000) seed 20268501 (2/48): σ²a=1.0439 σ²e=1.4706 conv=true
+  A(scale q=100000) seed 20268502 (3/48): σ²a=0.9978 σ²e=1.4962 conv=true
+  A(scale q=100000) seed 20268503 (4/48): σ²a=1.0091 σ²e=1.4789 conv=true
+  A(scale q=100000) seed 20268504 (5/48): σ²a=0.9777 σ²e=1.5176 conv=true
+  A(scale q=100000) seed 20268505 (6/48): σ²a=1.0337 σ²e=1.4664 conv=true
+  A(scale q=100000) seed 20268506 (7/48): σ²a=0.9835 σ²e=1.5095 conv=true
+  A(scale q=100000) seed 20268507 (8/48): σ²a=0.9939 σ²e=1.5008 conv=true
+  A(scale q=100000) seed 20268508 (9/48): σ²a=0.9973 σ²e=1.4930 conv=true
+  A(scale q=100000) seed 20268509 (10/48): σ²a=0.9864 σ²e=1.5149 conv=true
+  A(scale q=100000) seed 20268510 (11/48): σ²a=0.9584 σ²e=1.5128 conv=true
+  A(scale q=100000) seed 20268511 (12/48): σ²a=0.9840 σ²e=1.5146 conv=true
+  A(scale q=100000) seed 20268512 (13/48): σ²a=1.0403 σ²e=1.4861 conv=true
+  A(scale q=100000) seed 20268513 (14/48): σ²a=0.9775 σ²e=1.5105 conv=true
+  A(scale q=100000) seed 20268514 (15/48): σ²a=1.0177 σ²e=1.4962 conv=true
+  A(scale q=100000) seed 20268515 (16/48): σ²a=1.0003 σ²e=1.5116 conv=true
+  A(scale q=100000) seed 20268516 (17/48): σ²a=0.9986 σ²e=1.5110 conv=true
+  A(scale q=100000) seed 20268517 (18/48): σ²a=1.0339 σ²e=1.4801 conv=true
+  A(scale q=100000) seed 20268518 (19/48): σ²a=0.9885 σ²e=1.5327 conv=true
+  A(scale q=100000) seed 20268519 (20/48): σ²a=0.9862 σ²e=1.5077 conv=true
+  A(scale q=100000) seed 20268520 (21/48): σ²a=0.9782 σ²e=1.5280 conv=true
+  A(scale q=100000) seed 20268521 (22/48): σ²a=1.0039 σ²e=1.4974 conv=true
+  A(scale q=100000) seed 20268522 (23/48): σ²a=1.0051 σ²e=1.4949 conv=true
+  A(scale q=100000) seed 20268523 (24/48): σ²a=0.9924 σ²e=1.4889 conv=true
+  A(scale q=100000) seed 20268524 (25/48): σ²a=1.0277 σ²e=1.4962 conv=true
+  A(scale q=100000) seed 20268525 (26/48): σ²a=1.0160 σ²e=1.5077 conv=true
+  A(scale q=100000) seed 20268526 (27/48): σ²a=1.0079 σ²e=1.4881 conv=true
+  A(scale q=100000) seed 20268527 (28/48): σ²a=1.0296 σ²e=1.4855 conv=true
+  A(scale q=100000) seed 20268528 (29/48): σ²a=1.0223 σ²e=1.4821 conv=true
+  A(scale q=100000) seed 20268529 (30/48): σ²a=1.0102 σ²e=1.5048 conv=true
+  A(scale q=100000) seed 20268530 (31/48): σ²a=1.0039 σ²e=1.4866 conv=true
+  A(scale q=100000) seed 20268531 (32/48): σ²a=0.9907 σ²e=1.4963 conv=true
+  A(scale q=100000) seed 20268532 (33/48): σ²a=0.9575 σ²e=1.5145 conv=true
+  A(scale q=100000) seed 20268533 (34/48): σ²a=0.9815 σ²e=1.5057 conv=true
+  A(scale q=100000) seed 20268534 (35/48): σ²a=1.0253 σ²e=1.4884 conv=true
+  A(scale q=100000) seed 20268535 (36/48): σ²a=0.9965 σ²e=1.5013 conv=true
+  A(scale q=100000) seed 20268536 (37/48): σ²a=1.0313 σ²e=1.4899 conv=true
+  A(scale q=100000) seed 20268537 (38/48): σ²a=0.9970 σ²e=1.5005 conv=true
+  A(scale q=100000) seed 20268538 (39/48): σ²a=1.0246 σ²e=1.4861 conv=true
+  A(scale q=100000) seed 20268539 (40/48): σ²a=0.9730 σ²e=1.5127 conv=true
+  A(scale q=100000) seed 20268540 (41/48): σ²a=1.0072 σ²e=1.4884 conv=true
+  A(scale q=100000) seed 20268541 (42/48): σ²a=0.9932 σ²e=1.5038 conv=true
+  A(scale q=100000) seed 20268542 (43/48): σ²a=0.9947 σ²e=1.4972 conv=true
+  A(scale q=100000) seed 20268543 (44/48): σ²a=1.0136 σ²e=1.4950 conv=true
+  A(scale q=100000) seed 20268544 (45/48): σ²a=0.9775 σ²e=1.5061 conv=true
+  A(scale q=100000) seed 20268545 (46/48): σ²a=0.9795 σ²e=1.5210 conv=true
+  A(scale q=100000) seed 20268546 (47/48): σ²a=1.0153 σ²e=1.5000 conv=true
+  A(scale q=100000) seed 20268547 (48/48): σ²a=1.0197 σ²e=1.4830 conv=true
+  Leg A(scale q=100000): converged 48/48
+    σ²a  mean=1.0019 truth=1.00 bias=+0.0019 MCSE=0.0030 |bias|/MCSE=0.65  PASS
+    σ²e  mean=1.4990 truth=1.50 bias=-0.0010 MCSE=0.0020 |bias|/MCSE=0.48  PASS
+    mean rel.err σ²a=0.0019 σ²e=0.0006 (tol 0.05); per-seed max rel.err σ²a=0.0439 σ²e=0.0224
+  Leg A(scale q=100000) GATE (relative): PASS
+  B(deep n≈4500) seed 20268600 (1/48): σ²a=1.1270 σ²e=1.4443 conv=true
+  B(deep n≈4500) seed 20268601 (2/48): σ²a=0.9029 σ²e=1.5487 conv=true
+  B(deep n≈4500) seed 20268602 (3/48): σ²a=0.9361 σ²e=1.4647 conv=true
+  B(deep n≈4500) seed 20268603 (4/48): σ²a=0.9714 σ²e=1.4566 conv=true
+  B(deep n≈4500) seed 20268604 (5/48): σ²a=1.0863 σ²e=1.4611 conv=true
+  B(deep n≈4500) seed 20268605 (6/48): σ²a=0.9675 σ²e=1.4976 conv=true
+  B(deep n≈4500) seed 20268606 (7/48): σ²a=0.9732 σ²e=1.4745 conv=true
+  B(deep n≈4500) seed 20268607 (8/48): σ²a=0.8524 σ²e=1.5491 conv=true
+  B(deep n≈4500) seed 20268608 (9/48): σ²a=0.9623 σ²e=1.5106 conv=true
+  B(deep n≈4500) seed 20268609 (10/48): σ²a=0.9146 σ²e=1.5585 conv=true
+  B(deep n≈4500) seed 20268610 (11/48): σ²a=1.1301 σ²e=1.4505 conv=true
+  B(deep n≈4500) seed 20268611 (12/48): σ²a=1.0321 σ²e=1.4457 conv=true
+  B(deep n≈4500) seed 20268612 (13/48): σ²a=0.9416 σ²e=1.5547 conv=true
+  B(deep n≈4500) seed 20268613 (14/48): σ²a=0.9622 σ²e=1.5343 conv=true
+  B(deep n≈4500) seed 20268614 (15/48): σ²a=0.9590 σ²e=1.4464 conv=true
+  B(deep n≈4500) seed 20268615 (16/48): σ²a=0.9565 σ²e=1.4407 conv=true
+  B(deep n≈4500) seed 20268616 (17/48): σ²a=0.9497 σ²e=1.6100 conv=true
+  B(deep n≈4500) seed 20268617 (18/48): σ²a=0.9098 σ²e=1.5363 conv=true
+  B(deep n≈4500) seed 20268618 (19/48): σ²a=1.0409 σ²e=1.5458 conv=true
+  B(deep n≈4500) seed 20268619 (20/48): σ²a=0.9360 σ²e=1.4860 conv=true
+  B(deep n≈4500) seed 20268620 (21/48): σ²a=1.0054 σ²e=1.4589 conv=true
+  B(deep n≈4500) seed 20268621 (22/48): σ²a=1.0166 σ²e=1.4141 conv=true
+  B(deep n≈4500) seed 20268622 (23/48): σ²a=1.0634 σ²e=1.4638 conv=true
+  B(deep n≈4500) seed 20268623 (24/48): σ²a=0.9978 σ²e=1.6071 conv=true
+  B(deep n≈4500) seed 20268624 (25/48): σ²a=0.9197 σ²e=1.6087 conv=true
+  B(deep n≈4500) seed 20268625 (26/48): σ²a=0.9505 σ²e=1.5373 conv=true
+  B(deep n≈4500) seed 20268626 (27/48): σ²a=0.9751 σ²e=1.5542 conv=true
+  B(deep n≈4500) seed 20268627 (28/48): σ²a=1.0936 σ²e=1.4076 conv=true
+  B(deep n≈4500) seed 20268628 (29/48): σ²a=0.9154 σ²e=1.5008 conv=true
+  B(deep n≈4500) seed 20268629 (30/48): σ²a=0.8957 σ²e=1.6119 conv=true
+  B(deep n≈4500) seed 20268630 (31/48): σ²a=0.9926 σ²e=1.5363 conv=true
+  B(deep n≈4500) seed 20268631 (32/48): σ²a=0.9569 σ²e=1.5428 conv=true
+  B(deep n≈4500) seed 20268632 (33/48): σ²a=1.0768 σ²e=1.5066 conv=true
+  B(deep n≈4500) seed 20268633 (34/48): σ²a=0.8591 σ²e=1.4759 conv=true
+  B(deep n≈4500) seed 20268634 (35/48): σ²a=0.9036 σ²e=1.6294 conv=true
+  B(deep n≈4500) seed 20268635 (36/48): σ²a=1.1450 σ²e=1.4345 conv=true
+  B(deep n≈4500) seed 20268636 (37/48): σ²a=1.1484 σ²e=1.3843 conv=true
+  B(deep n≈4500) seed 20268637 (38/48): σ²a=0.9153 σ²e=1.5345 conv=true
+  B(deep n≈4500) seed 20268638 (39/48): σ²a=0.9146 σ²e=1.4899 conv=true
+  B(deep n≈4500) seed 20268639 (40/48): σ²a=0.8821 σ²e=1.5392 conv=true
+  B(deep n≈4500) seed 20268640 (41/48): σ²a=1.0866 σ²e=1.3713 conv=true
+  B(deep n≈4500) seed 20268641 (42/48): σ²a=0.9910 σ²e=1.4857 conv=true
+  B(deep n≈4500) seed 20268642 (43/48): σ²a=1.0176 σ²e=1.5845 conv=true
+  B(deep n≈4500) seed 20268643 (44/48): σ²a=1.0887 σ²e=1.4375 conv=true
+  B(deep n≈4500) seed 20268644 (45/48): σ²a=1.0461 σ²e=1.5520 conv=true
+  B(deep n≈4500) seed 20268645 (46/48): σ²a=1.0622 σ²e=1.4777 conv=true
+  B(deep n≈4500) seed 20268646 (47/48): σ²a=0.9407 σ²e=1.5572 conv=true
+  B(deep n≈4500) seed 20268647 (48/48): σ²a=1.0299 σ²e=1.5179 conv=true
+  Leg B(deep n≈4500): converged 48/48
+    σ²a  mean=0.9876 truth=1.00 bias=-0.0124 MCSE=0.0112 |bias|/MCSE=1.12  PASS
+    σ²e  mean=1.5049 truth=1.50 bias=+0.0049 MCSE=0.0090 |bias|/MCSE=0.55  PASS
+    mean rel.err σ²a=0.0124 σ²e=0.0033 (tol 0.05); per-seed max rel.err σ²a=0.1484 σ²e=0.0863
+  Leg B(deep n≈4500) GATE (bias_mcse): PASS
+  C seed 20268700: conv=false σ²a=1.645e-15 σ²e=1.053e-12 graceful=true
+  C seed 20268701: conv=true σ²a=5.316e-15 σ²e=1.034e-12 graceful=true
+  C seed 20268702: conv=true σ²a=2.925e-14 σ²e=9.614e-13 graceful=true
+  C seed 20268703: conv=false σ²a=1.530e-12 σ²e=1.314e-02 graceful=true
+  C seed 20268704: conv=false σ²a=4.547e-12 σ²e=1.599e-02 graceful=true
+  C seed 20268705: conv=true σ²a=7.677e-15 σ²e=9.927e-13 graceful=true
+  C seed 20268706: conv=true σ²a=3.656e-14 σ²e=9.482e-13 graceful=true
+  C seed 20268707: conv=false σ²a=2.999e-12 σ²e=1.636e-02 graceful=true
+  Leg C boundary (finite/non-throwing/non-negative): graceful 8/8
+  Leg C GATE: PASS
+  Anchor eigen≈AI max rel.diff: σ²a=1.18e-07 σ²e=4.68e-08 (tol 1e-06)  PASS
+
+GATE: PASS  (A=true B=true C=true X=true)
+GATE_JSON {"gate_pass":true,"version":"v2-corrected","truth":{"sa":1.0,"se":1.5},"A":{"pass":true,"conv":48,"n":100000,"rel_sa":0.00195,"rel_se":0.00065},"B":{"pass":true,"conv":48,"n":4500,"bias_sa":-0.012449,"mcse_sa":0.011155,"bias_se":0.004949,"mcse_se":0.008979},"C_boundary":true,"X_anchor":true}
