@@ -24,7 +24,8 @@ fir/DRAC, julia 1.10.10, single-thread):
 | 300,000 | ~17–19 | 0.297 s | **2.30 s** | 0.359 s | 1,197 MB | yes |
 
 The sparse Cholesky is 0.15 s at q=300k; METIS ordering gives ~1% (dropped). The
-direct sparse AI-REML path is **already production-scale** here.
+direct sparse AI-REML path **already scales** here (q=300k in 2.3 s, converged) — a
+measurement, not a performance claim.
 
 ### Regime B — high fill (random mating). Super-linear WALL.
 `sim/drac/f0_adversarial_fill.jl`, `nfounder_frac = 0.005`. Local smoke
@@ -41,13 +42,16 @@ Totoro scale confirmation (julia 1.12.6, single-thread, at/across the eigen cap 
 | q | fill nnz(L)/n | chol_s | fit_ai_reml | selinv_s | peak RSS | conv |
 |---|---|---|---|---|---|---|
 | 10,000 | **262** | 0.065 | **132.3 s** | 26.0 | 750 MB | yes (σ̂²≈truth) |
-| 20,000 | _confirmatory run in progress_ | | | | | |
+| 20,000 | **471** | 0.35 | **1,528.8 s (~25 min)** | 381 | 1,314 MB | yes (σ̂²≈truth) |
 
 The Totoro q=10 000 point is **decisive on its own**: `fit_ai_reml` takes **132 s** on the high-fill
 pedigree at q=10 000, versus **0.87 s** at q=100 000 on half-sib — ~150× slower at 1/10 the size.
 Note q=10 000 is *below* the eigen cap, so `:auto` (fill 262 > 60) would route it to eigen-once
-(fast); the 132 s is what the direct sparse path costs when forced. The q=20 000 run (at the cap,
-where eigen-once tops out) is a confirmatory add, not decision-changing.
+(fast); the 132 s is what the direct sparse path costs when forced. **The q=20 000 point (at the
+eigen cap) confirms the wall is catastrophic: 1,529 s (~25 min) — an 11.5× jump for a 2× size step,
+selinv-dominated (381 s) — so just past the cap, where eigen-once is unavailable, the direct sparse
+path is infeasible. That is precisely the deferred-F6 tail.** Both fits still recover truth
+(σ̂²≈1.0), so it is a cost wall, not a correctness failure.
 
 **Reading:** unlike half-sib, the random-mating **fill ratio grows with n**
 (50 → 77 → 149) and `fit_ai_reml` blows up **super-linearly** (~18× for a 2.5×
@@ -79,8 +83,11 @@ DEFERRED high-fill tail.** Reasoning:
 
 The S4 production-default declaration (staged, gated on S5+S6) must **fence its
 evidenced scope to the low-fill regime** and keep the eigen `:auto` crossover,
-which already routes moderate-n high-fill (n ≤ 20 000, nnz(L)/n > 60) to
-`fit_eigen_reml`. The **high-fill, n > 20 000 tail is an explicit documented
+which routes moderate-n high-fill (n ≤ 20 000, nnz(L)/n > 60) to `fit_eigen_reml`
+— though eigen *recovery* above nnz(L)/n = 60 inherits the eigen thread's OWN
+pending debt (its gate ran at fill ≈ 49 < 60; `capability-status.md:91`), so this
+mitigation is not independently proven above the threshold. The **high-fill,
+n > 20 000 tail is an explicit documented
 boundary** of the production-scale claim (not silently in-scope), with F6 named as
 its follow-on. This is exactly the "state what is NOT claimed" fence the DRM.jl
 scale-claim schema requires.
