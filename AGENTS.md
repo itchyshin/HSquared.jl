@@ -25,21 +25,22 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-24 (H2 engine-PERFORMANCE thread live — collaborator report; REML fit is the wall; handed to next lane).**
-  Triggered by **szymekdr** (Discord): `hsquared` slow + crashes at genomic G n≈1000. **MEASURED on Totoro:**
-  the A-inverse is FAST (`pedigree_inverse` 800=3 ms, 100k=2.2 s — **not** the bug); the default
-  `fit_sparse_reml` (derivative-free) scales ≈ **n^2.6** (Szymek: 10k=1708 s vs ASReml 12.9 s, 100k=2 s); and
-  the supposed fast path **`fit_ai_reml` runs to its 100-iteration cap / `not_converged`** at every size and
-  tolerance (reaches the right loglik) — the concrete meaning of Shinichi's *"something is not really
-  working."* **CONFOUND:** that was measured on no-signal data (σ²a→0, AI-REML's documented hard boundary);
-  the real-signal confirming run (`bench_signal.jl`) **DIED unresolved** and is the **decision hinge** — re-run
-  it first. Two-workflow ultra-plan (adversarial, beat-the-plan): **do NOT build the TMB native engine yet** —
-  cheaper Option-A ladder first (dense-`Ginv` crash guard + flip pedigree default to a *working* `fit_ai_reml`
-  + warm bridge), gated on the measurement. Native engine would PIVOT founding decision D-2026-06-12 (owner
-  decision pending). **D1 genomic-recovery stays PAUSED (D-68; owner leans GO) — a SEPARATE thread, do not
-  conflate.** `public_covered_count=5`; nothing moved. START HERE:
-  `docs/dev-log/handover/2026-07-24-claude-handover.md` → first action: re-run `~/hsq_work/bench_signal.jl` on
-  Totoro (real h²=0.4 signal). Ultra-plan detail: `docs/dev-log/native-engine-arc/native-engine-plan-hardened.md`.
+- **As of 2026-07-24 (H2 engine-PERFORMANCE thread DIAGNOSED + eigen-once fitter LANDED — Szymek report resolved).**
+  **RESOLVED (measured, Totoro):** `fit_ai_reml` is NOT broken — it converges in **5–8 Newton iterations** with
+  real signal (no bug; Gauss re-derived the score/AI/Newton algebra). The prior snapshot's "never converges" was
+  a **stale Totoro checkout (pre-#180) + no-signal benchmark data** — two confounds, both retired. The "slow" is
+  **fill-in-driven selected-inverse** cost on high-fill pedigrees, NOT the Cholesky; on a realistic-bandwidth
+  pedigree the fit is already fast (n=10000 = 0.64 s, ≤ the ASReml 12.9 s Szymek cited — not head-to-head).
+  **Shipped this thread (all TESTED green; EXPERIMENTAL — `public_covered_count` STAYS 5, no capability move):**
+  (1) `PosDefException` graceful-stop guards on BOTH AI-REML loops (single + multi-effect) + an iteration-count
+  regression guard; (2) **`fit_eigen_reml`** — a one-factorization eigen-once single-effect REML (EMMA/GEMMA;
+  eigendecompose A once, no repeated factorization / no selected inverse), recovers AI-REML to ~1e-8 and is
+  **6.95× faster on high-fill n=10000**, wired via `fit_animal_model(target = :eigen | :auto)` — `:auto` routes
+  eigen-vs-sparse by the MME **fill proxy `nnz(L)/n`**, NOT n. **NOT** the TMB native engine (still deferred,
+  owner-gated D-2026-06-12). **D1 genomic-recovery stays PAUSED (D-68) — a SEPARATE thread.** R exposure is a
+  coordination handoff to the R twin (not done in this lane). START HERE:
+  `docs/dev-log/handover/2026-07-24-claude-eigen-landing-handover.md` · findings + benchmarks:
+  `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`.
 
 ## Core Scope
 

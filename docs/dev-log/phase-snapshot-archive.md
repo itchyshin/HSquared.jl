@@ -1,5 +1,21 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-24 (H2 engine-PERFORMANCE thread live — collaborator report; REML fit is the wall; handed to next lane).**
+  Triggered by **szymekdr** (Discord): `hsquared` slow + crashes at genomic G n≈1000. **MEASURED on Totoro:**
+  the A-inverse is FAST (`pedigree_inverse` 800=3 ms, 100k=2.2 s — **not** the bug); the default
+  `fit_sparse_reml` (derivative-free) scales ≈ **n^2.6** (Szymek: 10k=1708 s vs ASReml 12.9 s, 100k=2 s); and
+  the supposed fast path **`fit_ai_reml` runs to its 100-iteration cap / `not_converged`** at every size and
+  tolerance (reaches the right loglik) — the concrete meaning of Shinichi's *"something is not really
+  working."* **CONFOUND:** that was measured on no-signal data (σ²a→0, AI-REML's documented hard boundary);
+  the real-signal confirming run (`bench_signal.jl`) **DIED unresolved** and is the **decision hinge** — re-run
+  it first. Two-workflow ultra-plan (adversarial, beat-the-plan): **do NOT build the TMB native engine yet** —
+  cheaper Option-A ladder first (dense-`Ginv` crash guard + flip pedigree default to a *working* `fit_ai_reml`
+  + warm bridge), gated on the measurement. Native engine would PIVOT founding decision D-2026-06-12 (owner
+  decision pending). **D1 genomic-recovery stays PAUSED (D-68; owner leans GO) — a SEPARATE thread, do not
+  conflate.** `public_covered_count=5`; nothing moved. START HERE:
+  `docs/dev-log/handover/2026-07-24-claude-handover.md` → first action: re-run `~/hsq_work/bench_signal.jl` on
+  Totoro (real h²=0.4 signal). Ultra-plan detail: `docs/dev-log/native-engine-arc/native-engine-plan-hardened.md`.
+
 - **As of 2026-07-20 (v0.7 D1 smoke-gate contract remediation DESIGNED + mirrored + Gauss RSS risk measured; H2 lane PAUSED by owner to focus on DRM/GLLVM).**
   The `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH` that killed D1 now has an owner-authorized,
   three-lens-reviewed **planning-only** remediation: a declared arity contract as data
