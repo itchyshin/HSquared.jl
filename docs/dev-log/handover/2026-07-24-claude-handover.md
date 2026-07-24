@@ -3,6 +3,14 @@
 **Meta:** 2026-07-24 · **from:** Claude · **to:** next Claude (or Codex) lane · **branch:**
 `codex/2026-07-13-v07-performance-localization` @ `bfdd45b2` · **mode:** live-toolchain (Totoro benchmarking)
 
+> **⚠️ SUPERSEDED IN PART (2026-07-24, later same day) — do NOT re-conclude "engine broken" from this doc.**
+> The central claim below — that `fit_ai_reml` "does not converge out-of-the-box" — was traced to a **stale
+> Totoro checkout (`662663e`, predating the #180 relative-change fix) + no-signal benchmark data**, NOT an
+> engine bug. On current code (`f70559c`) with real h²=0.4 signal it converges in **5–7 iterations**; the
+> "slow" is **random-pedigree Cholesky fill-in** (a realistic-bandwidth n=10000 fit is **0.64 s**). Gauss
+> re-derived the AI-REML algebra: **no bug**. Read first:
+> `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`.
+
 ## Critical Context (read or go wrong)
 
 1. **This is a NEW H2 thread — engine fitting PERFORMANCE — not the paused D1 genomic-recovery.** It was
