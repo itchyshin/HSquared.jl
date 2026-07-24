@@ -45,7 +45,12 @@ became: **measure the real scale behaviour, gate recovery at scale, and stage** 
   GATE = A∧B∧C∧X is a **BANKED NEGATIVE** (`2026-07-24-f5-scale-recovery-gate-result.md`).
   Diagnosed as a Leg-C **test-design flaw** (near-constant y legitimately converges to a valid tiny
   σ²≈1e-14 — finite, non-throwing, the #182 contract holds — which the criterion wrongly rejected),
-  NOT a `fit_ai_reml` defect. **NOT relaxed.**
+  NOT a `fit_ai_reml` defect. **NOT relaxed** (v1 stays banked). A corrected, freshly RE-DECLARED
+  gate **v2** (frozen `4fb6fb66`, fresh seeds, Leg C fixed to the actual finite/non-throwing/
+  non-negative #182 contract, recovery criteria UNCHANGED) then **PASSED all four legs**: recovery
+  **0.19%/0.065%** @ q=1e5 (48/48), deep-15-gen unbiasedness (48/48), boundary **8/8** graceful
+  (4 converge-to-tiny-σ² / 4 graceful-stop), eigen≡AI 1.18e-7
+  (`2026-07-24-f5-scale-recovery-gate-v2-result.md`).
 - **S6 — F8 comparator (done).** Direct `sommer`≡`fit_ai_reml` AGREE to 3.59e-5 (`514807a0`),
   complementing the eigen-thread transitive leg. Doc: `2026-07-24-f8-sommer-aireml-comparator.md`.
 - **S7 — Rose G8 + stage + handoff (done).** A REAL spawned `rose-systems-auditor` (opus) audited
@@ -59,7 +64,8 @@ became: **measure the real scale behaviour, gate recovery at scale, and stage** 
 | Leg | Artifact | Result |
 |---|---|---|
 | F0 benchmark | `sim/drac/f0_adversarial_fill.jl` + baseline | low-fill scales to 300k/2.3s; high-fill walls (132s@q=10k) |
-| F5 recovery gate | `sim/phase_f5_scale_recovery_gate.jl` (frozen 77ecad3a) | **GATE FAIL (banked)**: A/B/X PASS (recovery 0.49% @ q=1e5; deep unbiased; eigen≡AI 3.4e-7); C boundary FAIL 6/8 = test-design flaw, not a fitter defect |
+| F5 gate v1 | `phase_f5_scale_recovery_gate.jl` (frozen 77ecad3a) | GATE FAIL (banked): A/B/X PASS; C boundary FAIL 6/8 = Leg-C test-design flaw |
+| F5 gate **v2** (corrected) | `phase_f5_scale_recovery_gate_v2.jl` (frozen 4fb6fb66) | **GATE PASS**: recovery **0.19%/0.065%** @ q=1e5 (48/48); deep unbiased (48/48); boundary **8/8**; eigen≡AI **1.18e-7** |
 | F8 comparator | `comparator/{prepare,run}_sommer_aireml.*` | sommer≡AI-REML 3.59e-5 (AGREE) |
 
 ## Fences held
@@ -68,11 +74,12 @@ became: **measure the real scale behaviour, gate recovery at scale, and stage** 
 edited; D1 genomic PAUSED (D-68); TMB deferred; F6/GPU/multivariate/APY deferred.
 
 ## Next steps (for the owner / next session)
-1. **Owner G10:** the production-default flip (F4b) is **NOT gate-supported** — the pre-declared
-   gate FAILED (banked negative, a Leg-C test-design flaw, not a fitter defect). The recovery
-   (0.49% @ q=1e5) + deep-unbiasedness + `sommer` comparator evidence is strong, but a **corrected,
-   RE-DECLARED** boundary gate (accept graceful-stop OR converge-to-valid-tiny-σ²) must PASS before
-   a gate-supported default flip. Count stays 5 regardless.
+1. **Owner G10:** the pre-declared recovery-at-scale gate now **PASSES** (v2 corrected, `4fb6fb66`):
+   recovery **0.19%/0.065%** @ q=1e5, deep-15-gen unbiasedness, boundary 8/8, eigen≡AI 1.18e-7, plus
+   the `sommer` comparator AGREE 3.6e-5. The production-default flip (F4b) is therefore now
+   **gate-supported** — it owes only your G10 sign-off + the R bridge. (v1's banked negative stays on
+   the record; the v2 correction — a test-design fix, not a relaxation — is fully documented.) Count
+   stays 5 until you flip.
 2. **R lane:** expose the production-scale path via the R bridge (separate repo).
 3. **F6 follow-on (deferred):** wire the existing v0.8-S2 PCG into the fit loop for the high-fill
    n>20k tail, if/when a real high-fill large pedigree needs it.
