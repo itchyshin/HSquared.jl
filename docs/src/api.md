@@ -114,6 +114,7 @@ HSquared.AnimalModelFit
 HSquared.BreedingValues
 HSquared.fit_sparse_reml
 HSquared.fit_ai_reml
+HSquared.fit_eigen_reml
 HSquared.fit_gblup
 HSquared.fit_snp_blup
 HSquared.fit_gblup_reml
