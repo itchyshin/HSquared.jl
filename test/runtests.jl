@@ -4375,8 +4375,11 @@ end
 @testset "fit_animal_model target = :auto routes eigen-vs-sparse by fill-in (not n)" begin
     # :auto picks the eigen-once path ONLY on a dense-feasible Z=I animal model whose MME is
     # HIGH-FILL-IN (nnz(L)/n > threshold); everything else → sparse AI-REML. Routing is by the fill
-    # proxy, not n (eigen loses on well-structured pedigrees at every n). Measured crossover:
-    # well-structured nnz(L)/n≈17-19 (sparse wins), random ≥76 (eigen wins). Diagnosed 2026-07-24.
+    # proxy, not n (eigen loses on well-structured pedigrees at every n). Measured crossover surface
+    # (sim/bench_eigen_crossover.jl; docs/dev-log/native-engine-arc/2026-07-24-eigen-auto-threshold-crossover.md):
+    # the crossover proxy is n-dependent — n=2000 ∈ (51,76), n=4000 ∈ (57,109) — 60 sits in/near both.
+    # well-structured nnz(L)/n≈15-19 (sparse wins), random ≥76 at n≥2000 (eigen wins). Threshold KEPT at 60
+    # (validated + conservative first-pass, 2026-07-24).
     function _ped(n; window, seed = 7)
         rng = MersenneTwister(seed); s = zeros(Int, n); d = zeros(Int, n)
         for i in 3:n
