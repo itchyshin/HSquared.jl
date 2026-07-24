@@ -25,26 +25,21 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-20 (v0.7 D1 smoke-gate contract remediation DESIGNED + mirrored + Gauss RSS risk measured; H2 lane PAUSED by owner to focus on DRM/GLLVM).**
-  The `SMOKE_N_LADDER_RECOMMEND_WORKERS_CARDINALITY_MISMATCH` that killed D1 now has an owner-authorized,
-  three-lens-reviewed **planning-only** remediation: a declared arity contract as data
-  (`docs/design/50-recovery-v3-arity-contract.{tsv,md}`), the C1–C6 implementation gate incl. the composed
-  seed-free regression test (`docs/dev-log/recovery-checkpoints/2026-07-20-smoke-arity-contract-predeclaration.md`),
-  brain `D-71`. **Mirrored** to the R twin (`hsquared@f5c0d46`, byte-identical bodies). **Gauss's RSS
-  order-statistic risk MEASURED on Totoro (48 fits) → SAFE-AS-IS**, `attempts_per_rung=4` retained
-  (`docs/dev-log/recovery-checkpoints/2026-07-21-smoke-rss-order-statistic-characterization-predeclaration.md`).
-  Design satisfies **ONE of six** successor preconditions; **five remain open** (new root, disjoint
-  allocation, fresh preregistration, mutation controls/reviews/preseal, explicit authorization). D0F reseal4
-  stays PASS/COMPLETE; the retired `d1-reseal4` root and `2028000000/101:148` space stay immutable negative
-  evidence. `public_covered_count=5`; `ordinary_auto_genomic` held; V2-GRM/V2-GINV partial.
-  **NEXT ARC (owner decision, made fresh — not on momentum): go/no-go on whether to CONTINUE the genomic-recovery
-  campaign at all.** If GO → implement the C1–C6 gate in the R launcher+tests (fresh scoped arc), then assemble
-  a fresh D1 successor across all six preconditions. If NO-GO → freeze the D1/genomic-recovery line and pivot
-  H2 elsewhere. **OWNER LEANS GO (Shinichi, 2026-07-20):** on pausing to focus on DRM/GLLVM, his stated
-  inclination is to continue — implement C1–C6, then build the successor. **Resume TOWARD GO by default**, but
-  re-confirm it fresh before committing compute: this is a leaning recorded at his request, NOT a standing
-  authorization to run (the campaign has died at eight-plus distinct stages; the retirement fence and D-71
-  planning-only boundary stand). START HERE: `docs/dev-log/after-task/2026-07-20-v07-smoke-gate-contract-remediation.md`.
+- **As of 2026-07-24 (H2 engine-PERFORMANCE thread live — collaborator report; REML fit is the wall; handed to next lane).**
+  Triggered by **szymekdr** (Discord): `hsquared` slow + crashes at genomic G n≈1000. **MEASURED on Totoro:**
+  the A-inverse is FAST (`pedigree_inverse` 800=3 ms, 100k=2.2 s — **not** the bug); the default
+  `fit_sparse_reml` (derivative-free) scales ≈ **n^2.6** (Szymek: 10k=1708 s vs ASReml 12.9 s, 100k=2 s); and
+  the supposed fast path **`fit_ai_reml` runs to its 100-iteration cap / `not_converged`** at every size and
+  tolerance (reaches the right loglik) — the concrete meaning of Shinichi's *"something is not really
+  working."* **CONFOUND:** that was measured on no-signal data (σ²a→0, AI-REML's documented hard boundary);
+  the real-signal confirming run (`bench_signal.jl`) **DIED unresolved** and is the **decision hinge** — re-run
+  it first. Two-workflow ultra-plan (adversarial, beat-the-plan): **do NOT build the TMB native engine yet** —
+  cheaper Option-A ladder first (dense-`Ginv` crash guard + flip pedigree default to a *working* `fit_ai_reml`
+  + warm bridge), gated on the measurement. Native engine would PIVOT founding decision D-2026-06-12 (owner
+  decision pending). **D1 genomic-recovery stays PAUSED (D-68; owner leans GO) — a SEPARATE thread, do not
+  conflate.** `public_covered_count=5`; nothing moved. START HERE:
+  `docs/dev-log/handover/2026-07-24-claude-handover.md` → first action: re-run `~/hsq_work/bench_signal.jl` on
+  Totoro (real h²=0.4 signal). Ultra-plan detail: `docs/dev-log/native-engine-arc/native-engine-plan-hardened.md`.
 
 ## Core Scope
 
