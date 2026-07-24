@@ -41,10 +41,23 @@ eigen ≈ AI-REML max rel.diff: σ²a = **2.18e-7**, σ²e = 4.94e-8 (tol 1e-6) 
 - The largest ratio is **Arm WS σ²a at 1.01·MCSE** (mean 0.970 vs truth 1.00) — a mild, statistically
   undetectable negative offset consistent with finite-sample REML at n=1000; it is *within* the bound, not
   a boundary ride. Every other parameter is ≤ 0.26·MCSE.
-- **eigen ≡ AI-REML numerically** (≤ 2.6e-7 across all 96 fits): the substitutability corroboration holds —
-  `fit_eigen_reml` and sparse `fit_ai_reml` are the SAME single-effect REML estimand by a different route,
-  in BOTH fill regimes. Recovery therefore holds where eigen is actually used (high-fill), not only where
-  `:auto` would pick sparse.
+- **eigen ≡ AI-REML numerically** (≤ 2.62e-7 across all 96 fits — the WS-arm max; HF-arm max 2.18e-7): the
+  substitutability corroboration holds — `fit_eigen_reml` and sparse `fit_ai_reml` are the SAME single-effect
+  REML estimand by a different route, across BOTH fill regimes.
+
+## Scope correction (erratum) — what regime this gate actually exercises
+
+The two arms span a **fill gradient** — `nnz(L)/n ≈ 17` (WS, window=50) and `≈ 49` (HF, window=0) at n=1000 —
+with `fit_eigen_reml` fit **DIRECTLY** in both, so recovery is validated across low- and higher-fill pedigree
+STRUCTURE. **But at the gate's n=1000 BOTH arms sit below the `:auto` fill threshold 60** (HF ≈ 49 < 60), so
+`:auto` would route BOTH to sparse AI-REML. The `:auto` eigen route triggers only at `nnz(L)/n > 60` — the
+same window=0 structure reaches `≈76` at n=2000 and `≈124` at n=4000
+(`2026-07-24-eigen-auto-threshold-crossover.md`). So **recovery IN the regime where `:auto` actually selects
+eigen is NOT exercised by this gate**; it rests on (a) the direct-fit substitutability (eigen ≡ AI-REML on the
+HF seeds, ≤ 2.18e-7) and (b) eigen's cost being fill-independent. The frozen predeclaration + gate-script
+comments describe the HF arm as "`≥76` → `:auto`→eigen" — that is an **n≥2000** figure and does NOT hold at
+this gate's n=1000; this erratum is the correction (the frozen files cannot be edited without breaking freeze
+integrity). None of this affects the recovery PASS or the comparator — eigen was validated by direct fits.
 
 ## What remains for a covered close (NOT discharged here)
 

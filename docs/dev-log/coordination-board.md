@@ -34,6 +34,26 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## Eigen fitter (`fit_eigen_reml`) — G11 evidence STAGED; R `method="eigen"` handoff (2026-07-24)
+
+- **Julia lane (this session):** the experimental→covered EVIDENCE PACKAGE for the eigen-once single-effect
+  REML fitter `fit_eigen_reml` (`V1-EIGEN-REML`) is assembled and STAGED for the owner's call. **G11
+  DISCHARGED:** a pre-declared 48-seed × 2-arm known-truth recovery gate PASSED (both arms 48/48 converged,
+  all `|bias| ≤ 2·MCSE`, eigen ≡ AI-REML ≤ 2.62e-7) + the `sommer` 4.4.5 same-estimand external REML
+  comparator AGREED (7.77e-9). The `:auto` threshold was measured + validated (kept at 60). Rose G8 audit
+  CLEAR-WITH-CHANGES (applied). **STAYS partial/experimental — no capability flip; `public_covered_count`
+  stays 5.** (Scope note: the gate's two arms are a fill gradient WS≈17→HF≈49 at n=1000, both below the
+  `:auto` threshold 60 — the gate validates eigen by DIRECT fits, not inside `:auto`'s eigen regime.) Commits
+  `1d9ec57d`.. on `codex/2026-07-13-v07-performance-localization`. Evidence:
+  `docs/dev-log/recovery-checkpoints/2026-07-24-eigen-reml-{recovery-gate-result,comparator}.md`.
+- **R lane (OWED — R twin's job; do NOT edit `hsquared` from the Julia lane):** implement the opt-in R
+  `method="eigen"` / `target="eigen"` route per the bridge contract
+  (`docs/dev-log/native-engine-arc/2026-07-24-eigen-fitter-r-bridge-contract.md`) — routing + the one
+  `:eigen_reml` ↔ R-string mapping (standard `result_payload` covers the rest), surface the `Z≠I` /
+  `n>max_dense_n` guards, mark EXPERIMENTAL, confirm the count stays 5. Ledger: Julia #5/#6 ↔ R #2/#5.
+- **Owner (G10):** decide whether to flip the ENGINE experimental→covered given G11 discharged + Rose —
+  `public_covered_count` stays 5 either way (engine-covered ≠ R-public-covered).
+
 ## Current v0.7 recovery status — 2026-07-20
 
 - Branch: `codex/2026-07-13-v07-performance-localization` in both twins. Deployed repair heads: `HSquared.jl` `418be984`, `hsquared` `5325e95`.

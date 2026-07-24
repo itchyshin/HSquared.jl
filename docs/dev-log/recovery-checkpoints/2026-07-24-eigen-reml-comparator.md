@@ -25,17 +25,19 @@ inside the 2e-2 tolerance, and tighter than the ~1e-4/1e-5 the prior covered pro
 V4-DIRECT-MATERNAL) recorded against `sommer`/`blupf90+`. (The seed's σ²a=1.27 is above the truth 1.0
 because this is ONE draw; the comparator tests same-data agreement, not recovery — recovery is the gate.)
 
-## High-fill regime — covered transitively (rigorous)
+## High-fill regime — established transitively (rigorous)
 
-The direct comparator ran on the well-structured Arm-WS seed (where `sommer` is most robust). Agreement
-in eigen's high-fill operating regime follows transitively from two measured legs:
+The direct comparator ran on the well-structured Arm-WS seed (where `sommer` is most robust). Agreement on
+the higher-fill (window=0) Arm-HF pedigree follows transitively (an estimand-identity inference, not a direct
+`sommer` measurement) from two measured legs:
 
 - `sommer` ≡ `fit_eigen_reml` on Arm-WS seed 20267000: **7.77e-09** (this doc).
-- `fit_eigen_reml` ≡ `fit_ai_reml` across ALL 96 gate seeds incl. the 48 high-fill Arm-HF seeds:
-  **≤ 2.18e-7** (`2026-07-24-eigen-reml-recovery-gate-result.md`).
+- `fit_eigen_reml` ≡ `fit_ai_reml` across ALL 96 gate seeds incl. the 48 higher-fill Arm-HF seeds:
+  **≤ 2.62e-7** (all-96 max; `2026-07-24-eigen-reml-recovery-gate-result.md`).
 
-→ `sommer` ≡ `fit_eigen_reml` in the high-fill regime to ~2e-7 by transitivity. A direct high-fill
-`sommer` run is a cheap optional add if a reviewer wants it.
+→ `sommer` ≡ `fit_eigen_reml` on the higher-fill arm to ~2e-7 by transitivity. (NB the gate's HF arm is
+`nnz(L)/n ≈ 49` at n=1000 — a higher-fill *structure*, still below the `:auto` threshold 60; see the result
+doc's erratum.) A direct high-fill `sommer` run is a cheap optional add if a reviewer wants it.
 
 ## Reproduce
 
