@@ -25,22 +25,19 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-24 (H2 engine-PERFORMANCE thread DIAGNOSED + eigen-once fitter LANDED — Szymek report resolved).**
-  **RESOLVED (measured, Totoro):** `fit_ai_reml` is NOT broken — it converges in **5–8 Newton iterations** with
-  real signal (no bug; Gauss re-derived the score/AI/Newton algebra). The prior snapshot's "never converges" was
-  a **stale Totoro checkout (pre-#180) + no-signal benchmark data** — two confounds, both retired. The "slow" is
-  **fill-in-driven selected-inverse** cost on high-fill pedigrees, NOT the Cholesky; on a realistic-bandwidth
-  pedigree the fit is already fast (n=10000 = 0.64 s, ≤ the ASReml 12.9 s Szymek cited — not head-to-head).
-  **Shipped this thread (all TESTED green; EXPERIMENTAL — `public_covered_count` STAYS 5, no capability move):**
-  (1) `PosDefException` graceful-stop guards on BOTH AI-REML loops (single + multi-effect) + an iteration-count
-  regression guard; (2) **`fit_eigen_reml`** — a one-factorization eigen-once single-effect REML (EMMA/GEMMA;
-  eigendecompose A once, no repeated factorization / no selected inverse), recovers AI-REML to ~1e-8 and is
-  **6.95× faster on high-fill n=10000**, wired via `fit_animal_model(target = :eigen | :auto)` — `:auto` routes
-  eigen-vs-sparse by the MME **fill proxy `nnz(L)/n`**, NOT n. **NOT** the TMB native engine (still deferred,
-  owner-gated D-2026-06-12). **D1 genomic-recovery stays PAUSED (D-68) — a SEPARATE thread.** R exposure is a
-  coordination handoff to the R twin (not done in this lane). START HERE:
-  `docs/dev-log/handover/2026-07-24-claude-eigen-landing-handover.md` · findings + benchmarks:
-  `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`.
+- **As of 2026-07-24 (H2 eigen-once fitter — experimental→covered EVIDENCE PACKAGE assembled + STAGED; Rose CLEAR-WITH-CHANGES applied).**
+  The `fit_eigen_reml` (`V1-EIGEN-REML`) promotion evidence is assembled to the doc-16 **G11** bar and **STAGED
+  for the owner's G10 call — NOTHING promoted; the row stays `partial`/`experimental`; `public_covered_count`
+  STAYS 5; no capability move.** **G11 DISCHARGED:** a PRE-DECLARED (frozen `1d9ec57d` BEFORE the run) 48-seed ×
+  2-arm known-truth recovery gate **PASSED** on Totoro (both arms 48/48 converged, all `|bias| ≤ 2·MCSE`, eigen ≡
+  AI-REML ≤ 2.62e-7) **+** a same-estimand external REML comparator **`sommer` 4.4.5 AGREED to 7.77e-9**.
+  **`:auto` threshold measured + KEPT at 60** (validated, conservative; n-adaptive DEFERRED; **no `src` logic
+  change**). **Rose G8 = CLEAR-WITH-CHANGES (applied):** the gate ran at n=1000 where the HF arm's `nnz(L)/n ≈ 49`
+  is BELOW the threshold 60, so it does NOT exercise `:auto`'s eigen regime — recovery there rests on the
+  direct-fit eigen≡AI-REML substitutability (result-doc erratum). Szymek close-out drafted (owner sends).
+  **D1 genomic PAUSED (D-68); TMB deferred (D-2026-06-12); R `method="eigen"` bridge = R-lane handoff.**
+  START HERE: `docs/dev-log/handover/2026-07-24-claude-eigen-promotion-evidence-handover.md` · G8 audit:
+  `docs/dev-log/scout/2026-07-24-rose-eigen-evidence-audit.md`.
 
 ## Core Scope
 

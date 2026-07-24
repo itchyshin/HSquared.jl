@@ -1,5 +1,22 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-24 (H2 engine-PERFORMANCE thread DIAGNOSED + eigen-once fitter LANDED — Szymek report resolved).**
+  **RESOLVED (measured, Totoro):** `fit_ai_reml` is NOT broken — it converges in **5–8 Newton iterations** with
+  real signal (no bug; Gauss re-derived the score/AI/Newton algebra). The prior snapshot's "never converges" was
+  a **stale Totoro checkout (pre-#180) + no-signal benchmark data** — two confounds, both retired. The "slow" is
+  **fill-in-driven selected-inverse** cost on high-fill pedigrees, NOT the Cholesky; on a realistic-bandwidth
+  pedigree the fit is already fast (n=10000 = 0.64 s, ≤ the ASReml 12.9 s Szymek cited — not head-to-head).
+  **Shipped this thread (all TESTED green; EXPERIMENTAL — `public_covered_count` STAYS 5, no capability move):**
+  (1) `PosDefException` graceful-stop guards on BOTH AI-REML loops (single + multi-effect) + an iteration-count
+  regression guard; (2) **`fit_eigen_reml`** — a one-factorization eigen-once single-effect REML (EMMA/GEMMA;
+  eigendecompose A once, no repeated factorization / no selected inverse), recovers AI-REML to ~1e-8 and is
+  **6.95× faster on high-fill n=10000**, wired via `fit_animal_model(target = :eigen | :auto)` — `:auto` routes
+  eigen-vs-sparse by the MME **fill proxy `nnz(L)/n`**, NOT n. **NOT** the TMB native engine (still deferred,
+  owner-gated D-2026-06-12). **D1 genomic-recovery stays PAUSED (D-68) — a SEPARATE thread.** R exposure is a
+  coordination handoff to the R twin (not done in this lane). START HERE:
+  `docs/dev-log/handover/2026-07-24-claude-eigen-landing-handover.md` · findings + benchmarks:
+  `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`.
+
 - **As of 2026-07-24 (H2 engine-PERFORMANCE thread live — collaborator report; REML fit is the wall; handed to next lane).**
   Triggered by **szymekdr** (Discord): `hsquared` slow + crashes at genomic G n≈1000. **MEASURED on Totoro:**
   the A-inverse is FAST (`pedigree_inverse` 800=3 ms, 100k=2.2 s — **not** the bug); the default
