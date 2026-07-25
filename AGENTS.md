@@ -25,19 +25,20 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-24 (H2 eigen-once fitter — experimental→covered EVIDENCE PACKAGE assembled + STAGED; Rose CLEAR-WITH-CHANGES applied).**
-  The `fit_eigen_reml` (`V1-EIGEN-REML`) promotion evidence is assembled to the doc-16 **G11** bar and **STAGED
-  for the owner's G10 call — NOTHING promoted; the row stays `partial`/`experimental`; `public_covered_count`
-  STAYS 5; no capability move.** **G11 DISCHARGED:** a PRE-DECLARED (frozen `1d9ec57d` BEFORE the run) 48-seed ×
-  2-arm known-truth recovery gate **PASSED** on Totoro (both arms 48/48 converged, all `|bias| ≤ 2·MCSE`, eigen ≡
-  AI-REML ≤ 2.62e-7) **+** a same-estimand external REML comparator **`sommer` 4.4.5 AGREED to 7.77e-9**.
-  **`:auto` threshold measured + KEPT at 60** (validated, conservative; n-adaptive DEFERRED; **no `src` logic
-  change**). **Rose G8 = CLEAR-WITH-CHANGES (applied):** the gate ran at n=1000 where the HF arm's `nnz(L)/n ≈ 49`
-  is BELOW the threshold 60, so it does NOT exercise `:auto`'s eigen regime — recovery there rests on the
-  direct-fit eigen≡AI-REML substitutability (result-doc erratum). Szymek close-out drafted (owner sends).
-  **D1 genomic PAUSED (D-68); TMB deferred (D-2026-06-12); R `method="eigen"` bridge = R-lane handoff.**
-  START HERE: `docs/dev-log/handover/2026-07-24-claude-eigen-promotion-evidence-handover.md` · G8 audit:
-  `docs/dev-log/scout/2026-07-24-rose-eigen-evidence-audit.md`.
+- **As of 2026-07-24 (H2 production-scale sparse fitter `fit_ai_reml` — recovery-at-scale gate PASSES (v2); evidence STAGED; owner G10 = KEEP STAGED).**
+  TWO engine fitters now carry STAGED experimental→covered evidence for the owner's G10, and the owner chose to
+  **KEEP BOTH STAGED — NOTHING promoted; no capability-status row flipped; `public_covered_count` STAYS 5**
+  (engine-covered ≠ R-public-covered; the count moves only when the R bridge lands). **(1) `fit_ai_reml`
+  (production-scale sparse, THIS thread):** F0 shows the direct path scales on low-fill (q=300k/2.3s) but WALLS
+  on adversarial high-fill (Totoro q=20k=1529s, fill 471) → **F6 deferred** to that tail; the PRE-DECLARED
+  recovery-at-scale gate FAILED v1 (Leg-C test-design flaw — banked negative, NOT relaxed) then **PASSED
+  corrected v2** (frozen `4fb6fb66`): recovery **0.19%/0.065% @ q=100,000** (48/48), deep-15-gen unbiasedness,
+  boundary 8/8, eigen≡AI 1.18e-7; DIRECT `sommer` comparator AGREE 3.6e-5; **2× real spawned Rose (package
+  CLEAR-WITH-CHANGES + v1→v2 LEGITIMATE CORRECTION)**. **(2) `fit_eigen_reml` (prior thread):** G11 discharged,
+  staged (see `docs/dev-log/phase-snapshot-archive.md`). Both owe the R bridge + G10. **D1 genomic PAUSED (D-68);
+  TMB deferred (D-2026-06-12); F6 deferred; R bridge = R-lane handoff.**
+  START HERE: `docs/dev-log/handover/2026-07-24-claude-handover.md` · arc detail:
+  `docs/dev-log/after-task/2026-07-24-wave-f-production-sparse-evidence.md`.
 
 ## Core Scope
 

@@ -1,149 +1,135 @@
-# Session Handoff — H2 engine-performance thread (Szymek report → REML fit is broken/slow) → next Claude lane
+# Handover → next Claude (HSquared.jl, Julia engine lane) — 2026-07-24 (canonical entrypoint)
 
-**Meta:** 2026-07-24 · **from:** Claude · **to:** next Claude (or Codex) lane · **branch:**
-`codex/2026-07-13-v07-performance-localization` @ `bfdd45b2` · **mode:** live-toolchain (Totoro benchmarking)
+**You are the next Claude**, resuming the `HSquared.jl` Julia engine lane. This is the canonical
+session-entrypoint handover (the `AGENTS.md` snapshot points here; it supersedes the earlier same-day
+engine-performance and eigen handovers). **Branch:** `codex/2026-07-13-v07-performance-localization` @
+`114ae24c` (pushed, in sync) · **PR:** #274 (DRAFT — do not auto-merge) · **From:** Claude (this
+session) · **Mode:** landed — everything committed + pushed; working tree clean except the 4
+pre-existing FOREIGN files (never commit; listed below).
 
-> **⚠️ SUPERSEDED IN PART (2026-07-24, later same day) — do NOT re-conclude "engine broken" from this doc.**
-> The central claim below — that `fit_ai_reml` "does not converge out-of-the-box" — was traced to a **stale
-> Totoro checkout (`662663e`, predating the #180 relative-change fix) + no-signal benchmark data**, NOT an
-> engine bug. On current code (`f70559c`) with real h²=0.4 signal it converges in **5–7 iterations**; the
-> "slow" is **random-pedigree Cholesky fill-in** (a realistic-bandwidth n=10000 fit is **0.64 s**). Gauss
-> re-derived the AI-REML algebra: **no bug**. Read first:
-> `docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`.
+## Critical context (know this or it goes wrong)
+- **This is the JULIA ENGINE lane.** The R lane (`hsquared`) is a SEPARATE repo — do NOT edit it from
+  here. Anything R-facing is an R-lane handoff (see the coordination board's Active Lane Split).
+- **TWO engine fitters now carry STAGED experimental→covered evidence for the owner's G10, and the
+  owner chose to KEEP BOTH STAGED (no flip).** `public_covered_count` STAYS **5** — engine-covered ≠
+  R-public-covered; the count moves only when the R bridge lands. **Do NOT flip any capability without
+  a FRESH promote-specific Rose audit + explicit owner G10.**
+  1. **Eigen-once (`fit_eigen_reml`, `V1-EIGEN-REML`)** — G11 discharged (48-seed×2-arm recovery gate
+     PASS + `sommer` AGREE 7.77e-9); staged; owes the R `method="eigen"` bridge + G10.
+  2. **Production-scale sparse (`fit_ai_reml`, the "V1-REML" production path)** — **THIS session.** The
+     pre-declared recovery-at-scale gate PASSES (v2), `sommer` AGREE, 2× Rose clean; staged; **owner
+     G10 = KEEP STAGED**; owes the R bridge + G10.
+- **D1 genomic PAUSED (D-68). TMB deferred. F6 deferred.** Do not conflate D1 with the eigen/sparse work.
 
-## Critical Context (read or go wrong)
+## Goals / mission (the durable why)
+`HSquared.jl` is the Julia **engine** twin of the R package `hsquared`; R owns the public user
+language, Julia owns the engine reality. No fitting/perf claim without the full evidence chain; repo
+state (not chat) is truth. The **public covered fitting surface = 1** (the v0.1 univariate Gaussian
+animal model). The load-bearing adoption lever is the one-way **R↔Julia bridge** (R audience + Julia
+speed) — which is why "expose staged engine work via the R bridge" keeps surfacing as the next step.
 
-1. **This is a NEW H2 thread — engine fitting PERFORMANCE — not the paused D1 genomic-recovery.** It was
-   triggered by collaborator **szymekdr** (Discord): `hsquared` is slow and crashes on moderate genomic G
-   (n≈1000). D1 genomic-recovery stays PAUSED (D-68; owner leans GO — separate thread, do not conflate).
-2. **The fast REML path does NOT converge out-of-the-box.** `fit_ai_reml` (the AI-REML Newton method, the
-   engine's supposed ASReml-class path) runs to its **100-iteration cap / `not_converged`** on the pedigree
-   animal model at every size and every tolerance tried — while reaching the correct loglik. So it is *slower*
-   than the "slow" `fit_sparse_reml` at the sizes tested. **This is the concrete meaning of Shinichi's
-   "something is not really working."**
-3. **The decision-hinge measurement is UNRESOLVED.** Whether `fit_ai_reml` converges with *real genetic
-   signal* (vs the σ²a→0 boundary of my no-signal test) is the question that decides the whole arc — and the
-   confirming run (`bench_signal.jl`) **died on Totoro with no output.** RE-RUN IT FIRST (see Next Steps).
-4. **Do NOT start building the TMB native engine.** The ultra-plan's adversarial panel (beat-the-plan) found
-   a cheaper dominant path; TMB is a *conditional endpoint*, gated on the measurement above. See the hardened
-   plan.
+## What was accomplished (this session — the production-scale sparse fitting arc)
+Ultra-plan `keen-orbiting-horizon`, Claude end-to-end (owner-directed), Totoro + local R. Assembled +
+STAGED the production-scale evidence for `fit_ai_reml` — **nothing promoted**:
+- **S1** — verified the 3 "un-merged" branches were actually merged/superseded → **deleted** them
+  (owner-approved). Confirmed the src map; pinned doc-18-vs-capability-status drift.
+- **S2 (F0)** — the direct sparse path scales on low-fill (q=300k/2.3s) but **walls on adversarial
+  high-fill** (Totoro q=20k = 1529s, fill 471, selinv-driven). F6 = the deferred high-fill-tail lever.
+- **S3** — `Pkg.test()` green; F1/F3/#114/#182 all present.
+- **S5 (F5)** — pre-declared gate **v1 FAILED (banked negative)** on Leg C boundary (6/8) → diagnosed
+  as a Leg-C **test-design flaw**, NOT a fitter defect (near-constant y legitimately converges to a
+  tiny valid σ²). NOT relaxed. A corrected, freshly re-declared **v2 gate PASSED** all four legs:
+  recovery **0.19%/0.065% @ q=100,000** (48/48), deep-15-gen unbiasedness, boundary 8/8, eigen≡AI 1.18e-7.
+- **S6 (F8)** — direct `sommer`≡`fit_ai_reml` **AGREE 3.6e-5**.
+- **S7** — TWO real spawned Rose audits: package = **CLEAR-WITH-CHANGES** (applied); v1→v2 integrity =
+  **LEGITIMATE CORRECTION** (not a relaxation). Melissa reconcile clean. Staged in capability-status
+  row 108; check-log + status.json done; 3 stale branches deleted.
 
-## What Was Accomplished
+Detail (do not duplicate — read these): `docs/dev-log/after-task/2026-07-24-wave-f-production-sparse-evidence.md`,
+`docs/dev-log/recovery-checkpoints/2026-07-24-f5-scale-recovery-gate-{predeclaration,result,v2-predeclaration,v2-result}.md`,
+`…-f0-adversarial-highfill-decision.md`, `…-f8-sommer-aireml-comparator.md`,
+`docs/dev-log/handover/2026-07-24-claude-wave-f-production-sparse-handover.md` (the arc-specific handover).
 
-- **Measured the real bottleneck (Totoro, direct Julia):**
-  - A-inverse is FAST — `pedigree_inverse` 800=3 ms, 100k=2.2 s (sparse Henderson + O(n) Meuwissen–Luo). **Not
-    the bug.** (`src/pedigree.jl`.)
-  - Szymek's baseline (`hsquared` R → default `fit_sparse_reml`): n=1000→3.4 s, 2000→24.6 s, 10000→**1708 s**,
-    100k→>1 hr; ASReml 10000→12.9 s, 100k→2 s. Scaling ≈ **n^2.6** (derivative-free NelderMead re-factorizing
-    the sparse-Cholesky MME every eval).
-  - `fit_ai_reml` on **no-signal** data: 100-iter cap / `not_converged` at n=1000 (2.46 s) and 2000 (19.3 s),
-    every tol 1e-4→1e-8, Δloglik vs sparse_reml ≈ 0, scales ~n^3. Convergence test is `ai_score_norm < tol`
-    (absolute score norm), `src/likelihood.jl:82`.
-- **Ran a two-workflow ultra-plan** for the "native R engine" arc (recon across hsquared/HSquared.jl/drmTMB/
-  gllvmTMB + adversarial panel). **Verdict: do NOT build TMB next**; cheaper Option-A ladder first, gated on
-  Stage 0. Design persisted in `docs/dev-log/native-engine-arc/` (hardened plan, arc design, beat-the-plan,
-  recon-r2).
-- **Corrected two of my own overclaims mid-flight** (honesty log): (a) "the fix is adopt AI-REML" — but
-  `fit_ai_reml` already exists AND doesn't converge OOB; (b) "found the convergence bug (tol too tight)" —
-  then measured that looser tol *also* fails, and flagged the no-signal-boundary confound I had ignored.
-- Updated the H2 mission-control board and filed a brain triage note ("HSquared perf triage — A-inverse is
-  fast, the gap is hsquared has no native engine").
+## Plans / roadmap (beyond the immediate steps)
+The engine leads the R-public surface (~13 engine-covered rows vs public count 5). The highest-leverage
+direction is **R-bridge activation** (expose staged engine work — eigen + ai_reml — to R users; that is
+what moves the public count). Then: production-sparse for the multivariate/two-effect/genomic models
+(after the univariate pattern lands); F6 (wire the existing PCG) for the high-fill tail; GPU (Track B).
+Authoritative: `ROADMAP.md`, `docs/design/18-programme-plan-2026-06.md`, `docs/design/capability-status.md`.
 
-## Current Working State
+## Current working state
+- **Working / landed:** all this-session commits pushed (`533cf0f8`..`114ae24c`); branch in sync; `Pkg.test()` green.
+- **In progress:** none.
+- **Blocked:** nothing — the owner made the pending calls (keep staged; branches deleted; hygiene done).
+- **Foreign never-commit files (NOT this lane's; leave untouched):**
+  `docs/dev-log/after-task/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`,
+  `docs/dev-log/check-log.d/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`,
+  `docs/dev-log/2026-07-18-two-lever-news-fit-laplace-reml-is-the-cox-reid-lever.md`,
+  `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl`.
 
-- **Working:** all benchmark scripts on Totoro under `~/hsq_work/` (`bench_ped.jl`, `bench_fit.jl`,
-  `bench_aireml.jl`, `bench_tol.jl`, `bench_signal.jl`); the HSquared.jl checkout there
-  (`~/hsq_work/HSquared.jl`, head `662663e` — has the current pedigree/likelihood code); Totoro reachable via
-  the passwordless ControlMaster socket.
-- **In progress / unresolved:** the real-signal `fit_ai_reml` test (`bench_signal.jl`) — process died, no
-  output. THE decision hinge.
-- **Blocked:** the native-engine go/no-go and the "flip the default to `fit_ai_reml`" fix are both blocked on
-  first making a native REML path actually converge fast.
+## Key decisions & rationale
+- **STAGE, not flip** — owner G10 for `fit_ai_reml` = KEEP STAGED (hold until the R bridge, so the flip
+  + public-count move land together; the eigen-thread pattern). Count stays 5.
+- **F5 v1 banked, v2 corrected** — v1's failure is preserved; v2 fixed only the demonstrably-wrong Leg-C
+  criterion on fresh seeds with recovery criteria unchanged (Rose verdict: LEGITIMATE, not a relaxation).
+- **F6 deferred** to the high-fill n>20k tail (the direct path suffices for the common low-fill case).
 
-## Key Decisions & Rationale
-
-- **Native-engine arc PIVOTS founding decision D-2026-06-12** ("R = frontend, Julia = engine"). Not yet
-  authorized — owner decision pending (and it makes `hsquared` a compiled package: CRAN/cross-platform tax).
-- **Beat-the-plan override (2026-07-24):** the collaborator's pain is *slow + crash*, not *bridge*. The cheap
-  Option-A ladder (dense-`Ginv` crash guard + flip pedigree default to a *working* `fit_ai_reml` + warm-bridge)
-  dominates a multi-week TMB build. Full TMB only if Stage 0 proves the ASReml gap survives the cheap fixes AND
-  the roadmap commits to non-Gaussian families. (`docs/dev-log/native-engine-arc/adv-beat-the-plan.md`.)
-- **Claim ceiling unchanged:** `public_covered_count=5`; nothing moved; no repo capability claim changed.
-
-## Landing State
-
-`handoff_gate.sh` needs a path (was passed a bare name); state hand-verified below. The HSquared.jl tree is at
-`bfdd45b2` with only pre-existing foreign/protected files dirty (untouched by this thread).
-
+## Landing State (git ledger)
 | Artifact / branch | Committed | Pushed | PR | State |
 |---|---|---|---|---|
-| This handover + design docs + snapshot, `codex/2026-07-13-v07-performance-localization` | on a fresh branch (this handover) | see PR | opening, DO NOT auto-merge | LANDING |
-| Benchmark scripts `~/hsq_work/bench_*.jl` (Totoro) | n/a (remote scratch) | n/a | none | CARRIED-OVER — reuse; re-run `bench_signal.jl` |
-| `docs/dev-log/after-task/2026-07-15-v07-d0f-retry5-*` (2 files, M) | no | no | none | CARRIED-OVER — foreign protected (prior session) |
-| `docs/dev-log/2026-07-18-two-lever-*.md`, `sim/phase2_v07_...replay.jl` (??) | no | no | none | CARRIED-OVER — foreign WIP / D2-D4 scaffold |
-| Plan file `~/.claude/plans/splendid-weaving-shannon.md` | n/a (session plan) | n/a | none | CARRIED-OVER — PLAN 2 = native engine + STAGE 0 RESULTS |
-| Scratchpad `native-engine-*.md`, `adv-*.md`, `recon-r*.md` | copied into repo `docs/dev-log/native-engine-arc/` | see PR | — | LANDED (persisted) |
+| `HSquared.jl` `codex/2026-07-13-v07-performance-localization` `114ae24c` | y | y | #274 (draft) | **LANDED** |
+| 4 foreign dirty files (above) | n | n | — | **NOT OURS — leave** |
 
-## Next Immediate Steps (ordered, for the next lane — needs LIVE Julia on Totoro)
+## Next immediate steps (ordered; none blocking)
+1. **R lane (R twin — separate repo; do NOT edit `hsquared` from here):** implement the opt-in R routes
+   for BOTH staged engine fitters — `method="eigen"` (eigen bridge contract) AND the production-scale
+   `fit_ai_reml` path — mark EXPERIMENTAL, confirm the count stays 5. Ledger: Julia #5/#6 ↔ R #2/#5.
+2. **Owner (G10):** flip-or-hold for eigen AND ai_reml (both staged; owner already chose HOLD for
+   ai_reml). A flip needs a FRESH promote-specific Rose + the R bridge.
+3. **F6 follow-on (deferred):** wire the v0.8-S2 matrix-free PCG into the AI-REML fit loop for the
+   high-fill n>20k tail, if/when a real high-fill large pedigree needs it.
+4. **Deferred menu (carried forward, not dropped):** the eigen Szymek close-out (owner sends); the
+   `check-log`/`status.json` are now DONE; the corrected-boundary-gate is DONE (v2 passed — no longer owed).
 
-1. **RE-RUN `bench_signal.jl` cleanly on Totoro** (real h²=0.4 signal, `em_warmup` ∈ {0,5}). Does `fit_ai_reml`
-   converge in ~6 iters with real signal? Launch detached + read the output FILE (not through a pipe):
-   `cd ~/hsq_work/HSquared.jl && OPENBLAS_NUM_THREADS=1 nohup ~/.juliaup/bin/julia --project=. ~/hsq_work/bench_signal.jl > ~/hsq_work/signal_out.txt 2>&1 &`
-   then `grep -E "^n=|DONE" ~/hsq_work/signal_out.txt`.
-2. **Instrument the AI-REML iteration** (`src/likelihood.jl` `_fit_ai_reml_diagnostics`): print the score-norm
-   and (σ²a, σ²e) each iteration. Determine: oscillates? plateaus above tol? is the score inconsistent with
-   the loglik it's at? This distinguishes **boundary artifact** from **genuine bug**.
-3. **Decide the fix:** if boundary → default `em_warmup>0` + a *relative* convergence criterion (not absolute
-   `score_norm < 1e-8`); if bug → fix the AI step / score formula.
-4. **Confirm + fix the genomic crash:** reproduce Szymek's n≈1000 dense-G crash; route dense `Ginv` through a
-   dense branch (recon-r2 §dense-Ginv).
-5. **Only then** choose Option A (cheap Julia-lane fixes + flip default) vs the TMB program, per the hardened
-   plan. Get owner sign-off on the D-2026-06-12 pivot before any TMB / compiled-package work.
+## Blockers / open questions
+None blocking. All owner decisions for this arc are made.
 
-## Blockers / Open Questions
+## Gotchas & failed approaches
+- **Freeze BEFORE running** — gate integrity anchors: F5 v1 `77ecad3a`, v2 `4fb6fb66` (both frozen
+  before the Totoro run; the result docs carry the erratum for v1's stale header).
+- **Leg-A criterion:** a bias/MCSE test is pathological at q=1e5 (MCSE→0 makes it fail on negligible
+  bias) — use a relative-recovery criterion at scale, keep bias/MCSE for moderate n (Leg B).
+- **Never write a result number before the run produces it.** This session I briefly wrote predicted
+  PASS numbers into a doc before the Totoro run finished — caught and blanked it. Numbers come ONLY
+  from the committed run logs (`sim/drac/results/f5_gate_v{1,2}.log`, `f0_adv_q{10,20}k.tsv`).
+- **High-fill exact-cov Leg B is expensive** (dense inv+chol at n=4500 × 48 ≈ 15 min on Totoro).
+- **Totoro clone tracks only `main`** — `git fetch origin <branch>` explicitly, checkout the commit;
+  julia is `~/.juliaup/bin/julia` (1.12.6); socket `SOCK=$(ls ~/.ssh/cm-*totoro* | head -1)` (no Duo).
+- **The engine is NOT broken** — the earlier "REML broken/slow" engine-perf handover was a stale
+  checkout + no-signal data; on current code `fit_ai_reml` converges in 5–7 iterations
+  (`docs/dev-log/native-engine-arc/2026-07-24-ai-reml-convergence-findings.md`). Do not re-open it.
 
-- **Decision hinge:** does `fit_ai_reml` converge fast with real signal? (Unresolved — re-run step 1.)
-- **Owner decisions pending (for TMB path only):** authorize the D-2026-06-12 pivot; accept `hsquared` as a
-  compiled package.
-- **Szymek chat:** Shinichi meets Szymek his afternoon / our morning. He has benchmark scripts (Julia + R,
-  earlier in the thread) to reproduce on his side; pin his hsquared version + whether the crash is pedigree
-  vs genomic.
+## How to resume (TARGET = claude)
+1. Run the **`hsquared-rehydrate`** skill (live git/CI + ROADMAP + coordination board + check-log +
+   newest after-task + capability-status + validation-debt).
+2. Read the `AGENTS.md` Live Phase Snapshot, THIS doc, then the detail set linked above.
+3. **Before ANY public/capability claim or a promotion flip, spawn a REAL Rose subagent** (mandatory
+   G8; a lens is not enough).
+4. **Division of labour:** Claude plans/refactors/writes prose + runs pure-logic/CI checks; hand the
+   LIVE toolchain (real fits, `R CMD check`, sims, Totoro campaigns) to the in-session compute you
+   drive or to a Codex session. Skills live in `.claude/skills/`.
 
-## Gotchas & Failed Approaches
-
-- **Do NOT benchmark REML with no-signal `y`** (random `y` → σ²a→0, AI-REML's documented hard boundary; it
-  even has an EM-warmup, off by default, for this). My initial "AI-REML is broken" read was on exactly this
-  unfair input — verify with real signal before concluding.
-- **Do NOT call the A-inverse the bottleneck.** Measured fast (3 ms / 800). The wall is the REML *fit*.
-- **`nohup julia … &` over ssh holds the ssh channel open** (the Bash call times out) but the process runs —
-  read the output FILE separately, don't rely on the ssh return.
-- **Piping julia stdout through `grep`/`tail` buffers** and shows nothing until exit — write to a file with
-  `flush(stdout)` after each line and read the file.
-- `fit_ai_reml` default `tol=1e-8` (absolute score norm) is suspicious, but **looser tol (1e-4) also failed**
-  on no-signal data — so it is not *only* the tolerance.
-
-## How to Resume
-
-1. Run `hsquared-rehydrate`; read this handover, the `AGENTS.md` snapshot, and
-   `docs/dev-log/native-engine-arc/native-engine-plan-hardened.md` (the recommendation) +
-   `~/.claude/plans/splendid-weaving-shannon.md` PLAN 2 (STAGE 0 RESULTS).
-2. Spawn Rose before any public/capability claim; bring Gauss/Karpinski for the AI-REML numerics.
-3. Do **Next Immediate Step 1** (re-run `bench_signal.jl`) — it decides everything.
-
-**One-command resume (paste in an authenticated terminal):**
-
-```sh
-claude "Rehydrate with hsquared-rehydrate + docs/dev-log/handover/2026-07-24-claude-handover.md. This is the H2 engine-PERFORMANCE thread (Szymek report), NOT the paused D1 genomic lane. First action: re-run ~/hsq_work/bench_signal.jl on Totoro (real h2=0.4 signal, em_warmup 0 and 5) — does fit_ai_reml converge fast with real signal? Then instrument src/likelihood.jl _fit_ai_reml_diagnostics to see the score-norm trajectory. Diagnose boundary-vs-bug. Do NOT build the TMB engine; do NOT touch the paused D1 genomic-recovery. Fences: public_covered_count=5, no capability move; native-engine pivots D-2026-06-12 (owner decision pending)."
-```
+### One-command resume (paste in an authenticated terminal, from the repo root)
+- Interactive: `claude "Rehydrate with hsquared-rehydrate + docs/dev-log/handover/2026-07-24-claude-handover.md + the AGENTS.md snapshot. Two engine fitters (eigen fit_eigen_reml + production-sparse fit_ai_reml) carry STAGED experimental→covered evidence for G10; owner chose KEEP STAGED; public_covered_count=5. Continue with the Next Immediate Steps: the R bridge (R lane, separate repo) + owner G10. Fences: no capability flip without a FRESH Rose + G10; D1 PAUSED (D-68); TMB deferred; do NOT touch the 4 foreign dirty files."`
+- Autonomous, clean context: the same prompt via `claude -p "…" --max-budget-usd <cap>`.
 
 ## Mission-control summary
-
-| Repo / lane | Branch / state | What shipped this thread | Plan by leverage |
+| Repo / lane | Branch / state / CI | Shipped this session | Next by leverage |
 |---|---|---|---|
-| HSquared.jl (engine perf) | `codex/2026-07-13-v07-performance-localization` @ `bfdd45b2` | measured A-inverse fast + REML fit is the wall; `fit_ai_reml` doesn't converge OOB; ultra-plan (don't build TMB) | re-run signal test → diagnose AI-REML convergence → cheap fix vs TMB |
-| hsquared (R twin) | same branch | (untouched this thread; bridges to Julia; no native engine) | receives the fix once the engine path converges fast |
-| D1 genomic-recovery | PAUSED (D-68); owner leans GO | — | separate thread; do not conflate |
+| HSquared.jl (Julia engine — production-sparse) | `codex/2026-07-13-…` @ `114ae24c`, PR #274 draft; `Pkg.test` green | F5 v2 gate PASS (recovery 0.19% @ q=1e5); F8 sommer AGREE 3.6e-5; 2× Rose CLEAR/LEGITIMATE; staged experimental | R bridge → owner G10 → F6 (high-fill tail) |
+| HSquared.jl (Julia engine — eigen, prior thread) | same branch; staged | G11 discharged (gate + sommer 7.77e-9); staged | R `method="eigen"` bridge → owner G10 |
+| hsquared (R twin) | separate repo, untouched | R-bridge contracts handed off (eigen + ai_reml) | implement opt-in routes (count stays 5) |
+| D1 genomic-recovery | PAUSED (D-68), same branch | — | separate thread; do not conflate |
 
-> Related: `docs/dev-log/native-engine-arc/native-engine-plan-hardened.md` ·
-> `docs/dev-log/native-engine-arc/adv-beat-the-plan.md` · `~/.claude/plans/splendid-weaving-shannon.md` (PLAN 2)
-> · brain note "HSquared perf triage — A-inverse is fast".
+> Detail companions: this session's after-task + the arc handover (`…-wave-f-production-sparse-handover.md`);
+> prior thread: `2026-07-24-claude-eigen-promotion-evidence-handover.md`. Ledger: Julia #5/#6 ↔ R #2/#5.
