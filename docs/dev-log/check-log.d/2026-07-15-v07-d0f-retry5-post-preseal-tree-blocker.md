@@ -35,10 +35,9 @@
 - The paired recovery checkpoints and paired check-log entries compare
   byte-identical. Targeted stale-future wording searches returned no current
   Retry-5-as-next-step hits.
-- `tools/handoff_gate.sh` was run in both twins before handoff drafting. It
-  correctly reported the still-uncommitted closure plus intentional Retry-6
-  and scaffold state; the landed closure and carried-over state are separated
-  explicitly in the handoff ledger.
+- `tools/handoff_gate.sh` was run in both twins before handoff drafting and
+  again after the closure landed. The initial Retry-6 R WIP was subsequently
+  landed at `8dea0ad`; the final ledger carries only the Julia scaffold.
 
 See
 `docs/dev-log/recovery-checkpoints/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`

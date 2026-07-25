@@ -39,6 +39,7 @@ Close Retry-5 at its immutable one-fit infrastructure endpoint, audit its admiss
 - `docs/dev-log/after-task/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`
 - `docs/dev-log/check-log.d/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`
 - `docs/dev-log/coordination-board.md`
+- `docs/dev-log/handover/2026-07-15-retry5-terminal-retry6-entry.md`
 - `docs/dev-log/phase-snapshot-archive.md`
 - `docs/dev-log/recovery-checkpoints/2026-07-15-v07-d0f-retry5-post-preseal-tree-blocker.md`
 - `docs/src/genomic-models.md`
@@ -114,8 +115,8 @@ Close Retry-5 at its immutable one-fit infrastructure endpoint, audit its admiss
 
 ## 10. Known Residuals
 
-- Initial Retry-6 repair commits are now pushed at Julia `d1914951` and R
-  `efda17e`; later R implementation/test edits remain uncommitted. The arc must
+- Retry-6 repair commits are now pushed at Julia `d1914951` and R `efda17e`
+  plus `8dea0ad`; the R tree is clean. The arc must
   still pass its own contract, mutations, exact reviews, clean deploy, durable
   preflight, preseal, and seed-lock before RNG.
 - `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl` remains an untracked
