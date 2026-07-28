@@ -1,5 +1,20 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-24 (H2 production-scale sparse fitter `fit_ai_reml` — recovery-at-scale gate PASSES (v2); evidence STAGED; owner G10 = KEEP STAGED).**
+  TWO engine fitters now carry STAGED experimental→covered evidence for the owner's G10, and the owner chose to
+  **KEEP BOTH STAGED — NOTHING promoted; no capability-status row flipped; `public_covered_count` STAYS 5**
+  (engine-covered ≠ R-public-covered; the count moves only when the R bridge lands). **(1) `fit_ai_reml`
+  (production-scale sparse, THIS thread):** F0 shows the direct path scales on low-fill (q=300k/2.3s) but WALLS
+  on adversarial high-fill (Totoro q=20k=1529s, fill 471) → **F6 deferred** to that tail; the PRE-DECLARED
+  recovery-at-scale gate FAILED v1 (Leg-C test-design flaw — banked negative, NOT relaxed) then **PASSED
+  corrected v2** (frozen `4fb6fb66`): recovery **0.19%/0.065% @ q=100,000** (48/48), deep-15-gen unbiasedness,
+  boundary 8/8, eigen≡AI 1.18e-7; DIRECT `sommer` comparator AGREE 3.6e-5; **2× real spawned Rose (package
+  CLEAR-WITH-CHANGES + v1→v2 LEGITIMATE CORRECTION)**. **(2) `fit_eigen_reml` (prior thread):** G11 discharged,
+  staged (see `docs/dev-log/phase-snapshot-archive.md`). Both owe the R bridge + G10. **D1 genomic PAUSED (D-68);
+  TMB deferred (D-2026-06-12); F6 deferred; R bridge = R-lane handoff.**
+  START HERE: `docs/dev-log/handover/2026-07-24-claude-handover.md` · arc detail:
+  `docs/dev-log/after-task/2026-07-24-wave-f-production-sparse-evidence.md`.
+
 - **As of 2026-07-24 (H2 eigen-once fitter — experimental→covered EVIDENCE PACKAGE assembled + STAGED; Rose CLEAR-WITH-CHANGES applied).**
   The `fit_eigen_reml` (`V1-EIGEN-REML`) promotion evidence is assembled to the doc-16 **G11** bar and **STAGED
   for the owner's G10 call — NOTHING promoted; the row stays `partial`/`experimental`; `public_covered_count`

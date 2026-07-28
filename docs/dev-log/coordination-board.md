@@ -34,6 +34,29 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+## F6 matrix-free fitter (`fit_matrix_free_reml`) — landed EXPERIMENTAL + OPT-IN (2026-07-28)
+
+- **Julia lane (this session):** F6 landed — the matrix-free Monte-Carlo EM-REML fitter for the
+  single-effect animal model, discharging the F0-deferred high-fill lever. **No capability flip;
+  `public_covered_count` stays 5.** It is an adapter + route over the existing v0.8-S2 `K≥2`
+  machinery (which runs unmodified as `K=1`), not new numerics. **`:auto` NEVER selects it — opt-in
+  only** (owner decision 2026-07-28: the route would have fired only at `n>20 000`, the single
+  regime never measured). Commits `5047676d`..`929442d1`, **unpushed**, PR #274 draft.
+- **External comparator:** ASReml-R 4.2.0.482 **AGREE** — 1.31e-7 vs exact `fit_ai_reml`,
+  0.33–0.51 SD vs the matrix-free across-seed mean. ASReml was given the PEDIGREE and built its own
+  `A⁻¹`, so the Henderson construction is checked too. **ESTIMAND ONLY — no ASReml timing recorded
+  or implied; the §4 honesty fence stands.** Discharged at VALIDATION SCALE only (q=2000, fill 75.2,
+  *below* the crossover) — **the at-scale comparator leg is still OWED.**
+- **Rose G8:** real spawned audit, CLEAR-WITH-CHANGES, all applied (incl. a push-blocker: a
+  published docstring still described the removed `:auto` route). A FRESH promote-specific Rose is
+  still required at any flip.
+- **OWED — see the sign-off ledger in `docs/dev-log/handover/2026-07-28-claude-handover.md`:**
+  pre-declared recovery gate at `n>20 000` (needs cluster access from Shinichi), the at-scale
+  comparator, the R bridge (R lane), and owner G10.
+- **R lane (OWED — R twin's job; do NOT edit `hsquared` from here):** an opt-in R route for the
+  matrix-free fitter alongside the eigen + ai_reml routes, marked EXPERIMENTAL; the count stays 5.
+  Ledger: Julia #5/#6 ↔ R #2/#5.
+
 ## Eigen fitter (`fit_eigen_reml`) — G11 evidence STAGED; R `method="eigen"` handoff (2026-07-24)
 
 - **Julia lane (this session):** the experimental→covered EVIDENCE PACKAGE for the eigen-once single-effect

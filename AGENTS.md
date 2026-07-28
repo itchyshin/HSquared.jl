@@ -25,20 +25,20 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-24 (H2 production-scale sparse fitter `fit_ai_reml` — recovery-at-scale gate PASSES (v2); evidence STAGED; owner G10 = KEEP STAGED).**
-  TWO engine fitters now carry STAGED experimental→covered evidence for the owner's G10, and the owner chose to
-  **KEEP BOTH STAGED — NOTHING promoted; no capability-status row flipped; `public_covered_count` STAYS 5**
-  (engine-covered ≠ R-public-covered; the count moves only when the R bridge lands). **(1) `fit_ai_reml`
-  (production-scale sparse, THIS thread):** F0 shows the direct path scales on low-fill (q=300k/2.3s) but WALLS
-  on adversarial high-fill (Totoro q=20k=1529s, fill 471) → **F6 deferred** to that tail; the PRE-DECLARED
-  recovery-at-scale gate FAILED v1 (Leg-C test-design flaw — banked negative, NOT relaxed) then **PASSED
-  corrected v2** (frozen `4fb6fb66`): recovery **0.19%/0.065% @ q=100,000** (48/48), deep-15-gen unbiasedness,
-  boundary 8/8, eigen≡AI 1.18e-7; DIRECT `sommer` comparator AGREE 3.6e-5; **2× real spawned Rose (package
-  CLEAR-WITH-CHANGES + v1→v2 LEGITIMATE CORRECTION)**. **(2) `fit_eigen_reml` (prior thread):** G11 discharged,
-  staged (see `docs/dev-log/phase-snapshot-archive.md`). Both owe the R bridge + G10. **D1 genomic PAUSED (D-68);
-  TMB deferred (D-2026-06-12); F6 deferred; R bridge = R-lane handoff.**
-  START HERE: `docs/dev-log/handover/2026-07-24-claude-handover.md` · arc detail:
-  `docs/dev-log/after-task/2026-07-24-wave-f-production-sparse-evidence.md`.
+- **As of 2026-07-28 (H2 F6 matrix-free fitter LANDED as experimental + OPT-IN; ASReml comparator AGREE; Rose applied).**
+  **THREE engine fitters are now experimental; NOTHING is promoted; `public_covered_count` STAYS 5.**
+  **(1) NEW — `fit_matrix_free_reml` (F6, this session):** matrix-free Monte-Carlo EM-REML for the single-effect
+  animal model, discharging the F0-deferred high-fill lever. It was an ADAPTER + route over the existing v0.8-S2
+  `K≥2` machinery (which runs unmodified as `K=1`) — no new numerics. Crossover (committed
+  `sim/matrix_free_crossover.tsv`, Mac Studio, median-of-3): exact WINS at fill 50/77 (0.13×/0.37×), matrix-free
+  wins 2.74× at fill 151 and **16.59× at fill 262**. **`:auto` NEVER selects it — OPT-IN ONLY** (owner decision:
+  the route would have fired only at `n>20 000`, the one regime never measured). External comparator **ASReml-R
+  4.2.0.482 AGREE 1.31e-7** vs exact, 0.33–0.51 SD vs matrix-free — **estimand only, no ASReml timing** (§4
+  fence). Real spawned **Rose CLEAR-WITH-CHANGES, all applied** (incl. a push-blocker: a published docstring
+  still described the removed route). **STILL OWED: recovery-to-truth at `n>20 000` (pre-declared gate), the
+  AT-SCALE comparator, the R bridge, G10.** **(2) `fit_ai_reml` + (3) `fit_eigen_reml`:** STAGED for G10, owner
+  chose KEEP STAGED; both owe the R bridge (see archive). **D1 genomic PAUSED (D-68/D-71); TMB deferred.**
+  START HERE: `docs/dev-log/handover/2026-07-28-claude-handover.md` (carries the sign-off ledger).
 
 ## Core Scope
 
