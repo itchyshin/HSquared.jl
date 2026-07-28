@@ -18,8 +18,7 @@ the accuracy-vs-feasibility trade, and how to control it.
 | accuracy | exact | approximate — the gradient carries a Monte-Carlo standard error |
 | where it wins | small–moderate size (exact, few iterations) | very large size, where the factorization is infeasible |
 
-**Why two?** With a *single* random effect the animal-model factorization stays sparse and scales
-to very large pedigrees. But with *two or more* random effects (a contemporary-group, maternal, or
+**Why two?** With *two or more* random effects (a contemporary-group, maternal, or
 permanent-environment term alongside the animal effect) the sparse Cholesky **fills in** — the
 factor becomes far denser than `C` — and past roughly `10⁵` individuals it becomes infeasible in
 memory and time (measured: the direct multi-effect path is already ~quadratic by `q ≈ 50 000`; a
@@ -27,10 +26,62 @@ METIS reordering did **not** fix it). The matrix-free engine never forms or fact
 has no fill wall — it has stayed feasible fitting `K = 3` models to 200 000 individuals in testing (the matrix-free *solve* it is built on reaches a million) — but it pays
 with Monte-Carlo noise in the variance-component gradient.
 
+A *single* random effect is usually the easy case — but **not always**, and the difference is
+**fill-in, not size**. See the next section.
+
 This is the same accuracy-for-feasibility trade a variational approximation makes: you reach for
 the approximate engine **only** where the exact one cannot run.
 
-## Choosing automatically
+## The single-effect animal model: size is not the problem, fill is
+
+For the univariate animal model the same two-engine choice exists —
+[`fit_ai_reml`](@ref) (exact) versus [`fit_matrix_free_reml`](@ref) (matrix-free) — and
+[`fit_animal_model`](@ref) with `target = :auto` picks between them (plus the eigen-once path).
+
+The intuition "one random effect, so the factorization stays sparse" is **only true for
+well-structured pedigrees**. What decides cost is the fill-in of the MME Cholesky, `nnz(L)/n`:
+
+| pedigree | fill `nnz(L)/n` | `fit_ai_reml` |
+|---|---|---|
+| half-sib, q = 300 000 | ~17–19 | 2.3 s |
+| random-mating, q = 10 000 | 262 | 132 s |
+| random-mating, q = 20 000 | 471 | 1 529 s (~25 min) |
+
+A high-fill pedigree at **1/15th the size** costs ~60× more. Field data from livestock and most
+managed populations is low-fill and needs none of this; densely interconnected pedigrees — small
+founder bases, random mating, deep overlapping generations — are where it bites.
+
+The mechanism is specific and worth knowing, because it is *not* the factorization. At
+q = 20 000 the sparse Cholesky takes 0.35 s; the **Takahashi selected inverse** that supplies
+AI-REML's exact score trace takes 381 s, and it is recomputed every iteration. That single term
+is the wall. [`fit_matrix_free_reml`](@ref) replaces it with a matrix-free Hutchinson stochastic
+trace and PCG solves, so `C` is never assembled or factorized during the fit:
+
+```julia
+fit = fit_animal_model(spec; target = :matrix_free)     # or fit_matrix_free_reml(spec)
+```
+
+Measured crossover on high-fill pedigrees (local, single-thread — a measurement, not a
+performance claim; reproduce with `sim/matrix_free_crossover_benchmark.jl`):
+
+| q | fill | exact | matrix-free | speed-up | agreement with the exact optimum |
+|---|---|---|---|---|---|
+| 2 000 | 77 | 1.06 s | 2.78 s | 0.38× (exact wins) | 3.0e-3 |
+| 5 000 | 151 | 24.7 s | 8.8 s | **2.80×** | 4.7e-3 |
+| 10 000 | 262 | 220.1 s | 14.4 s | **15.3×** | 4.7e-3 |
+
+The exact path grows super-linearly in fill; the matrix-free one roughly linearly. Note the
+agreement column: it is a Monte-Carlo *approximation*, not equality — see
+[Reading the Monte-Carlo noise](@ref) below.
+
+!!! note "`:auto` diverts only where the exact path cannot run"
+    For the animal model `target = :auto` routes to the matrix-free fitter **only** when
+    `n > 20 000` **and** fill > 150 — past the dense eigen cap, where a high-fill MME has no exact
+    escape. Below that cap it never diverts a fit the validated exact path can handle, because
+    swapping an exact estimator for a stochastic one silently would be a worse failure than being
+    slow. Force it anywhere with `target = :matrix_free`.
+
+## Choosing automatically (multi-effect)
 
 ```julia
 fit = fit_multi_effect(y, X, effects)                 # method = :auto (the default)
@@ -41,6 +92,12 @@ fit = fit_multi_effect(y, X, effects)                 # method = :auto (the defa
 - a **single** random effect (`K = 1`), or `N = p + Σqᵢ ≤ direct_max_n` → **exact**;
 - otherwise → **matrix-free**, printing a one-line `@info` that it switched and that the estimates
   carry a Monte-Carlo standard error.
+
+!!! warning "`fit_multi_effect`'s `K = 1` shortcut assumes low fill"
+    That `K = 1` → exact rule is a *structural* assumption, and a high-fill single-effect pedigree
+    breaks it (see the previous section). For the univariate animal model prefer
+    [`fit_animal_model`](@ref) with `target = :auto`, which routes on measured fill rather than on
+    `K`; or pass `method = :matrix_free` here explicitly.
 
 ```julia
 fit = fit_multi_effect(y, X, effects; method = :exact)        # force exact (may run out of memory)
@@ -54,9 +111,16 @@ fit = fit_multi_effect(y, X, effects; method = :matrix_free)  # force matrix-fre
     problem, try `method = :exact` first; if it fits in memory, its answer is exact.
 
 The returned `NamedTuple` carries a `dispatch` field (`:exact` or `:matrix_free`) recording which
-engine ran. The two result shapes differ: the matrix-free result has a `trace_mcse` (and **no**
-`loglik` — a matrix-free REML log-likelihood needs a stochastic log-determinant, which is not yet
-implemented).
+engine ran. The two result shapes differ: the matrix-free result adds a `trace_mcse`, and its
+`loglik` is `NaN` unless you ask for it with `compute_loglik = true` — the matrix-free REML
+log-likelihood needs a stochastic log-determinant ([`matrix_free_reml_loglik`](@ref), estimated by
+stochastic Lanczos quadrature), so it carries its own Monte-Carlo error, reported as `loglik_mcse`.
+
+The single-effect [`fit_matrix_free_reml`](@ref) differs here: it returns the standard
+`AnimalModelFit`, and its log-likelihood is **exact**, not stochastic. It can afford one
+[`sparse_reml_loglik`](@ref) call at the converged estimate because that costs two Choleskys and
+**no** selected inverse — and the selected inverse, not the factorization, was the wall it exists
+to avoid. Set `compute_loglik = false` to skip even that.
 
 ## Reading the Monte-Carlo noise
 
@@ -80,3 +144,15 @@ controllable by `nprobe`.
   page and the v0.8 recovery-checkpoints).
 - The exact engine's small-sample recovery is the covered `V3-NEFFECT-REML` result. The matrix-free
   engine's added claim is only that its Monte-Carlo approximation **reproduces** that exact fit.
+- The same fence applies to the single-effect [`fit_matrix_free_reml`](@ref) (`V1-MATFREE-REML`,
+  **experimental**). It is validated to recover the `fit_ai_reml` optimum within Monte-Carlo error
+  on committed high-fill fixtures — and that is agreement with *another estimator*, not
+  recovery-to-truth. A pre-declared known-truth recovery gate at tail scale and an external
+  same-estimand comparator are **owed** before any covered claim. It is not wired into the R
+  bridge and moves no public capability count.
+- Every timing on this page is a **measurement on the machine that ran it**, not a performance
+  claim or a competitive benchmark, and none of it is a CI gate.
+- Both `:auto` fill thresholds (60 for eigen-once, 150 for matrix-free) are **first-pass scalar
+  heuristics**. The true crossover is a joint fill × `n` surface; the 150 anchor was measured at
+  `n = 5 000` and extrapolated into the `n > 20 000` tail it serves. Mapping that surface properly
+  is owed work.
