@@ -1,0 +1,10 @@
+# HSquared.jl F6 matrix-free crossover benchmark  2026-07-28T13:29:52.810
+# host=Mac-Studio-Szymek.local  julia=1.12.6  JULIA_NUM_THREADS=1  nprobe=64  nrep=3
+# LBTConfig([ILP64] libopenblas64_.dylib)
+# OPT-IN measurement; NO performance claim, NO CI gate, NOT recovery evidence.
+# exact_s/matfree_s are MEDIANS of nrep timed runs after one discarded warm-up.
+q	fill_nnzL_over_n	exact_s	exact_s_min	exact_s_max	matfree_s	matfree_s_min	matfree_s_max	ratio	rel_sigma_a2	rel_sigma_e2	sigma_a2_exact	sigma_e2_exact	sigma_a2_mf	sigma_e2_mf	conv_exact	conv_mf	iters_mf	nprobe	nrep	peakRSS_MB	host	julia
+1000	49.656	0.2183	0.2154	0.2203	1.7322	1.7029	1.7353	0.1260	1.748050e-02	7.082999e-03	0.948785	1.130597	0.965371	1.122589	true	true	52	64	3	1077.3	Mac-Studio-Szymek.local	1.12.6
+2000	76.927	1.0546	0.9832	1.0875	2.8826	2.8196	2.8874	0.3659	3.026516e-03	1.527105e-03	1.054963	0.986596	1.051770	0.988103	true	true	45	64	3	1278.8	Mac-Studio-Szymek.local	1.12.6
+5000	150.728	25.0261	23.9397	25.8252	9.1245	8.9255	9.5114	2.7427	4.709581e-03	2.419874e-03	0.927522	1.020680	0.923153	1.023150	true	true	52	64	3	1696.2	Mac-Studio-Szymek.local	1.12.6
+10000	262.437	231.3636	229.4683	234.0214	13.9435	13.9290	14.0597	16.5930	4.749413e-03	2.649378e-03	1.016711	1.021130	1.021539	1.018424	true	true	32	64	3	1995.9	Mac-Studio-Szymek.local	1.12.6

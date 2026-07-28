@@ -4421,9 +4421,10 @@ end
     # STOCHASTIC — this pins recovery of the exact optimum WITHIN Monte-Carlo error, determinism
     # given a seed, the standard result shape, and the guards. Deterministic (fixed seeds).
     #
-    # Off-CI scaling measurement (sim/matrix_free_crossover_benchmark.jl; local, single-thread,
-    # high-fill random-mating pedigree): exact-vs-matrix-free wall clock 0.38x at fill 77 (q=2000),
-    # 2.80x at fill 151 (q=5000), 15.32x at fill 262 (q=10000) — a MEASUREMENT, not a claim.
+    # Off-CI scaling measurement (sim/matrix_free_crossover_benchmark.jl → sim/matrix_free_crossover.tsv;
+    # Mac Studio, single-thread, median of 3, high-fill random-mating pedigrees): exact-vs-matrix-free
+    # wall clock 0.13x at fill 50 (q=1000) and 0.37x at fill 77 (q=2000) — exact wins — then 2.74x at
+    # fill 151 (q=5000) and 16.59x at fill 262 (q=10000) — a MEASUREMENT, not a claim.
     rng = MersenneTwister(20260728)
     nm = 400
     sm = zeros(Int, nm); dm = zeros(Int, nm)
@@ -4492,12 +4493,12 @@ end
           :matrix_free_reml
 end
 
-@testset "target = :auto routes to matrix-free ONLY in the measured high-fill tail (F6)" begin
-    # The F6 route must fire exactly where F0 measured the exact path infeasible — high fill AND
-    # n past the dense eigen cap — and NOWHERE else. Below the cap :auto must keep its previous
-    # behaviour unchanged, because diverting a fit the validated exact path handles to a stochastic
-    # estimator would be a silent estimator change. The cap/threshold are keyword-injected here so
-    # the branch is exercised without building a >20 000-animal pedigree in CI.
+@testset "target = :auto NEVER selects the stochastic matrix-free fitter (F6 opt-in fence)" begin
+    # `fit_matrix_free_reml` is OPT-IN ONLY. :auto routes between the two EXACT fitters and must
+    # never hand a user a Monte-Carlo estimate they did not ask for — the regime a route would
+    # serve (high fill past the dense cap) is precisely where the fitter has NOT been measured,
+    # so routing on the n=5000 crossover anchor would be extrapolation into the unmeasured tail.
+    # This pins the fence across every axis :auto looks at: n, fill, and Z.
     function _ped(n; window, seed = 11)
         rng = MersenneTwister(seed); s = zeros(Int, n); d = zeros(Int, n)
         for i in 3:n
@@ -4516,29 +4517,37 @@ end
     lowfill = _ped(500; window = 50)    # well-structured
     highfill = _ped(800; window = 0)    # random mating
 
-    # (a) past the cap, high fill → matrix-free; the SAME spec under the real (default) cap must
-    # NOT divert to the stochastic estimator — whichever exact fitter it picks.
-    @test HSquared._auto_reml_route(highfill; max_dense_n = 100,
-                                    matrix_free_fill_threshold = 10.0) == :matrix_free_reml
-    @test HSquared._auto_reml_route(highfill) != :matrix_free_reml
+    # (a) :auto only ever yields an EXACT fitter, on every spec and on both sides of the cap.
+    # `max_dense_n = 100` puts these specs past the dense cap, which is where a matrix-free route
+    # would have fired.
+    for spec in (lowfill, highfill), cap in (100, 20_000)
+        @test HSquared._auto_reml_route(spec; max_dense_n = cap) in (:ai_reml, :eigen_reml)
+    end
 
-    # (b) past the cap but BELOW the fill threshold → the exact sparse default, not matrix-free
-    @test HSquared._auto_reml_route(highfill; max_dense_n = 100,
-                                    matrix_free_fill_threshold = 1e6) == :ai_reml
-    @test HSquared._auto_reml_route(lowfill; max_dense_n = 100,
-                                    matrix_free_fill_threshold = 150.0) == :ai_reml
+    # (b) past the cap the eigen rescue is gone, so a high-fill spec falls back to the validated
+    # sparse default rather than being diverted to the stochastic fitter
+    @test HSquared._auto_reml_route(highfill; max_dense_n = 100) == :ai_reml
 
-    # (c) the route survives Z ≠ I (matrix-free has no Z = I restriction, unlike eigen-once)
+    # (c) Z ≠ I never routes to a dense/stochastic path either
     nz = length(highfill.y)
     Zbad = sparse(1.0I, nz, nz); Zbad[1, 1] = 2.0
     zspec = animal_model_spec(highfill.y, ones(nz, 1), Zbad, highfill.Ainv; ids = 1:nz, method = :REML)
-    @test HSquared._auto_reml_route(zspec; max_dense_n = 100,
-                                    matrix_free_fill_threshold = 10.0) == :matrix_free_reml
-    @test HSquared._auto_reml_route(zspec) == :ai_reml      # below the cap: unchanged behaviour
+    @test HSquared._auto_reml_route(zspec; max_dense_n = 100) == :ai_reml
+    @test HSquared._auto_reml_route(zspec) == :ai_reml
 
-    # (d) the default thresholds are the documented, evidence-anchored ones
+    # (d) the end-to-end fit agrees: :auto never returns a matrix-free fit
+    @test fit_animal_model(lowfill; target = :auto).target in (:ai_reml, :eigen_reml)
+    @test fit_animal_model(highfill; target = :auto).target in (:ai_reml, :eigen_reml)
+
+    # (e) the crossover anchor is RECORDED but unwired — `_auto_reml_route` must not accept it as
+    # a routing knob (a regression here would mean someone re-wired the divert)
     @test HSquared._AUTO_MATRIX_FREE_FILL_THRESHOLD == 150.0
     @test HSquared._AUTO_EIGEN_FILL_THRESHOLD == 60.0
+    @test_throws MethodError HSquared._auto_reml_route(lowfill; matrix_free_fill_threshold = 10.0)
+
+    # (f) but the fitter is still reachable explicitly — opt-in, not removed
+    @test fit_animal_model(highfill; target = :matrix_free, nprobe = 16,
+                           seed = 3).target == :matrix_free_reml
 end
 
 @testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin

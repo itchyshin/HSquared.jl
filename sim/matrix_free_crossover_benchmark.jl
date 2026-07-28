@@ -23,7 +23,7 @@
 # Usage:  julia --project=. sim/matrix_free_crossover_benchmark.jl [q1,q2,...] [out.tsv] [nprobe]
 
 using HSquared
-using LinearAlgebra, SparseArrays, Printf, Dates, Random
+using LinearAlgebra, SparseArrays, Printf, Dates, Random, Statistics
 
 # High-fill pedigree: small founder base + RANDOM mating (each non-founder draws two distinct
 # parents uniformly from ALL earlier individuals). The long-range parent edges make the
@@ -66,6 +66,11 @@ end
 
 rss_mb() = Sys.maxrss() / 2^20
 
+# NREP timed runs per cell, reported as the MEDIAN — the house convention
+# (`sim/cpu_fit_benchmark.jl`: "Median of 3 timed runs after one JIT warm-up run"). min/max are
+# recorded alongside so a single-run outlier is visible rather than hidden behind the median.
+const NREP = 3
+
 function bench(qt::Int; nfounder_frac = 0.005, nprobe = 64, seed = 20260728)
     GC.gc()
     ped = adversarial(qt; nfounder_frac = nfounder_frac)
@@ -80,11 +85,22 @@ function bench(qt::Int; nfounder_frac = 0.005, nprobe = 64, seed = 20260728)
     chf = cholesky(Symmetric(lhs); check = true)
     fill = nnz(sparse(chf.L)) / q
 
-    t_exact = @elapsed ex = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
-    t_mf = @elapsed mf = fit_matrix_free_reml(spec; nprobe = nprobe, seed = seed)
+    # Both fitters are DETERMINISTIC (matrix-free given `seed`), so the estimates are identical
+    # across repeats; only wall clock varies. Timing is repeated, the estimate is taken once.
+    te = Float64[]; tm = Float64[]
+    local ex, mf
+    for _ in 1:NREP
+        GC.gc()
+        push!(te, @elapsed ex = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0)))
+        GC.gc()
+        push!(tm, @elapsed mf = fit_matrix_free_reml(spec; nprobe = nprobe, seed = seed))
+    end
+    t_exact = median(te); t_mf = median(tm)
     ev = ex.variance_components; mv = mf.variance_components
 
     return (; q, fill, t_exact, t_mf,
+            t_exact_min = minimum(te), t_exact_max = maximum(te),
+            t_mf_min = minimum(tm), t_mf_max = maximum(tm),
             ratio = t_exact / t_mf,
             rel_a = abs(mv.sigma_a2 - ev.sigma_a2) / ev.sigma_a2,
             rel_e = abs(mv.sigma_e2 - ev.sigma_e2) / ev.sigma_e2,
@@ -104,10 +120,11 @@ function main()
     println("# ", BLAS.get_config())
     println("# OPT-IN measurement; NO performance claim, NO CI gate, NOT recovery evidence.")
     println("# ratio > 1 means the matrix-free fitter is faster; rel_a/rel_e are Monte-Carlo error.")
+    println("# timings are the MEDIAN of ", NREP, " runs after one discarded JIT warm-up; min/max in the TSV.")
     bench(400; nprobe = np)                      # JIT warm-up (discarded)
     rows = NamedTuple[]
     for q in qs
-        @printf("# benchmarking high-fill q≈%d ...\n", q); flush(stdout)
+        @printf("# benchmarking high-fill q≈%d (%d reps) ...\n", q, NREP); flush(stdout)
         push!(rows, bench(q; nprobe = np))
     end
     @printf("\n%-9s %8s %10s %10s %8s %10s %10s %6s\n",
@@ -116,15 +133,29 @@ function main()
         @printf("%-9d %8.1f %10.3f %10.3f %8.2f %10.2e %10.2e %6d\n",
                 r.q, r.fill, r.t_exact, r.t_mf, r.ratio, r.rel_a, r.rel_e, r.iters_mf)
     end
+    println("\n# spread across the ", NREP, " timed runs (median [min, max]):")
+    for r in rows
+        @printf("#   q=%-7d exact %.3f [%.3f, %.3f]   matfree %.3f [%.3f, %.3f]\n",
+                r.q, r.t_exact, r.t_exact_min, r.t_exact_max,
+                r.t_mf, r.t_mf_min, r.t_mf_max)
+    end
     open(out, "w") do io
-        println(io, "q\tfill_nnzL_over_n\texact_s\tmatfree_s\tratio\trel_sigma_a2\trel_sigma_e2\t" *
+        println(io, "# HSquared.jl F6 matrix-free crossover benchmark  ", Dates.now())
+        println(io, "# host=", gethostname(), "  julia=", VERSION,
+                    "  JULIA_NUM_THREADS=", Threads.nthreads(), "  nprobe=", np, "  nrep=", NREP)
+        println(io, "# ", BLAS.get_config())
+        println(io, "# OPT-IN measurement; NO performance claim, NO CI gate, NOT recovery evidence.")
+        println(io, "# exact_s/matfree_s are MEDIANS of nrep timed runs after one discarded warm-up.")
+        println(io, "q\tfill_nnzL_over_n\texact_s\texact_s_min\texact_s_max\tmatfree_s\tmatfree_s_min\tmatfree_s_max\t" *
+                    "ratio\trel_sigma_a2\trel_sigma_e2\t" *
                     "sigma_a2_exact\tsigma_e2_exact\tsigma_a2_mf\tsigma_e2_mf\t" *
-                    "conv_exact\tconv_mf\titers_mf\tnprobe\tpeakRSS_MB\thost\tjulia")
+                    "conv_exact\tconv_mf\titers_mf\tnprobe\tnrep\tpeakRSS_MB\thost\tjulia")
         for r in rows
-            @printf(io, "%d\t%.3f\t%.4f\t%.4f\t%.4f\t%.6e\t%.6e\t%.6f\t%.6f\t%.6f\t%.6f\t%s\t%s\t%d\t%d\t%.1f\t%s\t%s\n",
-                    r.q, r.fill, r.t_exact, r.t_mf, r.ratio, r.rel_a, r.rel_e,
+            @printf(io, "%d\t%.3f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.6e\t%.6e\t%.6f\t%.6f\t%.6f\t%.6f\t%s\t%s\t%d\t%d\t%d\t%.1f\t%s\t%s\n",
+                    r.q, r.fill, r.t_exact, r.t_exact_min, r.t_exact_max,
+                    r.t_mf, r.t_mf_min, r.t_mf_max, r.ratio, r.rel_a, r.rel_e,
                     r.sigma_a2_exact, r.sigma_e2_exact, r.sigma_a2_mf, r.sigma_e2_mf,
-                    r.conv_exact, r.conv_mf, r.iters_mf, np, r.rss, gethostname(), VERSION)
+                    r.conv_exact, r.conv_mf, r.iters_mf, np, NREP, r.rss, gethostname(), VERSION)
         end
     end
     println("\n# wrote ", out)

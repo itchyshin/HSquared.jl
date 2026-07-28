@@ -412,33 +412,29 @@ end
 # EXPERIMENTAL first-pass heuristic; the exact crossover is a joint fill×n surface (V1-EIGEN-REML).
 const _AUTO_EIGEN_FILL_THRESHOLD = 60.0
 
-# F6 route threshold: the fill at which the MATRIX-FREE Monte-Carlo fitter takes over from
-# sparse AI-REML past the dense eigen cap. Anchored to the LOWEST fill at which matrix-free was
-# MEASURED to win on a single-effect high-fill pedigree — `nnz(L)/n = 150.7` (q=5000: exact
-# 24.7 s vs matrix-free 8.8 s = 2.80x, recovering the exact optimum to 4.7e-3). Below that the
-# exact path still won at the sizes measured (fill 76.9 → 0.38x). Deliberately conservative and
-# biased toward the validated exact default: mis-routing to AI-REML is a slowdown, mis-routing
-# to matrix-free buys speed with Monte-Carlo noise in the gradient.
+# F6 crossover anchor — RECORDED, and DELIBERATELY NOT WIRED INTO `:auto`.
 #
-# HONEST SCOPE: the 150.7 anchor is measured at n=5000 and EXTRAPOLATED to the n > max_dense_n
-# tail this route serves, where the exact path's selected inverse is measured-infeasible anyway
-# (q=20 000, fill 471: 1529 s). The true crossover is a joint fill x n surface; mapping it is
-# owed work (validation-debt V1-MATFREE-REML), as is a recovery gate at tail scale.
+# This is the lowest MME fill `nnz(L)/n` at which the matrix-free Monte-Carlo fitter was MEASURED
+# to beat sparse AI-REML on a single-effect high-fill pedigree
+# (`sim/matrix_free_crossover_benchmark.jl`; below it the exact path still won at the sizes
+# measured).
+#
+# It is NOT a routing threshold, and `:auto` never selects `fit_matrix_free_reml`. The regime such
+# a route would serve — high fill AND `n > max_dense_n` — is precisely the regime in which the
+# matrix-free fitter has NOT been measured: this anchor comes from n=5000, so routing on it past
+# the dense cap would mean auto-selecting a STOCHASTIC estimator on the strength of a number
+# measured somewhere else. `fit_matrix_free_reml` is therefore OPT-IN ONLY
+# (`fit_animal_model(spec; target = :matrix_free)`). Wiring it into `:auto` needs a pre-declared
+# recovery gate at `n > 20 000` first (validation-debt `V1-MATFREE-REML`); the true crossover is a
+# joint fill x n surface, not a scalar.
 const _AUTO_MATRIX_FREE_FILL_THRESHOLD = 150.0
 
 function _auto_reml_route(spec::AnimalModelSpec;
                           max_dense_n::Integer = 20_000,
-                          fill_threshold::Real = _AUTO_EIGEN_FILL_THRESHOLD,
-                          matrix_free_fill_threshold::Real = _AUTO_MATRIX_FREE_FILL_THRESHOLD)
+                          fill_threshold::Real = _AUTO_EIGEN_FILL_THRESHOLD)
     n = length(spec.y)
     # eigen-once is only a candidate for the dense-feasible standard Z = I animal model
-    eigen_candidate = n <= max_dense_n && sparse(Float64.(spec.Z)) == sparse(1.0I, n, n)
-    # Past the dense cap the eigen rescue is gone, so a high-fill MME has no exact escape: that
-    # is the F0-measured tail the matrix-free fitter exists for. Below the cap, keep the
-    # previous behaviour exactly — never silently divert a fit the validated exact path handles.
-    matrix_free_candidate = n > max_dense_n
-    (eigen_candidate || matrix_free_candidate) || return :ai_reml
-
+    (n <= max_dense_n && sparse(Float64.(spec.Z)) == sparse(1.0I, n, n)) || return :ai_reml
     lhs, _, _ = _sparse_mme_system(spec, 1.0, 1.0)   # MME sparsity pattern is variance-independent
     factor = try
         cholesky(Symmetric(lhs); check = true)
@@ -446,10 +442,7 @@ function _auto_reml_route(spec::AnimalModelSpec;
         err isa LinearAlgebra.PosDefException || rethrow(err)
         return :ai_reml                              # indefinite MME → let the sparse path report it
     end
-    fill = nnz(sparse(factor.L)) / n
-    eigen_candidate && fill > fill_threshold && return :eigen_reml
-    matrix_free_candidate && fill > matrix_free_fill_threshold && return :matrix_free_reml
-    return :ai_reml
+    return (nnz(sparse(factor.L)) / n) > fill_threshold ? :eigen_reml : :ai_reml
 end
 
 """
@@ -2677,19 +2670,19 @@ EM-REML; STOCHASTIC — estimates carry Monte-Carlo error).
 at supplied variance components; it does not estimate them and does not return
 log-likelihood, AIC, `df`, or optimizer diagnostics.
 
-`target = :auto` picks a fitter from the MME fill-in `nnz(L)/n` (variance-independent) and `n`,
-biased toward the validated exact default — it diverts only where the exact path is
-measured-infeasible:
+`target = :auto` picks between the two EXACT fitters from the MME fill-in `nnz(L)/n`
+(variance-independent) and `n`, biased toward the validated sparse default:
 
 | condition | route | why |
 |---|---|---|
 | `n ≤ 20 000`, `Z = I`, fill > 60 | [`fit_eigen_reml`](@ref) | dense eigen-once beats a high-fill sparse factorization |
-| `n > 20 000`, fill > 150 | [`fit_matrix_free_reml`](@ref) | past the dense cap a high-fill MME has no exact escape (F0: q=20 000, fill 471 → 1529 s) |
 | otherwise | [`fit_ai_reml`](@ref) | the validated sparse default |
 
-The `:auto` route to the STOCHASTIC matrix-free fitter fires only in that measured tail; below
-the dense cap `:auto` never diverts a fit the exact path handles. Both thresholds are
-first-pass heuristics — see [`fit_matrix_free_reml`](@ref) for what the matrix-free route owes.
+`:auto` **never** selects the stochastic [`fit_matrix_free_reml`](@ref) — that fitter is opt-in
+only (`target = :matrix_free`). The regime it would serve (high fill past the dense cap) is
+exactly the regime in which it has not yet been measured, so auto-selecting it there would trade
+an exact estimator for a Monte-Carlo one on unmeasured ground. See
+[`fit_matrix_free_reml`](@ref) for what it owes before that changes.
 """
 function fit_animal_model(
     spec::AnimalModelSpec;
@@ -2736,10 +2729,9 @@ function fit_animal_model(
             throw(ArgumentError("target = :auto selects the fitter and its defaults; pass " *
                                 "target = :eigen, :ai_reml, or :matrix_free to set optimizer " *
                                 "keyword arguments"))
-        route = _auto_reml_route(spec)
-        route == :eigen_reml && return fit_eigen_reml(spec)
-        route == :matrix_free_reml && return fit_matrix_free_reml(spec)
-        return fit_ai_reml(spec)
+        # NOTE: `:auto` never selects `fit_matrix_free_reml` — that fitter is opt-in only
+        # (`target = :matrix_free`). See `_AUTO_MATRIX_FREE_FILL_THRESHOLD` for why.
+        return _auto_reml_route(spec) == :eigen_reml ? fit_eigen_reml(spec) : fit_ai_reml(spec)
     end
 
     isempty(kwargs) ||

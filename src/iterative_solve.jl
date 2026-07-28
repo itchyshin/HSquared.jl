@@ -997,9 +997,15 @@ extractors and the result payload work unchanged.
 
 EXPERIMENTAL, REML-only, two-component, Gaussian-only. It RECOVERS the exact `fit_ai_reml`
 optimum within Monte-Carlo error on the committed high-fill fixtures (`test/runtests.jl`), and
-that is ALL that is claimed: a pre-declared known-truth recovery gate at scale and an external
-same-estimand comparator are **OWED** before any covered claim. It is NOT the default fit path
-— `target = :auto` selects it only in the measured-infeasible tail (see [`fit_animal_model`](@ref)).
+that is ALL that is claimed. An external same-estimand REML comparator is discharged (ASReml-R
+4.2.0.482 at q=2000, `docs/dev-log/recovery-checkpoints/2026-07-28-asreml-matfree-comparator.md`)
+— but that is agreement with another *estimator*, not recovery-to-truth, and a pre-declared
+known-truth recovery gate at tail scale is **OWED** before any covered claim.
+
+**OPT-IN ONLY: `target = :auto` NEVER selects this fitter.** `:auto` routes between the two EXACT
+fitters (see [`fit_animal_model`](@ref)); the regime a route would serve is precisely the one in
+which this fitter has not been measured. Reach it explicitly with
+`fit_animal_model(spec; target = :matrix_free)`.
 """
 function fit_matrix_free_reml(
     spec::AnimalModelSpec;
