@@ -172,8 +172,9 @@ end
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 55
+    @test length(validation) == 56
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
+    @test "V1-MATFREE-REML" in [row.id for row in validation]
     @test "V2-APY" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
     @test "V3-NEFFECT-MATFREE-FIT" in [row.id for row in validation]
@@ -4411,6 +4412,133 @@ end
 
     # :auto is zero-config (it selects the fitter), so optimizer kwargs are rejected
     @test_throws ArgumentError fit_animal_model(low; target = :auto, iterations = 50)
+end
+
+@testset "fit_matrix_free_reml (F6 matrix-free MC EM-REML) recovers the AI-REML optimum" begin
+    # F6: the matrix-free Monte-Carlo fitter for the high-fill tail where fit_ai_reml's Takahashi
+    # selected inverse is measured-infeasible and the dense eigen rescue is past its cap. It never
+    # assembles or factorizes C during the fit (PCG solves + Hutchinson trace), so its estimate is
+    # STOCHASTIC — this pins recovery of the exact optimum WITHIN Monte-Carlo error, determinism
+    # given a seed, the standard result shape, and the guards. Deterministic (fixed seeds).
+    #
+    # Off-CI scaling measurement (sim/matrix_free_crossover_benchmark.jl; local, single-thread,
+    # high-fill random-mating pedigree): exact-vs-matrix-free wall clock 0.38x at fill 77 (q=2000),
+    # 2.80x at fill 151 (q=5000), 15.32x at fill 262 (q=10000) — a MEASUREMENT, not a claim.
+    rng = MersenneTwister(20260728)
+    nm = 400
+    sm = zeros(Int, nm); dm = zeros(Int, nm)
+    for i in 3:nm                                   # random mating → deliberately high fill-in
+        sm[i] = rand(rng, 1:i-1); dm[i] = rand(rng, 1:i-1)
+        while dm[i] == sm[i]; dm[i] = rand(rng, 1:i-1); end
+    end
+    Am = pedigree_inverse(collect(1:nm), sm, dm)
+    um = zeros(nm)
+    for i in 1:nm
+        (sm[i] == 0 && dm[i] == 0) ? (um[i] = sqrt(0.4) * randn(rng)) :
+            (um[i] = 0.5 * (um[sm[i]] + um[dm[i]]) + sqrt(0.2) * randn(rng))
+    end
+    ym = 10.0 .+ um .+ sqrt(0.6) .* randn(rng, nm)
+    Xm = ones(nm, 1); Zm = sparse(1.0I, nm, nm)
+    specm = animal_model_spec(ym, Xm, Zm, Am; ids = 1:nm, method = :REML)
+
+    exact = fit_ai_reml(specm)
+    mf = fit_matrix_free_reml(specm; nprobe = 256, seed = 20260728)
+
+    # (a) recovers the exact optimum WITHIN Monte-Carlo error. The tolerance is loose ON PURPOSE:
+    # this estimator is stochastic (error ∝ 1/√nprobe), so a tight rtol would be a false claim.
+    @test mf.converged
+    @test mf.variance_components.sigma_a2 ≈ exact.variance_components.sigma_a2 rtol = 5e-2
+    @test mf.variance_components.sigma_e2 ≈ exact.variance_components.sigma_e2 rtol = 5e-2
+    @test mf.target == :matrix_free_reml
+    @test mf.variance_components_source == :estimated_matrix_free_mc_reml
+    @test mf.sparse_mme_path
+    @test !mf.dense_validation_path
+
+    # (b) the loglik is the EXACT sparse REML loglik at the returned estimate (not stochastic):
+    # it must equal a direct sparse_reml_loglik call at those same variance components.
+    direct_ll = sparse_reml_loglik(specm, mf.variance_components.sigma_a2,
+                                   mf.variance_components.sigma_e2)
+    @test mf.likelihood.loglik ≈ direct_ll.loglik rtol = 1e-12
+    @test isfinite(mf.likelihood.loglik)
+
+    # (c) deterministic given the seed; a DIFFERENT seed moves the estimate (it really is MC)
+    @test fit_matrix_free_reml(specm; nprobe = 256, seed = 20260728).variance_components ==
+          mf.variance_components
+    @test fit_matrix_free_reml(specm; nprobe = 256, seed = 99).variance_components.sigma_a2 !=
+          mf.variance_components.sigma_a2
+
+    # (d) standard extractors work on the returned AnimalModelFit
+    @test length(breeding_values(mf).values) == nm
+    @test length(fixed_effects(mf)) == 1
+    @test heritability(mf) ≈ heritability(exact) rtol = 5e-2
+
+    # (e) compute_loglik = false skips the one factorization and reports NaN honestly
+    mfn = fit_matrix_free_reml(specm; nprobe = 8, seed = 1, compute_loglik = false)
+    @test isnan(mfn.likelihood.loglik)
+
+    # (f) supplied `initial` is accepted in animal-model (sigma_a2, sigma_e2) naming
+    mfi = fit_matrix_free_reml(specm; nprobe = 64, seed = 5,
+                               initial = (sigma_a2 = 0.5, sigma_e2 = 0.5))
+    @test mfi.variance_components.sigma_a2 > 0
+
+    # (g) guard: REML-only
+    @test_throws ArgumentError fit_matrix_free_reml(
+        animal_model_spec(ym, Xm, Zm, Am; ids = 1:nm, method = :ML))
+
+    # (h) explicit routing through fit_animal_model, both spellings
+    @test fit_animal_model(specm; target = :matrix_free, nprobe = 32, seed = 3).target ==
+          :matrix_free_reml
+    @test fit_animal_model(specm; target = :matrix_free_reml, nprobe = 32, seed = 3).target ==
+          :matrix_free_reml
+end
+
+@testset "target = :auto routes to matrix-free ONLY in the measured high-fill tail (F6)" begin
+    # The F6 route must fire exactly where F0 measured the exact path infeasible — high fill AND
+    # n past the dense eigen cap — and NOWHERE else. Below the cap :auto must keep its previous
+    # behaviour unchanged, because diverting a fit the validated exact path handles to a stochastic
+    # estimator would be a silent estimator change. The cap/threshold are keyword-injected here so
+    # the branch is exercised without building a >20 000-animal pedigree in CI.
+    function _ped(n; window, seed = 11)
+        rng = MersenneTwister(seed); s = zeros(Int, n); d = zeros(Int, n)
+        for i in 3:n
+            lo = window > 0 ? max(1, i - window) : 1
+            s[i] = rand(rng, lo:i-1); d[i] = rand(rng, lo:i-1)
+            while d[i] == s[i]; d[i] = rand(rng, lo:i-1); end
+        end
+        Ainv = pedigree_inverse(collect(1:n), s, d); u = zeros(n)
+        for i in 1:n
+            (s[i] == 0 && d[i] == 0) ? (u[i] = sqrt(0.4) * randn(rng)) :
+                (u[i] = 0.5 * (u[s[i]] + u[d[i]]) + sqrt(0.2) * randn(rng))
+        end
+        y = 10.0 .+ u .+ sqrt(0.6) .* randn(rng, n)
+        animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), Ainv; ids = collect(1:n), method = :REML)
+    end
+    lowfill = _ped(500; window = 50)    # well-structured
+    highfill = _ped(800; window = 0)    # random mating
+
+    # (a) past the cap, high fill → matrix-free; the SAME spec under the real (default) cap must
+    # NOT divert to the stochastic estimator — whichever exact fitter it picks.
+    @test HSquared._auto_reml_route(highfill; max_dense_n = 100,
+                                    matrix_free_fill_threshold = 10.0) == :matrix_free_reml
+    @test HSquared._auto_reml_route(highfill) != :matrix_free_reml
+
+    # (b) past the cap but BELOW the fill threshold → the exact sparse default, not matrix-free
+    @test HSquared._auto_reml_route(highfill; max_dense_n = 100,
+                                    matrix_free_fill_threshold = 1e6) == :ai_reml
+    @test HSquared._auto_reml_route(lowfill; max_dense_n = 100,
+                                    matrix_free_fill_threshold = 150.0) == :ai_reml
+
+    # (c) the route survives Z ≠ I (matrix-free has no Z = I restriction, unlike eigen-once)
+    nz = length(highfill.y)
+    Zbad = sparse(1.0I, nz, nz); Zbad[1, 1] = 2.0
+    zspec = animal_model_spec(highfill.y, ones(nz, 1), Zbad, highfill.Ainv; ids = 1:nz, method = :REML)
+    @test HSquared._auto_reml_route(zspec; max_dense_n = 100,
+                                    matrix_free_fill_threshold = 10.0) == :matrix_free_reml
+    @test HSquared._auto_reml_route(zspec) == :ai_reml      # below the cap: unchanged behaviour
+
+    # (d) the default thresholds are the documented, evidence-anchored ones
+    @test HSquared._AUTO_MATRIX_FREE_FILL_THRESHOLD == 150.0
+    @test HSquared._AUTO_EIGEN_FILL_THRESHOLD == 60.0
 end
 
 @testset "Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6)" begin

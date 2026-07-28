@@ -412,12 +412,33 @@ end
 # EXPERIMENTAL first-pass heuristic; the exact crossover is a joint fill×n surface (V1-EIGEN-REML).
 const _AUTO_EIGEN_FILL_THRESHOLD = 60.0
 
+# F6 route threshold: the fill at which the MATRIX-FREE Monte-Carlo fitter takes over from
+# sparse AI-REML past the dense eigen cap. Anchored to the LOWEST fill at which matrix-free was
+# MEASURED to win on a single-effect high-fill pedigree — `nnz(L)/n = 150.7` (q=5000: exact
+# 24.7 s vs matrix-free 8.8 s = 2.80x, recovering the exact optimum to 4.7e-3). Below that the
+# exact path still won at the sizes measured (fill 76.9 → 0.38x). Deliberately conservative and
+# biased toward the validated exact default: mis-routing to AI-REML is a slowdown, mis-routing
+# to matrix-free buys speed with Monte-Carlo noise in the gradient.
+#
+# HONEST SCOPE: the 150.7 anchor is measured at n=5000 and EXTRAPOLATED to the n > max_dense_n
+# tail this route serves, where the exact path's selected inverse is measured-infeasible anyway
+# (q=20 000, fill 471: 1529 s). The true crossover is a joint fill x n surface; mapping it is
+# owed work (validation-debt V1-MATFREE-REML), as is a recovery gate at tail scale.
+const _AUTO_MATRIX_FREE_FILL_THRESHOLD = 150.0
+
 function _auto_reml_route(spec::AnimalModelSpec;
                           max_dense_n::Integer = 20_000,
-                          fill_threshold::Real = _AUTO_EIGEN_FILL_THRESHOLD)
+                          fill_threshold::Real = _AUTO_EIGEN_FILL_THRESHOLD,
+                          matrix_free_fill_threshold::Real = _AUTO_MATRIX_FREE_FILL_THRESHOLD)
     n = length(spec.y)
     # eigen-once is only a candidate for the dense-feasible standard Z = I animal model
-    (n <= max_dense_n && sparse(Float64.(spec.Z)) == sparse(1.0I, n, n)) || return :ai_reml
+    eigen_candidate = n <= max_dense_n && sparse(Float64.(spec.Z)) == sparse(1.0I, n, n)
+    # Past the dense cap the eigen rescue is gone, so a high-fill MME has no exact escape: that
+    # is the F0-measured tail the matrix-free fitter exists for. Below the cap, keep the
+    # previous behaviour exactly — never silently divert a fit the validated exact path handles.
+    matrix_free_candidate = n > max_dense_n
+    (eigen_candidate || matrix_free_candidate) || return :ai_reml
+
     lhs, _, _ = _sparse_mme_system(spec, 1.0, 1.0)   # MME sparsity pattern is variance-independent
     factor = try
         cholesky(Symmetric(lhs); check = true)
@@ -425,7 +446,10 @@ function _auto_reml_route(spec::AnimalModelSpec;
         err isa LinearAlgebra.PosDefException || rethrow(err)
         return :ai_reml                              # indefinite MME → let the sparse path report it
     end
-    return (nnz(sparse(factor.L)) / n) > fill_threshold ? :eigen_reml : :ai_reml
+    fill = nnz(sparse(factor.L)) / n
+    eigen_candidate && fill > fill_threshold && return :eigen_reml
+    matrix_free_candidate && fill > matrix_free_fill_threshold && return :matrix_free_reml
+    return :ai_reml
 end
 
 """
@@ -2644,10 +2668,28 @@ The default `target = :variance_components` dispatches to
 [`fit_variance_components`](@ref), the experimental dense validation optimizer.
 `target = :sparse_reml` dispatches to [`fit_sparse_reml`](@ref), the
 experimental sparse REML validation optimizer.
+`target = :ai_reml` dispatches to [`fit_ai_reml`](@ref) (the sparse AI-REML path),
+`target = :eigen_reml` to [`fit_eigen_reml`](@ref) (eigen-once, `Z = I`, dense-capped), and
+`target = :matrix_free_reml` to [`fit_matrix_free_reml`](@ref) (matrix-free Monte-Carlo
+EM-REML; STOCHASTIC — estimates carry Monte-Carlo error).
 `target = :henderson_mme` requires supplied `variance_components` and returns a
 [`HendersonMMEResult`](@ref). The Henderson target solves mixed-model equations
 at supplied variance components; it does not estimate them and does not return
 log-likelihood, AIC, `df`, or optimizer diagnostics.
+
+`target = :auto` picks a fitter from the MME fill-in `nnz(L)/n` (variance-independent) and `n`,
+biased toward the validated exact default — it diverts only where the exact path is
+measured-infeasible:
+
+| condition | route | why |
+|---|---|---|
+| `n ≤ 20 000`, `Z = I`, fill > 60 | [`fit_eigen_reml`](@ref) | dense eigen-once beats a high-fill sparse factorization |
+| `n > 20 000`, fill > 150 | [`fit_matrix_free_reml`](@ref) | past the dense cap a high-fill MME has no exact escape (F0: q=20 000, fill 471 → 1529 s) |
+| otherwise | [`fit_ai_reml`](@ref) | the validated sparse default |
+
+The `:auto` route to the STOCHASTIC matrix-free fitter fires only in that measured tail; below
+the dense cap `:auto` never diverts a fit the exact path handles. Both thresholds are
+first-pass heuristics — see [`fit_matrix_free_reml`](@ref) for what the matrix-free route owes.
 """
 function fit_animal_model(
     spec::AnimalModelSpec;
@@ -2681,13 +2723,23 @@ function fit_animal_model(
         return fit_eigen_reml(spec; kwargs...)
     end
 
+    if normalized_target == :matrix_free_reml
+        variance_components === nothing ||
+            throw(ArgumentError("variance_components is not used when target = :matrix_free_reml"))
+        return fit_matrix_free_reml(spec; kwargs...)
+    end
+
     if normalized_target == :auto
         variance_components === nothing ||
             throw(ArgumentError("variance_components is not used when target = :auto"))
         isempty(kwargs) ||
             throw(ArgumentError("target = :auto selects the fitter and its defaults; pass " *
-                                "target = :eigen or :ai_reml to set optimizer keyword arguments"))
-        return _auto_reml_route(spec) == :eigen_reml ? fit_eigen_reml(spec) : fit_ai_reml(spec)
+                                "target = :eigen, :ai_reml, or :matrix_free to set optimizer " *
+                                "keyword arguments"))
+        route = _auto_reml_route(spec)
+        route == :eigen_reml && return fit_eigen_reml(spec)
+        route == :matrix_free_reml && return fit_matrix_free_reml(spec)
+        return fit_ai_reml(spec)
     end
 
     isempty(kwargs) ||
@@ -3412,9 +3464,11 @@ function _coerce_fit_target(target::Symbol)
     target in (:sparse_reml, :sparse_reml_validation) && return :sparse_reml
     target in (:ai_reml, :ai_reml_validation) && return :ai_reml
     target in (:eigen, :eigen_reml) && return :eigen_reml
+    target in (:matrix_free, :matrix_free_reml) && return :matrix_free_reml
     target == :auto && return :auto
     target == :henderson_mme && return :henderson_mme
-    throw(ArgumentError("target must be :variance_components, :sparse_reml, :ai_reml, :eigen_reml, :auto, or :henderson_mme"))
+    throw(ArgumentError("target must be :variance_components, :sparse_reml, :ai_reml, :eigen_reml, " *
+                        ":matrix_free_reml, :auto, or :henderson_mme"))
 end
 
 function _coerce_fit_target(target::AbstractString)
