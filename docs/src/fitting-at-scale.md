@@ -41,15 +41,22 @@ For the univariate animal model the same two-engine choice exists —
 The intuition "one random effect, so the factorization stays sparse" is **only true for
 well-structured pedigrees**. What decides cost is the fill-in of the MME Cholesky, `nnz(L)/n`:
 
-| pedigree | fill `nnz(L)/n` | `fit_ai_reml` |
-|---|---|---|
-| half-sib, q = 300 000 | ~17–19 | 2.3 s |
-| random-mating, q = 10 000 | 262 | 132 s |
-| random-mating, q = 20 000 | 471 | 1 529 s (~25 min) |
+| pedigree | fill `nnz(L)/n` | `fit_ai_reml` | machine |
+|---|---|---|---|
+| half-sib, q = 300 000 | ~17–19 | 2.3 s | DRAC (`fir`) |
+| random-mating, q = 10 000 | 262 | 132 s | Totoro |
+| random-mating, q = 20 000 | 471 | 1 529 s (~25 min) | Totoro |
 
-A high-fill pedigree at **1/15th the size** costs ~60× more. Field data from livestock and most
+A high-fill pedigree at **1/15th the size** costs ~660× more. Field data from livestock and most
 managed populations is low-fill and needs none of this; densely interconnected pedigrees — small
 founder bases, random mating, deep overlapping generations — are where it bites.
+
+!!! warning "These rows are from different machines, and so is the table further down"
+    The three rows above come from two clusters
+    (`docs/dev-log/recovery-checkpoints/2026-07-24-f0-adversarial-highfill-decision.md`), and the
+    crossover table later on this page is a Mac Studio. **Do not read them as one series.** The
+    same fit — `fit_ai_reml` at q = 10 000, fill 262 — is 132 s on Totoro and 231 s on the Mac
+    Studio. Each table is internally consistent; across tables only the *shape* carries meaning.
 
 The mechanism is specific and worth knowing, because it is *not* the factorization. At
 q = 20 000 the sparse Cholesky takes 0.35 s; the **Takahashi selected inverse** that supplies
@@ -61,25 +68,34 @@ trace and PCG solves, so `C` is never assembled or factorized during the fit:
 fit = fit_animal_model(spec; target = :matrix_free)     # or fit_matrix_free_reml(spec)
 ```
 
-Measured crossover on high-fill pedigrees (local, single-thread — a measurement, not a
-performance claim; reproduce with `sim/matrix_free_crossover_benchmark.jl`):
+Measured crossover on high-fill pedigrees — a measurement on one machine, not a performance
+claim. Timings are the **median of 3 runs** after a discarded warm-up, single-threaded on an Apple
+Mac Studio (julia 1.12.6). Reproduce with `sim/matrix_free_crossover_benchmark.jl`; the committed
+numbers, including per-cell min/max, are in `sim/matrix_free_crossover.tsv`:
 
 | q | fill | exact | matrix-free | speed-up | agreement with the exact optimum |
 |---|---|---|---|---|---|
-| 2 000 | 77 | 1.06 s | 2.78 s | 0.38× (exact wins) | 3.0e-3 |
-| 5 000 | 151 | 24.7 s | 8.8 s | **2.80×** | 4.7e-3 |
-| 10 000 | 262 | 220.1 s | 14.4 s | **15.3×** | 4.7e-3 |
+| 1 000 | 50 | 0.22 s | 1.73 s | 0.13× (exact wins) | 1.7e-2 |
+| 2 000 | 77 | 1.05 s | 2.88 s | 0.37× (exact wins) | 3.0e-3 |
+| 5 000 | 151 | 25.0 s | 9.12 s | **2.74×** | 4.7e-3 |
+| 10 000 | 262 | 231.4 s | 13.9 s | **16.6×** | 4.7e-3 |
 
 The exact path grows super-linearly in fill; the matrix-free one roughly linearly. Note the
 agreement column: it is a Monte-Carlo *approximation*, not equality — see
 [Reading the Monte-Carlo noise](@ref) below.
 
-!!! note "`:auto` diverts only where the exact path cannot run"
-    For the animal model `target = :auto` routes to the matrix-free fitter **only** when
-    `n > 20 000` **and** fill > 150 — past the dense eigen cap, where a high-fill MME has no exact
-    escape. Below that cap it never diverts a fit the validated exact path can handle, because
-    swapping an exact estimator for a stochastic one silently would be a worse failure than being
-    slow. Force it anywhere with `target = :matrix_free`.
+!!! warning "The matrix-free fitter is opt-in — `:auto` will not choose it for you"
+    `target = :auto` routes only between the two **exact** fitters. It never selects
+    `fit_matrix_free_reml`, and you must ask for it explicitly.
+
+    That is deliberate, and it is a fence rather than an oversight. The regime a route would serve
+    — high fill past the dense eigen cap — is exactly the regime in which this fitter has **not**
+    been measured: the crossover above was measured at `n ≤ 10 000`, so routing on it at
+    `n > 20 000` would be extrapolation. Handing you a Monte-Carlo estimate you did not ask for,
+    on the strength of a number measured somewhere else, is a worse failure than being slow.
+
+    Wiring it into `:auto` needs a pre-declared recovery gate in that tail first. Until then:
+    `fit_animal_model(spec; target = :matrix_free)`.
 
 ## Choosing automatically (multi-effect)
 
