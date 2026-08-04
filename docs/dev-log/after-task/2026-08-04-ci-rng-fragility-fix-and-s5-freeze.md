@@ -185,6 +185,25 @@ the decisive fact — the fix introduced `on_boundary`/`safe_rel`/`ANOMALY`, and
 contains none of them, so it is provably the **pre-fix** version. It was deployed and run before the
 fix existed. The current in-repo file contains all three.
 
+**The decisive evidence is IN THE REPO and needs no Totoro access.** The fix's own source comment,
+committed in `7ceaff17` and written at fix time — before any of this was disputed — records both
+numbers and attributes them correctly:
+
+```
+git show 7ceaff17:sim/f6_matfree_recovery.jl | sed -n '73,78p'
+  # ... Measured on Totoro 2026-08-04 at the smoke size nm=60, the exact fit
+  # returns sigma_a2 = 0 and the naive ratio reports rel_a ≈ 4e4 ...
+  # ... an absolute 1e-8 cutoff would miss it and print rel.err = 980 as if it meant something.
+```
+
+`4e4` is **40925.4**, the Totoro run. `980` is the *later local* run. The author of the fix could
+only have written "on Totoro … 4e4" while looking at Totoro's output — the local run never produced
+that figure. This is a fingerprint internal to the commit under dispute, predating the dispute, and
+verifiable with one `git show`. (Independently corroborated afterwards: the run was reproduced on
+Totoro byte-for-byte against the still-deployed sha256-verified copy, with the output persisted this
+time to `~/hsq_work/grace_f6_smoke_reproduction.log` — the original run's missing standalone log was
+a real gap, acknowledged rather than argued around.)
+
 **Two different rel.err figures, kept distinct:** Totoro's original run reported
 `rel.err sigma_a2 = 40925.4` (naive absolute denominator). The ≈980 figure quoted elsewhere is a
 *later local* run, after the first edit introduced an absolute `1e-8` cutoff that was still too tight.
