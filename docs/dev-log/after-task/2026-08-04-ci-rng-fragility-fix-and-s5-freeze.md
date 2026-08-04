@@ -170,9 +170,30 @@ against F5-v2 precedent, and did not fix it → the Totoro SMOKE run surfaced it
 orchestrator → the orchestrator wrote the fix and verified it on Julia 1.10.0 and 1.12.6 → it was
 committed. Both accounts were partly right; neither agent held the run report.
 
+**How to falsify this yourself — the evidence is checkable, not just quoted.** A transcript pasted
+into a commit message is a citation, not a primary artifact; that objection was raised and it was
+fair. The deployed copy is still on Totoro:
+
+```sh
+SOCK=$(ls ~/.ssh/cm-*totoro* | head -1)
+ssh -o ControlPath="$SOCK" -o ControlMaster=no -o BatchMode=yes totoro \
+  'ls -la ~/hsq_work/grace-f6smoke/sim/; grep -c "on_boundary\|ANOMALY" ~/hsq_work/grace-f6smoke/sim/f6_matfree_recovery.jl'
+```
+
+Expected: `f6_matfree_recovery.jl`, 5810 B, **Aug 4 09:13**, and the grep returns **0**. That zero is
+the decisive fact — the fix introduced `on_boundary`/`safe_rel`/`ANOMALY`, and the Totoro copy
+contains none of them, so it is provably the **pre-fix** version. It was deployed and run before the
+fix existed. The current in-repo file contains all three.
+
+**Two different rel.err figures, kept distinct:** Totoro's original run reported
+`rel.err sigma_a2 = 40925.4` (naive absolute denominator). The ≈980 figure quoted elsewhere is a
+*later local* run, after the first edit introduced an absolute `1e-8` cutoff that was still too tight.
+Same defect, two denominators, two runs — they are not the same measurement and should not be merged.
+
 **Standing lesson:** two independent agents converged confidently on a wrong conclusion by reasoning
 from git history alone about work that was still uncommitted. Absence from `git log` is not absence
-from the session. Prefer the primary artifact over an inference about it. **What the defect was, and its fix, both hold:**
+from the session. Prefer the primary artifact over an inference about it — and when you cite one,
+say where it lives and how to check it. **What the defect was, and its fix, both hold:**
 before the fix, the opt-in driver's SMOKE mode reported a meaningless `GATE: FAIL` at `nm=60` because
 the exact fit at that shrunken size lands on the variance boundary (`sigma_a2 ≈ 4e-5` against
 `sigma_e2 ≈ 0.70`) and a naive relative-error denominator collapses (measured rel.err ≈ 980, and
