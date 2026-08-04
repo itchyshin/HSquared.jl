@@ -1321,3 +1321,23 @@ JOINT contract task per AGENTS.md rule 2.
 - `CARRIED-OVER` (unchanged): the two protected Retry-5 drafts + the untracked
   downstream-replay scaffold remain untouched. Detail:
   `docs/dev-log/check-log.d/2026-07-18-v07-d0f-retry8-adjudication-pass.md`.
+
+## 2026-08-04 — Szymek's lane WRAPPED UP; handed to Shinichi
+
+- **Julia lane:** one docs-only commit (`fa53b573`) — the published validation-status table is now
+  **GENERATED** from `validation_status()` at build time. It had drifted to **33 of 56 rows**, and
+  `V5-MARKER-THRESHOLD` was published `partial` where the engine says `covered`. Fixed by
+  generation, not resync; the stale table was deleted rather than kept under a "superseded" heading.
+  **No `src/`/test/fixture change, no flip, no new claim; `public_covered_count` stays 5.**
+- **Why the lane stops here:** every remaining lever is a Shinichi sign-off or needs compute Szymek
+  does not have. Nothing is half-finished and nothing waits on a technical unknown in this repo.
+- **Blocked on Shinichi:** G10 ×3 (S1/S2/S3) · **Totoro/DRAC access (S8)**, which gates the
+  pre-declared recovery gate at `n>20 000` (S5) and the at-scale comparator (S6) · the R bridge (S7,
+  separate repo — the ONLY thing that moves the count off 5) · D1 authorization (S9) · **and the
+  never-answered question of whether G10 is delegated to Szymek.**
+- **State:** branch `codex/2026-07-13-v07-performance-localization` @ `fa53b573`, **8 commits ahead,
+  UNPUSHED**; PR #274 draft. `Pkg.test()` passed, docs exit 0, CAP OK. CI not verifiable (`gh` absent).
+- **R twin:** untouched. Still owes the opt-in routes for all three fitters; count stays 5.
+- **OPEN handed onward:** `V1-EIGEN-REML` has a debt row but no `validation_status()` row while
+  `V1-MATFREE-REML` has both — the published ladder shows one staged fitter and not the other.
+- Start at `docs/dev-log/handover/2026-08-04-shinichi-handover.md` (carries the sign-off ledger).
