@@ -1335,8 +1335,8 @@ JOINT contract task per AGENTS.md rule 2.
   pre-declared recovery gate at `n>20 000` (S5) and the at-scale comparator (S6) · the R bridge (S7,
   separate repo — the ONLY thing that moves the count off 5) · D1 authorization (S9) · **and the
   never-answered question of whether G10 is delegated to Szymek.**
-- **State:** branch `codex/2026-07-13-v07-performance-localization` @ `fa53b573`, **8 commits ahead,
-  UNPUSHED**; PR #274 draft. `Pkg.test()` passed, docs exit 0, CAP OK. CI not verifiable (`gh` absent).
+- **State:** branch `codex/2026-07-13-v07-performance-localization` @ `2c1f4917`; origin is at
+  `67b60d8b` (the F6 arc was pushed 2026-08-04), so **2 docs commits are ahead and UNPUSHED**; PR #274 draft. `Pkg.test()` passed, docs exit 0, CAP OK. CI not verifiable (`gh` absent).
 - **R twin:** untouched. Still owes the opt-in routes for all three fitters; count stays 5.
 - **OPEN handed onward:** `V1-EIGEN-REML` has a debt row but no `validation_status()` row while
   `V1-MATFREE-REML` has both — the published ladder shows one staged fitter and not the other.

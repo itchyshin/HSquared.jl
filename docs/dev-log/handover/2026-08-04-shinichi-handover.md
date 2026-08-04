@@ -1,14 +1,16 @@
 # Handover → Shinichi (HSquared.jl, Julia engine lane) — 2026-08-04 (canonical entrypoint)
 
-**Branch:** `codex/2026-07-13-v07-performance-localization` @ `fa53b573` — **8 commits AHEAD of
-origin, NOT PUSHED** · **PR:** #274 (DRAFT — do not auto-merge) · **Handed from:** Szymek ·
-**Handed to:** Shinichi · Tree clean, all work committed, all local checks green.
+**Branch:** `codex/2026-07-13-v07-performance-localization` @ `2c1f4917` — origin is at `67b60d8b`,
+so **2 commits are AHEAD and UNPUSHED** (the F6 arc through `67b60d8b` was pushed on 2026-08-04;
+this session's two docs commits are not) · **PR:** #274 (DRAFT — do not auto-merge) ·
+**Handed from:** Szymek · **Handed to:** Shinichi · Tree clean, all work committed, all local
+checks green.
 
 > **Resume correctly.** `main` is far behind; this branch carries the whole 07-24 → 08-04 arc.
 > ```sh
 > cd <repo> && git fetch origin
 > git checkout codex/2026-07-13-v07-performance-localization   # DO THIS FIRST
-> git log --oneline -1                                          # expect fa53b573 or later
+> git log --oneline -1                                          # expect 2c1f4917 or later
 > ```
 > Then run the `hsquared-rehydrate` skill, read the `AGENTS.md` Live Phase Snapshot, then this doc.
 
@@ -77,10 +79,11 @@ only at `n > 20 000`, the single regime never measured.
 **`:auto` never selects the matrix-free fitter.** It is opt-in only, by owner decision of
 2026-07-28, and a `MethodError` test pins that re-wiring the divert cannot pass silently.
 
-## What this session did (2026-08-04, one commit, docs-only)
+## What this session did (2026-08-04, two commits, docs-only)
 
 `fa53b573` — the published validation-status table is now **generated** from `validation_status()`
-at documentation build time.
+at documentation build time. `2c1f4917` — this handover, the board entry, and the Live Phase
+Snapshot rotation.
 
 The 2026-07-28 handover recorded it as "omits 4 rows". Re-derived mechanically, it was carrying
 **33 of 56 rows** — 23 missing — and `V5-MARKER-THRESHOLD` was published **`partial`** where the
@@ -138,7 +141,7 @@ triggered. Flagged plainly because `AGENTS.md` requires saying so.
 
 | Lane | Branch / state | Shipped since 07-28 | Next by leverage |
 |---|---|---|---|
-| HSquared.jl (docs) | `codex/2026-07-13-…` @ `fa53b573`, **8 ahead, unpushed** | generated validation-status table (drift class closed) | — |
+| HSquared.jl (docs) | `codex/2026-07-13-…` @ `2c1f4917`, **2 ahead of origin `67b60d8b`, unpushed** | generated validation-status table (drift class closed) | push the 2 docs commits |
 | HSquared.jl (matrix-free) | same branch; experimental + opt-in | — | tail-scale recovery gate + at-scale comparator (**needs S8**) |
 | HSquared.jl (ai_reml, eigen) | same branch; STAGED | — | **your G10** + R bridge |
 | hsquared (R twin) | separate repo, untouched | — | opt-in routes for all three; count stays 5 |
