@@ -53,7 +53,10 @@ F6 violated that policy and the same failure mode recurred, this time in three p
 The two audited commits (`7ceaff17`, `33ab68f6`) hold up under independent re-verification. No
 overclaim was found in either commit's own text. The **CHANGES** are the staleness-class fix and the
 new decision/freeze records this report and its sibling commit deliver (see below) — not a defect in
-the audited commits themselves.
+the audited commits themselves. **Post-close-out correction:** a peer session caught an unsupported
+provenance detail in this report's own original Finding 6 (misattributed the SMOKE-defect discovery
+to "a Totoro probe"); retracted and corrected in place after independent re-verification — see
+Finding 6.
 
 ## Evidence
 
@@ -144,14 +147,29 @@ not in CI at all, for either sibling. Stated explicitly because "in-CI" no longe
 high fill" for either of these two testsets, and that is a real (intended, disclosed) narrowing of
 what a green CI run demonstrates.
 
-**6. The SMOKE defect the brief describes, verified.** Before this fix, the opt-in driver's SMOKE
-mode (found via a Totoro probe at `nm=60`) reported a meaningless `GATE: FAIL` because the exact fit
-at that shrunken size lands on the variance boundary (`sigma_a2 ≈ 4e-5` against `sigma_e2 ≈ 0.70`) and
-a naive relative-error denominator collapses (measured rel.err ≈ 980, and separately ≈ 4e4 with an
-absolute-vs-relative boundary test). **Fixed:** SMOKE is now explicitly plumbing-only (asserts finite
-output from both fitters, not recovery), and any boundary case — in SMOKE or full mode — reports an
-explicit `ANOMALY` (NaN) judged relative to trait scale rather than a spurious FAIL. Confirmed by
-reading `sim/f6_matfree_recovery.jl`'s `on_boundary`/`safe_rel`/`plumbing_ok`/`gate` logic in full.
+**6. The SMOKE defect, verified — but this report's original attribution was wrong and is corrected
+here.** A peer session (Melissa) flagged that this Finding originally read "found via a Totoro probe
+at `nm=60`," and checked directly with slice-C. **That provenance detail is retracted; the
+bug-existed/got-fixed/no-impact substance is unaffected.** Independently re-verified before accepting
+the correction: `git log --all --oneline -- sim/f6_matfree_recovery.jl` returns **exactly one commit**
+(`7ceaff17`) — no earlier, unfixed version of this file was ever committed, so the bug cannot have
+been discovered by running an already-shipped script on Totoro; a repo-wide grep for "Totoro" +
+"smoke"/"nm=60"/"f6_matfree" co-occurring found no corroboration anywhere outside the unrelated S5
+`q=25,000` feasibility probe (`33ab68f6`). Per Melissa's account (she checked with slice-C directly,
+not independently re-derived by this audit): slice-C ran SMOKE mode **locally**, `nm=60`, saw the
+`GATE: FAIL`/`rel_a≈980` symptom, judged it acceptable, and handed off without fixing it; the fix was
+folded in by another hand before the single commit landed. The original wording in this report most
+likely conflated two true-but-separate facts — Totoro was used this session, and the SMOKE bug was
+found and fixed — a conflation this audit repeated from the task brief's own wording without
+independently checking it, which it should have. **What the defect was, and its fix, both hold:**
+before the fix, the opt-in driver's SMOKE mode reported a meaningless `GATE: FAIL` at `nm=60` because
+the exact fit at that shrunken size lands on the variance boundary (`sigma_a2 ≈ 4e-5` against
+`sigma_e2 ≈ 0.70`) and a naive relative-error denominator collapses (measured rel.err ≈ 980, and
+separately ≈ 4e4 with an absolute-vs-relative boundary test). **Fixed:** SMOKE is now explicitly
+plumbing-only (asserts finite output from both fitters, not recovery), and any boundary case — in
+SMOKE or full mode — reports an explicit `ANOMALY` (NaN) judged relative to trait scale rather than a
+spurious FAIL. Confirmed by reading `sim/f6_matfree_recovery.jl`'s
+`on_boundary`/`safe_rel`/`plumbing_ok`/`gate` logic in full.
 
 ## Decisions recorded this session
 
