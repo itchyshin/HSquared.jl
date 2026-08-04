@@ -5414,3 +5414,29 @@ Newest entries go at the top.
   No seed drawn. Detail:
   `docs/dev-log/check-log.d/2026-07-19-v07-d0f-reseal-recompute278.md`;
   full report: `docs/dev-log/after-task/2026-07-19-v07-d0f-reseal-recompute278.md`.
+
+## 2026-08-04 — published validation-status table made GENERATED (drift class closed)
+
+- The hand-maintained table in `docs/src/validation-status.md` had drifted from
+  `validation_status()` **far more than recorded**: the 2026-07-28 handover named 4 missing rows;
+  it was actually carrying **33 of 56** (23 missing), and one published status was **wrong** —
+  `V5-MARKER-THRESHOLD` said `partial` where the engine, the debt register (`covered (scoped)`),
+  and its promotion checkpoint all say `covered`.
+- Fixed by **generation, not resync**: the table is now a Documenter `@eval` block built from
+  `validation_status()` at build time, so it cannot disagree with the engine. Re-copying 56 rows by
+  hand would have restarted the same clock. The stale table was **deleted**, not demoted to a
+  "superseded" heading — leaving it on the page would keep the wrong status published.
+- Verified: docs build **exit 0**, rendered table **56 rows**, rendered ids **IDENTICAL** to
+  `validation_status()`, corrected statuses confirmed in the built output; pipe-bearing cells
+  escaped (4 rows), no newline-bearing cells. `Pkg.test()` **passed** (zero failures suite-wide);
+  `preamble_cap.sh` **CAP OK**; status cache refreshed with **every count byte-identical**
+  (rows 56, covered 13, public_covered 5) — only `refreshed_at`/`refreshed_from_head` moved.
+- **Docs-only. No `src/`, test, or fixture change; no capability flip; no new claim;**
+  `public_covered_count` stays **5**. Rose was applied as a review LENS only — **no subagent ran**;
+  no flip occurred, so gate S4 is not triggered.
+- **OPEN, handed to Shinichi:** `V1-EIGEN-REML` has a debt-register row but **no
+  `validation_status()` row**, while its sibling `V1-MATFREE-REML` has both — so the published
+  ladder shows one of the three staged fitters and not the other. Adding a row moves the published
+  count 56→57 and a test assertion, so it needs its own slice. Detail:
+  `docs/dev-log/check-log.d/2026-08-04-validation-status-table-generated.md`; full report:
+  `docs/dev-log/after-task/2026-08-04-validation-status-table-generated.md`.

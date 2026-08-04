@@ -17,41 +17,33 @@ length(status)
 
 ## Current Rows
 
-| id | capability | phase | status | claim boundary |
-| :--- | :--- | :--- | :--- | :--- |
-| `V0-LOAD` | package loading | Phase 0 | covered | Package loads; this is not modelling evidence. |
-| `V1-PED` | pedigree normalization | Phase 1 | covered | Pedigree validation utility only; no fitting claim. |
-| `V1-AINV-TINY` | sparse Ainv tiny checks | Phase 1 | covered | Direct sparse Ainv utility; not a fitted animal model. |
-| `V1-AINV-MRODE9` | Mrode9 pedigree inverse comparator | Phase 1 | covered_external | Pedigree inverse agreement only; not fitted Mrode output validation. |
-| `V1-LIK` | Gaussian likelihood tiny checks | Phase 1 | partial | Dense validation evaluator only; not production sparse fitting. |
-| `V1-SPARSE-REML` | sparse REML identity | Phase 1 | partial | Supplied-variance REML objective only; no variance-component estimation. |
-| `V1-SPARSE-REML-OPT` | sparse REML validation optimizer | Phase 1 | partial | Experimental REML-only validation optimizer; not AI-REML, not the default fit path, and not production sparse fitting. |
-| `V1-MME` | Henderson MME supplied-variance solve | Phase 1 | partial | Supplied variance components plus a published Mrode Example 3.1 animal-model anchor and one cross-estimator JWAS agreement probe; JWAS is Bayesian/MCMC, so this is agreement only, not REML parity, and Example 3.1 is not variance-component estimation. |
-| `V1-DENSE-OUT` | dense output extractors | Phase 1 | partial | Experimental dense low-level outputs only; accuracy is derived from reliability. |
-| `V1-SELINV-PEV` | sparse selected-inversion PEV/reliability | Phase 1 | partial | Experimental sparse PEV path; exact at the L+L^T pattern (diagonal/PEV exact); the default extractor path remains dense. |
-| `V1-AI-REML` | average-information REML estimator | Phase 1 | covered | Experimental Gaussian-only REML estimator; the AI form is exact for the Gaussian linear mixed model but not for non-Gaussian/Laplace models (which need observed-information Newton); known-truth recovery and the published-anchor match are validated in the R lane via the bridge. |
-| `V1-MRODE-FIT` | fitted animal-model outputs vs a published estimate | Phase 1 | covered_external | Fitted animal-model recovery against a published external estimate; validated via the R-lane bridge, not a Julia-native bundled fixture. |
-| `V1-COMPARATORS` | external fitted-model comparators | Phase 1 | covered_external | REML variance-component / h2 agreement against one CRAN comparator (sommer) on one anchor; not multi-package or multi-trait parity. |
-| `V1-HERIT-CI` | variance-component covariance and heritability interval | Phase 1 | partial | Asymptotic, REML-only; unreliable at small n (wide interval, ill-conditioned AI matrix); not a coverage-calibrated interval. |
-| `V2-GRM` | genomic relationship matrix (VanRaden G) | Phase 2 | partial | Experimental construction utility only; no genomic prediction, fitting, single-step, or marker-effect claim. |
-| `V2-GINV` | regularized genomic inverse (Ginv) | Phase 2 | partial | Construction utility plus a held narrow marker-to-precision R candidate; the ordinary route is not activated on main, and there is no single-step or production genomic-prediction claim. |
-| `V2-GBLUP` | genomic BLUP supplied-variance solve | Phase 2 | partial | Supplied-variance genomic solve plus a Julia-native/R-consumed comparator target only; no genomic variance-component estimation, no single-step, no external comparator parity. |
-| `V2-SNPBLUP` | SNP-BLUP / GBLUP equivalence | Phase 2 | partial | Supplied-variance VanRaden method-1 marker model plus a Julia-native/R-consumed comparator target only; no external comparator, no weighted/Bayesian marker priors. |
-| `V2-SSHINV` | single-step H-inverse construction | Phase 2 | partial | Dense validation-scale single-step and supplied-Gamma H^Gamma primitives; dense-H oracle round-trip and nonzero-Gamma REML bridge payload/diagnostics smoke are tested; Gamma and blending controls are inputs, not estimated or comparator-validated; no external-comparator or covered single-step prediction claim. |
-| `V2-GREML` | genomic REML variance-component estimation | Phase 2 | covered | Covered only for the validation-scale supplied-`Ginv` estimator, backed by preregistered 48-seed recovery and same-precision `blupf90+` parity. Raw-marker construction and ordinary public R activation remain partial/held; no production sparse-G scaling claim. |
-| `V3-REPEAT` | repeatability / permanent-environment supplied-variance solve | Phase 3 | partial | Supplied-variance two-random-effect solve only; no R-facing model-spec, engine-internal. |
-| `V3-REPEAT-REML` | repeatability REML variance-component estimation | Phase 3 | partial | Dense validation-scale REML over three variance components; no committed recovery test, no uncertainty intervals, no external comparator, no R-facing model-spec. |
-| `V3-TWOEFFECT` | general two-random-effect MME (common environment, maternal) | Phase 3 | partial | Supplied-variance, two INDEPENDENT random effects only; no correlated maternal genetic, no R-facing model-spec. |
-| `V3-TWOEFFECT-REML` | two-effect REML (common-environment / maternal estimation) | Phase 3 | covered | COVERED (experimental, validation-scale, opt-in; NOT the public default) via the doc-33 substitutable gate — a pre-declared 48-seed bias/MCSE recovery gate PASSED + a `blupf90+` 2.60 same-estimand REML comparator (~1e-5). "Covered" means the engine correctly implements two-effect REML, NOT small-sample accuracy on σ1² (−2.15%/0.57·MCSE). Standing debt (covered does NOT retire): ratio intervals, correlated maternal genetic, the R-facing model-spec. |
-| `V4-MULTIVARIATE` | multivariate (multi-trait) animal model (supplied covariance) | Phase 4 | partial | Supplied-covariance with a design shared across traits; handles missing-trait records and copy-returning Julia-side accessors over existing fields, but does not estimate G0/R0 and has no R-facing multivariate model-spec or bridge payload change. |
-| `V4-MV-REML` | multivariate REML (genetic/residual covariance estimation) | Phase 4 | covered | Experimental dense/validation-scale multivariate REML; correctness is self-consistency + univariate-reduction validated and adversarial-reviewed (robustness findings fixed), copy-returning Julia accessors wrap existing fields without widening `result_payload()`, opt-in Julia and R-lane cold-start recovery studies show no detectable bias at validation scale, and the serialized target plus comparator protocol now has one reproduced external `sommer` 4.4.5 same-estimand comparator leg, an R-lane Mrode Example 5.1 supplied-covariance BLUP/MME anchor, Bayesian `MCMCglmm` agreement evidence, and an executed `blupf90+` 2.60 same-estimand comparator (~1e-5, neutral start); COVERED (experimental, validation-scale, opt-in; NOT the public default) via the doc-33 substitutable gate — a pre-declared 48-seed recovery gate PASSED + two same-estimand REML comparator legs (`sommer` 4.4.5 + `blupf90+` 2.60). "Covered" = the engine correctly implements unstructured multivariate REML, NOT small-sample accuracy on V_A; the per-seed Frobenius gate (a different estimand) is not relaxed. Standing debt (covered does NOT retire): broader-DGP recovery characterized partial, full-sib/3+-trait recovery, the in-suite unstructured sommer test, the deep-inbreeding boundary. |
-| `V4-FA` | structured multivariate genetic covariance (diag/lowrank/fa) | Phase 4B | partial | Experimental dense/validation-scale engine API only; copy-returning structured-metadata accessors expose existing fields locally; returned loadings are sign-canonicalized under a sign-only convention but not rotation-identified; the rotation-free `:diagonal` structure is bridge-exposed through `multivariate_result_payload`, while lowrank/fa loadings remain blocked from the bridge; the opt-in recovery harness accepts explicit seed lists and remains outside CI; the recovery calibration protocol was executed and did not pass (factor-analytic 8/10 with G-only/G+R failures, low-rank 9/10 with 1 R-only failure, all fits converged); no R-facing covariance-structure syntax, no production sparse FA solver, no broad multi-seed calibration, and no external comparator evidence. |
-| `V5-MARKER-FIXED` | fixed-effect single-marker scan | Phase 5 | partial | Fixed-effect Gaussian screening utility with row-aligned scan-table, GWAS/QTL/eQTL labelled table wrappers, marker-effect, marker-variance-contribution, marker-map-backed Manhattan, regional marker-window, nominal returned-marker-set significance summary, QQ, inflation diagnostic helpers, and opt-in marker-scan recovery smoke outside CI only, using supplied residual variance plus approximate Wald p-values, Bonferroni/BH adjustments, LOD-equivalent scores, Manhattan data, regional data, nominal raw/Bonferroni/BH significance counts, QQ data, and a lambda_GC diagnostic over the returned marker set; gwas_table(), qtl_table(), and eqtl_table() wrappers only label already-computed direct scan tables and do not run GWAS/QTL/eQTL workflows; no regional_plot() or fine-mapping activation, no formula-driven mixed-model GWAS/QTL claim, no expression-wide eQTL claim, no calibrated/correlated-marker genome-wide threshold claim, no p-value calibration claim, no calibrated PVE/model R² claim, no R formula term activation, no bridge payload change, and no comparator evidence. |
-| `V5-MARKER-MIXED` | supplied-variance mixed-model marker scan | Phase 5 | partial | Dense validation-scale supplied-variance Julia utility plus post-fit bridge payload/fixture only; R scan-result table views are thin views of existing `hs_gwas` objects only; relationship correction is by the supplied marginal covariance and tested by GLS identities, but there is no variance-component estimation, no p-value calibration claim, no calibrated PVE/model R² claim, no R formula activation, no map-annotated GWAS/QTL/eQTL table workflow, and no comparator evidence. |
-| `V5-MARKER-LOCO` | leave-one-group-out marker scan construction and selection | Phase 5 | partial | Dense validation-scale LOCO construction and supplied-matrix selection helpers only; LOCO precision construction uses VanRaden-plus-ridge identities and the scan uses supplied variance components, with opt-in marker-scan recovery smoke outside CI, but there are no public LOCO defaults, no variance-component estimation, no p-value calibration claim, no calibrated PVE/model R² claim, no R formula activation, no bridge payload change, and no comparator evidence. |
-| `V5-MARKER-THRESHOLD` | permutation-calibrated genome-wide significance threshold | Phase 5 | partial | Deterministic threshold machinery and add-one genome-wide p-value helpers exist, with an opt-in fixed-panel mini-smoke over correlated markers recorded outside CI; this is not a production genome-wide-significance claim, and realistic-LD/design calibration, external comparator evidence (the R lane currently records local marker-scan comparator tooling blockers), and R-facing `gwas()` significance wording remain open gates. |
-| `V5-GENOMIC-QTL` | genomic, marker, QTL, and eQTL validation | Phase 5 | planned | Broad genomic/QTL/eQTL validation remains planned; the direct marker-screening utilities are tracked separately in `V5-MARKER-FIXED`, `V5-MARKER-MIXED`, and `V5-MARKER-LOCO`. |
-| `V6-LAPLACE` | non-Gaussian Laplace + variational (VA) animal model | Phase 6 | partial | Experimental dense/validation-scale non-Gaussian Laplace+VA engine; the Gaussian-limit reduction and per-family kernels are validated, the fitted REML path is exported, and `nongaussian_result_payload` plus `test/fixtures/non_gaussian_parity/` now pin Poisson Laplace and per-record Binomial variational bridge payload shape, with R Julia-free normalizer consumption banked in hsquared PR #95 and the opt-in R non-Gaussian bridge status corrected in hsquared PR #96; but the single-trial Bernoulli variance is downward-biased, no external-comparator evidence exists, per-record varying-trial R activation remains open, and this is not public-default or covered status. |
+The table below is **generated from `validation_status()` at documentation build
+time**, so it cannot disagree with the engine. It was hand-maintained until
+2026-08-04 and had drifted to 33 of 56 rows, with one status stale
+(`V5-MARKER-THRESHOLD`); a hand-copied status table is a claim that ages.
+
+```@eval
+using HSquared
+using Markdown
+
+cell(x) = replace(replace(string(x), "\\" => "\\\\"), "|" => "\\|")
+
+io = IOBuffer()
+println(io, "| id | capability | phase | status | claim boundary |")
+println(io, "| :--- | :--- | :--- | :--- | :--- |")
+for row in validation_status()
+    println(io, "| `", cell(row.id), "` | ", cell(row.capability), " | ",
+            cell(row.phase), " | ", cell(row.status), " | ",
+            cell(row.claim_boundary), " |")
+end
+Markdown.parse(String(take!(io)))
+```
+
+<!--
+The hand-maintained table that stood here until 2026-08-04 is retained in git
+history only. Do not reinstate it: `validation_status()` is the single source,
+and the generated block above renders every row it returns.
+-->
 
 ## Boundary
 
