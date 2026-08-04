@@ -6,6 +6,14 @@ this session's two docs commits are not) · **PR:** #274 (DRAFT — do not auto-
 **Handed from:** Szymek · **Handed to:** Shinichi · Tree clean, all work committed, all local
 checks green.
 
+> **SUPERSEDED same day.** This was accurate at Szymek's handoff. Shinichi's session that followed
+> found CI red (both 2026-08-04 runs — `gh` was absent on this machine, so Szymek could not see it),
+> fixed the underlying RNG-fragility as a class, and froze (not ran) the S5 gate: commits `7ceaff17`
+> + `33ab68f6`. Branch is now 2 commits ahead of origin `42572f91`, UNPUSHED. G10 delegation (asked
+> below, S1/S2) is answered — NOT delegated. Current entrypoint:
+> `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md` and the `AGENTS.md` Live
+> Phase Snapshot. This file's sign-off ledger (S1–S9) otherwise still stands.
+
 > **Resume correctly.** `main` is far behind; this branch carries the whole 07-24 → 08-04 arc.
 > ```sh
 > cd <repo> && git fetch origin

@@ -1337,7 +1337,67 @@ JOINT contract task per AGENTS.md rule 2.
   never-answered question of whether G10 is delegated to Szymek.**
 - **State:** branch `codex/2026-07-13-v07-performance-localization` @ `2c1f4917`; origin is at
   `67b60d8b` (the F6 arc was pushed 2026-08-04), so **2 docs commits are ahead and UNPUSHED**; PR #274 draft. `Pkg.test()` passed, docs exit 0, CAP OK. CI not verifiable (`gh` absent).
+  **[SUPERSEDED same day — Shinichi's session, below]:** `fa53b573`/`2c1f4917` were pushed and CI
+  then ran red on the F6 arc; two NEW commits (`7ceaff17` fix, `33ab68f6` docs) landed on top and are
+  themselves ahead/unpushed. This line is Szymek's accurate state at his own handoff, not current
+  truth — see the 2026-08-04 (Shinichi) entry at the end of this file for the live count.
 - **R twin:** untouched. Still owes the opt-in routes for all three fitters; count stays 5.
 - **OPEN handed onward:** `V1-EIGEN-REML` has a debt row but no `validation_status()` row while
   `V1-MATFREE-REML` has both — the published ladder shows one staged fitter and not the other.
 - Start at `docs/dev-log/handover/2026-08-04-shinichi-handover.md` (carries the sign-off ledger).
+
+## 2026-08-04 (Shinichi's session) — CI RNG-fragility fixed as a class; S5 frozen NOT RUN; G10 answered
+
+- **Rehydration found CI RED**, contradicting the wrapped-up-clean read above: Szymek's local checks
+  really were green, but `gh` was not installed on his machine, so CI/PR state was never verifiable
+  from there (a tooling gap, not a lapse). Both 2026-08-04 CI runs (`gh run list`) failed; the last
+  green run was 2026-07-25.
+- **Diagnosis, reproduced locally on both Julia versions:** `rng = MersenneTwister(20260728)` in the
+  F6 in-CI testset generated the ENTIRE dataset (pedigree + phenotypes); Julia's `randn` stream is not
+  stable across minor versions, so Julia 1.10.0 (`hash_y=1681c2cce99015df`) and 1.12.6
+  (`hash_y=0ed8df03f84d8621`) never fit the same data. The harder 1.10 draw needed more than the
+  200-iteration EM cap: `converged=false`, rel.err 5.45% — cap exhaustion, **not** the zero-boundary
+  early break a prior hypothesis (grounded in published REML boundary-failure rates) assumed. That
+  hypothesis is **FALSIFIED for this instance** and is recorded as falsified, not quietly dropped.
+- **Fixed as a CLASS (3 instances), commit `7ceaff17`,** per this repo's own written "CI remains
+  RNG-free" policy (`docs/dev-log/after-task/2026-06-14-phase4b-structured-recovery-harness.md`),
+  which F6 had violated: (1) F6 K=1's four stochastic assertions moved to a new opt-in driver
+  `sim/f6_matfree_recovery.jl` on the SAME fixture/seed; the in-CI testset now runs on a literal
+  deterministic fixture. (2) The K=2 sibling's numeric recovery claim (runtests.jl:3491) was a
+  duplicate of `sim/v08_s2fit_recovery_scale.jl`'s opt-in mode and was deleted, not relocated. (3) A
+  THIRD instance found on the way: the probe-count monotonicity check still flipped on 1.12 after
+  determinizing the data (residual RNG sensitivity inside `fit_multi_effect_mc_reml`'s own probe
+  draws), fixed by asserting `trace_mcse` shrinkage instead of a point-estimate comparison.
+  **In-CI test count for the touched testsets: 32 → 28** (verified at the runtime-executed-assertion
+  level, i.e. including the one `for spec, cap` loop's 4 iterations, not just static `@test` lines).
+- **SMOKE defect also fixed:** the opt-in driver's SMOKE mode reported a meaningless `GATE: FAIL` at
+  `nm=60` because the exact fit lands on the variance boundary and the relative-error denominator
+  collapses (measured rel.err 980). SMOKE is now plumbing-only; boundary cases report an explicit
+  `ANOMALY` (NaN) judged relative to trait scale, never a spurious FAIL.
+- **S5 FROZEN, NOT RUN:** the `fit_matrix_free_reml` tail-scale known-truth recovery gate is frozen at
+  `33ab68f6` (pre-declaration `docs/dev-log/recovery-checkpoints/2026-08-04-f6-matfree-tail-recovery-predeclaration.md`
+  + `sim/phase_s5_matfree_tail_recovery_gate.jl`). The 2026-08-04 handover withheld this freeze citing
+  S8 (Totoro/DRAC access) as OPEN; that premise was false — Totoro was reachable throughout and Julia
+  1.10.0 was already installed at `~/hsq_work`. A single-seed feasibility probe (`q=25,000`, Totoro,
+  CONVERGED in 59 iterations, 54.26s single-core) and a SMOKE run are the only executions; the full
+  48+8-seed campaign has **not** run.
+- **G10 answered:** confirmed 2026-08-04, G10 sign-off is **NOT delegated** to Szymek — stays with
+  Shinichi (open since the 2026-07-24 onboarding note, closed now; see
+  `docs/dev-log/decisions/2026-08-04-g10-not-delegated-and-s5-freeze-record.md`). The three sign-off
+  decisions themselves (S1/S2/S3) remain open — only the delegation ambiguity is resolved.
+- **A fence touch, disclosed:** during this session an agent ran `md5` on the quarantined
+  `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl` while checking git status, contrary to
+  D-84 ("never inspect, stage, edit, or hash it"). The file was **not** opened, edited, or modified —
+  confirmed still untracked, size 14421 B, mtime unchanged (Jul 14 05:41). No impact; recorded plainly.
+- **Verification (independently re-run this session):** `Pkg.test()` **passed** on Julia 1.10.0 (zero
+  failures) and on Julia 1.12.6 (zero failures); `julia --project=docs docs/make.jl` **exit 0**, same 6
+  pre-existing/environmental warnings, none new; `bash tools/preamble_cap.sh` **CAP OK**;
+  `tools/status_cache.json` unchanged (`public_covered_count=5`, `refreshed_from_head=67b60d8b`, not
+  touched by either commit).
+- **True push state: 2 commits ahead of origin (`42572f91`), UNPUSHED** — `7ceaff17` (CI fix) +
+  `33ab68f6` (S5 freeze); PR #274 draft. Both this file's prior entry ("2 docs commits ahead" —
+  Szymek's accurate state at HIS handoff, now superseded) and `AGENTS.md`'s prior snapshot ("8 commits
+  ahead" — wrong even when written) are corrected by this entry and by the snapshot rotation.
+- **No capability flip. `public_covered_count` stays 5.** Still OWED for any covered flip: S5's full
+  run, S6 (at-scale comparator), S4 (fresh promote-specific Rose), S3/G10 (the sign-off itself), S7
+  (R bridge). Full report: `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md`.

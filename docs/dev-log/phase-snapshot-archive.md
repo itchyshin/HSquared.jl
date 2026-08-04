@@ -1,5 +1,21 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-08-04 (Szymek's lane WRAPPED UP and handed to Shinichi; every remaining lever is a
+  Shinichi sign-off or needs compute Szymek does not have).** **THREE engine fitters are experimental;
+  NOTHING is promoted; `public_covered_count` STAYS 5.** Since 2026-07-28: **F6
+  `fit_matrix_free_reml`** landed experimental + **OPT-IN ONLY** (`:auto` never selects it — owner
+  decision, since the route would fire only at `n>20 000`, the one regime never measured); ASReml-R
+  4.2.0.482 **AGREE 1.31e-7** vs exact — **estimand only, no timing** (§4 fence). **(2) `fit_ai_reml`
+  + (3) `fit_eigen_reml`:** STAGED for G10, owner chose KEEP STAGED. **This session (docs-only):** the
+  published validation-status table was drifting — **33 of 56 rows**, and `V5-MARKER-THRESHOLD`
+  published `partial` where the engine says `covered` — so it is now **GENERATED from
+  `validation_status()`** at build time and cannot disagree with the engine. **8 commits ahead of
+  origin, UNPUSHED; PR #274 draft.** **BLOCKED ON SHINICHI: G10 ×3 (S1/S2/S3), Totoro/DRAC access
+  (S8 — gates the recovery gate S5 + at-scale comparator S6), the R bridge (S7, other repo), D1
+  authorization (S9), and the never-answered question of whether G10 is delegated to Szymek.**
+  **D1 genomic PAUSED (D-68/D-71); TMB deferred.**
+  START HERE: `docs/dev-log/handover/2026-08-04-shinichi-handover.md` (carries the sign-off ledger).
+
 - **As of 2026-07-28 (H2 F6 matrix-free fitter LANDED as experimental + OPT-IN; ASReml comparator AGREE; Rose applied).**
   **THREE engine fitters are now experimental; NOTHING is promoted; `public_covered_count` STAYS 5.**
   **(1) NEW — `fit_matrix_free_reml` (F6, this session):** matrix-free Monte-Carlo EM-REML for the single-effect

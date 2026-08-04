@@ -25,21 +25,31 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-08-04 (Szymek's lane WRAPPED UP and handed to Shinichi; every remaining lever is a
-  Shinichi sign-off or needs compute Szymek does not have).** **THREE engine fitters are experimental;
-  NOTHING is promoted; `public_covered_count` STAYS 5.** Since 2026-07-28: **F6
-  `fit_matrix_free_reml`** landed experimental + **OPT-IN ONLY** (`:auto` never selects it — owner
-  decision, since the route would fire only at `n>20 000`, the one regime never measured); ASReml-R
-  4.2.0.482 **AGREE 1.31e-7** vs exact — **estimand only, no timing** (§4 fence). **(2) `fit_ai_reml`
-  + (3) `fit_eigen_reml`:** STAGED for G10, owner chose KEEP STAGED. **This session (docs-only):** the
-  published validation-status table was drifting — **33 of 56 rows**, and `V5-MARKER-THRESHOLD`
-  published `partial` where the engine says `covered` — so it is now **GENERATED from
-  `validation_status()`** at build time and cannot disagree with the engine. **8 commits ahead of
-  origin, UNPUSHED; PR #274 draft.** **BLOCKED ON SHINICHI: G10 ×3 (S1/S2/S3), Totoro/DRAC access
-  (S8 — gates the recovery gate S5 + at-scale comparator S6), the R bridge (S7, other repo), D1
-  authorization (S9), and the never-answered question of whether G10 is delegated to Szymek.**
-  **D1 genomic PAUSED (D-68/D-71); TMB deferred.**
-  START HERE: `docs/dev-log/handover/2026-08-04-shinichi-handover.md` (carries the sign-off ledger).
+- **As of 2026-08-04 (CI RNG-fragility fixed as a class; S5 predeclaration FROZEN, NOT RUN; G10
+  confirmed NOT delegated).** **THREE engine fitters remain experimental; NOTHING is promoted;
+  `public_covered_count` STAYS 5.** Rehydration on handoff from Szymek found CI RED (both 2026-08-04
+  runs; green through 07-25) — his local checks were genuinely clean, but `gh` was absent on his
+  machine so CI was unverifiable to him (a tooling gap, not a lapse). Diagnosis:
+  `MersenneTwister(20260728)` generated the WHOLE F6 dataset; Julia's `randn` stream is not
+  version-stable, so Julia 1.10 drew a harder dataset than 1.12 and hit the 200-iteration EM cap
+  (`converged=false`, rel.err 5.45%) — cap exhaustion, NOT the zero-boundary break a prior hypothesis
+  assumed (that hypothesis is now FALSIFIED for this instance, recorded, not silently dropped). Fixed
+  as a CLASS, not an instance (3 sites, `7ceaff17`): F6 K=1's four stochastic assertions moved to a
+  new opt-in driver `sim/f6_matfree_recovery.jl` on the SAME fixture/seed (in-CI count 32→28); the
+  K=2 sibling's duplicate numeric claim deleted (already covered by
+  `sim/v08_s2fit_recovery_scale.jl`); the probe-count monotonicity check now asserts `trace_mcse`
+  shrinkage, not a point estimate. A found-on-the-way SMOKE defect (meaningless `GATE: FAIL` at
+  nm=60, a boundary denominator collapse) is also fixed. **S5** (`fit_matrix_free_reml` tail-scale
+  known-truth recovery gate) is FROZEN at `33ab68f6` — pre-declaration + script committed, **NOT
+  RUN** (SMOKE + one feasibility probe only). **G10 confirmed NOT delegated** to Szymek — stays with
+  Shinichi (open since the 2026-07-24 onboarding note; now closed, see
+  `docs/dev-log/decisions/2026-08-04-g10-not-delegated-and-s5-freeze-record.md`). **2 commits ahead
+  of origin (`42572f91`), UNPUSHED — `7ceaff17` (CI fix) + `33ab68f6` (S5 freeze); PR #274 draft.**
+  **BLOCKED ON SHINICHI: the G10 ×3 sign-offs themselves (S1/S2/S3 — delegation is resolved, the
+  sign-off decisions are not), Totoro/DRAC access (S8 — gates S5's full run + at-scale comparator
+  S6), the R bridge (S7, other repo), D1 authorization (S9).** **D1 genomic PAUSED (D-68/D-71); TMB
+  deferred.**
+  START HERE: `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md`.
 
 ## Core Scope
 
