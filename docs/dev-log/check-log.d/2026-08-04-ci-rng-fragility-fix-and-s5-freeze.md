@@ -101,3 +101,40 @@ quarantined `sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl` NOT opened
 this audit (metadata-only `ls -la`) · S5 gate NOT run by this audit · not pushed.
 
 Full report: `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md`.
+
+## Addendum — the Totoro-provenance dispute, closed with independent re-verification
+
+After this check-log entry and its after-task sibling were first committed (`f0093eb7`), a peer
+audit and the orchestrator went three further rounds on one detail in Finding 6: whether the SMOKE
+defect was "found via a Totoro probe." Full sequence in `docs/dev-log/plan-actual/2026-08-04-f6-ci-honesty.md`
+row 7 and in the after-task report's own Finding 6, both already updated by other hands
+(`3e00eaae`, `c0d35d5e`, `9833c481`, `9542ddcf`) — not restated here. This audit independently
+re-verified the FINAL claim itself, rather than accept it because two other parties had already
+agreed on it:
+
+- SSH'd to Totoro (existing ControlMaster socket) and confirmed directly: the deployed copy at
+  `~/hsq_work/grace-f6smoke/sim/f6_matfree_recovery.jl` is 5810 B, dated Aug 4 09:13, sha256
+  `73d5cf19d4587757...483eb9e` (matches the claim), and contains zero occurrences of
+  `on_boundary`/`ANOMALY` — provably the pre-fix version.
+- Read the freshly-persisted `~/hsq_work/grace_f6_smoke_reproduction.log` on Totoro directly (987 B,
+  Aug 4 11:07): reproduces `rel.err sigma_a2=40925.4384`, `GATE: FAIL` byte-for-byte against the same
+  sha256-verified deployed file.
+- Independently grepped the CURRENT, already-committed `sim/f6_matfree_recovery.jl` for the "≈4e4"
+  code comment myself — this file was read in full by this audit hours before the dispute existed,
+  so the comment's presence is not something any party could have added in response to the
+  challenge. It reads: `the naive ratio reports rel_a ≈ 4e4`, matching `40925.4384` and pre-dating
+  every commit in the dispute.
+
+**Verdict: the reinstated attribution is correct**, and now stronger than when first asserted — not
+just quoted, but hash-verified and independently reproduced. This audit's own `3e00eaae` retraction
+was itself the mistaken step; recorded, not erased (`3e00eaae` stands as a commit, superseded by
+`c0d35d5e`, not amended).
+
+**Process observation, offered by the orchestrator, recorded here at this audit's discretion:**
+`3e00eaae` and `c0d35d5e` — a claim and its direct reversal — carry byte-identical `author` and
+`Co-Authored-By` git trailers (`Shinichi Nakagawa` / `Claude Opus 5`), because every commit in this
+multi-agent session is authored under the orchestrator's identity regardless of which sub-agent
+produced the content. `git blame`/`git log --format=%an` cannot distinguish who wrote what in this
+repo's commits; provenance lives only in commit-message prose and the swarm's own task routing. Not
+a defect in this arc's evidence (the dispute resolved on content, not on `git blame`), but worth
+naming as a standing limitation of this convention for any future provenance dispute.
