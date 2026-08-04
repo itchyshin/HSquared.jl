@@ -1401,3 +1401,24 @@ JOINT contract task per AGENTS.md rule 2.
 - **No capability flip. `public_covered_count` stays 5.** Still OWED for any covered flip: S5's full
   run, S6 (at-scale comparator), S4 (fresh promote-specific Rose), S3/G10 (the sign-off itself), S7
   (R bridge). Full report: `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md`.
+
+## 2026-08-04 (evening) — Julia engine lane CLOSED and handed to a fresh Claude session
+
+- **Lane closed.** Branch `codex/2026-07-13-v07-performance-localization` @ `b9b09758`, **pushed, in
+  sync with origin (0/0)**. This supersedes the "2 commits ahead, UNPUSHED" line in the entry above,
+  which was accurate when written and went stale on push.
+- **CI is GREEN on both matrix legs** (`Julia 1.10` + `Julia 1`) at `b9b09758`, and on Documenter —
+  verified by CI, not merely by local `Pkg.test()`. That distinction is the whole subject of this arc:
+  the failure existed precisely because a true "local green" was mistaken for a verified one.
+- **S8 is not a blocker and never was.** Totoro was reachable throughout via the existing
+  `ControlMaster` socket, with Julia 1.10.0 already installed at `~/hsq_work`. S5's `q=25,000`
+  feasibility is now MEASURED: fill 583.3, converged in 59 iterations, 54.26 s single-core.
+- **Handover for the next session:** `docs/dev-log/handover/2026-08-04-claude-handover.md` (now the
+  `AGENTS.md` START HERE pointer). It carries the Landing State ledger, including 15 **pre-existing**
+  stale branches (2026-06-21 → 2026-07-09, not this lane's work) declared CARRIED-OVER, and the
+  quarantined sim declared PROTECTED.
+- **R twin (`hsquared`) — separate lane, untouched, and NOT clean:** 7 commits ahead of its own origin
+  with a dirty tree. Resolve that before scheduling S7 bridge work there.
+- **Top of the next queue:** settle the `CAP-EXHAUSTED ≤ 4/48` threshold (no in-repo precedent,
+  owner-revisable while nothing has run), then run S5 on Totoro. Neither promotes anything;
+  `public_covered_count` stays **5**.

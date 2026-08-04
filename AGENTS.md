@@ -43,13 +43,17 @@ engine reality.
   known-truth recovery gate) is FROZEN at `33ab68f6` — pre-declaration + script committed, **NOT
   RUN** (SMOKE + one feasibility probe only). **G10 confirmed NOT delegated** to Szymek — stays with
   Shinichi (open since the 2026-07-24 onboarding note; now closed, see
-  `docs/dev-log/decisions/2026-08-04-g10-not-delegated-and-s5-freeze-record.md`). **2 commits ahead
-  of origin (`42572f91`), UNPUSHED — `7ceaff17` (CI fix) + `33ab68f6` (S5 freeze); PR #274 draft.**
-  **BLOCKED ON SHINICHI: the G10 ×3 sign-offs themselves (S1/S2/S3 — delegation is resolved, the
-  sign-off decisions are not), Totoro/DRAC access (S8 — gates S5's full run + at-scale comparator
-  S6), the R bridge (S7, other repo), D1 authorization (S9).** **D1 genomic PAUSED (D-68/D-71); TMB
-  deferred.**
-  START HERE: `docs/dev-log/after-task/2026-08-04-ci-rng-fragility-fix-and-s5-freeze.md`.
+  `docs/dev-log/decisions/2026-08-04-g10-not-delegated-and-s5-freeze-record.md`). **ALL PUSHED —
+  branch @ `b9b09758`, in sync with origin (0/0), and CI is GREEN on BOTH matrix legs (Julia 1.10 +
+  Julia 1) at that commit, verified by CI and not merely locally; PR #274 still DRAFT.**
+  **S8 IS NOT A BLOCKER — the premise was false:** Totoro was reachable throughout via the existing
+  `ControlMaster` socket and Julia 1.10.0 was already installed at `~/hsq_work`; S5's `q=25,000`
+  feasibility is now MEASURED (fill 583.3, converged in 59 iterations, 54.26 s single-core ⇒ minutes
+  at 48-way). **BLOCKED ON SHINICHI: the G10 ×3 sign-offs themselves (S1/S2/S3 — delegation is
+  resolved, the sign-off decisions are not), the `CAP-EXHAUSTED ≤ 4/48` threshold in the frozen gate
+  (no in-repo precedent; owner-revisable before any run), the at-scale comparator S6, the R bridge
+  (S7, other repo), D1 authorization (S9).** **D1 genomic PAUSED (D-68/D-71); TMB deferred.**
+  START HERE: `docs/dev-log/handover/2026-08-04-claude-handover.md`.
 
 ## Core Scope
 
