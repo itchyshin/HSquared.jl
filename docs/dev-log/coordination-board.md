@@ -1422,3 +1422,11 @@ JOINT contract task per AGENTS.md rule 2.
 - **Top of the next queue:** settle the `CAP-EXHAUSTED ≤ 4/48` threshold (no in-repo precedent,
   owner-revisable while nothing has run), then run S5 on Totoro. Neither promotes anything;
   `public_covered_count` stays **5**.
+- **Lane reassigned to Szymek (2026-08-04 evening).** Handover note:
+  `docs/dev-log/handover/2026-08-04-szymek-handover.md` — now the `AGENTS.md` START HERE pointer, and
+  the human entrypoint; it points on to the agent-facing `2026-08-04-claude-handover.md`. It answers
+  his eleven-day-old G10 question (**not delegated** — develop and generate evidence freely; only the
+  `experimental → covered` flip is Shinichi's), explains why his "all local checks green" was true
+  while CI was red (no `gh` on his machine; Julia's `randn` stream is not version-stable), and asks
+  him to install `gh`. The two decisions gating the S5 run — the `CAP-EXHAUSTED ≤ 4/48` threshold and
+  Totoro access — are explicitly flagged as Shinichi's, not his.

@@ -53,7 +53,10 @@ engine reality.
   resolved, the sign-off decisions are not), the `CAP-EXHAUSTED ≤ 4/48` threshold in the frozen gate
   (no in-repo precedent; owner-revisable before any run), the at-scale comparator S6, the R bridge
   (S7, other repo), D1 authorization (S9).** **D1 genomic PAUSED (D-68/D-71); TMB deferred.**
-  START HERE: `docs/dev-log/handover/2026-08-04-claude-handover.md`.
+  **LANE OWNER: Szymek** (handed 2026-08-04 evening).
+  START HERE: `docs/dev-log/handover/2026-08-04-szymek-handover.md` (human entrypoint; it points on to
+  `docs/dev-log/handover/2026-08-04-claude-handover.md`, the agent-facing version with the full
+  Landing State ledger).
 
 ## Core Scope
 
