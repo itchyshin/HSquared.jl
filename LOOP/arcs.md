@@ -21,7 +21,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A14 | B4 | Bridge payload v2 contract | done | R `7193e9ad` phase 1; receipt `h2-b4-a14-receipt.md` |
 | A15 | B4 | engine=julia smoke + F8 | done | R `07399a9` — receipt `h2-b4-a15-a16-receipt.md` |
 | A16 | B4 | Bridge parity test → CI | done | R `3dbf486` phase 1 Tier 0 contracts |
-| A17 | B5 | Docs IA rebuild both sites | doing | plan `h2-a17-docs-ia-plan.md`; R slice `a2dd54c` |
+| A17 | B5 | Docs IA rebuild both sites | doing | phase 1 `a2dd54c`; phase 2 navbar `1e0fe06`; phase 3 README/limits |
 | A18 | B5 | CI/deploy hygiene + status gen | todo | — |
 | A19 | B6 | Julia General registry (F7) | doing | prep `294cdcb` checklist; ASK before register |
 | A20 | B6 | hsquared 0.5.0 CRAN local gate | todo | — |
@@ -38,7 +38,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B2 | **partial** | Gauss, Fisher, Ada — A08 done; A07 gated (S5 NOT RUN); A09 dossiers prepared |
 | B3 | **partial** | Curie, Mrode, Jason, Darwin — A10/A12 done; A11 skeleton; A13 draft |
 | B4 | **partial** | Hopper, Boole, Emmy, Fisher — A14–A16 done; barrier pending |
-| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17 phase 1 `a2dd54c`; phase 2 navbar in flight |
+| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17 phases 1–2 R (`a2dd54c`, `1e0fe06`); phase 3 todo |
 | B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; register ASK |
 | B7 | todo | Opus A21 |
 | B8 | todo | Melissa → Rose |
