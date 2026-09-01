@@ -16,7 +16,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A09 | B2 | G10 S1/S2/S3 dossiers (no sign) | doing | dossiers `~/local-scratch/h2-g10-dossiers/` |
 | A10 | B3 | BLUPF90 wire or document (F5) | done | R `2cc13d2` — doc path |
 | A11 | B3 | Comparator harness 7 targets | doing | skeleton `cf069956`; receipt `h2-b3-comparator-receipt.md` |
-| A12 | B3 | sommer/ASReml R fixtures | todo | — |
+| A12 | B3 | sommer/ASReml R fixtures | done | R `2d52a48` + Julia `cce9a961`; receipt `h2-a12-fixtures-receipt.md` |
 | A13 | B3 | Real-data 3-tier manifest | doing | draft `h2-a13-realdata-manifest.md` |
 | A14 | B4 | Bridge payload v2 contract | done | R `7193e9ad` phase 1; receipt `h2-b4-a14-receipt.md` |
 | A15 | B4 | engine=julia smoke + F8 | done | R `07399a9` — receipt `h2-b4-a15-a16-receipt.md` |
@@ -36,7 +36,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
 | B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
 | B2 | **partial** | Gauss, Fisher, Ada — A08 done; A07 gated (S5 NOT RUN); A09 dossiers prepared |
-| B3 | **partial** | Curie, Mrode, Jason, Darwin — A10 done; A11 skeleton; A13 draft |
+| B3 | **partial** | Curie, Mrode, Jason, Darwin — A10/A12 done; A11 skeleton; A13 draft |
 | B4 | **partial** | Hopper, Boole, Emmy, Fisher — A14–A16 done; barrier pending |
 | B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17 phase 1 `a2dd54c`; phase 2 navbar in flight |
 | B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; register ASK |

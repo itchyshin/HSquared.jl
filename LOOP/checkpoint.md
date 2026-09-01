@@ -11,14 +11,14 @@ ARCS DONE (verified):
 
 BATCH PARTIAL:
 - **B2** — A08 done; **A07 S5 gated** (approval packet only, **NOT RUN**); A09 dossiers `~/local-scratch/h2-g10-dossiers/`
-- **B3** — A10 done; A11 skeleton `cf069956`; A12 todo (comparator fixtures unstaged on R); A13 draft manifest
+- **B3** — A10 done; **A12 done** R `2d52a48` + Julia `cce9a961`; receipt `~/local-scratch/h2-a12-fixtures-receipt.md`; A11 skeleton; A13 draft manifest
 - **B4** — A14–A16 done; **barrier pending** (Hopper, Boole, Emmy, Fisher)
 - **B5** — A17 phase 1 `a2dd54c`; phase 2 navbar in flight
 - **B6 prep** — A19 checklist Julia `294cdcb`; register ASK owner
 
 ARC NEXT (parallel-safe):
 - **A11** — finish 7-target harness
-- **A12** — sommer/ASReml R fixtures (unstaged work on R)
+- **A11** — finish 7-target harness (A12 index landed)
 - **A13** — Darwin review real-data manifest
 - **A17** — pkgdown navbar (phase 2)
 - **B4 barrier** — lens review after A15/A16 receipt
