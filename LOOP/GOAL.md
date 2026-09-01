@@ -2,6 +2,10 @@
 
 Read this first, every cycle. Chat is disposable; this file is truth.
 
+## Parent goal (north star)
+
+`docs/design/41-lane-goal-to-1.0.md` — Phase 6 arc to honest **1.0** (six pillars, 0.5→0.9 ladder, maintainer maturity declaration). **This loop's active slice remains Block 1 only** (releasable **0.5.0** twin pair, arcs A01–A23). Do not start MV-4 or other 0.6+ spine work until Block 1 release gate clears.
+
 ## Mission
 
 Drive the H² twin (hsquared R + HSquared.jl engine) through **Block 1 only (arcs A01–A23)** to a **releasable 0.5.0 twin pair**: honest claims, comparator-anchored validation, bridge parity in CI, Julia General registry before R CRAN gate, all five D-41 EXPERIMENTAL channels — **not CRAN submission**, **not Block 2 (A24–A26)**.
