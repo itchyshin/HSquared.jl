@@ -14,8 +14,8 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A07 | B2 | S5 tail-scale REML gate q=25k | todo | Totoro >30m ASK |
 | A08 | B2 | CAP-EXHAUSTED ≤4/48 threshold (F4) | done | Q2 fixed pre-run |
 | A09 | B2 | G10 S1/S2/S3 dossiers (no sign) | todo | Q3 Shinichi signs |
-| A10 | B3 | BLUPF90 wire or document (F5) | todo | — |
-| A11 | B3 | Comparator harness 7 targets | todo | Totoro ≤30m |
+| A10 | B3 | BLUPF90 wire or document (F5) | done | R 2cc13d2 — doc path |
+| A11 | B3 | Comparator harness 7 targets | doing | skeleton cf069956; Totoro ≤30m |
 | A12 | B3 | sommer/ASReml R fixtures | todo | — |
 | A13 | B3 | Real-data 3-tier manifest | todo | — |
 | A14 | B4 | Bridge payload v2 contract | todo | — |
@@ -36,7 +36,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
 | B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
 | B2 | doing | Gauss, Fisher, Ada (G10); A08 done; A07 gated |
-| B3 | todo | Curie, Mrode, Jason, Darwin |
+| B3 | doing | Curie, Mrode, Jason, Darwin — A10 done; A11 skeleton |
 | B4 | todo | Hopper, Boole, Emmy, Fisher |
 | B5 | todo | Grace, Karpinski, Pat, Darwin, Florence |
 | B6 | todo | Grace, Rose mandatory |
