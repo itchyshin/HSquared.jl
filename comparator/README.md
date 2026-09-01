@@ -37,6 +37,24 @@ does not import JWAS).
 `comparator/Manifest.toml` is git-ignored (instantiate locally); only
 `Project.toml` is committed.
 
+## Unified comparator harness (A11 skeleton)
+
+`run_targets.jl` reads `test/fixtures/comparator_targets.toml` and runs
+**validate-only** adapters for all 7 targets. It writes an explicit
+`comparator/results/manifest.json` with per-target statuses
+(`validated`, `gap`, `blocked`, `unavailable`) and **0 silent skips**.
+
+```sh
+julia comparator/run_targets.jl
+julia comparator/run_targets.jl --validate-only
+```
+
+This is a harness index only. It does not run external comparators, does not
+replace per-model opt-in runners below, and does not promote any validation-status
+row. BLUPF90 unavailability for `phase4_multitrait_parity` is documented in the
+R lane at
+`docs/dev-log/comparator-runs/2026-09-01-blupf90-tool-unavailability.md`.
+
 ## BLUPF90/AIREMLF90 multivariate starter packet
 
 The currently serialized comparator and bridge targets are indexed in
