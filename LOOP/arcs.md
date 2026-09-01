@@ -8,11 +8,11 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A01 | B0 | Lane extraction — worktrees | done | — |
 | A02 | B0 | v07 fog / base decision | done | — |
 | A03 | B0 | Claim-surface sweep | done | — |
-| A04 | B1 | Enumerate 5 covered rows (F2) | doing | B1 |
-| A05 | B1 | R↔Julia parity table (F3) | doing | B1 |
-| A06 | B1 | Test/runtime baseline | doing | B1 |
+| A04 | B1 | Enumerate 5 covered rows (F2) | done | B1 |
+| A05 | B1 | R↔Julia parity table (F3) | done | B1 |
+| A06 | B1 | Test/runtime baseline | done | B1 |
 | A07 | B2 | S5 tail-scale REML gate q=25k | todo | Totoro >30m ASK |
-| A08 | B2 | CAP-EXHAUSTED ≤4/48 threshold (F4) | todo | Q2 fixed pre-run |
+| A08 | B2 | CAP-EXHAUSTED ≤4/48 threshold (F4) | done | Q2 fixed pre-run |
 | A09 | B2 | G10 S1/S2/S3 dossiers (no sign) | todo | Q3 Shinichi signs |
 | A10 | B3 | BLUPF90 wire or document (F5) | todo | — |
 | A11 | B3 | Comparator harness 7 targets | todo | Totoro ≤30m |
@@ -34,8 +34,8 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | Batch | Status | Barrier lenses |
 |-------|--------|----------------|
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
-| B1 | doing | Fisher, Rose — agent 3b8d0dd5 may be in progress; coordinate, no duplicate heavy tests |
-| B2 | todo | Gauss, Fisher, Ada (G10) |
+| B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
+| B2 | doing | Gauss, Fisher, Ada (G10); A08 done; A07 gated |
 | B3 | todo | Curie, Mrode, Jason, Darwin |
 | B4 | todo | Hopper, Boole, Emmy, Fisher |
 | B5 | todo | Grace, Karpinski, Pat, Darwin, Florence |
