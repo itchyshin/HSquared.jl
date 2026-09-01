@@ -63,6 +63,10 @@ handoff surface for R/external lanes: it names each target fixture, required
 files, associated issue/status rows, and the claim boundary. It is an index
 only, not comparator evidence.
 
+The R twin now mirrors this index at `hsquared/tests/fixtures/comparator_targets.toml`
+with `tests/fixtures/comparator_fixture_shas.csv` freezing mirrored CSV bytes;
+see receipt `~/local-scratch/h2-a12-fixtures-receipt.md` (A12, 2026-09-01).
+
 Current cross-lane status:
 
 - hsquared PR #84 (`52507da`) mirrors and consumes the
