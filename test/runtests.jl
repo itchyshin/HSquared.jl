@@ -176,7 +176,7 @@ include("test_aqua.jl")
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 55
+    @test length(validation) == 56
     # A18: Documenter status table must stay generated from validation_status().
     status_page = read(joinpath(@__DIR__, "..", "docs", "src", "validation-status.md"), String)
     @test occursin("BEGIN GENERATED validation-status-table", status_page)
@@ -187,6 +187,12 @@ include("test_aqua.jl")
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
     @test "V3-NEFFECT-MATFREE-FIT" in [row.id for row in validation]
     @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
+    # The S5 tail-scale gate and the G10 S3 dossier both cite V1-MATFREE-REML; the row must
+    # exist for that evidence to be auditable, and must stay `partial` until S6/S4/S7 close.
+    matfree = only(r for r in validation if r.id == "V1-MATFREE-REML")
+    @test matfree.status == "partial"
+    @test occursin("25,000", matfree.evidence)
+    @test occursin("public_covered_count", matfree.claim_boundary)
     @test validation[begin].id == "V0-LOAD"
     @test validation[end].id == "V6-GGLLVM-REML"
     @test "V4-EVOLVE" in [row.id for row in validation]

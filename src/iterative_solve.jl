@@ -995,17 +995,23 @@ to the fit it just replaced — so the returned log-likelihood is exact, not sto
 Returns the standard [`AnimalModelFit`](@ref) (`target = :matrix_free_reml`), so the ordinary
 extractors and the result payload work unchanged.
 
-EXPERIMENTAL, REML-only, two-component, Gaussian-only. It RECOVERS the exact `fit_ai_reml`
-optimum within Monte-Carlo error on the committed high-fill fixtures (`test/runtests.jl`), and
-that is ALL that is claimed. An external same-estimand REML comparator is discharged (ASReml-R
-4.2.0.482 at q=2000, `docs/dev-log/recovery-checkpoints/2026-07-28-asreml-matfree-comparator.md`)
-— but that is agreement with another *estimator*, not recovery-to-truth, and a pre-declared
-known-truth recovery gate at tail scale is **OWED** before any covered claim.
+EXPERIMENTAL, REML-only, two-component, Gaussian-only. Ledger row `V1-MATFREE-REML`
+(`validation_status()`, status `partial`) — read it before quoting any number from this fitter.
 
-**OPT-IN ONLY: `target = :auto` NEVER selects this fitter.** `:auto` routes between the two EXACT
-fitters (see [`fit_animal_model`](@ref)); the regime a route would serve is precisely the one in
-which this fitter has not been measured. Reach it explicitly with
-`fit_animal_model(spec; target = :matrix_free)`.
+The pre-declared tail-scale known-truth recovery gate PASSED on 2026-09-01 at q = 25,000
+(48/48 converged, mean relative error against generating truth 0.0016/0.0007 against a bound of
+0.05; `docs/dev-log/recovery-checkpoints/2026-09-01-f6-matfree-tail-recovery-result.md`). That is
+recovery-to-truth for the frozen gate fixture at that one scale — not at any other. The external
+same-estimand REML comparator (ASReml-R 4.2.0.482,
+`docs/dev-log/recovery-checkpoints/2026-07-28-asreml-matfree-comparator.md`) ran at q = 2000, below
+the measured crossover, so an at-scale comparator in the high-fill tail is still **OWED** before
+any covered claim.
+
+**OPT-IN ONLY.** On this branch the fitter is reachable only by calling it directly:
+`fit_animal_model` accepts `:variance_components`, `:sparse_reml`, `:ai_reml`, and
+`:henderson_mme`, and there is no `:auto` REML router, so nothing can select this estimator on a
+user's behalf. That is deliberate — the regime a route would serve is largely the one in which
+this fitter has not been measured.
 """
 function fit_matrix_free_reml(
     spec::AnimalModelSpec;
