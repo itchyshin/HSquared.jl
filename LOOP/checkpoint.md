@@ -125,13 +125,28 @@ ARC NEXT (one owner each):
   `validation_status()` so the Documenter page cites C8 (`47925486`, **14/16**) alongside W1;
   CI now requires claim_boundary prose sync (Rose F3 / inventory T2 closed). Check-log
   `check-log.d/2026-09-02-h2-a25-grace-validation-status-regen.md`. Launch:
-  `~/local-scratch/h2-a25-docregen-launch.md`. **Next:** true A25 (MV-5 disposition), then A26.
+  `~/local-scratch/h2-a25-docregen-launch.md`.
+- **A26 DONE (not pushed)** — R↔engine element-wise k=2 multivariate parity. R
+  `0ec917f`/`37843d8`/`74ba7d6`/`806f7a7`. Declared-before / measured-after margins:
+  start-matched **1.7e-14** (tol 1e-8); bridge `I₂` start **2.0e-5** (tol 5e-4);
+  pedigree-permutation **1.7e-14** (tol 1e-6). Live 44 PASS / 0 FAIL; CRAN 6 PASS / 2 SKIP.
+  **Fence held:** R multivariate **partial**; Julia `V4-MV-REML` covered; `public_covered_count` **5**.
+  Receipt `~/local-scratch/h2-a26-receipt.md`; briefing §17; scratch LOOP `~/local-scratch/h2-a26-LOOP.md`.
+- **A26-grace DONE (not pushed)** — JuliaCall 0.17.6 NA-matrix segfault workaround (pre-existing;
+  blocked whole-suite live runs). R `becfa5b`. Root cause: R `NA_real_` → Julia `Missing`;
+  `julia_eval(sum(isnan.(…)))` segfaults in Rcpp precious-preserve. Workaround: explicit
+  `hs_y_matrix_for_julia` NA→NaN before assign + safe Int count. Live `test-multivariate.R`
+  FAIL 0 / SKIP 0; A26 parity still green; CRAN path unchanged. Check-log
+  `check-log.d/2026-09-02-h2-a26-juliacall-na-segfault.md`.
+- **Owner asks (open, do not quietly fix)** — (1) Bridge multivariate start: shipped `I₂` vs
+  engine `0.5·phenotypic-variance` (identity costs ~2e-5 on G0, inside tol). (2) **DP-1** push.
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
-  evidence assembly (true A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
+  evidence assembly. Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
   not a plan of record**); gate-level inventory with SHAs:
-  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip findings discharged;
-  T2 page-staleness closed by A25-grace).
+  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip + A26 parity
+  findings discharged; T2 page-staleness closed by A25-grace; JuliaCall segfault closed by A26-grace).
   `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
+  **Next:** true A25 (MV-5 disposition) · A27 Darwin · A29 Rose · A30 G10 · DP-1.
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for
