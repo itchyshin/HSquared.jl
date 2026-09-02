@@ -2,7 +2,7 @@
 # ============================================================================
 # S6 -- ASReml-R comparator: at-scale estimand leg (E) + wall-clock ladder (W).
 #
-# STATUS: SKELETON. FROZEN-NOT-RUN. NOT AUTHORISED.
+# STATUS: SKELETON. PARKED (licence ABSENT, A33). Design freeze intact. NOT AUTHORISED. No speed claim.
 #
 # This file freezes the grid, the seeds, the caps, and the toolchain assertions
 # declared in:
@@ -15,7 +15,7 @@
 # file existing.
 #
 # PREREQUISITES (pre-declaration section 1):
-#   P1  licensed ASReml-R on a drivable host -- OPEN, OWNER action (arc A33).
+#   P1  licensed ASReml-R on a drivable host -- ABSENT (A33 2026-09-02; Mac + Totoro). Receipt: ~/local-scratch/h2-a33-asreml-licence-probe.md.
 #   P2  ASReml scaffold + high-fill generator -- DISCHARGED by provenance port
 #       (2026-09-02): comparator/prepare_asreml_matfree.jl,
 #       comparator/run_asreml_matfree.R, sim/drac/f0_adversarial_fill.jl from

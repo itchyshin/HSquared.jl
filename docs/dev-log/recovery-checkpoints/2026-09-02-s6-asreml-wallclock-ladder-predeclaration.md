@@ -1,24 +1,26 @@
 # Pre-declaration — S6 ASReml-R comparator: at-scale estimand leg + wall-clock ladder
 
-> **STATUS: FROZEN-NOT-RUN, AND NOT AUTHORISED.** This document freezes a design.
-> It does not start a campaign, does not request compute, and does not license any
-> claim. Nothing in it has been executed — not the grid, not a single cell, not a
-> feasibility probe. `public_covered_count` stays **5**; `V1-MATFREE-REML` stays
-> `experimental`; no row moves because this file exists.
+> **STATUS: PARKED (licence ABSENT).** Design freeze intact (FROZEN-NOT-RUN content
+> unchanged). A33 measured **ABSENT** on Mac + Totoro — receipt
+> `~/local-scratch/h2-a33-asreml-licence-probe.md`. Nothing executed — not the grid,
+> not a single cell, not a feasibility probe. **No speed claim.** Not authorised.
+> `public_covered_count` stays **5**; `V1-MATFREE-REML` stays `experimental`; no row
+> moves because this file exists or because A33 closed P1 as ABSENT.
 >
-> **Prerequisites:** P1 remains OPEN (owner). **P2 is DISCHARGED** by the 2026-09-02
-> provenance port (see §1). P3 remains ABSENT/`OPTIONAL` as measured. Two of the
-> original three blockers were measured facts about this branch (see §1). This gate is **licence-gated before it
-> is compute-gated**: without a licensed ASReml-R on a host we can drive, the whole
-> wall-clock leg is parked, and parking it is a legitimate outcome.
+> **Prerequisites:** **P1 = ABSENT** (A33, 2026-09-02). **P2 is DISCHARGED** by the
+> 2026-09-02 provenance port (see §1). P3 remains ABSENT/`OPTIONAL` as measured.
+> This gate is **licence-gated before it is compute-gated**: without a licensed
+> ASReml-R on a host we can drive, the whole wall-clock leg is parked, and parking
+> it is a legitimate outcome — now the measured outcome.
 >
 > **OWNER-REVISABLE BEFORE ANY RUN.** Freezing binds the gate, not the maintainer.
 > Every threshold below may be revised and re-frozen at a new commit; what may not
-> happen is a threshold moving *after* a number has been seen.
+> happen is a threshold moving *after* a number has been seen. Unparking requires a
+> later PRESENT probe on a licensed host, then A34 before A35.
 
 **Spine reference:** `~/local-scratch/h2-post-050-spine-mv4-s6.md` §3 (Track 2, arcs
-A32/A33/A34/A35). This document is **A32**. A33 (licensed-host probe) is an owner
-action and has not happened.
+A32/A33/A34/A35). This document is **A32**. **A33 is DONE — ABSENT** (Mac + Totoro);
+see receipt above. Ladder **PARKED**; design freeze intact.
 
 **Ledger position.** S6 is item **(2)** of the four things `V1-MATFREE-REML` owes
 before any covered flip (`docs/design/validation-debt-register.md`, the
@@ -56,13 +58,19 @@ internal timing in this repository is HSquared measured against itself.
 
 Stated first, because a pre-declaration that hides its blockers is a wish list.
 
-### P1 — Licensed ASReml-R host (OPEN, owner action, A33)
+### P1 — Licensed ASReml-R host (**ABSENT**, A33 2026-09-02)
 
-ASReml-R is **not installed on the campaign laptop**
-(`docs/dev-log/2026-09-01-blupf90-tool-unavailability.md`). A licence is an owner
-action, never an agent's. **A NO is a legitimate outcome** and parks Leg W (and
-Leg E's ASReml arm) without invalidating this design. Bundle the ask with the
-S6/S7/D1 owner items already on the list rather than raising it separately.
+**Measured ABSENT** on the campaign Mac (R 4.6.0) and Totoro (R 4.5.3 via existing
+ControlMaster): `packageVersion("asreml")` / `library(asreml)` both fail with no
+package called `asreml` — never reached a licence-error path. Receipt:
+`~/local-scratch/h2-a33-asreml-licence-probe.md`.
+
+Prior note that it was not on the campaign laptop
+(`docs/dev-log/2026-09-01-blupf90-tool-unavailability.md`) is confirmed and widened.
+**A NO / ABSENT parks Leg W (and Leg E's ASReml arm) without invalidating this
+design** — now the measured outcome. Owner may still obtain a licence elsewhere;
+until a PRESENT re-probe, A34/A35 stay unarmed. Bundle any obtain-or-park decision
+with the existing S7/D1 owner items; **DP-1 push remains first.**
 
 ### P2 — The ASReml scaffold is NOT on this branch (MEASURED, 2026-09-02; **PORTED 2026-09-02**)
 
@@ -90,8 +98,8 @@ The inlined `adversarial()` at `sim/phase_s5_matfree_tail_recovery_gate.jl:95`
 remains available for the ladder DGP; the ported `f0_adversarial_fill.jl` is the
 standalone high-fill scaffold named by this prerequisite.
 
-**P2 status: DISCHARGED on this campaign branch.** P1 (licence) and the Leg E/W
-implementations remain open.
+**P2 status: DISCHARGED on this campaign branch.** P1 is **ABSENT** (A33);
+Leg E/W implementations remain unarmed while parked.
 
 ### P3 — `fit_eigen_reml` does not exist on this branch (MEASURED, 2026-09-02)
 
