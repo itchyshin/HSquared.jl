@@ -3563,11 +3563,32 @@ end
     # (4) No other engine module reaches the fitter. The only `src/` files that name it are its
     #     own definition, the export list, and the ledger prose -- so wiring a call into
     #     `likelihood.jl` or `bridge_payload_v2.jl` grows this set and goes red.
+    #     The walk is recursive (`walkdir`, not a top-level `readdir`): a call planted
+    #     under a future `src/` subdirectory still grows this set (JL-8).
     srcdir = joinpath(@__DIR__, "..", "src")
-    naming = sort([f for f in readdir(srcdir)
-                   if endswith(f, ".jl") &&
-                      occursin("fit_matrix_free_reml", read(joinpath(srcdir, f), String))])
+    src_jl_files_containing = function (rootdir, needle)
+        sort(String[
+            replace(relpath(joinpath(dir, f), rootdir), '\\' => '/')
+            for (dir, _, files) in walkdir(rootdir)
+            for f in files
+            if endswith(f, ".jl") && occursin(needle, read(joinpath(dir, f), String))
+        ])
+    end
+    naming = src_jl_files_containing(srcdir, "fit_matrix_free_reml")
     @test naming == ["HSquared.jl", "iterative_solve.jl", "validation_status.jl"]
+
+    # Recursion pin: the same walker must see a nested file. Switching it to
+    # `readdir` would miss `nested/hidden.jl` and this goes red.
+    probe_root = mktempdir()
+    try
+        mkpath(joinpath(probe_root, "nested"))
+        write(joinpath(probe_root, "nested", "hidden.jl"), "fit_matrix_free_reml\n")
+        write(joinpath(probe_root, "top.jl"), "unrelated\n")
+        @test src_jl_files_containing(probe_root, "fit_matrix_free_reml") ==
+              ["nested/hidden.jl"]
+    finally
+        rm(probe_root; recursive = true, force = true)
+    end
 
     # (5) Opt-in, not banned: calling it by name works and the fit self-labels. ONE EM step,
     #     with no convergence or accuracy assertion -- the accuracy claim belongs to the frozen
