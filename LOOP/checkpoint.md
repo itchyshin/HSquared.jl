@@ -1,5 +1,8 @@
 GOAL: see LOOP/GOAL.md.   STATE: **DP-1 DONE — CI GREEN on PR heads (Julia `c8a4620a`: CI `33622314629` / Documenter `33622314613`)** — R tip `02a92a5` · Julia tip `23330a32`→`c8a4620a` on origin; draft PRs Julia [#277](https://github.com/itchyshin/HSquared.jl/pull/277) · R [#141](https://github.com/itchyshin/hsquared/pull/141); CI runs Julia `33619572028` + Documenter `33619572161` · R `33619570481`; receipt `~/local-scratch/h2-dp1-push-receipt-2026-09-02.md`. Trailers ACCEPT. **No merge / Registrator / covered flip.** (Historical Block 1 detail continues below; dated stamp at end.)
 
+**GATES:**
+- `push = local-only (owner)` — no `git push` from Multitask/background workers. Local `git add` / `git commit` only. Owner pushes. No force-push. No merge to `main`.
+
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
 - **A07/A08 (B2)** — S5 **PASS** q=25k; adjudication `~/local-scratch/h2-a07-s5-run-adjudication.md`; **do not re-run**
@@ -280,3 +283,7 @@ RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
 ## 2026-09-02 — CI GREEN on PR heads (Grace watch)
 
 Julia `c8a4620a` (LOOP-only commit after `23330a32`): CI `33622314629` **success** (Julia 1.10 + Julia 1; opt-in plotting job skipped by design) · Documenter `33622314613` **success**. R `02a92a5` unchanged, R-CMD-check `33619570481` green. Receipt §"CI on `c8a4620a`". Drafts #277 / #141 ready for owner review. **No merge / Registrator / version bump / G10 / covered flip.**
+
+## 2026-09-02 — owner binding: push is local-only
+
+**GATES:** `push = local-only (owner)`. Workers may `git add` / `git commit` locally. Never `git push` from Multitask/background. No force-push. No merge to `main`. Policy: `~/local-scratch/h2-push-policy-2026-09-02.md`.
