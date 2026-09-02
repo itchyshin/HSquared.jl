@@ -79,9 +79,9 @@ ARC NEXT (one owner each):
   (**scratch stub, not a plan of record**). `LOOP/GOAL.md` gates both behind the Block 1 release gate.
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (after pass 3: **R ahead 19** `c05ddab`, **Julia ahead 36** — head is this
-  LOOP commit, pass-3 commits `713edcf7` + `9fb1cf85` — **neither pushed → CI still unverified, and
-  every local check in this campaign remains local**) · A19 register · Version bump
+- G10 S1/S2/S3 sign · push (after pass 3: **R ahead 19** `c05ddab`, **Julia ahead 37** `d3d92952` —
+  pass-3 commits `713edcf7`, `9fb1cf85`, `b597f811`, `d3d92952` — **neither pushed → CI still
+  unverified, and every local check in this campaign remains local**) · A19 register · Version bump
 - ~~**`V1-MATFREE-REML` row does not exist**~~ **CLOSED 2026-09-01, `69280b70`** (Rose JL-1). It was a
   **port gap**, not a missing id: the row already existed on the v0.7 lineage (`33ab68f6`), and A07's
   `f261165e` ported `fit_matrix_free_reml` (body byte-identical) without the rows that came with it.
@@ -102,7 +102,7 @@ GATED (owner):
   `CLAUDE.md` no-trailer convention. **Auto-injected by the Cursor commit path** — no git hook and no
   `commit.template` (both checked, both empty) — so it cannot be avoided by wording messages
   differently from this surface. Owner's choice is genuinely accept-or-rewrite; the rewrite stays an
-  ASK. Cheaper before push than after.
+  ASK. Cheaper before push than after. **After pass 3, recounted: Julia 35/37, R 19/19 — 54 of 56.**
 - **Add `validation_status()` rows for RR k=2 + direct–maternal?** Both are `covered` in
   `docs/design/capability-status.md` but absent from the exported R table, so the generated limits page
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).
