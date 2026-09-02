@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 PROCEED pending DP-1** — R tip `02a92a5` ahead **43** · Julia tip `90f70bdb` ahead **63**; local green **PASS** (`~/local-scratch/h2-block1-prepush-green-2026-09-02.md`); trailers ACCEPT (96 with / 10 without); wakeup `~/local-scratch/h2-owner-wakeup-2026-09-02.md`; push packet `~/local-scratch/h2-dp1-push-readiness-2026-09-02.md`. **No push / no PR until DP-1.** Julia CI needs draft PR after push. (Historical Block 1 detail continues below; dated stamp at end.)
+GOAL: see LOOP/GOAL.md.   STATE: **DP-1 DONE — watch CI** — R tip `02a92a5` · Julia tip `23330a32` on origin; draft PRs Julia [#277](https://github.com/itchyshin/HSquared.jl/pull/277) · R [#141](https://github.com/itchyshin/hsquared/pull/141); CI runs Julia `33619572028` + Documenter `33619572161` · R `33619570481`; receipt `~/local-scratch/h2-dp1-push-receipt-2026-09-02.md`. Trailers ACCEPT. **No merge / Registrator / covered flip.** (Historical Block 1 detail continues below; dated stamp at end.)
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -273,3 +273,6 @@ RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
 
 **A33 DONE — ABSENT** (Mac + Totoro). Receipt `~/local-scratch/h2-a33-asreml-licence-probe.md`. S6 pre-declaration STATUS → **PARKED** (design freeze intact; no speed claim; grid NOT RUN). Wakeup already has **§8b**. **Still first: DP-1 push.** No push / no ASReml install / no grid. `public_covered_count` **5**.
 
+## 2026-09-02 — DP-1 DONE (push + draft PRs)
+
+**DONE.** Trailers ACCEPT; pushed both lanes; draft PRs opened. Tips Julia `23330a32` / R `02a92a5`. PRs: HSquared.jl #277 · hsquared #141. CI started: Julia CI `33619572028`, Documenter `33619572161`, R-CMD-check `33619570481`. Receipt `~/local-scratch/h2-dp1-push-receipt-2026-09-02.md`. **Next: watch CI.** No merge / Registrator / version bump / G10 / covered flip.
