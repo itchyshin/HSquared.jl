@@ -4,6 +4,14 @@
 rows. It is a diagnostic table, not a comparator runner and not a fitting
 helper.
 
+The public covered count is **5**. That name is a claims-register label
+(see `docs/design/06-public-claims-register.md` and the R twin's matching
+register), not a function — there is no `public_covered_count()` in this
+package. It is also not this table's covered-row count: engine-covered is
+not the same as R-public-covered. Generated claim-boundary cells may still
+use the old identifier as a label; do not treat it as something you can
+call.
+
 ```@example validation_status
 using HSquared
 

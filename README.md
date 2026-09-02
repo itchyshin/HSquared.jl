@@ -173,7 +173,8 @@ leg. What is *not* covered — and is what the planned list above should have sa
 coverage, broader-LD or covariate-adjusted (Freedman–Lane) calibration, the
 fixed-null-reuse shortcut (which failed its own gate and is banked as a negative
 result), and the map-annotated formula-level `marker_scan()` / `qtl_scan()` API.
-None of this is the public default: `public_covered_count` is **5**, and covered
+None of this is the public default: the public covered count is **5**
+(a claims-register ledger total, not a callable function), and covered
 *fitting* remains the v0.1 Gaussian animal model. Read the `V5-MARKER-THRESHOLD`
 row in `validation_status()` before quoting any number from it.
 
