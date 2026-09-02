@@ -70,7 +70,7 @@ requires before a *derived* estimand may be called `covered`: a within-package
 identity test asserting it equals its defining function of the covered
 components, plus a locked, pinned citation for that identity. This section
 mirrors that lock so the two lanes cannot drift on what the symbols mean. It
-records **no new Julia evidence** and moves **no status**.
+moves **no status**.
 
 The multivariate (0.6) identities, in engine notation, with `σ²_a,k = G0[k,k]`
 and `σ²_e,k = R0[k,k]`:
@@ -88,7 +88,7 @@ and `σ²_e,k = R0[k,k]`:
   does not contain. Locked citation: Falconer & Mackay (1996), ch. 8, 10; Lynch
   & Walsh (1998), ch. 4, 7.
 
-Where the identity tests live, and what this engine does **not** pin:
+Where the identity tests live, and what they do and do not establish:
 
 - The gating identity tests are **R-lane** (`tests/testthat/test-multivariate.R`,
   MV-3), asserting the R extractors equal these functions of the covered
@@ -96,23 +96,35 @@ Where the identity tests live, and what this engine does **not** pin:
   values.
 - On the Julia side both quantities are computed **by construction** from the
   same fitted `G0hat`/`R0hat` inside `fit_multivariate_reml`, so they cannot
-  numerically disagree with the definitions above. What the suite actually pins
-  is weaker: ranges (`0 ≤ h²_k ≤ 1`, `-1 ≤ r_g[i,j] ≤ 1`), copy-returning
-  extractors, and — on the supplied-covariance `multivariate_mme` path only —
-  `result.genetic_correlation ≈ genetic_correlation(G0)`. There is **no** Julia
-  assertion of the form
-  `heritability(fit) ≈ diag(G0) ./ (diag(G0) .+ diag(R0))`; construction is not
-  a test, and a refactor that recomputed `h²` from somewhere else would not turn
-  the suite red.
+  numerically disagree with the definitions above — but construction is not a
+  test, and a refactor that recomputed `h²` from somewhere else would not have
+  turned the suite red. The engine therefore pins the definitions directly on
+  the **estimated** path: `test/runtests.jl` § *Phase 4 derived-estimand
+  identities on the REML fit path* asserts
+  `heritability(fit) ≈ diag(G0) ./ (diag(G0) .+ diag(R0))` (extractor and
+  stored field, trait by trait) together with
+  `fit.genetic_correlation ≈ D⁻¹ G0 D⁻¹` and
+  `fit.residual_correlation ≈ D⁻¹ R0 D⁻¹`, at `rtol = 1e-12`, across the
+  `:unstructured`, `:diagonal`, `:lowrank`, `t = 1` and missing-record fits.
+  The reference maps are written out in the notation above rather than obtained
+  from `genetic_correlation`, which would be circular. The weaker pins remain
+  alongside: ranges (`0 ≤ h²_k ≤ 1`, `-1 ≤ r_g[i,j] ≤ 1`), copy-returning
+  extractors, and the supplied-covariance `multivariate_mme`
+  `result.genetic_correlation ≈ genetic_correlation(G0)` identity.
+- What those Julia assertions establish is **self-consistency of the engine's
+  own estimates with the locked definitions** — that `heritability` and
+  `genetic_correlation` denote the stated functions of `G0`/`R0`. They are
+  **not** external-comparator evidence and do not bear on whether `G0`/`R0`
+  themselves are right.
 - Component `G0`/`R0` stay external-same-estimand-comparator gated (the
   `sommer` 4.4.5 and executed `blupf90+` 2.60 legs recorded on the
   `V4-MV-REML` row); the two derived quantities above are identity-test +
   locked-citation gated.
 
-Unchanged by this mirror: Julia `V4-MV-REML` stays `covered` (experimental,
-validation-scale, opt-in), the R multivariate surface stays `partial`, and
-`public_covered_count` stays **5**. The R-lane covered flip itself remains
-twin-gated plus Darwin biology sign-off plus Rose.
+Unchanged by this mirror and by those assertions: Julia `V4-MV-REML` stays
+`covered` (experimental, validation-scale, opt-in), the R multivariate surface
+stays `partial`, and `public_covered_count` stays **5**. The R-lane covered flip
+itself remains twin-gated plus Darwin biology sign-off plus Rose.
 
 ## Status Words
 

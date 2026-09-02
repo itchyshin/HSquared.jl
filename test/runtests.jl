@@ -7309,6 +7309,89 @@ end
     @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
 end
 
+@testset "Phase 4 derived-estimand identities on the REML fit path" begin
+    # docs/design/04-validation-canon.md § Locked Derived-Estimand Identities:
+    #   h²_k = diag(G0) ./ (diag(G0) .+ diag(R0))
+    #   r_g  = D⁻¹ G0 D⁻¹,  D = diag(sqrt.(diag(G0)))   (R's cov2cor)
+    # Both are built by construction inside fit_multivariate_reml, and the suite
+    # otherwise pins only their ranges plus the supplied-covariance
+    # multivariate_mme cov2cor identity — so a refactor that recomputed h² from
+    # a different source would not turn anything red. These assertions pin the
+    # definitions on the ESTIMATED path, against references written out here
+    # rather than obtained from genetic_correlation (which would be circular).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    Y2 = hcat(y1, reverse(y1))
+    X = ones(8, 1)
+    Z = Matrix(1.0I, 8, 8)
+    Ymiss = copy(Y2); Ymiss[2, 2] = NaN; Ymiss[5, 1] = NaN
+
+    h2_ref(G0, R0) = [G0[k, k] / (G0[k, k] + R0[k, k]) for k in axes(G0, 1)]
+    function corr_ref(C)
+        D = Diagonal(sqrt.(diag(C)))
+        M = Matrix(D \ Matrix(C) / D)
+        for i in axes(M, 1)
+            M[i, i] = 1.0
+        end
+        return M
+    end
+
+    fits = (
+        unstructured = fit_multivariate_reml(Y2, X, Z, Ainv),
+        diagonal = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal),
+        lowrank = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank,
+            rank = 1,
+            initial = (loadings = reshape([0.7, -0.4], 2, 1), R0 = [1.0 0.0; 0.0 1.0])),
+        trait_reduction = fit_multivariate_reml(reshape(y1, 8, 1), X, Z, Ainv),
+        missing_records = fit_multivariate_reml(Ymiss, X, Z, Ainv),
+    )
+
+    for (name, fit) in pairs(fits)
+        @testset "$name" begin
+            G0 = fit.genetic_covariance
+            R0 = fit.residual_covariance
+            @test fit.converged
+            @test all(>(0), diag(G0))            # both identities need a positive diagonal
+            @test all(>(0), diag(R0))
+
+            # h²: the extractor AND the stored field equal the defining ratio,
+            # trait by trait (not merely inside [0, 1])
+            @test heritability(fit) ≈ h2_ref(G0, R0) rtol = 1e-12
+            @test collect(fit.heritability) ≈ h2_ref(G0, R0) rtol = 1e-12
+            for k in axes(G0, 1)
+                @test heritability(fit)[k] ≈ G0[k, k] / (G0[k, k] + R0[k, k]) rtol = 1e-12
+            end
+
+            # r_g and r_e: D⁻¹ C D⁻¹, unit diagonal, symmetric — on the fitted
+            # path, not only the supplied-covariance MME path
+            @test fit.genetic_correlation ≈ corr_ref(G0) rtol = 1e-12
+            @test genetic_correlation(fit) ≈ corr_ref(G0) rtol = 1e-12
+            @test fit.residual_correlation ≈ corr_ref(R0) rtol = 1e-12
+            @test diag(fit.genetic_correlation) == ones(size(G0, 1))
+            @test diag(fit.residual_correlation) == ones(size(R0, 1))
+            @test fit.genetic_correlation ≈ transpose(fit.genetic_correlation)
+        end
+    end
+
+    # the identities are discriminating, not vacuous: this fixture has clearly
+    # distinct per-trait h², a non-zero genetic covariance, and the two maps
+    # respond differently to dropping that covariance (h² ignores it, r_g does
+    # not) — so h² and r_g are pinned as different functions of the same G0
+    unstr = fits.unstructured
+    h2 = heritability(unstr)
+    G0u = unstr.genetic_covariance
+    R0u = unstr.residual_covariance
+    @test G0u[1, 2] != 0
+    @test !isapprox(h2[1], h2[2]; rtol = 1e-6)
+    @test !isapprox(h2, reverse(h2_ref(G0u, R0u)); rtol = 1e-6)   # trait order matters
+    G0diag = Matrix(Diagonal(diag(G0u)))
+    @test h2_ref(G0diag, R0u) ≈ h2 rtol = 1e-12
+    @test !isapprox(corr_ref(G0diag), unstr.genetic_correlation; rtol = 1e-6)
+end
+
 @testset "Phase 4 shared multi-trait parity fixture" begin
     fixture_dir = joinpath(@__DIR__, "fixtures", "phase4_multitrait_parity")
 
