@@ -32,6 +32,55 @@ julia --project=. sim/phase_s5_matfree_tail_recovery_gate.jl a07_s5_recovery.tsv
 | Wall time | ~44m 39s (2026-09-01T17:42:28 → 18:27:07 -06:00) |
 | Receipt | `~/local-scratch/h2-a07-s5-receipt.md` |
 
+## Full pre-declared criteria (Ada, consolidating)
+
+| Leg | Criterion | Bound | Observed | Verdict |
+|-----|-----------|-------|----------|---------|
+| A | A1 mean rel.err vs truth, both components | ≤ 0.05 | 0.0016 / 0.0007 | PASS |
+| A | A2 NON_GRACEFUL | 0/48 | 0/48 | PASS |
+| A | A3 CAP_EXHAUSTED | ≤ 4/48 | 0/48 | PASS |
+| X | mean \|reldiff\| vs exact `fit_ai_reml`, nprobe=64 | ≤ 0.05 | 0.0090 / 0.0052 | PASS |
+
+Buckets: CONVERGED 48, CAP_EXHAUSTED 0, NON_GRACEFUL 0, ANOMALY_ITER_MISMATCH 0.
+Iterations 52–62 against a cap of 200; fill mean 582.4 (min 571.4, max 596.5).
+
+## Independent replication, same interpreter
+
+A second invocation of the same frozen script on Julia 1.10.10, launched concurrently,
+wrote `~/hsq_work/results/h2-a07-s5-20260901/s5_recovery.tsv`.
+
+```sh
+diff <(grep -E '^  (A|X) ' R1.log | sed 's/wall=[0-9.]*s//') \
+     <(grep -E '^  (A|X) ' R2.log | sed 's/wall=[0-9.]*s//')
+```
+
+Outcome: **empty diff — all 56 per-seed rows identical**, and the two `GATE_JSON`
+strings are byte-equal. Determinism measured, not assumed.
+
+## Cross-version arm — NOT the verdict
+
+A third concurrent invocation on **Julia 1.12.6** diverges per seed (dgp 20269500:
+`sigma_a2` 1.0286 vs 0.9890; fill 582.5 vs 580.2). Expected: `MersenneTwister` streams
+are not version-portable for this fixture, as the script's own manifest states. Kept as
+a cross-version robustness arm; excluded from the pre-declared verdict.
+Adjudication of all three runs: `~/local-scratch/h2-a07-s5-run-adjudication.md`.
+
+## Artifacts
+
+- In repo: `sim/drac/results/s5_matfree_tail_recovery_20260901.tsv`
+- Result document: `docs/dev-log/recovery-checkpoints/2026-09-01-f6-matfree-tail-recovery-result.md`
+- Off repo: `~/local-scratch/receipts/h2-a07-s5-20260901/` (both logs, both TSVs)
+
 ## Claim boundary
 
 - Validation evidence only; no capability promotion; no push from this slice.
+- `public_covered_count` stays **5**; no `validation_status` row flips; G10 S3 unsigned.
+- Discharges validation-debt item (1) for `V1-MATFREE-REML`; narrows item (3) at
+  q = 25,000 **only**; S6 (at-scale comparator) and S7 (R bridge) remain open.
+
+## Follow-up owed
+
+The frozen gate records its interpreter version but does not pin it — three agents
+reached for three `julia` binaries across two versions. Recommend a version assertion
+in the script or a required version in the predeclaration. Not changed here: editing a
+frozen gate after its run is the post-hoc relaxation the predeclaration forbids.
