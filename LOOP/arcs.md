@@ -35,7 +35,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 |-------|--------|----------------|
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
 | B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
-| B2 | **partial** | Gauss, Fisher, Ada — A08 done; A07 gated (S5 NOT RUN); A09 dossiers prepared |
+| B2 | **partial** | Gauss, Fisher, Ada — A07/A08 done; A09 dossiers refreshed; G10 sign owner |
 | B3 | **partial** | Curie, Mrode, Jason, Darwin — A10/A12 done; A11 skeleton; A13 draft |
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
 | B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17 phases 1–2 R (`a2dd54c`, `1e0fe06`); phase 3 todo |

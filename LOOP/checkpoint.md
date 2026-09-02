@@ -1,34 +1,24 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B2–B5 partial; B4 bridge slices landed.**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B2 S5 PASS; B4 done; B3/B5 partial.**
 
 ARCS DONE (verified):
-- A01–A03 (B0) — `~/local-scratch/h2-twin-b0-receipt.md`
-- A04–A06 (B1) — barrier **PROCEED**
-- **A08 (B2)** — CAP-EXHAUSTED ≤4/48 (`4ad2c87b`)
-- **A10 (B3)** — F5 doc path R `2cc13d2`
-- **A14–A16 (B4)** — R `7193e9a` → `07399a9`; receipt `~/local-scratch/h2-b4-a15-a16-receipt.md`
-- **A15** — engine=julia smoke S2/S3 + F8 (`07399a9`)
-- **A16** — Tier 0 bridge CI contracts (`3dbf486`)
+- A01–A06, A08 — prior receipts
+- **A07 (B2)** — S5 **PASS** on Totoro (~44m39s); `a0ffb86a`+`f261165e`; receipt `~/local-scratch/h2-a07-s5-receipt.md`
+- A10, A12 (B3); A14–A16 + B4 barrier (R)
 
 BATCH PARTIAL:
-- **B2** — A08 done; **A07 S5 gated** (approval packet only, **NOT RUN**); A09 dossiers `~/local-scratch/h2-g10-dossiers/`
-- **B3** — A10 done; **A12 done** R `2d52a48` + Julia `cce9a961`; receipt `~/local-scratch/h2-a12-fixtures-receipt.md`; A11 skeleton; A13 draft manifest
-- **B4** — **done** — barrier PROCEED `~/local-scratch/h2-b4-barrier.md`; tail `a50a92f` + `7450b33`
-- **B5** — A17 phase 1 `a2dd54c`; **phase 2** `1e0fe06` pkgdown navbar; phase 3 README I2 + limits page todo
-- **B6 prep** — A19 checklist Julia `294cdcb`; register ASK owner
+- **B2** — A07/A08 done; A09 dossiers `~/local-scratch/h2-g10-dossiers/` updated for S5; **G10 owner sign**
+- **B3** — A11 skeleton; A13 draft
+- **B5** — A17 phases 1–2; phase 3 todo
+- **B6 prep** — A19 checklist
 
-ARC NEXT (parallel-safe):
-- **A11** — finish 7-target harness
-- **A11** — finish 7-target harness (A12 index landed)
-- **A13** — Darwin review real-data manifest
-- **A17** — phase 3: README I2, full limits page, function-map (plan `h2-a17-docs-ia-plan.md`)
-- **B4 barrier** — closed PROCEED (Tier 1 / fit_payload_v2 default post-B4)
+ARC NEXT:
+- **A09** — G10 packet ready for owner review (S3: S5 PASS, S6 still open)
+- **A11**, **A13**, **A17 phase 3**
 
 GATED:
-- **A07 S5 Totoro** — ASK before run; no duplicate probes
-- **G10** — Shinichi signs dossiers
-- **A19 register** — owner ASK after B6 green
-- **Push** — owner ASK when locally green
+- **G10 sign** — Shinichi only (S1/S2/S3)
+- **A19 register**, **push** — owner ASK
 
-TRUTH: Julia LOOP `~/local-scratch/lanes/HSquared.jl-h2-twin-20260901` · R twin same branch · MC vault `435d1fb`
+TRUTH: Julia LOOP worktree · R ahead 10 · Julia ahead 16+ · MC vault `b22b17f` (S5)
 
-RESUME: LOOP/GOAL.md → this file → arcs.md. One S5 compute owner (A07, gated).
+RESUME: LOOP/GOAL.md → this file → arcs.md. **Do not re-run S5.**
