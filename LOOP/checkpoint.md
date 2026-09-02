@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim). Pass 3 (2026-09-01 late) cleared the scrub's *after-push* residue while push itself stays gated: the matrix-free fence is now PINNED IN CI (the "owed pin" from JL-1), B3 C2 is closed as a DOCUMENTED Julia-only sire boundary, and the Julia README's JL-2/JL-3 understatements are corrected. Nothing promoted anywhere — rows 56, covered 13, `public_covered_count` 5, unchanged. The `Co-authored-by` trailer remains the one pre-push owner ASK — see GATED.**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim). Pass 3 (2026-09-01 late) cleared the scrub's *after-push* residue while push itself stays gated: the matrix-free fence is now PINNED IN CI (the "owed pin" from JL-1), B3 C2 is closed as a DOCUMENTED Julia-only sire boundary, and the Julia README's JL-2/JL-3 understatements are corrected. **Rose re-scrubbed all three pass-3 surfaces (2026-09-02): CLEAR-WITH-CHANGES, no false claim, no patch — and re-ran every one of pass 3's check claims rather than accepting them (all reproduced exactly).** Nothing promoted anywhere — rows 56, covered 13, `public_covered_count` 5, unchanged. The `Co-authored-by` trailer remains the one pre-push owner ASK — now **56 of 58** across both repos — see GATED.**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -120,10 +120,25 @@ GATED (owner):
   same-estimand REML sire comparator is untouched by either choice.
 - **Open question:** pin Julia version in frozen S5 gate pre-run? (records but doesn't assert today)
 
-TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · Rose pre-public scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-prepublic-scrub-2026-09-01.md` · briefing `~/local-scratch/h2-morning-briefing-2026-09-02.md` · pass-3 receipt `~/local-scratch/h2-overnight-pass3-launch-receipt.md` · post-0.5 spine stub (NOT authorized work) `~/local-scratch/h2-post-050-spine-mv4-s6.md`
+TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · Rose pre-public scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-prepublic-scrub-2026-09-01.md` · Rose pass-3 re-scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-rescrub-pass3-2026-09-02.md` · briefing (§7 is the current section) `~/local-scratch/h2-morning-briefing-2026-09-02.md` · pass-3 receipt `~/local-scratch/h2-overnight-pass3-launch-receipt.md` · post-0.5 spine stub (NOT authorized work) `~/local-scratch/h2-post-050-spine-mv4-s6.md`
 
-PASS 3 CAVEAT: the new Julia README paragraph is itself a claim surface **Rose has not read**. A
-re-scrub of it is owed before push. Push is owner-gated anyway, so this is a sequencing note, not a
-new blocker.
+~~PASS 3 CAVEAT: the new Julia README paragraph is a claim surface Rose has not read; a re-scrub is
+owed before push.~~ **RE-SCRUB DONE 2026-09-02 — CLEAR-WITH-CHANGES**, no false claim, no patch
+needed (`~/local-scratch/h2-rose-rescrub-pass3-2026-09-02.md`). All three pass-3 surfaces clear: the
+README genome-wide paragraph is a clause-by-clause transcription of `V5-MARKER-THRESHOLD` (every
+figure, all five fenced-out items); the fence testset's scope is honest and narrower than the tidy
+untruth; the sire boundary does **not** repeat JL-1's dangling pointer — the cited R note exists and
+every factual claim in it verified (`r_mirror = false`, zero bytes frozen, 9 fixture files,
+`V1-SIRE-FIT` still `partial`, no R fixtures invented). Rose **re-ran** all five of pass 3's check
+claims rather than accepting them: suite 143/4252/0 exact match, fence testset 20/20 in-suite,
+harness exit 0 (6 agree / 0 drift / 1 not mirrored), `--strict` **exit 1**, rows 56 / covered 13 /
+partial 39 live; committed `manifest.json` reproduces byte-identically. THREE NEW LOW findings, none
+a false claim, all post-push one-liners: **JL-6** two design points sit beside a design range in the
+README (0.0542/0.0504 are the #207 REBUILD gate at (500,2000)+(1000,2000), not the whole n/m range —
+inherited from the ledger's own compression); **JL-7** `public_covered_count` is set as code but is
+not callable in either lane (authority is `docs/design/06-public-claims-register.md`); **JL-8** the
+fence test's `src/` scan is non-recursive — exactly equivalent today (`src/` is flat, 24 files) but
+it would under-cover its own wording if a `src/` subdirectory is ever added. Carried forward OPEN:
+JL-2 partial (implemented-list omissions beyond genome-wide untouched), JL-4, JL-5, R-1, R-2, R-3.
 
 RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
