@@ -62,6 +62,58 @@ The supplied-variance Henderson and Mrode9-shaped fixtures are not fitted Mrode
 models and do not estimate variance components. The Mrode Example 3.1 published
 anchor is also supplied-variance evidence.
 
+## Locked Derived-Estimand Identities (R-lane gate, mirrored here)
+
+The R twin's `hsquared/docs/design/04-validation-canon.md` locks the
+derived-estimand identities that the 2026-07-09 Standard-Tier Covered-Flip Gate
+requires before a *derived* estimand may be called `covered`: a within-package
+identity test asserting it equals its defining function of the covered
+components, plus a locked, pinned citation for that identity. This section
+mirrors that lock so the two lanes cannot drift on what the symbols mean. It
+records **no new Julia evidence** and moves **no status**.
+
+The multivariate (0.6) identities, in engine notation, with `σ²_a,k = G0[k,k]`
+and `σ²_e,k = R0[k,k]`:
+
+- **Genetic correlation.** `r_g[i,j] = σ_g,ij / sqrt(σ²_g,i · σ²_g,j)`, i.e.
+  `r_g = D⁻¹ G0 D⁻¹` with `D = diag(sqrt.(diag(G0)))`. Julia
+  `genetic_correlation(G0)` (`src/multivariate.jl`) is exactly that map and is
+  the engine spelling of R's `cov2cor(G0)`. Locked citation: Falconer & Mackay
+  (1996), *Introduction to Quantitative Genetics*, 4th ed., ch. 19; Lynch &
+  Walsh (1998), *Genetics and Analysis of Quantitative Traits*, ch. 21.
+- **Per-trait heritability.** `h²_k = σ²_a,k / (σ²_a,k + σ²_e,k)`, i.e.
+  `diag(G0) ./ (diag(G0) .+ diag(R0))`. This is the per-trait variance ratio
+  implied by *this model's* two-component partition — not a total-additive or
+  Willham-style `h²_T`, and not a ratio over any further random effect the model
+  does not contain. Locked citation: Falconer & Mackay (1996), ch. 8, 10; Lynch
+  & Walsh (1998), ch. 4, 7.
+
+Where the identity tests live, and what this engine does **not** pin:
+
+- The gating identity tests are **R-lane** (`tests/testthat/test-multivariate.R`,
+  MV-3), asserting the R extractors equal these functions of the covered
+  components, verified on the engine's serialized `phase4_multitrait_parity`
+  values.
+- On the Julia side both quantities are computed **by construction** from the
+  same fitted `G0hat`/`R0hat` inside `fit_multivariate_reml`, so they cannot
+  numerically disagree with the definitions above. What the suite actually pins
+  is weaker: ranges (`0 ≤ h²_k ≤ 1`, `-1 ≤ r_g[i,j] ≤ 1`), copy-returning
+  extractors, and — on the supplied-covariance `multivariate_mme` path only —
+  `result.genetic_correlation ≈ genetic_correlation(G0)`. There is **no** Julia
+  assertion of the form
+  `heritability(fit) ≈ diag(G0) ./ (diag(G0) .+ diag(R0))`; construction is not
+  a test, and a refactor that recomputed `h²` from somewhere else would not turn
+  the suite red.
+- Component `G0`/`R0` stay external-same-estimand-comparator gated (the
+  `sommer` 4.4.5 and executed `blupf90+` 2.60 legs recorded on the
+  `V4-MV-REML` row); the two derived quantities above are identity-test +
+  locked-citation gated.
+
+Unchanged by this mirror: Julia `V4-MV-REML` stays `covered` (experimental,
+validation-scale, opt-in), the R multivariate surface stays `partial`, and
+`public_covered_count` stays **5**. The R-lane covered flip itself remains
+twin-gated plus Darwin biology sign-off plus Rose.
+
 ## Status Words
 
 - `planned`
