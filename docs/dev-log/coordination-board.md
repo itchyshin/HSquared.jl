@@ -23,6 +23,10 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — A21 C9 wave-1 ledger
+
+JL-7 `ca4b4fcf` + JL-8 `c0f53e0d` indexed in `docs/dev-log/after-task/2026-09-02-h2-a21-c9-wave1-after-task.md`. Fence: `public_covered_count` **5**; draft #277; no G10 / Darwin / Registrator / merge.
+
 ### 2026-09-02 — Block 1 + MV prep (campaign lane; not pushed)
 
 Campaign branch `claude/lane-h2-twin-20260901` in worktree
