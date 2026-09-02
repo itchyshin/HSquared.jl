@@ -7763,6 +7763,107 @@ end
           occursin("not", lowercase(sire_target["boundary"]))
 end
 
+# Loaded into its own module so the harness's own `include` of the BLUPF90
+# packet does not replace the copy this file already loaded at line 9.
+module ComparatorHarnessUnderTest
+include(joinpath(@__DIR__, "..", "comparator", "run_targets.jl"))
+end
+
+@testset "Unified comparator harness (A11 validate-only)" begin
+    H = ComparatorHarnessUnderTest
+
+    manifest = TOML.parsefile(joinpath(@__DIR__, "fixtures", "comparator_targets.toml"))
+    toml_ids = Set(target["id"] for target in manifest["target"])
+
+    @testset "target accounting" begin
+        @test H.TARGET_COUNT == length(toml_ids)
+        @test Set(keys(H.ADAPTERS)) == toml_ids
+        for target in manifest["target"]
+            @test haskey(H.EXTERNAL_TIER, target["evidence_type"])
+        end
+        # No evidence_type may claim a completed external comparator. If one
+        # ever does, that is a covered-flip decision, not a harness edit.
+        @test !any(==("complete"), values(H.EXTERNAL_TIER))
+    end
+
+    @testset "CLI refuses to imply an external run" begin
+        @test H.parse_cli(String[]).strict == false
+        @test H.parse_cli(["--validate-only"]).write_manifest_file == true
+        @test H.parse_cli(["--strict"]).strict == true
+        @test H.parse_cli(["--no-write"]).write_manifest_file == false
+        @test_throws ErrorException H.parse_cli(["--run"])
+        @test_throws ErrorException H.parse_cli(["--nonsense"])
+    end
+
+    @testset "CSV validation catches rot, not just absence" begin
+        mktempdir() do dir
+            good = joinpath(dir, "good.csv")
+            write(good, "name,value\nsigma_a2,1.5\nsigma_e2,0.5\n")
+            @test H.validate_csv(good) === nothing
+
+            ragged = joinpath(dir, "ragged.csv")
+            write(ragged, "name,value\nsigma_a2,1.5\nsigma_e2\n")
+            @test occursin("cell", H.validate_csv(ragged))
+
+            nonfinite = joinpath(dir, "nonfinite.csv")
+            write(nonfinite, "name,value\nsigma_a2,NaN\n")
+            @test occursin("non-finite", H.validate_csv(nonfinite))
+
+            headeronly = joinpath(dir, "headeronly.csv")
+            write(headeronly, "name,value\n")
+            @test occursin("fewer than 2", H.validate_csv(headeronly))
+
+            # A non-finite value written as Inf is caught the same way.
+            infinite = joinpath(dir, "inf.csv")
+            write(infinite, "name,value\nsigma_a2,Inf\n")
+            @test occursin("non-finite", H.validate_csv(infinite))
+        end
+    end
+
+    @testset "validate-only run over all targets" begin
+        out = H.run_harness(; write_manifest_file = false, verbose = false)
+        entries = out.entries
+
+        @test length(entries) == H.TARGET_COUNT
+        @test Set(entry.id for entry in entries) == toml_ids
+        @test all(entry.status in H.ALLOWED_STATUSES for entry in entries)
+        @test all(entry.r_mirror in ("agree", "drift", "absent", "uncheckable") for entry in entries)
+        @test all(entry.external_comparator in ("none", "one_leg", "complete") for entry in entries)
+
+        # Every fixture in the repo validates, so every target carries a
+        # SHA-256 rollup digest over its required files.
+        @test all(length(entry.fixture_digest) == 64 for entry in entries)
+        @test all(!isempty(entry.file_digests) for entry in entries)
+        @test all(!isempty(entry.capability_rows) for entry in entries)
+
+        text = out.manifest_text
+        @test occursin("\"schema_version\": 2", text)
+        @test occursin("\"mode\": \"validate-only\"", text)
+        @test !occursin("\"mode\": \"run\"", text)
+        @test occursin("no external comparator was run", text)
+        @test occursin("\"external_comparator_complete\": 0", text)
+    end
+
+    @testset "cross-lane mirror parity is reported, not assumed" begin
+        out = H.run_harness(; write_manifest_file = false, verbose = false)
+        entries = out.entries
+
+        # Byte drift between the two lanes must never read as validated: two
+        # lanes comparing different data would agree about the wrong thing.
+        for entry in entries
+            entry.r_mirror == "drift" && @test entry.status == "gap"
+        end
+
+        if H.R_LANE !== nothing && H.R_FROZEN !== nothing
+            @test !any(entry.r_mirror == "drift" for entry in entries)
+            # The sire target is the one fixture the R lane has never mirrored.
+            sire = only(entry for entry in entries if entry.id == "sire_model_fitted_target")
+            @test sire.r_mirror == "absent"
+            @test sire.status == "gap"
+        end
+    end
+end
+
 @testset "Real-data validation manifest (A13 three-tier ladder)" begin
     manifest_path = joinpath(@__DIR__, "..", "docs", "design", "real-data-validation-manifest.toml")
     manifest = TOML.parsefile(manifest_path)

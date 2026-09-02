@@ -37,22 +37,50 @@ does not import JWAS).
 `comparator/Manifest.toml` is git-ignored (instantiate locally); only
 `Project.toml` is committed.
 
-## Unified comparator harness (A11 skeleton)
+## Unified comparator harness (A11)
 
 `run_targets.jl` reads `test/fixtures/comparator_targets.toml` and runs
-**validate-only** adapters for all 7 targets. It writes an explicit
-`comparator/results/manifest.json` with per-target statuses
-(`validated`, `gap`, `blocked`, `unavailable`) and **0 silent skips**.
+**validate-only** adapters for all 7 targets, with **0 silent skips**. It writes
+`comparator/results/manifest.json` (schema 2).
 
 ```sh
-julia comparator/run_targets.jl
-julia comparator/run_targets.jl --validate-only
+julia comparator/run_targets.jl              # validate-only (default)
+julia comparator/run_targets.jl --strict     # nonzero exit if any target reports a gap
+julia comparator/run_targets.jl --no-write   # print only
 ```
 
-This is a harness index only. It does not run external comparators, does not
-replace per-model opt-in runners below, and does not promote any validation-status
-row. BLUPF90 unavailability for `phase4_multitrait_parity` is documented in the
-R lane at
+`--run` is **refused**: no external comparator runner is wired into the unified
+harness. Use the per-model opt-in runners below, each of which gates on its own
+environment variable.
+
+What it actually checks, per target:
+
+- **Fixture integrity, not just presence.** Every required file must exist, be
+  non-empty, and — for CSVs — have a header, at least one data row, a constant
+  column count, and no non-finite numeric cell. A fixture that has rotted into
+  `NaN` or a ragged row reports `gap`, not `validated`.
+- **Fixture digests.** SHA-256 per required file plus a rollup digest over the
+  sorted `(file, digest)` pairs, both recorded in the manifest.
+- **Cross-lane byte parity.** The R twin freezes its mirrored fixture bytes in
+  `hsquared/tests/fixtures/comparator_fixture_shas.csv`. The harness compares that
+  freeze against the Julia fixtures' own digests and reports `agree`, `drift`,
+  `absent`, or `uncheckable`. **Drift outranks the adapter verdict and forces
+  `gap`** — two lanes comparing different bytes would agree about the wrong thing.
+  Point the harness at a specific R checkout with `HSQUARED_R_ROOT`; otherwise it
+  resolves a sibling `hsquared` or `hsquared-*` worktree.
+- **Evidence tier, carried from the TOML.** Each target's `capability_rows`,
+  `evidence_type`, `required_comparator`, and `boundary` land in the manifest,
+  along with a derived `external_comparator` tier of `none`, `one_leg`, or
+  `complete`. **No target reaches `complete`** — the tier exists so the manifest
+  can say that rather than imply otherwise.
+
+The manifest `summary` block therefore reports both axes: status counts, external
+comparator counts, and cross-lane mirror counts.
+
+This remains a **fixture-integrity and evidence index**. It runs no external
+comparator, replaces no per-model opt-in runner, and promotes no
+validation-status row. BLUPF90 unavailability for `phase4_multitrait_parity` is
+documented in the R lane at
 `docs/dev-log/comparator-runs/2026-09-01-blupf90-tool-unavailability.md`.
 
 ## BLUPF90/AIREMLF90 multivariate starter packet
