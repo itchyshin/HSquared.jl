@@ -138,6 +138,26 @@ ARC NEXT (one owner each):
   `hs_y_matrix_for_julia` NA→NaN before assign + safe Int count. Live `test-multivariate.R`
   FAIL 0 / SKIP 0; A26 parity still green; CRAN path unchanged. Check-log
   `check-log.d/2026-09-02-h2-a26-juliacall-na-segfault.md`.
+- **A27 PREP DONE / SIGN PENDING (not pushed)** — Darwin MV-6 sign pack + criterion-3 citation.
+  **The signature line is blank and must stay blank until the owner inks it**; do not read A27 as
+  closed anywhere. Quantity on the sheet: genetic covariance `G0` / genetic correlation `r_g` for
+  k=2 unstructured — **not** per-trait h² alone. Criterion-3 required **no new citation**: the
+  Falconer & Mackay (1996) / Lynch & Walsh (1998) pins already existed in the R canon, and this arc
+  **mirrored them into the Julia canon** — Julia `7a2361b9`, `docs/design/04-validation-canon.md`
+  § *Locked Derived-Estimand Identities (R-lane gate, mirrored here)*, docs-only (no `src/`, no
+  `test/`, `docs/design/` is not in `docs/make.jl` so no build claim is made). **Noether boundary
+  written into the mirror rather than glossed:** Julia's `r_g` and `h²_k` are computed *by
+  construction* from the same `G0hat`/`R0hat` inside `fit_multivariate_reml`
+  (`src/multivariate.jl:869/874/876`), so they cannot disagree with their definitions — but
+  construction is **not** a test. The Julia suite pins only ranges, copy-returning extractors, and
+  the supplied-covariance `multivariate_mme` `cov2cor` identity; **no** assertion of the form
+  `heritability(fit) ≈ diag(G0)./(diag(G0).+diag(R0))` exists, so a refactor that recomputed h²
+  elsewhere would not go red. The gating identity tests are R-lane by design
+  (`tests/testthat/test-multivariate.R`, MV-3), so this is a recorded honest boundary, **not** a new
+  flip blocker. Fence held: `V4-MV-REML` covered, R multivariate **partial**,
+  `public_covered_count` **5**. Check-log `check-log.d/2026-09-02-h2-a27-canon-identity-mirror.md`;
+  scratch LOOP `~/local-scratch/h2-a27-LOOP.md`; briefing §18; sheet
+  `~/local-scratch/h2-a27-darwin-mv-sign-sheet.md`.
 - **Owner asks (open, do not quietly fix)** — (1) Bridge multivariate start: shipped `I₂` vs
   engine `0.5·phenotypic-variance` (identity costs ~2e-5 on G0, inside tol). (2) **DP-1** push.
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
@@ -146,7 +166,8 @@ ARC NEXT (one owner each):
   `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip + A26 parity
   findings discharged; T2 page-staleness closed by A25-grace; JuliaCall segfault closed by A26-grace).
   `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
-  **Next:** true A25 (MV-5 disposition) · A27 Darwin · A29 Rose · A30 G10 · DP-1.
+  **Next:** true A25 (MV-5 disposition) · **A27 owner signature** (prep done, sheet blank) ·
+  A29 Rose · A30 G10 · DP-1.
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for
