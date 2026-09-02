@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim; 2 pre-push items, see GATED).**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim); its higher pre-push item JL-1 is now CLOSED (`69280b70`, `V1-MATFREE-REML` ledger home; nothing promoted, `public_covered_count` still 5), leaving the `Co-authored-by` trailer as the one pre-push owner ASK — see GATED.**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -45,19 +45,26 @@ ARC NEXT (one owner each):
 - **B3 C2** — sire_model R mirror **or** Julia-only boundary note
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (R ahead 17 `e304a40`, Julia ahead 30 `d070b220`, **neither pushed → CI
+- G10 S1/S2/S3 sign · push (R ahead 18 `765b209`, Julia ahead 33 — head is this LOOP commit, ledger home `69280b70` — **neither pushed → CI
   unverified**) · A19 register · Version bump
-- **`V1-MATFREE-REML` row does not exist** (Rose, pre-push). The A07 check-log
-  (`check-log.d/2026-09-01-h2-twin-a07-s5-matfree-tail-recovery.md:93`) and
-  `~/local-scratch/h2-a09-g10-dossier-prep.md:15` discharge a validation-debt item against that id, but
-  it is absent from `src/validation_status.jl`, `docs/design/capability-status.md`, and
-  `docs/design/validation-debt-register.md`; the gated estimator `fit_matrix_free_reml`
-  (`src/iterative_solve.jl:1010`, exported `src/HSquared.jl:140`) has **no ledger row at all**. So the
-  S5 PASS has no auditable home and G10 S3 inherits the dangling pointer. Decide: add the row (claim
-  surface → Boole + Rose) **or** refile the evidence under an existing id. Not patched — both options
-  edit a status surface.
-- **`Co-authored-by: Cursor` trailer on 29/30 Julia campaign commits**, against the `CLAUDE.md`
-  no-trailer convention. Accept or rebase out — cheaper before push than after.
+- ~~**`V1-MATFREE-REML` row does not exist**~~ **CLOSED 2026-09-01, `69280b70`** (Rose JL-1). It was a
+  **port gap**, not a missing id: the row already existed on the v0.7 lineage (`33ab68f6`), and A07's
+  `f261165e` ported `fit_matrix_free_reml` (body byte-identical) without the rows that came with it.
+  Rows now ported to `src/validation_status.jl`, `docs/design/capability-status.md`, and
+  `docs/design/validation-debt-register.md` at `partial`/`experimental` — **nothing promoted**: rows
+  55→56, partial 38→39, covered 13 unchanged, `public_covered_count` **5** unchanged (verified from the
+  regenerated cache). The v0.7 wording was NOT copied verbatim — its in-CI testset and `:auto` fence
+  tests were never ported, so the new row says so. Fence verified to hold **structurally** instead:
+  `_auto_reml_route` absent, `fit_animal_model` rejects `:matrix_free`/`:matrix_free_reml`/`:auto`.
+  Full suite green. Record: `check-log.d/2026-09-01-h2-twin-matfree-ledger-home.md`.
+  **Still owed:** port the v0.7 fence tests so the fence is pinned, not merely true.
+- **`Co-authored-by: Cursor` trailer — MEASURED, and wider than the scrub reported: Julia 31/33 AND
+  R 18/18, i.e. 49 of 51 commits across both repos.** The scrub counted only the Julia lane ("29/30"),
+  so the R lane's full sweep is new information; a rewrite is a two-repo job, not one. Against the
+  `CLAUDE.md` no-trailer convention. **Auto-injected by the Cursor commit path** — no git hook and no
+  `commit.template` (both checked, both empty) — so it cannot be avoided by wording messages
+  differently from this surface. Owner's choice is genuinely accept-or-rewrite; the rewrite stays an
+  ASK. Cheaper before push than after.
 - **Add `validation_status()` rows for RR k=2 + direct–maternal?** Both are `covered` in
   `docs/design/capability-status.md` but absent from the exported R table, so the generated limits page
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).
