@@ -104,19 +104,23 @@ ARC NEXT (one owner each):
 - **A28-part1 DONE (not pushed)** — the `(opt-in)` key is **ALIASED, not renamed**: R
   `22cb5cd`/`90adf27`/`d5df60b`, no Julia commits. `validation_status()` gains `capability_label`;
   the id stays because **three dated records cite it verbatim**. `public_covered_count` 5.
-  **A28 remainder open:** doc-38 §H.3 gate-decision record + `k >= 3` / `diagonal` fence-enforcement
-  audit.
+- **A28-remainder DONE (not pushed)** — doc-38 §H.3 discharged by MV-1; `k≥3` parseable-but-
+  experimental and `diagonal` experimental fences pinned on `validation_status()` /
+  `formula_status()` + contract tests. R `e822db3`. No covered flip.
+- **A26b DONE (not pushed)** — MV-1 Suggests harden: `hs_require_suggests("sommer")` fails
+  loudly under `NOT_CRAN=true`; CRAN still skips. R `d59d98e`. Helper unit tests + multivariate
+  suite green (2 expected live-Julia skips).
 - **A25a DONE (not pushed)** — C8 register reconcile (compute-free cite only). Julia tip
   `11f54d9e` + R `0c0ae4a`. Banked confirm now cited on claim surfaces: DRAC `47925486`,
   16 cells × 500 seeds, 500/500 convergence every cell, **14/16 pass** (fails only
   `rg_090_rec1`, `rg_095_rec1`); W1 (8×50, 5/8) retained as triage. **Fence verified / unchanged:**
   Julia `V4-MV-REML` **covered**; R multivariate **partial**; `public_covered_count` **5**.
   No covered flip, no Totoro/DRAC, no push. Scratch: `~/local-scratch/h2-a25a-LOOP.md`;
-  briefing §13. **Next:** A25 (MV-5 disposition), then A26 (+A26b).
+  briefing §13–§14. **Next:** A25 (MV-5 disposition), then A26 (R↔engine parity).
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
   evidence assembly (A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
   not a plan of record**); gate-level inventory with SHAs:
-  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited finding discharged by A25a).
+  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip findings discharged).
   `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
 
 GATED (owner):
