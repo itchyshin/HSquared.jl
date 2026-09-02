@@ -8,7 +8,7 @@ ARCS DONE (verified):
 
 BATCH PARTIAL:
 - **B2** — A09 G10 dossiers updated; **owner sign** (S3: S5 PASS, S6/S4/S7 open)
-- **B3** — A11 skeleton; **A13** draft manifest → implement next
+- **B3** — A10/A12 done; **A13** manifest R `02d0a31` + Julia `374b79aa` (17 arcs, receipt `h2-a13-receipt.md`); A11 skeleton; **Darwin review pending**
 - **B5** — A17 phases 1–2; phase 3 todo
 - **B6 prep** — A19 checklist
 
@@ -16,7 +16,7 @@ PROCESS (S5 lesson):
 - **Launch receipt required** before any Totoro gate >30m — prevents triple-run collision (Ada pass 1).
 
 ARC NEXT (one owner each):
-- **A13** — real-data 3-tier manifest implementation (Darwin review pack)
+- **A13 Darwin review** — 8-item checklist in manifest stub (gryphon h², Wilson citation, teaching vs field)
 - **A11** — finish 7-target harness
 - **A17 phase 3** — README I2 + limits page
 
