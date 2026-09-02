@@ -50,8 +50,9 @@ Secondary, informational:
 - Fill (nnz(L)/n): mean 582.4, min 571.4, max 596.5 — matches the August single-seed
   probe (583.3), so the adversarial generator reproduced its intended high-fill regime.
 - Bias is **+0.0016 (0.39 MCSE)** and **+0.0007 (0.24 MCSE)**. At n = 48 the estimator's
-  bias at this scale is not distinguishable from zero; the A1 margin is a factor of ~30
-  on `sigma_a2` and ~70 on `sigma_e2`, not a near miss.
+  bias at this scale is not distinguishable from zero. On this realization the A1 margin
+  is a factor of ~30 on `sigma_a2`; see the cross-version section below before quoting
+  that margin, because it is realization-specific.
 - The converged-only subset equals the graceful subset (all 48 converged), so the two
   A1 computations coincide — the taxonomy's (a)/(b) split never had to be exercised.
 - `capreset(iterations=1000)` re-fit arm: not triggered (no CAP_EXHAUSTED seeds).
@@ -102,7 +103,41 @@ for, obtained by accident and kept.
 The third run used Julia 1.12.6 and diverges per seed, exactly as this fixture's own
 manifest line predicts (`MersenneTwister` streams are not version-portable). It is a
 **different realized fixture**, tracked separately as a cross-version robustness arm,
-and is **not** part of this verdict.
+and is **not** part of this verdict. It is reported next, because it completed.
+
+## Cross-version robustness arm — Julia 1.12.6 — also PASS (informational)
+
+Same frozen script, same seeds, same defaults; different interpreter, therefore a
+different realized fixture. Completed 2026-09-01 on Totoro.
+Artifacts: `~/local-scratch/receipts/h2-a07-s5-20260901/R3-julia1.12.6-*`.
+
+| Criterion | Bound | Julia 1.10.10 (record) | Julia 1.12.6 (arm) |
+|-----------|-------|------------------------|--------------------|
+| A1 rel.err `sigma_a2` | ≤ 0.05 | 0.0016 | **0.0142** |
+| A1 rel.err `sigma_e2` | ≤ 0.05 | 0.0007 | **0.0020** |
+| A2 NON_GRACEFUL | 0/48 | 0/48 | **0/48** |
+| A3 CAP_EXHAUSTED | ≤ 4/48 | 0/48 | **0/48** |
+| Leg X mean \|reldiff\| `sigma_a2` / `sigma_e2` | ≤ 0.05 | 0.0090 / 0.0052 | **0.0097 / 0.0050** |
+| Buckets | — | 48 CONVERGED, 0 / 0 / 0 | **48 CONVERGED, 0 / 0 / 0** |
+| Verdict | — | PASS | **PASS** |
+
+**Two readings, and the honest one matters.**
+
+The verdict is **robust to the RNG realization**: every criterion passes on both
+interpreters, and the qualitative picture — all 48 seeds converge, nothing exhausts the
+cap, nothing fails gracelessly — is identical. That is meaningfully stronger evidence
+than one realization.
+
+But the **A1 margin is not stable**: `sigma_a2` relative error is **0.0016 on one
+realization and 0.0142 on the other, a factor of ~9**. Both are inside the 0.05 bound,
+so the honest statement of margin across the two realizations we have is **~3.5×, not
+~30×**. Anyone quoting the 1.10.10 number alone as "recovery to within 0.2%" would be
+over-claiming a single fixture draw as an estimator property. Leg X, by contrast, is
+stable across interpreters (0.0090 vs 0.0097), consistent with its residual being probe
+noise rather than fixture-dependent.
+
+This arm was not pre-declared and does not gate. It is recorded because it was measured,
+and because it constrains the language the campaign may use about A1's margin.
 
 ## What this discharges, and what it does not
 

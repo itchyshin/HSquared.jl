@@ -65,6 +65,20 @@ are not version-portable for this fixture, as the script's own manifest states. 
 a cross-version robustness arm; excluded from the pre-declared verdict.
 Adjudication of all three runs: `~/local-scratch/h2-a07-s5-run-adjudication.md`.
 
+It completed, and it also **passes** every criterion:
+
+| Criterion | Bound | 1.10.10 (record) | 1.12.6 (arm) |
+|-----------|-------|------------------|--------------|
+| A1 `sigma_a2` / `sigma_e2` | ≤ 0.05 | 0.0016 / 0.0007 | 0.0142 / 0.0020 |
+| A2 / A3 | 0 · ≤4 | 0/48 · 0/48 | 0/48 · 0/48 |
+| Leg X `sigma_a2` / `sigma_e2` | ≤ 0.05 | 0.0090 / 0.0052 | 0.0097 / 0.0050 |
+
+The verdict is robust to the RNG realization. The **A1 margin is not**: `sigma_a2`
+relative error moves by a factor of ~9 between realizations. State the margin as
+**~3.5× across the two realizations measured**, not ~30× from the 1.10.10 draw alone.
+Leg X is stable across interpreters, consistent with probe noise rather than fixture
+dependence. See the result document's cross-version section.
+
 ## Artifacts
 
 - In repo: `sim/drac/results/s5_matfree_tail_recovery_20260901.tsv`
