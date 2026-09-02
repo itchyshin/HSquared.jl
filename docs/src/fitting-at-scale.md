@@ -1,5 +1,9 @@
 # Fitting at scale: exact vs matrix-free
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
 `HSquared.jl` has **two** engines for the `K`-independent-random-effect mixed model, and
 [`fit_multi_effect`](@ref) chooses between them by feasibility. This page explains the choice,
 the accuracy-vs-feasibility trade, and how to control it.

@@ -1,5 +1,9 @@
 # Genomic Models
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
 !!! warning "Experimental · opt-in · not the default fit"
     Engine APIs on this page are validation-scale and dense. The R genomic
     GREML surface stays partial/held. This page is not public activation

@@ -1,5 +1,9 @@
 # Multivariate (Multi-Trait) Models
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
 !!! warning "Experimental · validation-scale · dense · REML-only"
     The experimental label is retained. The R twin exposes `cbind()` as a
     public surface — covered-vs-partial is the R limits page, not this engine

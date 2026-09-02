@@ -1,5 +1,9 @@
 # Standard Quantitative-Genetic Models
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
 !!! warning "Covered at validation scale · opt-in · dense · REML-only"
     These are **engine APIs**, not the default univariate formula. On the R twin
     they are opt-in `target`s. The **common-environment** two-effect leg is

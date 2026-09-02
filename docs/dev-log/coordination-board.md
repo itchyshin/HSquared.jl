@@ -23,6 +23,13 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — Florence P0 docs figures (draft PR)
+
+Lane: `cursor/docs-quality-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-docs-quality-20260902`).
+F5 banners, F1 animal-model path, F3 recovery ladder on Documenter. No covered
+flip; experimental retained; `public_covered_count` unchanged at **6**. Twin R
+branch of the same name. Not a G10 claim-surface edit.
+
 ### 2026-09-02 — G10 R-public multivariate + experimental 0.6.0 (twin honesty)
 
 Lane: `cursor/post-g10-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-post-g10-060-20260902`).

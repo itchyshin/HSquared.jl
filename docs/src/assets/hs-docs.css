@@ -21,3 +21,11 @@
   font-size: 0.9rem;
   color: #475569;
 }
+
+.hs-banner {
+  border-left: 4px solid var(--hs-amber);
+  background: #fffbeb;
+  color: var(--hs-ink);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0 1.5rem;
+}
