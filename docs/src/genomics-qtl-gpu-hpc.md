@@ -1,5 +1,15 @@
 # Genomics, QTL, GPU, And HPC Roadmap
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
+!!! warning "Experimental · opt-in · not the default fit"
+    This page is a **roadmap**. Engine utilities exist; production genomics,
+    QTL/eQTL, GLLVM, and GPU backends do not. Live status is
+    [`validation_status()`](validation-status.md), not the section headings
+    below.
+
 This page records the long-range technical plan for `hsquared` and
 `HSquared.jl`.
 
@@ -16,16 +26,18 @@ oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY, and backend
 claim gates.
 
 The formula names `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
-and `qtl_scan()` are now reserved in both twins. In Julia they currently throw
+and `qtl_scan()` are reserved in both twins. In Julia they currently throw
 planned-not-implemented errors. They do not fit genomic models or run QTL/eQTL
 scans. Direct Julia utilities such as `fit_snp_blup()` and
 `single_marker_scan()` are engine-internal and do not activate those formula
 terms.
 
-Related Phase 2+ names such as `permanent()`, `common_env()`,
-`maternal_genetic()`, `paternal_genetic()`, `dominance()`, `epistasis()`,
-`relmat()`, and `HSquared.precision()` are also reserved as planned vocabulary.
-They do not fit standard quantitative-genetic extensions or custom kernels yet.
+Do **not** read every reserved name as unimplemented. On the R twin,
+`permanent()`, `common_env()`, and `maternal_genetic()` fit through opt-in
+engine targets (see [Standard QG models](standard-qg-models.md)).
+`paternal_genetic()`, `dominance()`, and `epistasis()` remain planned.
+`relmat()` / `precision()` are opt-in experimental kernels — check the live
+table, not this paragraph.
 
 ## 1. Executive Summary
 

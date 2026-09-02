@@ -1,11 +1,25 @@
 # Standard Quantitative-Genetic Models
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
+!!! warning "Covered at validation scale · opt-in · dense · REML-only"
+    These are **engine APIs**, not the default univariate formula. On the R twin
+    they are opt-in `target`s. The **common-environment** two-effect leg is
+    covered at validation scale. Repeatability and the independent
+    maternal-genetic two-effect leg remain experimental/partial. Direct–maternal
+    (correlated 2×2 G) is a **separate** covered-at-validation-scale target, not
+    this independent two-effect kernel.
+
 `HSquared.jl` covers the standard two-random-effect quantitative-genetic models
 (repeatability / permanent environment, common environment, maternal environment)
-on top of the same Henderson machinery as the animal model. These are **engine
-APIs** — experimental, engine-internal, and **not yet wired to the public R
-formula terms** (`permanent()` / `common_env()` still error as planned), with no
-external-comparator parity yet. The dense paths are validation-scale.
+on top of the same Henderson machinery as the animal model. The dense paths are
+validation-scale. They are **not** production sparse fitting.
+
+The R formula terms `permanent()`, `common_env()`, and `maternal_genetic()` are
+**not** planned-not-implemented: they fit through opt-in engine targets. Do not
+read the engine API names below as “the R parser still errors”.
 
 ## Repeatability / permanent environment
 
@@ -69,21 +83,25 @@ cf = fit_two_effect_reml(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2))
 
 ## Validation boundary
 
-Covered now (self-consistent, comparator-free):
+Internal self-consistency (MME vs independent GLS, reductions to the
+one-effect animal model) is necessary and is tested. It is **not** the
+covered gate — that gate is known-truth recovery and/or an external
+same-estimand comparator.
 
-- `repeatability_mme` / `two_effect_mme` match an independent marginal-GLS BLUP
-  (~1e-9), and `repeatability_mme` is exactly the `two_effect_mme(Z2=Z1, A2=I)`
-  special case;
-- `fit_repeatability_reml` / `fit_two_effect_reml` maximize the dense two-effect
-  REML log-likelihood (which reduces to the animal-model REML when the second
-  variance → 0), the optimum beats a coarse grid, and `fit_repeatability_reml` is
-  the reduction of `fit_two_effect_reml`;
-- seeded one-off simulations recover the variance components (recorded in the
-  after-task reports, not committed — the suite is RNG-free).
+Covered at validation scale (engine + R opt-in, still experimental packaging):
 
-Still planned / coordinated:
+- common-environment two-effect (`fit_two_effect_reml` with `A2 = I`):
+  pre-declared recovery plus a `blupf90+` same-estimand comparator;
+- direct–maternal correlated 2×2 G is a **separate** target
+  (`fit_direct_maternal_reml`), not this independent two-effect kernel.
 
-- the public R `permanent()` / `common_env()` / maternal model-spec mapping;
-- correlated direct–maternal genetic effects (a 2×2 genetic covariance);
-- variance-ratio uncertainty intervals and a committed recovery harness;
-- external-comparator parity (ASReml / sommer / BLUPF90) — R lane.
+Experimental / partial:
+
+- repeatability (`fit_repeatability_reml`);
+- independent maternal-genetic two-effect (`A2` = pedigree).
+
+Still planned / not claimed here:
+
+- production sparse reliability;
+- interval coverage calibration;
+- unusual inheritance.

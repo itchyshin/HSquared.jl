@@ -1,12 +1,18 @@
 # Fitting at scale: exact vs matrix-free
 
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+```
+
 `HSquared.jl` has **two** engines for the `K`-independent-random-effect mixed model, and
 [`fit_multi_effect`](@ref) chooses between them by feasibility. This page explains the choice,
 the accuracy-vs-feasibility trade, and how to control it.
 
-!!! warning "Experimental"
-    Everything on this page is experimental and validation-scale. The public default fit path is
-    the univariate Gaussian animal model; these multi-effect engines are opt-in.
+!!! warning "Experimental · opt-in · not the default fit"
+    Everything on this page is experimental and validation-scale. The public
+    default fit path is the univariate Gaussian animal model; these
+    multi-effect engines are opt-in. Timings below are measurements, not a
+    production-performance claim.
 
 ## The two engines
 

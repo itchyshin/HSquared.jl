@@ -1,5 +1,20 @@
 # Get Started
 
+!!! warning "Experimental · engine utilities, not a formula API"
+    `HSquared.jl` is the computational twin of [hsquared](https://itchyshin.github.io/hsquared/).
+    Applied users type the R formula. These pages document the engine.
+    Not in Julia General — `Pkg.add(url=...)` only; do **not** `Pkg.add("HSquared")`
+    by name. `public_covered_count` is a claims-register label; read
+    [`validation_status()`](validation-status.md) rather than a screenshot.
+
+```@raw html
+<link rel="stylesheet" href="./assets/hs-docs.css">
+<figure class="hs-figure">
+<img src="./assets/animal-model-path.svg" alt="Flowchart of the engine-side univariate animal model: pedigree and phenotype become a validated spec, AI-REML returns variance components, heritability, and breeding values. Genomic and multivariate paths are not shown.">
+<figcaption>v0.1 univariate Gaussian REML on the engine. Genomic, QTL, and multivariate paths are not this arrow.</figcaption>
+</figure>
+```
+
 `HSquared.jl` is the Julia engine twin of
 [hsquared](https://github.com/itchyshin/hsquared). R users who want a
 formula should start there. This page walks engine utilities and
