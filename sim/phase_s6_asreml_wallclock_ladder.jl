@@ -14,15 +14,15 @@
 # experimental. No fence in section 8 of the pre-declaration is lifted by this
 # file existing.
 #
-# THREE PREREQUISITES ARE OPEN (pre-declaration section 1):
-#   P1  licensed ASReml-R on a drivable host -- OWNER action, not an agent's.
-#   P2  `comparator/prepare_asreml_matfree.jl` lives only on the FOREIGN codex
-#       lane `codex/2026-07-13-v07-performance-localization`; it must be PORTED
-#       with provenance, never copied. The high-fill `adversarial()` generator is
-#       already available locally at
-#       sim/phase_s5_matfree_tail_recovery_gate.jl:95 and is reused from there.
+# PREREQUISITES (pre-declaration section 1):
+#   P1  licensed ASReml-R on a drivable host -- OPEN, OWNER action (arc A33).
+#   P2  ASReml scaffold + high-fill generator -- DISCHARGED by provenance port
+#       (2026-09-02): comparator/prepare_asreml_matfree.jl,
+#       comparator/run_asreml_matfree.R, sim/drac/f0_adversarial_fill.jl from
+#       foreign tip 853bcc12 (introducing 29d04a1d / 533cf0f8). Foreign lane
+#       was READ ONLY. Ported, NOT RUN.
 #   P3  `fit_eigen_reml` is ABSENT from src/ on this branch -- the eigen arm is
-#       OPTIONAL and is reported ABSENT, never silently dropped.
+#       OPTIONAL and is reported ABSENT, never silently dropped. (Unchanged.)
 #
 # TWO LEGS, TWO VERDICTS, NEVER MERGED:
 #   Leg E -- estimand agreement in the high-fill tail. Closes debt item (2) at
@@ -132,6 +132,33 @@ function require_asreml()
 end
 
 # ---------------------------------------------------------------------------
+# Prerequisite: P2 scaffold files present on THIS branch (ported with provenance).
+# Presence only — never execute the prepare/runner from this skeleton.
+# ---------------------------------------------------------------------------
+const SCAFFOLD_FILES = (
+    "comparator/prepare_asreml_matfree.jl",
+    "comparator/run_asreml_matfree.R",
+    "sim/drac/f0_adversarial_fill.jl",
+)
+
+function require_scaffold()
+    missing = [f for f in SCAFFOLD_FILES if !isfile(f)]
+    isempty(missing) && return nothing
+    error("""
+    S6 STOP -- P2 scaffold files missing on this branch. NOTHING WAS RUN.
+
+    Expected (ported with provenance from
+    refs/heads/codex/2026-07-13-v07-performance-localization @ 853bcc12):
+      $(join(SCAFFOLD_FILES, "\n      "))
+
+    Missing:
+      $(join(missing, "\n      "))
+
+    Frozen design: $(PREDECLARATION)
+    """)
+end
+
+# ---------------------------------------------------------------------------
 # Toolchain: ASSERTED, not merely recorded.
 #
 # This is the S5 lesson, fixed here because it cannot be retrofitted to an
@@ -214,6 +241,11 @@ function dryrun()
     println("             fit_eigen_reml -> ABSENT on this branch (P3): reported ABSENT, never blank")
     println("             ASReml-R -> licence-gated (P1): absent => NOT RUN, not partially run")
     println()
+    println("P2 SCAFFOLD: PORTED (not run) --")
+    for f in SCAFFOLD_FILES
+        @printf("             %s  [%s]\n", f, isfile(f) ? "present" : "MISSING")
+    end
+    println()
     println("FENCE: no 'faster than ASReml' claim on any surface until Leg W has reported")
     println("       AND been Rose-audited. An agreement result is not a timing result.")
     println("       The honest answer today is: cannot say.")
@@ -230,19 +262,19 @@ function main()
     end
 
     require_asreml()     # stops here today: no licensed host (P1)
+    require_scaffold()   # P2: ported files must be present (presence only)
     assert_toolchain()
 
     error("""
     S6 STOP -- the campaign is NOT IMPLEMENTED in this skeleton, by design.
     NOTHING WAS RUN.
 
-    Prerequisites read as satisfied, but this file freezes the grid, the seeds,
-    the caps, and the toolchain assertions ONLY. Implementing the two legs is a
-    separate, authorised slice (spine arcs A34 Leg E and A35 Leg W), and it
-    additionally needs P2 discharged: `comparator/prepare_asreml_matfree.jl`
-    PORTED with provenance from the foreign codex lane
-    `codex/2026-07-13-v07-performance-localization` -- never copied, never
-    edited in place on that lane.
+    Prerequisites that this skeleton can check locally are satisfied (P2 scaffold
+    present; P1 ASReml cmd set; toolchain asserted), but this file freezes the
+    grid, the seeds, the caps, and the toolchain assertions ONLY. Implementing
+    the two legs is a separate, authorised slice (spine arcs A34 Leg E and A35
+    Leg W). P2 was discharged by the 2026-09-02 provenance port; P3 remains
+    ABSENT (`fit_eigen_reml` reported ABSENT, never blank).
 
     Do not implement the legs inside this file without re-reading the frozen
     design first, and do not run a cell without an owner launch receipt.

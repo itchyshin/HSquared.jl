@@ -6,8 +6,9 @@
 > feasibility probe. `public_covered_count` stays **5**; `V1-MATFREE-REML` stays
 > `experimental`; no row moves because this file exists.
 >
-> **Three prerequisites are OPEN, and two of them are measured facts about this
-> branch rather than assumptions** (see §1). This gate is **licence-gated before it
+> **Prerequisites:** P1 remains OPEN (owner). **P2 is DISCHARGED** by the 2026-09-02
+> provenance port (see §1). P3 remains ABSENT/`OPTIONAL` as measured. Two of the
+> original three blockers were measured facts about this branch (see §1). This gate is **licence-gated before it
 > is compute-gated**: without a licensed ASReml-R on a host we can drive, the whole
 > wall-clock leg is parked, and parking it is a legitimate outcome.
 >
@@ -63,21 +64,34 @@ action, never an agent's. **A NO is a legitimate outcome** and parks Leg W (and
 Leg E's ASReml arm) without invalidating this design. Bundle the ask with the
 S6/S7/D1 owner items already on the list rather than raising it separately.
 
-### P2 — The ASReml scaffold is NOT on this branch (MEASURED, 2026-09-02)
+### P2 — The ASReml scaffold is NOT on this branch (MEASURED, 2026-09-02; **PORTED 2026-09-02**)
 
-`comparator/prepare_asreml_matfree.jl` and the high-fill `adversarial()` generator
-`sim/drac/f0_adversarial_fill.jl` exist **only** on
+**Finding (A32 freeze):** `comparator/prepare_asreml_matfree.jl` and the high-fill
+`adversarial()` generator `sim/drac/f0_adversarial_fill.jl` existed **only** on
 `refs/heads/codex/2026-07-13-v07-performance-localization` — verified by walking
 every ref's tree, not by reading a path. That is a **foreign codex lane** (GOAL
-invariant I4: do not touch it). Consequences, both concrete:
+invariant I4: do not touch it).
 
-- The comparator preparation code must be **ported** to whatever branch runs this
-  gate, exactly as `f261165e` ported the `fit_matrix_free_reml` body itself. A port
-  is a commit with provenance, not a copy-paste.
-- The `adversarial()` generator is, however, **already available locally**, inlined
-  at `sim/phase_s5_matfree_tail_recovery_gate.jl:95` with the same
-  `nfounder_frac = 0.005` signature. The skeleton in §9 reuses that copy so the
-  ladder's DGP does not depend on the foreign lane.
+**Port receipt (this commit family, campaign only; foreign lane READ ONLY):**
+
+| Campaign path | Source introducing SHA | Date | Blob SHA |
+|---|---|---|---|
+| `comparator/prepare_asreml_matfree.jl` | `29d04a1d9abf649eb33981cacccd65643999a449` | 2026-07-28 | `8a5a44da6adcb8e15dfbff83d2bb328f6644e631` |
+| `comparator/run_asreml_matfree.R` | `29d04a1d9abf649eb33981cacccd65643999a449` | 2026-07-28 | `295b718def1ea99ade2fd44a971db3df203893c2` |
+| `sim/drac/f0_adversarial_fill.jl` | `533cf0f8c84e69624b6127d6736d96db4718d799` | 2026-07-24 | `24a5edf1d9667dd05647b04b3a8719bb6e9c582e` |
+
+Foreign tip used for the show: `853bcc12a25dee4445374754b048662576df2fef`
+(`codex/2026-07-13-v07-performance-localization`). Each file carries a provenance
+header; bodies match the foreign blobs byte-for-byte after the header. **PORTED,
+NOT RUN** — neither prepare nor runner nor F0 bench was executed; S6 Leg E/W
+remain unimplemented in the skeleton.
+
+The inlined `adversarial()` at `sim/phase_s5_matfree_tail_recovery_gate.jl:95`
+remains available for the ladder DGP; the ported `f0_adversarial_fill.jl` is the
+standalone high-fill scaffold named by this prerequisite.
+
+**P2 status: DISCHARGED on this campaign branch.** P1 (licence) and the Leg E/W
+implementations remain open.
 
 ### P3 — `fit_eigen_reml` does not exist on this branch (MEASURED, 2026-09-02)
 
