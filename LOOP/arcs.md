@@ -62,3 +62,14 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B7 | **done** | Fisher (Opus A21) — panel `~/local-scratch/h2-a21-estimand-claim-panel-2026-09-02.md`; verdict was **HOLD WITH CONDITIONS**: C1 `rr(t, k = 2)` does not parse (register + `model-status.Rmd`), C2 `heritability()` does not return h²(t) (`rr_heritability()` does) — both prose-only, pre-existing on `origin/main`, no flip needed; C4–C9 post-push. **All three pre-push conditions LANDED** by Boole on the R lane, commit `1a00045` (**not pushed**): C1 + C2 fixed on the two named surfaces **plus a third found by grep** (`R/formula-status.R`, printed to users by `formula_status()`); C3 taken as a message-only RR branch on `heritability()` naming `rr_heritability()`. Guarded by 2 scoped contract tests, one proven to fail when the defect is reintroduced. `check()` **0e/0w/0n**, `test()` 2336 pass / 0 fail. No covered flip, no row add, `public_covered_count` stays 5. **A21 re-verdict: PROCEED (owner push).** Receipt `~/local-scratch/h2-a21-fix-receipt.md` |
 | B8 | **done** | Melissa → A22 done; audit + owner packet filed |
 | B9 | **done** | A23 done; D-43 closed by Option B decision `2026-09-02-block1-check-log-substitution.md` |
+
+| A24 | MV prep | MV-4 claim-surface honesty | done | R commits; not pushed |
+| A25 | MV prep | Rose DESCRIPTION / MV claim audit | done | MV-5 disposition still owner |
+| A25a | MV prep | C8 register reconcile cite | done | banked evidence only |
+| A26 | MV prep | R↔engine element-wise parity | done | discharged locally; **not CI-backed** |
+| A26b | MV prep | sommer Suggests loud-skip | done | `hs_require_suggests` |
+| A27 | MV prep | Darwin sign pack + Noether identity | doing | identity pinned; **Darwin ink blank** |
+| A28 | MV prep | capability-id alias + fences | done | §H.3 discharged |
+| A29 | MV prep | Rose pre-flip + no-anchor follow-up | done | gate item 2 **MET**; flip still blocked |
+| A30 | MV prep | DoD backfill + DP-10 loud guard (Grace) | done | criterion 9 MET for A24–A29 cluster; DP-10 owner decision still open |
+

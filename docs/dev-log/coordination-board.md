@@ -23,6 +23,34 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — Block 1 + MV prep (campaign lane; not pushed)
+
+Campaign branch `claude/lane-h2-twin-20260901` in worktree
+`~/local-scratch/lanes/HSquared.jl-h2-twin-20260901` (R twin same branch name).
+**Not on either remote.** Tip here `bc3cb79d` — **ahead 60** of `origin/main`
+(recount with `git rev-list --count origin/main..HEAD`; do not trust a frozen
+number after the next commit).
+
+Honest live state (no hype):
+
+- Block 1 B0–B6 and pass-3 hygiene landed **locally**; after-task debt for
+  B0–B3/B5–B6/pass-3 closed under the adopted Option B substitution policy
+  (`docs/dev-log/decisions/2026-09-02-block1-check-log-substitution.md`).
+- A24–A29 MV honesty / identity / no-anchor / A26 language sync are local;
+  consolidated after-task: `docs/dev-log/after-task/2026-09-02-h2-a24-a29-mv-prep-after-task.md`.
+- Fences held: `V4-MV-REML` stays **covered**; rows/covered counts unchanged;
+  `public_covered_count` **5**; R multivariate stays **partial**.
+- Gate item 2 (estimated-`G0`/`R0` no-anchor disclosure) **MET** on both lanes.
+- Still **NOT MET** for a 0.6 R flip: Darwin ink (owner), DP-10 (owner), and —
+  until this DoD backfill lands — criterion 9. CI is **unverified** because
+  nothing has been pushed.
+- Foreign lane `codex/2026-07-13-v07-performance-localization` is live elsewhere;
+  do not bleed into it.
+
+Next: owner ink / DP-10 decision / push readiness only. Agents may land the R
+loud-failure guard for DP-10; **do not flip** `bridge-parity-tier1.stub.yaml`
+and **do not** enable Tier-1 on every PR.
+
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
 Codex held both twins sequentially for the preregistered doc-46 boundary slice.

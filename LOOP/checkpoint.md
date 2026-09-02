@@ -258,3 +258,9 @@ it would under-cover its own wording if a `src/` subdirectory is ever added. Car
 JL-2 partial (implemented-list omissions beyond genome-wide untouched), JL-4, JL-5, R-1, R-2, R-3.
 
 RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
+
+## 2026-09-02 — Grace DoD backfill + DP-10 loud guard
+
+- Gate item 2 MET (A29 follow-up). Criterion 9 DoD backfill landing: coordination-board rows both lanes + consolidated A24–A29 after-task reports.
+- DP-10: `hs_require_bridge()` + negative tests + optional `workflow_dispatch` Tier-1 YAML. Stub `if: false` untouched. Owner still decides B vs C; criterion 8 still NOT MET.
+- Fence: no push, no covered flip, `public_covered_count` 5, Darwin ink blank.
