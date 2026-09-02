@@ -95,3 +95,29 @@ No covered flip. No `public_covered_count` change. No S5 re-run. No
 frozen-gate edit. No force-push. No merge of PR #277. No Registrator, no
 version bump. No codex v07 merge. Foreign-lane `test/runtests.jl` on
 PR #274 was read, not edited.
+
+## Follow-up — CI RED on Julia 1 (1.12.7), run 33625908497
+
+`test/test_matfree_reml_inci_pins.jl:97` `seed=99` threw
+`ArgumentError: PCG hit non-positive curvature (pᵀCp = 0.0)` on the
+Julia 1 matrix; Julia 1.10 stayed green. Local probe of the same fixture:
+
+| seed | 1.10.12 | 1.12.6 |
+|---|---|---|
+| 99 | OK, σ²a moves | `PosDefException` |
+| 7 | OK, σ²a moves | OK, σ²a moves |
+| 13 | PCG pᵀCp≈0 | `PosDefException` |
+| 17 | OK, σ²a moves | OK, σ²a moves |
+| 42 | OK, σ²a moves | OK, σ²a moves |
+
+Fix: swap the sensitivity pin to `seed=7`. Identity pins (a/b/d/e/f/g)
+and the same-seed determinism pin are unchanged. Not a covered flip;
+`public_covered_count` stays 5.
+
+```sh
+julia +1.10.12 --project=. -e 'using Test; include("test/test_matfree_reml_inci_pins.jl")'
+# 17/17 in 6.2s
+
+julia +1.12 --project=. -e 'using Test; include("test/test_matfree_reml_inci_pins.jl")'
+# 17/17 in 8.1s  (local 1.12.6; CI matrix is 1.12.7)
+```

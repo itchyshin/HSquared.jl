@@ -90,11 +90,16 @@ using Test
     @test isfinite(mf.likelihood.loglik)
 
     # (c) deterministic given the seed; a DIFFERENT seed moves the estimate
-    #     (it really is Monte-Carlo). Same-process comparison: Julia-version
-    #     RNG streams do not enter, because no expected numeric is stored.
+    #     (it really is Monte-Carlo). Same-process comparison: no stored
+    #     expected numeric. The *stream* is still version-sensitive: some
+    #     Hutchinson draws drive this CI-budgeted fixture into a PCG/PosDef
+    #     breakdown (2026-08-04 RNG-fragility class). seed=99 is a 1.12
+    #     landmine here (CI 1.12.7: ArgumentError pᵀCp=0; local 1.12.6:
+    #     PosDefException) while completing on 1.10. seed=7 completed and
+    #     moved σ²a on local 1.10.12 and 1.12.6; do not restore 99.
     @test fit_matrix_free_reml(spec; nprobe = 32, seed = 20260728).variance_components ==
           mf.variance_components
-    @test fit_matrix_free_reml(spec; nprobe = 32, seed = 99).variance_components.sigma_a2 !=
+    @test fit_matrix_free_reml(spec; nprobe = 32, seed = 7).variance_components.sigma_a2 !=
           mf.variance_components.sigma_a2
 
     # (d) standard extractors work on the returned AnimalModelFit
