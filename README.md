@@ -4,18 +4,22 @@ Documentation: [HSquared.jl engine docs](https://itchyshin.github.io/HSquared.jl
 R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
-`HSquared.jl` is the Julia engine underneath the R package `hsquared`.
+`HSquared.jl` is the Julia engine twin of the R package `hsquared`.
+This is not the package you type a formula into.
 
-The long-term goal is open, sparse, inheritance-aware quantitative genetics:
-sparse animal models, pedigree and genomic relationship structures, REML/ML
-estimation, breeding values, G matrices, factor-analytic genetic covariance,
-and high-dimensional GLLVM-style extensions.
+R users: start at [hsquared](https://github.com/itchyshin/hsquared)
+(`y ~ sex + age + animal(1 | id, pedigree = ped)`), or the
+[hsquared pkgdown site](https://itchyshin.github.io/hsquared/).
+That is the applied-user interface. This repository is the engine.
 
-The intended users are breeders, plant and livestock geneticists, evolutionary
-geneticists, genomic prediction users, and applied analysts who need R syntax
-with a Julia engine underneath. Comparator packages such as ASReml,
-BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, and nadiv are
-benchmarks to learn from and test against, not claims of current superiority.
+This engine already has experimental validation-scale fitting: pedigree
+checks, sparse `Ainv`, low-level REML and Henderson MME solves, and
+extractors for heritability, EBVs, and PEV. Those are engine utilities,
+not a public formula API and not a production sparse pipeline.
+
+`hsquared()` here still throws. Lower-level `fit_animal_model` and
+`fit_ai_reml` exist as experimental engine paths, not the applied
+default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
