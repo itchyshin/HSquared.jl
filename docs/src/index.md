@@ -119,6 +119,10 @@ Planned, but not implemented yet:
 
 ## Install
 
+HSquared is **not** in the Julia General registry yet. Do not use
+`Pkg.add("HSquared")` until a General PR merges. This `0.5.0` number is
+experimental; `public_covered_count` stays 5.
+
 ```julia
 using Pkg
 Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")

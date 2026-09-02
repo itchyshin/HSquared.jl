@@ -9,6 +9,9 @@
 > complete for this candidate. No capability/count row moved; `public_covered_count`
 > remains 5. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
+>
+> **Experimental 0.5.0:** version number only. Not a covered flip, not
+> production-ready, not yet in Julia General. `public_covered_count` stays **5**.
 
 | Capability | Status | Evidence |
 | --- | --- | --- |

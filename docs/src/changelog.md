@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.5.0 (experimental)
+
+First experimental public version number (`0.0.1` → `0.5.0`). The engine
+remains experimental. This is not a covered flip, not a production-ready
+release, and not a Julia General registration. `public_covered_count` stays
+**5**. Install from the GitHub URL until a General PR merges.
+
 - Corrected the Julia #44/R-bridge status wording after hsquared PR #96. The R
   twin already has an opt-in `target = "nongaussian"` bridge for Poisson and
   Binomial LA/VA fits plus the PR #95 normalizer fixture; the remaining bridge
