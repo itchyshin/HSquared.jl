@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator).**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim; 2 pre-push items, see GATED).**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -45,7 +45,19 @@ ARC NEXT (one owner each):
 - **B3 C2** — sire_model R mirror **or** Julia-only boundary note
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (R ahead ~17, Julia ahead ~30, **CI unverified**) · A19 register · Version bump
+- G10 S1/S2/S3 sign · push (R ahead 17 `e304a40`, Julia ahead 30 `d070b220`, **neither pushed → CI
+  unverified**) · A19 register · Version bump
+- **`V1-MATFREE-REML` row does not exist** (Rose, pre-push). The A07 check-log
+  (`check-log.d/2026-09-01-h2-twin-a07-s5-matfree-tail-recovery.md:93`) and
+  `~/local-scratch/h2-a09-g10-dossier-prep.md:15` discharge a validation-debt item against that id, but
+  it is absent from `src/validation_status.jl`, `docs/design/capability-status.md`, and
+  `docs/design/validation-debt-register.md`; the gated estimator `fit_matrix_free_reml`
+  (`src/iterative_solve.jl:1010`, exported `src/HSquared.jl:140`) has **no ledger row at all**. So the
+  S5 PASS has no auditable home and G10 S3 inherits the dangling pointer. Decide: add the row (claim
+  surface → Boole + Rose) **or** refile the evidence under an existing id. Not patched — both options
+  edit a status surface.
+- **`Co-authored-by: Cursor` trailer on 29/30 Julia campaign commits**, against the `CLAUDE.md`
+  no-trailer convention. Accept or rebase out — cheaper before push than after.
 - **Add `validation_status()` rows for RR k=2 + direct–maternal?** Both are `covered` in
   `docs/design/capability-status.md` but absent from the exported R table, so the generated limits page
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).
@@ -54,6 +66,6 @@ GATED (owner):
 - **`sire_model_fitted_target` not mirrored to R** — mirror + freeze, or record it as Julia-only.
 - **Open question:** pin Julia version in frozen S5 gate pre-run? (records but doesn't assert today)
 
-TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md`
+TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · Rose pre-public scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-prepublic-scrub-2026-09-01.md` · briefing `~/local-scratch/h2-morning-briefing-2026-09-02.md`
 
 RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
