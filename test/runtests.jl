@@ -3502,6 +3502,77 @@ end
     @test_throws ArgumentError fit_multi_effect(y, X, effects; method = :bogus)
 end
 
+@testset "V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name)" begin
+    # The `V1-MATFREE-REML` ledger row records this fitter as OPT-IN ONLY: no router may select
+    # it on a user's behalf, because the regime a route would serve is largely the one in which
+    # it has not been measured. On this branch the fence held STRUCTURALLY but nothing PINNED it
+    # -- `f261165e` ported the fitter body from the v0.7 lineage without the v0.7 in-CI fence
+    # tests, so re-wiring a route in would not have failed loudly. This testset is that pin.
+    #
+    # SCOPE, stated because the wider claim is false: this is the two-component ANIMAL-MODEL
+    # target router only. `fit_multi_effect(method = :auto)` is a DIFFERENT estimator
+    # (`V3-NEFFECT-MATFREE-FIT`) whose `:auto` router DOES deliberately route to a matrix-free
+    # engine -- see the dispatch testset immediately above. "`:auto` never selects matrix-free"
+    # holds here and nowhere else.
+    #
+    # NOT A PORT of the v0.7 fence testset, because the API differs and the v0.7 assertions would
+    # be WRONG here: v0.7 ACCEPTED `fit_animal_model(spec; target = :matrix_free)` and fenced only
+    # its `_auto_reml_route`, whereas this branch refuses the target outright. The debt is
+    # therefore discharged in a different form. A future porter must not "repair" (1) by
+    # re-admitting `:matrix_free` as a target -- that would widen the surface, not restore parity.
+    ped = normalize_pedigree(["a1","a2","a3","a4","a5","a6","a7","a8"],
+        ["0","0","a1","a1","a2","a2","a3","a5"], ["0","0","a2","a2","0","0","a4","a6"])
+    n = 8; X = ones(n, 1); Z = sparse(1.0I, n, 8); Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids)
+
+    # (1) fit_animal_model refuses every matrix-free spelling, and :auto, as Symbol or String.
+    for bad in (:matrix_free, :matrix_free_reml, :matrix_free_mc_em_reml, :auto,
+                "matrix_free", "matrix_free_reml", "auto")
+        @test_throws ArgumentError fit_animal_model(spec; target = bad)
+    end
+
+    # (2) The accepted target surface is exactly four canonical targets and their aliases.
+    #     Adding a matrix-free target to `_coerce_fit_target` is what (1) exists to catch; this
+    #     pins the complement, so a silent WIDENING of the surface also goes red.
+    accepted = Dict(:variance_components => :variance_components,
+                    :dense_validation => :variance_components,
+                    :sparse_reml => :sparse_reml,
+                    :sparse_reml_validation => :sparse_reml,
+                    :ai_reml => :ai_reml,
+                    :ai_reml_validation => :ai_reml,
+                    :henderson_mme => :henderson_mme)
+    for (alias, canonical) in accepted
+        @test HSquared._coerce_fit_target(alias) === canonical
+    end
+    @test Set(values(accepted)) ==
+          Set([:variance_components, :sparse_reml, :ai_reml, :henderson_mme])
+
+    # (3) There is no `:auto` REML router on this branch at all. The v0.7 lineage had
+    #     `_auto_reml_route`; if one is reintroduced, this goes red and the fence is revisited.
+    @test !isdefined(HSquared, :_auto_reml_route)
+
+    # (4) No other engine module reaches the fitter. The only `src/` files that name it are its
+    #     own definition, the export list, and the ledger prose -- so wiring a call into
+    #     `likelihood.jl` or `bridge_payload_v2.jl` grows this set and goes red.
+    srcdir = joinpath(@__DIR__, "..", "src")
+    naming = sort([f for f in readdir(srcdir)
+                   if endswith(f, ".jl") &&
+                      occursin("fit_matrix_free_reml", read(joinpath(srcdir, f), String))])
+    @test naming == ["HSquared.jl", "iterative_solve.jl", "validation_status.jl"]
+
+    # (5) Opt-in, not banned: calling it by name works and the fit self-labels. ONE EM step,
+    #     with no convergence or accuracy assertion -- the accuracy claim belongs to the frozen
+    #     S5 gate (opt-in, at q = 25,000 on a cluster), never to CI.
+    fit = fit_matrix_free_reml(spec; nprobe = 8, iterations = 1, seed = 1, compute_loglik = false)
+    @test fit.target === :matrix_free_reml
+    @test fit.variance_components_source === :estimated_matrix_free_mc_reml
+
+    # (6) REML-only, per the row: an ML spec is refused before any numerics run.
+    ml_spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ml)
+    @test_throws ArgumentError fit_matrix_free_reml(ml_spec)
+end
+
 @testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
     # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
     # matrix-free PCG solve + the Hutchinson trace (C never assembled/factorized). It must

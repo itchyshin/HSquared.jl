@@ -1011,7 +1011,10 @@ any covered claim.
 `fit_animal_model` accepts `:variance_components`, `:sparse_reml`, `:ai_reml`, and
 `:henderson_mme`, and there is no `:auto` REML router, so nothing can select this estimator on a
 user's behalf. That is deliberate — the regime a route would serve is largely the one in which
-this fitter has not been measured.
+this fitter has not been measured — and it is PINNED IN CI by the testset
+`V1-MATFREE-REML opt-in fence`, so re-wiring a route in fails loudly rather than silently. That
+fence covers this animal-model target router only; [`fit_multi_effect`](@ref)'s `:auto` is a
+different estimator and does route to a matrix-free engine.
 """
 function fit_matrix_free_reml(
     spec::AnimalModelSpec;
