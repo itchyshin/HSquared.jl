@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3 barrier PROCEED WITH CONDITIONS (batch still partial); B5 same; A20 skip migration advanced.**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator).**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -14,9 +14,11 @@ ARCS DONE (verified):
 - **A18 (BOTH)** — R pkgdown build/deploy split + hide internals; Julia Documenter `push: main`,
   `warnonly = [:missing_docs]`, job-shaped sidebar, generated validation-status table (55 rows).
   Receipts: `~/local-scratch/h2-a18-launch-receipt.md`; check-log.d shards both lanes.
-- **A20 skip migration (R)** `26bc005` — 33 live-Julia gates → `hs_skip_live_julia()` (bridge,
-  single-step, plot-parity, genomic, SNP-BLUP, MV live); scoped tests FAIL 0 / PASS 333.
-  Addendum: `~/local-scratch/h2-a20-skip-migration-addendum.md`.
+- **A20 skip migration (R)** wave1 `26bc005` (33) + leftovers (26 + 2 missing gates) —
+  live-Julia bare `skip_on_cran` exhausted except intentional non-Julia legs; scoped leftovers
+  FAIL 0 / PASS 704. Addendum: `~/local-scratch/h2-a20-skip-migration-addendum.md`.
+- **A19 hygiene (Julia)** — `test_aqua.jl` + TagBot.yml + `CITATION.cff` + extras compat;
+  Aqua **10/10**; removed undefined export `fit_eigen_reml`. **No** Registrator / **no** 0.5.0 bump.
 
 BATCH PARTIAL:
 - **B2** — A09 G10 dossiers updated; **owner sign** (S3: S5 PASS, S6/S4/S7 open)
@@ -25,8 +27,7 @@ BATCH PARTIAL:
 - **B5** — A17 + A18 done; barrier **PROCEED WITH CONDITIONS**
   (`~/local-scratch/h2-b5-barrier-packet.md`); C1 post-merge Pages/Documenter open;
   C2 Pat script drafted `~/local-scratch/h2-b5-pat-reader-walk.md` (**not walked/signed**)
-- **B6** — A19 checklist; **A20** still **doing** — listed live suites migrated; other bare
-  `skip_on_cran` suites + Version/win-builder/submit remain
+- **B6** — A19 hygiene green locally; A20 skips done; Version/win-builder/submit + Registrator remain
 
 PROCESS (lessons):
 - **Launch receipt required** before any Totoro gate >30m — prevents triple-run collision (Ada pass 1).
@@ -38,13 +39,13 @@ PROCESS (lessons):
 
 ARC NEXT (one owner each):
 - **A13 Darwin review** — draft answers in `~/local-scratch/h2-a13-darwin-review-draft.md`; **sign still pending**
-- **A20 remaining** — other live-suite skip migration; optional testthat.R filter; Version 0.5.0;
-  win-builder; submit only after Julia General
+- **A20 remaining** — optional testthat.R allowlist; Version 0.5.0; win-builder; submit after Julia General
+- **A19 remaining** — DOCUMENTER_KEY verify; Documenter install honesty; owner OK → 0.5.0 + Registrator
 - **B5 C1/C2** — owner push → first green Pages/Documenter; human Pat walk of drafted script
 - **B3 C2** — sire_model R mirror **or** Julia-only boundary note
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (R ahead ~16, Julia ahead ~28, **CI unverified**) · A19 register
+- G10 S1/S2/S3 sign · push (R ahead ~17, Julia ahead ~30, **CI unverified**) · A19 register · Version bump
 - **Add `validation_status()` rows for RR k=2 + direct–maternal?** Both are `covered` in
   `docs/design/capability-status.md` but absent from the exported R table, so the generated limits page
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).

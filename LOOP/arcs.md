@@ -23,8 +23,8 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A16 | B4 | Bridge parity test → CI | done | R `3dbf486` phase 1 Tier 0 contracts |
 | A17 | B5 | Docs IA rebuild both sites | done | R phases 1–3 `9ac11d1`; Julia sidebar regrouped in A18 |
 | A18 | B5 | CI/deploy hygiene + status gen | done | R pkgdown split+hide; JL Documenter main-push + generated status table; **post-merge deploy unverified (no push)** |
-| A19 | B6 | Julia General registry (F7) | doing | prep `294cdcb` checklist; ASK before register |
-| A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | prep `e7bc5ec` + skip migration `26bc005` (33 sites); other live suites + Version/win-builder remain; `h2-a20-skip-migration-addendum.md` |
+| A19 | B6 | Julia General registry (F7) | doing | checklist + hygiene (Aqua/TagBot/CITATION); **ASK** before register / 0.5.0 bump |
+| A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | prep + skip migration wave1+leftovers; optional allowlist + Version/win-builder remain; `h2-a20-skip-migration-addendum.md` |
 | A21 | B7 | Estimand + claim ceiling panel | todo | Opus ceiling |
 | A22 | B8 | unlazy reverify + Melissa reconcile | todo | — |
 | A23 | B9 | D-43 completion panel | todo | Opus ceiling |
@@ -39,7 +39,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B3 | **partial** | Curie, Mrode, Jason, Darwin — barrier **PROCEED WITH CONDITIONS** (`h2-b3-barrier-packet.md`); **not done** — Darwin A13 sign (C1) + sire Julia-only gap (C2) |
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
 | B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy open; C2 Pat script drafted (`h2-b5-pat-reader-walk.md`) not walked |
-| B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; A20 skip migration advanced (`26bc005`); register ASK |
+| B6 | **partial** | Grace, Rose — A19 hygiene landed (Aqua green); A20 live-Julia skips exhausted; register + Version ASK |
 | B7 | todo | Opus A21 |
 | B8 | todo | Melissa → Rose |
 | B9 | todo | Opus A23 |

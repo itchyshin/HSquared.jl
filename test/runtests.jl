@@ -73,6 +73,10 @@ function _mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2)
     return inverse_lhs[(p + 1):end, (p + 1):end]
 end
 
+# Julia General-registry hygiene (Aqua.jl): deps_compat, stale deps, exports.
+# Sister pattern: DRM.jl `test/test_aqua.jl`. A19 — not a covered-flip gate.
+include("test_aqua.jl")
+
 @testset "HSquared Phase 0 scaffold" begin
     control = HSControl()
 
