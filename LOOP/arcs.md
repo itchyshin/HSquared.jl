@@ -17,14 +17,14 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A10 | B3 | BLUPF90 wire or document (F5) | done | R `2cc13d2` — doc path |
 | A11 | B3 | Comparator harness 7 targets | done | Julia — integrity + digests + cross-lane parity; `Pkg.test()` 37/37; receipt `h2-a11-comparator-harness-receipt.md` |
 | A12 | B3 | sommer/ASReml R fixtures | done | R `2d52a48` + Julia `cce9a961`; receipt `h2-a12-fixtures-receipt.md` |
-| A13 | B3 | Real-data 3-tier manifest | doing | R `02d0a31` + Julia `374b79aa`; **Darwin review pending** |
+| A13 | B3 | Real-data 3-tier manifest | doing | R `02d0a31` + Julia `374b79aa`; **Darwin review pending** (draft only; do not flip signed) |
 | A14 | B4 | Bridge payload v2 contract | done | R `7193e9ad` phase 1; receipt `h2-b4-a14-receipt.md` |
 | A15 | B4 | engine=julia smoke + F8 | done | R `07399a9` — receipt `h2-b4-a15-a16-receipt.md` |
 | A16 | B4 | Bridge parity test → CI | done | R `3dbf486` phase 1 Tier 0 contracts |
 | A17 | B5 | Docs IA rebuild both sites | done | R phases 1–3 `9ac11d1`; Julia sidebar regrouped in A18 |
 | A18 | B5 | CI/deploy hygiene + status gen | done | R pkgdown split+hide; JL Documenter main-push + generated status table; **post-merge deploy unverified (no push)** |
 | A19 | B6 | Julia General registry (F7) | doing | prep `294cdcb` checklist; ASK before register |
-| A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | local prep partial — cran-comments/CITATION/skip/.git; see `h2-a20-cran-local-prep-receipt.md` |
+| A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | prep `e7bc5ec` + skip migration `26bc005` (33 sites); other live suites + Version/win-builder remain; `h2-a20-skip-migration-addendum.md` |
 | A21 | B7 | Estimand + claim ceiling panel | todo | Opus ceiling |
 | A22 | B8 | unlazy reverify + Melissa reconcile | todo | — |
 | A23 | B9 | D-43 completion panel | todo | Opus ceiling |
@@ -36,10 +36,10 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
 | B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
 | B2 | **partial** | Gauss, Fisher, Ada — A07/A08 done; A09 dossiers refreshed; G10 sign owner |
-| B3 | **partial** | Curie, Mrode, Jason, Darwin — A10/A11/A12 done, A13 impl done; **Darwin sign A13** is the only open item |
+| B3 | **partial** | Curie, Mrode, Jason, Darwin — barrier **PROCEED WITH CONDITIONS** (`h2-b3-barrier-packet.md`); **not done** — Darwin A13 sign (C1) + sire Julia-only gap (C2) |
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
-| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy + C2 Pat reader still open |
-| B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; register ASK |
+| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy open; C2 Pat script drafted (`h2-b5-pat-reader-walk.md`) not walked |
+| B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; A20 skip migration advanced (`26bc005`); register ASK |
 | B7 | todo | Opus A21 |
 | B8 | todo | Melissa → Rose |
 | B9 | todo | Opus A23 |
