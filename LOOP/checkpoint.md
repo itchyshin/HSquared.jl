@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim). Pass 3 (2026-09-01 late) cleared the scrub's *after-push* residue while push itself stays gated: the matrix-free fence is now PINNED IN CI (the "owed pin" from JL-1), B3 C2 is closed as a DOCUMENTED Julia-only sire boundary, and the Julia README's JL-2/JL-3 understatements are corrected. **Rose re-scrubbed all three pass-3 surfaces (2026-09-02): CLEAR-WITH-CHANGES, no false claim, no patch — and re-ran every one of pass 3's check claims rather than accepting them (all reproduced exactly).** Nothing promoted anywhere — rows 56, covered 13, `public_covered_count` 5, unchanged. The `Co-authored-by` trailer remains the one pre-push owner ASK — **recount it, do not read a ratio here** (command in GATED; the commit that records a count also increments it).**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 PROCEED pending DP-1** — R tip `02a92a5` ahead **43** · Julia tip `90f70bdb` ahead **63**; local green **PASS** (`~/local-scratch/h2-block1-prepush-green-2026-09-02.md`); trailers ACCEPT (96 with / 10 without); wakeup `~/local-scratch/h2-owner-wakeup-2026-09-02.md`; push packet `~/local-scratch/h2-dp1-push-readiness-2026-09-02.md`. **No push / no PR until DP-1.** Julia CI needs draft PR after push. (Historical Block 1 detail continues below; dated stamp at end.)
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -264,3 +264,8 @@ RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
 - Gate item 2 MET (A29 follow-up). Criterion 9 DoD backfill landing: coordination-board rows both lanes + consolidated A24–A29 after-task reports.
 - DP-10: `hs_require_bridge()` + negative tests + optional `workflow_dispatch` Tier-1 YAML. Stub `if: false` untouched. Owner still decides B vs C; criterion 8 still NOT MET.
 - Fence: no push, no covered flip, `public_covered_count` 5, Darwin ink blank.
+
+## 2026-09-02 — Grace final Block 1 pre-push green
+
+**STATE:** Block 1 **PROCEED pending DP-1**. Tips R `02a92a5` (ahead **43**) · Julia `90f70bdb` (ahead **63**). Local green **PASS** (`~/local-scratch/h2-block1-prepush-green-2026-09-02.md`): Julia `Pkg.test()` 144/4322/0; R A31 check cited + key filters + live A26 PASS. Trailers 96 with / 10 without (ACCEPT). Wakeup: `~/local-scratch/h2-owner-wakeup-2026-09-02.md`. Push packet: `~/local-scratch/h2-dp1-push-readiness-2026-09-02.md`. **No push. No PR. No covered flip. No Registrator. No Darwin forge.** Julia CI needs draft PR after push.
+
