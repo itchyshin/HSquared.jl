@@ -1,10 +1,14 @@
 name: Documenter
+# Deploy docs on push to main (keeps the site current with R pkgdown), on version
+# tags, and as a PR check. Mirrors DRM.jl / GLLVM.jl. A18 closed the previous
+# tag/PR/dispatch-only asymmetry vs R's every-main-push pkgdown deploy.
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   pull_request:
     branches: [main]

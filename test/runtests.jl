@@ -173,6 +173,11 @@ end
     validation = validation_status()
     @test validation isa ValidationStatus
     @test length(validation) == 55
+    # A18: Documenter status table must stay generated from validation_status().
+    status_page = read(joinpath(@__DIR__, "..", "docs", "src", "validation-status.md"), String)
+    @test occursin("BEGIN GENERATED validation-status-table", status_page)
+    @test occursin("END GENERATED validation-status-table", status_page)
+    @test all(occursin("`$(row.id)`", status_page) for row in validation)
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
     @test "V2-APY" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
