@@ -3602,6 +3602,11 @@ end
     @test_throws ArgumentError fit_matrix_free_reml(ml_spec)
 end
 
+# v0.7 in-CI deterministic NUMERIC pins for fit_matrix_free_reml (path exists /
+# identities hold). Dedicated file so the fence testset above stays a fence.
+# NOT a covered flip. See the file header for what was deliberately not ported.
+include(joinpath(@__DIR__, "test_matfree_reml_inci_pins.jl"))
+
 @testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
     # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
     # matrix-free PCG solve + the Hutchinson trace (C never assembled/factorized). It must
