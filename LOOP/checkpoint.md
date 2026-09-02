@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B2/B4 milestones; B3 all-impl-done; B5 A17+A18 landed (local).**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B5 barrier PROCEED WITH CONDITIONS; A20 CRAN local prep partial.**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -18,9 +18,9 @@ ARCS DONE (verified):
 BATCH PARTIAL:
 - **B2** — A09 G10 dossiers updated; **owner sign** (S3: S5 PASS, S6/S4/S7 open)
 - **B3** — A10/A11/A12 done; **A13** manifest R `02d0a31` + Julia `374b79aa`; **Darwin review pending** = only open item
-- **B5** — A17 + A18 **implementation done locally**; Pat/Darwin/Florence reader pass + first
-  post-merge Pages/Documenter deploy still open (no push this pass)
-- **B6 prep** — A19 checklist
+- **B5** — A17 + A18 done; barrier **PROCEED WITH CONDITIONS**
+  (`~/local-scratch/h2-b5-barrier-packet.md`); C1 post-merge Pages/Documenter + C2 Pat reader open
+- **B6** — A19 checklist; **A20 local prep partial** (cran-comments, CITATION, `hs_skip_live_julia`, `.git` NOTE cleared)
 
 PROCESS (lessons):
 - **Launch receipt required** before any Totoro gate >30m — prevents triple-run collision (Ada pass 1).
@@ -30,9 +30,9 @@ PROCESS (lessons):
   (e.g. `V1-SIRE-FIT`) that the old table omitted.
 
 ARC NEXT (one owner each):
-- **A13 Darwin review** — 8-item checklist in manifest stub (gryphon h², Wilson citation, teaching vs field)
-- **A20** — hsquared 0.5.0 CRAN local gate (`cran-comments.md`, `hs_skip_live_julia()`, `inst/CITATION`, `.git` NOTE)
-- **B5 barrier** — Pat + Darwin + Florence on reader IA; Grace/Karpinski on first green CI deploy after push
+- **A13 Darwin review** — draft answers in `~/local-scratch/h2-a13-darwin-review-draft.md`; **sign still pending**
+- **A20 remaining** — migrate remaining live Julia skips; Version 0.5.0 bump; win-builder; submit only after Julia General
+- **B5 C1/C2** — owner push → first green Pages/Documenter; brief Pat reader walk
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (R ahead ~14, Julia ahead ~27 after A18, **CI unverified**) · A19 register
@@ -44,7 +44,6 @@ GATED (owner):
 - **`sire_model_fitted_target` not mirrored to R** — mirror + freeze, or record it as Julia-only.
 - **Open question:** pin Julia version in frozen S5 gate pre-run? (records but doesn't assert today)
 
-TRUTH: Ada pass 2 `~/local-scratch/h2-overnight-pass2-receipt.md` · A18
-`~/local-scratch/h2-a18-launch-receipt.md` · pass 1 `~/local-scratch/h2-ada-overnight-pass-1-receipt.md`
+TRUTH: B5 barrier `~/local-scratch/h2-b5-barrier-packet.md` · A20 `~/local-scratch/h2-a20-cran-local-prep-receipt.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · pass 2 `~/local-scratch/h2-overnight-pass2-receipt.md`
 
 RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**

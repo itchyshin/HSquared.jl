@@ -24,7 +24,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A17 | B5 | Docs IA rebuild both sites | done | R phases 1–3 `9ac11d1`; Julia sidebar regrouped in A18 |
 | A18 | B5 | CI/deploy hygiene + status gen | done | R pkgdown split+hide; JL Documenter main-push + generated status table; **post-merge deploy unverified (no push)** |
 | A19 | B6 | Julia General registry (F7) | doing | prep `294cdcb` checklist; ASK before register |
-| A20 | B6 | hsquared 0.5.0 CRAN local gate | todo | — |
+| A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | local prep partial — cran-comments/CITATION/skip/.git; see `h2-a20-cran-local-prep-receipt.md` |
 | A21 | B7 | Estimand + claim ceiling panel | todo | Opus ceiling |
 | A22 | B8 | unlazy reverify + Melissa reconcile | todo | — |
 | A23 | B9 | D-43 completion panel | todo | Opus ceiling |
@@ -38,7 +38,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B2 | **partial** | Gauss, Fisher, Ada — A07/A08 done; A09 dossiers refreshed; G10 sign owner |
 | B3 | **partial** | Curie, Mrode, Jason, Darwin — A10/A11/A12 done, A13 impl done; **Darwin sign A13** is the only open item |
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
-| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 impl done locally; barrier = reader pass + first green post-merge deploy |
+| B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy + C2 Pat reader still open |
 | B6 | **partial** | Grace, Rose — A19 prep checklist `294cdcb`; register ASK |
 | B7 | todo | Opus A21 |
 | B8 | todo | Melissa → Rose |
