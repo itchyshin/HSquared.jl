@@ -1,5 +1,10 @@
 # Genomic Models
 
+!!! warning "Experimental · opt-in · not the default fit"
+    Engine APIs on this page are validation-scale and dense. The R genomic
+    GREML surface stays partial/held. This page is not public activation
+    and does not change `public_covered_count`.
+
 `HSquared.jl` builds the genomic relationship engine on top of the same Henderson
 mixed-model-equation machinery as the pedigree animal model. The functions below
 are **engine APIs** (the Julia package's own functions). A narrow R-twin

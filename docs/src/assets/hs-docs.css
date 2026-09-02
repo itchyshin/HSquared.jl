@@ -1,0 +1,23 @@
+/* F5 banner + figure chrome for DocumenterVitepress (twin of pkgdown extra.css). */
+:root {
+  --hs-ink: #0f2533;
+  --hs-amber: #e69f00;
+  --hs-amber-ink: #92400e;
+  --hs-navy: #0072b2;
+}
+
+.hs-figure {
+  margin: 1.25rem 0 1.6rem;
+}
+
+.hs-figure img {
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.hs-figure figcaption {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  color: #475569;
+}

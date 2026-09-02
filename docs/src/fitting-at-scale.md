@@ -4,9 +4,11 @@
 [`fit_multi_effect`](@ref) chooses between them by feasibility. This page explains the choice,
 the accuracy-vs-feasibility trade, and how to control it.
 
-!!! warning "Experimental"
-    Everything on this page is experimental and validation-scale. The public default fit path is
-    the univariate Gaussian animal model; these multi-effect engines are opt-in.
+!!! warning "Experimental · opt-in · not the default fit"
+    Everything on this page is experimental and validation-scale. The public
+    default fit path is the univariate Gaussian animal model; these
+    multi-effect engines are opt-in. Timings below are measurements, not a
+    production-performance claim.
 
 ## The two engines
 
