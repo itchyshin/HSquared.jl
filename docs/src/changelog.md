@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.6.0 (experimental)
+
+Experimental numbered bump after R G10. Version tracks R-public covered
+capability (`public_covered_count` **5 → 6**). Engine `V4-MV-REML` was already
+covered; this is **not** an engine covered flip. Experimental label retained.
+Not production, not Julia General. k≥3 / diagonal multivariate and interval
+calibration stay out of the covered claim.
+
 ## 0.5.0 (experimental)
 
 First experimental public version number (`0.0.1` → `0.5.0`). The engine
