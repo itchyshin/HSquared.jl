@@ -79,7 +79,9 @@ ARC NEXT (one owner each):
   (**scratch stub, not a plan of record**). `LOOP/GOAL.md` gates both behind the Block 1 release gate.
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (after pass 3: **R ahead 19** `c05ddab`, **Julia ahead 37** `d3d92952` —
+- G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for
+  live ahead counts run `git rev-list --count origin/main..HEAD` rather than trusting a number here,
+  because a ledger commit that records the count also increments it —
   pass-3 commits `713edcf7`, `9fb1cf85`, `b597f811`, `d3d92952` — **neither pushed → CI still
   unverified, and every local check in this campaign remains local**) · A19 register · Version bump
 - ~~**`V1-MATFREE-REML` row does not exist**~~ **CLOSED 2026-09-01, `69280b70`** (Rose JL-1). It was a
@@ -102,7 +104,9 @@ GATED (owner):
   `CLAUDE.md` no-trailer convention. **Auto-injected by the Cursor commit path** — no git hook and no
   `commit.template` (both checked, both empty) — so it cannot be avoided by wording messages
   differently from this surface. Owner's choice is genuinely accept-or-rewrite; the rewrite stays an
-  ASK. Cheaper before push than after. **After pass 3, recounted: Julia 35/37, R 19/19 — 54 of 56.**
+  ASK. Cheaper before push than after. **After pass 3: R 19/19, and every Julia campaign commit but
+  2.** Recount with `git log origin/main..HEAD --format='%(trailers:key=Co-authored-by,valueonly)' |
+  grep -c Cursor` rather than quoting a frozen ratio — pass 3 alone moved it three times.
 - **Add `validation_status()` rows for RR k=2 + direct–maternal?** Both are `covered` in
   `docs/design/capability-status.md` but absent from the exported R table, so the generated limits page
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).
