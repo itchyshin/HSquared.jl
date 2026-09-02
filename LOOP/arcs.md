@@ -36,7 +36,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B0 | done | Shannon, Rose — receipt `h2-twin-b0-receipt.md` |
 | B1 | done | Fisher, Rose — barrier `~/local-scratch/h2-twin-b1-barrier.md` PROCEED |
 | B2 | **partial** | Gauss, Fisher, Ada — A07/A08 done; A09 dossiers refreshed; G10 sign owner |
-| B3 | **partial** | Curie, Mrode, Jason, Darwin — barrier **PROCEED WITH CONDITIONS** (`h2-b3-barrier-packet.md`); **not done** — Darwin A13 sign (C1) + sire Julia-only gap (C2) |
+| B3 | **partial** | Curie, Mrode, Jason, Darwin — barrier **PROCEED WITH CONDITIONS** (`h2-b3-barrier-packet.md`); **C2 closed in note form** (pass 3: sire boundary documented, harness verdict kept at `gap`, mirror-vs-permanent decision left to the owner); **still not done — Darwin A13 sign (C1)** |
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
 | B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy open; C2 Pat script drafted (`h2-b5-pat-reader-walk.md`) not walked |
 | B6 | **partial** | Grace, Rose — A19 hygiene landed (Aqua green); A20 live-Julia skips exhausted; register + Version ASK |

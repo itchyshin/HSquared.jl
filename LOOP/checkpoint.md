@@ -1,4 +1,4 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim); its higher pre-push item JL-1 is now CLOSED (`69280b70`, `V1-MATFREE-REML` ledger home; nothing promoted, `public_covered_count` still 5), leaving the `Co-authored-by` trailer as the one pre-push owner ASK — see GATED.**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B3/B5 proceed-with-conditions; A20 live-Julia skips exhausted; A19 hygiene landed (no Registrator); Rose pre-public scrub CLEAR-WITH-CHANGES (no false claim). Pass 3 (2026-09-01 late) cleared the scrub's *after-push* residue while push itself stays gated: the matrix-free fence is now PINNED IN CI (the "owed pin" from JL-1), B3 C2 is closed as a DOCUMENTED Julia-only sire boundary, and the Julia README's JL-2/JL-3 understatements are corrected. Nothing promoted anywhere — rows 56, covered 13, `public_covered_count` 5, unchanged. The `Co-authored-by` trailer remains the one pre-push owner ASK — see GATED.**
 
 ARCS DONE (verified):
 - A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
@@ -19,11 +19,41 @@ ARCS DONE (verified):
   FAIL 0 / PASS 704. Addendum: `~/local-scratch/h2-a20-skip-migration-addendum.md`.
 - **A19 hygiene (Julia)** — `test_aqua.jl` + TagBot.yml + `CITATION.cff` + extras compat;
   Aqua **10/10**; removed undefined export `fit_eigen_reml`. **No** Registrator / **no** 0.5.0 bump.
+- **PASS 3 — matrix-free fence PINNED (Julia)** `713edcf7`. New testset `V1-MATFREE-REML opt-in fence`,
+  20 deterministic assertions: `fit_animal_model` refuses `:matrix_free`/`:matrix_free_reml`/
+  `:matrix_free_mc_em_reml`/`:auto` (Symbol **and** String); the accepted target surface is pinned
+  CLOSED at 4 canonical targets so a silent *widening* also goes red; `_auto_reml_route` asserted
+  ABSENT; and no `src/` module beyond definition/export/ledger names the fitter, so wiring a call in
+  fails loudly. **The v0.7 fence tests could NOT be ported** — v0.7 *accepted* `target = :matrix_free`,
+  so its assertions are false here and porting would have re-widened the surface; the debt is
+  discharged in this branch's API shape and the testset says so. **SCOPE — the wide claim is FALSE:**
+  `fit_multi_effect(:auto)` is a *different* estimator (`V3-NEFFECT-MATFREE-FIT`) and DOES route
+  matrix-free, so "`:auto` never selects matrix-free" holds only for the animal-model target router.
+  No stochastic assertion added to CI (one EM step, tags only) — the 2026-08-04 RNG-fragility lesson
+  is not re-broken. Four surfaces that said "no test pins that" updated + status page regenerated.
+  Record: `check-log.d/2026-09-01-h2-twin-matfree-fence-pin.md`.
+- **PASS 3 — sire Julia-only boundary DOCUMENTED (both lanes) → B3 C2 closed in note form.**
+  Julia `9fb1cf85` · R `c05ddab`.
+  R lane: new `docs/dev-log/comparator-runs/2026-09-01-sire-julia-only-boundary.md` + TOML boundary.
+  Julia lane: `comparator/README.md` subsection, a `boundary_note` field carried into
+  `manifest.json`, matching TOML text. **`gap` verdict KEPT and `--strict` still fails** — documenting
+  a boundary is not discharging a debt. Measured on the way: `test-mrode-sire-anchor.R` is a
+  *supplied-variance* anchor and therefore NOT this mirror, which is easy to misread from file names.
+- **PASS 3 — Julia README understatement fixed (Rose JL-2/JL-3)** `9fb1cf85`. Premise verified first
+  (`V5-MARKER-THRESHOLD` really is `covered`; the three `genome_wide_*` functions really are
+  exported). Genome-wide calibration no longer listed flatly as planned: one paragraph states the
+  covered scope (fixed-effect single-marker, exact per-dataset add-one rule, **type-I control only**,
+  n∈300–2000 / m∈100–10000, 0.0542/0.0504 at α=0.05, PLINK 1.9 leg) and, at equal length, the
+  fenced-out set. `pedigree_inverse`'s "not yet connected to a fitted animal model" replaced.
+  Two drafting errors caught before commit: `fit_ai_reml` is covered but **not** the default target,
+  and the throwing `hsquared()` is this package's placeholder, not the R twin's.
+  Record: `check-log.d/2026-09-01-h2-twin-sire-boundary-and-readme-honesty.md`.
 
 BATCH PARTIAL:
 - **B2** — A09 G10 dossiers updated; **owner sign** (S3: S5 PASS, S6/S4/S7 open)
 - **B3** — A10/A11/A12 done; A13 **impl** done; barrier **PROCEED WITH CONDITIONS**
-  (`~/local-scratch/h2-b3-barrier-packet.md`); **not done** — Darwin sign (C1) + sire Julia-only (C2)
+  (`~/local-scratch/h2-b3-barrier-packet.md`); **C2 CLOSED in note form (pass 3)** — sire boundary
+  documented; **still not done — Darwin sign (C1)**, so B3 stays partial regardless
 - **B5** — A17 + A18 done; barrier **PROCEED WITH CONDITIONS**
   (`~/local-scratch/h2-b5-barrier-packet.md`); C1 post-merge Pages/Documenter open;
   C2 Pat script drafted `~/local-scratch/h2-b5-pat-reader-walk.md` (**not walked/signed**)
@@ -42,11 +72,16 @@ ARC NEXT (one owner each):
 - **A20 remaining** — optional testthat.R allowlist; Version 0.5.0; win-builder; submit after Julia General
 - **A19 remaining** — DOCUMENTER_KEY verify; Documenter install honesty; owner OK → 0.5.0 + Registrator
 - **B5 C1/C2** — owner push → first green Pages/Documenter; human Pat walk of drafted script
-- **B3 C2** — sire_model R mirror **or** Julia-only boundary note
+- ~~**B3 C2** — sire_model R mirror **or** Julia-only boundary note~~ **note COMMITTED (pass 3)**;
+  the mirror-vs-permanent decision moves to GATED (ask `#sire-mirror`)
+- **Post-0.5 spine (do NOT start)** — MV-4 (`cbind()` auto-routing + Boole grammar freeze) toward
+  0.6 and the S6 ASReml speed ladder are outlined in `~/local-scratch/h2-post-050-spine-mv4-s6.md`
+  (**scratch stub, not a plan of record**). `LOOP/GOAL.md` gates both behind the Block 1 release gate.
 
 GATED (owner):
-- G10 S1/S2/S3 sign · push (R ahead 18 `765b209`, Julia ahead 33 — head is this LOOP commit, ledger home `69280b70` — **neither pushed → CI
-  unverified**) · A19 register · Version bump
+- G10 S1/S2/S3 sign · push (after pass 3: **R ahead 19** `c05ddab`, **Julia ahead 36** — head is this
+  LOOP commit, pass-3 commits `713edcf7` + `9fb1cf85` — **neither pushed → CI still unverified, and
+  every local check in this campaign remains local**) · A19 register · Version bump
 - ~~**`V1-MATFREE-REML` row does not exist**~~ **CLOSED 2026-09-01, `69280b70`** (Rose JL-1). It was a
   **port gap**, not a missing id: the row already existed on the v0.7 lineage (`33ab68f6`), and A07's
   `f261165e` ported `fit_matrix_free_reml` (body byte-identical) without the rows that came with it.
@@ -57,7 +92,10 @@ GATED (owner):
   tests were never ported, so the new row says so. Fence verified to hold **structurally** instead:
   `_auto_reml_route` absent, `fit_animal_model` rejects `:matrix_free`/`:matrix_free_reml`/`:auto`.
   Full suite green. Record: `check-log.d/2026-09-01-h2-twin-matfree-ledger-home.md`.
-  **Still owed:** port the v0.7 fence tests so the fence is pinned, not merely true.
+  ~~**Still owed:** port the v0.7 fence tests so the fence is pinned, not merely true.~~
+  **PIN DONE 2026-09-01 (pass 3)** — but NOT by porting; the v0.7 tests assert an API this branch
+  does not have. See the pass-3 entry above. Still owed on the row: the v0.7 in-CI **numeric** gates,
+  S6, S4, S7, and **S3 (G10) UNSIGNED**.
 - **`Co-authored-by: Cursor` trailer — MEASURED, and wider than the scrub reported: Julia 31/33 AND
   R 18/18, i.e. 49 of 51 commits across both repos.** The scrub counted only the Julia lane ("29/30"),
   so the R lane's full sweep is new information; a rewrite is a two-repo job, not one. Against the
@@ -70,9 +108,18 @@ GATED (owner):
   cannot card them. Public-claim-surface change → Boole (naming) + Rose (audit).
 - **README merge conflict** with `origin/codex/2026-07-13-v07-performance-localization` (5 commits,
   same paragraphs, narrows genomic GREML to a held branch-only candidate). Not imported. D-87/D-88.
-- **`sire_model_fitted_target` not mirrored to R** — mirror + freeze, or record it as Julia-only.
+- **`sire_model_fitted_target` — boundary now DOCUMENTED (pass 3), decision still yours (ask
+  `#sire-mirror`).** The gap is no longer silent: note committed in the R lane, both TOMLs and the
+  comparator README point at it, and `manifest.json` carries a `boundary_note`. What is NOT decided is
+  whether to (a) mirror + freeze the fixture or (b) make the Julia-only boundary permanent — the note
+  argues both sides and settles neither. Harness still reports `gap`; `--strict` still fails; the
+  same-estimand REML sire comparator is untouched by either choice.
 - **Open question:** pin Julia version in frozen S5 gate pre-run? (records but doesn't assert today)
 
-TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · Rose pre-public scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-prepublic-scrub-2026-09-01.md` · briefing `~/local-scratch/h2-morning-briefing-2026-09-02.md`
+TRUTH: B3 barrier `~/local-scratch/h2-b3-barrier-packet.md` · B5 `~/local-scratch/h2-b5-barrier-packet.md` · A20 addendum `~/local-scratch/h2-a20-skip-migration-addendum.md` · A18 `~/local-scratch/h2-a18-launch-receipt.md` · Rose pre-public scrub **CLEAR-WITH-CHANGES** `~/local-scratch/h2-rose-prepublic-scrub-2026-09-01.md` · briefing `~/local-scratch/h2-morning-briefing-2026-09-02.md` · pass-3 receipt `~/local-scratch/h2-overnight-pass3-launch-receipt.md` · post-0.5 spine stub (NOT authorized work) `~/local-scratch/h2-post-050-spine-mv4-s6.md`
+
+PASS 3 CAVEAT: the new Julia README paragraph is itself a claim surface **Rose has not read**. A
+re-scrub of it is owed before push. Push is owner-gated anyway, so this is a sequencing note, not a
+new blocker.
 
 RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
