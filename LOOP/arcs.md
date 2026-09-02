@@ -29,6 +29,12 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A22 | B8 | unlazy reverify + Melissa reconcile | done | Melissa; audit `h2-block1-completion-audit-2026-09-02.md`; owner packet `h2-owner-decision-packet-2026-09-02.md` |
 | A23 | B9 | D-43 completion panel | done | Option B **ADOPTED** — decision `docs/dev-log/decisions/2026-09-02-block1-check-log-substitution.md`; A21 receipt + A23 panel are the after-task records; standard after-task required from A24+ |
 
+## Preview outside Block 1 numbering (not armed Block 2)
+
+| Arc | Status | Note |
+|-----|--------|------|
+| **A24-preview** | **done (not pushed)** | MV-4 claim-surface honesty — R `8ed0837`/`14f5a7b`/`a13595d`; Julia `a7852138` (this GOAL reframe). Default-reachable / claim still `partial`; `public_covered_count` 5. Residual `(opt-in)` key → A28. Receipt `~/local-scratch/h2-a24-mv4-doc-honesty-receipt.md`. |
+
 ## Batch status
 
 | Batch | Status | Barrier lenses |

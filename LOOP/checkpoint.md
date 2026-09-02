@@ -97,9 +97,13 @@ ARC NEXT (one owner each):
 - **B5 C1/C2** — owner push → first green Pages/Documenter; human Pat walk of drafted script
 - ~~**B3 C2** — sire_model R mirror **or** Julia-only boundary note~~ **note COMMITTED (pass 3)**;
   the mirror-vs-permanent decision moves to GATED (ask `#sire-mirror`)
-- **Post-0.5 spine (do NOT start)** — MV-4 (`cbind()` auto-routing + Boole grammar freeze) toward
-  0.6 and the S6 ASReml speed ladder are outlined in `~/local-scratch/h2-post-050-spine-mv4-s6.md`
-  (**scratch stub, not a plan of record**). `LOOP/GOAL.md` gates both behind the Block 1 release gate.
+- **A24-preview DONE (not pushed)** — MV-4 claim-surface honesty: R `8ed0837`/`14f5a7b`/`a13595d`;
+  Julia GOAL reframe `a7852138`. Multivariate default-reachable / claim still `partial`;
+  `public_covered_count` 5. Residual `validation_status()` key `(opt-in)` → **A28** (do not rename).
+  Receipt `~/local-scratch/h2-a24-mv4-doc-honesty-receipt.md`.
+- **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
+  evidence assembly (A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
+  not a plan of record**). `LOOP/GOAL.md` still gates behind the Block 1 release gate.
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for
