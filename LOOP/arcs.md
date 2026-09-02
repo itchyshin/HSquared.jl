@@ -38,7 +38,10 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | **A28-remainder** | **done (not pushed)** | Doc-38 §H.3 discharged by MV-1; `k≥3` / `diagonal` fences pinned on claim surfaces + contract tests. R `e822db3`. Check-log `check-log.d/2026-09-02-h2-a28-fence-enforcement.md`. No covered flip. |
 | **0.6 inventory** | **written (scratch)** | `~/local-scratch/h2-060-evidence-inventory.md` — every MV recovery/comparator gate in both lanes with path, SHA, status. Headline finding (C8 banked but uncited) discharged by **A25a**. A26b + A28 remainder recorded. |
 | **A25a** | **done (not pushed)** | C8 register reconcile (compute-free cite). Julia `11f54d9e` + R `0c0ae4a`. DRAC `47925486`: 16×500, 500/500 conv, **14/16 pass** (fails `rg_090_rec1`/`rg_095_rec1` only); W1 retained as triage. Fence: Julia `V4-MV-REML` **covered**, R multivariate **partial**, `public_covered_count` **5** — all unchanged. Scratch LOOP `~/local-scratch/h2-a25a-LOOP.md`; briefing §13. |
-| **A26b** | **done (not pushed)** | MV-1 sommer Suggests: `hs_require_suggests` — **loud fail under `NOT_CRAN=true`**, CRAN skip intact. R `d59d98e`. Check-log `check-log.d/2026-09-02-h2-a26b-sommer-loud-skip.md`. **Next:** A25 (MV-5 disposition), then A26 parity. |
+| **A25-rose (mislabeled)** | **done (not pushed)** | **A29-shaped** claim-surface audit landed under the A25 label. R `469ab94` + Julia `b24f7f88`. Verdict CLEAR-WITH-CHANGES. **True spine A25 = MV-5 disposition remains OPEN.** Report `~/local-scratch/h2-a25-rose-mv-audit-2026-09-02.md`. |
+| **A25-grace (docregen)** | **done (not pushed)** | Regenerated `docs/src/validation-status.md` so C8 (`47925486`, 14/16) appears on the published page; CI now asserts claim_boundary prose sync (not ids only). Check-log `check-log.d/2026-09-02-h2-a25-grace-validation-status-regen.md`. Closes inventory T2 / Rose F3. |
+| **A25 (true)** | **OPEN — owner** | **MV-5 disposition** (run / supersede / keep frozen). Draft only: `~/local-scratch/h2-a25-mv5-disposition-draft.md`. **Do not run** Totoro/DRAC. |
+| **A26b** | **done (not pushed)** | MV-1 sommer Suggests: `hs_require_suggests` — **loud fail under `NOT_CRAN=true`**, CRAN skip intact. R `d59d98e`. Check-log `check-log.d/2026-09-02-h2-a26b-sommer-loud-skip.md`. **Next:** true A25 (MV-5 disposition), then A26 parity. |
 
 ## Batch status
 

@@ -182,6 +182,14 @@ include("test_aqua.jl")
     @test occursin("BEGIN GENERATED validation-status-table", status_page)
     @test occursin("END GENERATED validation-status-table", status_page)
     @test all(occursin("`$(row.id)`", status_page) for row in validation)
+    # A25 Grace: id-only checks miss prose drift (Rose F3 — C8 cite present in
+    # validation_status() but absent from the generated page). Mirror the writer
+    # cell escape and require each claim_boundary on the page.
+    _status_page_cell(s) = begin
+        t = replace(string(s), "|" => "\\|", "\n" => " ")
+        replace(t, r"\s+" => " ")
+    end
+    @test all(occursin(_status_page_cell(row.claim_boundary), status_page) for row in validation)
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
     @test "V2-APY" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]

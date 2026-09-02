@@ -116,11 +116,21 @@ ARC NEXT (one owner each):
   `rg_090_rec1`, `rg_095_rec1`); W1 (8×50, 5/8) retained as triage. **Fence verified / unchanged:**
   Julia `V4-MV-REML` **covered**; R multivariate **partial**; `public_covered_count` **5**.
   No covered flip, no Totoro/DRAC, no push. Scratch: `~/local-scratch/h2-a25a-LOOP.md`;
-  briefing §13–§14. **Next:** A25 (MV-5 disposition), then A26 (R↔engine parity).
+  briefing §13–§14.
+- **LABEL COLLISION (read before trusting "A25 done")** — The Rose multivariate claim-surface
+  audit was **A29-shaped work mislabeled A25** (R `469ab94`, Julia `b24f7f88`). Spine
+  **A25 = MV-5 disposition remains OPEN**. Disposition draft (options only, no run):
+  `~/local-scratch/h2-a25-mv5-disposition-draft.md`.
+- **A25-grace DONE (not pushed)** — Regenerated `docs/src/validation-status.md` from live
+  `validation_status()` so the Documenter page cites C8 (`47925486`, **14/16**) alongside W1;
+  CI now requires claim_boundary prose sync (Rose F3 / inventory T2 closed). Check-log
+  `check-log.d/2026-09-02-h2-a25-grace-validation-status-regen.md`. Launch:
+  `~/local-scratch/h2-a25-docregen-launch.md`. **Next:** true A25 (MV-5 disposition), then A26.
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
-  evidence assembly (A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
+  evidence assembly (true A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
   not a plan of record**); gate-level inventory with SHAs:
-  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip findings discharged).
+  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited + A26b silent-skip findings discharged;
+  T2 page-staleness closed by A25-grace).
   `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
 
 GATED (owner):
