@@ -150,14 +150,39 @@ ARC NEXT (one owner each):
   construction* from the same `G0hat`/`R0hat` inside `fit_multivariate_reml`
   (`src/multivariate.jl:869/874/876`), so they cannot disagree with their definitions — but
   construction is **not** a test. The Julia suite pins only ranges, copy-returning extractors, and
-  the supplied-covariance `multivariate_mme` `cov2cor` identity; **no** assertion of the form
+  the supplied-covariance `multivariate_mme` `cov2cor` identity; ~~**no** assertion of the form
   `heritability(fit) ≈ diag(G0)./(diag(G0).+diag(R0))` exists, so a refactor that recomputed h²
-  elsewhere would not go red. The gating identity tests are R-lane by design
-  (`tests/testthat/test-multivariate.R`, MV-3), so this is a recorded honest boundary, **not** a new
+  elsewhere would not go red.~~ **THAT GAP IS NOW CLOSED — A27-noether, `7ab28d36`, below.** The
+  gating identity tests remain R-lane by design
+  (`tests/testthat/test-multivariate.R`, MV-3), so this was a recorded honest boundary, **not** a new
   flip blocker. Fence held: `V4-MV-REML` covered, R multivariate **partial**,
   `public_covered_count` **5**. Check-log `check-log.d/2026-09-02-h2-a27-canon-identity-mirror.md`;
   scratch LOOP `~/local-scratch/h2-a27-LOOP.md`; briefing §18; sheet
   `~/local-scratch/h2-a27-darwin-mv-sign-sheet.md`.
+- **A27-noether DONE (not pushed)** — the Julia identity pin A27 recorded as missing. Julia
+  `7ab28d36`, test-only + one canon correction. New `test/runtests.jl` testset *Phase 4
+  derived-estimand identities on the REML fit path* (**69 assertions, 69 pass**) pins, on the
+  **estimated** path rather than only the supplied-covariance `multivariate_mme` path:
+  `heritability(fit) ≈ diag(G0)./(diag(G0).+diag(R0))` (extractor **and** stored field, and per
+  trait), `fit.genetic_correlation ≈ D⁻¹ G0 D⁻¹`, `fit.residual_correlation ≈ D⁻¹ R0 D⁻¹`, unit
+  correlation diagonals, and `r_g` symmetry — across five fits from the 8-animal pedigree already in
+  the file (`:unstructured`, `:diagonal`, `:lowrank` rank-1, `t = 1`, and a two-`NaN` near-boundary
+  fit with `diag(G0) ≈ [0.0067, 0.0835]`). `rtol = 1e-12`; **measured** discrepancy is ulp-level
+  (h² exactly `0.0`, `r_g` ≤ `1.1e-16`), so a wrong-source recompute cannot hide in the tolerance.
+  Reference maps are written out in canon notation and deliberately **not** obtained from
+  `genetic_correlation`, which is the map under test. Five anti-vacuity assertions show the
+  identities discriminate: `G0[1,2] = 0.552 ≠ 0`, the two per-trait h² differ (`0.851` / `0.558`)
+  and the **reversed** reference is rejected, and h² is invariant to zeroing `G0`'s off-diagonal
+  while `r_g` is not — pinning the two as different functions of one `G0`. No new fixture, **no
+  RNG**. `docs/design/04-validation-canon.md` corrected: its "there is no Julia assertion of the
+  form …" sentence was false once this landed; replaced with what the suite pins plus two stated
+  boundaries — these are **self-consistency** assertions on this engine's own estimates (they pin
+  what the symbols denote, not whether `G0`/`R0` are right) and are **NOT** external-comparator
+  evidence. Suite `Pkg.test()` **144 testsets / 4322 assertions / 0 fail / 0 error** (baseline
+  143/4252); `validation_status()` rows **56**, covered **13**, unchanged; `preamble_cap.sh` OK.
+  Fence held: `V4-MV-REML` covered, R multivariate **partial**, `public_covered_count` **5**;
+  **Darwin MV-6 signature still blank**. Check-log
+  `check-log.d/2026-09-02-h2-a27-noether-identity-pin.md`.
 - **Owner asks (open, do not quietly fix)** — (1) Bridge multivariate start: shipped `I₂` vs
   engine `0.5·phenotypic-variance` (identity costs ~2e-5 on G0, inside tol). (2) **DP-1** push.
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
