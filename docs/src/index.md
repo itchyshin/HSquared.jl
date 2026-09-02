@@ -2,10 +2,11 @@
 
 !!! warning "Experimental 0.5.0 — not production"
     Version number tracks covered capability, not maturity. **Not** in the
-    Julia General registry yet
-    ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)
-    is open / pending AutoMerge). Install with `Pkg.add(url=...)` only — do
-    **not** use `Pkg.add("HSquared")` until that PR merges.
+    Julia General registry — registration deferred pending collaborator
+    review
+    ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
+    Install with `Pkg.add(url=...)` only — do **not** use
+    `Pkg.add("HSquared")` by name.
     `public_covered_count` stays **5**.
 
 `HSquared.jl` is the Julia engine twin of the R package
@@ -127,10 +128,11 @@ Planned, but not implemented yet:
 
 ## Install
 
-HSquared is **not** in the Julia General registry yet
-([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)
-is pending AutoMerge). Do **not** use `Pkg.add("HSquared")` until that PR
-merges. This `0.5.0` number is experimental; `public_covered_count` stays **5**.
+HSquared is **not** in the Julia General registry — registration deferred
+pending collaborator review
+([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
+Do **not** use `Pkg.add("HSquared")` by name. This `0.5.0` number is
+experimental; `public_covered_count` stays **5**.
 
 ```julia
 using Pkg
