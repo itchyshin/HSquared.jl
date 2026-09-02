@@ -25,7 +25,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A18 | B5 | CI/deploy hygiene + status gen | done | R pkgdown split+hide; JL Documenter main-push + generated status table; **post-merge deploy unverified (no push)** |
 | A19 | B6 | Julia General registry (F7) | doing | checklist + hygiene (Aqua/TagBot/CITATION); **ASK** before register / 0.5.0 bump |
 | A20 | B6 | hsquared 0.5.0 CRAN local gate | doing | prep + skip migration wave1+leftovers; optional allowlist + Version/win-builder remain; `h2-a20-skip-migration-addendum.md` |
-| A21 | B7 | Estimand + claim ceiling panel | todo | Opus ceiling |
+| A21 | B7 | Estimand + claim ceiling panel | done | Opus ceiling; panel `h2-a21-estimand-claim-panel-2026-09-02.md`; **HOLD WITH CONDITIONS** (C1/C2 prose-only false claims before push) |
 | A22 | B8 | unlazy reverify + Melissa reconcile | todo | — |
 | A23 | B9 | D-43 completion panel | todo | Opus ceiling |
 
@@ -40,6 +40,6 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | B4 | **done** | Hopper, Boole, Emmy, Fisher — barrier **PROCEED** `~/local-scratch/h2-b4-barrier.md` |
 | B5 | **partial** | Grace, Karpinski, Pat, Darwin, Florence — A17+A18 done; barrier packet **PROCEED WITH CONDITIONS** (`h2-b5-barrier-packet.md`); C1 post-merge deploy open; C2 Pat script drafted (`h2-b5-pat-reader-walk.md`) not walked |
 | B6 | **partial** | Grace, Rose — A19 hygiene landed (Aqua green); A20 live-Julia skips exhausted; register + Version ASK |
-| B7 | todo | Opus A21 |
+| B7 | **done** | Fisher (Opus A21) — panel `~/local-scratch/h2-a21-estimand-claim-panel-2026-09-02.md`; verdict **HOLD WITH CONDITIONS**: C1 `rr(t, k = 2)` does not parse (register + `model-status.Rmd`), C2 `heritability()` does not return h²(t) (`rr_heritability()` does) — both prose-only, pre-existing on `origin/main`, no flip needed; C4–C9 post-push. No covered flip, no row add, scratch-only |
 | B8 | todo | Melissa → Rose |
 | B9 | todo | Opus A23 |
