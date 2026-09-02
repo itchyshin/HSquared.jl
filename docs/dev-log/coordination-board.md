@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — A19 experimental 0.5.0 bump (draft PR)
+
+Lane: `chore/a19-experimental-050-bump` from `origin/main` `69f16572`
+(worktree `~/local-scratch/lanes/HSquared.jl-a19-050-20260902`). Version
+`0.0.1` → `0.5.0` in `Project.toml` + `CITATION.cff`; changelog heading;
+experimental / not-in-General wording kept. `public_covered_count` stays
+**5**. No covered flip. No Registrator. **Do not merge** until owner
+**A19 GO** + **A13 SIGNED**.
+
 ### 2026-09-02 — A21 C9 wave-1 ledger
 
 JL-7 `ca4b4fcf` + JL-8 `c0f53e0d` indexed in `docs/dev-log/after-task/2026-09-02-h2-a21-c9-wave1-after-task.md`. Fence: `public_covered_count` **5**; draft #277; no G10 / Darwin / Registrator / merge.

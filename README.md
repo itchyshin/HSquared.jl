@@ -23,6 +23,10 @@ default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
+**Experimental 0.5.0.** Version number only. Not in Julia General yet
+(`Pkg.add(url=...)` until a General PR merges). Not production-ready.
+`public_covered_count` stays 5.
+
 This repository has moved beyond the scaffold. It has experimental
 validation-scale engine utilities for univariate animal models, REML/AI-REML
 estimation, genomic relationship models, repeatability / two-effect models,

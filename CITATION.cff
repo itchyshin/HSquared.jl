@@ -16,10 +16,10 @@ authors:
 license: MIT
 repository-code: "https://github.com/itchyshin/HSquared.jl"
 url: "https://itchyshin.github.io/HSquared.jl/"
-# Matches Project.toml today. Bump to 0.5.0 together with the release commit
-# (do not invent a DOI here — identifiers.doi stays absent until Zenodo deposit).
-version: 0.0.1
-date-released: 2026-09-01
+# Matches Project.toml. Twin DOI still pending (hub D-23) — do not invent
+# identifiers.doi until the Zenodo deposit after both twins are tagged v0.5.0.
+version: 0.5.0
+date-released: 2026-09-02
 keywords:
   - quantitative genetics
   - animal model
