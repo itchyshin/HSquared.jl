@@ -7763,6 +7763,82 @@ end
           occursin("not", lowercase(sire_target["boundary"]))
 end
 
+@testset "Real-data validation manifest (A13 three-tier ladder)" begin
+    manifest_path = joinpath(@__DIR__, "..", "docs", "design", "real-data-validation-manifest.toml")
+    manifest = TOML.parsefile(manifest_path)
+    @test manifest["schema_version"] == 1
+    @test manifest["lane"] == "HSquared.jl"
+    @test occursin("does not promote any capability to covered", lowercase(manifest["claim_boundary"]))
+    @test occursin("does not claim field-empirical", lowercase(manifest["claim_boundary"]))
+
+    tier_summary = manifest["tier_summary"]
+    @test occursin("Not empirical validation", tier_summary["tier_1"])
+    @test occursin("Not field empirical", tier_summary["tier_2"])
+    @test occursin("NOT STARTED", tier_summary["tier_4"])
+
+    arcs = manifest["arc"]
+    ids = [arc["id"] for arc in arcs]
+    @test length(ids) == length(unique(ids))
+
+    tiers_present = sort(unique(arc["tier"] for arc in arcs))
+    @test tiers_present == [1, 2, 3, 4]
+
+    tier_counts = Dict(t => count(arc -> arc["tier"] == t, arcs) for t in tiers_present)
+    @test tier_counts[1] >= 5
+    @test tier_counts[2] >= 4
+    @test tier_counts[3] >= 3
+    @test tier_counts[4] == 1
+
+    allowed_origins = Set([
+        "synthetic",
+        "teaching-simulated",
+        "published-textbook",
+        "generated-comparator",
+        "field-empirical",
+    ])
+    allowed_darwin = Set(["pending", "signed", "blocked"])
+    allowed_ci = Set(["in-CI", "skip-guarded", "opt-in"])
+
+    for arc in arcs
+        @test arc["data_origin"] in allowed_origins
+        @test arc["darwin_review"] in allowed_darwin
+        @test arc["ci_policy"] in allowed_ci
+        @test !isempty(strip(arc["claim_boundary"]))
+        if arc["tier"] < 4
+            boundary = lowercase(arc["claim_boundary"])
+            @test occursin("not", boundary) ||
+                  occursin("no", boundary) ||
+                  occursin("only", boundary) ||
+                  occursin("open", boundary) ||
+                  occursin("internal", boundary) ||
+                  occursin("test-of-test", boundary) ||
+                  occursin("frozen", boundary)
+        end
+        if arc["tier"] < 4
+            @test arc["data_origin"] != "field-empirical"
+        end
+    end
+
+    gryphon = only(arc for arc in arcs if arc["id"] == "gryphon_bwt_reml")
+    @test gryphon["tier"] == 2
+    @test gryphon["data_origin"] == "teaching-simulated"
+    @test occursin("Not field empirical", gryphon["claim_boundary"])
+
+    placeholder = only(arc for arc in arcs if arc["id"] == "field_empirical_placeholder")
+    @test placeholder["tier"] == 4
+    @test placeholder["darwin_review"] == "blocked"
+    @test occursin("NOT STARTED", placeholder["claim_boundary"])
+
+    review = manifest["darwin_review"]
+    @test review["status"] == "pending"
+    @test review["signed_date"] == ""
+    @test review["reviewer"] == ""
+    @test length(review["questions"]) >= 3
+    @test length(review["checklist"]) >= 3
+    @test all(item -> item["status"] == "pending", review["checklist"])
+    @test any(q -> "gryphon_bwt_reml" in q["arc_ids"], review["questions"])
+end
+
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
     Λ = reshape([1.0, -2.0], 2, 1)
