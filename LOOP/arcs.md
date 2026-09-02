@@ -10,7 +10,7 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | A03 | B0 | Claim-surface sweep | done | — |
 | A04 | B1 | Enumerate 5 covered rows (F2) | done | B1 |
 | A05 | B1 | R↔Julia parity table (F3) | done | B1 |
-| A06 | B1 | Test/runtime baseline | done | B1 |
+| A06 | B1 | Test/runtime baseline | done | B1 + Totoro full suite `73a4db0b` |
 | A07 | B2 | S5 tail-scale REML gate q=25k | done | **PASS** Totoro ~44m; receipt `h2-a07-s5-receipt.md` |
 | A08 | B2 | CAP-EXHAUSTED ≤4/48 threshold (F4) | done | Q2 fixed pre-run |
 | A09 | B2 | G10 S1/S2/S3 dossiers (no sign) | doing | dossiers updated post-S5; **owner sign** |

@@ -1,24 +1,29 @@
-GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B2 S5 PASS; B4 done; B3/B5 partial.**
+GOAL: see LOOP/GOAL.md.   STATE: **Block 1 — B2/B4 milestones; B3/B5 partial.**
 
 ARCS DONE (verified):
-- A01–A06, A08 — prior receipts
-- **A07 (B2)** — S5 **PASS** on Totoro (~44m39s); `a0ffb86a`+`f261165e`; receipt `~/local-scratch/h2-a07-s5-receipt.md`
-- A10, A12 (B3); A14–A16 + B4 barrier (R)
+- A01–A06 (B1) — A06 **Totoro close-out** `73a4db0b` (4053 assertions, 0 fail)
+- **A07/A08 (B2)** — S5 **PASS** q=25k; adjudication `~/local-scratch/h2-a07-s5-run-adjudication.md`; **do not re-run**
+- A10, A12 (B3); A14–A16 + B4 barrier PROCEED (R)
+- A15 re-verified live R `6a9fa07`
 
 BATCH PARTIAL:
-- **B2** — A07/A08 done; A09 dossiers `~/local-scratch/h2-g10-dossiers/` updated for S5; **G10 owner sign**
-- **B3** — A11 skeleton; A13 draft
+- **B2** — A09 G10 dossiers updated; **owner sign** (S3: S5 PASS, S6/S4/S7 open)
+- **B3** — A11 skeleton; **A13** draft manifest → implement next
 - **B5** — A17 phases 1–2; phase 3 todo
 - **B6 prep** — A19 checklist
 
-ARC NEXT:
-- **A09** — G10 packet ready for owner review (S3: S5 PASS, S6 still open)
-- **A11**, **A13**, **A17 phase 3**
+PROCESS (S5 lesson):
+- **Launch receipt required** before any Totoro gate >30m — prevents triple-run collision (Ada pass 1).
 
-GATED:
-- **G10 sign** — Shinichi only (S1/S2/S3)
-- **A19 register**, **push** — owner ASK
+ARC NEXT (one owner each):
+- **A13** — real-data 3-tier manifest implementation (Darwin review pack)
+- **A11** — finish 7-target harness
+- **A17 phase 3** — README I2 + limits page
 
-TRUTH: Julia LOOP worktree · R ahead 10 · Julia ahead 16+ · MC vault `b22b17f` (S5)
+GATED (owner):
+- G10 S1/S2/S3 sign · push (R ahead 10, Julia ahead 21, **CI unverified**) · A19 register
+- **Open question:** pin Julia version in frozen S5 gate pre-run? (records but doesn't assert today)
 
-RESUME: LOOP/GOAL.md → this file → arcs.md. **Do not re-run S5.**
+TRUTH: Ada pass `~/local-scratch/h2-ada-overnight-pass-1-receipt.md` · MC includes S5 adjudication
+
+RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
