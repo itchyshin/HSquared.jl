@@ -269,3 +269,7 @@ RESUME: LOOP/GOAL.md → this file → arcs.md. **No S5 re-run.**
 
 **STATE:** Block 1 **PROCEED pending DP-1**. Tips R `02a92a5` (ahead **43**) · Julia `90f70bdb` (ahead **63**). Local green **PASS** (`~/local-scratch/h2-block1-prepush-green-2026-09-02.md`): Julia `Pkg.test()` 144/4322/0; R A31 check cited + key filters + live A26 PASS. Trailers 96 with / 10 without (ACCEPT). Wakeup: `~/local-scratch/h2-owner-wakeup-2026-09-02.md`. Push packet: `~/local-scratch/h2-dp1-push-readiness-2026-09-02.md`. **No push. No PR. No covered flip. No Registrator. No Darwin forge.** Julia CI needs draft PR after push.
 
+## 2026-09-02 — A33 ABSENT → S6 PARKED (Grace)
+
+**A33 DONE — ABSENT** (Mac + Totoro). Receipt `~/local-scratch/h2-a33-asreml-licence-probe.md`. S6 pre-declaration STATUS → **PARKED** (design freeze intact; no speed claim; grid NOT RUN). Wakeup already has **§8b**. **Still first: DP-1 push.** No push / no ASReml install / no grid. `public_covered_count` **5**.
+
