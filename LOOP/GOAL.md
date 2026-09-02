@@ -4,7 +4,7 @@ Read this first, every cycle. Chat is disposable; this file is truth.
 
 ## Parent goal (north star)
 
-`docs/design/41-lane-goal-to-1.0.md` — Phase 6 arc to honest **1.0** (six pillars, 0.5→0.9 ladder, maintainer maturity declaration). **This loop's active slice remains Block 1 only** (releasable **0.5.0** twin pair, arcs A01–A23). Do not start MV-4 or other 0.6+ spine work until Block 1 release gate clears.
+`docs/design/41-lane-goal-to-1.0.md` — Phase 6 arc to honest **1.0** (six pillars, 0.5→0.9 ladder, maintainer maturity declaration). **This loop's active slice remains Block 1 only** (releasable **0.5.0** twin pair, arcs A01–A23). Do not start 0.6+ spine work until Block 1 release gate clears. **Correction 2026-09-01:** this line used to say "do not start MV-4", which no longer means anything — MV-4 (`cbind()` default-path auto-routing) is already implemented and merged (PR #132, `ff89ac7`), and the Boole grammar freeze (`docs/design/38`) was ratified 2026-07-11. The 0.6 rung's remaining work is **evidence assembly against the 0.6 gate**, not routing code: MV-5 run-or-supersede disposition, R↔engine element-wise parity, Darwin sign-off on the recovered covariance, Rose pre-flip audit, owner G10 flip. The STOP is unchanged — none of that starts before the Block 1 release gate.
 
 ## Mission
 
