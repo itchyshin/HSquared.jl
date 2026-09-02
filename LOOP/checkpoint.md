@@ -106,15 +106,18 @@ ARC NEXT (one owner each):
   the id stays because **three dated records cite it verbatim**. `public_covered_count` 5.
   **A28 remainder open:** doc-38 §H.3 gate-decision record + `k >= 3` / `diagonal` fence-enforcement
   audit.
+- **A25a DONE (not pushed)** — C8 register reconcile (compute-free cite only). Julia tip
+  `11f54d9e` + R `0c0ae4a`. Banked confirm now cited on claim surfaces: DRAC `47925486`,
+  16 cells × 500 seeds, 500/500 convergence every cell, **14/16 pass** (fails only
+  `rg_090_rec1`, `rg_095_rec1`); W1 (8×50, 5/8) retained as triage. **Fence verified / unchanged:**
+  Julia `V4-MV-REML` **covered**; R multivariate **partial**; `public_covered_count` **5**.
+  No covered flip, no Totoro/DRAC, no push. Scratch: `~/local-scratch/h2-a25a-LOOP.md`;
+  briefing §13. **Next:** A25 (MV-5 disposition), then A26 (+A26b).
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
   evidence assembly (A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
   not a plan of record**); gate-level inventory with SHAs:
-  `~/local-scratch/h2-060-evidence-inventory.md`. **New finding — the C8 broader-DGP confirm
-  (16 cells x 500 seeds, 14/16 pass, DRAC `47925486`) is banked in BOTH lanes'
-  `recovery-checkpoints/` but reaches NEITHER lane's `capability-status.md` or
-  `validation-debt-register.md`** (both still cite W1: 50 seeds, 5/8). Inventory recommends a new
-  compute-free **A25a** register reconciliation ahead of A25, since A29/A30 cannot cite evidence no
-  register knows about. `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
+  `~/local-scratch/h2-060-evidence-inventory.md` (C8-uncited finding discharged by A25a).
+  `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for
