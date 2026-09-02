@@ -59,8 +59,31 @@ BATCH PARTIAL:
   C2 Pat script drafted `~/local-scratch/h2-b5-pat-reader-walk.md` (**not walked/signed**)
 - **B6** — A19 hygiene green locally; A20 skips done; Version/win-builder/submit + Registrator remain
 
+A21 CONDITIONS CLOSED (2026-09-02, R lane, Boole):
+- A21's **HOLD WITH CONDITIONS** is discharged. The two verified false public statements
+  (`rr(t, k = 2)`, which the parser refuses; and crediting `heritability()` with the h²(t)
+  curve, which `rr_heritability()` actually returns) are gone from every claim surface —
+  including a **third** surface the panel did not list, `R/formula-status.R`, which
+  `formula_status()` prints to users. C3 was taken as a message-only RR branch on
+  `heritability()` that names `rr_heritability()` instead of the generic "planned v0.1
+  contract" miss, following the existing `hs_block_multivariate_response_scale()` precedent.
+- R commit `1a00045` — **NOT pushed**; branch 20 ahead of `origin/main`.
+  `check()` **0e/0w/0n** (better than the panel's 0e/0w/1N); `test()` 2336 pass / 0 fail / 70
+  pre-existing skips. Receipt `~/local-scratch/h2-a21-fix-receipt.md`; shard
+  `check-log.d/2026-09-02-h2-a21-rr-grammar-and-accessor-honesty.md` (R lane).
+- **Releasable surface is now closer to PROCEED; the remaining gate is the owner's push
+  decision (DP-1), which was never an agent condition.** Still held: no covered flip, no
+  `validation_status()` row for RR k=2 / direct-maternal, `public_covered_count` stays 5.
+- **Deferred deliberately:** C4 (`make_dm_fit` sets `r_am = -0.4` while its own components
+  imply `-0.4714`) — a fixture defect, not a false public claim, and fixing it means
+  choosing which value is canonical, so it is an owner call for post-0.5. C5–C9 post-push.
+
 PROCESS (lessons):
 - **Launch receipt required** before any Totoro gate >30m — prevents triple-run collision (Ada pass 1).
+- **`air format .` is not a safe blanket command here.** It rewrites pre-air manual alignment
+  across ~22 files, including the direct-maternal block A21 §1.1 signed off as correct.
+  Format the files the slice touches, verify the slice's own new lines are clean, and revert
+  the rest — a prose-honesty commit must not become a package-wide diff (A21 C1–C3).
 - **`devtools::test()` green is NOT `check()` green.** Source-tree tests that read `.Rbuildignore`d
   paths (`docs/`) pass under `test()` and fail under `check()`. Guard them (pass 2, A13/A16).
 - **Hand-maintained Documenter status tables drift.** A18 generator recovered missing rows
