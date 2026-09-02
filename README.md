@@ -143,7 +143,9 @@ Planned, but not implemented yet:
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
-- R-facing multivariate model-spec syntax and external comparator parity;
+- R↔engine element-wise multivariate parity in CI, plus ASReml/JWAS
+  multivariate comparator legs (the twin's `cbind()` model-spec routes by
+  default at a `partial` claim, and the `sommer`/`blupf90+` legs have landed);
 - public R-facing genomic model-spec fitting, production genomic prediction,
   APY/sparse genomic scaling, formula-driven mixed-model marker scans, public
   LOCO workflows, interval-mapping or mixed-model LOD workflows,

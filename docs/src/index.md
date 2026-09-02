@@ -97,7 +97,8 @@ Planned, but not implemented yet:
 - expression-feature joins and eQTL/omics fitting from expression metadata;
 - annotation joins, eQTL/omics fitting, and GLLVM workflows from annotation
   metadata;
-- R-facing multivariate model-spec syntax and comparator parity;
+- R↔engine element-wise multivariate parity in CI, and ASReml/JWAS
+  multivariate comparator legs;
 - non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
 - backend execution dispatch, runtime backend availability probing, GPU
