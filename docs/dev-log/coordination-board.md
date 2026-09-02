@@ -27,7 +27,7 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 
 Campaign branch `claude/lane-h2-twin-20260901` in worktree
 `~/local-scratch/lanes/HSquared.jl-h2-twin-20260901` (R twin same branch name).
-**Not on either remote.** Tip here `bc3cb79d` — **ahead 60** of `origin/main`
+**Not on either remote.** Tip here `63d74e23` — **ahead 61** of `origin/main`
 (recount with `git rev-list --count origin/main..HEAD`; do not trust a frozen
 number after the next commit).
 
