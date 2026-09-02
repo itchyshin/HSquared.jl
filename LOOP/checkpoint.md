@@ -101,9 +101,20 @@ ARC NEXT (one owner each):
   Julia GOAL reframe `a7852138`. Multivariate default-reachable / claim still `partial`;
   `public_covered_count` 5. Residual `validation_status()` key `(opt-in)` → **A28** (do not rename).
   Receipt `~/local-scratch/h2-a24-mv4-doc-honesty-receipt.md`.
+- **A28-part1 DONE (not pushed)** — the `(opt-in)` key is **ALIASED, not renamed**: R
+  `22cb5cd`/`90adf27`/`d5df60b`, no Julia commits. `validation_status()` gains `capability_label`;
+  the id stays because **three dated records cite it verbatim**. `public_covered_count` 5.
+  **A28 remainder open:** doc-38 §H.3 gate-decision record + `k >= 3` / `diagonal` fence-enforcement
+  audit.
 - **Post-0.5 spine (do NOT arm Block 2)** — MV-4 routing already merged; remaining 0.6 work is
   evidence assembly (A25+). Outline: `~/local-scratch/h2-post-050-spine-mv4-s6.md` (**scratch,
-  not a plan of record**). `LOOP/GOAL.md` still gates behind the Block 1 release gate.
+  not a plan of record**); gate-level inventory with SHAs:
+  `~/local-scratch/h2-060-evidence-inventory.md`. **New finding — the C8 broader-DGP confirm
+  (16 cells x 500 seeds, 14/16 pass, DRAC `47925486`) is banked in BOTH lanes'
+  `recovery-checkpoints/` but reaches NEITHER lane's `capability-status.md` or
+  `validation-debt-register.md`** (both still cite W1: 50 seeds, 5/8). Inventory recommends a new
+  compute-free **A25a** register reconciliation ahead of A25, since A29/A30 cannot cite evidence no
+  register knows about. `LOOP/GOAL.md` still gates everything behind the Block 1 release gate.
 
 GATED (owner):
 - G10 S1/S2/S3 sign · push (after pass 3: **R last content commit `c05ddab`, Julia `d3d92952`** — for

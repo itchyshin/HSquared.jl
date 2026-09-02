@@ -34,6 +34,8 @@ Batch barriers: B0–B9 (ultra-plan §6).
 | Arc | Status | Note |
 |-----|--------|------|
 | **A24-preview** | **done (not pushed)** | MV-4 claim-surface honesty — R `8ed0837`/`14f5a7b`/`a13595d`; Julia `a7852138` (this GOAL reframe). Default-reachable / claim still `partial`; `public_covered_count` 5. Residual `(opt-in)` key → A28. Receipt `~/local-scratch/h2-a24-mv4-doc-honesty-receipt.md`. |
+| **A28-part1** | **done (not pushed)** | Capability-id honesty — **ALIASED, not renamed**. R `22cb5cd`/`90adf27`/`d5df60b`; no Julia commits. `validation_status()` gains `capability_label`; the `(opt-in)` id stays because **three dated records cite it verbatim**. Also fixed a self-contradiction in the multivariate `claim_boundary`. Checks: test PASS 2348 / FAIL 0, `check()` 0/0/0. Decision `docs/dev-log/decisions.md` (2026-09-02); check-log `check-log.d/2026-09-02-h2-a28-capability-id-alias.md`. `public_covered_count` 5. **A28 remainder open:** doc-38 §H.3 gate-decision record + `k >= 3` / `diagonal` fence-enforcement audit. |
+| **0.6 inventory** | **written (scratch)** | `~/local-scratch/h2-060-evidence-inventory.md` — every MV recovery/comparator gate in both lanes with path, SHA, status. **Headline: the C8 confirm (16 cells x 500 seeds, 14/16 pass, DRAC job `47925486`) is banked in both lanes' `recovery-checkpoints/` but absent from BOTH lanes' `capability-status.md` and `validation-debt-register.md`, which still cite W1 (50 seeds, 5/8).** Recommends a new compute-free first arc **A25a** (register reconciliation) ahead of A25. No Totoro/DRAC runs. |
 
 ## Batch status
 
