@@ -83,6 +83,24 @@ validation-status row. BLUPF90 unavailability for `phase4_multitrait_parity` is
 documented in the R lane at
 `docs/dev-log/comparator-runs/2026-09-01-blupf90-tool-unavailability.md`.
 
+### The one Julia-only target: `sire_model_fitted_target`
+
+Six of the seven targets are mirrored to the R lane and byte-identical to its
+freeze. The seventh, `sire_model_fitted_target`, exists **only here**: the R lane
+carries it in its TOML with `r_mirror = false` and freezes none of its bytes.
+
+That is a **documented boundary**, not a silent gap — see the R lane's
+`docs/dev-log/comparator-runs/2026-09-01-sire-julia-only-boundary.md`. Two things
+it is worth being exact about:
+
+- The R lane's `tests/testthat/test-mrode-sire-anchor.R` is **not** this mirror.
+  It is a *supplied-variance* published anchor (Mrode Example 3.2), so it cannot
+  corroborate a target defined by a REML-*estimated* sire variance.
+- Being documented does not make it `validated`. The adapter still reports
+  `gap`, and `--strict` still exits non-zero. Whether to build the mirror or make
+  the Julia-only boundary permanent is an open owner decision (ask
+  `#sire-mirror`); the boundary note argues both sides and settles neither.
+
 ## BLUPF90/AIREMLF90 multivariate starter packet
 
 The currently serialized comparator and bridge targets are indexed in

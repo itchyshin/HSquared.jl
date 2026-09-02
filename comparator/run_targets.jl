@@ -236,10 +236,18 @@ end
 function adapter_sire_model_fitted_target(target, fixture)
     # The sire target is the one target the R lane has never mirrored, so an
     # absent mirror is a tracked gap here rather than a neutral observation.
+    #
+    # The boundary is DOCUMENTED as of 2026-09-01 (see `boundary_note` below), and the verdict
+    # stays `gap` anyway. Documenting a boundary and discharging a debt are different acts:
+    # reporting `validated` here would assert cross-lane agreement nobody has measured, and
+    # `--strict` should still refuse. Whether to build the mirror or make the Julia-only
+    # boundary permanent is an open owner decision, not the harness's to assume.
     state, detail = check_r_mirror(target, fixture)
     state == "absent" && return (
         status = "gap",
-        detail = "$(fixture.detail); R lane has not mirrored this fixture ($detail)",
+        detail = "$(fixture.detail); R lane has not mirrored this fixture ($detail) — " *
+                 "DOCUMENTED Julia-only boundary, not a silent gap",
+        boundary_note = "docs/dev-log/comparator-runs/2026-09-01-sire-julia-only-boundary.md",
     )
     return (
         status = "validated",
@@ -351,6 +359,7 @@ function target_json(entry; indent)
         "boundary" => entry.boundary,
         "blupf90" => entry.blupf90,
         "unavailability_note" => entry.unavailability_note,
+        "boundary_note" => entry.boundary_note,
         "file_digests" => isempty(digest_pairs) ? nothing :
                           RawJSON(json_object(digest_pairs; indent = indent + 2)),
     ]
@@ -449,6 +458,7 @@ function run_harness(; write_manifest_file::Bool = true, verbose::Bool = true)
                 file_digests = fixture.digests,
                 blupf90 = get(result, :blupf90, nothing),
                 unavailability_note = get(result, :unavailability_note, nothing),
+                boundary_note = get(result, :boundary_note, nothing),
             ),
         )
     end
