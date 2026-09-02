@@ -1,7 +1,9 @@
 # Get Started
 
-`HSquared.jl` currently exposes engine utilities, not a full model-fitting
-workflow.
+`HSquared.jl` is the Julia engine twin of
+[hsquared](https://github.com/itchyshin/hsquared). R users who want a
+formula should start there. This page walks engine utilities and
+experimental low-level fitting — not a public formula API.
 
 ## Normalize A Pedigree
 

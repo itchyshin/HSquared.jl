@@ -44,7 +44,7 @@ required_files = [
     "expected_metadata.csv",
     "generate.jl",
 ]
-boundary = "Serialized Julia fitted sire-model target plus a self-consistency pin only; the engine heritability() accessor is mislabelled for sire specs (the fixture stores the corrected h2 = 4 sigma_s2 / (sigma_s2 + sigma_e2)); no external comparator run, no parsed R sire-model formula, and no covered status."
+boundary = "Serialized Julia fitted sire-model target plus a self-consistency pin only; the engine heritability() accessor is mislabelled for sire specs (the fixture stores the corrected h2 = 4 sigma_s2 / (sigma_s2 + sigma_e2)); no external comparator run, no parsed R sire-model formula, and no covered status. This is the ONE target with no R mirror, and that is now a DOCUMENTED Julia-only boundary rather than a silent gap: the R lane's docs/dev-log/comparator-runs/2026-09-01-sire-julia-only-boundary.md. Documented is not discharged — the adapter still reports gap and --strict still fails; whether to mirror the fixture or make the Julia-only boundary permanent is an open owner decision."
 
 [[target]]
 id = "phase4_multitrait_parity"

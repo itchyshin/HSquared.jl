@@ -4,18 +4,22 @@ Documentation: [HSquared.jl engine docs](https://itchyshin.github.io/HSquared.jl
 R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
-`HSquared.jl` is the Julia engine underneath the R package `hsquared`.
+`HSquared.jl` is the Julia engine twin of the R package `hsquared`.
+This is not the package you type a formula into.
 
-The long-term goal is open, sparse, inheritance-aware quantitative genetics:
-sparse animal models, pedigree and genomic relationship structures, REML/ML
-estimation, breeding values, G matrices, factor-analytic genetic covariance,
-and high-dimensional GLLVM-style extensions.
+R users: start at [hsquared](https://github.com/itchyshin/hsquared)
+(`y ~ sex + age + animal(1 | id, pedigree = ped)`), or the
+[hsquared pkgdown site](https://itchyshin.github.io/hsquared/).
+That is the applied-user interface. This repository is the engine.
 
-The intended users are breeders, plant and livestock geneticists, evolutionary
-geneticists, genomic prediction users, and applied analysts who need R syntax
-with a Julia engine underneath. Comparator packages such as ASReml,
-BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, and nadiv are
-benchmarks to learn from and test against, not claims of current superiority.
+This engine already has experimental validation-scale fitting: pedigree
+checks, sparse `Ainv`, low-level REML and Henderson MME solves, and
+extractors for heritability, EBVs, and PEV. Those are engine utilities,
+not a public formula API and not a production sparse pipeline.
+
+`hsquared()` here still throws. Lower-level `fit_animal_model` and
+`fit_ai_reml` exist as experimental engine paths, not the applied
+default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
@@ -143,14 +147,40 @@ Planned, but not implemented yet:
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
-- R-facing multivariate model-spec syntax and external comparator parity;
+- R↔engine element-wise multivariate parity in CI, plus ASReml/JWAS
+  multivariate comparator legs (the twin's `cbind()` model-spec routes by
+  default at a `partial` claim, and the `sommer`/`blupf90+` legs have landed);
 - public R-facing genomic model-spec fitting, production genomic prediction,
   APY/sparse genomic scaling, formula-driven mixed-model marker scans, public
   LOCO workflows, interval-mapping or mixed-model LOD workflows,
-  genome-wide multiple-testing calibration, expression-wide eQTL scans,
-  QTL/eQTL intervals, and
+  genome-wide multiple-testing calibration for the relatedness-corrected
+  mixed-model/LOCO null, broader-LD and covariate-adjusted calibration, and
+  power/coverage characterization (the *fixed-effect* permutation threshold is
+  implemented and covered-scoped — see the correction below), expression-wide
+  eQTL scans, QTL/eQTL intervals, and
   non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
+
+**One correction to the two lists above, because they drifted toward
+understatement.** Genome-wide multiple-testing calibration is not wholly
+planned. `genome_wide_marker_scan`, `genome_wide_pvalue`, and
+`genome_wide_threshold_from_null` are exported, and `V5-MARKER-THRESHOLD` is
+`covered` in `validation_status()` — but in a narrow, scoped, opt-in sense that
+the bare word "covered" does not carry. What is covered is genome-wide
+significance for a **fixed-effect single-marker scan** under the exact
+per-dataset add-one permutation rule, with the null rebuilt from the analysed
+phenotype on every call, and **type-I control only**, on the validated designs
+(n ∈ 300–2000, m ∈ 100–10000, the tested LD architecture): measured mean type-I
+error 0.0542 / 0.0504 at α = 0.05, with an executed PLINK 1.9 max(T) comparator
+leg. What is *not* covered — and is what the planned list above should have said
+— is the relatedness-corrected mixed-model/LOCO genome-wide null, power and
+coverage, broader-LD or covariate-adjusted (Freedman–Lane) calibration, the
+fixed-null-reuse shortcut (which failed its own gate and is banked as a negative
+result), and the map-annotated formula-level `marker_scan()` / `qtl_scan()` API.
+None of this is the public default: the public covered count is **5**
+(a claims-register ledger total, not a callable function), and covered
+*fitting* remains the v0.1 Gaussian animal model. Read the `V5-MARKER-THRESHOLD`
+row in `validation_status()` before quoting any number from it.
 
 ## Julia Surface
 
@@ -167,8 +197,11 @@ ped = normalize_pedigree(
 Ainv = pedigree_inverse(ped)
 ```
 
-This is an engine utility only. It is not yet connected to a fitted animal
-model.
+`pedigree_inverse` is the sparse relationship-precision construction on its own.
+It is no longer unconnected: this `Ainv` is what an `animal_model_spec` is
+built from, and so what the covered AI-REML fitter (`fit_ai_reml`) and the
+sparse MME path consume. What it is not is a *public* fitting entry point —
+`hsquared()` is still an honest Phase 0 placeholder that throws (see below).
 
 The first Julia data container mirrors the R `hs_data()` input contract:
 

@@ -754,9 +754,16 @@ validated by deterministic self-consistency checks (the `t = 1` reduction
 recovers the univariate REML estimate; the multivariate REML log-likelihood is on
 the same full-constant scale as the univariate one; the optimum beats a coarse
 grid). Known-truth covariance recovery for `t ≥ 2` is exercised only by one-off
-simulations (the test suite is RNG-free), and external-comparator (sommer /
-ASReml / JWAS) parity is still missing — treat multi-trait variance estimates as
-experimental. There is no R-facing multivariate model-spec.
+simulations (the test suite is RNG-free); same-estimand external-comparator
+parity is discharged on ONE deterministic fixture (point-estimate) by `sommer`
+4.4.5 and `blupf90+` 2.60, with no ASReml or JWAS leg — treat multi-trait
+variance estimates as experimental. There is no published textbook anchor for
+estimated multivariate `G0`/`R0`: the R lane's Mrode Example 5.1 leg is a
+*supplied*-covariance BLUP/MME anchor, so it does not check the estimated
+covariances. The R twin reaches this fitter on its default `cbind()` route
+(hsquared MV-4); that claim stays `partial`, and R↔engine element-wise parity at
+the promotion fixture is discharged locally (hsquared A26) but is not CI-backed
+— the R lane's CI provisions no Julia, so the parity legs skip there.
 
 Returns a `NamedTuple`:
 

@@ -964,6 +964,116 @@ function matrix_free_ratio_intervals(
 end
 
 """
+    fit_matrix_free_reml(spec; nprobe = 64, tol = 1e-4, iterations = 200, seed = 0,
+                         pcg_tol = 1e-9, pcg_maxiter = 2000, initial = nothing,
+                         shared_probes = false, compute_loglik = true)
+
+MATRIX-FREE Monte-Carlo EM-REML fit of the SINGLE-effect Gaussian animal model (F6) — the
+`AnimalModelFit`-returning single-effect face of [`fit_multi_effect_mc_reml`](@ref), for the
+one regime where the exact sparse [`fit_ai_reml`](@ref) is measured-infeasible and the
+eigen-once rescue is unavailable: **high fill-in AND `n` past the dense eigen cap**.
+
+The mechanism it avoids is specific. `fit_ai_reml`'s per-iteration cost is dominated NOT by
+the sparse Cholesky (cheap even at high fill — 0.35 s at q=20 000) but by the **Takahashi
+selected inverse** that supplies its exact score trace `tr(A⁻¹C^uu)`, which scales with
+`nnz(L)` and is recomputed every iteration (381 s per call at q=20 000, fill 471 — so the
+whole fit walls at ~25 min; `docs/dev-log/recovery-checkpoints/2026-07-24-f0-adversarial-highfill-decision.md`).
+This fitter replaces that exact trace with the matrix-free Hutchinson estimator
+[`mc_reml_block_traces`](@ref) and the MME solve with matrix-free PCG, so `C` is NEVER
+assembled or factorized during the fit and the fill-in never materializes.
+
+The estimator is therefore **STOCHASTIC**: its fixed point is the exact REML optimum
+perturbed by Monte-Carlo error (`∝ 1/√nprobe`). A fixed probe `seed` is reused across EM
+iterations, so the map is deterministic and reproducible given `seed`. Read `trace_mcse` on
+the underlying fit for the honest noise band on the gradient; increase `nprobe` to tighten it.
+
+`compute_loglik = true` (default) evaluates the EXACT [`sparse_reml_loglik`](@ref) ONCE at the
+converged estimate. That costs two sparse Choleskys and NO selected inverse — cheap relative
+to the fit it just replaced — so the returned log-likelihood is exact, not stochastic. Set
+`compute_loglik = false` (loglik `NaN`) if even one factorization is infeasible.
+
+Returns the standard [`AnimalModelFit`](@ref) (`target = :matrix_free_reml`), so the ordinary
+extractors and the result payload work unchanged.
+
+EXPERIMENTAL, REML-only, two-component, Gaussian-only. Ledger row `V1-MATFREE-REML`
+(`validation_status()`, status `partial`) — read it before quoting any number from this fitter.
+
+The pre-declared tail-scale known-truth recovery gate PASSED on 2026-09-01 at q = 25,000
+(48/48 converged, mean relative error against generating truth 0.0016/0.0007 against a bound of
+0.05; `docs/dev-log/recovery-checkpoints/2026-09-01-f6-matfree-tail-recovery-result.md`). That is
+recovery-to-truth for the frozen gate fixture at that one scale — not at any other. The external
+same-estimand REML comparator (ASReml-R 4.2.0.482,
+`docs/dev-log/recovery-checkpoints/2026-07-28-asreml-matfree-comparator.md`) ran at q = 2000, below
+the measured crossover, so an at-scale comparator in the high-fill tail is still **OWED** before
+any covered claim.
+
+**OPT-IN ONLY.** On this branch the fitter is reachable only by calling it directly:
+`fit_animal_model` accepts `:variance_components`, `:sparse_reml`, `:ai_reml`, and
+`:henderson_mme`, and there is no `:auto` REML router, so nothing can select this estimator on a
+user's behalf. That is deliberate — the regime a route would serve is largely the one in which
+this fitter has not been measured — and it is PINNED IN CI by the testset
+`V1-MATFREE-REML opt-in fence`, so re-wiring a route in fails loudly rather than silently. That
+fence covers this animal-model target router only; [`fit_multi_effect`](@ref)'s `:auto` is a
+different estimator and does route to a matrix-free engine.
+"""
+function fit_matrix_free_reml(
+    spec::AnimalModelSpec;
+    nprobe::Integer = 64,
+    tol::Real = 1e-4,
+    iterations::Integer = 200,
+    seed::Integer = 0,
+    pcg_tol::Real = 1e-9,
+    pcg_maxiter::Integer = 2000,
+    initial = nothing,
+    shared_probes::Bool = false,
+    compute_loglik::Bool = true,
+)
+    spec.method == :REML ||
+        throw(ArgumentError("fit_matrix_free_reml requires spec.method == :REML"))
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    p < n ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    # The single-effect animal model is the K = 1 case of the matrix-free multi-effect
+    # estimator; `initial` is translated from the animal-model (sigma_a2, sigma_e2) naming.
+    mf_initial = initial === nothing ? nothing :
+        begin
+            sa2, se2 = _coerce_supplied_variance_components(initial)
+            [sa2, se2]
+        end
+    fit = fit_multi_effect_mc_reml(spec.y, spec.X, [(spec.Z, spec.Ainv)];
+                                   nprobe = nprobe, tol = tol, iterations = iterations,
+                                   seed = seed, pcg_tol = pcg_tol, pcg_maxiter = pcg_maxiter,
+                                   initial = mf_initial, ids = [collect(spec.ids)],
+                                   shared_probes = shared_probes)
+    sigma_a2 = fit.variance_components.sigmas[1]
+    sigma_e2 = fit.variance_components.sigma_e2
+
+    # Exact REML loglik at the converged estimate: two sparse Choleskys, NO selected inverse —
+    # affordable precisely because the selinv (not the factorization) was the wall.
+    likelihood = if compute_loglik && sigma_a2 > 0 && sigma_e2 > 0
+        sparse_reml_loglik(spec, sigma_a2, sigma_e2)
+    else
+        GaussianLikelihoodResult(NaN, fill(NaN, p), Float64(sigma_a2), Float64(sigma_e2),
+                                 :REML, n, p)
+    end
+
+    return AnimalModelFit(
+        spec,
+        likelihood,
+        (sigma_a2 = Float64(sigma_a2), sigma_e2 = Float64(sigma_e2)),
+        fit.converged,
+        fit.converged ? "converged" : "not_converged",
+        fit.iterations,
+        :matrix_free_reml,
+        false,
+        true,
+        :estimated_matrix_free_mc_reml,
+    )
+end
+
+"""
     fit_multi_effect(y, X, effects; method = :auto, direct_max_n = 200_000, nprobe = 64,
                      verbose = true, kwargs...)
 
