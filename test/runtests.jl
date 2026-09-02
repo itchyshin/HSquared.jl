@@ -3606,6 +3606,7 @@ end
 # identities hold). Dedicated file so the fence testset above stays a fence.
 # NOT a covered flip. See the file header for what was deliberately not ported.
 include(joinpath(@__DIR__, "test_matfree_reml_inci_pins.jl"))
+include(joinpath(@__DIR__, "test_genomic_greml_s0_identity.jl"))
 
 @testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
     # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
