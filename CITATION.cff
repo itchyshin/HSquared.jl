@@ -17,8 +17,8 @@ license: MIT
 repository-code: "https://github.com/itchyshin/HSquared.jl"
 url: "https://itchyshin.github.io/HSquared.jl/"
 # Matches Project.toml. Twin DOI still pending (hub D-23) — do not invent
-# identifiers.doi until the Zenodo deposit after both twins are tagged v0.5.0.
-version: 0.5.0
+# identifiers.doi until the Zenodo deposit after both twins are tagged v0.6.0.
+version: 0.6.0
 date-released: 2026-09-02
 keywords:
   - quantitative genetics
