@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — G10 R-public multivariate + experimental 0.6.0 (twin honesty)
+
+Lane: `cursor/post-g10-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-post-g10-060-20260902`).
+Owner G10 ink: Shinichi; chat `"G10 - you keep going"` (2026-09-02). R multivariate
+`partial → covered`; `public_covered_count` **5 → 6**. Julia twin: version
+`0.6.0` + R-count honesty only. Engine `V4-MV-REML` already covered — **not**
+re-covered. Experimental label retained. No General force-merge. Next pillar
+named only: Genomic GREML → 0.7.0.
+
 ### 2026-09-02 — A19 experimental 0.5.0 bump (draft PR)
 
 Lane: `chore/a19-experimental-050-bump` from `origin/main` `69f16572`
@@ -182,6 +191,10 @@ Julia engine status and the R user-facing package without inferring bridge
 support beyond the recorded evidence.
 
 ## Current Slice
+
+- 2026-09-02: Twin honesty after R G10. Experimental `0.6.0`; R-public
+  `public_covered_count` is **6** (t=2 unstructured multivariate covered).
+  Engine `V4-MV-REML` already covered. No engine status word moved.
 
 - 2026-07-02: R lane (cross-lane heads-up) / covered-status surface reconciliation
   in `hsquared` (R `main` `5389f23`, pushed, pkgdown CI green). Propagated four

@@ -5,12 +5,12 @@ R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
 > [!WARNING]
-> **Experimental 0.5.0 — not production.** Version number tracks covered
+> **Experimental 0.6.0 — not production.** Version number tracks covered
 > capability, not maturity. Not in the Julia General registry —
 > registration deferred pending collaborator review
 > ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
 > Install with `Pkg.add(url=...)` only — do **not** use `Pkg.add("HSquared")`
-> by name. `public_covered_count` stays **5**.
+> by name. `public_covered_count` is **6** (R-public; G10 multivariate).
 
 `HSquared.jl` is the Julia engine twin of the R package `hsquared`.
 This is not the package you type a formula into.
@@ -31,11 +31,11 @@ default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
-**Experimental 0.5.0.** Version number only. Not in Julia General —
+**Experimental 0.6.0.** Version number only. Not in Julia General —
 registration deferred pending collaborator review
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
 Use `Pkg.add(url=...)` only; do **not** use `Pkg.add("HSquared")` by name.
-Not production-ready. `public_covered_count` stays **5**.
+Not production-ready. `public_covered_count` is **6** (R-public; G10 multivariate).
 
 This repository has moved beyond the scaffold. It has experimental
 validation-scale engine utilities for univariate animal models, REML/AI-REML

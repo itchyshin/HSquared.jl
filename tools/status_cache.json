@@ -4,7 +4,7 @@
   "covered_external": 3,
   "partial": 39,
   "planned": 1,
-  "public_covered_count": 5,
+  "public_covered_count": 6,
   "refreshed_at": "2026-09-01",
   "refreshed_from_head": "196e005d",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."

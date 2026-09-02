@@ -1,13 +1,13 @@
 # HSquared.jl
 
-!!! warning "Experimental 0.5.0 — not production"
+!!! warning "Experimental 0.6.0 — not production"
     Version number tracks covered capability, not maturity. **Not** in the
     Julia General registry — registration deferred pending collaborator
     review
     ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
     Install with `Pkg.add(url=...)` only — do **not** use
     `Pkg.add("HSquared")` by name.
-    `public_covered_count` stays **5**.
+    `public_covered_count` is **6** (R-public; G10 multivariate).
 
 `HSquared.jl` is the Julia engine twin of the R package
 [hsquared](https://github.com/itchyshin/hsquared). This is not the package
@@ -131,8 +131,8 @@ Planned, but not implemented yet:
 HSquared is **not** in the Julia General registry — registration deferred
 pending collaborator review
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
-Do **not** use `Pkg.add("HSquared")` by name. This `0.5.0` number is
-experimental; `public_covered_count` stays **5**.
+Do **not** use `Pkg.add("HSquared")` by name. This `0.6.0` number is
+experimental; `public_covered_count` is **6** (R-public; G10 multivariate).
 
 ```julia
 using Pkg
