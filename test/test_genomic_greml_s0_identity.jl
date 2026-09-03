@@ -27,20 +27,16 @@ using Test
         # Naming contract: total genomic VC is σ̂_marker · k (design-51 N1).
         sigma_marker = snp.sigma_g2 / snp.k
         @test snp.sigma_g2 ≈ sigma_marker * snp.k atol = 0
-        # Unregularized supplied-variance GBLUP↔SNP-BLUP GEBV identity (same σ²_g).
-        # (Ridge K_lambda breaks this identity — design-44 fence; not asserted here.)
-        Q0 = try
-            genomic_relationship_inverse(G; ridge = 0.0)
-        catch
-            nothing
-        end
-        if Q0 === nothing
-            @test_broken false  # G not PD at ridge=0 on this draw; naming pin above still holds
-        else
-            gblup_sup = fit_gblup(y, X, Z, Q0, snp.sigma_g2, snp.sigma_e2; ids = ids)
-            snp_sup = fit_snp_blup(y, X, markers, snp.sigma_g2, snp.sigma_e2; ids = string.("m", 1:m))
-            @test maximum(abs.(breeding_values(gblup_sup).values .- snp_sup.gebv)) <= 1e-8
-        end
+        # Unregularized GBLUP↔SNP-BLUP GEBV identity (same σ²_g). VanRaden G is
+        # rank-deficient — route GBLUP through the marginal V, never invert at
+        # ridge=0 (runtests.jl Phase 2 pin). Ridge K_lambda breaks this identity
+        # (design-44 fence; not asserted here).
+        Gmat = genomic_relationship_matrix(markers)
+        V = snp.sigma_g2 .* Matrix(Gmat) + snp.sigma_e2 * I
+        beta = (transpose(X) * (V \ X)) \ (transpose(X) * (V \ y))
+        u_gblup = snp.sigma_g2 .* Matrix(Gmat) * (V \ (y .- X * beta))
+        snp_sup = fit_snp_blup(y, X, markers, snp.sigma_g2, snp.sigma_e2; ids = string.("m", 1:m))
+        @test maximum(abs.(u_gblup .- snp_sup.gebv)) <= 1e-8
     end
 
     @testset "N2 numeric ratio on K_lambda is genomic-scale (label owed on R)" begin
