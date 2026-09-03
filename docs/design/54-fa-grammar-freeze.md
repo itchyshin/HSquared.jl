@@ -257,8 +257,11 @@ S4 pass definition and are not frozen as a covered FA claim here.
 - **Boole (formula/API freeze):** **FROZEN 2026-09-03** — §A.2 engine-control
   predicate and §B names, scoped to the S4 cell. Formula `cov = fa(K = k)`
   is a **name** freeze only.
-- **Maintainer:** **pending** — required before any covered flip
-  (design-41 §5). This document may sit on #292 / R #160 without that nod.
+- **Maintainer:** **RATIFIED 2026-09-03 — Shinichi** (`nod FA Boole` /
+  `nod both Boole`). Owner authorization: *"please go ahead and merge
+  what you need to do - and I approve to keep going"*. Grammar ink only.
+  Parser / default-route / R activation stay **draft**. **Not** a covered
+  flip. Count stays **7**. Experimental stays **0.7.0**.
 - **Darwin / Rose CLEAN / WOMBAT-or-disclosure / no-anchor:** other
   packets. Not this file.
 
