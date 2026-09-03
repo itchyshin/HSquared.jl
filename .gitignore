@@ -38,6 +38,7 @@
 /comparator/bin/
 /sim/*.log.txt
 /sim/.*.log.txt
+/sim/recipes/exact_G_packet/
 .claude/worktrees/
 
 # session scratchpad (working files, never tracked)
