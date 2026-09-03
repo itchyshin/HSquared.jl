@@ -23,6 +23,14 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — 0.7 GREML Rose gap-clear G1–G6 (no flip)
+
+Lane: `cursor/07-greml-20260902` (WT `~/local-scratch/lanes/HSquared.jl-07-greml-20260902`).
+Twin R same branch. design-53 SUPERSEDE · design-51 Boole RATIFIED · canon genomic
+citation lock · Totoro exact-G PASS shard · after-task. Engine Genomic REML
+**covered** unchanged. R count stays **6**; Version **0.6.0** experimental.
+No General / CRAN / 1.0. Next: merge → Rose tip re-audit → lockstep flip iff CLEAN.
+
 ### 2026-09-02 — Florence P0 docs figures (draft PR)
 
 Lane: `cursor/docs-quality-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-docs-quality-20260902`).

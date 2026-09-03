@@ -84,7 +84,9 @@ Named-job paste (D-139; Fisher-ratified):
 2. Ratify tols (Fisher perspective, 2026-09-02) — **done**.
 3. Totoro one-shot · record SHAs.
 4. R catch-up honesty (no covered flip).
-5. Feed S0d recovery disposition (banked 48-seed engine gate vs new confirm).
+5. ~~Feed S0d recovery disposition~~ — **design-53 SUPERSEDE** (engine V2-GREML
+   + marker≡Q for opt-in §3 #1; design-44 G5 default activation still owed).
+   Totoro PASS banked in `docs/dev-log/check-log.d/2026-09-02-07-totoro-exactG-pass.md`.
 
 ## Cite
 

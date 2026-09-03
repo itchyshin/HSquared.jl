@@ -122,9 +122,32 @@ Where the identity tests live, and what they do and do not establish:
   locked-citation gated.
 
 Unchanged by this mirror and by those assertions: Julia `V4-MV-REML` stays
-`covered` (experimental, validation-scale, opt-in), the R multivariate surface
-stays `partial`, and `public_covered_count` stays **5**. The R-lane covered flip
-itself remains twin-gated plus Darwin biology sign-off plus Rose.
+`covered` (experimental, validation-scale, opt-in). R multivariate is now
+**covered** at validation scale (G10; R `public_covered_count` **6**). This
+section still moves **no** status by itself.
+
+### Genomic GREML identities (0.7 candidate; mirrored from R)
+
+Lock for the R-public opt-in genomic GREML derived estimand. Engine Genomic
+REML (supplied-`Ginv`) is already **covered**; this lock does **not** change
+that row and does **not** flip R genomic. Count stays **6** until Rose CLEAN +
+lockstep flip. Recovery disposition: design-53 SUPERSEDE.
+
+Locked construction citation:
+
+- VanRaden, P. M. (2008). Efficient methods to compute genomic predictions.
+  *Journal of Dairy Science* **91**(11): 4414–4423.
+  doi:10.3168/jds.2007-0980 (method 1; sample allele frequencies).
+
+- **Genomic variance ratio**
+  \(r_G = \sigma_g^2 / (\sigma_g^2 + \sigma_e^2)\) on
+  \(K_\lambda = G + 0.01\,I\), surfaced as `genomic_variance_ratio` — not
+  pedigree narrow-sense \(h^2\). Identity scaffolding:
+  `test/test_genomic_greml_s0_identity.jl` (marker vs supplied-Q; GBLUP/SNP-BLUP
+  naming on the unregularized scale). Locked citation: VanRaden (2008) for \(G\);
+  Falconer & Mackay (1996) ch. 8/10 for the two-component variance-ratio form on
+  the declared genomic scale (explicit no-anchor: no clean Mrode genomic-\(h^2\)
+  pin).
 
 ## Status Words
 
