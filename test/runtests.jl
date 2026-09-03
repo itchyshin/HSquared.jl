@@ -8220,7 +8220,7 @@ end
     @test fa.genetic_structure == :factor_analytic
     @test fa.genetic_rank == 1
     @test genetic_structure(fa) == (structure = :factor_analytic, rank = 1)
-    @test all(fa.genetic_uniqueness .> 0)
+    @test all(fa.genetic_uniqueness .>= FA_UNIQUENESS_FLOOR)
     @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
     @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
     fa_loadings = genetic_loadings(fa)
@@ -10593,6 +10593,9 @@ end
         ))
     end
 end
+
+# 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
+include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))

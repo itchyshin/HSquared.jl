@@ -326,6 +326,66 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
     return L * transpose(L) + Diagonal(ψ)
 end
 
+# Heywood interior bound for fitted FA uniqueness (0.8 S3).
+# Parameterization: ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i), so min(ψ̂) ≥ 1e-4.
+# Matches the frozen S2 pass cut
+# (`docs/dev-log/decisions/2026-09-03-v08-s2-fa-recovery-gate-prereg.md`).
+# The constructor above still accepts any positive Ψ (truth DGPs, diagnostics).
+const FA_UNIQUENESS_FLOOR = 1e-4
+
+"""
+    ledermann_slack(t, K)
+
+Ledermann degrees of freedom for a `t`-trait rank-`K` factor-analytic
+covariance: `(t − K)² − (t + K)`. Strictly positive slack is required
+before a cell can be a covered-flip candidate; slack `≤ 0` is
+Ledermann-saturated (S1 `t=3 K=1` is the disclosure cell).
+"""
+function ledermann_slack(t::Integer, K::Integer)
+    t >= 1 || throw(ArgumentError("t (trait count) must be ≥ 1"))
+    K >= 1 || throw(ArgumentError("K (factor rank) must be ≥ 1"))
+    K <= t || throw(ArgumentError("K must be between 1 and t"))
+    return (Int(t) - Int(K))^2 - (Int(t) + Int(K))
+end
+
+"""
+    fa_covered_flip_cell(t, K) -> Bool
+
+Return `true` only when `ledermann_slack(t, K) > 0`. Saturated cells may
+still be *fitted* for diagnosis; they are refused as a covered-flip cell.
+"""
+fa_covered_flip_cell(t::Integer, K::Integer) = ledermann_slack(t, K) > 0
+
+"""
+    require_fa_covered_flip_cell(t, K)
+
+Throw if `(t, K)` is Ledermann-saturated (`slack ≤ 0`). Does not block
+fitting; it is the honest refuse path for a covered-flip cell.
+Returns the positive slack.
+"""
+function require_fa_covered_flip_cell(t::Integer, K::Integer)
+    slack = ledermann_slack(t, K)
+    slack > 0 || throw(ArgumentError(
+        "Ledermann-saturated FA (t=$t, K=$K, slack=$slack ≤ 0) is not a covered-flip cell. " *
+        "S1 (t=3 K=1) showed uniqueness collapse is typical at slack ≤ 0. " *
+        "The frozen S2 gate cell is t=4 K=1 (slack=4). Saturated cells remain diagnostic only."))
+    return slack
+end
+
+function _fa_uniqueness_from_unconstrained(θ)
+    return FA_UNIQUENESS_FLOOR .+ exp.(θ)
+end
+
+function _fa_uniqueness_to_unconstrained(ψ)
+    excess = Float64.(collect(ψ)) .- FA_UNIQUENESS_FLOOR
+    all(isfinite, excess) || throw(ArgumentError(
+        "uniqueness must be finite and exceed the interior floor $(FA_UNIQUENESS_FLOOR)"))
+    all(>(0), excess) || throw(ArgumentError(
+        "uniqueness values must exceed the uniqueness-interior floor $(FA_UNIQUENESS_FLOOR); " *
+        "values at or below the floor are Heywood starts"))
+    return log.(excess)
+end
+
 function _canonicalize_loadings(loadings::AbstractMatrix)
     L = _check_finite_matrix(loadings, "loadings")
     size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
@@ -560,7 +620,7 @@ function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol,
     else
         nload = t * rank
         L = _canonicalize_loadings(reshape(collect(@view(params[1:nload])), t, rank))
-        ψ = exp.(params[(nload + 1):end])
+        ψ = _fa_uniqueness_from_unconstrained(@view(params[(nload + 1):end]))
         return factor_analytic_covariance(L, ψ), L, ψ
     end
 end
@@ -594,12 +654,11 @@ function _structured_genetic_params0(G0_start, genetic_structure::Symbol, rank::
         ψ0 = Float64.(collect(initial.uniqueness))
         length(ψ0) == t || throw(ArgumentError("initial.uniqueness length must match the number of traits"))
         all(isfinite, ψ0) || throw(ArgumentError("initial.uniqueness must not contain Inf or NaN"))
-        all(>(0), ψ0) || throw(ArgumentError("initial.uniqueness values must be positive"))
         ψ0
     else
-        max.(0.5 .* diag(G0_start), eps(Float64))
+        max.(0.5 .* diag(G0_start), 2 * FA_UNIQUENESS_FLOOR)
     end
-    return vcat(vec(L), log.(ψ))
+    return vcat(vec(L), _fa_uniqueness_to_unconstrained(ψ))
 end
 
 # Validate the observed data. `present` is the n×t observed mask. Throws a clear
@@ -736,8 +795,11 @@ The additive genetic covariance can be constrained with `genetic_structure`:
   - `:unstructured` (default) — full positive-definite `G0`;
   - `:diagonal` — independent trait-specific genetic variances;
   - `:lowrank` — `G0 = ΛΛ'`, requiring `rank`;
-  - `:factor_analytic` — `G0 = ΛΛ' + Ψ`, requiring `rank` and positive diagonal
-    uniquenesses.
+  - `:factor_analytic` — `G0 = ΛΛ' + Ψ`, requiring `rank`. Fitted uniqueness
+    uses `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)` so `min(ψ̂) ≥ 1e-4` (Heywood
+    interior bound). Ledermann-saturated cells (`ledermann_slack(t, K) ≤ 0`)
+    may still be fitted for diagnosis; `require_fa_covered_flip_cell`
+    refuses them as a covered-flip cell.
 
 For structured fits, `initial` may supply `G0`, `R0`, `loadings`
 (`traits × rank`), and `uniqueness` for `:factor_analytic`; omitted fields use
