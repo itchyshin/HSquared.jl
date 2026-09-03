@@ -12,7 +12,7 @@
 >
 > **Experimental 0.6.0:** version tracks R-public covered capability after G10.
 > Not an engine covered flip (`V4-MV-REML` already covered). Not
-> production-ready, not yet in Julia General. `public_covered_count` is **7** (R-public; G10 multivariate).
+> production-ready, not yet in Julia General. `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML opt-in).
 
 | Capability | Status | Evidence |
 | --- | --- | --- |
