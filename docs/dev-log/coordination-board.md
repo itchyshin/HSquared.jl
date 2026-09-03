@@ -23,6 +23,19 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — V2-SSHINV claim-surface honesty (AGHmatrix + #167 exist; no flip)
+
+Lane: `cursor/08-ss-honesty-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-honesty-20260903`).
+Rewrote stale `V2-SSHINV` field-7 / capability / debt language that
+still said “no external-comparator” after #295 AGHmatrix construction
+AGREE and hsquared #167 Hinv-cell R↔engine parity landed. Evidence
+named as **existing**; n≫6 recovery stays known-truth, not
+external-comparator-complete for REML/fit. Field-4 stays **partial**.
+Count stays **7**. Experimental **0.7.0**. No 0.8.0. No covered
+prediction claim. No flip. Rebased onto FA G10 tip `058ef956`
+(`V4-FA` stays **covered**).
+
 ### 2026-09-03 — V4-FA engine-row G10 flip (S4 G/R cell; count stays 7)
 
 Lane: `cursor/08-fa-g10-20260903` (WT
