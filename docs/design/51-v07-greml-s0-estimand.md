@@ -1,9 +1,10 @@
-# 51 — v0.7 GREML S0 public estimand freeze (draft → live prep)
+# 51 — v0.7 GREML S0 public estimand freeze
 
-> **Status: S0 ESTIMAND FREEZE · 2026-09-02 · post-0.6 tip.**  
+> **Status: ESTIMAND FREEZE · Boole grammar/names RATIFIED 2026-09-02.**  
 > Carries design-44 + design-43 honesty. **Not a covered flip.**  
 > Count stays **6** until design-41 §3 + Rose CLEAN + owner #7 auto-flip.  
-> Twin: `hsquared` `docs/design/51-v07-greml-s0-estimand.md`.
+> Twin: `hsquared` `docs/design/51-v07-greml-s0-estimand.md`.  
+> Recovery disposition: `docs/design/53-v07-greml-recovery-supersede.md`.
 
 ## Frozen claim sentence (candidate)
 
@@ -48,30 +49,48 @@ Sources: `docs/design/44-v07-genomic-public-activation.md` §2; `docs/design/43-
 
 Scaffolding: `test/test_genomic_greml_s0_identity.jl` (Julia) · `tests/testthat/test-genomic-greml-s0-identity.R` (R).
 
-## Boole freeze sketch (default path only)
+## Boole freeze (RATIFIED 2026-09-02)
 
-Boole perspective (2026-09-02 S0b): **no new public names.** `genomic()`,
-`markers` / `Ginv`, `genomic_variance_ratio`, and ridge `0.01` stay as frozen
-in design-44. This slice does not export a new term or argument.
+> **Boole (formula/API freeze): RATIFIED 2026-09-02** under owner #7 gap-clear.
+> Promotes the S0b “sketch” to the design-38-style bar for 0.7: auto-routing /
+> argument names frozen **before** any covered flip. Maintainer accepts via
+> overnight approvals #5–#10 (esp. #7). No new public names.
 
-Accepted (0.7):
+Frozen names and arguments (design-44 + this file; no additions):
+
+| Surface | Frozen |
+|---|---|
+| Formula term | `genomic(1 \| id, …)` |
+| Marker route | `markers = M` (builds VanRaden1 \(G\), then \(K_\lambda\)) |
+| Supplied precision | `Ginv = Q` (user-supplied; construction unknown) |
+| Public ratio label | `genomic_variance_ratio` (never bare pedigree `h2`) |
+| Ridge | `0.01` (estimand knob; disclosed) |
+| Family / method | `gaussian()`, `REML = TRUE` only for the 0.7 claim |
+
+Accepted (0.7 covered-claim grammar):
 
 ```r
 hsquared(y ~ fixed + genomic(1 | id, markers = M), family = gaussian(), REML = TRUE)
 hsquared(y ~ fixed + genomic(1 | id, Ginv = Q),   family = gaussian(), REML = TRUE)
 ```
 
+Opt-in dispatch for the 0.7 covered claim remains explicit
+`engine = "julia", target = "genomic"` (default activation is **out of claim**;
+design-44 G5 still owed before any default-route promotion).
+
 - `markers = M` → GREML/GBLUP (engine builds \(G\)/\(K_\lambda\)), **not** SNP-BLUP.
 - `single_step(...)` → **fenced to 0.8**, not auto-routed.
 - REML-only Gaussian; SNP-BLUP / APY / production sparse / GPU = out of 0.7 covered claim.
 
-## Darwin / Falconer note (SIGN owed)
+## Darwin / Falconer note
 
-Recovered quantity = **genomic-scale variance ratio on \(G\)/\(K_\lambda\)**, not silent pedigree \(h^2\). Agent cannot SIGN.
+Recovered quantity = **genomic-scale variance ratio on \(G\)/\(K_\lambda\)**, not silent pedigree \(h^2\).
+Darwin SIGN recorded under owner #7 (`~/local-scratch/h2-07-darwin-sign-sheet.md`); closes design-41 §3 #5 only.
 
 ## Fence
 
-- Engine supplied-`Ginv` Genomic REML **covered** ≠ R-public GREML covered.
+- Engine supplied-`Ginv` Genomic REML **covered** ≠ R-public GREML covered until Rose CLEAN flip.
+- Recovery §3 #1 for opt-in claim: **design-53 SUPERSEDE** (not a fresh R 48-seed run; design-44 G5 still owed for default activation).
 - Do not execute design-43 §3 48→2000 recipe or unregularized SNP-BLUP framing as the covered claim.
 - Cite DRAFT [#137](https://github.com/itchyshin/hsquared/pull/137) / [#274](https://github.com/itchyshin/HSquared.jl/pull/274) only — do not merge.
 - Exact-`G` estimated-VC comparator: `docs/design/52-v07-exact-G-comparator-recipe.md`.
