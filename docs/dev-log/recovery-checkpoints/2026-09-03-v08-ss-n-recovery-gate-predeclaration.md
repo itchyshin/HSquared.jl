@@ -120,9 +120,24 @@ Gate seeds `20265000..47` were **not** run.
 
 One-fit wall after compile is ~1 s. 48-seed sequential is minutes, not hours.
 
-## RESULT
+## RESULT (run 2026-09-03, AFTER freeze `8e6e038b`) — **GATE: PASS**
 
-**NOT RUN** at freeze. Smoke / construct after this commit prove the path
-only. Fill a follow-up checkpoint (or append below under a new heading) after
-the 48-seed campaign, citing this freeze SHA and a byte-identical
-`git diff <freeze> -- sim/v08_ss_s2_recovery.jl`.
+`sim/v08_ss_s2_recovery.jl --mode=gate`, seeds `20265000..20265047`,
+Totoro, julia 1.10.0, `JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1`.
+Freeze SHA `8e6e038b37046f65ad3aa5b54ca2616e523263c6`.
+Driver SHA-256 `c010249bf46c2824b2c576137731b629b7e3c1da1a33de99c943997e05bd3d86`
+byte-identical to freeze (`git diff 8e6e038b -- sim/v08_ss_s2_recovery.jl` empty).
+Raw TSV/log (outside git): `totoro:~/hsq_work/results/v08_ss_s2_n240_8e6e038b/`.
+
+| component | mean | truth | bias | MCSE | \|bias\|/MCSE | verdict |
+|---|---|---|---|---|---|---|
+| σ²a | 1.0441 | 1.00 | +0.0441 | 0.0516 | 0.86 | PASS |
+| σ²e | 1.4586 | 1.50 | −0.0414 | 0.0466 | 0.89 | PASS |
+| h² (reported, not gated) | 0.4147 | 0.40 | +0.0147 | 0.0187 | 0.79 | (not a PASS object) |
+
+**48/48 converged; σ²a and σ²e `|bias| ≤ 2·MCSE` → GATE PASS.**
+Read as no detectable across-seed bias — **never “unbiased”**.
+
+**Still not a flip.** `V2-SSHINV` stays **partial**. Count stays **7**.
+Experimental **0.7.0**. FA sibling untouched. G5 / Darwin / Boole / R catch-up
+/ Rose CLEAN remain open (note only; not invented here).
