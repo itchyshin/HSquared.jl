@@ -366,7 +366,7 @@ include("test_aqua.jl")
     @test !occursin("likelihood-ratio tests for the covariances", mvreml_row.missing)
     fa_row = only(row for row in validation if row.id == "V4-FA")
     @test fa_row.phase == "Phase 4B"
-    @test fa_row.status == "partial"
+    @test fa_row.status == "covered"
     @test occursin("factor_analytic_covariance", fa_row.evidence)
     @test occursin("sign-canonicalization", fa_row.evidence)
     @test occursin("genetic_loadings", fa_row.evidence)
@@ -386,7 +386,12 @@ include("test_aqua.jl")
     @test occursin("NO-ANCHOR DISCLOSURE", fa_row.evidence)
     @test occursin("no Mrode factor-analytic pin table", fa_row.evidence)
     @test occursin("55-v08-fa-no-anchor-disclosure", fa_row.evidence)
-    @test fa_row.status == "partial"
+    @test fa_row.status == "covered"
+    @test occursin("d8148a3a", fa_row.evidence) || occursin("ok_recovery", fa_row.evidence)
+    @test occursin("d3e9ca09", fa_row.evidence) || occursin("recovery-substitution", fa_row.evidence)
+    @test occursin("2ca6cdaf", fa_row.evidence) ||
+          occursin("2026-09-03-v08-fa-darwin-sign", fa_row.evidence)
+    @test occursin("54-fa-grammar-freeze", fa_row.evidence) || occursin("RATIFIED", fa_row.evidence)
     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
     # SEs stay honestly absent (rotation-nonidentified loadings)
     @test occursin("covariance_structure_lrt", fa_row.evidence)

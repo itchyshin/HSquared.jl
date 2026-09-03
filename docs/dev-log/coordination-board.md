@@ -33,7 +33,21 @@ AGREE and hsquared #167 Hinv-cell R↔engine parity landed. Evidence
 named as **existing**; n≫6 recovery stays known-truth, not
 external-comparator-complete for REML/fit. Field-4 stays **partial**.
 Count stays **7**. Experimental **0.7.0**. No 0.8.0. No covered
-prediction claim. No flip.
+prediction claim. No flip. Rebased onto FA G10 tip `058ef956`
+(`V4-FA` stays **covered**).
+
+### 2026-09-03 — V4-FA engine-row G10 flip (S4 G/R cell; count stays 7)
+
+Lane: `cursor/08-fa-g10-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-fa-g10-20260903`).
+Owner phrase **"Go ahead and G10"** on Rose CLEAN packet
+`~/local-scratch/h2-08-fa-rose-packet-2026-09-03-post-sign.md`.
+`V4-FA` `partial→covered` (engine-only; validation-scale; opt-in;
+Julia API; S4 `t=4 K=1` rotation-invariant G/R/ψ). R FA stays
+**planned**. `public_covered_count` stays **7**. Experimental
+**0.7.0**. No 0.8.0. SS `V2-SSHINV` **not** flipped (Rose NOT CLEAN
+pending honesty rewrite #299/#168). Flip landed; Rose was CLEAN
+pre-flip.
 
 ### 2026-09-03 — V2-SSHINV h² fence (reported, not claim-gated; no flip)
 

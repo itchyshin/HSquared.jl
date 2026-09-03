@@ -191,9 +191,11 @@ seed lists with per-case summaries. Both use loose, version-robust thresholds.
 The shared calibration protocol in
 `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
 defines the seed-count, run-plan, and reporting gate required before any broad
-multi-seed calibration claim. It was executed on the predeclared seed sets and
+multi-seed calibration claim. Phase 4B calibration (2026-06-14; did not pass)
+was executed on the predeclared seed sets and
 did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
-low-rank passed 9/10, with all fits converged. The raw logs and summary live in
+low-rank passed 9/10, with all fits converged. That Phase 4B 8/10 is **not**
+the later S4 covered gate (`docs/dev-log/recovery-checkpoints/2026-09-03-v08-s4-fa-d4-k1.md`). The raw logs and summary live in
 `docs/dev-log/recovery-checkpoints/`.
 The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
 the Markdown case summary, failure-mode table, and failed-seed list from those
