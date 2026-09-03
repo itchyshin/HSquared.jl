@@ -23,6 +23,17 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — Boole `cov=fa` freeze (S4-scoped, no flip)
+
+Lane: `cursor/08-fa-20260903`. Design-54 + decision stamp. Boole froze
+`genetic_structure = :factor_analytic`, `rank`, `G0 = ΛΛ' + Ψ`, and the
+planned constructor `fa(K = k)`. Engine-control route is the S4-supported
+predicate. Formula parser / default-path auto-route / R bridge activation
+stay **draft**. Covered-claim cell if a later flip happens: `t=4 K=1`.
+`V4-FA` stays **partial**. Count stays **7**. Experimental **0.7.0**.
+Maintainer nod still required before any flip (design-41 §5). No Rose
+CLEAN. No 1.0 / CRAN.
+
 ### 2026-09-03 — 0.8 S4 FA d4-k1 Totoro campaign (no flip)
 
 Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
