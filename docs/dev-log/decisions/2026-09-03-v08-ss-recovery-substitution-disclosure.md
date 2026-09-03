@@ -124,7 +124,7 @@ legs, not a stand-in for their numbers.
 | §3 #3 derived estimands (h² identity + locked citation) | still OPEN |
 | §3 #4 textbook / no-anchor | already HOLD (Mrode Ch.11 NO-ANCHOR on the AGHmatrix packet) |
 | §3 #5 Darwin SIGN | unsigned sheet on disk (`6f8e851b`); still no ink — do not invent |
-| §3 #6 Boole `single_step()` freeze | still OPEN — do not invent |
+| §3 #6 Boole `single_step()` freeze | **FROZEN 2026-09-03** — `docs/design/56-single-step-grammar-freeze.md` (ordinary defaults; maintainer nod still pending) |
 | §3 #8 R↔engine parity | still OPEN (R already opt-in partial; element-wise catch-up owed) |
 | Rose CLEAN | **NOT CLEAN.** This note is one artifact, not a re-audit. |
 
@@ -155,6 +155,6 @@ fence remains τ=ω=1, blend=ridge=0.
 - Not `V2-SSHINV` covered. Not count 7→8. Not experimental 0.8.0. Not 1.0 /
   CRAN / Julia General.
 - Not Rose CLEAN. Not clean-with-limitations.
-- Not Darwin SIGN. Not Boole freeze.
+- Not Darwin SIGN (unsigned sheet only). Boole ordinary-default freeze is a later #295 commit, not this file.
 - AGHmatrix `COMPARATOR: AGREE` remains **construction only**.
 - The n=240 48/48 PASS is **not** a second H-builder.

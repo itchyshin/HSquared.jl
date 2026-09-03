@@ -89,4 +89,5 @@ n=6 seed from the packed `H`, then `fit_single_step_reml`. This is a
 1. Execute AGREE on a machine with AGHmatrix (this runner).
 2. Predeclared multi-seed recovery gate (S2) — not this packet.
 3. preGSf90 if provisioned, or disclose that second-tool gap.
-4. Boole grammar freeze + Darwin SIGN + R catch-up + Rose CLEAN.
+4. Boole grammar freeze **landed** (`docs/design/56-single-step-grammar-freeze.md`).
+   Still owed: Darwin SIGN + R catch-up + Rose CLEAN.

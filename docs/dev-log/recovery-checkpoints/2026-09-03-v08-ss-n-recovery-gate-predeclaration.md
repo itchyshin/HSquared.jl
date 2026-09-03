@@ -101,7 +101,7 @@ verdict is only the full-block aggregate.
 |---|---|
 | G5 second comparator / fit-level honesty | AGHmatrix closed **construction**. `preGSf90` / `blupf90+` not provisioned. Recovery-substitution disclosure **not written**. |
 | Darwin SIGN | not signed; nothing PASS’d to sign until this gate exists |
-| Boole `single_step()` freeze | grammar exists; not frozen |
+| Boole `single_step()` freeze | **FROZEN 2026-09-03** — `docs/design/56-single-step-grammar-freeze.md` (ordinary defaults only; maintainer nod still pending for a flip) |
 | R catch-up + element-wise parity | R already opt-in partial; engine evidence not yet mirrored |
 | Interval coverage prereg | not the 0.8 critical path; say “not coverage-calibrated” |
 | Rose CLEAN + G10 | spawn only after 1–7 are on disk |
@@ -139,5 +139,6 @@ Raw TSV/log (outside git): `totoro:~/hsq_work/results/v08_ss_s2_n240_8e6e038b/`.
 Read as no detectable across-seed bias — **never “unbiased”**.
 
 **Still not a flip.** `V2-SSHINV` stays **partial**. Count stays **7**.
-Experimental **0.7.0**. FA sibling untouched. G5 / Darwin / Boole / R catch-up
-/ Rose CLEAN remain open (note only; not invented here).
+Experimental **0.7.0**. FA sibling untouched. Boole ordinary-default
+`single_step()` freeze is now on disk (`docs/design/56-single-step-grammar-freeze.md`).
+G5 / Darwin / R catch-up / Rose CLEAN remain open (note only; not invented here).

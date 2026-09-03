@@ -90,7 +90,9 @@ unwritten / **NOT CLEAN**.
 
 ## Next
 
-Other §3 blockers stay open (Darwin SIGN, Boole freeze, derived h²
-identity, R element-wise catch-up). A **new** Rose packet on the tip
-that carries those artifacts — this after-task is not that re-audit.
+Other §3 blockers stay open (Darwin SIGN ink, derived h² identity, R
+element-wise catch-up). Boole ordinary-default freeze is now on disk
+(`docs/design/56-single-step-grammar-freeze.md`). A **new** Rose packet
+on the tip that carries those artifacts — this after-task is not that
+re-audit.
 No auto-flip.
