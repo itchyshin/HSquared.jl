@@ -381,6 +381,12 @@ include("test_aqua.jl")
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
+    # design-55: textbook no-anchor is on evidence (claim_boundary left
+    # unchanged so the generated docs/src page stays in sync under the g5 lease)
+    @test occursin("NO-ANCHOR DISCLOSURE", fa_row.evidence)
+    @test occursin("no Mrode factor-analytic pin table", fa_row.evidence)
+    @test occursin("55-v08-fa-no-anchor-disclosure", fa_row.evidence)
+    @test fa_row.status == "partial"
     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
     # SEs stay honestly absent (rotation-nonidentified loadings)
     @test occursin("covariance_structure_lrt", fa_row.evidence)
