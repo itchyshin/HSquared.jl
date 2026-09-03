@@ -1,7 +1,7 @@
 name = "HSquared"
 uuid = "a0667dea-0f38-44e8-9150-4fda00624eac"
 authors = ["Shinichi Nakagawa <itchyshin@gmail.com>"]
-version = "0.6.0"
+version = "0.7.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

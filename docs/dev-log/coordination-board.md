@@ -23,6 +23,12 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-02 — 0.7 genomic GREML covered flip (twin honesty)
+
+Lane: `cursor/07-greml-20260902`. Version **0.7.0**; R `public_covered_count` **7**.
+Engine Genomic REML already covered — not re-covered. Experimental retained.
+No General force-merge.
+
 ### 2026-09-02 — 0.7 GREML Rose gap-clear G1–G6 (no flip)
 
 Lane: `cursor/07-greml-20260902` (WT `~/local-scratch/lanes/HSquared.jl-07-greml-20260902`).

@@ -5,12 +5,12 @@ R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
 > [!WARNING]
-> **Experimental 0.6.0 — not production.** Version number tracks covered
+> **Experimental 0.7.0 — not production.** Version number tracks covered
 > capability, not maturity. Not in the Julia General registry —
 > registration deferred pending collaborator review
 > ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
 > Install with `Pkg.add(url=...)` only — do **not** use `Pkg.add("HSquared")`
-> by name. `public_covered_count` is **6** (R-public; G10 multivariate).
+> by name. `public_covered_count` is **7** (R-public; G10 multivariate).
 
 `HSquared.jl` is the Julia engine twin of the R package `hsquared`.
 This is not the package you type a formula into.
@@ -31,11 +31,11 @@ default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
-**Experimental 0.6.0.** Version number only. Not in Julia General —
+**Experimental 0.7.0.** Version number only. Not in Julia General —
 registration deferred pending collaborator review
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
 Use `Pkg.add(url=...)` only; do **not** use `Pkg.add("HSquared")` by name.
-Not production-ready. `public_covered_count` is **6** (R-public; G10 multivariate).
+Not production-ready. `public_covered_count` is **7** (R-public; G10 multivariate).
 
 This repository has moved beyond the scaffold. It has experimental
 validation-scale engine utilities for univariate animal models, REML/AI-REML
@@ -191,7 +191,7 @@ leg. What is *not* covered — and is what the planned list above should have sa
 coverage, broader-LD or covariate-adjusted (Freedman–Lane) calibration, the
 fixed-null-reuse shortcut (which failed its own gate and is banked as a negative
 result), and the map-annotated formula-level `marker_scan()` / `qtl_scan()` API.
-None of this is the public default: the public covered count is **6**
+None of this is the public default: the public covered count is **7**
 (R-public; G10 multivariate; a claims-register ledger total, not a callable
 function), and this genome-wide marker surface does not move that count. Read
 the `V5-MARKER-THRESHOLD` row in `validation_status()` before quoting any

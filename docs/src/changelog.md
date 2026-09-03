@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.6.0 (experimental)
+## 0.7.0 (experimental)
 
 Experimental numbered bump after R G10. Version tracks R-public covered
 capability (`public_covered_count` **5 → 6**). Engine `V4-MV-REML` was already
