@@ -381,6 +381,12 @@ include("test_aqua.jl")
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
     @test occursin("no R-facing", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
+    # design-55: textbook no-anchor is on evidence (claim_boundary left
+    # unchanged so the generated docs/src page stays in sync under the g5 lease)
+    @test occursin("NO-ANCHOR DISCLOSURE", fa_row.evidence)
+    @test occursin("no Mrode factor-analytic pin table", fa_row.evidence)
+    @test occursin("55-v08-fa-no-anchor-disclosure", fa_row.evidence)
+    @test fa_row.status == "partial"
     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
     # SEs stay honestly absent (rotation-nonidentified loadings)
     @test occursin("covariance_structure_lrt", fa_row.evidence)
@@ -8220,7 +8226,7 @@ end
     @test fa.genetic_structure == :factor_analytic
     @test fa.genetic_rank == 1
     @test genetic_structure(fa) == (structure = :factor_analytic, rank = 1)
-    @test all(fa.genetic_uniqueness .> 0)
+    @test all(fa.genetic_uniqueness .>= FA_UNIQUENESS_FLOOR)
     @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
     @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
     fa_loadings = genetic_loadings(fa)
@@ -10593,6 +10599,9 @@ end
         ))
     end
 end
+
+# 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
+include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))

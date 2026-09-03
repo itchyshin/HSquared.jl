@@ -23,6 +23,58 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — Boole `cov=fa` freeze (S4-scoped, no flip)
+
+Lane: `cursor/08-fa-20260903`. Design-54 + decision stamp. Boole froze
+`genetic_structure = :factor_analytic`, `rank`, `G0 = ΛΛ' + Ψ`, and the
+planned constructor `fa(K = k)`. Engine-control route is the S4-supported
+predicate. Formula parser / default-path auto-route / R bridge activation
+stay **draft**. Covered-claim cell if a later flip happens: `t=4 K=1`.
+`V4-FA` stays **partial**. Count stays **7**. Experimental **0.7.0**.
+Maintainer nod still required before any flip (design-41 §5). No Rose
+CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S4 FA d4-k1 Totoro campaign (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S2 FROZEN at `eff57e3d` (driver not edited). S3 tip `3d1de490` on Totoro
+worktree. Frozen `--cell=d4-k1 --mode=fit` seeds `20260914:20260923`:
+**8/10 `ok_recovery` · PASS vs 8/10 bar.** Misses: 20260915 cap-exhaustion
+(`unclassified`); 20260916 `sampling_vs_threshold`. Zero Heywood, zero
+`optimizer_miss`. TSV banked. `V4-FA` / `V2-SSHINV` stay **partial**.
+Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+Next: Rose packet only — no auto-flip.
+
+### 2026-09-03 — 0.8 S3 FA uniqueness-interior bound (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S2 stays FROZEN at `eff57e3d` (driver not edited). S3 engine change:
+fitted `ψ = 1e-4 + exp(θ)` so `min(ψ̂) ≥ 1e-4`; `require_fa_covered_flip_cell`
+refuses slack ≤ 0 as a covered-flip cell (fits still allowed for diagnosis).
+**Not** EM warm-start. S4 now run (see row above). `V4-FA` / `V2-SSHINV` stay **partial**.
+Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S2 FA recovery-gate prereg FROZEN (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S1 CLOSED (`5f07d026` contrast + `80e91d75` panel). S2 FROZEN at
+`eff57e3d`. SHA-locked:
+`t=4 K=1` (`ledermann_slack=4`) + `min(ψ̂) ≥ 1e-4` as a first-class pass
+cut. Old G/R gates accept collapsed uniqueness (S1: 5/8 "passes" Heywood).
+Driver `sim/v08_fa_s2_prereg.jl` blob `370cf697`. `t=5 K=2` rejected (rank
+confound). S3 = uniqueness bound / Ledermann guard, **not** EM warm-start,
+**not** a campaign. `V4-FA` / `V2-SSHINV` stay **partial**. Count stays
+**7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S1 FA diagnose scaffold + Totoro panel (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+Owner 0.8 G0 YES. Design-42 S1 driver + Totoro d3-contrast and **d3-panel**
+(10/10 converged; 8 `ok_recovery` / 2 `heywood_boundary`; 0 `optimizer_miss`;
+`heywood_flag` on 7/10; Ledermann-saturated). `V4-FA` / `V2-SSHINV` stay
+**partial**. Count stays **7**. Experimental **0.7.0**. G5 #157/#291 cite-only.
+No 1.0 / CRAN. Next: S2 prereg FROZEN (see row above) — no flip.
+
 ### 2026-09-02 — 0.7 genomic GREML covered flip (twin honesty)
 
 Lane: `cursor/07-greml-20260902`. Version **0.7.0**; R `public_covered_count` **7**.
