@@ -121,7 +121,7 @@ legs, not a stand-in for their numbers.
 |---|---|
 | design-41 §3 #2 (2nd comparator AGREE **or** written recovery-substitution) | **HOLD** — this file is the substitution. Fit-level / 2nd-construction debt **retained**. |
 | §3 #1 n≫6 recovery PASS | already HOLD (`8e6e038b` / `0533e9da`) |
-| §3 #3 derived estimands (h² identity + locked citation) | still OPEN |
+| §3 #3 derived estimands (h² identity + locked citation) | **FENCED 2026-09-03** — `docs/dev-log/decisions/2026-09-03-v08-ss-h2-fence.md`. h² reported, not claim-gated. Identity+citation still OPEN if a later sentence names h² as covered. |
 | §3 #4 textbook / no-anchor | already HOLD (Mrode Ch.11 NO-ANCHOR on the AGHmatrix packet) |
 | §3 #5 Darwin SIGN | unsigned sheet on disk (`6f8e851b`); still no ink — do not invent |
 | §3 #6 Boole `single_step()` freeze | **FROZEN 2026-09-03** — `docs/design/56-single-step-grammar-freeze.md` (ordinary defaults; maintainer nod still pending) |
