@@ -10,9 +10,11 @@
 > remains 5 historically for that gate. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
 >
-> **Experimental 0.6.0:** version tracks R-public covered capability after G10.
-> Not an engine covered flip (`V4-MV-REML` already covered). Not
-> production-ready, not yet in Julia General. `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML opt-in).
+> **Experimental 0.7.0:** version tracks R-public covered capability after G10
+> multivariate + 0.7 genomic GREML opt-in. Not an engine covered flip beyond
+> already-covered rows (`V4-MV-REML`, `V2-GREML` supplied-`Ginv`). Not
+> production-ready, not yet in Julia General. `public_covered_count` is **7**
+> (R-public; G10 multivariate + 0.7 genomic GREML opt-in; default activation held).
 
 | Capability | Status | Evidence |
 | --- | --- | --- |
