@@ -23,12 +23,14 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-### 2026-09-03 — 0.8 S1 FA diagnose scaffold (no flip)
+### 2026-09-03 — 0.8 S1 FA diagnose scaffold + Totoro panel (no flip)
 
 Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
-Owner 0.8 G0 YES. Added design-42 S1 driver + single-step construction probe.
-`V4-FA` / `V2-SSHINV` stay **partial**. Count stays **7**. Experimental **0.7.0**.
-G5 #157/#291 cite-only. No 1.0 / CRAN. Next: Totoro `--mode=fit` d3-contrast.
+Owner 0.8 G0 YES. Design-42 S1 driver + Totoro d3-contrast and **d3-panel**
+(10/10 converged; 8 `ok_recovery` / 2 `heywood_boundary`; 0 `optimizer_miss`;
+`heywood_flag` on 7/10; Ledermann-saturated). `V4-FA` / `V2-SSHINV` stay
+**partial**. Count stays **7**. Experimental **0.7.0**. G5 #157/#291 cite-only.
+No 1.0 / CRAN. Next: S2 prereg (uniqueness interior / Ledermann slack) — no flip.
 
 ### 2026-09-02 — 0.7 genomic GREML covered flip (twin honesty)
 
