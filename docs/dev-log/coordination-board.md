@@ -23,6 +23,17 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — 0.8 S2 FA recovery-gate prereg FROZEN (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S1 CLOSED (`5f07d026` contrast + `80e91d75` panel). S2 SHA-locked:
+`t=4 K=1` (`ledermann_slack=4`) + `min(ψ̂) ≥ 1e-4` as a first-class pass
+cut. Old G/R gates accept collapsed uniqueness (S1: 5/8 "passes" Heywood).
+Driver `sim/v08_fa_s2_prereg.jl` blob `370cf697`. `t=5 K=2` rejected (rank
+confound). S3 = uniqueness bound / Ledermann guard, **not** EM warm-start,
+**not** a campaign. `V4-FA` / `V2-SSHINV` stay **partial**. Count stays
+**7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+
 ### 2026-09-03 — 0.8 S1 FA diagnose scaffold + Totoro panel (no flip)
 
 Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
@@ -30,7 +41,7 @@ Owner 0.8 G0 YES. Design-42 S1 driver + Totoro d3-contrast and **d3-panel**
 (10/10 converged; 8 `ok_recovery` / 2 `heywood_boundary`; 0 `optimizer_miss`;
 `heywood_flag` on 7/10; Ledermann-saturated). `V4-FA` / `V2-SSHINV` stay
 **partial**. Count stays **7**. Experimental **0.7.0**. G5 #157/#291 cite-only.
-No 1.0 / CRAN. Next: S2 prereg (uniqueness interior / Ledermann slack) — no flip.
+No 1.0 / CRAN. Next: S2 prereg FROZEN (see row above) — no flip.
 
 ### 2026-09-02 — 0.7 genomic GREML covered flip (twin honesty)
 
