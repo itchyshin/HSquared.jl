@@ -63,7 +63,7 @@ if hasflag("--refresh-count")
   "covered_external": $(get(d,"covered_external",0)),
   "partial": $(get(d,"partial",0)),
   "planned": $(get(d,"planned",0)),
-  "public_covered_count": 6,
+  "public_covered_count": 7,
   "refreshed_at": "$(Dates.format(now(), "yyyy-mm-dd"))",
   "refreshed_from_head": "$(trycmd(`git -C $root log -1 --format=%h`))",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
@@ -108,7 +108,7 @@ genat = Dates.format(now(), "yyyy-mm-ddTHH:MM:SS")
 status = """{
   "generated_at": "$genat",
   "generator_version": "tools/gen_status_json.jl @ $(trycmd(`git -C $root log -1 --format=%h`))",
-  "public_covered_count": 6,
+  "public_covered_count": 7,
   "honesty_assert": "Public-covered FITTING surface = 6: (1) v0.1 univariate Gaussian animal model (default path); (2) the opt-in common-environment two-effect model (engine=julia, target=two_effect; c² covered, maternal leg experimental); (3) the opt-in arbitrary-N independent random-effect model ((1|g); target=multi_effect; animal ratio = narrow-sense h², other blocks are variance-explained proportions NOT heritabilities; INDEPENDENT effects only, NOT correlated/RR/non-Gaussian); (4) the opt-in random-regression k=2 reaction-norm model (rr(); target=random_regression; K_g + h²(t) curve, POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian); (5) direct–maternal correlated 2×2 G animal model (maternal_genetic(); target=direct_maternal; opt-in; Willham total-h² labelled triple, direct h² ≠ total h², validation-scale/dense n≤1000, single relationship A, NOT the default); and (6) default-route t=2 unstructured multivariate Gaussian animal model (G10 R-public covered; k≥3 / diagonal stay experimental). All intervals asymptotic/delta-method, NOT coverage-calibrated. Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
   "validation": {"rows": $rows, "covered": $cov, "covered_external": $covx, "partial": $part, "planned": $plan, "source": "cache", "refreshed_at": "$refreshed"},
   "repos": [
