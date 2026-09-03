@@ -18,6 +18,7 @@ Freeze an in-repo S2 recovery gate now that S1 is classified. No covered flip.
 ## What landed
 
 - Decision + driver + predeclaration + check-log.d + this report + board row.
+- **Freeze SHA: `eff57e3d`.**
 - Gate DGP: **`t=4 K=1`**, `ledermann_slack=4`. `t=5 K=2` rejected (rank confound).
 - Pass: converged + banked `rel_g ≤ 0.45` / `rel_r ≤ 0.25` + **`min(ψ̂) ≥ 1e-4`**
   + `slack > 0`. Old G/R gates are recorded as accepting collapsed uniqueness.

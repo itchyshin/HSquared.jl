@@ -9,8 +9,10 @@ S1 classify is closed: Totoro d3-panel 8/10 `ok_recovery`, 2 `heywood_boundary`,
 Driver: `sim/v08_fa_s2_prereg.jl`  
 Driver SHA-256: `47a1b619e83b468cec28dae57918f755064a32528f16bf775943b8b7e36b4b83`  
 Driver git blob: `370cf69773a52dc7e158a9415d389e31ddf7a8e7`  
-Freeze commit: the git commit that introduces this file and that driver
-together. Do not edit either after freeze; a new prereg is a new commit.
+**Freeze commit: `eff57e3d`** (`eff57e3dff381dfb94315bde7ef762b09dbb6640`).
+That commit introduced this file and the driver together. Do not edit the
+driver after freeze; a new prereg is a new commit. This stamp does not
+change gate text.
 
 `public_covered_count` stays **7**. `V4-FA` stays **partial / experimental**.
 No 0.8.0. No 1.0 / CRAN. Rose CLEAN is **not** written.

@@ -26,7 +26,8 @@ This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 ### 2026-09-03 — 0.8 S2 FA recovery-gate prereg FROZEN (no flip)
 
 Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
-S1 CLOSED (`5f07d026` contrast + `80e91d75` panel). S2 SHA-locked:
+S1 CLOSED (`5f07d026` contrast + `80e91d75` panel). S2 FROZEN at
+`eff57e3d`. SHA-locked:
 `t=4 K=1` (`ledermann_slack=4`) + `min(ψ̂) ≥ 1e-4` as a first-class pass
 cut. Old G/R gates accept collapsed uniqueness (S1: 5/8 "passes" Heywood).
 Driver `sim/v08_fa_s2_prereg.jl` blob `370cf697`. `t=5 K=2` rejected (rank

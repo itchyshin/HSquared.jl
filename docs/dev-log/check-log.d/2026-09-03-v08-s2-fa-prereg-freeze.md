@@ -8,6 +8,7 @@
 - Driver: `sim/v08_fa_s2_prereg.jl`
 - SHA-256: `47a1b619e83b468cec28dae57918f755064a32528f16bf775943b8b7e36b4b83`
 - git blob: `370cf69773a52dc7e158a9415d389e31ddf7a8e7`
+- **Freeze commit: `eff57e3d`**
 - Gate DGP: `t=4 K=1`, `ledermann_slack=4`
 - Pass adds `min(ψ̂) ≥ 1e-4` and `slack > 0` on top of banked G/R cuts
 - S4 seed list `20260914:20260923` predeclared, **not executed**
