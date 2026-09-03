@@ -23,15 +23,25 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — 0.8 S4 FA d4-k1 Totoro campaign (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S2 FROZEN at `eff57e3d` (driver not edited). S3 tip `3d1de490` on Totoro
+worktree. Frozen `--cell=d4-k1 --mode=fit` seeds `20260914:20260923`:
+**8/10 `ok_recovery` · PASS vs 8/10 bar.** Misses: 20260915 cap-exhaustion
+(`unclassified`); 20260916 `sampling_vs_threshold`. Zero Heywood, zero
+`optimizer_miss`. TSV banked. `V4-FA` / `V2-SSHINV` stay **partial**.
+Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+Next: Rose packet only — no auto-flip.
+
 ### 2026-09-03 — 0.8 S3 FA uniqueness-interior bound (no flip)
 
 Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
 S2 stays FROZEN at `eff57e3d` (driver not edited). S3 engine change:
 fitted `ψ = 1e-4 + exp(θ)` so `min(ψ̂) ≥ 1e-4`; `require_fa_covered_flip_cell`
 refuses slack ≤ 0 as a covered-flip cell (fits still allowed for diagnosis).
-**Not** EM warm-start. **Not** S4. `V4-FA` / `V2-SSHINV` stay **partial**.
+**Not** EM warm-start. S4 now run (see row above). `V4-FA` / `V2-SSHINV` stay **partial**.
 Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
-S4 is unblocked (Totoro, frozen `d4-k1` driver) but not launched.
 
 ### 2026-09-03 — 0.8 S2 FA recovery-gate prereg FROZEN (no flip)
 
