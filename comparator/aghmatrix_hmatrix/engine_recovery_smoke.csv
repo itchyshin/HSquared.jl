@@ -1,0 +1,9 @@
+quantity,value
+seed,20260903
+truth_sigma_a2,1
+truth_sigma_e2,1.5
+fit_sigma_a2,0.0759543061528
+fit_sigma_e2,0.324200668388
+converged,true
+n,6
+note,one-seed smoke on n=6; NOT a predeclared recovery gate

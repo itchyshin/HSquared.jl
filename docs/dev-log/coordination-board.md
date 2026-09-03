@@ -23,6 +23,30 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-03 — V2-SSHINV h² fence (reported, not claim-gated; no flip)
+
+Lane: `cursor/08-ss-h2-fence-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-20260903`).
+PR [#295](https://github.com/itchyshin/HSquared.jl/pull/295).
+design-41 §3 #3 cheap path: H-scale `h²` is **reported, not
+claim-gated** (n=240 dump 0.4147 vs 0.40; 0.79·MCSE; not a PASS
+object). Identity+citation not written. `V2-SSHINV` stays **partial**.
+Count stays **7**. Experimental **0.7.0**. Darwin UNSIGNED. No Rose
+CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — Boole `single_step()` freeze (n≫6 ordinary defaults, no flip)
+
+Lane: `cursor/08-ss-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-ss-20260903`).
+PR [#295](https://github.com/itchyshin/HSquared.jl/pull/295). Design-56.
+Boole froze `single_step_inverse` / `fit_single_step[_reml]`, knobs
+`tau`/`omega`/`blend_weight`/`ridge` at ordinary defaults **1/1/0/0**, and
+the reserved `single_step()` spellings as **names only**. Covered-claim
+cell if a later flip happens: univariate Gaussian REML, `G = A₂₂ + 0.05 I`.
+`markers = M` (VanRaden) stays out. `V2-SSHINV` stays **partial**. Count
+stays **7**. Experimental **0.7.0**. Maintainer nod still required before
+any flip (design-41 §5). No Rose CLEAN. No 1.0 / CRAN. FA sibling
+(design-54) untouched.
+
 ### 2026-09-03 — Boole `cov=fa` freeze (S4-scoped, no flip)
 
 Lane: `cursor/08-fa-20260903`. Design-54 + decision stamp. Boole froze
