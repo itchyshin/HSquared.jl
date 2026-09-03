@@ -10,6 +10,13 @@
     article. Intervals are not coverage-calibrated. Not ASReml-style production
     multi-trait software.
 
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/g0-rg-teaching.svg" alt="Teaching panel of an illustrative two-trait genetic covariance matrix G0 beside its genetic-correlation triangle r_g. Mass and length show a positive correlation; values are illustrative. Experimental opt-in multivariate; rotation-invariant; loadings not shown; point display only.">
+<figcaption>G0 is trait-scale genetic covariance; r_g is the standardized triangle. Illustrative numbers. Rotation-invariant — loadings not shown. Twin R article: Reading G matrices.</figcaption>
+</figure>
+```
+
 `HSquared.jl` has a **multivariate (multi-trait) animal model** engine
 slice. `multivariate_mme` solves the balanced multi-trait model at **supplied**
 genetic and residual covariance matrices. `fit_multivariate_reml` estimates

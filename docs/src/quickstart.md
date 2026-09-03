@@ -85,6 +85,16 @@ Z_from_slots = sparse_csc_matrix(
 Z_from_slots == Z
 ```
 
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/twin-bridge.svg" alt="Two-column diagram of the R to Julia twin bridge. Formula language stays in R; y, X, Z CSC, pedigree indices, and target metadata cross the bridge; solvers stay in Julia; result_payload returns variance components, heritability, and breeding values. Default engine equals fit for v0.1; other targets are opt-in experimental.">
+<figcaption>What crosses the bridge vs what stays lane-local. Default <code>engine = "fit"</code> is the v0.1 path; opt-in targets need <code>engine = "julia"</code> and an explicit <code>target</code>. Not a production claim for every model.</figcaption>
+</figure>
+```
+
+The twin R article is
+[Fitting quantitative-genetic models](https://itchyshin.github.io/hsquared/articles/fitting-models.html).
+
 ## Evaluate The Gaussian Likelihood
 
 The first likelihood function evaluates ML or REML at supplied variance
