@@ -1149,7 +1149,9 @@ the raw `information` matrix.
 Experimental, asymptotic, dense/validation-scale, REML-only. SEs are
 finite-difference approximations and are wide/unreliable at small `n`; not
 coverage-calibrated. Throws if the observed information is not finite
-positive-definite (a flat or boundary optimum). Structured/factor-analytic fits
+positive-definite (a flat or boundary optimum). A fitted off-diagonal
+`|r| ≥ 1 − 1e-6` is treated as a boundary even when the finite-difference
+Hessian appears PD (platform/roundoff). Structured/factor-analytic fits
 are **not** supported — their loadings are rotation-nonidentified.
 """
 function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Real = 1e-4)
@@ -1158,6 +1160,16 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     G0 = Matrix(Float64.(Matrix(fit.genetic_covariance)))
     R0 = Matrix(Float64.(Matrix(fit.residual_covariance)))
     t = size(G0, 1)
+    if t > 1
+        # Optimizer and finite-difference roundoff can make the information
+        # matrix appear positive definite even when a fitted correlation is
+        # numerically on the covariance boundary.  Reject that case directly
+        # so the documented boundary contract is platform-independent.
+        for C in (genetic_correlation(G0), genetic_correlation(R0))
+            any(abs(C[i, j]) >= 1 - 1e-6 for j in 1:t for i in (j + 1):t) &&
+                throw(ArgumentError("observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable"))
+        end
+    end
     ng = t * (t + 1) ÷ 2
     phat = vcat(_cov_to_chol_params(G0, t), _cov_to_chol_params(R0, t))
     loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,

@@ -23,6 +23,19 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-04 — CI flake: n=8 mv covariance SE throw (count stays 7)
+
+Lane: `cursor/mv-se-flake-20260904` (WT
+`~/local-scratch/lanes/HSquared.jl-mv-se-flake-20260904`).
+Pre-existing flake hit DRAFT #303 Julia 1.10 (`runtests.jl` Phase 4
+multivariate covariance SEs + LRTs): n=8 single-record unstructured
+fit has `|r_g|≈1`, but the FD Hessian can look PD so
+`multivariate_covariance_standard_errors` returned SEs instead of
+`ArgumentError`. Helper now rejects `|r| ≥ 1−1e-6` before the Hessian
+(same 10-line pin already on the genomic lane `609c8bb3`). Not an
+#303 docs change. Do not merge #303 from this slice. Count stays
+**7**. Experimental **0.8.0**. No 1.0.
+
 ### 2026-09-04 — experimental version 0.7.0 → 0.8.0 (count stays 7)
 
 Lane: `cursor/08-ver-080-jl-20260903` (WT
