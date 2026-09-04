@@ -23,6 +23,17 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-04 — V2-SSHINV engine-row G10 flip (H-scale VCs; count stays 7)
+
+Lane: `cursor/08-ss-flip-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-flip-20260903`).
+Owner phrase **`G10 SS`** on Rose CLEAN packet
+`~/local-scratch/h2-08-ss-rose-packet-2026-09-03-post-missing-fix.md`.
+`V2-SSHINV` `partial→covered` (engine-only; validation-scale; opt-in;
+Julia API; H-scale σ²a / σ²e; ordinary defaults). R SS stays
+**opt-in partial**. `public_covered_count` stays **7**. Experimental
+**0.7.0**. No 0.8.0. `V4-FA` stays **covered**. R FA stays **planned**.
+
 ### 2026-09-03 — V2-SSHINV claim-surface honesty (AGHmatrix + #167 exist; no flip)
 
 Lane: `cursor/08-ss-honesty-20260903` (WT
