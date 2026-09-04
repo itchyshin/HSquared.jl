@@ -9261,10 +9261,20 @@ end
     @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
 
     # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
-    # is on the genetic-correlation boundary, so the observed information is not PD
-    # and standard errors are unavailable (the function says so rather than guessing)
+    # is on the genetic-correlation boundary, so standard errors are unavailable
+    # (the function says so rather than guessing). Pin the throw on |r_g|≈1 as
+    # well as a non-PD FD Hessian: the Hessian alone can look PD on some
+    # Julia/BLAS builds (CI flake on 1.10 at this site). Keep the check.
     mv2_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
+    @test abs(mv2_bnd.genetic_correlation[1, 2]) >= 1 - 1e-6
     @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_bnd, hcat(y1, y2), X, Z, Ainv)
+    # Contract lock: |r_g|=1 is a boundary even if a later Hessian would look PD.
+    fake_bnd = (
+        genetic_structure = :unstructured,
+        genetic_covariance = [1.0 1.0; 1.0 1.0],
+        residual_covariance = [1.0 0.0; 0.0 1.0],
+    )
+    @test_throws ArgumentError multivariate_covariance_standard_errors(fake_bnd, hcat(y1, y2), X, Z, Ainv)
 
     # (7) guards
     @test_throws ArgumentError covariance_structure_lrt(mv2, mv2_diag)        # df <= 0 (wrong order)
@@ -9324,7 +9334,7 @@ end
     @test_throws ArgumentError genetic_correlation_interval(mv2_diag, Yr, Xr, Zr, Ainv)  # structured rejected
 
     # boundary: n=8 single-record → rg on the boundary → SE path throws → :delta throws
-    # (a clear ArgumentError, never a fabricated whisker)
+    # (a clear ArgumentError, never a fabricated whisker). Same |r_g| pin as (6).
     X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
     mv_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
     @test_throws ArgumentError genetic_correlation_interval(mv_bnd, hcat(y1, y2), X, Z, Ainv)
