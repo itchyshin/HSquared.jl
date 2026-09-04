@@ -5,7 +5,7 @@ R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
 > [!WARNING]
-> **Experimental 0.7.0 — not production.** Version number tracks covered
+> **Experimental 0.8.0 — not production.** Version number tracks covered
 > capability, not maturity. Not in the Julia General registry —
 > registration deferred pending collaborator review
 > ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
@@ -31,7 +31,7 @@ default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
-**Experimental 0.7.0.** Version number only. Not in Julia General —
+**Experimental 0.8.0.** Version number only. Not in Julia General —
 registration deferred pending collaborator review
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
 Use `Pkg.add(url=...)` only; do **not** use `Pkg.add("HSquared")` by name.
