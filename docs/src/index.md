@@ -1,6 +1,6 @@
 # HSquared.jl
 
-!!! warning "Experimental 0.7.0 — not production"
+!!! warning "Experimental 0.8.0 — not production"
     Version number tracks covered capability, not maturity. **Not** in the
     Julia General registry — registration deferred pending collaborator
     review
@@ -131,7 +131,7 @@ Planned, but not implemented yet:
 HSquared is **not** in the Julia General registry — registration deferred
 pending collaborator review
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
-Do **not** use `Pkg.add("HSquared")` by name. This `0.7.0` number is
+Do **not** use `Pkg.add("HSquared")` by name. This `0.8.0` number is
 experimental; `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
 
 ```julia

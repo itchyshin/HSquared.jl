@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-04 — experimental version 0.7.0 → 0.8.0 (count stays 7)
+
+Lane: `cursor/08-ver-080-jl-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ver-080-20260903`).
+Owner phrase **`bump 0.8.0`**. Number only. Both 0.8 engine pillars
+already covered (`V4-FA`, `V2-SSHINV`). `public_covered_count` stays
+**7**. Experimental label **retained**. R FA stays **planned**. R
+`single_step()` stays **opt-in partial**. No tag / General / CRAN / 1.0.
+
 ### 2026-09-04 — V2-SSHINV engine-row G10 flip (H-scale VCs; count stays 7)
 
 Lane: `cursor/08-ss-flip-20260903` (WT

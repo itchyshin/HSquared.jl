@@ -316,7 +316,7 @@ include("test_aqua.jl")
     @test occursin("NO-ANCHOR", ss_row.claim_boundary)
     @test occursin("opt-in partial", ss_row.claim_boundary)
     @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
-    @test occursin("0.7.0", ss_row.claim_boundary)
+    @test occursin("0.8.0", ss_row.claim_boundary)
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
     @test mv_row.status == "partial"

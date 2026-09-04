@@ -6,6 +6,6 @@
   "planned": 1,
   "public_covered_count": 7,
   "refreshed_at": "2026-09-04",
-  "refreshed_from_head": "d724993d",
+  "refreshed_from_head": "bd2ec128",
   "note": "Machine-refreshable validation_status() count cache. Refresh: julia --project=. tools/gen_status_json.jl --refresh-count."
 }

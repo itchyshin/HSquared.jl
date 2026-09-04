@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.8.0 (experimental)
+
+Experimental numbered bump after both 0.8 engine pillars are covered
+(FA `V4-FA` + single-step `V2-SSHINV`). Version tracks the engine pillar
+pair, not R-public count. `public_covered_count` stays **7**.
+Experimental label retained. Not production, not Julia General.
+R FA stays planned. R `single_step()` stays opt-in partial.
+
 ## 0.7.0 (experimental)
 
 Experimental numbered bump after R G10. Version tracks R-public covered
