@@ -162,6 +162,7 @@ high-level genomic fitting remains unimplemented.
   extractors (`variance_components`, `fixed_effects`, `heritability`, and
   `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
   without changing `result_payload()` or the R bridge. Phase 4B now has
+engine-internal utilities; V4-FA coverage does not activate R `cov = fa(K)` syntax or change the R twin's planned FA status.
   structured genetic
   covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
