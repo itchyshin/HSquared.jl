@@ -317,6 +317,23 @@ include("test_aqua.jl")
     @test occursin("opt-in partial", ss_row.claim_boundary)
     @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
     @test occursin("0.8.0", ss_row.claim_boundary)
+
+    # FA/SS engine coverage must remain separate from R-public coverage in
+    # both status ledgers; this locks claim boundaries without changing rows.
+    capability_page = read(joinpath(@__DIR__, "..", "docs", "design", "capability-status.md"), String)
+    debt_page = read(joinpath(@__DIR__, "..", "docs", "design", "validation-debt-register.md"), String)
+    capability_lines = split(capability_page, '\n')
+    capability_intro = join(capability_lines[1:min(length(capability_lines), 25)], "\n")
+    @test occursin("public_covered_count", capability_intro)
+    @test occursin("**7**", capability_intro)
+    @test occursin("V4-FA", capability_page)
+    @test occursin("V2-SSHINV", capability_page)
+    @test occursin("not R-public", capability_page)
+    @test occursin("V4-FA", debt_page)
+    @test occursin("V2-SSHINV", debt_page)
+    @test occursin("R FA planned", debt_page)
+    @test occursin("R `single_step()` stays opt-in partial", debt_page)
+
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
     @test mv_row.status == "partial"
