@@ -10570,6 +10570,15 @@ end
                                       "relmat_status" => "identity")],
         ))
 
+        # Missing required block envelope key: do not silently default ids.
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "a", "type" => "iid",
+                                      "Z" => Z_animal,
+                                      "relmat_status" => "identity")],
+        ))
+
         # Dimension mismatch: Z has wrong number of rows
         Z_bad = zeros(5, 4)   # 5 rows vs 8 obs
         @test_throws ArgumentError parse_payload_v2(Dict(

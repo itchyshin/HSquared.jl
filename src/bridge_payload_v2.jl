@@ -103,20 +103,29 @@ end
 
 # Parse a single block dict/namedtuple into a resolved NamedTuple.
 function _parse_one_block(block)
-    name = string(_field(block, "name", :name))
-    btype = string(_field(block, "type", :type))
+    name_raw = _field(block, "name", :name)
+    name_raw === nothing && throw(ArgumentError("payload-v2 block is missing required field 'name'"))
+    name = string(name_raw)
+    type_raw = _field(block, "type", :type)
+    type_raw === nothing && throw(ArgumentError("payload-v2 block '$name' is missing required field 'type'"))
+    btype = string(type_raw)
     btype in ("pedigree", "iid", "coefcov", "correlated") ||
         throw(ArgumentError("unknown block type '$btype'; expected pedigree, iid, coefcov, or correlated"))
 
     Z_raw = _field(block, "Z", :Z)
-    Z_raw === nothing && throw(ArgumentError("block '$name' is missing field 'Z'"))
+    Z_raw === nothing && throw(ArgumentError("payload-v2 block '$name' is missing required field 'Z'"))
     Z = Z_raw isa AbstractMatrix ? Z_raw : Matrix{Float64}(Z_raw)
 
+    status_raw = _field(block, "relmat_status", :relmat_status)
+    status_raw === nothing && throw(ArgumentError(
+        "payload-v2 block '$name' is missing required field 'relmat_status'"))
     relmat_inverse = _resolve_relmat_inverse(block, Z)
 
     # §2: ids field for this block (level ids vector)
     ids_raw = _field(block, "ids", :ids)
-    block_ids = ids_raw === nothing ? collect(1:size(Z, 2)) : collect(ids_raw)
+    ids_raw === nothing && throw(ArgumentError(
+        "payload-v2 block '$name' is missing required field 'ids'"))
+    block_ids = collect(ids_raw)
 
     if btype == "correlated"
         # §2 correlated block: Z → Zd, partner_incidence → Zm.

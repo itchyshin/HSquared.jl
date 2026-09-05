@@ -128,6 +128,50 @@ function load_fixture(fname)
     return payload
 end
 
+_nt_keys(x::NamedTuple) = Set(fieldnames(typeof(x)))
+
+# ---------------------------------------------------------------------------
+# Frozen request schema guard
+# ---------------------------------------------------------------------------
+
+@testset "P0.5 payload-v2 frozen request schema" begin
+    expected_top_level = Set([
+        "payload_version", "y", "X", "method", "family",
+        "random_effects", "metadata",
+    ])
+    expected_metadata = Set(["n_obs", "n_re_blocks", "fixed_colnames", "ainv_status"])
+    expected_pedigree_block = Set([
+        "name", "type", "relmat_status", "relmat_inverse", "ids", "Z", "pedigree",
+    ])
+    expected_iid_block = Set([
+        "name", "type", "relmat_status", "relmat_inverse", "ids", "Z",
+    ])
+    expected_sparse = Set(["i", "j", "v", "nrow", "ncol"])
+    expected_pedigree = Set(["id", "sire", "dam", "sire_index", "dam_index", "original_order"])
+
+    for fname in ("fixture_a_single_animal.json",
+                  "fixture_b_animal_common_env.json",
+                  "fixture_c_animal_permanent.json")
+        raw = JSON3.read(read(joinpath(FIXTURE_DIR, fname), String))
+        @test Set(string.(keys(raw))) == expected_top_level
+        @test Int(raw["payload_version"]) == 2
+        @test Set(string.(keys(raw["metadata"]))) == expected_metadata
+        @test raw["metadata"]["ainv_status"] == "build_in_julia"
+        @test length(raw["random_effects"]) == Int(raw["metadata"]["n_re_blocks"])
+
+        for block in raw["random_effects"]
+            expected_block = block["type"] == "pedigree" ?
+                expected_pedigree_block : expected_iid_block
+            @test Set(string.(keys(block))) == expected_block
+            @test Set(string.(keys(block["Z"]))) == expected_sparse
+            @test block["relmat_inverse"] === nothing
+            if block["type"] == "pedigree"
+                @test Set(string.(keys(block["pedigree"]))) == expected_pedigree
+            end
+        end
+    end
+end
+
 # ---------------------------------------------------------------------------
 # Fixture (a): single-pedigree animal model
 #   Formula (R): y ~ sex + animal(1 | id, pedigree = ped_abcd)
@@ -185,6 +229,12 @@ end
     # ---- 5. v0.1 byte-identity: result_payload_v2 == result_payload(direct) -
     res_v2     = result_payload_v2(fit_v2_a, parsed_a)
     res_direct = result_payload(fit_direct_a)
+    @test _nt_keys(res_v2) == Set([
+        :variance_components, :heritability, :breeding_values, :fixed_effects,
+        :random_effects, :loglik, :df, :nobs, :predictions,
+        :prediction_error_variance, :reliability, :diagnostics, :converged,
+    ])
+    @test _nt_keys(res_v2.random_effects.animal) == Set([:ids, :values])
     # Both are AnimalModelFit: the v2 fast path must delegate to result_payload.
     @test res_v2.variance_components.sigma_a2 === res_direct.variance_components.sigma_a2
     @test res_v2.heritability ≈ res_direct.heritability
@@ -270,6 +320,12 @@ end
     @test res_v2_b.variance_components.blocks[1].variance ≈ vc_direct_b.sigma1
     @test res_v2_b.variance_components.blocks[2].variance ≈ vc_direct_b.sigma2
     @test res_v2_b.variance_components.residual ≈ vc_direct_b.sigma_e2
+    @test _nt_keys(res_v2_b) == Set([:variance_components, :random_effects, :loglik, :converged])
+    @test _nt_keys(res_v2_b.variance_components) == Set([:residual, :blocks])
+    @test all(_nt_keys(block) == Set([:name, :type, :variance])
+              for block in res_v2_b.variance_components.blocks)
+    @test all(_nt_keys(block) == Set([:name, :ids, :values])
+              for block in res_v2_b.random_effects)
 
     # ---- 6. Boundary: iid block has correct relmat_inverse (identity) -------
     @test b2_b.relmat_inverse ≈ I   # sparse identity over L=2 litter levels
