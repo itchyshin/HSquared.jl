@@ -23,6 +23,34 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-05 — 0.9 honesty status (NOT 0.9.0; count stays 7)
+
+Lane: `docs/coord-board-09-status-2026-09-05` (scratch clone
+`~/local-scratch/worktrees/HSquared.jl-coord-board-09-row-2026-09-05`).
+Dropbox twins FOREIGN. Shannon Path FULL DRAFT note only. Twin R
+table row is the Shannon ledger; this is the engine-board mirror.
+
+**Pins:** `public_covered_count` stays **7**. Experimental **0.8.0**.
+**0.9.0 NOT authorized.** No tag / General / CRAN / 1.0. No covered
+flip.
+
+**Paid:** Option B 12/12 honesty (R #176-#183 @ `7a5215d`; Julia
+#305-#308 @ `f8abd105`); NG-1 freeze+nod + R #173 @ `f70c2cd`;
+R #184 pkgdown @ `3e2b8c3`; Fisher yes Table 2 (Layer B track,
+**not** Gate-6); Gate 5 FA/SS post-merge PASS (scratch). Scratch
+Phase-1 banked both twins.
+
+**Waiting / blocked:** Gate-6 Rose **NOT READY / NOT CLEAN / do not
+spawn**. Layer B Rose live DRAFT **BLOCKED** (owner-accept unpaid;
+ratify forbidden). H1/H3 science unpaid. G10 S1/S2/S3 unpaid.
+Live-main check-log + after-task unpaid (DRAFT PRs exist).
+
+**Open PRs (do not merge from this note):** R #185 style (ready, not
+merged); R #187 and Julia #309 Phase-1 check-log DRAFTs. Sibling
+after-task DRAFTs R #188 / Julia #310.
+
+This is **not** a Rose audit and does **not** pay Gate-6.
+
 ### 2026-09-04 — CI flake: n=8 mv covariance SE throw (count stays 7)
 
 Lane: `cursor/mv-se-flake-20260904` (WT
