@@ -2,12 +2,19 @@
 
 !!! warning "Experimental 0.8.0 — not production"
     Version number tracks covered capability, not maturity. **Not** in the
-    Julia General registry — registration deferred pending collaborator
-    review
-    ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
-    Install with `Pkg.add(url=...)` only — do **not** use
-    `Pkg.add("HSquared")` by name.
+    Julia General registry. An earlier attempt
+    ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
+    v0.5.0) was closed. Install with `Pkg.add(url=...)` only — do **not**
+    use `Pkg.add("HSquared")` by name.
     `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
+
+I used language-model tools (Claude, Codex, and Cursor) on substantial
+parts of this engine: source, tests, and docs. I review the code I
+ship, and I am responsible for it. Tests and Documenter run in CI.
+This release is experimental 0.8.0. It is not a production engine and
+it is not version 1.0. HSquared is not in the Julia General registry
+yet; until a later registration actually merges, install with
+`Pkg.add(url=...)` only.
 
 `HSquared.jl` is the Julia engine twin of the R package
 [hsquared](https://github.com/itchyshin/hsquared). This is not the package
@@ -128,11 +135,10 @@ Planned, but not implemented yet:
 
 ## Install
 
-HSquared is **not** in the Julia General registry — registration deferred
-pending collaborator review
-([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969)).
-Do **not** use `Pkg.add("HSquared")` by name. This `0.8.0` number is
-experimental; `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
+HSquared is **not** in the Julia General registry. An earlier attempt
+([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
+v0.5.0) was closed. Do **not** use `Pkg.add("HSquared")` by name. This
+`0.8.0` number is experimental; `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
 
 ```julia
 using Pkg
