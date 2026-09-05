@@ -34,6 +34,7 @@ makedocs(;
             "Model spec grammar" => "model-spec-grammar.md",
             "Data containers" => "data.md",
             "Pedigrees and Ainv" => "pedigree-ainv.md",
+            "Twin boundary" => "twin-boundary.md",
         ],
         "Model guides" => [
             "Standard QG models" => "standard-qg-models.md",
