@@ -1,6 +1,6 @@
 # Live Phase Snapshot — archive
 
-Thirty entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
+Thirty-one entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
 2026-06-20). **Nothing is summarised; nothing is deleted.**
 
 Why they moved: the `## Live Phase Snapshot` block had grown to **92% of `AGENTS.md`** (720 of 880
