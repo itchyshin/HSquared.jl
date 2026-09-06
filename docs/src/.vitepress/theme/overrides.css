@@ -13,17 +13,17 @@
   scroll-margin-top: calc(var(--vp-nav-height) + 8px);
 }
 
-/* ---- Palette (OPUS-BEAUTY-BRIEF §1) --------------------------------------
+/* ---- Palette -------------------------------------------------------------
    Every hue is taken from the PROPOSAL hex (docs/src/assets/logo.svg) or is a
    lightness step of the same teal. The hex is PROPOSAL, not a settled brand.
 
    --hs-teal   mark fill; hero name; primary button. #0A3A48 is 12.3:1 on
                white but reads as ink, so it is NOT the link colour.
    --hs-link   --vp-c-brand-1 (~50 consumers, body links). #0A6C7E is the
-               same teal, lighter: ~6.1:1 on white (re-measure in build).
-   --hs-gold   mark pedigree; card hover edge + focus ring only, never text
-               (1.9:1 on white).
-   --hs-rim    mark hairline; alt-button border. */
+               same teal, lighter: ~6.1:1 on white.
+   --hs-gold   mark pedigree; hero rule; card hover edge + focus ring. Never
+               text (1.9:1 on white).
+   --hs-rim    mark hairline; card and alt-button border. */
 :root {
   --hs-teal: #0a3a48;
   --hs-link: #0a6c7e;
@@ -32,6 +32,19 @@
   --hs-ink: var(--vp-c-text-1);
   --hs-deep: #072a36;
   --hs-abyss: #041c24;
+
+  /* Hero ground. Teal and gold only -- no violet, no Julia red/green/purple.
+     Alphas are the second attempt: the first pass sat at 4-7% and simply did
+     not register at 1440, which is most of why the page still read as a white
+     sea. These land the wash while keeping type contrast untouched. */
+  --hs-wash-teal: rgba(10, 108, 126, 0.2);
+  --hs-wash-gold: rgba(240, 180, 41, 0.13);
+  --hs-wash-sheet: rgba(10, 58, 72, 0.07);
+  --hs-lattice: rgba(10, 58, 72, 0.09);
+  --hs-card-top: rgba(246, 251, 251, 0.95);
+  --hs-card-bottom: rgba(10, 58, 72, 0.075);
+  --hs-shadow: rgba(7, 42, 54, 0.1);
+  --hs-shadow-lift: rgba(7, 42, 54, 0.16);
 
   --vp-c-brand-1: var(--hs-link);
   --vp-c-brand-2: #095c6c;
@@ -49,20 +62,23 @@
   --vp-button-brand-active-text: #f8fbfb;
   --vp-button-brand-active-border: var(--hs-abyss);
 
-  /* Two outline buttons: rim hairline, ink label. Not four flat pills. */
-  --vp-button-alt-bg: transparent;
+  /* Two outline buttons: rim hairline, ink label. Not three flat pills. */
+  --vp-button-alt-bg: rgba(255, 255, 255, 0.72);
   --vp-button-alt-text: var(--hs-ink);
   --vp-button-alt-border: var(--hs-rim);
-  --vp-button-alt-hover-bg: rgba(10, 58, 72, 0.06);
-  --vp-button-alt-hover-text: var(--hs-ink);
+  --vp-button-alt-hover-bg: #ffffff;
+  --vp-button-alt-hover-text: var(--hs-teal);
   --vp-button-alt-hover-border: var(--hs-teal);
-  --vp-button-alt-active-bg: rgba(10, 58, 72, 0.12);
-  --vp-button-alt-active-text: var(--hs-ink);
+  --vp-button-alt-active-bg: rgba(10, 58, 72, 0.08);
+  --vp-button-alt-active-text: var(--hs-teal);
   --vp-button-alt-active-border: var(--hs-teal);
 
-  /* Hero name: flat teal. The gradient is the VitePress default and makes
-     the brand line fight the question. */
-  --vp-home-hero-name-color: var(--hs-teal);
+  /* Hero name: a colour that is obviously not ink. DRM/GLLVM keep
+     .name and .text at the SAME 56px; the split is brand-1 vs ink.
+     #0A3A48 (--hs-teal) is 12:1 on white and reads as the question's
+     charcoal, so the two lines fuse. #0A6C7E is the same teal, lit
+     enough to do the sister job. Size split is in .VPHero .main below. */
+  --vp-home-hero-name-color: var(--hs-link);
   --vp-home-hero-name-background: none;
 
   /* No blurred backdrop behind the mark (see Hero below). */
@@ -76,6 +92,15 @@
   --hs-teal: #7ec8d4; /* 9.07:1 on the VitePress dark ground */
   --hs-link: #7ec8d4;
   --hs-rim: rgba(214, 232, 232, 0.28);
+
+  --hs-wash-teal: rgba(126, 200, 212, 0.16);
+  --hs-wash-gold: rgba(240, 180, 41, 0.09);
+  --hs-wash-sheet: rgba(126, 200, 212, 0.07);
+  --hs-lattice: rgba(214, 232, 232, 0.075);
+  --hs-card-top: rgba(126, 200, 212, 0.06);
+  --hs-card-bottom: rgba(2, 20, 27, 0.35);
+  --hs-shadow: rgba(0, 0, 0, 0.4);
+  --hs-shadow-lift: rgba(0, 0, 0, 0.55);
 
   --vp-c-brand-1: var(--hs-link);
   --vp-c-brand-2: #a6dce4;
@@ -92,9 +117,12 @@
   --vp-button-brand-active-text: var(--hs-abyss);
   --vp-button-brand-active-border: #d6e8e8;
 
-  --vp-button-alt-hover-bg: rgba(126, 200, 212, 0.1);
+  --vp-button-alt-bg: rgba(126, 200, 212, 0.04);
+  --vp-button-alt-hover-bg: rgba(126, 200, 212, 0.12);
+  --vp-button-alt-hover-text: var(--hs-teal);
   --vp-button-alt-hover-border: var(--hs-teal);
-  --vp-button-alt-active-bg: rgba(126, 200, 212, 0.18);
+  --vp-button-alt-active-bg: rgba(126, 200, 212, 0.2);
+  --vp-button-alt-active-text: var(--hs-teal);
   --vp-button-alt-active-border: var(--hs-teal);
 
   /* DocumenterVitepress's default .dark block repaints the name with the
@@ -106,19 +134,136 @@
   --vp-home-hero-image-filter: none;
 }
 
-/* ---- Hero: exactly one hex (OPUS-BEAUTY-BRIEF §2) -------------------------
-   VPHero renders <div class="image-bg">, a 320px border-radius:50% div
-   painted by --vp-home-hero-image-background-image and smeared by
+/* ---- Navbar mark ----------------------------------------------------------
+   DocumenterVitepress hardcodes `logo: { src: '/logo.png', width: 24, height:
+   24 }` (vitepress_config.jl:144) and there is no committed config.mts to edit
+   -- adding one would freeze every other generated setting. So swap the image
+   in CSS instead.
+
+   The full hex is drawn for a 300px hero: a 22-unit rim, three 46-unit rings,
+   and an h-squared inside a 1200-unit board. Squeezed into 24px the rings
+   close up and the silhouette rounds off, which is why the navbar read as a
+   circular badge rather than the hero's hex. logo-mark.svg is the same mark
+   redrawn for chrome size: heavier rim, one collapsed gold pedigree bar, and
+   an h-squared sized to survive. Both files ship, because writer.jl:198 copies
+   every `assets/*logo*` into public/.
+
+   `content: url()` on an <img> is supported in Chromium, WebKit, and Firefox;
+   where it is not, the hero PNG shows through unchanged. */
+.VPNavBarTitle .logo,
+.VPNavBarTitle .VPImage.logo {
+  content: url("/logo-mark.svg");
+  width: 26px;
+  height: 26px;
+  max-height: none;
+  margin-right: 8px;
+}
+
+.VPNavBarTitle .title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Hero ground ---------------------------------------------------------
+   The complaint the previous pass did not answer: the page was a white sea
+   with type floating in it. Two stacked layers give the hero a ground without
+   a hard coloured band -- a warm/cold radial pair plus a faint 48px lattice
+   that fades out before it reaches the cards. The lattice is the engine
+   reference (a sparse matrix, not decoration) and is held under 6% alpha. */
+.VPHome {
+  padding-bottom: 0;
+}
+
+.VPHero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-bottom: 84px;
+}
+
+@media (min-width: 960px) {
+  .VPHero {
+    padding-top: calc(
+      var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 76px
+    );
+    padding-bottom: 96px;
+  }
+}
+
+.VPHero::before,
+.VPHero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(-1 * (var(--vp-nav-height) + var(--vp-layout-top-height, 0px))) 0
+    0 0;
+  pointer-events: none;
+}
+
+.VPHero::before {
+  background-image:
+    radial-gradient(
+      58rem 30rem at 76% 22%,
+      var(--hs-wash-teal),
+      transparent 70%
+    ),
+    radial-gradient(30rem 18rem at 2% 4%, var(--hs-wash-gold), transparent 72%),
+    linear-gradient(180deg, var(--hs-wash-sheet), transparent 82%);
+}
+
+.VPHero::after {
+  background-image:
+    linear-gradient(var(--hs-lattice) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hs-lattice) 1px, transparent 1px);
+  background-size: 52px 52px;
+  background-position: center top;
+  /* A tight mask made the lattice read as a patch of artefact beside the hex
+     rather than a ground under the whole hero. Wide, with a long fade. */
+  -webkit-mask-image: radial-gradient(
+    72rem 40rem at 58% 24%,
+    #000 12%,
+    transparent 80%
+  );
+  mask-image: radial-gradient(
+    72rem 40rem at 58% 24%,
+    #000 12%,
+    transparent 80%
+  );
+}
+
+/* A hairline closes the hero ground so the cards read as a second register
+   rather than more of the same white. */
+.VPHero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.VPHome .VPFeatures {
+  position: relative;
+  padding-top: 56px;
+  border-top: 1px solid var(--hs-rim);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .VPHero::before,
+  .VPHero::after {
+    display: none;
+  }
+}
+
+/* ---- Hero: exactly one hex -----------------------------------------------
+   VPHero renders <div class="image-bg">, a 320px border-radius:50% div painted
+   by --vp-home-hero-image-background-image and smeared by
    --vp-home-hero-image-filter. That halo read as two or three stacked hexes
    behind the mark. Remove the element, not just its paint. The upstream
-   .image-container also carries transform: translate(-32px,-32px) at
-   >=960px, which floats the mark above the name's cap line; reset it. */
+   .image-container also carries transform: translate(-32px,-32px) at >=960px,
+   which floats the mark above the name's cap line; reset it. */
 .VPHero .image-bg {
   display: none;
 }
 
 .VPHero .image-container {
-  width: min(300px, 62vw);
+  width: min(320px, 62vw);
   transform: none;
 }
 
@@ -140,49 +285,154 @@
   mix-blend-mode: normal;
 }
 
-/* Type hierarchy: brand line, then the question as the headline. Upstream
-   sets .name and .text to one shared size per breakpoint; .main scopes these
-   above the theme's scoped selectors. */
-.VPHero .main .name {
-  font-size: clamp(2.4rem, 5.2vw, 3.4rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+/* ---- Hero type -----------------------------------------------------------
+   Upstream sets .name and .text to one shared size per breakpoint, and the
+   previous pass left them 3.4rem against 3.1rem -- close enough that the brand
+   line and the question read as a single ragged three-line block. The sister
+   sites (DRM.jl, GLLVM.jl) work because the two lines do different jobs: a
+   coloured brand line, then the question at display weight in ink. Roughly
+   1.7x between them, with a real gap, is what makes the question the headline.
+
+   .main scopes these above the theme's own scoped selectors. */
+.VPHero .heading {
+  display: flex;
+  flex-direction: column;
 }
 
+.VPHero .main .name {
+  font-size: clamp(1.75rem, 2.9vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  margin-bottom: 0.5rem;
+}
+
+/* Short gold rule above the brand line. Gold appears as an edge, never as
+   text. .name carries VitePress's .clip, which sets background-clip: text for
+   the default gradient; reset those on the pseudo so it paints as a bar. */
+.VPHero .main .name::before {
+  content: "";
+  display: block;
+  width: 52px;
+  height: 3px;
+  margin-bottom: 1.15rem;
+  border-radius: 2px;
+  background: var(--hs-gold);
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
+  -webkit-text-fill-color: initial;
+}
+
+/* max-width must stay relative as well as absolute: a bare `22ch` is wider
+   than a phone viewport at this font size, so the line stopped wrapping and
+   "How much is genetic?" ran off the right edge instead. */
 .VPHero .main .text {
   color: var(--vp-c-text-1);
-  font-size: clamp(2.1rem, 4.6vw, 3.1rem);
-  font-weight: 750;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.95rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+  max-width: min(22ch, 100%);
 }
 
 .VPHero .main .tagline {
-  max-width: 40rem;
+  max-width: 38rem;
+  margin-top: 1.5rem;
   font-size: 1.05rem;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--vp-c-text-2);
 }
 
-/* Gold appears on the page only as a keyboard focus ring and a card hover
-   edge, never as text. */
+/* The lede rule is a left-aligned device. Below 960px VitePress centres the
+   hero, where a hanging border reads as a stray line. */
+@media (min-width: 960px) {
+  .VPHero .main .tagline {
+    margin-top: 1.75rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--hs-rim);
+  }
+}
+
+/* ---- Buttons -------------------------------------------------------------
+   Default VitePress pills read as a menu of three equivalent links. One
+   weighted dark button with a teal shadow, then two quieter outlines, reads as
+   a decision. The squarer radius is deliberate: it is the fastest signal that
+   the chrome is not stock. */
+.VPHero .actions {
+  margin-top: 2.25rem;
+  gap: 0.75rem;
+}
+
+.VPHero .action {
+  padding: 0;
+}
+
+/* VitePress compiles VPButton's styles as a scoped SFC block, so its rules
+   arrive as `.VPButton.medium[data-v-hash]` -- specificity 0,3,0. A bare
+   `.VPButton.medium` is 0,2,0 and loses no matter how late it loads, which is
+   why the pills stayed at the stock 20px radius and 38px height through the
+   previous pass. Every button rule here is descended from .VPHero .action to
+   clear that bar. */
+.VPHero .action .VPButton,
+.VPHero .action .VPButton.medium {
+  border-radius: 10px;
+  border-width: 1.5px;
+  padding: 0 1.5rem;
+  line-height: 48px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 200ms ease,
+    transform 160ms ease;
+}
+
+.VPHero .action .VPButton.brand {
+  box-shadow: 0 8px 20px -8px rgba(7, 42, 54, 0.5);
+}
+
+.VPHero .action .VPButton.brand:hover {
+  box-shadow: 0 12px 26px -8px rgba(7, 42, 54, 0.55);
+  transform: translateY(-1px);
+}
+
+.VPHero .action .VPButton.alt:hover {
+  transform: translateY(-1px);
+}
+
+/* Gold appears on the page only as a keyboard focus ring, the hero rule, and
+   a card hover edge -- never as text. */
 .VPButton:focus-visible,
 .VPFeature:focus-visible {
   outline: 3px solid var(--hs-gold);
   outline-offset: 2px;
 }
 
-/* ---- Feature cards --------------------------------------------------------
-   4-up grid. A two-line title must not shove the details block short of its
-   last line: give the card a floor and let text wrap and overflow freely. */
+/* ---- Feature cards ------------------------------------------------------
+   4-up grid. Two problems: a two-line title such as "Read the estimand, not
+   the brand" was shoving its details block short of the last line, and the
+   cards themselves were the untouched default -- flat fill, hairline border,
+   no craft. Give the card a floor, a soft vertical fill, a teal title, and a
+   gold top edge that only appears on hover. */
 .VPFeatures .VPFeature {
   min-height: 13.5rem;
   height: 100%;
   overflow: visible;
-  border: 1px solid var(--vp-c-divider);
+  border: 1px solid var(--hs-rim);
+  border-radius: 12px;
+  padding: 1.4rem;
+  background: linear-gradient(
+    180deg,
+    var(--hs-card-top),
+    var(--hs-card-bottom)
+  );
+  box-shadow: 0 1px 2px var(--hs-shadow);
   transition:
     border-color 160ms ease,
+    box-shadow 200ms ease,
     transform 160ms ease;
 }
 
@@ -192,26 +442,48 @@
 }
 
 .VPFeature .title {
+  color: var(--hs-teal);
+  font-size: 1.02rem;
+  font-weight: 700;
   line-height: 1.3;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
 .VPFeature .details {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1.62;
   overflow: visible;
   -webkit-line-clamp: none;
   overflow-wrap: anywhere;
 }
 
 .VPFeature:hover {
-  border-color: var(--hs-gold);
-  transform: translateY(-2px);
+  border-color: var(--hs-teal);
+  box-shadow:
+    inset 0 2px 0 0 var(--hs-gold),
+    0 10px 24px -12px var(--hs-shadow-lift);
+  transform: translateY(-3px);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .VPFeature,
   .VPFeature:hover,
-  .VPButton {
+  .VPHero .action .VPButton,
+  .VPHero .action .VPButton:hover {
     transition: none;
     transform: none;
   }
+}
+
+/* ---- Home body ----------------------------------------------------------
+   The honesty callout is the first thing under the cards and carries the
+   EXPERIMENTAL 0.8.0 / public_covered_count = 7 / 0.9-not-released statement.
+   It should look deliberate rather than like an unstyled warning block; the
+   wording is not touched here. */
+.VPHome .vp-doc .custom-block {
+  border-radius: 12px;
+  border-width: 1px;
+  border-left-width: 4px;
 }
