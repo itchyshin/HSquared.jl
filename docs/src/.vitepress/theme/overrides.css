@@ -1,4 +1,4 @@
-/* Loaded after the resolved DocumenterVitepress theme styles.
+/* Loaded after the resolved DocumenterVitepress theme styles (index.ts).
    Customisations live HERE and never in theme/style.css: DocumenterVitepress
    writes its default stylesheet only when theme/style.css is ABSENT
    (vitepress_config.jl:61-63). Creating that file silently drops JuliaMono,
@@ -13,71 +13,193 @@
   scroll-margin-top: calc(var(--vp-nav-height) + 8px);
 }
 
-/* ---- Palette -------------------------------------------------------------
-   Drawn from the PROPOSAL hex (docs/src/assets/logo.svg): dark teal fills
-   #0A3A48 / #072A36 / #041C24, gold pedigree #F0B429, pale rim #D6E8E8.
-   Hex is PROPOSAL — not a settled brand decision.
+/* ---- Palette (OPUS-BEAUTY-BRIEF §1) --------------------------------------
+   Every hue is taken from the PROPOSAL hex (docs/src/assets/logo.svg) or is a
+   lightness step of the same teal. The hex is PROPOSAL, not a settled brand.
 
-   --vp-c-brand-1 paints body links. The mark gold fails WCAG AA on white
-   (~1.9:1). The mark fill #0A3A48 measures ~11.8:1 on white and is used as
-   the light-mode link/button hue. Gold stays a fill/edge accent only. */
+   --hs-teal   mark fill; hero name; primary button. #0A3A48 is 12.3:1 on
+               white but reads as ink, so it is NOT the link colour.
+   --hs-link   --vp-c-brand-1 (~50 consumers, body links). #0A6C7E is the
+               same teal, lighter: ~6.1:1 on white (re-measure in build).
+   --hs-gold   mark pedigree; card hover edge + focus ring only, never text
+               (1.9:1 on white).
+   --hs-rim    mark hairline; alt-button border. */
 :root {
-  --hs-teal: #0a3a48;       /* mark fill — edges, hero wash */
-  --hs-teal-text: #0a3a48;  /* AA on white — links, brand button */
-  --hs-gold: #f0b429;       /* mark pedigree — hover edges only */
+  --hs-teal: #0a3a48;
+  --hs-link: #0a6c7e;
+  --hs-gold: #f0b429;
   --hs-rim: #d6e8e8;
+  --hs-ink: var(--vp-c-text-1);
+  --hs-deep: #072a36;
+  --hs-abyss: #041c24;
 
-  --vp-c-brand-1: var(--hs-teal-text);
-  --vp-c-brand-2: #072a36;
-  --vp-c-brand-3: #041c24;
-  --vp-c-brand-soft: rgba(10, 58, 72, 0.12);
+  --vp-c-brand-1: var(--hs-link);
+  --vp-c-brand-2: #095c6c;
+  --vp-c-brand-3: var(--hs-teal);
+  --vp-c-brand-soft: rgba(10, 108, 126, 0.12);
 
-  --vp-button-brand-bg: var(--hs-teal-text);
-  --vp-button-brand-hover-bg: #072a36;
-  --vp-button-brand-border: var(--hs-teal-text);
+  /* One dark button: the hex fill under near-white text (11.8:1). */
+  --vp-button-brand-bg: var(--hs-teal);
+  --vp-button-brand-text: #f8fbfb;
+  --vp-button-brand-border: var(--hs-teal);
+  --vp-button-brand-hover-bg: var(--hs-deep);
+  --vp-button-brand-hover-text: #f8fbfb;
+  --vp-button-brand-hover-border: var(--hs-deep);
+  --vp-button-brand-active-bg: var(--hs-abyss);
+  --vp-button-brand-active-text: #f8fbfb;
+  --vp-button-brand-active-border: var(--hs-abyss);
 
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(112deg, #041c24, #0a3a48 58%, #0d4d5c);
-  --vp-home-hero-image-background-image:
-    radial-gradient(circle at 38% 38%, rgba(10, 58, 72, 0.28), transparent 46%),
-    radial-gradient(circle at 68% 66%, rgba(240, 180, 41, 0.18), transparent 44%);
-  --vp-home-hero-image-filter: blur(30px);
+  /* Two outline buttons: rim hairline, ink label. Not four flat pills. */
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-text: var(--hs-ink);
+  --vp-button-alt-border: var(--hs-rim);
+  --vp-button-alt-hover-bg: rgba(10, 58, 72, 0.06);
+  --vp-button-alt-hover-text: var(--hs-ink);
+  --vp-button-alt-hover-border: var(--hs-teal);
+  --vp-button-alt-active-bg: rgba(10, 58, 72, 0.12);
+  --vp-button-alt-active-text: var(--hs-ink);
+  --vp-button-alt-active-border: var(--hs-teal);
+
+  /* Hero name: flat teal. The gradient is the VitePress default and makes
+     the brand line fight the question. */
+  --vp-home-hero-name-color: var(--hs-teal);
+  --vp-home-hero-name-background: none;
+
+  /* No blurred backdrop behind the mark (see Hero below). */
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
 }
 
 /* VitePress puts .dark on <html> via useDark, so :root.dark beats the
    theme's own .dark rules without depending on load order. */
 :root.dark {
-  --hs-teal: #7ec8d4;
-  --hs-teal-text: #7ec8d4; /* ~8.9:1 on the VitePress dark ground */
-  --hs-gold: #f0b429;
+  --hs-teal: #7ec8d4; /* 9.07:1 on the VitePress dark ground */
+  --hs-link: #7ec8d4;
+  --hs-rim: rgba(214, 232, 232, 0.28);
 
-  --vp-c-brand-1: var(--hs-teal-text);
+  --vp-c-brand-1: var(--hs-link);
   --vp-c-brand-2: #a6dce4;
   --vp-c-brand-3: #d6e8e8;
-  --vp-c-brand-soft: rgba(126, 200, 212, 0.16);
+  --vp-c-brand-soft: rgba(126, 200, 212, 0.14);
 
-  --vp-button-brand-bg: #0a3a48;
-  --vp-button-brand-hover-bg: #0d4d5c;
-  --vp-button-brand-border: #7ec8d4;
+  --vp-button-brand-bg: var(--hs-teal);
+  --vp-button-brand-text: var(--hs-abyss);
+  --vp-button-brand-border: var(--hs-teal);
+  --vp-button-brand-hover-bg: #a6dce4;
+  --vp-button-brand-hover-text: var(--hs-abyss);
+  --vp-button-brand-hover-border: #a6dce4;
+  --vp-button-brand-active-bg: #d6e8e8;
+  --vp-button-brand-active-text: var(--hs-abyss);
+  --vp-button-brand-active-border: #d6e8e8;
 
-  --vp-home-hero-name-background: linear-gradient(112deg, #7ec8d4, #d6e8e8);
+  --vp-button-alt-hover-bg: rgba(126, 200, 212, 0.1);
+  --vp-button-alt-hover-border: var(--hs-teal);
+  --vp-button-alt-active-bg: rgba(126, 200, 212, 0.18);
+  --vp-button-alt-active-border: var(--hs-teal);
+
+  /* DocumenterVitepress's default .dark block repaints the name with the
+     Julia RGBP gradient; restate flat teal here or it wins in dark mode. */
+  --vp-home-hero-name-color: var(--hs-teal);
+  --vp-home-hero-name-background: none;
+
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
 }
 
-/* ---- Hero ----------------------------------------------------------------
-   .image-container is a fixed 320px with no max-width in the upstream theme,
-   which overflows the body on a 320px viewport. Cap it instead. */
+/* ---- Hero: exactly one hex (OPUS-BEAUTY-BRIEF §2) -------------------------
+   VPHero renders <div class="image-bg">, a 320px border-radius:50% div
+   painted by --vp-home-hero-image-background-image and smeared by
+   --vp-home-hero-image-filter. That halo read as two or three stacked hexes
+   behind the mark. Remove the element, not just its paint. The upstream
+   .image-container also carries transform: translate(-32px,-32px) at
+   >=960px, which floats the mark above the name's cap line; reset it. */
+.VPHero .image-bg {
+  display: none;
+}
+
 .VPHero .image-container {
-  width: min(320px, 100%);
+  width: min(300px, 62vw);
+  transform: none;
 }
 
-.VPHero .tagline {
+.VPHero .image-container::before,
+.VPHero .image-container::after {
+  content: none;
+  display: none;
+}
+
+/* The mark itself is absolutely centred upstream with
+   transform: translate(-50%, -50%); that transform is layout, not decoration,
+   and stays. Only paint effects are cleared. */
+.VPHero .image-src,
+.VPHero .VPImage {
+  max-width: 100%;
+  max-height: none;
+  filter: none;
+  box-shadow: none;
+  mix-blend-mode: normal;
+}
+
+/* Type hierarchy: brand line, then the question as the headline. Upstream
+   sets .name and .text to one shared size per breakpoint; .main scopes these
+   above the theme's scoped selectors. */
+.VPHero .main .name {
+  font-size: clamp(2.4rem, 5.2vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.VPHero .main .text {
+  color: var(--vp-c-text-1);
+  font-size: clamp(2.1rem, 4.6vw, 3.1rem);
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.VPHero .main .tagline {
   max-width: 40rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--vp-c-text-2);
 }
 
-/* ---- Feature cards ------------------------------------------------------- */
-.VPFeature {
+/* Gold appears on the page only as a keyboard focus ring and a card hover
+   edge, never as text. */
+.VPButton:focus-visible,
+.VPFeature:focus-visible {
+  outline: 3px solid var(--hs-gold);
+  outline-offset: 2px;
+}
+
+/* ---- Feature cards --------------------------------------------------------
+   4-up grid. A two-line title must not shove the details block short of its
+   last line: give the card a floor and let text wrap and overflow freely. */
+.VPFeatures .VPFeature {
+  min-height: 13.5rem;
+  height: 100%;
+  overflow: visible;
   border: 1px solid var(--vp-c-divider);
-  transition: border-color 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.VPFeature .box {
+  height: 100%;
+  overflow: visible;
+}
+
+.VPFeature .title {
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.VPFeature .details {
+  overflow: visible;
+  -webkit-line-clamp: none;
+  overflow-wrap: anywhere;
 }
 
 .VPFeature:hover {
@@ -87,7 +209,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .VPFeature,
-  .VPFeature:hover {
+  .VPFeature:hover,
+  .VPButton {
     transition: none;
     transform: none;
   }

@@ -5,10 +5,10 @@ layout: home
 hero:
   name: "HSquared.jl"
   text: "How much is genetic?"
-  tagline: "The Julia engine twin of hsquared. Sparse pedigrees, REML, and extractors — not the package you type a formula into."
+  tagline: "The Julia engine behind hsquared: sparse pedigrees, REML, EBVs, and heritability extractors. Experimental 0.8.0 — an engine, not the package you type a formula into."
   image:
     src: /logo.png
-    alt: "HSquared.jl hex mark (PROPOSAL): dark teal hexagon, gold hollow pedigree rings, h-squared. Not a settled brand."
+    alt: "HSquared.jl hex mark (PROPOSAL): deep teal hexagon, three hollow gold pedigree rings, h-squared. Not a settled brand."
   actions:
     - theme: brand
       text: First engine utility
@@ -21,14 +21,14 @@ hero:
       link: https://itchyshin.github.io/hsquared/
 
 features:
-  - title: "A formula on the R side"
-    details: "y ~ sex + age + animal(1 | id, pedigree = ped) is the default applied path. These pages document the engine underneath it."
+  - title: "The formula lives in R"
+    details: "y ~ sex + age + animal(1 | id, pedigree = ped) is the applied path in hsquared. These pages document the engine underneath it."
   - title: "Seven covered routes"
-    details: "public_covered_count is 7, validation-scale. Partial and planned stay labelled. The version number tracks covered capability, not maturity."
-  - title: "Read the estimand, not the brand"
-    details: "Report point estimates only where the route is covered. Standard errors and intervals are experimental and not coverage-calibrated."
+    details: "public_covered_count is 7 at validation scale. Partial and planned rows stay labelled; the version tracks covered capability, not maturity."
+  - title: "Point estimates, honestly"
+    details: "Report where the route is covered. Standard errors and intervals are experimental and not coverage-calibrated."
   - title: "A twin, not a port"
-    details: "MIT-licensed engine. hsquared owns the applied language. Not ASReml, not a GLLVM, and not a production sparse pipeline."
+    details: "MIT-licensed engine; hsquared owns the applied language. Not ASReml, not a GLLVM, not a production sparse pipeline."
 ---
 ```
 
