@@ -6,6 +6,10 @@
 /docs/Manifest.toml
 /docs/build/
 /docs/node_modules/
+# DocumenterVitepress copies these defaults only when they are absent.
+# Never commit a local theme/style.css — it takes over the default sheet.
+/docs/src/.vitepress/theme/style.css
+/docs/src/.vitepress/theme/docstrings.css
 /docs/package-lock.json
 /docs/package.json
 /coverage/
