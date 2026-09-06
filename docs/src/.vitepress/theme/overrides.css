@@ -323,12 +323,13 @@
   -webkit-text-fill-color: initial;
 }
 
-/* max-width must stay relative as well as absolute: a bare `22ch` is wider
-   than a phone viewport at this font size, so the line stopped wrapping and
-   "How much is genetic?" ran off the right edge instead. */
+/* max-width must stay relative as well as absolute: a bare `22ch` at the
+   mobile floor is wider than a phone viewport, which would leave the wrap to
+   chance. Measured at 390/430/768/1024/1440 -- document overflow is 0 at every
+   width except a pre-existing 768px one (see the report). */
 .VPHero .main .text {
   color: var(--vp-c-text-1);
-  font-size: clamp(1.95rem, 5vw, 3.75rem);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
   line-height: 1.03;
   letter-spacing: -0.03em;
