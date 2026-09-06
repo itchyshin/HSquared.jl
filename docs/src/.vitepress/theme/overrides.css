@@ -125,7 +125,13 @@
   --hs-bloom-warm: rgba(194, 147, 221, 0.13);
   --hs-bloom-cool: rgba(131, 163, 243, 0.13);
   --hs-wash-sheet: rgba(126, 200, 212, 0.07);
-  --hs-lattice: rgba(214, 232, 232, 0.075);
+  /* 0.075 was set by eye against the light value (0.09) on the assumption that
+     the same alpha reads the same on either ground. It does not: a pale line on
+     a near-black field is a much larger local contrast step than a dark line on
+     white, so the dark lattice read as a hard drawn grid rather than a ground,
+     and where it ran up to the hex the eye carried the lines straight across an
+     opaque mark. The mark was never transparent; the grid was too loud. */
+  --hs-lattice: rgba(214, 232, 232, 0.042);
   --hs-card-top: rgba(126, 200, 212, 0.06);
   --hs-card-bottom: rgba(2, 20, 27, 0.35);
   --hs-shadow: rgba(0, 0, 0, 0.4);
@@ -271,17 +277,29 @@
   background-size: 52px 52px;
   background-position: center top;
   /* A tight mask made the lattice read as a patch of artefact beside the hex
-     rather than a ground under the whole hero. Wide, with a long fade. */
+     rather than a ground under the whole hero. Wide, with a long fade -- but
+     centred on the type column, not the middle of the hero. At 58% the mask's
+     full-strength core sat under the mark itself, which is the geometry that
+     produced the read-through complaint: grid at full alpha meeting the hex
+     edge on all six sides. Centred at 32% it grounds the words and has died
+     out by the time it reaches the hex column. */
   -webkit-mask-image: radial-gradient(
-    72rem 40rem at 58% 24%,
-    #000 12%,
-    transparent 80%
+    64rem 36rem at 32% 26%,
+    #000 10%,
+    transparent 70%
   );
-  mask-image: radial-gradient(
-    72rem 40rem at 58% 24%,
-    #000 12%,
-    transparent 80%
-  );
+  mask-image: radial-gradient(64rem 36rem at 32% 26%, #000 10%, transparent 70%);
+}
+
+/* Below the two-column breakpoint the mark stops sitting beside the type and
+   centres over exactly the part of the hero the lattice grounds, so no mask
+   centre can keep the two apart. Drop the lattice there and let the radial
+   wash carry the ground alone. This is the viewport the read-through was
+   photographed at. */
+@media (max-width: 959px) {
+  .VPHero::after {
+    display: none;
+  }
 }
 
 /* A hairline closes the hero ground so the cards read as a second register
@@ -318,6 +336,13 @@
 .VPHero .image-container {
   width: min(320px, 62vw);
   transform: none;
+  /* Stated, not inherited. The mark is opaque and both hero grounds are
+     z-index -1 pseudo-elements, so nothing can print through it -- but that
+     held only because .container happens to raise the whole column. Pin the
+     mark's own layer so a later change to .container cannot quietly drop the
+     mark into the lattice. */
+  position: relative;
+  z-index: 1;
 }
 
 .VPHero .image-container::before,
@@ -336,6 +361,10 @@
   filter: none;
   box-shadow: none;
   mix-blend-mode: normal;
+  /* Both stated so the mark cannot become a window on anything behind it: the
+     hex fill in logo.svg is a fully opaque gradient, and the only ways to
+     undo that from CSS are a fractional opacity or a blend mode. */
+  opacity: 1;
 }
 
 /* ---- Hero type -----------------------------------------------------------
