@@ -3,7 +3,11 @@
 layout: home
 
 hero:
-  name: "HSquared.jl"
+  # VitePress renders hero name/text/tagline with v-html, so the wordmark can
+  # be two-tone without a theme component or a DOM patch. DRM.jl's near-black
+  # `DRM` + coloured `.jl` is the single move that stops the brand line and the
+  # question reading as one block; this is the same move in our teal.
+  name: "HSquared<span class='hs-jl'>.jl</span>"
   text: "How much is genetic?"
   tagline: "The Julia engine behind hsquared: sparse pedigrees, REML, EBVs, and heritability extractors. Experimental 0.8.0 — an engine, not the package you type a formula into."
   image:
