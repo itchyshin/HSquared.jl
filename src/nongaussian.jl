@@ -1496,17 +1496,18 @@ end
                               mu = nothing, n_trials = nothing,
                               predictor_variance = 0.0, converged = true)
 
-Return the explicit latent- and observation-scale summary for the supported
-Poisson-log and Binomial-logit families.  This small bridge-facing helper accepts
-only `:poisson`, `:binomial`, and `:bernoulli`; it validates a supplied trial
-denominator before a latent-only (`mu = nothing`) return, so varying denominators
-remain visible rather than being averaged.
+Return the explicit latent- and observation-scale summary for the public
+Poisson-log and Binomial-logit family labels.  `:bernoulli` is accepted only as
+an internal `Binomial(1)` input alias and normalizes to `:binomial` in the
+returned summary.  The helper validates a supplied trial denominator before a
+latent-only (`mu = nothing`) return, so varying denominators remain visible rather
+than being averaged.
 """
 function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
                                    mu = nothing, n_trials = nothing,
                                    predictor_variance = 0.0, converged = true)
     family in (:poisson, :binomial, :bernoulli) ||
-        throw(ArgumentError("nongaussian_scale_summary supports only :poisson, :binomial, and :bernoulli"))
+        throw(ArgumentError("nongaussian_scale_summary supports public families :poisson and :binomial; :bernoulli is an internal Binomial(1) input alias"))
     converged === true ||
         throw(ArgumentError("nongaussian_scale_summary refuses a non-converged input (converged = false)"))
 
@@ -1529,10 +1530,11 @@ function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
         n_trials === nothing ? (n_trials = 1, varying = false) : _scale_summary_trials(n_trials)
     end
     if family === :bernoulli && (trial_info.varying || trial_info.n_trials != 1)
-        throw(ArgumentError(":bernoulli is Binomial(1) and accepts only n_trials = 1"))
+        throw(ArgumentError(":bernoulli is an internal Binomial(1) alias and accepts only n_trials = 1"))
     end
 
     μ = _scale_summary_mu(mu)
+    summary_family = family === :bernoulli ? :binomial : family
     latent_total = family === :poisson ? V_pred : V_pred + _VAR_LOGISTIC
     isfinite(latent_total) ||
         throw(ArgumentError("the combined latent-scale variance must be finite"))
@@ -1545,7 +1547,7 @@ function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
             "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation-scale h² requires mu." :
             "Observation-scale h² requires mu (the finite link-scale population mean)."
         trial_info.varying && (caveat *= " Per-record varying n_trials also makes a single observation-scale h² ill-defined; it is not silently averaged.")
-        return _scale_summary_payload(family, V_A, nothing, latent_total,
+        return _scale_summary_payload(summary_family, V_A, nothing, latent_total,
                                       h2_latent, NaN, family === :poisson ? 0.0 : _VAR_LOGISTIC,
                                       NaN, family !== :poisson && !trial_info.varying && trial_info.n_trials == 1,
                                       caveat, primary, interpretation)
@@ -1553,13 +1555,13 @@ function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
 
     if trial_info.varying
         caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged)."
-        return _scale_summary_payload(family, V_A, μ, latent_total,
+        return _scale_summary_payload(summary_family, V_A, μ, latent_total,
                                       V_A / latent_total, NaN, _VAR_LOGISTIC, NaN,
                                       false, caveat, primary, interpretation)
     end
 
     core = _nongaussian_h2_core(family, V_A, μ, NaN, trial_info.n_trials, V_fixed, true)
-    return _scale_summary_payload(family, V_A, μ, core.latent_total_variance,
+    return _scale_summary_payload(summary_family, V_A, μ, core.latent_total_variance,
                                   core.h2_latent, core.h2_observation,
                                   core.var_link, core.var_distribution,
                                   core.information_limited, core.caveat,

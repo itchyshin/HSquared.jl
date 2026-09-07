@@ -66,6 +66,7 @@ let
 
     # Bernoulli is Binomial(1): explicit one-trial input is fine, any other denominator is not.
     bernoulli = HSquared.nongaussian_scale_summary(:bernoulli, V_A; mu = μ, n_trials = [1, 1])
+    @test bernoulli.family === :binomial
     @test bernoulli.primary === (true, false)
     @test bernoulli.information_limited
     @test_throws ArgumentError HSquared.nongaussian_scale_summary(:bernoulli, V_A; mu = μ, n_trials = 2)
