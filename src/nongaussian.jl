@@ -1190,11 +1190,14 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                 method = :gaussian_identity)
     elseif family === :poisson
         V_pred = V_A + V_fixed                       # linear-predictor variance
-        λ = exp(mu + V_pred / 2)                      # E[exp η]; Ψ = λ for the log link
-        V_A_obs = λ^2 * V_A                           # Ψ²·V_A (Stein)
-        V_P_obs = λ^2 * (exp(V_pred) - 1) + λ         # Var(exp η) + E[Poisson var]
+        log_λ = mu + V_pred / 2
+        λ = exp(log_λ)                                 # E[exp η]; Ψ = λ for the log link
+        # Divide the usual λ² numerator and denominator by λ² before evaluating.
+        # This is algebraically identical, but avoids Inf / Inf at finite extreme μ.
+        denominator = expm1(V_pred) + exp(-log_λ)
+        h2_observation = V_A == 0.0 ? 0.0 : V_A / denominator
         return (family = :poisson, sigma_a2 = V_A, mu = mu, latent_total_variance = V_pred,
-                h2_latent = NaN, h2_observation = V_A_obs / V_P_obs,
+                h2_latent = NaN, h2_observation = h2_observation,
                 var_distribution = λ, var_link = 0.0, converged = converged,
                 information_limited = false,
                 caveat = "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation/count scale via the log-normal–Poisson closed form (NS 2017).",
@@ -1204,13 +1207,22 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
         latent_total = V_A + _VAR_LOGISTIC + V_fixed
         p̄ = _gh_expect(_logistic, mu, V_pred)
         Ψ = _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), mu, V_pred)
-        Ep2 = _gh_expect(η -> (p = _logistic(η); p * p), mu, V_pred)
-        var_p = Ep2 - p̄^2                             # Var of the mean proportion
+        # Center before squaring: Ep² - E[p]² loses every bit in saturated tails.
+        var_p = _gh_expect(η -> (p = _logistic(η); (p - p̄)^2), mu, V_pred)
         V_A_obs = Ψ^2 * V_A                           # Ψ²·V_A (Stein) ≤ var_p
         var_dist = Ψ / n_trials                       # proportion-scale sampling variance
         info_lim = n_trials == 1
+        denominator = var_p + var_dist
+        h2_observation = if denominator > 0.0
+            V_A_obs / denominator
+        elseif V_A_obs == 0.0
+            # The finite-|μ| saturation limit for a finite trial count is zero.
+            0.0
+        else
+            throw(ArgumentError("logit observation-scale denominator is non-positive"))
+        end
         return (family = family, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
-                h2_latent = V_A / latent_total, h2_observation = V_A_obs / (var_p + var_dist),
+                h2_latent = V_A / latent_total, h2_observation = h2_observation,
                 var_distribution = var_dist, var_link = _VAR_LOGISTIC, converged = converged,
                 information_limited = info_lim,
                 caveat = info_lim ?
@@ -1390,4 +1402,153 @@ function nongaussian_heritability(sigma_a2::Real, mu::Real, family::ResponseFami
     sh = family isa GammaResponse ? Float64(family.shape) : NaN
     return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
                                 Float64(predictor_variance), true; cutpoints = cp, shape = sh)
+end
+
+function _scale_summary_nonnegative(value, name::AbstractString)
+    value isa Real && !(value isa Bool) ||
+        throw(ArgumentError("$name must be a finite, nonnegative real number"))
+    numeric = try
+        Float64(value)
+    catch
+        throw(ArgumentError("$name must be a finite, nonnegative real number"))
+    end
+    isfinite(numeric) && numeric >= 0.0 ||
+        throw(ArgumentError("$name must be a finite, nonnegative real number"))
+    return numeric
+end
+
+function _scale_summary_mu(mu)
+    mu === nothing && return nothing
+    mu isa Real && !(mu isa Bool) ||
+        throw(ArgumentError("mu must be a finite real link-scale mean or nothing"))
+    numeric = try
+        Float64(mu)
+    catch
+        throw(ArgumentError("mu must be a finite real link-scale mean or nothing"))
+    end
+    isfinite(numeric) || throw(ArgumentError("mu must be a finite real link-scale mean or nothing"))
+    return numeric
+end
+
+function _scale_summary_trial_count(value)
+    value isa Real && !(value isa Bool) ||
+        throw(ArgumentError("n_trials entries must be finite integers greater than or equal to one"))
+    numeric = try
+        Float64(value)
+    catch
+        throw(ArgumentError("n_trials entries must be finite integers greater than or equal to one"))
+    end
+    isfinite(numeric) && isinteger(numeric) && numeric >= 1.0 ||
+        throw(ArgumentError("n_trials entries must be finite integers greater than or equal to one"))
+    count = try
+        Int(value)
+    catch
+        throw(ArgumentError("n_trials entries must be representable integers greater than or equal to one"))
+    end
+    count >= 1 || throw(ArgumentError("n_trials entries must be finite integers greater than or equal to one"))
+    return count
+end
+
+function _scale_summary_trials(n_trials)
+    if n_trials isa AbstractVector
+        isempty(n_trials) && throw(ArgumentError("n_trials must not be an empty vector"))
+        counts = [_scale_summary_trial_count(value) for value in n_trials]
+        common = first(counts)
+        return (n_trials = common, varying = !all(==(common), counts))
+    end
+    return (n_trials = _scale_summary_trial_count(n_trials), varying = false)
+end
+
+_scale_summary_interpretation(V_fixed::Float64) = V_fixed == 0.0 ?
+    "Conditional scale summary: predictor_variance = 0, so no fixed-predictor spread is included." :
+    "Marginal scale summary: supplied predictor_variance = $V_fixed is included as fixed-predictor spread."
+
+function _scale_summary_payload(family::Symbol, sigma_a2::Float64, mu, latent_total_variance::Float64,
+                                h2_latent::Float64, h2_observation::Float64,
+                                var_link::Float64, var_distribution::Float64,
+                                information_limited::Bool, caveat::String,
+                                primary::Tuple{Bool,Bool}, interpretation::String)
+    return (family = family, sigma_a2 = sigma_a2, mu = mu,
+            latent_total_variance = latent_total_variance,
+            h2_latent = h2_latent, h2_observation = h2_observation,
+            var_link = var_link, var_distribution = var_distribution,
+            converged = true, information_limited = information_limited,
+            caveat = caveat, scale = (:latent, :observation),
+            estimate = (h2_latent, h2_observation), primary = primary,
+            interpretation = interpretation)
+end
+
+"""
+    nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
+                              mu = nothing, n_trials = nothing,
+                              predictor_variance = 0.0, converged = true)
+
+Return the explicit latent- and observation-scale summary for the supported
+Poisson-log and Binomial-logit families.  This small bridge-facing helper accepts
+only `:poisson`, `:binomial`, and `:bernoulli`; it validates a supplied trial
+denominator before a latent-only (`mu = nothing`) return, so varying denominators
+remain visible rather than being averaged.
+"""
+function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
+                                   mu = nothing, n_trials = nothing,
+                                   predictor_variance = 0.0, converged = true)
+    family in (:poisson, :binomial, :bernoulli) ||
+        throw(ArgumentError("nongaussian_scale_summary supports only :poisson, :binomial, and :bernoulli"))
+    converged === true ||
+        throw(ArgumentError("nongaussian_scale_summary refuses a non-converged input (converged = false)"))
+
+    V_A = _scale_summary_nonnegative(sigma_a2, "sigma_a2")
+    V_fixed = _scale_summary_nonnegative(predictor_variance, "predictor_variance")
+    V_pred = V_A + V_fixed
+    isfinite(V_pred) ||
+        throw(ArgumentError("sigma_a2 + predictor_variance must be finite"))
+
+    # Resolve and validate trials before inspecting mu: a latent-only request must not
+    # erase the fact that an observation-scale summary is undefined for varying trials.
+    trial_info = if family === :poisson
+        n_trials === nothing ||
+            throw(ArgumentError(":poisson does not accept n_trials"))
+        (n_trials = 1, varying = false)
+    elseif family === :binomial
+        n_trials === nothing && throw(ArgumentError(":binomial requires n_trials"))
+        _scale_summary_trials(n_trials)
+    else
+        n_trials === nothing ? (n_trials = 1, varying = false) : _scale_summary_trials(n_trials)
+    end
+    if family === :bernoulli && (trial_info.varying || trial_info.n_trials != 1)
+        throw(ArgumentError(":bernoulli is Binomial(1) and accepts only n_trials = 1"))
+    end
+
+    μ = _scale_summary_mu(mu)
+    latent_total = family === :poisson ? V_pred : V_pred + _VAR_LOGISTIC
+    isfinite(latent_total) ||
+        throw(ArgumentError("the combined latent-scale variance must be finite"))
+    primary = family === :poisson ? (false, true) : (true, false)
+    interpretation = _scale_summary_interpretation(V_fixed)
+
+    if μ === nothing
+        h2_latent = family === :poisson ? NaN : V_A / latent_total
+        caveat = family === :poisson ?
+            "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation-scale h² requires mu." :
+            "Observation-scale h² requires mu (the finite link-scale population mean)."
+        trial_info.varying && (caveat *= " Per-record varying n_trials also makes a single observation-scale h² ill-defined; it is not silently averaged.")
+        return _scale_summary_payload(family, V_A, nothing, latent_total,
+                                      h2_latent, NaN, family === :poisson ? 0.0 : _VAR_LOGISTIC,
+                                      NaN, family !== :poisson && !trial_info.varying && trial_info.n_trials == 1,
+                                      caveat, primary, interpretation)
+    end
+
+    if trial_info.varying
+        caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged)."
+        return _scale_summary_payload(family, V_A, μ, latent_total,
+                                      V_A / latent_total, NaN, _VAR_LOGISTIC, NaN,
+                                      false, caveat, primary, interpretation)
+    end
+
+    core = _nongaussian_h2_core(family, V_A, μ, NaN, trial_info.n_trials, V_fixed, true)
+    return _scale_summary_payload(family, V_A, μ, core.latent_total_variance,
+                                  core.h2_latent, core.h2_observation,
+                                  core.var_link, core.var_distribution,
+                                  core.information_limited, core.caveat,
+                                  primary, interpretation)
 end

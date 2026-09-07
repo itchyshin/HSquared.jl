@@ -10666,3 +10666,6 @@ include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
 @testset "Repeatability ratio-bias decomposition kernel" begin
     @test_nowarn RepeatabilityRatioBiasAnalysis._self_test()
 end
+
+# Gate A: narrow non-Gaussian scale-summary contract (also runnable on its own).
+include(joinpath(@__DIR__, "gate_a_nongaussian.jl"))
