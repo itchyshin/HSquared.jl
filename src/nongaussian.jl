@@ -1391,3 +1391,77 @@ function nongaussian_heritability(sigma_a2::Real, mu::Real, family::ResponseFami
     return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
                                 Float64(predictor_variance), true; cutpoints = cp, shape = sh)
 end
+
+"""
+    nongaussian_scale_summary(family, sigma_a2; mu=nothing, n_trials=nothing,
+                              predictor_variance=0.0, converged=true)
+
+The narrow bridge-facing scale summary for the 0.9 Poisson/log and
+Binomial/logit contract.  It is deliberately separate from
+[`nongaussian_result_payload`](@ref): the generic fitted-result payload remains
+family-uniform and does not acquire a misleading scalar `heritability` field.
+
+Only `:poisson`, `:bernoulli`, and `:binomial` are accepted.  The latent logit
+summary does not require `mu`; the observation scale does.  A varying Binomial
+trial vector retains `h2_observation = NaN`, rather than constructing a mean
+denominator.  This is an experimental point-summary helper, not interval or
+calibration evidence.
+"""
+function nongaussian_scale_summary(family::Symbol, sigma_a2::Real;
+                                   mu = nothing, n_trials = nothing,
+                                   predictor_variance::Real = 0.0,
+                                   converged::Bool = true)
+    family in (:poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("nongaussian_scale_summary supports only :poisson, :bernoulli, and :binomial"))
+    converged || throw(ArgumentError("nongaussian_scale_summary refuses a non-converged fit"))
+    isfinite(sigma_a2) && sigma_a2 >= 0 ||
+        throw(ArgumentError("sigma_a2 must be finite and non-negative"))
+    isfinite(predictor_variance) && predictor_variance >= 0 ||
+        throw(ArgumentError("predictor_variance must be finite and non-negative"))
+
+    V_A = Float64(sigma_a2)
+    V_fixed = Float64(predictor_variance)
+    fam = family === :bernoulli ? :binomial : family
+    # The latent logit estimand is independent of the population mean.  Keep
+    # this branch before resolving `mu`, so R can honour Gate A's explicit
+    # multi-coefficient latent accessor rule.
+    if fam === :binomial && mu === nothing
+        latent_total = V_A + _VAR_LOGISTIC + V_fixed
+        return (family = family, sigma_a2 = V_A, mu = NaN,
+                h2_latent = V_A / latent_total, h2_observation = NaN,
+                var_link = _VAR_LOGISTIC, var_distribution = NaN,
+                information_limited = family === :bernoulli,
+                caveat = "Latent logistic-liability scale only; observation scale needs an explicit mu.",
+                method = :logit_quadrature)
+    end
+    nt = if family === :poisson || family === :bernoulli
+        1
+    elseif n_trials === nothing
+        throw(ArgumentError("family = :binomial needs n_trials"))
+    else
+        n_trials
+    end
+    mu isa Real && isfinite(mu) ||
+        throw(ArgumentError("mu must be a finite link-scale population mean for an observation-scale summary"))
+    μ = Float64(mu)
+    if fam === :binomial && nt isa AbstractVector
+        all(n -> isinteger(n) && n >= 1, nt) ||
+            throw(ArgumentError("every n_trials[i] must be a positive integer"))
+        latent_total = V_A + _VAR_LOGISTIC + V_fixed
+        return (family = family, sigma_a2 = V_A, mu = μ,
+                h2_latent = V_A / latent_total, h2_observation = NaN,
+                var_link = _VAR_LOGISTIC, var_distribution = NaN,
+                information_limited = false,
+                caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged).",
+                method = :logit_quadrature)
+    end
+    nt_int = fam === :binomial ? Int(nt) : 1
+    nt_int >= 1 || throw(ArgumentError("n_trials must be a positive integer"))
+    core_family = fam === :binomial ? (family === :bernoulli ? :bernoulli : :binomial) : :poisson
+    h = _nongaussian_h2_core(core_family, V_A, μ, NaN, nt_int, V_fixed, true)
+    return (family = family, sigma_a2 = V_A, mu = μ,
+            h2_latent = h.h2_latent, h2_observation = h.h2_observation,
+            var_link = h.var_link, var_distribution = h.var_distribution,
+            information_limited = h.information_limited, caveat = h.caveat,
+            method = h.method)
+end

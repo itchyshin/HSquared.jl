@@ -1246,6 +1246,16 @@ end
     @test nsh2.status == "partial"
     @test occursin("Nakagawa", nsh2.evidence) || occursin("observation", nsh2.evidence)
     @test !(:heritability in propertynames(HSquared.nongaussian_result_payload(fb)))
+    # Gate A 0.9 bridge summary: latent logit does not need a population mean,
+    # but the observation scale does; varying trials retain an undefined value.
+    s_lat <- HSquared.nongaussian_scale_summary(:binomial, 0.8;
+                                                 predictor_variance = 0.2)
+    @test isfinite(s_lat.h2_latent)
+    @test isnan(s_lat.h2_observation)
+    s_var <- HSquared.nongaussian_scale_summary(:binomial, 0.8;
+                                                 mu = 0.2, n_trials = [1, 5, 8])
+    @test isnan(s_var.h2_observation)
+    @test occursin("not silently averaged", s_var.caveat)
 end
 
 @testset "Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2)" begin
