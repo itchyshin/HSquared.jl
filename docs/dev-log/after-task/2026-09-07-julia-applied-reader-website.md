@@ -131,9 +131,9 @@ The rebased website candidate is `8099e0e1`, four commits ahead of integrated
 `origin/main` `022e8503`, and remains local/draft-only until its draft PR and
 candidate CI complete. #317 merged as `5471354`; the rebase-reconciled #318
 merged as `022e8503` after all of its exact-head checks were green. Main's
-Documenter run `34150274656` is SUCCESS at that same head. Package CI run
-`34150400073` was parent-dispatched on the same head and remains pending at
-this report's freeze; it is distinct from the earlier local `Pkg.test` PASS.
+Documenter run `34150274656` and parent-dispatched package CI run
+`34150400073` are SUCCESS at that same head; this current-main proof is
+distinct from the earlier local `Pkg.test` PASS.
 No local build can contain deployment-created `versions.js`; no publication is
 authorized or implied.
 
