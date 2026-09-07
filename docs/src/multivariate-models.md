@@ -1,7 +1,6 @@
 # Multivariate (Multi-Trait) Models
 
 ```@raw html
-<link rel="stylesheet" href="./assets/hs-docs.css">
 ```
 
 !!! warning "Experimental · validation-scale · dense · REML-only"

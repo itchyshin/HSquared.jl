@@ -1,7 +1,6 @@
 # Fitting at scale: exact vs matrix-free
 
 ```@raw html
-<link rel="stylesheet" href="./assets/hs-docs.css">
 ```
 
 `HSquared.jl` has **two** engines for the `K`-independent-random-effect mixed model, and

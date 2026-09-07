@@ -8,7 +8,6 @@
     [`validation_status()`](validation-status.md) rather than a screenshot.
 
 ```@raw html
-<link rel="stylesheet" href="./assets/hs-docs.css">
 <figure class="hs-figure">
 <img src="./assets/animal-model-path.svg" alt="Flowchart of the engine-side univariate animal model: pedigree and phenotype become a validated spec, AI-REML returns variance components, heritability, and breeding values. Genomic and multivariate paths are not shown.">
 <figcaption>v0.1 univariate Gaussian REML on the engine. Genomic, QTL, and multivariate paths are not this arrow.</figcaption>
@@ -19,6 +18,15 @@
 [hsquared](https://github.com/itchyshin/hsquared). R users who want a
 formula should start there. This page walks engine utilities and
 experimental low-level fitting — not a public formula API.
+
+## Route this first
+
+For an applied analysis, start in the
+[hsquared R package](https://itchyshin.github.io/hsquared/). Continue here
+only when you need an engine utility or want to inspect the Julia layer.
+Before a fit, use [Standard QG models](standard-qg-models.md) to choose a
+route and its scope. After a fit, use [Validation status](validation-status.md)
+before extracting or reporting a point estimate.
 
 ## Normalize A Pedigree
 

@@ -13,14 +13,23 @@ R FA stays planned. R `single_step()` stays opt-in partial.
 ## 0.7.0 (experimental)
 
 Experimental numbered bump after R G10. Version tracks R-public covered
-capability (`public_covered_count` **5 → 6**). Engine `V4-MV-REML` was already
+capability (`public_covered_count` **6 → 7**). Engine `V4-MV-REML` was already
 covered; this is **not** an engine covered flip. Experimental label retained.
 Not production, not Julia General. k≥3 / diagonal multivariate and interval
 calibration stay out of the covered claim.
 
+## 0.6.0 (experimental; historical)
+
+This historical experimental marker followed the R-public unstructured
+multivariate route, which changed `public_covered_count` from **5 to 6**.
+`V4-MV-REML` was already engine-covered, so this was not an engine covered-row
+promotion. It did not establish production readiness, a Julia General
+registration, interval calibration, or a 0.9 release. The dated coordination
+record is [2026-09-02](https://github.com/itchyshin/HSquared.jl/blob/main/docs/dev-log/coordination-board.md#2026-09-02--g10-r-public-multivariate--experimental-060-twin-honesty).
+
 ## 0.5.0 (experimental)
 
-First experimental public version number (`0.0.1` → `0.5.0`). The engine
+Experimental numbering change (`0.0.1` → `0.5.0`). The engine
 remains experimental. This is not a covered flip, not a production-ready
 release, and not a Julia General registration. `public_covered_count` stays
 **5**. Install from the GitHub URL until a General PR merges.

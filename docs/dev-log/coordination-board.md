@@ -23,6 +23,19 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-07 — applied-reader website candidate (draft-only)
+
+Lane: `codex/web-journey-20260907`, local source-freeze `e45831e`.
+Reader navigation now follows Get started → Choose model → Fit → Diagnose →
+Report, with a separate progression/evidence page and engine-versus-R boundary.
+Fresh local `Pkg.test` and Documenter PASS are recorded in
+`check-log.d/2026-09-07-julia-applied-reader-website.md`; parent browser
+revalidation remains pending. Do not publish or deploy this website candidate.
+
+Related Julia honesty PRs stay separate: #317 merged as `5471354`; #318 is a
+non-duplicate correction to #316 and is held for rebase and fresh CI. No
+covered flip, version bump, API change, tag, or release is authorized.
+
 ### 2026-09-07 — 0.9 honesty continuous (NOT 0.9.0; count stays 7)
 
 Lane: `docs/09-post191-gate6-evidence-2026-09-07` (scratch clone
