@@ -1,3 +1,7 @@
+> **2026-09-07 release-record notice:** This handover is a historical snapshot.
+> The current documentation/usability milestone is recorded in
+> [`../decisions/2026-09-07-documentation-milestone-release-boundary.md`](../decisions/2026-09-07-documentation-milestone-release-boundary.md): it keeps experimental **0.8.0** / public count **7**, does not choose a package number or authorize a release, leaves H1/H3 deferred and G10 promotion held, and involved no new S5 execution. The September S5 tail-scale PASS remains scoped evidence, not a promotion.
+
 # Session Handoff: Path FULL 0.9 finish — Julia twin pointer (Cursor → Codex)
 
 Meta: 2026-09-07 (Denver) · from Cursor (Claude, AUTHOR=claude) · TARGET=codex · owner

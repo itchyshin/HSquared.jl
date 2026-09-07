@@ -23,6 +23,16 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-07 — paired release-record cleanup (local documentation-only)
+
+Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
+publication approval. This
+record reconciles the completed website and named honesty-documentation
+milestone with the unchanged experimental **0.8.0** / public count **7** pins.
+It authorizes no package number, tag, registration, release, capability flip,
+source/API change, or new S5 execution. The historical 0.9/1.0 science plan is
+still planned; H1/H3 remain deferred and the G10 promotion hold remains.
+
 ### 2026-09-07 — applied-reader website candidate (draft-only)
 
 Lane: `codex/web-journey-20260907`, local source-freeze `e45831e`.

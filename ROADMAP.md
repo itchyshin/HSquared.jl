@@ -11,7 +11,22 @@ contract agree.
 cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, work-unit estimates).
 Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
 
+> **Record status (2026-09-07):** The paired website and named honesty
+> documentation milestone is complete, but it is not a science-plan completion
+> or release decision. Experimental **0.8.0** / public count **7** stay pinned;
+> package numbering, tags, registration, and release remain undecided. H1/H3
+> are deferred, G10 promotion holds remain, and no new S5 execution occurred in
+> this record cleanup. See
+> [`docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md`](docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
+
 ## Current Status
+
+> **Historical snapshot, not current capability status (notice added 2026-09-07).**
+> The narrative below preserves earlier phase and genomic-route decisions. Its
+> held-route wording must not be applied to the later narrow R genomic GREML
+> default activation. Read the [capability ledger](docs/design/capability-status.md)
+> and [twin bridge matrix](docs/design/12-bridge-compatibility.md) for current
+> fitted scope and remaining limits. No older hold is released by this notice.
 
 Phase 0 public scaffold is complete. Phases 1-3 have landed as experimental,
 validation-scale Julia engine utilities (pedigree/Ainv, supplied-variance and
