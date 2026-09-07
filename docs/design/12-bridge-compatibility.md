@@ -65,3 +65,22 @@ live bridge tests when Julia is available. The remaining bridge gap is narrower:
 per-record varying-trial formula/bridge activation plus broader
 validation/comparator/calibration depth. There is still no threshold/probit
 comparator evidence, interval calibration, public default, or covered status.
+
+## Production fences (0.9 prep — DRAFT / UNRATIFIED)
+
+**Validation-scale live bridge ≠ production bridge.** Engine-side covered rows
+(`V4-MV-REML`, `V4-FA`, `V2-SSHINV`, etc.) do **not** authorize R-public
+covered claims or production sparse fitting. R twin scratch receipt:
+`~/local-scratch/h2-09-finish-BRIDGE-PRODUCTION-FENCES-DRAFT.md`.
+
+| Fence | Engine truth | R bridge / public |
+| --- | --- | --- |
+| **FA** | `V4-FA` engine-covered; 8/10 calibration partial | R rejects `factor_analytic` / `lowrank`; **planned** |
+| **SS** | `V2-SSHINV` engine-covered | R `single_step_construct` **opt-in partial** only |
+| **payload_v2** | `parse_payload_v2` / `fit_payload_v2` live | R uses for `direct_maternal`, `multi_effect` only |
+| **Production sparse** | experimental matfree / sparse paths | not R-bridged for 0.9; G10 hold on matfree |
+| **PATH_ONLY** | Julia #294 holds C1-ext numeric harness | R twin smoke only; not a fit bridge |
+
+Hopper must verify target parity, payload_v2 scope, FA rotation-invariant
+payload only, and SS engine≠R-public discipline before `authorize 0.9.0`.
+`public_covered_count` stays **7** on both public surfaces.
