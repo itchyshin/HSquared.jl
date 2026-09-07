@@ -27,22 +27,24 @@ engine version each R surface is validated against.
 
 | Capability | Engine status | Bridge target | R surface | Engine ver. tested | Parity fixture |
 | --- | --- | --- | --- | --- | --- |
-| Gaussian animal model (v0.1) | covered | `fit_animal_model`/`fit_ai_reml` | `hsquared()` default | (current `main`) | existing v0.1 |
-| Genomic GBLUP/SNP-BLUP/single-step | experimental | `genomic`/`single_step`/`snp_blup` | opt-in `target=` | current `main` | `genomic_gblup_snpblup_target` for GBLUP/SNP-BLUP only; single-step still pending |
-| Supplied-Γ metafounder single-step | experimental | `metafounder_single_step` (candidate: `metafounder_single_step_inverse` / `fit_metafounder_single_step[_reml]`) | planned R metafounder/single-step payload | current `main` | nonzero-Γ REML payload smoke |
-| Unstructured multivariate | experimental | `multivariate` | opt-in `target=` | current `main` | phase4_multitrait_parity |
-| Structured covariance (FA/low-rank) | experimental | #42 | (R #42 / #15) | — | planned (#42) |
+| Gaussian animal model (v0.1) | covered | `fit_animal_model`/`fit_ai_reml` | R-public `hsquared()` default | current `main` | existing v0.1 |
+| Narrow genomic GREML | covered at validation scale | `genomic` | R-public default route; count contribution is recorded in the R ledger | current `main` | genomic GREML target and route fixtures |
+| SNP-BLUP | partial | `snp_blup` | opt-in target; not a default or a genomic-wide promotion | current `main` | `genomic_gblup_snpblup_target` |
+| Ordinary single-step H/Hinv | engine-covered narrow cell | `single_step` | R supplied/constructed routes remain opt-in partial; Hinv-cell parity is not fitted ssGBLUP parity | current `main` | Hinv-cell parity; fitted comparator still owed |
+| Supplied-Γ / HΓ single-step | experimental | `metafounder_single_step` / `fit_metafounder_single_step[_reml]` | live R bridge partial; no general R formula activation implied | current `main` | nonzero-Γ REML payload smoke |
+| Unstructured t=2 multivariate | covered at validation scale | `multivariate` | R-public default `cbind()` route; engine evidence remains route-scoped | current `main` | `phase4_multitrait_parity` |
+| Structured covariance (FA/low-rank) | engine-covered FA S4 cell only | rotation-free `:diagonal` payload; FA/low-rank loading payload absent | R `cov = fa` grammar and lowrank/FA payload planned | current `main` | `structured_covariance_parity` only for rotation-free metadata |
 | PEV / reliability standard fields | experimental | `result_payload(::AnimalModelFit)` | `hs_julia_id_values()` top-level fields (R #21) | current `main` | standard payload tests (`:selinv` vs dense parity) |
 | Non-Gaussian Laplace/VA | experimental | `nongaussian_result_payload` | opt-in `target = "nongaussian"` bridge + result normalizer tests banked; per-record varying-trial activation planned (#18) | current `main` | `non_gaussian_parity` |
 | Post-fit marker scans | experimental | `marker_scan_result_payload` | R `gwas(fit, markers)` (#23) | current `main` | `marker_scan_parity` |
 
-Rows update as each BT2 bridge target lands its engine-side payload + fixture.
-The metafounder single-step row is engine-side only: `Γ`, `group_of`,
-`G`, and `genotyped_rows` are plain payload candidates. The current Julia
-fixture proves that a nonzero-`Γ` REML fit travels through the standard
-`AnimalModelFit` result payload, `fit_diagnostics()`, PEV, and reliability
-extractors without a special H^Γ extractor branch. No R formula syntax or live
-R bridge fixture is claimed until the R twin ratifies the shape and tests it.
+Rows update by estimand and route rather than by a broad model family. The
+metafounder and HΓ bridge entries are live partial surfaces: `Γ`, `group_of`,
+`G`, and `genotyped_rows` remain plain payload data, and the Julia fixture
+proves a nonzero-`Γ` REML fit travels through the standard `AnimalModelFit`
+payload, diagnostics, PEV, and reliability extractors without a special HΓ
+extractor branch. That partial bridge does not itself create a general R formula
+or production single-step fitting claim.
 
 The PEV/reliability row is a standard fitted `AnimalModelFit` payload surface,
 not a production large-pedigree reliability claim. The fields are
@@ -66,21 +68,20 @@ per-record varying-trial formula/bridge activation plus broader
 validation/comparator/calibration depth. There is still no threshold/probit
 comparator evidence, interval calibration, public default, or covered status.
 
-## Production fences (0.9 prep — DRAFT / UNRATIFIED)
+## Production fences (0.9 preparation; no status change)
 
-**Validation-scale live bridge ≠ production bridge.** Engine-side covered rows
-(`V4-MV-REML`, `V4-FA`, `V2-SSHINV`, etc.) do **not** authorize R-public
-covered claims or production sparse fitting. R twin scratch receipt:
-`~/local-scratch/h2-09-finish-BRIDGE-PRODUCTION-FENCES-DRAFT.md`.
+This is a routing fence, not a reset of existing bridge work. A payload or
+fixture that is already live remains available at its recorded scope; it does
+not make a production-scale fitting claim.
 
-| Fence | Engine truth | R bridge / public |
+| Route | What remains true | What this fence prevents |
 | --- | --- | --- |
-| **FA** | `V4-FA` engine-covered; 8/10 calibration partial | R rejects `factor_analytic` / `lowrank`; **planned** |
-| **SS** | `V2-SSHINV` engine-covered | R `single_step_construct` **opt-in partial** only |
-| **payload_v2** | `parse_payload_v2` / `fit_payload_v2` live | R uses for `direct_maternal`, `multi_effect` only |
-| **Production sparse** | experimental matfree / sparse paths | not R-bridged for 0.9; G10 hold on matfree |
-| **PATH_ONLY** | Julia #294 holds C1-ext numeric harness | R twin smoke only; not a fit bridge |
+| Standard Gaussian payload | The current `result_payload(::AnimalModelFit)` route, sparse `Z` CSC marshalling, and the opt-in supplied-variance Henderson MME route remain their separately tested surfaces. | Calling a validation-scale payload, MME solve, or sparse marshalling proof a production sparse REML/ML fit. |
+| AI-REML and multi-effect routes | Existing Julia fitting targets retain their documented route-specific evidence; the R default and opt-in targets are not silently collapsed into one new route. | Replacing or downgrading an existing sparse/AI-REML or `payload_v2` route merely because a later production bridge is planned. |
+| `payload_v2` | The versioned plain-data contract and its fixtures remain the compatibility mechanism; fields are added only with matching R normalization and parity evidence. | Passing Julia structs, raw factor loadings, or undocumented fields across the boundary. |
+| Factor-analytic structure | The covered engine S4 cell is a Julia-only, validation-scale result. The rotation-free `:diagonal` metadata route is distinct from FA/low-rank loadings. | Presenting an R `cov = fa` grammar, loadings payload, structured-fit SEs, or calibrated intervals before those have their own evidence. |
+| Single-step H/Hinv | `AGHmatrix::Hmatrix` is construction evidence for `H`/`Hinv`; a fitted same-estimand comparator remains separate debt. R `single_step()` remains opt-in partial. | Treating H/Hinv construction agreement as fitted ssGBLUP parity, or opening the ordinary R route. |
 
-Hopper must verify target parity, payload_v2 scope, FA rotation-invariant
-payload only, and SS engine≠R-public discipline before `authorize 0.9.0`.
-`public_covered_count` stays **7** on both public surfaces.
+The durable evidence for each route is the relevant validation and capability
+row in this repository, plus the version-pinned R fixture named in the matrix
+above. No private scratch location is a bridge source of truth.
