@@ -1,12 +1,14 @@
 # Model Spec Grammar
 
-This page mirrors the R twin's formula-grammar status map for the Julia engine.
-It is a status page, not an implementation promise.
+This is the Julia engine's model-spec and planning-marker status page. It is
+not an implementation promise or an authoritative R formula grammar.
 
 The R package owns formula capture and user-facing syntax. `HSquared.jl` owns
-the validated engine payloads and numeric computations. Terms listed as
-reserved are planned vocabulary only until a bridge payload contract, tests,
-validation evidence, and status rows exist.
+the validated engine payloads and numeric computations. Apart from the
+explicitly named v0.1 bridge contract below, R-style spellings on this page are
+comparison notation for Julia-local reserved markers. Check
+[hsquared's formula status](https://itchyshin.github.io/hsquared/reference/formula_status.html)
+for what the R parser currently accepts.
 
 ## Parsed Today
 
@@ -44,13 +46,14 @@ observed ID mapping, pedigree founder count, and Julia targets.
 
 ## Status Diagnostic
 
-`formula_status()` returns the same status categories as the R twin's
-diagnostic. It is a table of current grammar state, not a formula parser and
-not a fitting helper.
+`formula_status()` is a Julia diagnostic for the engine's current and planned
+marker vocabulary. It is not a formula parser or fitting helper, and its
+reserved rows do not claim that the R parser accepts or rejects the displayed
+R-style spellings.
 
 | term | category | phase | syntax_status | fitting_status | current_behavior |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `animal(1 \| id, pedigree = ped)` | v0.1 animal model | Phase 1 | parsed | experimental tiny bridge only | Validated by the R parser; default `hsquared()` stops before general fitting. |
+| `animal(1 \| id, pedigree = ped)` | v0.1 animal model | Phase 1 | parsed | Julia bridge diagnostic | The R default `hsquared()` owns its public fitting route; this Julia row records the v0.1 bridge shape, not a limit on the R frontier. |
 | `permanent(1 \| id)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `common_env(1 \| group)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `maternal_genetic(1 \| dam, pedigree = ped)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
@@ -63,8 +66,8 @@ not a fitting helper.
 | `epistasis(1 \| id, pedigree = ped)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `relmat(1 \| id, K = K)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `precision(1 \| id, Q = Q)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `genomic(1 \| id, Ginv = Ginv)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `single_step(1 \| id, Hinv = Hinv)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
+| `genomic(1 \| id, Ginv = Ginv)` | genomic and marker models | Phase 5 | Julia-local reserved marker | no Julia formula parser | This row does not state R parser behavior: narrow R genomic GREML is separately default-routed and covered at validation scale; other genomic routes retain their own status. |
+| `single_step(1 \| id, Hinv = Hinv)` | genomic and marker models | Phase 5 | Julia-local reserved marker | no Julia formula parser | This row does not state R parser behavior: supplied/constructed R single-step routes remain opt-in partial, while the narrow Julia Hinv cell is engine-covered only. |
 | `markers(M, model = "random")` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `marker_scan(M, map = marker_map)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
 | `qtl_scan(position, genotype_probs = probs)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |

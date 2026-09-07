@@ -1,7 +1,6 @@
 # Genomics, QTL, GPU, And HPC Roadmap
 
 ```@raw html
-<link rel="stylesheet" href="./assets/hs-docs.css">
 ```
 
 !!! warning "Experimental · opt-in · not the default fit"

@@ -15,24 +15,36 @@ hero:
     alt: "HSquared.jl hex mark (PROPOSAL): deep teal hexagon, three hollow gold pedigree rings, h-squared. Not a settled brand."
   actions:
     - theme: brand
+      text: "R users: get started in hsquared"
+      link: https://itchyshin.github.io/hsquared/
+    - theme: alt
       text: First engine utility
       link: /quickstart
     - theme: alt
-      text: What is covered today?
-      link: /validation-status
-    - theme: alt
-      text: R users start here
-      link: https://itchyshin.github.io/hsquared/
+      text: Choose an engine route
+      link: /standard-qg-models
 
 features:
-  - title: "The formula lives in R"
-    details: "y ~ sex + age + animal(1 | id, pedigree = ped) is the applied path in hsquared. These pages document the engine underneath it."
-  - title: "Seven covered routes"
-    details: "public_covered_count is 7 at validation scale. Partial and planned rows stay labelled; the version tracks covered capability, not maturity."
-  - title: "Point estimates, honestly"
-    details: "Report where the route is covered. Standard errors and intervals are experimental and not coverage-calibrated."
-  - title: "A twin, not a port"
-    details: "MIT-licensed engine; hsquared owns the applied language. Not ASReml, not a GLLVM, not a production sparse pipeline."
+  - title: "1. Get started"
+    details: "For applied analysis, begin in hsquared. This site starts with engine utilities."
+    link: https://itchyshin.github.io/hsquared/
+    linkText: "Start in hsquared"
+  - title: "2. Choose a model"
+    details: "Read the route scope and engine requirement before running a fit."
+    link: /standard-qg-models
+    linkText: "Choose a route"
+  - title: "3. Fit"
+    details: "Run the low-level experimental engine fit; keep opt-in routes explicit."
+    link: /quickstart#Fit-Variance-Components-Experimentally
+    linkText: "Experimental engine fit"
+  - title: "4. Diagnose"
+    details: "Check status and diagnostics before extracting or reporting an estimate."
+    link: /validation-status
+    linkText: "Read live status"
+  - title: "5. Report"
+    details: "Report point estimates only within the stated route scope."
+    link: /twin-boundary
+    linkText: "Check reporting scope"
 ---
 ```
 
@@ -61,8 +73,9 @@ That is the applied-user interface. These pages document the engine.
 
 `hsquared()` here still throws. Lower-level `fit_animal_model` and
 `fit_ai_reml` exist as experimental engine paths, not the applied
-default. Read [Get started](quickstart.md) and `validation_status()`
-before treating any path as production.
+default. Choose a route before fitting, then read
+[Validation status](validation-status.md) before treating any result as
+production-ready or reportable.
 
 ## What works today
 
@@ -115,12 +128,18 @@ must not claim model fitting until the Julia engine implements and
 validates it. `public_covered_count` is **7** and counts the R-public
 covered surface only.
 
-## Start here
+## Continue by task
 
-- [Get started](quickstart.md)
-- [Validation status](validation-status.md)
-- [Pedigrees and Ainv](pedigree-ainv.md)
-- [Audience and comparators](audience-comparators.md)
-- [Reference](api.md)
+```@raw html
+<ol start="1">
+  <li><a href="./quickstart">Get started</a> with an engine utility, or use <a href="https://itchyshin.github.io/hsquared/">hsquared</a> for the applied formula.</li>
+  <li><a href="./standard-qg-models">Choose a model</a> and read its scope before fitting.</li>
+  <li><a href="./fitting-at-scale">Fit</a> with the route's explicit engine controls.</li>
+  <li><a href="./validation-status">Diagnose</a> the route before extracting an estimate.</li>
+  <li><a href="./twin-boundary">Report</a> only the point-estimate claim the route supports.</li>
+</ol>
+```
 
-Developer dashboard (not a first-click path): [Mission control](mission-control.md).
+The [progression and evidence](progression-evidence.md) page separates this
+history from release status. [Mission control](mission-control.md) is a
+developer dashboard, not a first-click applied path.

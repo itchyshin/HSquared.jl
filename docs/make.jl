@@ -12,9 +12,9 @@ using HSquared
 include(joinpath(@__DIR__, "..", "tools", "write_validation_status_page.jl"))
 write_validation_status_table!()
 
-# Sidebar mirrors hsquared's pkgdown navbar-by-job (Get started / Model guides /
-# Status / Comparators / Developer / Reference). Existing pages are regrouped;
-# no new reader prose invented here.
+# Sidebar follows the applied-reader journey frozen with hsquared on 2026-09-07:
+# Get started → Choose a model → Fit → Diagnose → Report. Engine and developer
+# routes remain visible but do not replace the R-first applied path.
 # warnonly narrowed from blanket `true`: missing_docs stay warnings; broken
 # doctests and cross-refs fail the build (ultra-plan A18 / G8).
 makedocs(;
@@ -31,31 +31,34 @@ makedocs(;
         "Home" => "index.md",
         "Get started" => [
             "Quick start" => "quickstart.md",
-            "Model spec grammar" => "model-spec-grammar.md",
             "Data containers" => "data.md",
             "Pedigrees and Ainv" => "pedigree-ainv.md",
-            "Twin boundary" => "twin-boundary.md",
         ],
-        "Model guides" => [
+        "Choose a model" => [
+            "Model spec grammar" => "model-spec-grammar.md",
             "Standard QG models" => "standard-qg-models.md",
             "Genomic models" => "genomic-models.md",
             "Multivariate models" => "multivariate-models.md",
+        ],
+        "Fit" => [
             "Fitting at scale" => "fitting-at-scale.md",
         ],
-        "Status" => [
+        "Diagnose" => [
             "Validation status" => "validation-status.md",
-            "Mission control" => "mission-control.md",
         ],
-        "Comparators" => [
+        "Report" => [
+            "Twin boundary" => "twin-boundary.md",
             "Audience and comparators" => "audience-comparators.md",
+            "Progression and evidence" => "progression-evidence.md",
         ],
         "Developer" => [
             "Roadmap" => "roadmap.md",
             "Backend and algorithm roadmap" => "backend-algorithm-roadmap.md",
             "Genomics, QTL, GPU, and HPC" => "genomics-qtl-gpu-hpc.md",
+            "Mission control" => "mission-control.md",
+            "Changelog" => "changelog.md",
         ],
         "Reference" => "api.md",
-        "Changelog" => "changelog.md",
     ],
 )
 

@@ -1,7 +1,6 @@
 # Standard Quantitative-Genetic Models
 
 ```@raw html
-<link rel="stylesheet" href="./assets/hs-docs.css">
 ```
 
 !!! warning "Covered at validation scale · opt-in · dense · REML-only"

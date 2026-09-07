@@ -315,6 +315,49 @@
   border-top: 1px solid var(--hs-rim);
 }
 
+/* The applied journey is an ordered, five-step strip. It has a deliberate
+   responsive shape: five across when there is room, then 3+2, then one
+   readable task at a time. The DOM order remains the task order. */
+@media (min-width: 1200px) {
+  .VPHome .VPFeatures .container .items {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .VPHome .VPFeatures .container .item {
+    width: auto !important;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  /* VitePress's tablet rule has more specificity than `.items` alone and
+     kept reapplying a four-column minimum width.  Target the actual grid
+     container so the intended 3+2 sequence owns this breakpoint. */
+  .VPHome .VPFeatures .container .items {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .VPHome .VPFeatures .container,
+  .VPHome .VPFeatures .container .item,
+  .VPHome .VPFeatures .container .VPFeature {
+    min-width: 0;
+  }
+
+  .VPHome .VPFeatures .container .item {
+    width: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .VPHome .VPFeatures .items {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .VPHero::before,
   .VPHero::after {
@@ -507,8 +550,12 @@
 /* Gold appears on the page only as a keyboard focus ring, the hero rule, and
    a card hover edge -- never as text. */
 .VPButton:focus-visible,
-.VPFeature:focus-visible {
-  outline: 3px solid var(--hs-gold);
+.VPFeature:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--hs-gold);
   outline-offset: 2px;
 }
 
