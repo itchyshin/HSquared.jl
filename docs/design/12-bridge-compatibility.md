@@ -5,6 +5,13 @@ this engine owns correctness. The bridge is a **versioned parity contract**: the
 side pins a tested engine version, and parity tests run against serialized engine
 target fixtures (not against live re-fits).
 
+> **Record status (2026-09-07):** The later website and named
+> honesty-documentation milestone is complete, but it did not authorize a
+> package number, tag, registration, release, or bridge promotion. Experimental
+> **0.8.0** / public count **7** remain pinned. The corresponding public-source
+> record is
+> [`2026-09-07-documentation-milestone-release-boundary.md`](../dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
+
 ## Discipline
 
 - **Boring payload only.** Strings / dicts / plain arrays / column tables cross
