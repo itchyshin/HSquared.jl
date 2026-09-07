@@ -54,25 +54,25 @@ R-style spellings.
 | term | category | phase | syntax_status | fitting_status | current_behavior |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `animal(1 \| id, pedigree = ped)` | v0.1 animal model | Phase 1 | parsed | Julia bridge diagnostic | The R default `hsquared()` owns its public fitting route; this Julia row records the v0.1 bridge shape, not a limit on the R frontier. |
-| `permanent(1 \| id)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `common_env(1 \| group)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `maternal_genetic(1 \| dam, pedigree = ped)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `maternal_env(1 \| dam)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `paternal_genetic(1 \| sire, pedigree = ped)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `paternal_env(1 \| sire)` | standard quantitative genetics | Phase 2 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `cytoplasmic(1 \| maternal_line)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `imprinting(1 \| id, pedigree = ped, parent = "maternal")` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `dominance(1 \| id, pedigree = ped)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `epistasis(1 \| id, pedigree = ped)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `relmat(1 \| id, K = K)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `precision(1 \| id, Q = Q)` | inheritance and relationship kernels | Phase 3+ | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
+| `permanent(1 \| id)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `common_env(1 \| group)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; consult the R package for its live route and fitting status. |
+| `maternal_genetic(1 \| dam, pedigree = ped)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; consult the R package for its live route and fitting status. |
+| `maternal_env(1 \| dam)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `paternal_genetic(1 \| sire, pedigree = ped)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `paternal_env(1 \| sire)` | standard quantitative genetics | Phase 2 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `cytoplasmic(1 \| maternal_line)` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `imprinting(1 \| id, pedigree = ped, parent = "maternal")` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `dominance(1 \| id, pedigree = ped)` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `epistasis(1 \| id, pedigree = ped)` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `relmat(1 \| id, K = K)` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `precision(1 \| id, Q = Q)` | inheritance and relationship kernels | Phase 3+ | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
 | `genomic(1 \| id, Ginv = Ginv)` | genomic and marker models | Phase 5 | Julia-local reserved marker | no Julia formula parser | This row does not state R parser behavior: narrow R genomic GREML is separately default-routed and covered at validation scale; other genomic routes retain their own status. |
 | `single_step(1 \| id, Hinv = Hinv)` | genomic and marker models | Phase 5 | Julia-local reserved marker | no Julia formula parser | This row does not state R parser behavior: supplied/constructed R single-step routes remain opt-in partial, while the narrow Julia Hinv cell is engine-covered only. |
-| `markers(M, model = "random")` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `marker_scan(M, map = marker_map)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `qtl_scan(position, genotype_probs = probs)` | genomic and marker models | Phase 5 | reserved | not available | Exported as an inert marker; `hsquared()` errors as planned, not implemented. |
-| `animal(trait \| id, pedigree = ped, cov = us())` | multivariate and factor analytic | Phase 3-4 | planned | not available | Roadmap syntax; the v0.1 `animal()` parser rejects trait and cov arguments. |
-| `animal(trait \| id, pedigree = ped, cov = fa(K = 2))` | multivariate and factor analytic | Phase 3-4 | planned | not available | Roadmap syntax; the v0.1 `animal()` parser rejects trait and cov arguments. |
+| `markers(M, model = "random")` | genomic and marker models | Phase 5 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `marker_scan(M, map = marker_map)` | genomic and marker models | Phase 5 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `qtl_scan(position, genotype_probs = probs)` | genomic and marker models | Phase 5 | Julia-local reserved API | no Julia formula parser | Inert Julia diagnostic marker only; it makes no assertion about the live R formula frontier. |
+| `animal(trait \| id, pedigree = ped, cov = us())` | multivariate and factor analytic | Phase 3-4 | Julia roadmap notation | no Julia formula parser | This diagnostic row is not a statement about the R formula frontier; check the R route ledger for live multivariate support. |
+| `animal(trait \| id, pedigree = ped, cov = fa(K = 2))` | multivariate and factor analytic | Phase 3-4 | Julia roadmap notation | no Julia formula parser | This diagnostic row is not a statement about the R formula frontier; check the R route ledger for live FA support. |
 
 In direct Julia code, the custom precision-kernel marker is qualified as
 `HSquared.precision()` because `Base.precision` already exists. The grammar
