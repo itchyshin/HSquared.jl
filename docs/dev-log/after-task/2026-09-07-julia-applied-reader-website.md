@@ -4,8 +4,8 @@
 
 Make the Julia documentation site readable as an applied-reader journey while
 preserving its engine-only truth, repair carried-over claim wording, and retain
-testable evidence. This is a draft website candidate; it does not publish or
-change a capability row.
+testable evidence. This is a draft website candidate; it does not publish,
+change a status symbol/count, or add a fitted capability.
 
 ## 2. Implemented
 
@@ -43,13 +43,24 @@ change a capability row.
 
 - `OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using Pkg; Pkg.test()'`:
   PASS (`Testing HSquared tests passed`), log
-  `/private/tmp/hsq-web-20260907-julia-pkgtest-final.log`.
+  `/private/tmp/hsq-web-20260907-julia-pkgtest-final.log`. This is earlier
+  local candidate evidence, not a claim about the later integrated `main`.
 - `OPENBLAS_NUM_THREADS=1 julia --project=docs docs/make.jl`: PASS, 20 HTML
   pages; final log `/private/tmp/hsq-web-20260907-julia-documenter-final.log`.
+- Rebased candidate build: `OPENBLAS_NUM_THREADS=1 julia --project=docs
+  docs/make.jl`: PASS, 20 HTML pages; retained log
+  `/private/tmp/hsq-web-20260907-julia-documenter-rebased-candidate.log`.
 - `git diff --check`: PASS. `xmllint --noout docs/src/assets/*.svg`: PASS.
 - Link audit after rebuild: 20 HTML, 1,591 references, zero fragments and
   zero alternative missing assets; the 20 local `/versions.js` references are
   the known deployment-generation exception.
+- Parent browser refresh: 20 pages × 4 viewports = 80 HTTP-200 observations;
+  zero bad images, missing alternative text, page-script errors, or page-level
+  width mismatch, retained in
+  `/private/tmp/hsq-web-20260907-julia-verified-routes.json`. Terra's local
+  usability recheck is PASS at `a3342cf`; Sol's exact-head F4 claims recheck is
+  CLEAN at `a3342cf` (`/private/tmp/hsq-web-20260907-usability-review.md` and
+  `/private/tmp/hsq-web-20260907-claims-review.md`).
 
 ## 6. Tests of the Tests
 
@@ -67,8 +78,11 @@ each is now represented in generated output or source inspection.
   denominator ambiguity, AGHmatrix construction-vs-fit ambiguity, private
   scratch citation, CSS/anchor/SVG defects, 4+1 desktop/tablet cards, and 2–6
   journey numbering.
-- Deferred: final parent browser sweep at 768/1024/1440; #317 and #318 merge
-  completion; website draft PR and publication remain separate.
+- Completed after the initial receipt: parent browser sweep at 320/768/1024/
+  1440; #317 merged as `5471354`, and the reconciled #318 merged as
+  `022e8503` after exact-head CI.
+- Deferred: candidate PR CI/review and any publication remain separate. The
+  website is not deployed or merged by this record.
 
 ## 8. Consistency Audit
 
@@ -107,16 +121,21 @@ test processes; process inspection confirmed no live owner, then one-thread
 generation succeeded. A candidate package test had no duplicate sibling but
 ran for about three minutes. Documenter escaped bare HTML and shifts Markdown
 ordered-list starts, so the final solution uses its supported `@raw html`
-fence. PR #317's first all-green head was non-mergeable, required a rebase,
-and must receive fresh exact-head CI.
+fence. PR #317's first all-green head was non-mergeable and required a rebase;
+its rebased exact head later merged. #318 likewise required a clean rebase to
+replace stale #315/#316 bridge wording before its exact-head checks could run.
 
 ## 10. Known Residuals
 
-The website commit `e45831e` is local, draft-only, and behind `origin/main`
-until #317 and #318 land. Parent-owned browser revalidation remains required.
-No local build can contain deployment-created `versions.js`. #317 subsequently
-merged as `5471354`; #318 remains a non-duplicate correction to #316 and must
-be rebased, then receive fresh CI. No post-merge `main` check is claimed here.
+The rebased website candidate is `8099e0e1`, four commits ahead of integrated
+`origin/main` `022e8503`, and remains local/draft-only until its draft PR and
+candidate CI complete. #317 merged as `5471354`; the rebase-reconciled #318
+merged as `022e8503` after all of its exact-head checks were green. Main's
+Documenter run `34150274656` is SUCCESS at that same head. Package CI run
+`34150400073` was parent-dispatched on the same head and remains pending at
+this report's freeze; it is distinct from the earlier local `Pkg.test` PASS.
+No local build can contain deployment-created `versions.js`; no publication is
+authorized or implied.
 
 ## 11. Team Learning
 
@@ -133,5 +152,6 @@ rendered DOM, not the source selector.
 The reader journey covers ✓ source navigation, generated HTML, local link
 targets, responsive CSS intent, interval wording, and R-versus-engine wayfinding.
 It does NOT cover ✗ public deployment, a Julia General release, R API changes,
-new fitting science, status promotion, calibrated intervals, browser checks
-not yet rerun by the parent, or #317/#318 post-merge `main` CI.
+new fitting science, status promotion, calibrated intervals, candidate-PR CI /
+review, or website publication. The 80-observation browser receipt is local
+rendered evidence, not deployed-site or assistive-technology proof.
