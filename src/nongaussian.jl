@@ -1189,18 +1189,31 @@ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e
                 caveat = "Gaussian identity link: latent and observation scales coincide.",
                 method = :gaussian_identity)
     elseif family === :poisson
+        # This core is also reached by the legacy direct helper, whose typed arguments
+        # can still carry NaN/Inf.  Validate before the V_A == 0 shortcut below so an
+        # invalid mean or predictor variance cannot be disguised as h² = 0.
+        isfinite(V_A) && V_A >= 0.0 ||
+            throw(ArgumentError("Poisson sigma_a2 must be finite and nonnegative"))
+        isfinite(mu) || throw(ArgumentError("Poisson mu must be finite"))
+        isfinite(V_fixed) && V_fixed >= 0.0 ||
+            throw(ArgumentError("Poisson predictor_variance must be finite and nonnegative"))
         V_pred = V_A + V_fixed                       # linear-predictor variance
+        isfinite(V_pred) ||
+            throw(ArgumentError("Poisson sigma_a2 + predictor_variance must be finite"))
         log_λ = mu + V_pred / 2
         λ = exp(log_λ)                                 # E[exp η]; Ψ = λ for the log link
         # Divide the usual λ² numerator and denominator by λ² before evaluating.
         # This is algebraically identical, but avoids Inf / Inf at finite extreme μ.
         denominator = expm1(V_pred) + exp(-log_λ)
         h2_observation = V_A == 0.0 ? 0.0 : V_A / denominator
+        caveat = isinf(λ) ?
+            "Poisson log link: latent h² is degenerate (no latent residual) → NaN; var_distribution overflowed Float64 to Inf, while observation/count-scale h² was calculated stably from the λ²-cancelled closed form." :
+            "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation/count scale via the log-normal–Poisson closed form (NS 2017)."
         return (family = :poisson, sigma_a2 = V_A, mu = mu, latent_total_variance = V_pred,
                 h2_latent = NaN, h2_observation = h2_observation,
                 var_distribution = λ, var_link = 0.0, converged = converged,
                 information_limited = false,
-                caveat = "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation/count scale via the log-normal–Poisson closed form (NS 2017).",
+                caveat = caveat,
                 method = :lognormal_poisson)
     elseif family === :bernoulli || family === :binomial
         V_pred = V_A + V_fixed

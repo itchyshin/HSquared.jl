@@ -89,11 +89,17 @@ let
     @test_throws ArgumentError HSquared.nongaussian_scale_summary(:poisson, V_A; mu = μ, predictor_variance = Inf)
     @test_throws ArgumentError HSquared.nongaussian_scale_summary(:poisson, floatmax(Float64);
                                                                    mu = μ, predictor_variance = floatmax(Float64))
+    # The legacy direct path must not let the stable zero-variance shortcut hide bad inputs.
+    @test_throws ArgumentError HSquared.nongaussian_heritability(0.0, NaN, HSquared.PoissonResponse())
+    @test_throws ArgumentError HSquared.nongaussian_heritability(0.0, μ, HSquared.PoissonResponse();
+                                                                   predictor_variance = NaN)
 
     # Extreme but finite means must not trigger Inf/Inf (Poisson) or 0/0 (logit) NaN.
     po_extreme = HSquared.nongaussian_scale_summary(:poisson, V_A; mu = 1_000.0)
     @test isfinite(po_extreme.h2_observation)
     @test 0.0 <= po_extreme.h2_observation <= 1.0
+    @test isinf(po_extreme.var_distribution)
+    @test occursin("overflow", lowercase(po_extreme.caveat))
     logit_hi = HSquared.nongaussian_scale_summary(:binomial, V_A; mu = 1_000.0, n_trials = 5)
     logit_lo = HSquared.nongaussian_scale_summary(:binomial, V_A; mu = -1_000.0, n_trials = 5)
     @test isfinite(logit_hi.h2_observation)
