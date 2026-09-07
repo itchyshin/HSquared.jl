@@ -23,33 +23,43 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
-### 2026-09-05 — 0.9 honesty status (NOT 0.9.0; count stays 7)
+### 2026-09-07 — 0.9 honesty continuous (NOT 0.9.0; count stays 7)
 
-Lane: `docs/coord-board-09-status-2026-09-05` (scratch clone
-`~/local-scratch/worktrees/HSquared.jl-coord-board-09-row-2026-09-05`).
-Dropbox twins FOREIGN. Shannon Path FULL DRAFT note only. Twin R
-table row is the Shannon ledger; this is the engine-board mirror.
+Lane: `docs/09-post191-gate6-evidence-2026-09-07` (scratch clone
+`~/local-scratch/HSquared.jl-09-post191`). Engine-board mirror of R
+Shannon table row. Read-only cross-lane intel for Layer B #191.
 
 **Pins:** `public_covered_count` stays **7**. Experimental **0.8.0**.
 **0.9.0 NOT authorized.** No tag / General / CRAN / 1.0. No covered
 flip.
 
-**Paid:** Option B 12/12 honesty (R #176-#183 @ `7a5215d`; Julia
-#305-#308 @ `f8abd105`); NG-1 freeze+nod + R #173 @ `f70c2cd`;
-R #184 pkgdown @ `3e2b8c3`; Fisher yes Table 2 (Layer B track,
-**not** Gate-6); Gate 5 FA/SS post-merge PASS (scratch). Scratch
-Phase-1 banked both twins.
+**Paid (R lane, 2026-09-07):** Layer B B1/B2 honesty **MERGED** R #191
+@ `06bce492`; H0 Layer B **ratified**; L-4 plot/man demotion **MERGED**
+R #192 @ `fc7230c`. Fresh Rose Layer B **CLEAN WITH NITS** @ `8a3f597`.
+Gate-6 Rose **CLEAN WITH NITS** (read-only audit @ R `fc7230c` · Julia
+`b571184`). Check-log + after-task for both tracks **this PR**.
 
-**Waiting / blocked:** Gate-6 Rose **NOT READY / NOT CLEAN / do not
-spawn**. Layer B Rose live DRAFT **BLOCKED** (owner-accept unpaid;
-ratify forbidden). H1/H3 science unpaid. G10 S1/S2/S3 unpaid.
-Live-main check-log + after-task unpaid (DRAFT PRs exist).
+**Still open / deferred:** H1/H3 science **deferred** (not in 0.9).
+G10 S1/S2/S3 **hold banked** (V1-MATFREE-REML). Six-surface
+ratification + FA/SS R+Julia + bridge fences pre-authorized but unpaid.
+Side PRs: R #185 style; after-task DRAFTs R #188 / Julia #310.
 
-**Open PRs (do not merge from this note):** R #185 style (ready, not
-merged); R #187 and Julia #309 Phase-1 check-log DRAFTs. Sibling
-after-task DRAFTs R #188 / Julia #310.
+**Next:** Do **not** authorize 0.9.0. Continue EARNED_09 landing drafts.
 
-This is **not** a Rose audit and does **not** pay Gate-6.
+### 2026-09-05 — 0.9 honesty status (NOT 0.9.0; count stays 7) — SUPERSEDED
+
+Lane: `docs/coord-board-09-status-2026-09-05` (merged #311 @ `b571184`).
+**Historical snapshot only** — Gate-6 Rose and Layer B Rose blockers
+cleared 2026-09-07. Rehydrate from the 2026-09-07 section above.
+
+**Pins (snapshot):** count **7** · version **0.8.0** · 0.9.0 NOT
+authorized.
+
+**Paid (snapshot):** Option B 12/12 · NG-1 + #173 · #184 · Fisher yes
+Table 2 (Layer B track) · Gate 5 FA/SS PASS (scratch).
+
+**Was waiting (now cleared):** Gate-6 Rose do-not-spawn · Layer B Rose
+BLOCKED · live-main check-log/after-task unpaid.
 
 ### 2026-09-04 — CI flake: n=8 mv covariance SE throw (count stays 7)
 
