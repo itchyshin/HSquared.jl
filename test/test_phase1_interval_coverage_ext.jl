@@ -77,6 +77,59 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test all(c.scope == "characterization_not_covered" for c in _h1_t_cells(:smoke))
     @test _h1_multi_cells(:smoke)[1].k == 2
     @test _h1_multi_cells(:confirm)[1].k == 3
+
+    # The retained-evidence inventory is a pre-execution, canonical manifest:
+    # task identities do not follow the CLI campaign order.
+    inventory_cfg = _parse_args([
+        "--mode=confirm",
+        "--reps=2",
+        "--seed=20260903",
+        "--levels=0.90,0.95",
+    ])
+    inventory = _canonical_task_inventory(inventory_cfg)
+    @test Set(entry.campaign for entry in inventory) == Set(EXT_CAMPAIGNS)
+    @test any(entry -> entry.campaign === :h1_multi && entry.estimand == "ratio3", inventory)
+    @test all(entry -> entry.rep_start == 1 && entry.rep_end == 2 && entry.reps == 2, inventory)
+    @test all(entry -> entry.expected_key[1] == string(entry.campaign), inventory)
+
+    repeat_inventory = _canonical_task_inventory(inventory_cfg)
+    @test _inventory_digest(inventory) == _inventory_digest(repeat_inventory)
+    @test _canonical_inventory_serialization(inventory) ==
+          _canonical_inventory_serialization(repeat_inventory)
+    @test _inventory_digest(reverse(inventory)) == _inventory_digest(inventory)
+    @test occursin(r"^[0-9a-f]{64}$", _inventory_digest(inventory))
+
+    reordered_inventory = _canonical_task_inventory(_parse_args([
+        "--mode=confirm",
+        "--reps=2",
+        "--seed=20260903",
+        "--levels=0.95,0.90",
+        "--campaigns=h3_rg,h1_two,h3_ram,h1_t,h1_multi",
+    ]))
+    subset_inventory = _canonical_task_inventory(_parse_args([
+        "--mode=confirm",
+        "--reps=2",
+        "--seed=20260903",
+        "--levels=0.90,0.95",
+        "--campaigns=h3_rg",
+    ]))
+    h3_full = only(filter(entry -> entry.campaign === :h3_rg && entry.cell_index == 1 &&
+                                      entry.level == 0.9 && entry.rep == 1, inventory))
+    h3_reordered = only(filter(entry -> entry.campaign === :h3_rg && entry.cell_index == 1 &&
+                                           entry.level == 0.9 && entry.rep == 1, reordered_inventory))
+    h3_subset = only(filter(entry -> entry.campaign === :h3_rg && entry.cell_index == 1 &&
+                                        entry.level == 0.9 && entry.rep == 1, subset_inventory))
+    @test h3_full.expected_key == h3_reordered.expected_key == h3_subset.expected_key
+
+    mutated = collect(inventory)
+    mutated[1] = merge(mutated[1], (scope = "mutated_scope",))
+    @test _inventory_digest(mutated) != _inventory_digest(inventory)
+
+    same_campaign = filter(entry -> entry.campaign === :h1_two, inventory)
+    @test length(unique(entry.expected_key for entry in same_campaign)) == length(same_campaign)
+    @test any(entry -> entry.rep == 1, same_campaign) && any(entry -> entry.rep == 2, same_campaign)
+    @test any(entry -> entry.cell_index == 1, same_campaign) && any(entry -> entry.cell_index == 2, same_campaign)
+    @test any(entry -> entry.level == 0.9, same_campaign) && any(entry -> entry.level == 0.95, same_campaign)
 end
 
 if get(ENV, "HSQUARED_C1EXT_SMOKE", "0") == "1"

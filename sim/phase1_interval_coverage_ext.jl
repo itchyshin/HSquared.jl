@@ -29,6 +29,7 @@ using HSquared
 using LinearAlgebra
 using Printf
 using Random
+using SHA
 using SparseArrays
 
 # ---- Frozen claim-level contract (doc-34 §2–§4; do not relax) ----------------
@@ -442,6 +443,117 @@ function _h3_ram_cells(mode::Symbol)
              sad = 1.0, sam = 0.5, ram = -0.3, se = 1.0, scope = "interior")]
 end
 
+# ---- pre-execution retained-evidence inventory --------------------------------
+# The inventory is intentionally pure: it records every retained detail-row key
+# that a configuration is expected to emit, without calling any simulation or
+# fitting code.  Its canonical ordering is stable across CLI campaign ordering.
+function _campaign_cells(campaign::Symbol, mode::Symbol)
+    if campaign === :h1_two
+        return _h1_two_cells(mode)
+    elseif campaign === :h1_multi
+        return _h1_multi_cells(mode)
+    elseif campaign === :h1_t
+        return _h1_t_cells(mode)
+    elseif campaign === :h3_rg
+        return _h3_rg_cells(mode)
+    elseif campaign === :h3_ram
+        return _h3_ram_cells(mode)
+    end
+    error("unknown campaign $campaign")
+end
+
+function _campaign_retained_specs(campaign::Symbol, cell)
+    if campaign === :h1_two
+        return ((estimand = "ratio1", method = "ratio_delta_z"),
+                (estimand = "ratio2", method = "ratio_delta_z"))
+    elseif campaign === :h1_multi
+        return Tuple((estimand = "ratio$(i)", method = "ratio_delta_z") for i in 1:cell.k)
+    elseif campaign === :h1_t
+        return ((estimand = "t", method = "t_delta_z"),)
+    elseif campaign === :h3_rg
+        return ((estimand = "r_g", method = "rg_fisher_z"),)
+    elseif campaign === :h3_ram
+        return ((estimand = "r_am", method = "ram_fisher_z"),)
+    end
+    error("unknown campaign $campaign")
+end
+
+function _canonical_cell_id(campaign::Symbol, cell, level::Float64)
+    return string(campaign, "|", cell.label, "|scope=", cell.scope,
+                  "|level=", _format_float(level))
+end
+
+function _expected_detail_key(campaign::Symbol, cell_id::AbstractString, estimand::AbstractString,
+                              method::AbstractString, level::Float64, rep::Int, seed::Int)
+    return (string(campaign), String(cell_id), String(estimand), String(method), level, rep, seed)
+end
+
+function _canonical_task_inventory(config::ExtConfig)
+    config.reps > 0 || error("inventory requires a positive replicate count")
+    entries = NamedTuple[]
+    campaigns = sort(unique(config.campaigns); by = _campaign_index)
+    levels = sort(unique(config.levels))
+    for campaign in campaigns
+        campaign_index = _campaign_index(campaign)
+        for (cell_index, cell) in pairs(_campaign_cells(campaign, config.mode))
+            for level in levels
+                cell_id = _canonical_cell_id(campaign, cell, level)
+                for rep in 1:config.reps
+                    seed = _campaign_seed(config, campaign, cell_index, rep)
+                    for spec in _campaign_retained_specs(campaign, cell)
+                        expected_key = _expected_detail_key(
+                            campaign, cell_id, spec.estimand, spec.method, level, rep, seed,
+                        )
+                        push!(entries, (
+                            campaign = campaign,
+                            campaign_index = campaign_index,
+                            cell_index = cell_index,
+                            cell_id = cell_id,
+                            cell_label = String(cell.label),
+                            scope = String(cell.scope),
+                            level = level,
+                            rep_start = 1,
+                            rep_end = config.reps,
+                            reps = config.reps,
+                            rep = rep,
+                            seed = seed,
+                            estimand = spec.estimand,
+                            method = spec.method,
+                            expected_key = expected_key,
+                        ))
+                    end
+                end
+            end
+        end
+    end
+    keys = getproperty.(entries, :expected_key)
+    length(unique(keys)) == length(keys) || error("canonical inventory contains duplicate retained-row keys")
+    return Tuple(entries)
+end
+
+function _canonical_inventory_serialization(entries)
+    rows = String[]
+    ordered = sort(collect(entries); by = entry -> (
+        entry.campaign_index, entry.cell_index, entry.level, entry.rep,
+        entry.estimand, entry.method,
+    ))
+    for entry in ordered
+        key = entry.expected_key
+        push!(rows, join((
+            string(entry.campaign), string(entry.campaign_index), string(entry.cell_index),
+            entry.cell_id, entry.cell_label, entry.scope, _format_float(entry.level),
+            string(entry.rep_start), string(entry.rep_end), string(entry.reps), string(entry.rep),
+            string(entry.seed), entry.estimand, entry.method,
+            string(key[1]), key[2], key[3], key[4], _format_float(key[5]), string(key[6]), string(key[7]),
+        ), '\t'))
+    end
+    return join(rows, '\n') * (isempty(rows) ? "" : "\n")
+end
+
+function _inventory_digest(entries)
+    return bytes2hex(sha256(_canonical_inventory_serialization(entries)))
+end
+
 # ---- one-rep runners ---------------------------------------------------------
 function _run_h1_two(cell, seed, level, iterations)
     rng = MersenneTwister(seed)
@@ -782,19 +894,7 @@ function _stamp_cell!(row, cell_id, rep)
 end
 
 function _run_campaign!(records, config, campaign)
-    cells = if campaign === :h1_two
-        _h1_two_cells(config.mode)
-    elseif campaign === :h1_multi
-        _h1_multi_cells(config.mode)
-    elseif campaign === :h1_t
-        _h1_t_cells(config.mode)
-    elseif campaign === :h3_rg
-        _h3_rg_cells(config.mode)
-    elseif campaign === :h3_ram
-        _h3_ram_cells(config.mode)
-    else
-        error("unknown campaign $campaign")
-    end
+    cells = _campaign_cells(campaign, config.mode)
     runner = Dict(
         :h1_two => _run_h1_two,
         :h1_multi => _run_h1_multi,
@@ -807,7 +907,7 @@ function _run_campaign!(records, config, campaign)
         for level in config.levels
             for rep in 1:config.reps
                 seed = _campaign_seed(config, campaign, cell_index, rep)
-                cell_id = string(campaign, "|", cell.label, "|scope=", cell.scope, "|level=", _format_float(level))
+                cell_id = _canonical_cell_id(campaign, cell, level)
                 probe = _detail_row(;
                     campaign = campaign, cell_id = cell_id, seed = seed, rep = rep,
                     estimand = "_probe", method = "_probe", design = cell.label,
