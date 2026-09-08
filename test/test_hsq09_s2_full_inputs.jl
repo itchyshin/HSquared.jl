@@ -3,6 +3,7 @@
 using Test
 
 const S2_FULL_TOOL = joinpath(@__DIR__, "..", "tools", "materialize_hsq09_s2_full_inputs.jl")
+const S2_FULL_SBATCH = joinpath(@__DIR__, "..", "sim", "drac", "hsq09_s2_full_inputs.sbatch")
 
 @testset "0.9 S2 full deterministic screening/C1-ext inputs" begin
     @test isfile(S2_FULL_TOOL)
@@ -84,6 +85,53 @@ const S2_FULL_TOOL = joinpath(@__DIR__, "..", "tools", "materialize_hsq09_s2_ful
               (action = :probe, task_id = M.PROBE_TASK_ID)
         @test_throws ArgumentError M.parse_cli_args(["--probe-task", "substitute"])
         @test_throws ArgumentError M.parse_cli_args(String[])
+
+        # A remote array must receive one sealed, deduplicated raw-input task
+        # per index.  Scheduled estimand/method rows may share a DGP draw, but
+        # an input bundle may not be built twice or selected ambiguously.
+        raw_plan = M.raw_task_plan(root)
+        @test raw_plan.count == 14_240
+        @test length(raw_plan.entries) == raw_plan.count
+        @test length(unique(M.raw_bundle_id(entry) for entry in raw_plan.entries)) == raw_plan.count
+        @test raw_plan.entries == sort(raw_plan.entries; by = M.raw_task_sort_key)
+
+        first_task = M.resolve_raw_task(root, 1)
+        last_task = M.resolve_raw_task(root, raw_plan.count)
+        @test first_task.index == 1
+        @test last_task.index == raw_plan.count
+        @test first_task.task_id == M.raw_bundle_id(first_task.entry)
+        @test last_task.task_id == M.raw_bundle_id(last_task.entry)
+        @test_throws ArgumentError M.resolve_raw_task(root, 0)
+        @test_throws ArgumentError M.resolve_raw_task(root, raw_plan.count + 1)
+
+        mktempdir() do parent
+            task_manifest = joinpath(parent, "full-input-task-manifest.tsv")
+            manifest_receipt = M.write_raw_task_manifest(task_manifest; root = root)
+            @test manifest_receipt.task_count == 14_240
+            @test manifest_receipt.sha256 == M.verify_raw_task_manifest(task_manifest; root = root).sha256
+            @test_throws ArgumentError M.write_raw_task_manifest(task_manifest; root = root)
+
+            output_root = joinpath(parent, "outputs")
+            task_result = M.materialize_raw_task(root, output_root, 1; task_manifest = task_manifest)
+            @test task_result.index == 1
+            @test task_result.task_id == first_task.task_id
+            @test task_result.file_count == 8
+            @test isdir(task_result.path)
+            @test M.verify_input_bundle(task_result.path) === nothing
+            @test M.materialize_raw_task(root, output_root, 1; task_manifest = task_manifest).elapsed_seconds == 0.0
+        end
+
+        @test M.parse_cli_args(["--task-index", "1", "--task-manifest", "/tmp/full.tsv", "--output-root", "/tmp/outputs"]) ==
+              (action = :task, index = 1, task_manifest = "/tmp/full.tsv", output_root = "/tmp/outputs")
+        @test_throws ArgumentError M.parse_cli_args(["--task-index", "0", "--task-manifest", "/tmp/full.tsv", "--output-root", "/tmp/outputs"])
+        @test isfile(S2_FULL_SBATCH)
+        sbatch_text = read(S2_FULL_SBATCH, String)
+        @test occursin("#SBATCH --array=1-1%1", sbatch_text)
+        @test occursin("module load StdEnv/2023 julia/1.10.0", sbatch_text)
+        @test occursin("JULIA_NUM_THREADS=1", sbatch_text)
+        @test occursin("OPENBLAS_NUM_THREADS=1", sbatch_text)
+        @test !occursin("/project/def-snakagaw/bin/julia", sbatch_text)
+        @test !occursin("fit_", sbatch_text)
     end
 end
 

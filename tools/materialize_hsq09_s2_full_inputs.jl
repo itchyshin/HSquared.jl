@@ -125,6 +125,92 @@ function _expected_key_token(entry)
     return join((key[1], key[2], key[3], key[4], Base.invokelatest(_hash_float64, key[5]), string(key[6]), string(key[7])), "|")
 end
 
+# A scheduled interval row is not necessarily a unique input draw: estimands
+# and methods can share the same campaign/cell/seed DGP.  The remote array is
+# deliberately keyed to this raw bundle identity, never to a retained-result
+# row, so it cannot silently repeat identical input construction.
+function raw_task_sort_key(entry)
+    return (entry.campaign_index, entry.cell_index, entry.seed, string(entry.campaign), entry.cell_id)
+end
+
+_raw_bundle_key(entry) = (entry.mode, entry.campaign, entry.campaign_index, entry.cell_index, entry.cell_id, entry.seed)
+
+function raw_bundle_id(entry)
+    preimage = join((
+        CANDIDATE_HEAD,
+        string(entry.mode), string(entry.campaign), string(entry.campaign_index), string(entry.cell_index),
+        entry.cell_id, _cell_declaration(entry.cell), string(entry.seed),
+    ), "\t")
+    return _sha256(preimage)
+end
+
+function raw_task_plan(root::AbstractString)
+    plans = screening_confirmation_plans(root)
+    representatives = Dict{Tuple{Symbol,Symbol,Int,Int,String,Int},Any}()
+    for entry in vcat(plans.screen.entries, plans.confirm.entries)
+        key = _raw_bundle_key(entry)
+        if haskey(representatives, key)
+            raw_bundle_id(representatives[key]) == raw_bundle_id(entry) ||
+                error("raw input identity drift for duplicated scheduled key")
+        else
+            representatives[key] = entry
+        end
+    end
+    entries = sort!(collect(values(representatives)); by = raw_task_sort_key)
+    ids = raw_bundle_id.(entries)
+    length(unique(ids)) == length(ids) || error("raw bundle identifier collision")
+    return (entries = entries, count = length(entries))
+end
+
+function resolve_raw_task(root::AbstractString, index::Integer)
+    plan = raw_task_plan(root)
+    1 <= index <= plan.count || throw(ArgumentError("raw task index $(index) is outside 1:$(plan.count)"))
+    entry = plan.entries[index]
+    return (index = Int(index), task_id = raw_bundle_id(entry), entry = entry, count = plan.count)
+end
+
+const RAW_TASK_MANIFEST_HEADER = "index\ttask_id\tcampaign\tcampaign_index\tcell_index\tcell_id\tseed"
+
+function _raw_task_manifest_bytes(root::AbstractString)
+    plan = raw_task_plan(root)
+    rows = String[RAW_TASK_MANIFEST_HEADER]
+    for (index, entry) in enumerate(plan.entries)
+        push!(rows, join((string(index), raw_bundle_id(entry), string(entry.campaign),
+                          string(entry.campaign_index), string(entry.cell_index),
+                          entry.cell_id, string(entry.seed)), '\t'))
+    end
+    return join(rows, "\n") * "\n"
+end
+
+function write_raw_task_manifest(path::AbstractString; root::AbstractString = _DEFAULT_ROOT)
+    ispath(path) && throw(ArgumentError("immutable raw task manifest already exists"))
+    parent = dirname(path)
+    isdir(parent) || throw(ArgumentError("raw task manifest parent is absent"))
+    bytes = _raw_task_manifest_bytes(root)
+    staging = mktempdir(parent; prefix = ".raw-task-manifest-")
+    staged = joinpath(staging, basename(path))
+    completed = false
+    try
+        open(staged, "w") do io
+            write(io, bytes)
+        end
+        mv(staged, path; force = false)
+        completed = true
+    finally
+        !completed && ispath(staged) && rm(staged; force = true)
+        ispath(staging) && rm(staging; recursive = true, force = true)
+    end
+    return (path = path, sha256 = _sha256_file(path), task_count = raw_task_plan(root).count)
+end
+
+function verify_raw_task_manifest(path::AbstractString; root::AbstractString = _DEFAULT_ROOT)
+    isfile(path) || throw(ArgumentError("raw task manifest is absent"))
+    expected = _raw_task_manifest_bytes(root)
+    actual = read(path, String)
+    actual == expected || error("raw task manifest content drift")
+    return (path = path, sha256 = _sha256_file(path), task_count = raw_task_plan(root).count)
+end
+
 function task_id(entry)
     preimage = join((
         string(entry.campaign), string(entry.campaign_index), string(entry.cell_index),
@@ -370,26 +456,71 @@ function materialize_probe(root::AbstractString, output_root::AbstractString; ta
     end
 end
 
+function materialize_raw_task(root::AbstractString, output_root::AbstractString, index::Integer;
+                              task_manifest::AbstractString)
+    verify_raw_task_manifest(task_manifest; root = root)
+    task = resolve_raw_task(root, index)
+    target = joinpath(output_root, task.task_id)
+    if ispath(target)
+        verify_input_bundle(target)
+        return (index = task.index, task_id = task.task_id, path = target,
+                elapsed_seconds = 0.0,
+                bytes = sum(filesize(joinpath(target, file)) for file in readdir(target)),
+                file_count = length(readdir(target)), manifest_hash = _sha256_file(joinpath(target, "manifest.tsv")))
+    end
+    staging = _staging_directory(output_root)
+    completed = false
+    started = time_ns()
+    try
+        bundle = build_input_bundle(root, task.entry)
+        receipts = _write_bundle(staging, bundle)
+        verify_input_bundle(staging)
+        mv(staging, target; force = false)
+        completed = true
+        return (index = task.index, task_id = task.task_id, path = target,
+                elapsed_seconds = (time_ns() - started) / 1e9,
+                bytes = sum(row.bytes for row in receipts.component_rows) + receipts.manifest.bytes,
+                file_count = length(receipts.component_rows) + 1,
+                manifest_hash = receipts.manifest.sha256)
+    finally
+        !completed && ispath(staging) && rm(staging; recursive = true, force = true)
+    end
+end
+
 function parse_cli_args(args::Vector{String})
-    length(args) == 2 || throw(ArgumentError("expected exactly --probe-task <fixed-task-id>"))
-    args[1] == "--probe-task" || throw(ArgumentError("only --probe-task is supported"))
-    args[2] == PROBE_TASK_ID || throw(ArgumentError("probe task substitution is forbidden"))
-    return (action = :probe, task_id = args[2])
+    if length(args) == 2 && args[1] == "--probe-task"
+        args[2] == PROBE_TASK_ID || throw(ArgumentError("probe task substitution is forbidden"))
+        return (action = :probe, task_id = args[2])
+    end
+    if length(args) == 6 && args[1] == "--task-index" && args[3] == "--task-manifest" && args[5] == "--output-root"
+        index = tryparse(Int, args[2])
+        index === nothing && throw(ArgumentError("raw task index must be an integer"))
+        index >= 1 || throw(ArgumentError("raw task index must be positive"))
+        isempty(args[4]) && throw(ArgumentError("raw task manifest path is empty"))
+        isempty(args[6]) && throw(ArgumentError("raw task output root is empty"))
+        return (action = :task, index = index, task_manifest = args[4], output_root = args[6])
+    end
+    throw(ArgumentError("expected --probe-task <fixed-task-id> or --task-index <positive-int> --task-manifest <path> --output-root <path>"))
 end
 
 function main(args::Vector{String} = ARGS; root::AbstractString = _DEFAULT_ROOT)
     parsed = parse_cli_args(args)
-    output_root = joinpath(root, "sim", "fixtures", "hsq09-s2-full", "probe")
-    target = joinpath(output_root, parsed.task_id)
-    result = if ispath(target)
-        verify_input_bundle(target; expected_manifest_hash = PROBE_MANIFEST_SHA256)
-        (task_id = parsed.task_id, mode = :confirm, path = target,
-         elapsed_seconds = 0.0, bytes = sum(filesize(joinpath(target, file)) for file in readdir(target)),
-         file_count = length(readdir(target)), manifest_hash = _sha256_file(joinpath(target, "manifest.tsv")))
-    else
-        materialize_probe(root, output_root; task_id = parsed.task_id)
+    if parsed.action === :probe
+        output_root = joinpath(root, "sim", "fixtures", "hsq09-s2-full", "probe")
+        target = joinpath(output_root, parsed.task_id)
+        result = if ispath(target)
+            verify_input_bundle(target; expected_manifest_hash = PROBE_MANIFEST_SHA256)
+            (task_id = parsed.task_id, mode = :confirm, path = target,
+             elapsed_seconds = 0.0, bytes = sum(filesize(joinpath(target, file)) for file in readdir(target)),
+             file_count = length(readdir(target)), manifest_hash = _sha256_file(joinpath(target, "manifest.tsv")))
+        else
+            materialize_probe(root, output_root; task_id = parsed.task_id)
+        end
+        println("S2_FULL_INPUT_PROBE_OK task_id=$(result.task_id) elapsed_seconds=$(result.elapsed_seconds) bytes=$(result.bytes) file_count=$(result.file_count) manifest_sha256=$(result.manifest_hash)")
+        return result
     end
-    println("S2_FULL_INPUT_PROBE_OK task_id=$(result.task_id) elapsed_seconds=$(result.elapsed_seconds) bytes=$(result.bytes) file_count=$(result.file_count) manifest_sha256=$(result.manifest_hash)")
+    result = materialize_raw_task(root, parsed.output_root, parsed.index; task_manifest = parsed.task_manifest)
+    println("S2_FULL_INPUT_TASK_OK index=$(result.index) task_id=$(result.task_id) elapsed_seconds=$(result.elapsed_seconds) bytes=$(result.bytes) file_count=$(result.file_count) manifest_sha256=$(result.manifest_hash)")
     return result
 end
 
