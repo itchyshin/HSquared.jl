@@ -23,6 +23,12 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test roles["r_g"] == "covered_pillar_bank"
     @test roles["r_am"] == "covered_pillar_bank"
     @test all(row[1] in EXT_CAMPAIGNS for row in SYMBOLIC_ALIGNMENT)
+    @test any(
+        row -> row[1] === :h1_multi && row[2] == "ratio3" &&
+               row[3] == "multi_effect_ratio_interval" &&
+               row[6] == "covered_pillar_bank",
+        SYMBOLIC_ALIGNMENT,
+    )
 
     cfg = _parse_args(String[])
     @test cfg.mode === :smoke
@@ -44,6 +50,17 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     s2 = _rep_seed(20260903, 1, 1, 2)
     @test s1 != s2
     @test abs(s2 - s1) < EXT_SEED_STRIDE
+
+    # Mutation control: a reordered mapping, a request-order index, or a changed
+    # fixed index changes this exact seed.  The campaign's identity, rather than
+    # its position in a CLI request, determines its random stream.
+    expected_h3_rg_seed = _rep_seed(20260903, 4, 2, 3)
+    full = _parse_args(["--seed=20260903", "--campaigns=h1_two,h1_multi,h1_t,h3_rg,h3_ram"])
+    reordered = _parse_args(["--seed=20260903", "--campaigns=h3_rg,h1_two"])
+    subset = _parse_args(["--seed=20260903", "--campaigns=h3_rg"])
+    @test _campaign_seed(full, :h3_rg, 2, 3) == expected_h3_rg_seed
+    @test _campaign_seed(reordered, :h3_rg, 2, 3) == expected_h3_rg_seed
+    @test _campaign_seed(subset, :h3_rg, 2, 3) == expected_h3_rg_seed
 
     @test length(_h1_two_cells(:smoke)) == 1
     @test all(c.scope == "interior" for c in _h1_two_cells(:smoke))

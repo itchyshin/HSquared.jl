@@ -37,6 +37,7 @@ const EXT_CONFIRM_REPS_TARGET = 2000
 const EXT_SEED_STRIDE = 40_009          # coprime to C1 offsets; match future sbatch
 const EXT_PROMOTABLE_LEVEL = 0.95
 const EXT_CAMPAIGNS = (:h1_two, :h1_multi, :h1_t, :h3_rg, :h3_ram)
+const EXT_CAMPAIGN_INDEX = Dict(campaign => index for (index, campaign) in enumerate(EXT_CAMPAIGNS))
 const EXT_MODES = (:smoke, :screen, :confirm)
 
 const DETAIL_COLUMNS = [
@@ -95,6 +96,7 @@ const SYMBOLIC_ALIGNMENT = [
     (:h1_two,   "ratio2",    "two_effect_ratio_interval",      "logit-delta", "yes (two-effect opt-in)", "covered_pillar_bank"),
     (:h1_multi, "ratio1",    "multi_effect_ratio_interval",    "logit-delta", "yes (multi-effect opt-in)", "covered_pillar_bank"),
     (:h1_multi, "ratio2",    "multi_effect_ratio_interval",    "logit-delta", "yes (multi-effect opt-in)", "covered_pillar_bank"),
+    (:h1_multi, "ratio3",    "multi_effect_ratio_interval",    "logit-delta", "yes (multi-effect opt-in)", "covered_pillar_bank"),
     (:h1_t,     "t",         "repeatability_interval",         "logit-delta", "NO (recovery confirm FAIL)", "characterization_only"),
     (:h3_rg,    "r_g",       "genetic_correlation_interval",   "Fisher-z",  "yes (t=2 MV covered)",   "covered_pillar_bank"),
     (:h3_ram,   "r_am",      "direct_maternal_interval",       "Fisher-z",  "yes (direct-maternal opt-in)", "covered_pillar_bank"),
@@ -223,6 +225,16 @@ end
 
 function _rep_seed(master::Int, campaign_index::Int, cell_index::Int, rep::Int)
     return master + 1_000_003 * campaign_index + 10_007 * cell_index + rep
+end
+
+function _campaign_index(campaign::Symbol)
+    index = get(EXT_CAMPAIGN_INDEX, campaign, nothing)
+    index === nothing && error("unknown campaign $(campaign)")
+    return index
+end
+
+function _campaign_seed(config::ExtConfig, campaign::Symbol, cell_index::Int, rep::Int)
+    return _rep_seed(config.seed, _campaign_index(campaign), cell_index, rep)
 end
 
 function _halfsib_pedigree(nsire, ndam, noffspring)
@@ -769,7 +781,7 @@ function _stamp_cell!(row, cell_id, rep)
     return merge(row, (cell_id = cell_id, rep = rep))
 end
 
-function _run_campaign!(records, config, campaign, campaign_index)
+function _run_campaign!(records, config, campaign)
     cells = if campaign === :h1_two
         _h1_two_cells(config.mode)
     elseif campaign === :h1_multi
@@ -794,7 +806,7 @@ function _run_campaign!(records, config, campaign, campaign_index)
     for (cell_index, cell) in pairs(cells)
         for level in config.levels
             for rep in 1:config.reps
-                seed = _rep_seed(config.seed, campaign_index, cell_index, rep)
+                seed = _campaign_seed(config, campaign, cell_index, rep)
                 cell_id = string(campaign, "|", cell.label, "|scope=", cell.scope, "|level=", _format_float(level))
                 probe = _detail_row(;
                     campaign = campaign, cell_id = cell_id, seed = seed, rep = rep,
@@ -841,8 +853,8 @@ function main(args = ARGS)
 
     records = config.resume ? _read_detail_records(config.detail_output) : Dict{Any,Any}()
     _prepare_detail_output(config.detail_output; resume = config.resume)
-    for (i, campaign) in enumerate(config.campaigns)
-        rows = _run_campaign!(records, config, campaign, i)
+    for campaign in config.campaigns
+        rows = _run_campaign!(records, config, campaign)
         _write_detail_rows!(config.detail_output, rows)
     end
     summaries = _summaries_from_records(records)
