@@ -986,6 +986,7 @@ function _adjudicate_h1h3(summary; lower_band, upper_band,
     for (field, value) in ((:scheduled_reps, scheduled),
                            (:interval_success, succeeded),
                            (:covered, covered))
+        value isa Bool && error("retained summary $(field) must be a count, not Bool")
         value isa Integer || error("retained summary $(field) must be an integer count")
         value >= 0 || error("retained summary $(field) must be nonnegative")
     end

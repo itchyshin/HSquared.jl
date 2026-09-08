@@ -322,6 +322,16 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
         evidence_missing = false,
         immutable_failure = false,
     ); calibration_band...)
+    # Bool is an Integer subtype in Julia, but never a valid retained count.
+    @test_throws ErrorException _adjudicate_h1h3(complete_summary(
+        scheduled_reps = true, interval_success = 1, covered = 1,
+    ); calibration_band...)
+    @test_throws ErrorException _adjudicate_h1h3(complete_summary(
+        interval_success = true, covered = 1,
+    ); calibration_band...)
+    @test_throws ErrorException _adjudicate_h1h3(complete_summary(
+        covered = true,
+    ); calibration_band...)
 
     # The standalone validator is deliberately self-contained: its success
     # receipt is available without entering `main()` or starting a fit.
