@@ -11,6 +11,53 @@ pertains to other projects"*.
 
 ---
 
+## ⚠️ CORRECTION, added after first writing — there IS a contract doc, and it was deliberate
+
+**Read `docs/design/19-h2-scale-contract.md` §2.1 before anything below.** I did not find it on
+the first pass (I searched `src/` and the R package, not `docs/design/`), and its existence
+changes the framing of this handover though not its conclusion.
+
+**The `NaN` is not an oversight.** It is a documented contract decision that cites **the same
+paper**, states *"Terminology follows de Villemereuil, Schielzeth, Nakagawa & Morrissey (2016)"*,
+gives a code reference (`src/nongaussian.jl:952–954, 982`), and records verification *"against
+de Villemereuil 2016 + NS 2017 via the NotebookLM source set"*. Anyone reading my first draft
+would think nobody had thought about this. They had.
+
+**Where the contract and the paper actually diverge — this is the precise finding, and it is
+sharper than "the premise is false".** The contract's §2.1 defines
+
+    h²_latent = V_A / (V_A + V_link + V_fixed)          [doc 19 §2.1]
+
+against the paper's
+
+    h²_lat    = V_A,ℓ / (V_A,ℓ + V_RE + V_O)            [Eq 4]
+
+Two differences, in opposite directions:
+1. **The contract INCLUDES `V_link`**, which the paper places **only** in the *liability* scale
+   (Eq 24), never in the latent scale.
+2. **The contract OMITS `V_RE + V_O`** — the overdispersion — **which is the paper's entire
+   latent denominator.** The contract's model is written `η = μ + a + f`, with no overdispersion
+   term at all; the paper's Eq 3a is `ℓ = μ + Xb + Z_a a + … + o`.
+
+**So the two ingredients have effectively been swapped.** And that fully explains the `NaN`
+without anyone having blundered: with `V_link = 0` for the log link *and no `V_O` in the model*,
+the denominator collapses to `V_A + V_fixed`, which is degenerate. **Given the model doc 19
+writes down, `NaN` is the correct answer.** The disagreement is one level up — in the model, not
+the arithmetic.
+
+**And the overdispersion is available.** `src/nongaussian.jl:1186` already computes
+`latent_total_variance = V_A + sigma_e2` for another family — the Eq-4 shape — so `sigma_e2` is
+in scope. The code is therefore *already inconsistent with itself* across families, which is the
+strongest argument for the change and does not depend on adjudicating the paper at all.
+
+**What this means for the work below:** the task is not "fix a bug", it is **"ratify a contract
+change against doc 19"** — update `docs/design/19-h2-scale-contract.md` §2.1/§2.3 in the same
+change, or the code and its contract will disagree in the other direction. Note also that doc 19
+already has a **§2.3 Liability (threshold) scale**, so the vocabulary exists; it is assigned
+differently from the paper. Related: the `NG-1` item in `36-phase3-6-execution-plan` is
+*"ratify which scales hsquared surfaces"* — this decision is the answer to that open item, so
+close it in the same pass.
+
 ## Critical context — what is wrong today
 
 `src/nongaussian.jl` (on `origin/main`) computes a **`h2_latent`** that means two different
