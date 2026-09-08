@@ -1,0 +1,5 @@
+schema_version = "hsq09-s2-c1-ext-input-materialization-v1"
+manifest_file = "c1-ext-manifest.toml"
+manifest_digest_sha256 = "12bf4e78177106091985579d42b0508d0c0183a28c75cf54ba57dfd0a5bc5770"
+input_declaration_file = "c1-ext-input-declaration.tsv"
+input_declaration_sha256 = "45ec53eb22bfd46c956d2752bf866282d6591d9265c9d4d96ef4b030fac2d59b"
