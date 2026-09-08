@@ -48,6 +48,26 @@ const S2_TOOL = joinpath(S2_ROOT, "tools", "materialize_hsq09_s2.jl")
                 end
             end
 
+            # Exercise the production candidate-file path, not only its
+            # digest comparator: the temporary root carries this worktree's
+            # gitdir pointer, but every candidate-bound input is copied and
+            # then independently mutated.
+            candidate_files = (S2.SOURCE_RELATIVE_PATH, "Project.toml", S2.SBATCH_RELATIVE_PATH)
+            for mutated_relative in candidate_files
+                mktempdir() do copied_root
+                    write(joinpath(copied_root, ".git"), read(joinpath(S2_ROOT, ".git")))
+                    for relative in candidate_files
+                        target = joinpath(copied_root, relative)
+                        mkpath(dirname(target))
+                        write(target, read(joinpath(S2_ROOT, relative)))
+                    end
+                    open(joinpath(copied_root, mutated_relative), "a") do mutation
+                        write(mutation, "\n# copied-root mutation\n")
+                    end
+                    @test_throws ErrorException S2.assert_candidate_file(copied_root, mutated_relative)
+                end
+            end
+
             mktempdir() do parent
                 outdir = joinpath(parent, "sealed")
                 first = S2.materialize(outdir; root = S2_ROOT)
@@ -117,6 +137,16 @@ const S2_TOOL = joinpath(S2_ROOT, "tools", "materialize_hsq09_s2.jl")
                 S2.materialize(outdir; root = S2_ROOT)
                 manifest_path = joinpath(outdir, S2.MANIFEST_FILE)
                 open(manifest_path, "a") do io
+                    write(io, "# mutated\n")
+                end
+                @test_throws ErrorException S2.verify_materialization(outdir; root = S2_ROOT)
+            end
+
+            mktempdir() do parent
+                outdir = joinpath(parent, "sealed")
+                S2.materialize(outdir; root = S2_ROOT)
+                seal_path = joinpath(outdir, S2.SEAL_FILE)
+                open(seal_path, "a") do io
                     write(io, "# mutated\n")
                 end
                 @test_throws ErrorException S2.verify_materialization(outdir; root = S2_ROOT)
