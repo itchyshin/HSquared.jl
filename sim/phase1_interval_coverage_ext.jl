@@ -786,6 +786,8 @@ function _detail_error(row, message::AbstractString)
     error("invalid retained detail row $(_detail_row_label(row)): $(message)")
 end
 
+_allows_missing_scalar_se(method::AbstractString) = method == "rg_fisher_z"
+
 function _validate_detail_row(row)
     isfinite(row.level) || _detail_error(row, "level must be finite")
     isfinite(row.truth) || _detail_error(row, "truth must be finite")
@@ -797,10 +799,15 @@ function _validate_detail_row(row)
     if row.interval_success
         isempty(row.failure_reason) ||
             _detail_error(row, "successful interval requires an empty failure_reason")
-        for field in (:lower, :upper, :width, :estimate, :se)
+        for field in (:lower, :upper, :width, :estimate)
             isfinite(getproperty(row, field)) ||
                 _detail_error(row, "successful interval requires finite $(field)")
         end
+        # `genetic_correlation_interval`'s retained Fisher-z r_g record has
+        # scalar endpoints and estimate but no scalar SE.  No other method is
+        # allowed to use that missing-value representation.
+        (isfinite(row.se) || (_allows_missing_scalar_se(row.method) && isnan(row.se))) ||
+            _detail_error(row, "successful interval requires finite se outside rg_fisher_z")
         row.upper >= row.lower ||
             _detail_error(row, "successful interval requires upper >= lower")
         row.width >= 0 ||

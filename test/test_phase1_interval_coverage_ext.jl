@@ -184,6 +184,17 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test reconciled isa Dict
     @test reconciled[_detail_key(valid_row)] === valid_row
 
+    # The shipped Fisher-z r_g runner deliberately has no scalar standard
+    # error, while delta-ratio records do.  Preserve that narrow shape rather
+    # than weakening successful-interval validation for every method.
+    h3_rg_no_scalar_se = merge(valid_row, (se = NaN,))
+    @test _validate_detail_row(h3_rg_no_scalar_se) === h3_rg_no_scalar_se
+    @test_throws ErrorException _validate_detail_row(merge(h3_rg_no_scalar_se, (
+        campaign = "h1_two",
+        estimand = "ratio1",
+        method = "ratio_delta_z",
+    )))
+
     # Mutation controls: permissive booleans, logically inconsistent success
     # flags, blank failed-interval reasons, duplicate keys, and inventory drift
     # must all stop before pooling or resume can hide them.
