@@ -107,12 +107,30 @@ scale of Eq 4. Eq 4 needs **no** extra term. Exact observed-scale results alread
 The same three-scale confusion is very likely present, in the same shape, elsewhere. **Audit,
 do not assume:**
 
-- **`hsquared` (the R twin).** Measured 2026-09-08: **no** `h2_latent` / `h2_observation` /
-  `latent_total` anywhere in `R/`, and no `ln(1+1/λ)`. It exports `heritability()`,
-  `direct_heritability()`, `heritability_interval()`, `heritability_standard_error()`
-  (see `NAMESPACE`). So the twin has **no** non-Gaussian scale surface yet — decide whether
-  it gains the same three-field contract or explicitly documents that it is Gaussian-only.
-  **Do not let the twins diverge silently**; that is what the parity apparatus exists to stop.
+- **`hsquared` (the R twin) — DECIDED, and my first measurement of it was WRONG.**
+  **Correction (same day):** an earlier line in this document said the R twin had *"no
+  non-Gaussian scale surface at all"*. **That was measured on the checkout's branch
+  (`codex/2026-07-13-v07-performance-localization`) and is false.** The surface exists on
+  **`codex/hsq09-ng-contract-r`** (`c073172`, *"feat: add Gate A non-Gaussian scale
+  extractors"*), exporting `latent_heritability()` and `observation_heritability()`.
+  *A working tree is one BRANCH, not the repo — the trap this very handover warns about, hit
+  while writing it.*
+  **The R twin has the SAME defect, in a harder form — it does not return `NaN`, it
+  `stop()`s:**
+
+      stop("Poisson log-link latent heritability is undefined: V_link = 0 gives
+            no latent residual; use observation_heritability() ...")
+
+  **`V_link = 0` is correct for a log link, and irrelevant.** `V_link` is the *liability* term
+  (Eq 24); the latent residual is `V_O` (Eq 4), a different quantity, and `V_link` does not
+  appear in Eq 4 at all. Its roxygen also documents the field as *"latent logistic-**liability**
+  scale"* — naming both scales for one return value, which is the conflation itself in one
+  phrase.
+  **Shinichi's decision (2026-09-08): the R twin adopts the same three-field contract** —
+  `latent_heritability()` (Eq 4, every family, no `stop()`), `liability_heritability()`
+  (Eq 24, binomial only, **new**), `observation_heritability()` (Eq 26/25).
+  Tracked at **itchyshin/hsquared#201**. **The twins must land the same vocabulary in the same
+  change**, or the parity apparatus certifies agreement on a mislabelled quantity.
 - **`gllvmTMB` — there is an existing, documented decision that uses the OTHER convention.**
   `docs/dev-log/audits/2026-05-17-link-residual-design-decision.md` adds `π²/3` (logit), `1`
   (probit), `π²/6` (cloglog) to the **latent-scale Σ**, and calls it *"the correct latent-scale
@@ -153,7 +171,7 @@ do not assume:**
 
 ## Blockers / open questions for the maintainer
 
-- **`hsquared` scope:** add the three-field contract, or document Gaussian-only? Not decided.
+- ~~**`hsquared` scope:** add the three-field contract, or document Gaussian-only?~~ **DECIDED 2026-09-08 — it adopts the three-field contract; itchyshin/hsquared#201.**
 - **`gllvmTMB` rename:** its `link_residual` decision is sound but uses "latent" for what the
   paper calls liability. Renaming touches a public surface — Shinichi's call.
 - **Fixed effects:** Eqs 17–19 marginalise over fixed effects. This function carries

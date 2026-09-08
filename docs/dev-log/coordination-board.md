@@ -51,8 +51,12 @@ Contract: `h2_latent` (Eq 4, every family) · `h2_liability` (Eq 24, binomial on
 variance, an approximation convention for a data-scale ICC — not Eq 4, and unnecessary here
 because exact observed-scale results exist (Eqs 26/28).
 
-**Pertains to other projects** (Shinichi): `hsquared` has **no** non-Gaussian scale surface at
-all (measured) — decide contract vs documented Gaussian-only; **`gllvmTMB`'s
+**Pertains to other projects** (Shinichi): **`hsquared` DECIDED — it adopts the same three-field
+contract (itchyshin/hsquared#201).** *Correction: an earlier version of this entry said the R twin
+had no non-Gaussian surface; that was measured on the checkout's branch and is wrong — it exists on
+`codex/hsq09-ng-contract-r` (`c073172`) and carries the same defect in a harder form, a `stop()`
+rather than a `NaN`, justified by "V_link = 0 gives no latent residual" — `V_link` is the liability
+term and does not appear in Eq 4 at all.* **`gllvmTMB`'s
 `2026-05-17-link-residual-design-decision`** adds `π²/3` to the *latent* Σ, which is the
 liability scale under this terminology (its reasoning is sound — the NAME is the issue);
 **drmTMB / DRM.jl / GLLVM.jl repeatability** face the identical triad, and **Eq 28** is the
