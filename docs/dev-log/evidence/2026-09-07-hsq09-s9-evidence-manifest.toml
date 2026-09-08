@@ -1,0 +1,181 @@
+[manifest]
+id = "HSQ09-S9"
+schema_version = 1
+source_inert = true
+
+[repositories.julia]
+base_commit = "1dbf8b97a3b28f814e3418239ac1658acbbc19bb"
+allowed_dirty_paths = [
+  "docs/dev-log/evidence/2026-09-07-hsq09-s9-evidence-manifest.toml",
+  "tools/validate_hsq09_s9_manifest.jl",
+  "test/test_hsq09_s9_manifest.jl",
+]
+
+[repositories.r]
+commit = "e6a1ce4e8a691795487420668b349fb9e2670059"
+root_env = "HSQ09_S9_R_ROOT"
+
+[contract]
+master_seed = 20260903
+seed_stride = 40009
+screen_reps_per_cell = 48
+confirm_interpretable_reps_target = 2000
+confirm_target_status = "retained_intended_target_not_run"
+nominal_level = 0.95
+coverage_denominator = "interval_success"
+claim_eligible = false
+gate = "PATH_ONLY"
+recorded_counters = [
+  "reps",
+  "fit_success",
+  "fit_converged",
+  "interval_success",
+  "covered",
+  "failure_reason",
+]
+
+[conditional_coverage]
+denominator_symbol = "I"
+denominator = "interval_success"
+not_convergence = true
+interpretable_if = "I >= 0.9 * reps"
+pooling = "sum(covered) / sum(I)"
+observed_coverage = "C / I"
+observed_mcse = "sqrt((C / I) * (1 - C / I) / I)"
+nominal_mcse = "sqrt(0.95 * 0.05 / I)"
+nominal_mcse_status = "descriptive_only"
+nominal_band = "0.95 +/- 2 * observed_MCSE"
+nominal_band_status = "heuristic_not_calibration_proof"
+level_090_status = "descriptive_only"
+
+[authorizations]
+compute = false
+smoke = false
+screen = false
+confirm = false
+campaign = false
+promotion = false
+release = false
+public_count = false
+version = false
+h0_ratification = false
+h1_h3_coverage_claim = false
+outcomes_import = false
+
+[results]
+results_imported = false
+result_values_present = false
+outcomes_imported = false
+
+[sbatch_template]
+armed = false
+effective_exit_code = 78
+execution = "refusal_only"
+
+[exclusions]
+h0_ratification = false
+h1_h3_coverage_claim = false
+promotion = false
+release = false
+public_count = false
+version = false
+outcomes_import = false
+new_c1_tsv_mutation = false
+
+[protocols.h0]
+record = "H0"
+governed_input = "r_h0_univariate_coverage_flip"
+s9_ratification_authorized = false
+status = "not_adjudicated_by_s9"
+outcomes_imported = false
+
+[protocols.h1]
+record = "H1"
+governed_input = "r_h1_interval_recovery_preregistration"
+coverage_claim = false
+outcomes_imported = false
+h1_t_status = "characterization_only_banked_recovery_failure_no_rescue"
+
+[protocols.h3]
+record = "H3"
+governed_input = "julia_h1_h3_predeclaration"
+coverage_claim = false
+initialization = "generating_G0_R0"
+outcomes_imported = false
+
+[[inputs]]
+id = "r_h0_univariate_coverage_flip"
+repository = "r"
+path = "docs/design/39-h0-univariate-coverage-flip.md"
+role = "H0 protocol"
+sha256 = "9ad969312cb1994855ddfafe4835aca1636a0aa1151854fe1fc9acfa95fb472c"
+
+[[inputs]]
+id = "r_h1_interval_recovery_preregistration"
+repository = "r"
+path = "docs/design/34-interval-recovery-pre-registration.md"
+role = "H1 protocol"
+sha256 = "e110b424182569fa9c6652be15045331358ce9b25e240b7511bbb76645016679"
+
+[[inputs]]
+id = "r_h1_h3_path_pointer"
+repository = "r"
+path = "docs/dev-log/recovery-checkpoints/2026-09-03-c1-ext-h1-h3-r-pointer.md"
+role = "H1/H3 pointer protocol"
+sha256 = "511fda4c72d53e1379564eeab14cf4a5dded0cdb269cf48ea0feb202f2b15324"
+
+[[inputs]]
+id = "julia_h1_h3_predeclaration"
+repository = "julia"
+path = "docs/dev-log/recovery-checkpoints/2026-09-03-c1-ext-h1-h3-ademp-predeclaration.md"
+role = "H1/H3 protocol"
+sha256 = "0c8a6b27e08fcae25be1f5051066c80c34fcc561cc4ffc955800161cb216922e"
+
+[[inputs]]
+id = "julia_phase1_interval_driver"
+repository = "julia"
+path = "sim/phase1_interval_coverage_ext.jl"
+role = "phase1 interval Julia driver"
+sha256 = "60225d56dffffec004f2985d67134938ea8b7469ce9508d901135ec858c5afe5"
+
+[[inputs]]
+id = "julia_phase1_interval_test"
+repository = "julia"
+path = "test/test_phase1_interval_coverage_ext.jl"
+role = "phase1 interval Julia test"
+sha256 = "1a49b7b6b8807c057849634f3b477eb6d564c7c75e6ec26443de0b66bbd549ab"
+
+[[inputs]]
+id = "julia_phase1_interval_sbatch"
+repository = "julia"
+path = "sim/drac/phase1_interval_coverage_ext.sbatch"
+role = "unarmed phase1 interval sbatch template"
+sha256 = "660208954d881076e6a848a2729e0ee992bac9f65243fc572d62ee5737f6ab17"
+
+[[inputs]]
+id = "julia_real_data_validation_manifest"
+repository = "julia"
+path = "docs/design/real-data-validation-manifest.toml"
+role = "Julia real-data validation manifest"
+sha256 = "38a8a19e8b11b0a95d024c0975803ef1644806c3d84c38d2ed22bd57cd60f859"
+
+[[inputs]]
+id = "r_phase1_interval_pointer"
+repository = "r"
+path = "sim/phase1_interval_coverage_ext.R"
+role = "R path-only pointer driver"
+sha256 = "0a778816ba04a94f629ecb17b52328c5528631c9e1b96c9f109f2de83d22a391"
+
+[[inputs]]
+id = "r_phase1_interval_pointer_test"
+repository = "r"
+path = "tests/testthat/test-c1-ext-h1-h3-harness.R"
+role = "R pointer test"
+sha256 = "9649bf92d6f9745170f27f954619e60d1571475cf4f9db680f71e17f5660aa55"
+
+[[inputs]]
+id = "r_real_data_validation_manifest"
+repository = "r"
+path = "docs/design/real-data-validation-manifest.toml"
+role = "R real-data validation manifest"
+sha256 = "aa3a96d590359fe29f43cc77d7711afadcb5f3076d303fb39ff8bdcc291def33"
