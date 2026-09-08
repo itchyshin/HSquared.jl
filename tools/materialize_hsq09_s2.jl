@@ -12,6 +12,7 @@ using SHA
 
 const CANDIDATE_HEAD = "7770bf1640aef366970de2d136d19072bfdddcf4"
 const CANDIDATE_MANIFEST_SHA256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+const EXTERNAL_A2_LOCK_SOURCE_WORKTREE = "hsq09-s2-materialization"
 const SOURCE_RELATIVE_PATH = "sim/phase1_interval_coverage_ext.jl"
 const SBATCH_RELATIVE_PATH = "sim/drac/phase1_interval_coverage_ext.sbatch"
 const INPUT_DECLARATION_FILE = "c1-ext-input-declaration.tsv"
@@ -48,26 +49,39 @@ function _candidate_source_sha256(root::AbstractString)
     return bytes2hex(sha256(bytes))
 end
 
-function _assert_candidate_source(root::AbstractString)
-    source = joinpath(root, SOURCE_RELATIVE_PATH)
-    isfile(source) || error("missing C1-ext source $(source)")
-    actual = sha256_file(source)
-    expected = _candidate_source_sha256(root)
-    actual == expected || error("C1-ext source bytes drift from candidate $(CANDIDATE_HEAD)")
+function assert_candidate_digest(path::AbstractString, expected::AbstractString, label::AbstractString)
+    actual = sha256_file(path)
+    actual == expected || error("$(label) bytes drift from candidate $(CANDIDATE_HEAD)")
     return actual
 end
 
+function assert_candidate_file(root::AbstractString, relative::AbstractString)
+    path = joinpath(root, relative)
+    isfile(path) || error("missing candidate-bound $(relative)")
+    expected = bytes2hex(sha256(_git_bytes(root, "$(CANDIDATE_HEAD):$(relative)")))
+    return assert_candidate_digest(path, expected, relative)
+end
+
+function candidate_path_absent(root::AbstractString, relative::AbstractString)
+    cmd = Cmd(["git", "-C", root, "cat-file", "-e", "$(CANDIDATE_HEAD):$(relative)"])
+    return !success(pipeline(cmd; stdout = devnull, stderr = devnull))
+end
+
+function _assert_external_a2_environment_lock(root::AbstractString)
+    lock = joinpath(root, "Manifest.toml")
+    isfile(lock) || error("missing explicit external A2 Manifest.toml environment lock")
+    candidate_path_absent(root, "Manifest.toml") ||
+        error("Manifest.toml is candidate-present; external A2 lock provenance is invalid")
+    return assert_candidate_digest(lock, CANDIDATE_MANIFEST_SHA256, "external A2 Manifest.toml lock")
+end
+
 function _environment_descriptor(root::AbstractString)
-    rows = String[]
-    for relative in ("Project.toml", "Manifest.toml")
-        path = joinpath(root, relative)
-        if isfile(path)
-            push!(rows, "$(relative)\tpresent\t$(sha256_file(path))")
-        else
-            push!(rows, "$(relative)\tabsent")
-        end
-    end
-    return join(rows, "\n") * "\n"
+    project_sha256 = assert_candidate_file(root, "Project.toml")
+    lock_sha256 = _assert_external_a2_environment_lock(root)
+    return join((
+        "Project.toml\tcandidate-bound\t$(project_sha256)",
+        "Manifest.toml\texternal-a2-environment-lock\t$(lock_sha256)",
+    ), "\n") * "\n"
 end
 
 environment_sha256(root::AbstractString) = bytes2hex(sha256(_environment_descriptor(root)))
@@ -75,7 +89,7 @@ environment_sha256(root::AbstractString) = bytes2hex(sha256(_environment_descrip
 function _load_c1ext_helpers!(root::AbstractString)
     normalized = abspath(root)
     if _loaded_source_root[] === nothing
-        _assert_candidate_source(normalized)
+        assert_candidate_file(normalized, SOURCE_RELATIVE_PATH)
         # The source's sole non-stdlib import is needed by runner bodies, not
         # by the cell/seed/inventory helpers below.  Replacing that one import
         # lets this pre-run declaration remain independent of a fitted-engine
@@ -222,11 +236,10 @@ end
 
 function _candidate_plan(root::AbstractString)
     normalized_root = abspath(root)
-    source_sha256 = _assert_candidate_source(normalized_root)
-    manifest_lock = joinpath(normalized_root, "Manifest.toml")
-    isfile(manifest_lock) || error("missing A2 Manifest.toml lock")
-    sha256_file(manifest_lock) == CANDIDATE_MANIFEST_SHA256 ||
-        error("A2 Manifest.toml lock drift")
+    source_sha256 = assert_candidate_file(normalized_root, SOURCE_RELATIVE_PATH)
+    project_sha256 = assert_candidate_file(normalized_root, "Project.toml")
+    sbatch_template_sha256 = assert_candidate_file(normalized_root, SBATCH_RELATIVE_PATH)
+    environment_lock_sha256 = _assert_external_a2_environment_lock(normalized_root)
     environment = environment_sha256(normalized_root)
     cache_key = (normalized_root, source_sha256, environment)
     haskey(_declaration_plan_cache, cache_key) && return _declaration_plan_cache[cache_key]
@@ -235,9 +248,11 @@ function _candidate_plan(root::AbstractString)
     candidate = (
         root = normalized_root,
         source_sha256 = source_sha256,
+        project_sha256 = project_sha256,
+        sbatch_template_sha256 = sbatch_template_sha256,
+        environment_lock_sha256 = environment_lock_sha256,
         environment_sha256 = environment,
         environment_descriptor = _environment_descriptor(normalized_root),
-        sbatch_template_sha256 = sha256_file(joinpath(normalized_root, SBATCH_RELATIVE_PATH)),
         inventory_stream_sha256 = inventory_stream_sha256,
         expected_row_count = length(plan.entries),
         plan = plan,
@@ -252,9 +267,16 @@ function _manifest_bytes(candidate, input_sha256::AbstractString)
         "candidate_head = $(_toml_quote(CANDIDATE_HEAD))",
         "source_path = $(_toml_quote(SOURCE_RELATIVE_PATH))",
         "source_sha256 = $(_toml_quote(candidate.source_sha256))",
+        "candidate_project_path = $(_toml_quote("Project.toml"))",
+        "candidate_project_sha256 = $(_toml_quote(candidate.project_sha256))",
         "sbatch_template_path = $(_toml_quote(SBATCH_RELATIVE_PATH))",
         "sbatch_template_sha256 = $(_toml_quote(candidate.sbatch_template_sha256))",
-        "a2_manifest_sha256 = $(_toml_quote(CANDIDATE_MANIFEST_SHA256))",
+        "environment_lock_kind = $(_toml_quote("external_a2_environment_lock"))",
+        "environment_lock_path = $(_toml_quote("Manifest.toml"))",
+        "environment_lock_sha256 = $(_toml_quote(candidate.environment_lock_sha256))",
+        "environment_lock_source_worktree = $(_toml_quote(EXTERNAL_A2_LOCK_SOURCE_WORKTREE))",
+        "environment_lock_candidate_head = $(_toml_quote(CANDIDATE_HEAD))",
+        "environment_lock_candidate_manifest_present = false",
         "environment_sha256 = $(_toml_quote(candidate.environment_sha256))",
         "environment_descriptor = $(_toml_quote(candidate.environment_descriptor))",
         "inventory_stream_sha256 = $(_toml_quote(candidate.inventory_stream_sha256))",
@@ -325,9 +347,7 @@ function materialize(outdir::AbstractString = normpath(joinpath(@__DIR__, "..", 
                      root::AbstractString = normpath(joinpath(@__DIR__, "..")))
     root = abspath(root)
     outdir = abspath(outdir)
-    if isdir(outdir) && !isempty(readdir(outdir))
-        return verify_materialization(outdir; root = root)
-    end
+    ispath(outdir) && error("refusing pre-existing output directory: $(outdir)")
     candidate = _candidate_plan(root)
     parent = dirname(outdir)
     isdir(parent) || error("materialization parent is absent: $(parent)")
@@ -342,14 +362,7 @@ function materialize(outdir::AbstractString = normpath(joinpath(@__DIR__, "..", 
     open(_artifact_path(staging, SEAL_FILE), "w") do io
         write(io, _seal_bytes(manifest_sha256, declaration.sha256))
     end
-    if isdir(outdir)
-        for name in ARTIFACT_FILES
-            mv(_artifact_path(staging, name), _artifact_path(outdir, name); force = false)
-        end
-        rm(staging)
-    else
-        mv(staging, outdir; force = false)
-    end
+    mv(staging, outdir; force = false)
     return verify_materialization(outdir; root = root)
 end
 
