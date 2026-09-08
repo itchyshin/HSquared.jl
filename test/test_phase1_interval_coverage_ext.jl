@@ -183,6 +183,7 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     reconciled = _reconcile_detail_rows([valid_row], retained_cfg)
     @test reconciled isa Dict
     @test reconciled[_detail_key(valid_row)] === valid_row
+    @test length(_records_for_summary(reconciled, retained_cfg)) == 1
 
     # The shipped Fisher-z r_g runner deliberately has no scalar standard
     # error, while delta-ratio records do.  Preserve that narrow shape rather
@@ -217,11 +218,20 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     ))
     @test_throws ErrorException _validate_detail_row(merge(failed_row, (failure_reason = "",)))
     @test_throws ErrorException _validate_detail_row(merge(failed_row, (lower = 0.10,)))
+    @test_throws ErrorException _validate_detail_row(merge(valid_row, (width = 0.20,)))
+    @test_throws ErrorException _validate_detail_row(merge(valid_row, (covered = false,)))
     @test_throws ErrorException _reconcile_detail_rows([valid_row, valid_row], retained_cfg)
     @test_throws ErrorException _reconcile_detail_rows(NamedTuple[], retained_cfg)
     @test_throws ErrorException _reconcile_detail_rows([
         merge(valid_row, (cell_id = "unexpected-cell",)),
     ], retained_cfg)
+    # This is the normal summary-boundary helper, not merely the reconciler:
+    # completed inventory is mandatory before a summary can be written.
+    @test_throws ErrorException _records_for_summary(Dict{Any,Any}(), retained_cfg)
+    unexpected_records = Dict{Any,Any}()
+    unexpected_row = merge(valid_row, (cell_id = "unexpected-cell",))
+    unexpected_records[_detail_key(unexpected_row)] = unexpected_row
+    @test_throws ErrorException _records_for_summary(unexpected_records, retained_cfg)
 
     mktempdir() do dir
         detail_path = joinpath(dir, "detail.tsv")

@@ -788,6 +788,17 @@ end
 
 _allows_missing_scalar_se(method::AbstractString) = method == "rg_fisher_z"
 
+const DETAIL_WIDTH_TOLERANCE_FACTOR = 4 * sqrt(eps(Float64))
+
+function _detail_width_tolerance(row, expected_width::Float64)
+    # Detail TSV values are intentionally compact (`%.8g`), so independently
+    # parsed endpoints and width may differ by their final Float64 digits.
+    # This scale-aware tolerance is larger than that round-trip noise but
+    # remains far below a scientifically meaningful interval discrepancy.
+    scale = max(1.0, abs(row.lower), abs(row.upper), abs(row.width), abs(expected_width))
+    return DETAIL_WIDTH_TOLERANCE_FACTOR * scale
+end
+
 function _validate_detail_row(row)
     isfinite(row.level) || _detail_error(row, "level must be finite")
     isfinite(row.truth) || _detail_error(row, "truth must be finite")
@@ -812,6 +823,14 @@ function _validate_detail_row(row)
             _detail_error(row, "successful interval requires upper >= lower")
         row.width >= 0 ||
             _detail_error(row, "successful interval requires nonnegative width")
+        expected_width = row.upper - row.lower
+        isfinite(expected_width) ||
+            _detail_error(row, "successful interval has a non-finite derived width")
+        abs(row.width - expected_width) <= _detail_width_tolerance(row, expected_width) ||
+            _detail_error(row, "successful interval width must match upper - lower")
+        expected_covered = row.lower <= row.truth <= row.upper
+        row.covered == expected_covered ||
+            _detail_error(row, "successful interval covered must equal lower <= truth <= upper")
     else
         isempty(strip(row.failure_reason)) &&
             _detail_error(row, "failed interval requires a nonempty failure_reason")
@@ -866,12 +885,21 @@ function _reconcile_detail_rows(rows, config::ExtConfig)
     end
     observed = Set(keys(records))
     missing = setdiff(expected, observed)
-    isempty(missing) ||
-        error("retained detail rows are missing expected key(s): $(join(string.(sort!(collect(missing); by = string)), ", "))")
     unexpected = setdiff(observed, expected)
-    isempty(unexpected) ||
-        error("retained detail rows contain unexpected key(s): $(join(string.(sort!(collect(unexpected); by = string)), ", "))")
+    issues = String[]
+    isempty(missing) || push!(issues,
+        "missing expected key(s): $(join(string.(sort!(collect(missing); by = string)), ", "))")
+    isempty(unexpected) || push!(issues,
+        "unexpected key(s): $(join(string.(sort!(collect(unexpected); by = string)), ", "))")
+    isempty(issues) || error("retained detail reconciliation failed: $(join(issues, "; "))")
     return records
+end
+
+# Deliberately called once, after every selected campaign has had the chance
+# to append its rows.  Reconciling inside `_run_campaign!` would reject the
+# legitimate partial state between campaigns.
+function _records_for_summary(records, config::ExtConfig)
+    return _reconcile_detail_rows(values(records), config)
 end
 
 function _read_detail_records(path::AbstractString)
@@ -1044,6 +1072,7 @@ function main(args = ARGS)
         rows = _run_campaign!(records, config, campaign)
         _write_detail_rows!(config.detail_output, rows)
     end
+    records = _records_for_summary(records, config)
     summaries = _summaries_from_records(records)
     path = _write_summary(config.output, summaries)
     println("wrote ", path)
