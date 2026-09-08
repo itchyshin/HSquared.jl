@@ -964,6 +964,87 @@ function _summaries_from_records(records)
     return summaries
 end
 
+# ---- Pure retained-evidence adjudication (A2 infrastructure only) -----------
+#
+# `_adjudicate_h1h3` consumes a complete retained-summary NamedTuple.  It does
+# not run a fit, read an evidence file, or alter any claim surface.  Required
+# fields are `scheduled_reps`, `interval_success`, `covered`, `role`,
+# `evidence_missing`, and `immutable_failure`.  Coverage is always derived as
+# `covered / interval_success`; a task-level rate is neither accepted as an
+# input nor used as a substitute.  `promotable` is hard-coded false: this A2
+# helper can describe a result but cannot authorize promotion.
+function _adjudicate_h1h3(summary; lower_band, upper_band,
+                           success_floor::Real = EXT_INTERPRETABLE_FRACTION)
+    for field in (:scheduled_reps, :interval_success, :covered, :role,
+                  :evidence_missing, :immutable_failure)
+        hasproperty(summary, field) || error("retained summary is missing required field $(field)")
+    end
+
+    scheduled = getproperty(summary, :scheduled_reps)
+    succeeded = getproperty(summary, :interval_success)
+    covered = getproperty(summary, :covered)
+    for (field, value) in ((:scheduled_reps, scheduled),
+                           (:interval_success, succeeded),
+                           (:covered, covered))
+        value isa Integer || error("retained summary $(field) must be an integer count")
+        value >= 0 || error("retained summary $(field) must be nonnegative")
+    end
+    scheduled > 0 || error("retained summary scheduled_reps must be positive")
+    succeeded <= scheduled ||
+        error("retained summary interval_success cannot exceed scheduled_reps")
+    covered <= succeeded ||
+        error("retained summary covered cannot exceed interval_success")
+
+    evidence_missing = getproperty(summary, :evidence_missing)
+    immutable_failure = getproperty(summary, :immutable_failure)
+    evidence_missing isa Bool || error("retained summary evidence_missing must be Bool")
+    immutable_failure isa Bool || error("retained summary immutable_failure must be Bool")
+
+    lower_band isa Real && upper_band isa Real && success_floor isa Real ||
+        error("calibration bands and success_floor must be real")
+    lower = Float64(lower_band)
+    upper = Float64(upper_band)
+    floor = Float64(success_floor)
+    isfinite(lower) && isfinite(upper) && isfinite(floor) ||
+        error("calibration bands and success_floor must be finite")
+    0.0 <= lower < upper < 1.0 ||
+        error("calibration bands must satisfy 0 <= lower_band < upper_band < 1")
+    0.0 <= floor <= 1.0 || error("success_floor must lie in [0, 1]")
+
+    role_value = getproperty(summary, :role)
+    role_value isa Symbol || role_value isa AbstractString ||
+        error("retained summary role must be a Symbol or String")
+    role = String(role_value)
+    role in ("covered_pillar_bank", "characterization_only") ||
+        error("retained summary role is not an admitted H1/H3 role: $(repr(role))")
+
+    # `nothing` is intentional only when no interval denominator exists; the
+    # reason records why it cannot be treated as a coverage value.
+    coverage = succeeded == 0 ? nothing : covered / succeeded
+    outcome(verdict::Symbol, reason::Symbol) = (
+        verdict = verdict,
+        reason = reason,
+        coverage = coverage,
+        promotable = false,
+    )
+
+    evidence_missing && return outcome(:hold, :evidence_missing)
+    immutable_failure && return outcome(:hold, :immutable_failure)
+    succeeded / scheduled < floor && return outcome(:hold, :success_floor_not_met)
+    role == "characterization_only" &&
+        return outcome(:characterization_only, :role_barrier)
+
+    # From here, `coverage` cannot be `nothing`, because success_floor is
+    # nonnegative and a zero denominator fails the floor except at floor=0;
+    # preserve that guard explicitly rather than classifying an undefined rate.
+    coverage === nothing && return outcome(:hold, :missing_interval_denominator)
+    coverage == 1.0 && return outcome(:hold, :perfect_coverage_red_flag)
+    coverage <= 0.90 && return outcome(:experimental, :below_or_at_090)
+    coverage <= lower && return outcome(:experimental, :at_or_below_lower_band)
+    coverage < upper && return outcome(:calibrated_candidate, :strictly_inside_band)
+    return outcome(:directional_conservative, :at_or_above_upper_band)
+end
+
 function _write_summary(path::AbstractString, summaries)
     mkpath(dirname(path))
     rows = sort(collect(summaries); by = pair -> string(pair[1]))

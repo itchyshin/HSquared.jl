@@ -251,6 +251,84 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
         end
         @test_throws ErrorException _read_detail_records(malformed_path)
     end
+
+    # The release-facing classification must remain a pure adjudication of
+    # retained pooled counts.  It is deliberately unable to promote a claim.
+    calibration_band = (lower_band = 0.93, upper_band = 0.97)
+    complete_summary(; scheduled_reps = 100, interval_success = 100,
+                     covered = 95, role = "covered_pillar_bank",
+                     evidence_missing = false, immutable_failure = false) = (
+        scheduled_reps = scheduled_reps,
+        interval_success = interval_success,
+        covered = covered,
+        role = role,
+        evidence_missing = evidence_missing,
+        immutable_failure = immutable_failure,
+    )
+    result = _adjudicate_h1h3(complete_summary(); calibration_band...)
+    @test result.verdict === :calibrated_candidate
+    @test result.promotable === false
+    @test result.coverage == 0.95
+
+    @test _adjudicate_h1h3(complete_summary(immutable_failure = true);
+                           calibration_band...).verdict === :hold
+    @test _adjudicate_h1h3(complete_summary(evidence_missing = true);
+                           calibration_band...).verdict === :hold
+    @test _adjudicate_h1h3(complete_summary(interval_success = 89, covered = 85);
+                           calibration_band...).verdict === :hold
+    @test _adjudicate_h1h3(complete_summary(role = "characterization_only");
+                           calibration_band...).verdict === :characterization_only
+    @test _adjudicate_h1h3(complete_summary(covered = 100);
+                           calibration_band...).verdict === :hold
+    @test _adjudicate_h1h3(complete_summary(covered = 89);
+                           calibration_band...).verdict === :experimental
+    @test _adjudicate_h1h3(complete_summary(covered = 90);
+                           calibration_band...).verdict === :experimental
+    @test _adjudicate_h1h3(complete_summary(covered = 93);
+                           calibration_band...).verdict === :experimental
+    @test _adjudicate_h1h3(complete_summary(covered = 97);
+                           calibration_band...).verdict === :directional_conservative
+    @test _adjudicate_h1h3(complete_summary(covered = 98);
+                           calibration_band...).verdict === :directional_conservative
+
+    # A supplied per-task rate cannot replace the pooled numerator/denominator:
+    # mean(0/1, 100/100) is 0.5, but retained pooled coverage is 100/101.
+    pooled = _adjudicate_h1h3((;
+        scheduled_reps = 101,
+        interval_success = 101,
+        covered = 100,
+        role = "covered_pillar_bank",
+        evidence_missing = false,
+        immutable_failure = false,
+        per_task_rate = 0.5,
+    ); calibration_band...)
+    @test pooled.coverage == 100 / 101
+    @test pooled.verdict === :directional_conservative
+    @test pooled.promotable === false
+
+    @test_throws ErrorException _adjudicate_h1h3((;
+        scheduled_reps = 100,
+        interval_success = 100,
+        covered = missing,
+        role = "covered_pillar_bank",
+        evidence_missing = false,
+        immutable_failure = false,
+    ); calibration_band...)
+    @test_throws ErrorException _adjudicate_h1h3((;
+        scheduled_reps = 100,
+        interval_success = 101,
+        covered = 100,
+        role = "covered_pillar_bank",
+        evidence_missing = false,
+        immutable_failure = false,
+    ); calibration_band...)
+
+    # The standalone validator is deliberately self-contained: its success
+    # receipt is available without entering `main()` or starting a fit.
+    tool = joinpath(@__DIR__, "..", "tools", "validate_hsq09_h1h3_evidence.jl")
+    julia = joinpath(Sys.BINDIR, Base.julia_exename())
+    tool_output = read(`$julia --project=$(joinpath(@__DIR__, "..")) $tool --self-test`, String)
+    @test tool_output == "A2_EVIDENCE_INFRA_TESTS_OK\nA2_MUTATION_CONTROLS_OK\n"
 end
 
 if get(ENV, "HSQUARED_C1EXT_SMOKE", "0") == "1"
