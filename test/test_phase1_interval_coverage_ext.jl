@@ -184,6 +184,9 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test reconciled isa Dict
     @test reconciled[_detail_key(valid_row)] === valid_row
     @test length(_records_for_summary(reconciled, retained_cfg)) == 1
+    normal_runner_records = Dict{Any,Any}()
+    @test _insert_detail_record!(normal_runner_records, valid_row) === valid_row
+    @test_throws ErrorException _insert_detail_record!(normal_runner_records, valid_row)
 
     # The shipped Fisher-z r_g runner deliberately has no scalar standard
     # error, while delta-ratio records do.  Preserve that narrow shape rather

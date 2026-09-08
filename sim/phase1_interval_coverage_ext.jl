@@ -844,6 +844,14 @@ function _validate_detail_row(row)
     return row
 end
 
+function _insert_detail_record!(records, row; source::AbstractString = "retained detail records")
+    _validate_detail_row(row)
+    key = _detail_key(row)
+    haskey(records, key) && error("$(source) contain duplicate key $(key)")
+    records[key] = row
+    return row
+end
+
 function _parse_detail_record(parts; context::AbstractString = "detail row")
     length(parts) == length(DETAIL_COLUMNS) || error("detail row has $(length(parts)) fields")
     row = (
@@ -878,10 +886,7 @@ function _reconcile_detail_rows(rows, config::ExtConfig)
     expected = Set(entry.expected_key for entry in _canonical_task_inventory(config))
     records = Dict{Any,Any}()
     for row in rows
-        _validate_detail_row(row)
-        key = _detail_key(row)
-        haskey(records, key) && error("retained detail rows contain duplicate key $(key)")
-        records[key] = row
+        _insert_detail_record!(records, row; source = "retained detail rows")
     end
     observed = Set(keys(records))
     missing = setdiff(expected, observed)
@@ -915,10 +920,7 @@ function _read_detail_records(path::AbstractString)
                 split(line, '\t'; keepempty = true);
                 context = "detail row $(line_number + 1)",
             )
-            key = _detail_key(row)
-            haskey(records, key) &&
-                error("detail file contains duplicate retained key $(key): $(path)")
-            records[key] = row
+            _insert_detail_record!(records, row; source = "detail file $(path)")
         end
     end
     return records
@@ -1042,7 +1044,7 @@ function _run_campaign!(records, config, campaign)
                 produced = runner(cell, seed, level, config.iterations)
                 for row in produced
                     stamped = _stamp_cell!(row, cell_id, rep)
-                    records[_detail_key(stamped)] = stamped
+                    _insert_detail_record!(records, stamped; source = "campaign $(campaign) runner output")
                     push!(new_rows, stamped)
                 end
                 _ = probe
