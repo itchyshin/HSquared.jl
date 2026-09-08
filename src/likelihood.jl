@@ -1134,22 +1134,7 @@ function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
     return loglik, Vector{Float64}(beta), u1, u2
 end
 
-"""
-    fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
-                        ids1 = nothing, ids2 = nothing)
-
-REML estimation of the variance components `(sigma1, sigma2, sigma_e2)` of the
-general two-independent-random-effect model (see [`two_effect_mme`](@ref)), by
-maximizing the dense two-effect REML log-likelihood (NelderMead). Covers
-common-environment (`c² = ratio2`) and maternal-environment variance estimation.
-
-Returns a `NamedTuple` with `variance_components`, `ratio1 = sigma1/total`,
-`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`.
-Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
-model-spec mapping are not part of this function. On small data the optimum can
-sit on a boundary (a variance → 0).
-"""
-function fit_two_effect_reml(
+function _fit_two_effect_reml_core(
     y::AbstractVector,
     X::AbstractMatrix,
     Z1::AbstractMatrix,
@@ -1160,6 +1145,7 @@ function fit_two_effect_reml(
     iterations::Integer = 200,
     ids1 = nothing,
     ids2 = nothing,
+    trace = nothing,
 )
     initial.sigma1 > 0 && initial.sigma2 > 0 && initial.sigma_e2 > 0 ||
         throw(ArgumentError("initial variance components must be positive"))
@@ -1190,7 +1176,7 @@ function fit_two_effect_reml(
     sigma1, sigma2, sigma_e2 = exp.(Optim.minimizer(result))
     loglik, beta, u1, u2 = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, sigma1, sigma2, sigma_e2)
     total = sigma1 + sigma2 + sigma_e2
-    return (
+    fit = (
         variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
         ratio1 = sigma1 / total,
         ratio2 = sigma2 / total,
@@ -1199,6 +1185,47 @@ function fit_two_effect_reml(
         effect2 = (ids = e2ids, values = u2),
         loglik = loglik,
         converged = Optim.converged(result),
+    )
+    if trace !== nothing
+        trace[:optimizer] = _h1t_optimizer_telemetry(result, iterations)
+        trace[:fit] = fit
+    end
+    return fit
+end
+
+"""
+    fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
+                        ids1 = nothing, ids2 = nothing)
+
+REML estimation of the variance components `(sigma1, sigma2, sigma_e2)` of the
+general two-independent-random-effect model (see [`two_effect_mme`](@ref)), by
+maximizing the dense two-effect REML log-likelihood (NelderMead). Covers
+common-environment (`c² = ratio2`) and maternal-environment variance estimation.
+
+Returns a `NamedTuple` with `variance_components`, `ratio1 = sigma1/total`,
+`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`.
+Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
+model-spec mapping are not part of this function. On small data the optimum can
+sit on a boundary (a variance → 0).
+"""
+function fit_two_effect_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    return _fit_two_effect_reml_core(
+        y, X, Z1, Ainv1, Z2, Ainv2;
+        initial = initial,
+        iterations = iterations,
+        ids1 = ids1,
+        ids2 = ids2,
     )
 end
 
@@ -1260,17 +1287,93 @@ end
 # vector `theta` (length `d`), by central finite differences with a
 # component-relative step `fd_step · max(|θ_i|, 1e-3)`. Shared by the two-effect
 # and K-effect ratio-interval paths.
-function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)
+function _reml_fd_information(f, theta::AbstractVector, fd_step::Real; trace = nothing)
     d = length(theta)
     h = fd_step .* max.(abs.(theta), 1e-3)
     H = zeros(d, d)
     for i in 1:d, j in 1:d
         ei = zeros(d); ei[i] = h[i]
         ej = zeros(d); ej[j] = h[j]
-        H[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
-                   f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+        fpp = _h1t_fd_evaluation(f, theta + ei + ej, i, j, :plus_plus, trace)
+        fpm = _h1t_fd_evaluation(f, theta + ei - ej, i, j, :plus_minus, trace)
+        fmp = _h1t_fd_evaluation(f, theta - ei + ej, i, j, :minus_plus, trace)
+        fmm = _h1t_fd_evaluation(f, theta - ei - ej, i, j, :minus_minus, trace)
+        H[i, j] = (fpp - fpm - fmp + fmm) / (4 * h[i] * h[j])
     end
     return Symmetric(-H)
+end
+
+function _two_effect_interval_from_fit(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix,
+    fit;
+    level::Real,
+    which::Symbol,
+    fd_step::Real,
+    boundary_tol::Real,
+    trace = nothing,
+)
+    vc = fit.variance_components
+    theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
+    if trace !== nothing
+        trace[:stage] = :fd_information
+        trace[:theta] = copy(theta)
+        trace[:fd_step] = Float64(fd_step)
+        trace[:actual_steps] = fd_step .* max.(abs.(theta), 1e-3)
+        trace[:fd_evaluations] = NamedTuple[]
+    end
+
+    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
+    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
+    Xd = Matrix{Float64}(X); Z1d = Matrix{Float64}(Z1); Z2d = Matrix{Float64}(Z2)
+    yv = Float64.(y)
+    loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
+
+    # observed information = −Hessian of the REML loglik (central finite differences)
+    info = _reml_fd_information(loglik, theta, fd_step; trace = trace)
+    trace !== nothing && (trace[:information_matrix] = Matrix(info))
+    # A subsequent exception belongs to the delta/interval stage, not to the
+    # already completed finite-difference information calculation.
+    _h1t_mark_delta_stage!(trace)
+
+    na_ci = (estimate = NaN, lower = NaN, upper = NaN, se = NaN,
+             lower_clamped = false, upper_clamped = false, boundary = false)
+    r1 = which === :ratio2 ? merge(na_ci, (estimate = fit.ratio1,)) :
+         _ratio_delta_ci(info, theta, 1, level, boundary_tol)
+    r2 = which === :ratio1 ? merge(na_ci, (estimate = fit.ratio2,)) :
+         _ratio_delta_ci(info, theta, 2, level, boundary_tol)
+    interval = (ratio1 = r1, ratio2 = r2, level = level, converged = fit.converged)
+    if trace !== nothing
+        trace[:stage] = :complete
+        trace[:interval] = interval
+    end
+    return interval
+end
+
+function _two_effect_ratio_interval_core(
+    y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix, Ainv2::AbstractMatrix;
+    level::Real = 0.95, which::Symbol = :both,
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200, ids1 = nothing, ids2 = nothing,
+    fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+    trace = nothing,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    which in (:both, :ratio1, :ratio2) ||
+        throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+    trace !== nothing && (trace[:stage] = :fit)
+    fit = _fit_two_effect_reml_core(y, X, Z1, Ainv1, Z2, Ainv2;
+                                     initial = initial, iterations = iterations,
+                                     ids1 = ids1, ids2 = ids2, trace = trace)
+    return _two_effect_interval_from_fit(y, X, Z1, Ainv1, Z2, Ainv2, fit;
+                                          level = level, which = which,
+                                          fd_step = fd_step, boundary_tol = boundary_tol,
+                                          trace = trace)
 end
 
 """
@@ -1320,31 +1423,789 @@ function two_effect_ratio_interval(
     iterations::Integer = 200, ids1 = nothing, ids2 = nothing,
     fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
 )
-    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    which in (:both, :ratio1, :ratio2) ||
-        throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
-    fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
-                              initial = initial, iterations = iterations,
-                              ids1 = ids1, ids2 = ids2)
+    return _two_effect_ratio_interval_core(
+        y, X, Z1, Ainv1, Z2, Ainv2;
+        level = level,
+        which = which,
+        initial = initial,
+        iterations = iterations,
+        ids1 = ids1,
+        ids2 = ids2,
+        fd_step = fd_step,
+        boundary_tol = boundary_tol,
+    )
+end
+
+# Internal-only telemetry for H1T-DIAG-S10-FIXED-TINY-01.  This layer has no
+# file I/O and is deliberately not exported: a later, separately approved
+# runner owns any exact H1 input materialization and retained artifact write.
+const _H1T_PROTOCOL_ID = "H1T-DIAG-S10-FIXED-TINY-01"
+const _H1T_INPUT_NAMES = (:y, :X, :Z1, :Ainv1, :Z2, :Ainv2)
+const _H1T_RATIO_NAMES = (:ratio1, :ratio2)
+
+function _h1t_mark_delta_stage!(trace)
+    trace === nothing && return nothing
+    trace[:stage] = :delta
+    return nothing
+end
+
+function _h1t_interval_failure_terminal(trace)
+    return get(trace, :stage, :fit) === :fd_information ?
+        :fd_evaluation_error_or_nonfinite : :delta_nonfinite_or_invalid
+end
+
+function _h1t_optimizer_telemetry(result, requested_iterations::Integer)
+    converged = Optim.converged(result)
+    iteration_limit_reached = Optim.iteration_limit_reached(result)
+    termination_status = converged ? "converged" :
+                         iteration_limit_reached ? "iteration_limit_reached" :
+                         "not_converged"
+    termination_message = converged ?
+        "Optim.converged(result)" :
+        iteration_limit_reached ?
+        "Optim.iteration_limit_reached(result)" :
+        "Optim returned without a convergence flag"
+    return (
+        requested_iterations = Int(requested_iterations),
+        iterations = Int(Optim.iterations(result)),
+        function_calls = Int(Optim.f_calls(result)),
+        raw_log_minimizer = Vector{Float64}(Optim.minimizer(result)),
+        objective_minimum = Float64(Optim.minimum(result)),
+        converged = converged,
+        iteration_limit_reached = iteration_limit_reached,
+        x_converged = Optim.x_converged(result),
+        f_converged = Optim.f_converged(result),
+        g_converged = Optim.g_converged(result),
+        termination_status = termination_status,
+        termination_message = termination_message,
+    )
+end
+
+function _h1t_fd_evaluation(f, point, i::Integer, j::Integer, label::Symbol, trace)
+    trace === nothing && return f(point)
+    records = get!(trace, :fd_evaluations, NamedTuple[])
+    try
+        value = Float64(f(point))
+        push!(records, (
+            i = Int(i),
+            j = Int(j),
+            label = label,
+            point = Vector{Float64}(point),
+            value = value,
+            finite = isfinite(value),
+            error_type = "",
+            error_message = "",
+        ))
+        return value
+    catch err
+        push!(records, (
+            i = Int(i),
+            j = Int(j),
+            label = label,
+            point = Vector{Float64}(point),
+            value = NaN,
+            finite = false,
+            error_type = string(typeof(err)),
+            error_message = sprint(showerror, err),
+        ))
+        rethrow()
+    end
+end
+
+function _h1t_input_error(status::Symbol, message::AbstractString)
+    return (
+        status = status,
+        dimensions = nothing,
+        finite = false,
+        symmetric = (Ainv1 = false, Ainv2 = false),
+        group_counts = Int[],
+        fingerprints = nothing,
+        expected_fingerprints = nothing,
+        message = String(message),
+    )
+end
+
+function _h1t_materialize_inputs(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix,
+)
+    materials = try
+        (
+            y = Vector{Float64}(y),
+            X = Matrix{Float64}(X),
+            Z1 = Matrix{Float64}(Z1),
+            Ainv1 = Matrix{Float64}(Ainv1),
+            Z2 = Matrix{Float64}(Z2),
+            Ainv2 = Matrix{Float64}(Ainv2),
+        )
+    catch err
+        return _h1t_input_error(:input_setup_error, sprint(showerror, err))
+    end
+    n = length(materials.y)
+    size(materials.X, 1) == n ||
+        return _h1t_input_error(:input_setup_error, "X must have one row per record")
+    size(materials.Z1, 1) == n ||
+        return _h1t_input_error(:input_setup_error, "Z1 must have one row per record")
+    size(materials.Z2, 1) == n ||
+        return _h1t_input_error(:input_setup_error, "Z2 must have one row per record")
+    n1 = size(materials.Ainv1, 1)
+    n2 = size(materials.Ainv2, 1)
+    size(materials.Ainv1, 2) == n1 ||
+        return _h1t_input_error(:input_setup_error, "Ainv1 must be square")
+    size(materials.Ainv2, 2) == n2 ||
+        return _h1t_input_error(:input_setup_error, "Ainv2 must be square")
+    size(materials.Z1, 2) == n1 ||
+        return _h1t_input_error(:input_setup_error, "Z1 columns must match Ainv1 dimensions")
+    size(materials.Z2, 2) == n2 ||
+        return _h1t_input_error(:input_setup_error, "Z2 columns must match Ainv2 dimensions")
+    all(isfinite, materials.y) && all(isfinite, materials.X) &&
+        all(isfinite, materials.Z1) && all(isfinite, materials.Ainv1) &&
+        all(isfinite, materials.Z2) && all(isfinite, materials.Ainv2) ||
+        return _h1t_input_error(:input_setup_error, "all diagnostic inputs must be finite")
+    symmetric = (
+        Ainv1 = isequal(materials.Ainv1, transpose(materials.Ainv1)),
+        Ainv2 = isequal(materials.Ainv2, transpose(materials.Ainv2)),
+    )
+    symmetric.Ainv1 && symmetric.Ainv2 ||
+        return _h1t_input_error(:input_setup_error, "diagnostic precision matrices must be symmetric")
+    group_counts = [count(value -> !iszero(value), view(materials.Z2, :, group))
+                    for group in axes(materials.Z2, 2)]
+    return (
+        status = :valid,
+        dimensions = (
+            y = size(materials.y),
+            X = size(materials.X),
+            Z1 = size(materials.Z1),
+            Ainv1 = size(materials.Ainv1),
+            Z2 = size(materials.Z2),
+            Ainv2 = size(materials.Ainv2),
+        ),
+        finite = true,
+        symmetric = symmetric,
+        group_counts = Int.(group_counts),
+        materials = materials,
+    )
+end
+
+function _h1t_canonical_array_hash(name::Symbol, values::AbstractArray)
+    io = IOBuffer()
+    write(io, codeunits("HSquared:H1T:canonical-array:v1\n"))
+    write(io, codeunits(String(name)))
+    write(io, codeunits("\n"))
+    write(io, codeunits(join(size(values), ",")))
+    write(io, codeunits("\n"))
+    for value in values
+        write(io, codeunits(bitstring(Float64(value))))
+    end
+    return bytes2hex(SHA.sha256(take!(io)))
+end
+
+function _h1t_materialized_input_fingerprints(materials)
+    return NamedTuple{_H1T_INPUT_NAMES}(Tuple(
+        _h1t_canonical_array_hash(name, getproperty(materials, name))
+        for name in _H1T_INPUT_NAMES
+    ))
+end
+
+function _h1t_input_fingerprints(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix,
+)
+    input = _h1t_materialize_inputs(y, X, Z1, Ainv1, Z2, Ainv2)
+    input.status === :valid || throw(ArgumentError(input.message))
+    return _h1t_materialized_input_fingerprints(input.materials)
+end
+
+function _h1t_fingerprints_match(expected, observed)
+    expected isa NamedTuple || return false
+    propertynames(expected) == _H1T_INPUT_NAMES || return false
+    return all(name -> begin
+        candidate = getproperty(expected, name)
+        candidate isa AbstractString && candidate == getproperty(observed, name)
+    end, _H1T_INPUT_NAMES)
+end
+
+function _h1t_hex_digest(value, width::Integer)
+    value isa AbstractString || return false
+    return occursin(Regex("^[0-9a-f]{$width}\$"), value)
+end
+
+function _h1t_provenance_valid(provenance)
+    provenance isa NamedTuple || return false
+    required = (
+        :protocol_id,
+        :protocol_revision,
+        :authorization_text,
+        :fresh_worktree_path,
+        :source_commit,
+        :manifest_hash,
+        :harness_hash,
+        :master_seed,
+        :campaign_index,
+        :cell_index,
+        :replicate_index,
+        :derived_seed,
+    )
+    all(name -> hasproperty(provenance, name), required) || return false
+    provenance.protocol_id == _H1T_PROTOCOL_ID || return false
+    provenance.protocol_revision isa AbstractString && !isempty(provenance.protocol_revision) || return false
+    provenance.authorization_text isa AbstractString && !isempty(provenance.authorization_text) || return false
+    provenance.fresh_worktree_path isa AbstractString && !isempty(provenance.fresh_worktree_path) || return false
+    _h1t_hex_digest(provenance.source_commit, 40) || return false
+    _h1t_hex_digest(provenance.manifest_hash, 64) || return false
+    _h1t_hex_digest(provenance.harness_hash, 64) || return false
+    all(value -> value isa Integer && value > 0,
+        (provenance.master_seed, provenance.campaign_index, provenance.cell_index,
+         provenance.replicate_index, provenance.derived_seed)) || return false
+    expected_seed = provenance.master_seed + 1_000_003 * provenance.campaign_index +
+        10_007 * provenance.cell_index + provenance.replicate_index
+    return provenance.derived_seed == expected_seed
+end
+
+function _h1t_empty_fit_telemetry(requested_iterations::Integer)
+    return (
+        requested_iterations = Int(requested_iterations),
+        fit_returned = false,
+        fit_converged = false,
+        optimizer = (
+            requested_iterations = Int(requested_iterations),
+            iterations = 0,
+            function_calls = 0,
+            raw_log_minimizer = fill(NaN, 3),
+            objective_minimum = NaN,
+            converged = false,
+            iteration_limit_reached = false,
+            x_converged = false,
+            f_converged = false,
+            g_converged = false,
+            termination_status = "",
+            termination_message = "",
+        ),
+        variance_components = (sigma1 = NaN, sigma2 = NaN, sigma_e2 = NaN),
+        total = NaN,
+        ratio1 = NaN,
+        ratio2 = NaN,
+        loglik = NaN,
+        shares = (sigma1 = NaN, sigma2 = NaN, sigma_e2 = NaN),
+        boundary_flags = (sigma1 = false, sigma2 = false, sigma_e2 = false),
+    )
+end
+
+function _h1t_fit_telemetry(fit, optimizer, requested_iterations::Integer, boundary_tol::Real)
     vc = fit.variance_components
-    theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
+    total = vc.sigma1 + vc.sigma2 + vc.sigma_e2
+    components = (vc.sigma1, vc.sigma2, vc.sigma_e2)
+    valid_total = isfinite(total) && total > 0
+    components_valid = all(value -> isfinite(value) && value >= 0, components)
+    shares = valid_total && components_valid ?
+        (sigma1 = vc.sigma1 / total, sigma2 = vc.sigma2 / total, sigma_e2 = vc.sigma_e2 / total) :
+        (sigma1 = NaN, sigma2 = NaN, sigma_e2 = NaN)
+    boundary_flags = valid_total && components_valid ?
+        (sigma1 = shares.sigma1 <= boundary_tol,
+         sigma2 = shares.sigma2 <= boundary_tol,
+         sigma_e2 = shares.sigma_e2 <= boundary_tol) :
+        (sigma1 = false, sigma2 = false, sigma_e2 = false)
+    return (
+        requested_iterations = Int(requested_iterations),
+        fit_returned = true,
+        fit_converged = fit.converged,
+        optimizer = optimizer,
+        variance_components = vc,
+        total = total,
+        ratio1 = valid_total && components_valid ? fit.ratio1 : NaN,
+        ratio2 = valid_total && components_valid ? fit.ratio2 : NaN,
+        loglik = fit.loglik,
+        shares = shares,
+        boundary_flags = boundary_flags,
+    )
+end
 
-    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
-    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
-    Xd = Matrix{Float64}(X); Z1d = Matrix{Float64}(Z1); Z2d = Matrix{Float64}(Z2)
-    yv = Float64.(y)
-    loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
+function _h1t_empty_information(fd_step::Real)
+    return (
+        attempted = false,
+        fd_step = Float64(fd_step),
+        actual_steps = fill(NaN, 3),
+        evaluations = NamedTuple[],
+        matrix = fill(NaN, 3, 3),
+        finite = false,
+        full_pd = false,
+        eigenvalues = fill(NaN, 3),
+        min_eigenvalue = NaN,
+        max_eigenvalue = NaN,
+        condition_number = NaN,
+        error_type = "",
+        error_message = "",
+    )
+end
 
-    # observed information = −Hessian of the REML loglik (central finite differences)
-    info = _reml_fd_information(loglik, theta, fd_step)
+function _h1t_information_summary(trace, fd_step::Real)
+    matrix = Matrix{Float64}(trace[:information_matrix])
+    finite = all(isfinite, matrix)
+    full_pd = finite && isposdef(Symmetric(matrix))
+    eigenvalues = finite ? eigvals(Symmetric(matrix)) : fill(NaN, size(matrix, 1))
+    min_eigenvalue = finite ? minimum(eigenvalues) : NaN
+    max_eigenvalue = finite ? maximum(eigenvalues) : NaN
+    minimum_abs_eigenvalue = finite ? minimum(abs.(eigenvalues)) : NaN
+    condition_number = finite ?
+        (minimum_abs_eigenvalue == 0 ? Inf : maximum(abs.(eigenvalues)) / minimum_abs_eigenvalue) :
+        NaN
+    return (
+        attempted = true,
+        fd_step = Float64(fd_step),
+        actual_steps = Vector{Float64}(trace[:actual_steps]),
+        evaluations = copy(trace[:fd_evaluations]),
+        matrix = matrix,
+        finite = finite,
+        full_pd = full_pd,
+        eigenvalues = Vector{Float64}(eigenvalues),
+        min_eigenvalue = min_eigenvalue,
+        max_eigenvalue = max_eigenvalue,
+        condition_number = condition_number,
+        error_type = "",
+        error_message = "",
+    )
+end
 
-    na_ci = (estimate = NaN, lower = NaN, upper = NaN, se = NaN,
-             lower_clamped = false, upper_clamped = false, boundary = false)
-    r1 = which === :ratio2 ? merge(na_ci, (estimate = fit.ratio1,)) :
-         _ratio_delta_ci(info, theta, 1, level, boundary_tol)
-    r2 = which === :ratio1 ? merge(na_ci, (estimate = fit.ratio2,)) :
-         _ratio_delta_ci(info, theta, 2, level, boundary_tol)
-    return (ratio1 = r1, ratio2 = r2, level = level, converged = fit.converged)
+function _h1t_partial_information_summary(trace, fd_step::Real, err)
+    evaluations = copy(get(trace, :fd_evaluations, NamedTuple[]))
+    actual_steps = haskey(trace, :actual_steps) ?
+        Vector{Float64}(trace[:actual_steps]) : fill(NaN, 3)
+    return (
+        attempted = haskey(trace, :actual_steps) || !isempty(evaluations),
+        fd_step = Float64(fd_step),
+        actual_steps = actual_steps,
+        evaluations = evaluations,
+        matrix = fill(NaN, 3, 3),
+        finite = false,
+        full_pd = false,
+        eigenvalues = fill(NaN, 3),
+        min_eigenvalue = NaN,
+        max_eigenvalue = NaN,
+        condition_number = NaN,
+        error_type = string(typeof(err)),
+        error_message = sprint(showerror, err),
+    )
+end
+
+function _h1t_ratio_index(name::Symbol)
+    name === :ratio1 && return 1
+    name === :ratio2 && return 2
+    throw(ArgumentError("unknown H1T ratio name: $name"))
+end
+
+function _h1t_kept_indices(fit_telemetry, boundary_tol::Real)
+    shares = fit_telemetry.shares
+    share_values = (shares.sigma1, shares.sigma2, shares.sigma_e2)
+    return Int[index for index in eachindex(share_values) if share_values[index] > boundary_tol]
+end
+
+function _h1t_kept_pd(information, kept_indices::AbstractVector{<:Integer})
+    information.finite || return false
+    length(kept_indices) >= 2 || return false
+    return isposdef(Symmetric(information.matrix[kept_indices, kept_indices]))
+end
+
+function _h1t_finite_ordered_ratio(ratio)
+    values = (ratio.estimate, ratio.se, ratio.lower, ratio.upper)
+    return all(isfinite, values) && ratio.se > 0 &&
+        0 <= ratio.lower < ratio.estimate < ratio.upper <= 1
+end
+
+function _h1t_truth_containment(truth, name::Symbol, ratio)
+    hasproperty(truth, name) || return missing
+    value = getproperty(truth, name)
+    value isa Real && isfinite(value) && _h1t_finite_ordered_ratio(ratio) || return missing
+    return ratio.lower <= value <= ratio.upper
+end
+
+function _h1t_failure_ratio(
+    name::Symbol,
+    terminal::Symbol;
+    optimizer_nonconverged::Bool = false,
+    denominator_degenerate::Bool = false,
+    own_numerator_boundary::Bool = false,
+    fd_attempted::Bool = false,
+)
+    return (
+        name = name,
+        estimate = NaN,
+        se = NaN,
+        lower = NaN,
+        upper = NaN,
+        finite_ordered_interval = false,
+        truth_containment_if_finite = missing,
+        lower_clamped = false,
+        upper_clamped = false,
+        public_boundary = own_numerator_boundary || denominator_degenerate,
+        primary_terminal = terminal,
+        optimizer_nonconverged = optimizer_nonconverged,
+        denominator_degenerate = denominator_degenerate,
+        own_numerator_boundary = own_numerator_boundary,
+        kept_indices = Int[],
+        kept_pd = false,
+        fd_attempted = fd_attempted,
+    )
+end
+
+function _h1t_ratio_telemetry(
+    name::Symbol,
+    public_ratio,
+    fit_telemetry,
+    information,
+    boundary_tol::Real,
+    truth,
+)
+    index = _h1t_ratio_index(name)
+    component = index == 1 ? :sigma1 : :sigma2
+    own_numerator_boundary = getproperty(fit_telemetry.boundary_flags, component)
+    kept_indices = _h1t_kept_indices(fit_telemetry, boundary_tol)
+    kept_pd = _h1t_kept_pd(information, kept_indices)
+    finite_ordered_interval = _h1t_finite_ordered_ratio(public_ratio)
+    primary_terminal = if own_numerator_boundary
+        :own_numerator_boundary
+    elseif !information.attempted || !information.finite ||
+           any(record -> !record.finite, information.evaluations)
+        :fd_evaluation_error_or_nonfinite
+    elseif !kept_pd
+        :observed_information_nonpd_kept
+    elseif !finite_ordered_interval
+        :delta_nonfinite_or_invalid
+    else
+        :finite_ordered_interval
+    end
+    return (
+        name = name,
+        estimate = Float64(public_ratio.estimate),
+        se = Float64(public_ratio.se),
+        lower = Float64(public_ratio.lower),
+        upper = Float64(public_ratio.upper),
+        finite_ordered_interval = finite_ordered_interval,
+        truth_containment_if_finite = _h1t_truth_containment(truth, name, public_ratio),
+        lower_clamped = Bool(public_ratio.lower_clamped),
+        upper_clamped = Bool(public_ratio.upper_clamped),
+        public_boundary = Bool(public_ratio.boundary),
+        primary_terminal = primary_terminal,
+        optimizer_nonconverged = !fit_telemetry.fit_converged,
+        denominator_degenerate = false,
+        own_numerator_boundary = own_numerator_boundary,
+        kept_indices = kept_indices,
+        kept_pd = kept_pd,
+        fd_attempted = information.attempted,
+    )
+end
+
+function _h1t_snapshot(
+    provenance,
+    input,
+    controls,
+    fit,
+    information,
+    ratios,
+    public;
+    error_type::AbstractString = "",
+    error_message::AbstractString = "",
+)
+    return (
+        schema_version = "H1T-DIAG-TELEMETRY-V1",
+        provenance = provenance,
+        input = input,
+        controls = controls,
+        fit = fit,
+        information = information,
+        ratios = ratios,
+        public = public,
+        error_type = String(error_type),
+        error_message = String(error_message),
+        claim_eligible = false,
+    )
+end
+
+function _h1t_failure_snapshot(
+    provenance,
+    input,
+    controls,
+    terminal::Symbol;
+    fit = _h1t_empty_fit_telemetry(controls.iterations),
+    information = _h1t_empty_information(controls.fd_step),
+    error = nothing,
+)
+    rows = Tuple(_h1t_failure_ratio(
+        name,
+        terminal;
+        optimizer_nonconverged = !fit.fit_converged,
+        denominator_degenerate = terminal === :denominator_degenerate,
+        fd_attempted = information.attempted,
+    ) for name in _H1T_RATIO_NAMES)
+    error_type = error === nothing ? "" : string(typeof(error))
+    error_message = error === nothing ? "" : sprint(showerror, error)
+    return _h1t_snapshot(
+        provenance,
+        input,
+        controls,
+        fit,
+        information,
+        rows,
+        (fit = nothing, interval = nothing);
+        error_type = error_type,
+        error_message = error_message,
+    )
+end
+
+function _two_effect_diagnostic_snapshot(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    expected_input_hashes,
+    provenance,
+    level::Real = 0.95,
+    which::Symbol = :both,
+    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    iterations::Integer = 200,
+    fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
+    truth = (ratio1 = NaN, ratio2 = NaN),
+)
+    which === :both || throw(ArgumentError("H1T diagnostic telemetry requires which = :both"))
+    controls = (
+        level = Float64(level),
+        which = which,
+        initial = initial,
+        iterations = Int(iterations),
+        fd_step = Float64(fd_step),
+        boundary_tol = Float64(boundary_tol),
+    )
+    if !_h1t_provenance_valid(provenance)
+        input = _h1t_input_error(:provenance_mismatch, "invalid H1T provenance or derived seed")
+        return _h1t_failure_snapshot(provenance, input, controls, :provenance_mismatch)
+    end
+    input = _h1t_materialize_inputs(y, X, Z1, Ainv1, Z2, Ainv2)
+    input.status === :valid ||
+        return _h1t_failure_snapshot(provenance, input, controls, :input_setup_error)
+    observed_fingerprints = _h1t_materialized_input_fingerprints(input.materials)
+    input = merge(input, (
+        fingerprints = observed_fingerprints,
+        expected_fingerprints = expected_input_hashes,
+    ))
+    _h1t_fingerprints_match(expected_input_hashes, observed_fingerprints) || begin
+        input = merge(input, (
+            status = :provenance_mismatch,
+            message = "expected input fingerprints do not match materialized inputs",
+        ))
+        return _h1t_failure_snapshot(provenance, input, controls, :provenance_mismatch)
+    end
+
+    trace = Dict{Symbol,Any}(:stage => :fit)
+    fit = try
+        _fit_two_effect_reml_core(
+            input.materials.y,
+            input.materials.X,
+            input.materials.Z1,
+            input.materials.Ainv1,
+            input.materials.Z2,
+            input.materials.Ainv2;
+            initial = initial,
+            iterations = iterations,
+            trace = trace,
+        )
+    catch err
+        return _h1t_failure_snapshot(provenance, input, controls, :fit_exception; error = err)
+    end
+    optimizer = get(trace, :optimizer, _h1t_empty_fit_telemetry(iterations).optimizer)
+    fit_telemetry = _h1t_fit_telemetry(fit, optimizer, iterations, boundary_tol)
+    components = (
+        fit_telemetry.variance_components.sigma1,
+        fit_telemetry.variance_components.sigma2,
+        fit_telemetry.variance_components.sigma_e2,
+    )
+    denominator_degenerate = !isfinite(fit_telemetry.total) || fit_telemetry.total <= 0
+    denominator_degenerate &&
+        return _h1t_failure_snapshot(
+            provenance, input, controls, :denominator_degenerate; fit = fit_telemetry,
+        )
+    all(value -> isfinite(value) && value >= 0, components) ||
+        return _h1t_failure_snapshot(
+            provenance, input, controls, :delta_nonfinite_or_invalid; fit = fit_telemetry,
+        )
+
+    interval = try
+        _two_effect_interval_from_fit(
+            input.materials.y,
+            input.materials.X,
+            input.materials.Z1,
+            input.materials.Ainv1,
+            input.materials.Z2,
+            input.materials.Ainv2,
+            fit;
+            level = level,
+            which = which,
+            fd_step = fd_step,
+            boundary_tol = boundary_tol,
+            trace = trace,
+        )
+    catch err
+        information = haskey(trace, :information_matrix) ?
+            _h1t_information_summary(trace, fd_step) :
+            _h1t_partial_information_summary(trace, fd_step, err)
+        terminal = _h1t_interval_failure_terminal(trace)
+        return _h1t_failure_snapshot(
+            provenance, input, controls, terminal;
+            fit = fit_telemetry,
+            information = information,
+            error = err,
+        )
+    end
+    information = _h1t_information_summary(trace, fd_step)
+    ratios = Tuple(_h1t_ratio_telemetry(
+        name,
+        getproperty(interval, name),
+        fit_telemetry,
+        information,
+        boundary_tol,
+        truth,
+    ) for name in _H1T_RATIO_NAMES)
+    snapshot = _h1t_snapshot(
+        provenance,
+        input,
+        controls,
+        fit_telemetry,
+        information,
+        ratios,
+        (fit = fit, interval = interval),
+    )
+    _h1t_validate_diagnostic_snapshot(snapshot)
+    return snapshot
+end
+
+function _h1t_require(condition::Bool, message::AbstractString)
+    condition || throw(ArgumentError(message))
+    return nothing
+end
+
+function _h1t_validate_diagnostic_snapshot(snapshot)
+    required = (:schema_version, :provenance, :input, :controls, :fit, :information,
+                :ratios, :public, :error_type, :error_message, :claim_eligible)
+    _h1t_require(all(name -> hasproperty(snapshot, name), required),
+                  "H1T snapshot is missing a required top-level field")
+    _h1t_require(snapshot.schema_version == "H1T-DIAG-TELEMETRY-V1",
+                  "H1T snapshot has an unknown schema version")
+    _h1t_require(snapshot.claim_eligible === false,
+                  "H1T diagnostic telemetry can never be claim-eligible")
+    _h1t_require(_h1t_provenance_valid(snapshot.provenance),
+                  "H1T snapshot provenance is invalid")
+    _h1t_require(snapshot.input.status === :valid,
+                  "only a valid-input H1T snapshot can pass the telemetry schema")
+    _h1t_require(_h1t_fingerprints_match(
+        snapshot.input.expected_fingerprints,
+        snapshot.input.fingerprints,
+    ), "H1T snapshot input fingerprints do not match")
+
+    fit_fields = (:requested_iterations, :fit_returned, :fit_converged, :optimizer,
+                  :variance_components, :total, :ratio1, :ratio2, :loglik,
+                  :shares, :boundary_flags)
+    _h1t_require(all(name -> hasproperty(snapshot.fit, name), fit_fields),
+                  "H1T fit telemetry is incomplete")
+    _h1t_require(snapshot.fit.fit_returned === true,
+                  "valid H1T snapshot must retain a returned fit")
+    optimizer_fields = (:requested_iterations, :iterations, :function_calls,
+                        :raw_log_minimizer, :objective_minimum, :converged,
+                        :iteration_limit_reached, :x_converged, :f_converged,
+                        :g_converged, :termination_status, :termination_message)
+    _h1t_require(all(name -> hasproperty(snapshot.fit.optimizer, name), optimizer_fields),
+                  "H1T optimizer terminal telemetry is incomplete")
+    _h1t_require(!isempty(snapshot.fit.optimizer.termination_status) &&
+                  !isempty(snapshot.fit.optimizer.termination_message),
+                  "H1T optimizer terminal detail is blank")
+
+    information_fields = (:attempted, :fd_step, :actual_steps, :evaluations, :matrix,
+                          :finite, :full_pd, :eigenvalues, :min_eigenvalue,
+                          :max_eigenvalue, :condition_number, :error_type, :error_message)
+    _h1t_require(all(name -> hasproperty(snapshot.information, name), information_fields),
+                  "H1T information telemetry is incomplete")
+    information = snapshot.information
+    matrix = Matrix{Float64}(information.matrix)
+    actual_finite = all(isfinite, matrix)
+    actual_full_pd = actual_finite && isposdef(Symmetric(matrix))
+    _h1t_require(information.finite === actual_finite,
+                  "H1T information finite flag disagrees with its matrix")
+    _h1t_require(information.full_pd === actual_full_pd,
+                  "H1T information PD flag disagrees with its matrix")
+    _h1t_require(information.attempted === true,
+                  "valid H1T snapshot must retain attempted FD information")
+    _h1t_require(length(information.evaluations) == 36,
+                  "H1T 3-by-3 central FD telemetry must retain 36 evaluations")
+    evaluation_fields = (:i, :j, :label, :point, :value, :finite, :error_type, :error_message)
+    _h1t_require(all(record -> all(name -> hasproperty(record, name), evaluation_fields),
+                      information.evaluations),
+                  "H1T FD evaluation telemetry is incomplete")
+
+    _h1t_require(length(snapshot.ratios) == 2,
+                  "H1T telemetry must retain exactly two scheduled ratio rows")
+    row_names = Tuple(row.name for row in snapshot.ratios)
+    _h1t_require(sort(collect(row_names)) == sort(collect(_H1T_RATIO_NAMES)),
+                  "H1T ratio rows are missing or duplicated")
+    components = snapshot.fit.variance_components
+    total = snapshot.fit.total
+    _h1t_require(isfinite(total) && total > 0 &&
+                  all(value -> isfinite(value) && value >= 0,
+                      (components.sigma1, components.sigma2, components.sigma_e2)),
+                  "valid H1T snapshot has invalid fitted variance components")
+    expected_kept = _h1t_kept_indices(snapshot.fit, snapshot.controls.boundary_tol)
+    for row in snapshot.ratios
+        row_fields = (:name, :estimate, :se, :lower, :upper, :finite_ordered_interval,
+                      :truth_containment_if_finite, :lower_clamped, :upper_clamped,
+                      :public_boundary, :primary_terminal, :optimizer_nonconverged,
+                      :denominator_degenerate, :own_numerator_boundary, :kept_indices,
+                      :kept_pd, :fd_attempted)
+        _h1t_require(all(name -> hasproperty(row, name), row_fields),
+                      "H1T ratio telemetry is incomplete")
+        index = _h1t_ratio_index(row.name)
+        expected_own_boundary = index == 1 ?
+            snapshot.fit.boundary_flags.sigma1 : snapshot.fit.boundary_flags.sigma2
+        _h1t_require(row.own_numerator_boundary === expected_own_boundary,
+                      "H1T numerator-boundary label disagrees with the fitted share")
+        _h1t_require(row.kept_indices == expected_kept,
+                      "H1T kept-index telemetry disagrees with fitted shares")
+        expected_kept_pd = _h1t_kept_pd(information, expected_kept)
+        _h1t_require(row.kept_pd === expected_kept_pd,
+                      "H1T kept-information PD label disagrees with its matrix")
+        public_ratio = getproperty(snapshot.public.interval, row.name)
+        _h1t_require(row.public_boundary === public_ratio.boundary,
+                      "H1T public boundary label disagrees with the interval result")
+        finite_ordered = _h1t_finite_ordered_ratio(public_ratio)
+        _h1t_require(row.finite_ordered_interval === finite_ordered,
+                      "H1T finite/ordered interval label disagrees with the interval result")
+        _h1t_require(row.optimizer_nonconverged === !snapshot.fit.fit_converged,
+                      "H1T optimizer convergence must remain an orthogonal flag")
+        _h1t_require(row.denominator_degenerate === false,
+                      "valid H1T snapshot cannot label its denominator degenerate")
+        expected_terminal = if expected_own_boundary
+            :own_numerator_boundary
+        elseif !information.finite || any(record -> !record.finite, information.evaluations)
+            :fd_evaluation_error_or_nonfinite
+        elseif !expected_kept_pd
+            :observed_information_nonpd_kept
+        elseif !finite_ordered
+            :delta_nonfinite_or_invalid
+        else
+            :finite_ordered_interval
+        end
+        _h1t_require(row.primary_terminal === expected_terminal,
+                      "H1T primary terminal code violates its fixed precedence")
+        _h1t_require(row.public_boundary || finite_ordered,
+                      "H1T cannot label a NaN/boundary interval as interior")
+    end
+    return nothing
 end
 
 """

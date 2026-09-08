@@ -6,6 +6,8 @@ using TOML
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 using JSON3   # P0.5 payload-v2 cross-lane parity testset
 
+include("h1t_telemetry_amendment.jl")
+
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
