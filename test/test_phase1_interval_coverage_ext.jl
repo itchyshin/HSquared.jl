@@ -51,6 +51,15 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test s1 != s2
     @test abs(s2 - s1) < EXT_SEED_STRIDE
 
+    @test EXT_CAMPAIGN_INDEX == Dict(
+        :h1_two => 1,
+        :h1_multi => 2,
+        :h1_t => 3,
+        :h3_rg => 4,
+        :h3_ram => 5,
+    )
+    @test_throws ErrorException _campaign_seed(cfg, :h1_nbinom, 1, 1)
+
     # Mutation control: a reordered mapping, a request-order index, or a changed
     # fixed index changes this exact seed.  The campaign's identity, rather than
     # its position in a CLI request, determines its random stream.
