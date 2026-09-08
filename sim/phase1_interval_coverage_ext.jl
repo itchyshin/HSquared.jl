@@ -767,13 +767,60 @@ function _detail_key(row)
     return (row.campaign, row.cell_id, row.estimand, row.method, row.level, row.rep, row.seed)
 end
 
-function _parse_detail_bool(s)
-    return lowercase(strip(s)) in ("true", "1", "yes")
+function _parse_detail_bool(s, field::AbstractString = "boolean")
+    value = lowercase(strip(s))
+    value == "true" && return true
+    value == "false" && return false
+    error("detail field $(field) must be true or false, got $(repr(s))")
 end
 
-function _parse_detail_record(parts)
+function _detail_row_label(row)
+    try
+        return join(string.(_detail_key(row)), "/")
+    catch
+        return "<unkeyed>"
+    end
+end
+
+function _detail_error(row, message::AbstractString)
+    error("invalid retained detail row $(_detail_row_label(row)): $(message)")
+end
+
+function _validate_detail_row(row)
+    isfinite(row.level) || _detail_error(row, "level must be finite")
+    isfinite(row.truth) || _detail_error(row, "truth must be finite")
+    row.covered && !row.interval_success &&
+        _detail_error(row, "covered=true requires interval_success=true")
+    row.interval_success && !row.fit_success &&
+        _detail_error(row, "interval_success=true requires fit_success=true")
+
+    if row.interval_success
+        isempty(row.failure_reason) ||
+            _detail_error(row, "successful interval requires an empty failure_reason")
+        for field in (:lower, :upper, :width, :estimate, :se)
+            isfinite(getproperty(row, field)) ||
+                _detail_error(row, "successful interval requires finite $(field)")
+        end
+        row.upper >= row.lower ||
+            _detail_error(row, "successful interval requires upper >= lower")
+        row.width >= 0 ||
+            _detail_error(row, "successful interval requires nonnegative width")
+    else
+        isempty(strip(row.failure_reason)) &&
+            _detail_error(row, "failed interval requires a nonempty failure_reason")
+        # `_record_ci` deliberately retains any available estimate/SE on a
+        # failed interval, but emits no interval endpoints or width.
+        for field in (:lower, :upper, :width)
+            isnan(getproperty(row, field)) ||
+                _detail_error(row, "failed interval requires NaN $(field)")
+        end
+    end
+    return row
+end
+
+function _parse_detail_record(parts; context::AbstractString = "detail row")
     length(parts) == length(DETAIL_COLUMNS) || error("detail row has $(length(parts)) fields")
-    return (
+    row = (
         campaign = String(parts[1]),
         cell_id = String(parts[2]),
         seed = parse(Int, parts[3]),
@@ -787,17 +834,37 @@ function _parse_detail_record(parts)
         level = parse(Float64, parts[11]),
         scope = String(parts[12]),
         role = String(parts[13]),
-        fit_success = _parse_detail_bool(parts[14]),
-        fit_converged = _parse_detail_bool(parts[15]),
-        interval_success = _parse_detail_bool(parts[16]),
+        fit_success = _parse_detail_bool(parts[14], "$(context) fit_success"),
+        fit_converged = _parse_detail_bool(parts[15], "$(context) fit_converged"),
+        interval_success = _parse_detail_bool(parts[16], "$(context) interval_success"),
         failure_reason = String(parts[17]),
-        covered = _parse_detail_bool(parts[18]),
+        covered = _parse_detail_bool(parts[18], "$(context) covered"),
         lower = parse(Float64, parts[19]),
         upper = parse(Float64, parts[20]),
         width = parse(Float64, parts[21]),
         estimate = parse(Float64, parts[22]),
         se = parse(Float64, parts[23]),
     )
+    return _validate_detail_row(row)
+end
+
+function _reconcile_detail_rows(rows, config::ExtConfig)
+    expected = Set(entry.expected_key for entry in _canonical_task_inventory(config))
+    records = Dict{Any,Any}()
+    for row in rows
+        _validate_detail_row(row)
+        key = _detail_key(row)
+        haskey(records, key) && error("retained detail rows contain duplicate key $(key)")
+        records[key] = row
+    end
+    observed = Set(keys(records))
+    missing = setdiff(expected, observed)
+    isempty(missing) ||
+        error("retained detail rows are missing expected key(s): $(join(string.(sort!(collect(missing); by = string)), ", "))")
+    unexpected = setdiff(observed, expected)
+    isempty(unexpected) ||
+        error("retained detail rows contain unexpected key(s): $(join(string.(sort!(collect(unexpected); by = string)), ", "))")
+    return records
 end
 
 function _read_detail_records(path::AbstractString)
@@ -807,10 +874,16 @@ function _read_detail_records(path::AbstractString)
         header = readline(io)
         header == join(DETAIL_COLUMNS, '\t') ||
             error("detail header does not match C1-ext schema: $(path)")
-        for line in eachline(io)
+        for (line_number, line) in enumerate(eachline(io))
             isempty(strip(line)) && continue
-            row = _parse_detail_record(split(line, '\t'; keepempty = true))
-            records[_detail_key(row)] = row
+            row = _parse_detail_record(
+                split(line, '\t'; keepempty = true);
+                context = "detail row $(line_number + 1)",
+            )
+            key = _detail_key(row)
+            haskey(records, key) &&
+                error("detail file contains duplicate retained key $(key): $(path)")
+            records[key] = row
         end
     end
     return records
@@ -840,6 +913,7 @@ end
 function _summaries_from_records(records)
     summaries = Dict{Any,ExtSummary}()
     for row in values(records)
+        _validate_detail_row(row)
         key = (row.campaign, row.estimand, row.method, row.design, row.truth, row.level, row.scope, row.role)
         s = get!(summaries, key, ExtSummary())
         s.reps += 1

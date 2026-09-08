@@ -145,6 +145,88 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test any(entry -> entry.rep == 1, same_campaign) && any(entry -> entry.rep == 2, same_campaign)
     @test any(entry -> entry.cell_index == 1, same_campaign) && any(entry -> entry.cell_index == 2, same_campaign)
     @test any(entry -> entry.level == 0.9, same_campaign) && any(entry -> entry.level == 0.95, same_campaign)
+
+    # Retained rows are evidence records, not a best-effort cache.  Validate
+    # each record before a summary can see it, and reconcile row sequences
+    # before a Dict could conceal a duplicate key.
+    retained_cfg = _parse_args([
+        "--mode=smoke", "--reps=1", "--seed=20260903",
+        "--campaigns=h3_rg", "--levels=0.95",
+    ])
+    retained_entry = only(_canonical_task_inventory(retained_cfg))
+    valid_row = _detail_row(
+        campaign = retained_entry.campaign,
+        cell_id = retained_entry.cell_id,
+        seed = retained_entry.seed,
+        rep = retained_entry.rep,
+        estimand = retained_entry.estimand,
+        method = retained_entry.method,
+        design = retained_entry.cell_label,
+        n_animals = 12,
+        n_obs = 12,
+        truth = 0.25,
+        level = retained_entry.level,
+        scope = retained_entry.scope,
+        role = "covered_pillar_bank",
+        fit_success = true,
+        fit_converged = true,
+        interval_success = true,
+        failure_reason = "",
+        covered = true,
+        lower = 0.10,
+        upper = 0.40,
+        width = 0.30,
+        estimate = 0.25,
+        se = 0.10,
+    )
+    @test _validate_detail_row(valid_row) === valid_row
+    reconciled = _reconcile_detail_rows([valid_row], retained_cfg)
+    @test reconciled isa Dict
+    @test reconciled[_detail_key(valid_row)] === valid_row
+
+    # Mutation controls: permissive booleans, logically inconsistent success
+    # flags, blank failed-interval reasons, duplicate keys, and inventory drift
+    # must all stop before pooling or resume can hide them.
+    @test_throws ErrorException _parse_detail_bool("yes", "covered")
+    @test_throws ErrorException _validate_detail_row(merge(valid_row, (
+        interval_success = false,
+        covered = true,
+        failure_reason = "interval_failed",
+        lower = NaN,
+        upper = NaN,
+        width = NaN,
+    )))
+    failed_row = merge(valid_row, (
+        interval_success = false,
+        covered = false,
+        failure_reason = "interval_failed",
+        lower = NaN,
+        upper = NaN,
+        width = NaN,
+    ))
+    @test_throws ErrorException _validate_detail_row(merge(failed_row, (failure_reason = "",)))
+    @test_throws ErrorException _validate_detail_row(merge(failed_row, (lower = 0.10,)))
+    @test_throws ErrorException _reconcile_detail_rows([valid_row, valid_row], retained_cfg)
+    @test_throws ErrorException _reconcile_detail_rows(NamedTuple[], retained_cfg)
+    @test_throws ErrorException _reconcile_detail_rows([
+        merge(valid_row, (cell_id = "unexpected-cell",)),
+    ], retained_cfg)
+
+    mktempdir() do dir
+        detail_path = joinpath(dir, "detail.tsv")
+        _prepare_detail_output(detail_path; resume = false)
+        _write_detail_rows!(detail_path, [valid_row, valid_row])
+        @test_throws ErrorException _read_detail_records(detail_path)
+
+        malformed_path = joinpath(dir, "malformed-bool.tsv")
+        _prepare_detail_output(malformed_path; resume = false)
+        fields = [_format_value(getproperty(valid_row, Symbol(col))) for col in DETAIL_COLUMNS]
+        fields[18] = "yes"
+        open(malformed_path, "a") do io
+            println(io, join(fields, '\t'))
+        end
+        @test_throws ErrorException _read_detail_records(malformed_path)
+    end
 end
 
 if get(ENV, "HSQUARED_C1EXT_SMOKE", "0") == "1"
