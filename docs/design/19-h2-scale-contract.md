@@ -20,15 +20,19 @@ stays **1** (v0.1 univariate Gaussian). Every non-Gaussian h² surface below is
 ## 1. The rule
 
 > **A non-Gaussian heritability is never reported as a bare `h²`. It always carries an
-> explicit scale label — `latent`, `observation`, or `liability` — and the family-uniform
-> result payload carries NO `heritability` field at all.**
+> explicit scale label — `latent`, `observation`, or `liability`. The legacy
+> family-uniform result payload carries NO `heritability` field; the separate,
+> private versioned 0.9 R transport carries only its ratified labelled fields.**
 
 Off the identity link there is no single heritability: `V_A / (V_A + V_E)` is only the
 *latent*-scale ratio, and it is the wrong number to hand a breeder who measured counts or
 0/1 outcomes. So:
 
-- `nongaussian_result_payload` is deliberately **family-uniform and h²-free** — it would be
-  wrong to "reuse the Gaussian ratio" (`src/nongaussian.jl:1020–1023`).
+- The legacy `nongaussian_result_payload` is deliberately **family-uniform and
+  h²-free** — it would be wrong to "reuse the Gaussian ratio". It is distinct
+  from the private `nongaussian_three_field_payload`, whose narrow R-facing
+  0.9 contract has separately ratified fields and must not be generalized from
+  this legacy rule.
 - Heritability is a **separate, opt-in, self-describing call**, `nongaussian_heritability`,
   returning a `NamedTuple` whose fields name the scale: `h2_latent`, `h2_observation`,
   `var_link`, `var_distribution`, plus `caveat`, `information_limited`, `method`

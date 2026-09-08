@@ -9,6 +9,15 @@
 > discovery data and a new untouched holdout before any nine-cell recovery.
 > See `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
 
+> **A3 three-field reconciliation (2026-09-08):** the phrases “R model-spec”
+> and “varying-trial R activation” in the historical V6-LAPLACE/VA/FIT rows
+> mean a broader production-ready model specification, not the narrow ratified
+> 0.9 transport. The current private `nongaussian_three_field_payload` feeds
+> an opt-in, one-intercept R bridge for Poisson(log) and Binomial(logit),
+> including scalar/varying trials. It has only the ratified labelled fields;
+> it is partial/experimental, not a REML/AI-REML claim, and has no calibration,
+> comparator, promotion, default, or release status.
+
 | ID | Capability | Status | Required evidence |
 | --- | --- | --- | --- |
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
