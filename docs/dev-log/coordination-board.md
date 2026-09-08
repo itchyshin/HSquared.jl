@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-08 — A2 deterministic H1/H3 infrastructure closure [Julia]
+
+- Isolated `codex/hsq09-s2-evidence-infra` completed private deterministic
+  manifest/adjudication infrastructure verification: focused 95/95, validator
+  mutation controls, full `Pkg.test()`, and fresh Unlazy 5/5 re-verification.
+- This is **not** interval calibration evidence and makes no public or
+  capability-state change. S2 full-input materialization remains a separate
+  owner-bound lane; no array runner was edited or submitted here.
+
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
 
 Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
