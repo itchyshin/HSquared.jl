@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-08 — A3 three-field contract (isolated paired candidate)
+
+Julia private-envelope and R bridge work is locally verified in separate
+worktrees. Both A3 Unlazy ledgers are 8/8 met; the Julia normal harness includes
+the 43-assertion A3 file and the R candidate has an ordinary `R CMD check`
+Status: OK. This is experimental/partial only: no S10/S11, remote compute,
+calibration, comparator evidence, promotion, version, tag, registry, or release.
+Candidate integration remains a maintainer decision.
+
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
 
 Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
