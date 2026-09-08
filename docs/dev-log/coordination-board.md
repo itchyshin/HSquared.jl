@@ -23,6 +23,41 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-08 — h² THREE-SCALE NAMING: contract change specified, NOT implemented (Claude → Codex)
+
+Lane: `claude/h2-three-scale-naming-20260908` (cut from `origin/main`).
+**Specification only — `src/nongaussian.jl` is UNMODIFIED.** Implementation belongs to
+whichever Codex lane owns it; **`codex/hsq09-ng-contract-julia-repair` is editing this exact
+logic** (`cc2db0d0`), so coordinate before writing.
+
+**START HERE:** `docs/dev-log/handover/2026-09-08-codex-handover.md`
+
+**Maintainer decision (Shinichi, 2026-09-08):** adopt the naming of **de Villemereuil,
+Schielzeth, Nakagawa & Morrissey 2016, Genetics 204:1281–1294** and report **all three
+scales**; never return `NaN` for a quantity that is defined.
+
+Two defects on `origin/main`. (1) Poisson-log returns `h2_latent = NaN` on the stated grounds
+*"no latent residual"* — **false**: the latent residual is the overdispersion term, already in
+scope as `sigma_e2`, and Eq 4 needs no distribution variance at all. (2) The binomial branch
+adds `π²/3` and calls the result `h2_latent` — under Eq 24 that is the **liability** scale;
+the paper states explicitly (p1287) that liability *"is not the same as the latent scale"*.
+So one field name currently carries two different quantities.
+
+Contract: `h2_latent` (Eq 4, every family) · `h2_liability` (Eq 24, binomial only, **new**) ·
+`h2_observation` (Eq 26 Poisson-log / Eq 25 binomial-probit). **Breaking:** a binomial
+`h2_latent` from an earlier version equals the new `h2_liability` — needs NEWS + migration note.
+
+**Not the `ln(1 + 1/λ)` fix.** That is the Nakagawa & Schielzeth (2010) distribution-specific
+variance, an approximation convention for a data-scale ICC — not Eq 4, and unnecessary here
+because exact observed-scale results exist (Eqs 26/28).
+
+**Pertains to other projects** (Shinichi): `hsquared` has **no** non-Gaussian scale surface at
+all (measured) — decide contract vs documented Gaussian-only; **`gllvmTMB`'s
+`2026-05-17-link-residual-design-decision`** adds `π²/3` to the *latent* Σ, which is the
+liability scale under this terminology (its reasoning is sound — the NAME is the issue);
+**drmTMB / DRM.jl / GLLVM.jl repeatability** face the identical triad, and **Eq 28** is the
+exact Poisson-log observed-scale ICC.
+
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
 
 Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
