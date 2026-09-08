@@ -56,11 +56,6 @@ work remain outside this source amendment.
 Rose's independent audit passed. Status/claim/debt text says experimental and
 partial; it does not call the likelihood route REML/AI-REML and does not claim
 calibration, external-comparator evidence, promotion, a default route, or a
-release.
-
-Rose's independent audit passed. Status/claim/debt text says experimental and
-partial; it does not call the likelihood route REML/AI-REML and does not claim
-calibration, external-comparator evidence, promotion, a default route, or a
 release. The telemetry lane had closed and committed its own harness change
 before the A3 include was added; the narrow lease was released after the green
 suite. No Dropbox original was touched.
