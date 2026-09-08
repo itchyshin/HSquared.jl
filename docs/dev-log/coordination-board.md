@@ -23,6 +23,19 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-07 — Gate-A NG-1 Julia scale-summary receipt (local, unpromoted)
+
+Lane: `codex/hsq09-ng-contract-julia-repair` at local `cc2db0d` atop verified
+main `6987871`.  The new bridge-facing helper supports only Poisson-log and
+Binomial-logit summaries; wire-level Bernoulli is accepted solely as a
+Binomial(1) alias and normalizes to `family=:binomial`.  Focused tests,
+`Pkg.test()`, and Documenter passed; records are in
+`check-log.d/2026-09-07-ng1-gate-a-julia.md` and the matching after-task report.
+This receipt authorizes no R surface, parity claim, calibration run, capability
+flip, version, tag, registry action, push, or release.  The next R lane must
+use the stateless scale-summary helper rather than the older fit-bound h²
+route.
+
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
 
 Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
