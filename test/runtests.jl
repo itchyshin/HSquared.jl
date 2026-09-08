@@ -10661,6 +10661,9 @@ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
+# A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
+include(joinpath(@__DIR__, "a3_three_field.jl"))
+
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
 @testset "Repeatability ratio-bias decomposition kernel" begin

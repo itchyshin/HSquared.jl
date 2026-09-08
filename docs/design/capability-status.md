@@ -1,5 +1,14 @@
 # Capability Status
 
+> **A3 non-Gaussian reconciliation (2026-09-08).** Older V6 rows preserve the
+> family-uniform legacy payload and its historical “Laplace/VA REML” shorthand.
+> They do not describe the current narrow R transport: private
+> `nongaussian_three_field_payload` admits only intercept-only Poisson(log) and
+> Binomial(logit), including scalar/varying trials, with the ratified labelled
+> fields. It is experimental and partial; neither objective is a REML/AI-REML
+> claim, and it has no calibration, comparator, promotion, default, or release
+> status.
+
 > **HISTORICAL — v0.7 genomic *runtime* gate (2026-07-13): held.** That
 > dated performance-localization gate is not the live R-activation state.
 > Live: R default `genomic()` route is on (owner G5 YES 2026-09-03); count
