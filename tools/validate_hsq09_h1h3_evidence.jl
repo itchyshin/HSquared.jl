@@ -97,6 +97,16 @@ function _self_test()
         immutable_failure = false,
     )), "Bool scheduled count")
     _a2_expect_error(() -> _a2_verdict((;
+        scheduled_reps = 100, interval_success = true, covered = 1,
+        role = "covered_pillar_bank", evidence_missing = false,
+        immutable_failure = false,
+    )), "Bool interval-success count")
+    _a2_expect_error(() -> _a2_verdict((;
+        scheduled_reps = 100, interval_success = 100, covered = true,
+        role = "covered_pillar_bank", evidence_missing = false,
+        immutable_failure = false,
+    )), "Bool covered count")
+    _a2_expect_error(() -> _a2_verdict((;
         scheduled_reps = 100, interval_success = 100, covered = 95,
         role = "unreviewed_role", evidence_missing = false,
         immutable_failure = false,
