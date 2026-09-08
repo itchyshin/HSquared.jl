@@ -531,6 +531,12 @@ function _canonical_task_inventory(config::ExtConfig)
     return Tuple(entries)
 end
 
+function _hash_float64(x::Float64)
+    # `%.8g` is appropriate for human-facing labels but loses Float64 identity.
+    # The IEEE-754 bit token is fixed-width, deterministic, and injective.
+    return "f64:" * string(reinterpret(UInt64, x); base = 16, pad = 16)
+end
+
 function _canonical_inventory_serialization(entries)
     rows = String[]
     ordered = sort(collect(entries); by = entry -> (
@@ -541,10 +547,10 @@ function _canonical_inventory_serialization(entries)
         key = entry.expected_key
         push!(rows, join((
             string(entry.campaign), string(entry.campaign_index), string(entry.cell_index),
-            entry.cell_id, entry.cell_label, entry.scope, _format_float(entry.level),
+            entry.cell_id, entry.cell_label, entry.scope, _hash_float64(entry.level),
             string(entry.rep_start), string(entry.rep_end), string(entry.reps), string(entry.rep),
             string(entry.seed), entry.estimand, entry.method,
-            string(key[1]), key[2], key[3], key[4], _format_float(key[5]), string(key[6]), string(key[7]),
+            string(key[1]), key[2], key[3], key[4], _hash_float64(key[5]), string(key[6]), string(key[7]),
         ), '\t'))
     end
     return join(rows, '\n') * (isempty(rows) ? "" : "\n")

@@ -99,6 +99,21 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test _inventory_digest(reverse(inventory)) == _inventory_digest(inventory)
     @test occursin(r"^[0-9a-f]{64}$", _inventory_digest(inventory))
 
+    # Display labels intentionally use compact formatting.  Hash material must
+    # preserve the exact Float64 level, including values with the same label.
+    near_level_a = _canonical_task_inventory(_parse_args([
+        "--mode=smoke", "--reps=1", "--seed=20260903",
+        "--campaigns=h3_rg", "--levels=0.95",
+    ]))
+    near_level_b = _canonical_task_inventory(_parse_args([
+        "--mode=smoke", "--reps=1", "--seed=20260903",
+        "--campaigns=h3_rg", "--levels=0.950000001",
+    ]))
+    @test near_level_a[1].cell_id == near_level_b[1].cell_id
+    @test _canonical_inventory_serialization(near_level_a) !=
+          _canonical_inventory_serialization(near_level_b)
+    @test _inventory_digest(near_level_a) != _inventory_digest(near_level_b)
+
     reordered_inventory = _canonical_task_inventory(_parse_args([
         "--mode=confirm",
         "--reps=2",
