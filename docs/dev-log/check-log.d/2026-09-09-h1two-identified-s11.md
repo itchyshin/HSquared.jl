@@ -1,6 +1,7 @@
 # H1-two identified S11 — sealed local pre-submission receipt
 
-Status: **LOCAL PRE-SUBMISSION PASS; FIR STAGING BLOCKED BY PROJECT INODE QUOTA.**
+Status: **RETAINED TWO-WAVE NARVAL S11 COMPLETE — EVIDENCE ONLY; NO
+PROMOTION OR RELEASE.**
 
 This receipt records only local sealing and read-only Fir discovery. It does
 not report a submitted job, a received DRAC file, a coverage result, a
@@ -91,8 +92,9 @@ respectively,
 `1284f1058734d034453deff44d8fc34495cf65d2de61eed31464ea492cdaa7da`.
 
 The Narval manifest test (15/15), sbatch test (13/13), manifest mutation
-validator, and shell syntax check all pass. Transfer and submission remain
-the next authorized actions; no Narval file has yet been created.
+validator, and shell syntax check all pass. At this amendment point, transfer
+and submission were the next authorized actions; the completed two-wave run is
+recorded below.
 
 ## Narval staging and scheduler submission — retained failure
 
@@ -106,10 +108,77 @@ then `using HSquared` printed `H1T_S11_NARVAL_PRECOMPILE_OK`.
 The exact authorized `sbatch --array=1-2000%100` submission was rejected
 before a job was created with `AssocMaxSubmitJobLimit`. Read-only accounting
 then reported `MaxSubmitJobs=1000` for `snakagaw|def-snakagaw_cpu` and zero
-current jobs. No task, receipt, log, result, promotion, or release was
-created. The 2,000-task protocol is intact, but its one-array launch is
-incompatible with this live account limit.
+current jobs. That original one-array submission created no task, receipt,
+log, result, promotion, or release. The 2,000-task protocol is intact, but
+its one-array launch is incompatible with this live account limit.
 
 The only compliant continuation is a separately authorized two-wave launch:
 `--array=1-1000%100`, then `--array=1001-2000%100`, with the same sealed
 driver, one task per seed, retained receipts, and no other scope change.
+
+## Narval two-wave campaign — complete retained evidence only
+
+The maintainer then authorized exactly the two sequential array waves named
+above. Wave 1 was submitted as job `2734452` with `--array=1-1000%100`; only
+after its terminal accounting and 1,000 receipt hashes passed was wave 2
+submitted as job `2740214` with `--array=1001-2000%100`. The two job ranges
+are disjoint and together cover the frozen 2,000-seed window.
+
+### Scheduler and retained-artifact accounting
+
+| Wave | Scheduler accounting | Final selected-task `seff` receipt |
+| --- | --- | --- |
+| `2734452` (1–1000) | 1,000 `COMPLETED`, each exit `0:0` | task `2734452_1000`: 1 core, 7 CPU seconds / 9 wall seconds, 311.01 MB of 2 GB |
+| `2740214` (1001–2000) | 1,000 `COMPLETED`, each exit `0:0` | task `2740214_2000`: 1 core, 8 CPU seconds / 8 wall seconds, 311.03 MB of 2 GB |
+
+`seff` reports the final selected array element above, not an aggregate
+campaign resource total. The durable Narval project directory retains 2,000
+atomic receipt TSVs, 2,000 SHA-256 sidecars, 2,000 stdout logs (each carrying
+`H1T_S11_TASK_OK`), and 2,000 empty stderr logs. All remote sidecars verified
+against their payloads; the locally retrieved evidence copy also verified all
+2,000 digests. Because each sidecar names its Narval absolute path, the local
+check removes only that frozen directory prefix before passing the digest/path
+pairs to `sha256sum -c`; it does not alter a receipt or sidecar.
+
+The local reconciler was run against the complete copied receipt inventory:
+
+```text
+H1T_S11_RECONCILE_OK requested=2000 rows=4000 interval_success=3950 covered=3833 coverage=0.970379746835443 mcse=0.00269753257002308 claim_eligible=false
+```
+
+The reconciler also proves the exact 2,000-seed × two-estimand inventory,
+unique rows, fixed truth and level, valid successful intervals, retained
+failures, and hard-false `claim_eligible`. The campaign driver on the
+reconciliation checkout is byte-identical to the sealed driver source at
+`36ae0691c9e4d30dda8947e162716ebaf30de762`.
+
+### Per-estimand result and constrained interpretation
+
+| Estimand | Scheduled | Interval-success denominator | Retained failure | Covered | Coverage | MCSE | Difference from 0.95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `ratio1` | 2,000 | 1,952 | 48 `invalid_or_boundary_interval` | 1,895 | 0.970799 | 0.003811 | +5.46 MCSE |
+| `ratio2` | 2,000 | 1,998 | 2 `invalid_or_boundary_interval` | 1,938 | 0.969970 | 0.003818 | +5.23 MCSE |
+
+The pooled bookkeeping value is 3,833 / 3,950 = 0.970380 (MCSE 0.002698),
+but it is **not** a pooled scientific label because the two ratio estimands are
+distinct. Under the frozen H1 rule, over-coverage can support only a
+`directional-conservative` description for each individual ratio at this
+identified DGM; it can never support a point/calibrated statement. The
+available A2 calibration band `[0.93, 0.97]` is also exceeded by the pooled
+value, so this is not a `calibrated_candidate` even if that adjudicator is
+later linked formally to this fixture.
+
+Independent Fisher review confirms the per-ratio directional-conservative
+reading and prohibits pooling the two estimands into one scientific claim.
+Independent Rose review finds the data-integrity chain complete but requires
+the no-promotion boundary below. Neither review is a capability flip or a
+maintainer release decision.
+
+### Boundary held
+
+The S11 manifest remains `claim_eligible = false`, and all promotion,
+versioning, tag, registry, and release fields remain false. The isolated branch
+has no `Project.toml` version change and no tag contains its candidate head;
+the GitHub release query returned no rows. No capability-status or
+public-claim row changed. This result is retained evidence for later Fisher,
+Rose, and maintainer adjudication only; it does not authorize a release.

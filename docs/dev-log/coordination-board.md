@@ -23,13 +23,29 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-09 — H1-two identified S11 retained Narval evidence (held)
+
+Lane: `codex/hsq09-h1two-identified-20260909` (isolated worktree). The
+maintainer-authorized, sealed `HSQ09-H1T-IDENTIFIED-S11-01` campaign completed
+as the required sequential Narval waves `2734452` (seeds 1–1000) and `2740214`
+(seeds 1001–2000), each 1,000 scheduler `COMPLETED` / `0:0` tasks. All 2,000
+atomic receipt hashes and task logs are retained; interval failures remain in
+the denominators. The two fixed-DGM ratio results are
+directional-conservative only (ratio1 1,895/1,952; ratio2 1,938/1,998): they
+are not pooled as one scientific estimand and do not meet the available A2
+calibrated-candidate band. This supersedes only the 2026-09-08 statement that
+S11 had not run; it does not reopen the distinct `988eec…` Totoro S10 no-go.
+`claim_eligible`, promotion, versioning, tag, registry, and release remain
+false. See `check-log.d/2026-09-09-h1two-identified-s11.md`.
+
 ### 2026-09-08 — A3 three-field contract (isolated paired candidate)
 
 Julia private-envelope and R bridge work is locally verified in separate
 worktrees. Both A3 Unlazy ledgers are 8/8 met; the Julia normal harness includes
 the 43-assertion A3 file and the R candidate has an ordinary `R CMD check`
-Status: OK. This is experimental/partial only: no S10/S11, remote compute,
-calibration, comparator evidence, promotion, version, tag, registry, or release.
+Status: OK. This is experimental/partial only: no public/API promotion,
+calibration, comparator evidence, version, tag, registry, or release. The
+separate 2026-09-09 S11 evidence run above does not change this A3 contract.
 Candidate integration remains a maintainer decision.
 
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
