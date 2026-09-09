@@ -102,9 +102,11 @@ _fit(; family::Symbol = :poisson, n_trials = nothing, beta = [0.3],
         @test_throws ArgumentError HSquared.nongaussian_three_field_payload(
             _fit(family = :binomial, n_trials = [2, 3]),
         )
-        @test_throws ArgumentError HSquared.nongaussian_three_field_payload(
+        all_one = HSquared.nongaussian_three_field_payload(
             _fit(family = :binomial, n_trials = [1, 1]); response_length = 2,
         )
+        @test isfinite(all_one.h2_observation)
+        @test all_one.h2_observation_undefined_reason === nothing
     end
 
     @testset "legacy payload remains a separate compatibility control" begin

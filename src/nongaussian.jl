@@ -937,8 +937,14 @@ function nongaussian_three_field_payload(
         # Gauss--Hermite proportion estimand.  `trials` is `nothing` only for
         # Bernoulli, which is the n_trials = 1 special case; a constant trial
         # vector is exactly the common-trial Binomial case, not an averaging rule.
-        scalar_family = fit.family === :bernoulli ? BernoulliResponse() :
-                        BinomialResponse(trials isa AbstractVector ? first(trials) : trials)
+        # An all-one vector is the per-record representation of Bernoulli, so
+        # use the same family in the h2 calculation.
+        scalar_family = if fit.family === :bernoulli ||
+                           (trials isa AbstractVector && all(==(1), trials))
+            BernoulliResponse()
+        else
+            BinomialResponse(trials isa AbstractVector ? first(trials) : trials)
+        end
         observation = nongaussian_heritability(V_A, μ, scalar_family).h2_observation
         (V_A / (V_eta_random + _VAR_LOGISTIC), observation, nothing)
     end
@@ -981,8 +987,6 @@ function _three_field_binomial_trials(
         throw(ArgumentError("vector n_trials must have response_length entries"))
     all(>(0), n_trials) ||
         throw(ArgumentError("vector n_trials must contain only positive integers"))
-    all(==(1), n_trials) &&
-        throw(ArgumentError("all-one n_trials is Bernoulli and must not be transported as :binomial"))
     return copy(n_trials)
 end
 
