@@ -1,0 +1,36 @@
+[manifest]
+id = "HSQ09-H1T-IDENTIFIED-S9-01"
+kind = "ratified_replacement_path_fixture"
+
+[candidate]
+julia_commit = "dc1a3632e9842a808b2bfd64ce55eaf6f850db3b"
+r_commit = "fd2825795d3d481311912d29f3c377f2897d321d"
+runtime_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+driver_sha256 = "b8581cb31a45ca3cb7832ae284bae1022ea3adcc6e8c02a7c2397e959dc2321d"
+
+[fixture]
+seed = 20260701
+sires = 20
+offspring = 200
+groups = 40
+truth_sigma1 = 1.0
+truth_sigma2 = 0.5
+truth_sigma_e2 = 1.0
+level = 0.95
+group_assignment = "independent_of_pedigree"
+
+[s10]
+requires_fit_converged = true
+requires_ratio1_finite_interior = true
+requires_ratio2_finite_interior = true
+claim_eligible = false
+
+[authorizations]
+s10_compute = false
+s11_campaign = false
+promotion = false
+release = false
+
+[supersedes]
+tiny_s10 = "HSQ09-S10-TOTORO-SMOKE-01"
+tiny_receipt = "NO-GO retained; never pooled"
