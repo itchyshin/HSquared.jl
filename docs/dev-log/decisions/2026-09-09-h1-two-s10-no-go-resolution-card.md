@@ -36,3 +36,20 @@ Choose one explicit next scientific contract:
    the failed S10 as calibration evidence.
 
 No third option—silent fixture widening or sentinel relaxation—is admissible.
+
+## B selected — proposed exact replacement awaiting fixture ratification
+
+Use the already committed deterministic positive-control fixture from
+`test/runtests.jl`'s “Phase 3 two-effect ratio interval” test:
+
+- master seed `20260701`; 20 sire founders, 200 offspring, 40 random groups;
+- additive pedigree effect and group assignment independent by construction;
+- truth `(sigma1, sigma2, sigma_e2) = (1.0, 0.5, 1.0)` and intercept `3.0`;
+- one record per offspring, 95% logit-delta intervals for `ratio1` and `ratio2`;
+- S10 success: both intervals finite and strictly interior, both `boundary=false`,
+  fit convergence true, and `claim_eligible=false`.
+
+This is not selected from the failed tiny S10 output: it pre-existed as a
+deterministic passing engine test. It is a replacement **path** fixture only;
+the future calibration campaign must still use a fresh seed block and retain
+all scheduled failures.
