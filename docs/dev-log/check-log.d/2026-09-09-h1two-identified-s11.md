@@ -1,11 +1,12 @@
-# H1-two identified S11 — sealed local pre-submission receipt
+# H1-two identified S11 — retained two-wave evidence record
 
 Status: **RETAINED TWO-WAVE NARVAL S11 COMPLETE — EVIDENCE ONLY; NO
 PROMOTION OR RELEASE.**
 
-This receipt records only local sealing and read-only Fir discovery. It does
-not report a submitted job, a received DRAC file, a coverage result, a
-capability promotion, or a release action.
+Reading note: the local-sealing, Fir-discovery, and original-submission sections
+below are **historical pre-submission material**. The later Narval two-wave
+section is the completed retained-evidence record. Neither section authorizes a
+capability promotion or release action.
 
 ## Frozen inputs
 
@@ -168,11 +169,12 @@ available A2 calibration band `[0.93, 0.97]` is also exceeded by the pooled
 value, so this is not a `calibrated_candidate` even if that adjudicator is
 later linked formally to this fixture.
 
-Independent Fisher review confirms the per-ratio directional-conservative
-reading and prohibits pooling the two estimands into one scientific claim.
-Independent Rose review finds the data-integrity chain complete but requires
-the no-promotion boundary below. Neither review is a capability flip or a
-maintainer release decision.
+The separate Fisher review confirms the per-ratio directional-conservative
+reading and prohibits pooling the two estimands into one scientific claim. The
+separate Rose audit accepts only the no-promotion boundary below. Neither review
+is a capability flip or a maintainer release decision. See
+`docs/dev-log/reviews/2026-09-09-h1two-identified-s11-fisher.md` and
+`docs/dev-log/reviews/2026-09-09-h1two-identified-s11-rose.md`.
 
 ### Boundary held
 

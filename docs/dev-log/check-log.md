@@ -5287,3 +5287,16 @@ Newest entries go at the top.
 - Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
   after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
   Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
+
+## 2026-09-09 — S12 H1-two retained-evidence panel `[JL]`
+
+- Closed the S11 manifest schema; the mutation suite now rejects every governed
+  field mutation plus an unknown section. Added a deterministic retained-failure
+  reconciliation fixture (focused tests 17/17 and 12/12).
+- Reconciled the completed Narval two-wave record with separate Fisher/Rose
+  reviews, a compact retention index, and engine-/capability-inert wording repairs. The
+  result remains **evidence only**: separately directional-conservative at the
+  fixed S9 replacement DGM; no calibrated/pooled/public/release claim.
+- Full `Pkg.test()` passed. Unlazy S12 ledger: 5/5 gates met, with the runnable
+  validator gate reverified. No source API, fixture, package version, tag,
+  registry action, or release changed.

@@ -27,6 +27,9 @@ claim_eligible = false
 
 [authorizations]
 s10_compute = true
+# This false is local to the S9 replacement path: it did not authorize S11.
+# The later, separately authorized S11 is frozen in
+# `2026-09-09-h1two-identified-s11-manifest.toml`.
 s11_campaign = false
 promotion = false
 release = false

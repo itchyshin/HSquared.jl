@@ -31,7 +31,9 @@ is not rewritten as a result of this later `36ae…` campaign.
 - this report.
 
 No engine, public API, R bridge, fixture, package version, capability-status,
-or validation-debt row changed.
+or validation-debt row changed by the campaign itself. The later engine-/capability-inert
+S12 record-quality panel separately clarifies the open debt wording; it does
+not promote a capability.
 
 ## 5. Checks Run
 
@@ -49,12 +51,13 @@ or validation-debt row changed.
 
 ## 6. Tests of the Tests
 
-The S11 validator's deterministic positive and mutation suite covers the
-manifest pins, false promotion/release fields, fixed seed range, driver/sbatch
-hashes, retained row contract, and corrupt/absent governed values. Retention is
-also independently checked by (a) remote sidecars, (b) locally copied sidecars,
-and (c) the reconciler's exact seed × estimand inventory rather than a scheduler
-success count alone.
+The S11 validator's deterministic positive and mutation suite now covers every
+closed-schema governed value, including interpretation and every false
+promotion/release field; it rejects an unknown section. Retention is also
+checked by (a) remote sidecars, (b) locally copied sidecars, and (c) the
+reconciler's exact seed × estimand inventory rather than a scheduler success
+count alone. The engine-/capability-inert S12 panel adds a deterministic retained-failure
+fixture and compact remote-evidence index.
 
 ## 7a. Issue Ledger
 
@@ -69,12 +72,11 @@ success count alone.
 ## 8. Consistency Audit
 
 The candidate commit, driver, fixture, 2,000-seed window, two ratio estimands,
-and all-false promotion fields match the sealed manifest. Fisher's independent
-review permits only a separate `directional-conservative` description for each
-ratio (not their pooled bookkeeping rate). Rose independently found the retained
-data-integrity chain complete and required the held state: the pooled rate is
-above the available A2 `[0.93, 0.97]` calibrated-candidate band, and the
-manifest remains `claim_eligible = false`.
+and all-false promotion fields match the sealed manifest. The separate Fisher
+review permits only a `directional-conservative` description for each ratio
+(not their pooled bookkeeping rate). The separate Rose audit requires the held
+state: the pooled rate is above the available A2 `[0.93, 0.97]`
+calibrated-candidate band, and the manifest remains `claim_eligible = false`.
 
 ## 9. What Did Not Go Smoothly
 

@@ -1,0 +1,48 @@
+[record]
+id = "HSQ09-H1T-IDENTIFIED-S11-RETENTION-INDEX-01"
+kind = "compact_remote_evidence_index"
+status = "evidence_only_held"
+observed_on = "2026-09-09"
+
+[remote]
+cluster = "narval"
+project_dir = "/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691"
+wave1_job = "2734452"
+wave1_array = "1-1000%100"
+wave2_job = "2740214"
+wave2_array = "1001-2000%100"
+scheduler_records = 2000
+scheduler_completed_exit0 = 2000
+receipt_tsv_count = 2000
+receipt_sidecar_count = 2000
+stdout_log_count = 2000
+empty_stderr_log_count = 2000
+scheduler_query = "sacct -X -j 2734452,2740214 --format=JobIDRaw,State,ExitCode -P -n"
+
+[local_non_authoritative_mirror]
+root = "/private/tmp/hsq09-h1t-identified-s11-36ae0691-narval-results"
+receipt_tsv_count = 2000
+receipt_sidecar_count = 2000
+stdout_log_count = 2000
+empty_stderr_log_count = 2000
+receipt_tsv_inventory_sha256 = "ec4a64dd68c321a0d4ec3986af1787fc89903af3782a7e2beea82cc6b07cf9cf"
+
+[reconciliation]
+command = "julia --project=. tools/reconcile_h1two_identified_s11.jl --dir=<mirror>/receipts"
+requested_reps = 2000
+retained_rows = 4000
+interval_success = 3950
+covered = 3833
+coverage = 0.970379746835443
+mcse = 0.00269753257002308
+claim_eligible = false
+
+[boundary]
+replacement_fixture = "HSQ09-H1T-IDENTIFIED-S9-01"
+not_original_c1_ext = true
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
+note = "Remote project storage is authoritative; the local mirror is only a replay convenience. This index records accounting and replay identity, not a scientific promotion."

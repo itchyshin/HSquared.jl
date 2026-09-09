@@ -19,6 +19,20 @@ include(joinpath(@__DIR__, "..", "tools", "validate_h1two_identified_s11_manifes
     @test manifest["authorization"]["promotion"] === false
     @test manifest["authorization"]["release"] === false
     @test h1t_s11_manifest_self_test()
+
+    source = read(H1T_S11_MANIFEST_PATH, String)
+    mktempdir() do dir
+        unknown_key = joinpath(dir, "unknown-key.toml")
+        write(unknown_key, source * "\n[unreviewed]\nclaim = \"not-governed\"\n")
+        @test_throws ErrorException _h1t_s11_validate(unknown_key)
+
+        changed_interpretation = joinpath(dir, "changed-interpretation.toml")
+        write(changed_interpretation,
+              replace(source,
+                      "calibration_decision = \"deferred_to_Fisher_Rose_and_maintainer\"" =>
+                      "calibration_decision = \"calibrated\""; count = 1))
+        @test_throws ErrorException _h1t_s11_validate(changed_interpretation)
+    end
 end
 
 println("H1T_S11_MANIFEST_TESTS_OK")

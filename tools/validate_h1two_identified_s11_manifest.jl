@@ -4,6 +4,7 @@ const H1T_S11_MANIFEST_PATH = normpath(joinpath(@__DIR__, "..", "docs", "dev-log
                                                  "2026-09-09-h1two-identified-s11-manifest.toml"))
 const H1T_S11_EXPECTED = Dict(
     ("manifest", "id") => "HSQ09-H1T-IDENTIFIED-S11-01",
+    ("manifest", "kind") => "retained_interval_characterization",
     ("candidate", "julia_commit") => "36ae0691c9e4d30dda8947e162716ebaf30de762",
     ("candidate", "r_commit") => "fd2825795d3d481311912d29f3c377f2897d321d",
     ("candidate", "project_toml_sha256") => "5681beadea6d197720629a2d3e01a00bf9c4cf7098f77e4e27595c4700af67cc",
@@ -23,6 +24,10 @@ const H1T_S11_EXPECTED = Dict(
     ("fixture", "level") => 0.95,
     ("fixture", "group_assignment") => "independent_of_pedigree",
     ("retention", "rows_per_seed") => 2,
+    ("retention", "estimands") => ["ratio1", "ratio2"],
+    ("retention", "receipt_policy") => "one_atomic_nonoverwriting_tsv_per_seed",
+    ("retention", "failure_policy") => "retain_two_failure_rows_with_reason",
+    ("retention", "pooling") => "sum(covered) / sum(interval_success); never_average_task_rates",
     ("retention", "claim_eligible") => false,
     ("routing", "cluster") => "narval",
     ("routing", "account") => "def-snakagaw_cpu",
@@ -43,11 +48,35 @@ const H1T_S11_EXPECTED = Dict(
     ("authorization", "registry") => false,
     ("authorization", "release") => false,
     ("interpretation", "status") => "evidence_only",
+    ("interpretation", "calibration_decision") => "deferred_to_Fisher_Rose_and_maintainer",
     ("interpretation", "no_public_capability_change") => true,
+)
+
+const H1T_S11_SCHEMA = Dict(
+    "manifest" => Set(["id", "kind"]),
+    "candidate" => Set(["julia_commit", "r_commit", "project_toml_sha256",
+                           "runtime_manifest_sha256", "driver_sha256", "sbatch_sha256"]),
+    "fixture" => Set(["seed_start", "seed_stop", "reps", "sires", "offspring", "groups",
+                        "truth_sigma1", "truth_sigma2", "truth_sigma_e2", "intercept", "level",
+                        "group_assignment"]),
+    "retention" => Set(["rows_per_seed", "estimands", "receipt_policy", "failure_policy",
+                          "pooling", "claim_eligible"]),
+    "routing" => Set(["cluster", "account", "partition", "project_dir", "array_tasks",
+                        "array_max_concurrent", "task_unit", "cpus_per_task", "julia_threads",
+                        "openblas_threads", "time_limit", "memory"]),
+    "authorization" => Set(["s11_campaign", "promotion", "versioning", "tag", "registry", "release"]),
+    "interpretation" => Set(["status", "calibration_decision", "no_public_capability_change"]),
 )
 
 function _h1t_s11_validate(path::AbstractString)
     parsed = TOML.parsefile(path)
+    Set(keys(parsed)) == Set(keys(H1T_S11_SCHEMA)) ||
+        error("S11 manifest sections are not the closed governed schema")
+    for (section, allowed) in H1T_S11_SCHEMA
+        haskey(parsed, section) || error("S11 manifest is missing section $(section)")
+        Set(keys(parsed[section])) == allowed ||
+            error("S11 manifest keys are not the closed governed schema in $(section)")
+    end
     for ((section, key), expected) in H1T_S11_EXPECTED
         get(get(parsed, section, Dict{String, Any}()), key, nothing) == expected ||
             error("S11 manifest mismatch at $(section).$(key)")
@@ -68,24 +97,26 @@ h1t_s11_manifest() = _h1t_s11_validate(H1T_S11_MANIFEST_PATH)
 function h1t_s11_manifest_self_test()
     h1t_s11_manifest()
     source = read(H1T_S11_MANIFEST_PATH, String)
-    mutations = (
-        ("reps = 2000", "reps = 1999"),
-        ("cpus_per_task = 1", "cpus_per_task = 2"),
-        ("s11_campaign = true", "s11_campaign = false"),
-        ("promotion = false", "promotion = true"),
-        ("groups = 40", "groups = 39"),
-        ("claim_eligible = false", "claim_eligible = true"),
-    )
     mktempdir() do dir
-        for (from, to) in mutations
+        for ((_, key), expected) in H1T_S11_EXPECTED
+            from = "$(key) = $(repr(expected))"
+            to = "$(key) = \"__MUTATED__\""
             path = joinpath(dir, "mutation.toml")
             write(path, replace(source, from => to; count = 1))
             try
                 _h1t_s11_validate(path)
-                error("mutation $(from) was accepted")
+                error("mutation $(key) was accepted")
             catch err
                 occursin("was accepted", sprint(showerror, err)) && rethrow()
             end
+        end
+        path = joinpath(dir, "unknown-section.toml")
+        write(path, source * "\n[unreviewed]\nclaim = \"not-governed\"\n")
+        try
+            _h1t_s11_validate(path)
+            error("unknown manifest section was accepted")
+        catch err
+            occursin("was accepted", sprint(showerror, err)) && rethrow()
         end
     end
     return true

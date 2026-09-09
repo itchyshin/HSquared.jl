@@ -1405,3 +1405,16 @@ JOINT contract task per AGENTS.md rule 2.
   evidence rules, and cross-project scout cadence.
 - `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
   fitted/planned/missing separation.
+
+## 2026-09-09 — S12 H1-two retained-evidence closeout `[JL]`
+
+- Julia lane `codex/hsq09-h1two-identified-20260909` added only engine-/capability-inert
+  S11/S12 evidence-record hardening: a closed-schema manifest validator,
+  retained-failure reconciliation test, evidence index, separate Fisher/Rose
+  review artifacts, and claim-wording repairs.
+- Narval S11 is **held evidence only**, not a cross-twin contract or a release:
+  fixed S9 replacement DGM, per-ratio directional-conservative reading,
+  no pooled/calibrated/public promotion. The R checkout was not touched.
+- Next shared seam remains the full 0.9 Gate B package: H0/H3, calibration,
+  final public-contract R↔Julia parity, comparator scope, and maintainer release
+  decision. No source/API/bridge work follows from S12 alone.

@@ -20,6 +20,23 @@ include(joinpath(@__DIR__, "..", "tools", "reconcile_h1two_identified_s11.jl"))
         cp(joinpath(dir, "rep-$(first(seeds)).tsv"), joinpath(dir, "duplicate.tsv"))
         @test_throws ArgumentError reconcile_h1t_s11(dir; seeds = collect(seeds))
     end
+
+    mktempdir() do dir
+        success_seed, failed_seed = first(seeds), last(seeds)
+        write_h1two_identified_campaign_receipt(joinpath(dir, "rep-$(success_seed).tsv");
+                                                seed = success_seed)
+        open(joinpath(dir, "rep-$(failed_seed).tsv"), "w") do io
+            println(io, join(H1T_S11_RECEIPT_COLUMNS, '\t'))
+            for row in _h1t_s11_failed_rows(failed_seed, "synthetic_retained_failure")
+                _h1t_s11_write_row(io, row)
+            end
+        end
+        summary = reconcile_h1t_s11(dir; seeds = collect(seeds))
+        @test summary.retained_rows == 4
+        @test summary.interval_failure >= 2
+        @test summary.interval_success + summary.interval_failure == summary.retained_rows
+        @test !summary.claim_eligible
+    end
 end
 
 println("H1T_S11_RECONCILE_TESTS_OK")
