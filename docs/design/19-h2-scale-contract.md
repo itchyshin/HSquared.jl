@@ -43,6 +43,16 @@ Off the identity link there is no single heritability: `V_A / (V_A + V_E)` is on
   back-filled from another scale (Poisson latent h²; per-record-varying `n_trials`
   observation h²).
 
+**A4-1 private-envelope amendment (2026-09-08).** The private 0.9 three-field
+transport now uses this established Gauss--Hermite proportion-scale observation
+estimand for Bernoulli and scalar/common-trial Binomial logit fits.  A
+per-record-varying Binomial denominator remains `NaN` with
+`h2_observation_undefined_reason = "varying_trials_no_scalar_estimand"`: its
+population weighting rule is not part of the 0.9 contract, and it is never
+silently replaced by an average trial count.  A vector with every entry equal
+is a representation of the common-trial case and receives the same scalar
+observation-scale result.
+
 This is the cross-cutting, expensive-to-retrofit decision: pin it before adding families.
 
 ---

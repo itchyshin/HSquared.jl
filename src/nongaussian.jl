@@ -924,8 +924,23 @@ function nongaussian_three_field_payload(
         (nothing,
          V_A / (expm1(V_eta_random) + exp(-(μ + V_eta_random / 2))),
          nothing)
+    elseif fit.family === :binomial && trials isa AbstractVector &&
+           !all(==(first(trials)), trials)
+        # A vector denominator has no scalar proportion-scale estimand until its
+        # population weighting rule is separately declared.  In particular, do
+        # not silently replace it with a mean trial count.
+        (V_A / (V_eta_random + _VAR_LOGISTIC),
+         NaN,
+         "varying_trials_no_scalar_estimand")
     else
-        (V_A / (V_eta_random + _VAR_LOGISTIC), NaN, "not_yet_ratified")
+        # The ratified Bernoulli/common-trial Binomial data scale is the existing
+        # Gauss--Hermite proportion estimand.  `trials` is `nothing` only for
+        # Bernoulli, which is the n_trials = 1 special case; a constant trial
+        # vector is exactly the common-trial Binomial case, not an averaging rule.
+        scalar_family = fit.family === :bernoulli ? BernoulliResponse() :
+                        BinomialResponse(trials isa AbstractVector ? first(trials) : trials)
+        observation = nongaussian_heritability(V_A, μ, scalar_family).h2_observation
+        (V_A / (V_eta_random + _VAR_LOGISTIC), observation, nothing)
     end
 
     return (
