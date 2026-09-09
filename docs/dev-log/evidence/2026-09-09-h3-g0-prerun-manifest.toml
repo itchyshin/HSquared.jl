@@ -4,10 +4,11 @@ kind = "unarmed_h3_prerun_card"
 engine_capability_inert = true
 
 [candidate]
-julia_commit = "4d4a55c14c9234270979a76c53888d65634a6eaf"
-driver_sha256 = "d6a8d307881b58e44b024562232b6dd638e4feaae4785aa99ea6897a79973002"
+julia_commit = "82f836f368e37cf75609f721f7a03bde3113e10b"
+driver_sha256 = "6c1b74cc207247241e395bd78143c07f01b0091682d3049e57bfdbb1a8d0401d"
 sbatch_template_sha256 = "660208954d881076e6a848a2729e0ee992bac9f65243fc572d62ee5737f6ab17"
 predeclaration_sha256 = "0c8a6b27e08fcae25be1f5051066c80c34fcc561cc4ffc955800161cb216922e"
+environment_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
 
 [h3_rg]
 estimand = "r_g"

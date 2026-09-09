@@ -9,8 +9,10 @@ authorizes any compute.
 
 ## Frozen candidate and cells
 
-The candidate is Julia `4d4a55c`, with the C1-ext driver, refusal-only sbatch
-template, and ADEMP predeclaration pinned in the companion manifest.
+The candidate is Julia `82f836f3`, which includes the retained-nonconvergence
+accounting correction.  Its C1-ext driver, refusal-only sbatch template, ADEMP
+predeclaration, and now-instantiated `Manifest.toml` are pinned in the
+companion manifest.
 
 - H3-rg: genetic correlation `r_g`, `genetic_correlation_interval`, Fisher-z;
   a tiny one-replicate smoke and the predeclared small 8:16:96 confirmation
