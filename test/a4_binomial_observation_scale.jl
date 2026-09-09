@@ -23,6 +23,13 @@ _a4_fit(; family::Symbol = :bernoulli, n_trials = nothing, beta = [0.3]) =
     common_vector = HSquared.nongaussian_three_field_payload(
         _a4_fit(family = :binomial, n_trials = [3, 3]); response_length = 2,
     )
+    all_one_vector = try
+        HSquared.nongaussian_three_field_payload(
+            _a4_fit(family = :binomial, n_trials = [1, 1]); response_length = 2,
+        )
+    catch caught
+        caught
+    end
 
     for result in (bernoulli, binomial)
         @test isfinite(result.h2_observation)
@@ -33,6 +40,9 @@ _a4_fit(; family::Symbol = :bernoulli, n_trials = nothing, beta = [0.3]) =
     @test binomial.h2_observation ≈ 0.21227333326532113 atol = 1e-12
     @test common_vector.h2_observation ≈ binomial.h2_observation atol = 1e-12
     @test common_vector.h2_observation_undefined_reason === nothing
+    @test all_one_vector isa NamedTuple
+    @test all_one_vector.h2_observation ≈ bernoulli.h2_observation atol = 1e-12
+    @test all_one_vector.h2_observation_undefined_reason === nothing
     @test bernoulli.h2_observation != binomial.h2_observation
 
     # Negative control: neither a changing vector nor its order can be silently
