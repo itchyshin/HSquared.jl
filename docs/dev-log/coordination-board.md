@@ -23,6 +23,18 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-09 — H3 S10 Totoro PATH_ONLY smoke (no-go, held)
+
+Lane: `codex/hsq09-h3-prerun-20260909`, sealed engine candidate `82f836f3`;
+source-inert launcher correction `1b5f6042`.  One actual one-thread Totoro
+smoke for `r_g` and `r_am` ran after remote hash verification and precompile.
+It is a **no-go**: `r_g` was non-converged and `r_am` had non-positive-definite
+REML information, so both interval-success counts are zero.  The retained
+receipt is named in `check-log.d/2026-09-09-h3-s10-totoro-no-go.md`.  No rerun,
+S11/DRAC submission, R change, capability flip, version/tag/registry action,
+or release occurred; a new scientific fixture decision is required before any
+H3 retry.
+
 ### 2026-09-09 — H3 G0 unarmed pre-run card (Julia-only, held)
 
 Lane: `codex/hsq09-h3-prerun-20260909`, isolated candidate `4d4a55c`.
