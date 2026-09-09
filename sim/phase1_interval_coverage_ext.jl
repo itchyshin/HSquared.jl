@@ -363,7 +363,19 @@ end
 function _record_ci(campaign, cell_id, seed, rep, estimand, method, design,
                     n_animals, n_obs, truth, level, scope, role,
                     fit_ok, fit_converged, lower, upper, estimate, se, failure)
-    ok = fit_ok && _interval_ok(lower, upper)
+    # A finite interval is not valid coverage evidence when its generating fit
+    # did not converge.  Retain the row, but keep it outside the
+    # `interval_success` denominator and make the failure mode explicit.
+    ok = fit_ok && fit_converged && _interval_ok(lower, upper)
+    failure_reason = if ok
+        ""
+    elseif !fit_ok
+        isempty(failure) ? "fit_failed" : failure
+    elseif !fit_converged
+        "fit_not_converged"
+    else
+        isempty(failure) ? "interval_failed" : failure
+    end
     covered = ok && lower <= truth <= upper
     return _detail_row(;
         campaign, cell_id, seed, rep, estimand, method, design,
@@ -371,7 +383,7 @@ function _record_ci(campaign, cell_id, seed, rep, estimand, method, design,
         fit_success = fit_ok,
         fit_converged = fit_converged,
         interval_success = ok,
-        failure_reason = ok ? "" : (isempty(failure) ? "interval_failed" : failure),
+        failure_reason = failure_reason,
         covered = covered,
         lower = ok ? lower : NaN,
         upper = ok ? upper : NaN,

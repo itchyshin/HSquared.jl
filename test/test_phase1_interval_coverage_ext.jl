@@ -188,6 +188,22 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     @test _insert_detail_record!(normal_runner_records, valid_row) === valid_row
     @test_throws ErrorException _insert_detail_record!(normal_runner_records, valid_row)
 
+    # A finite interval from an unconverged fit is retained as a failed
+    # attempt, never admitted to the coverage denominator.  Otherwise H3-r_g
+    # could inflate its interval-success count despite reporting convergence.
+    unconverged = _record_ci(
+        :h3_rg, retained_entry.cell_id, retained_entry.seed, retained_entry.rep,
+        "r_g", "rg_fisher_z", retained_entry.cell_label, 12, 24, 0.25,
+        retained_entry.level, retained_entry.scope, "covered_pillar_bank",
+        true, false, 0.10, 0.40, 0.25, NaN, "",
+    )
+    @test !unconverged.fit_converged
+    @test !unconverged.interval_success
+    @test !unconverged.covered
+    @test unconverged.failure_reason == "fit_not_converged"
+    @test isnan(unconverged.lower) && isnan(unconverged.upper) && isnan(unconverged.width)
+    @test _validate_detail_row(unconverged) === unconverged
+
     # The shipped Fisher-z r_g runner deliberately has no scalar standard
     # error, while delta-ratio records do.  Preserve that narrow shape rather
     # than weakening successful-interval validation for every method.
@@ -337,7 +353,10 @@ include(joinpath(@__DIR__, "..", "sim", "phase1_interval_coverage_ext.jl"))
     # receipt is available without entering `main()` or starting a fit.
     tool = joinpath(@__DIR__, "..", "tools", "validate_hsq09_h1h3_evidence.jl")
     julia = joinpath(Sys.BINDIR, Base.julia_exename())
-    tool_output = read(`$julia --project=$(joinpath(@__DIR__, "..")) $tool --self-test`, String)
+    project_file = Base.active_project()
+    @test project_file !== nothing
+    project_dir = dirname(project_file)
+    tool_output = read(`$julia --project=$project_dir $tool --self-test`, String)
     @test tool_output == "A2_EVIDENCE_INFRA_TESTS_OK\nA2_MUTATION_CONTROLS_OK\n"
 end
 
