@@ -21,7 +21,7 @@ function validate_h1two_identified_manifest(data)
     _h1t_assert(s10["requires_fit_converged"] && s10["requires_ratio1_finite_interior"] &&
                 s10["requires_ratio2_finite_interior"] && !s10["claim_eligible"], "S10 contract")
     auth = data["authorizations"]
-    _h1t_assert(!auth["s10_compute"] && !auth["s11_campaign"] && !auth["promotion"] && !auth["release"],
+    _h1t_assert(auth["s10_compute"] && !auth["s11_campaign"] && !auth["promotion"] && !auth["release"],
                 "authorization hold")
     _h1t_assert(data["supersedes"]["tiny_receipt"] == "NO-GO retained; never pooled", "tiny receipt retention")
     return nothing
@@ -43,7 +43,7 @@ function main(args = ARGS)
     validate_h1two_identified_manifest(data)
     for (table, key, value) in (("fixture", "seed", 1),
                                 ("fixture", "groups", 39),
-                                ("authorizations", "s10_compute", true),
+                                ("authorizations", "s10_compute", false),
                                 ("s10", "claim_eligible", true))
         mutated = deepcopy(data)
         mutated[table][key] = value

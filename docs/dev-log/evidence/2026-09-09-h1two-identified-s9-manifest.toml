@@ -26,7 +26,7 @@ requires_ratio2_finite_interior = true
 claim_eligible = false
 
 [authorizations]
-s10_compute = false
+s10_compute = true
 s11_campaign = false
 promotion = false
 release = false
