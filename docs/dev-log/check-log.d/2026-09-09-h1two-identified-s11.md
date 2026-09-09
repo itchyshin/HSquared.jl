@@ -78,5 +78,18 @@ On 2026-09-09, the connected DRAC paths were checked read-only for project
 | tamIA | no project allocation | unavailable |
 | Nibi | non-Lustre quota response | not selected without a live storage contract |
 
-Narval is a concrete alternative but remains **unselected and unmodified**
-until a new user authorization names its destination and submission route.
+## Narval routing amendment
+
+The maintainer authorized a **source-inert** amendment to Narval at
+`/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691/`. Only the
+manifest route and sbatch metadata changed: `cluster = "narval"` and the
+sbatch self-identifies Narval. The driver commit, runtime manifest, fixture,
+seed window, estimands, task count, one-thread cap, and all promotion/release
+fields are unchanged. The amended S11 manifest and sbatch hashes are,
+respectively,
+`118add7f907dd4807e932ac69cc732038f208fe60ef38ab92341a0e4623dfe29` and
+`1284f1058734d034453deff44d8fc34495cf65d2de61eed31464ea492cdaa7da`.
+
+The Narval manifest test (15/15), sbatch test (13/13), manifest mutation
+validator, and shell syntax check all pass. Transfer and submission remain
+the next authorized actions; no Narval file has yet been created.

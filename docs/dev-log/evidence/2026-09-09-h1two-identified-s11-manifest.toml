@@ -8,7 +8,7 @@ r_commit = "fd2825795d3d481311912d29f3c377f2897d321d"
 project_toml_sha256 = "5681beadea6d197720629a2d3e01a00bf9c4cf7098f77e4e27595c4700af67cc"
 runtime_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
 driver_sha256 = "111aadbfb81f235bfda8ca976ec1cef84e2e61aa9bb3348a6be9df31fffc63c0"
-sbatch_sha256 = "0afa34664e9c1edbbb5641111724a331ec18c3aa2beaf93a1f76799d6d647b38"
+sbatch_sha256 = "1284f1058734d034453deff44d8fc34495cf65d2de61eed31464ea492cdaa7da"
 
 [fixture]
 seed_start = 202609100001
@@ -33,7 +33,7 @@ pooling = "sum(covered) / sum(interval_success); never_average_task_rates"
 claim_eligible = false
 
 [routing]
-cluster = "fir"
+cluster = "narval"
 account = "def-snakagaw_cpu"
 partition = "cpubase_bycore_b1"
 project_dir = "/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691"

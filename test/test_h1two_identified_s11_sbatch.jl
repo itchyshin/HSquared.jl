@@ -4,6 +4,7 @@ const H1T_S11_SBATCH = joinpath(@__DIR__, "..", "sim", "drac", "h1two_identified
 
 @testset "identified H1-two S11 Slurm contract" begin
     script = read(H1T_S11_SBATCH, String)
+    @test occursin("# Target cluster: narval", script)
     @test occursin("#SBATCH --account=def-snakagaw_cpu", script)
     @test occursin("#SBATCH --partition=cpubase_bycore_b1", script)
     @test occursin("#SBATCH --array=1-2000%100", script)

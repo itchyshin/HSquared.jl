@@ -2,6 +2,7 @@
 # Authorized retained H1-two S11 campaign.  One task is exactly one seed.
 # The staging directory, source commit, runtime Manifest.toml, and this file
 # are checked against the sealed S11 manifest before `sbatch` is called.
+# Target cluster: narval
 #SBATCH --account=def-snakagaw_cpu
 #SBATCH --partition=cpubase_bycore_b1
 #SBATCH --job-name=hsq09-h1t-s11

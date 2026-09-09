@@ -13,6 +13,8 @@ include(joinpath(@__DIR__, "..", "tools", "validate_h1two_identified_s11_manifes
     @test manifest["fixture"]["groups"] == 40
     @test manifest["routing"]["array_tasks"] == 2000
     @test manifest["routing"]["cpus_per_task"] == 1
+    @test manifest["routing"]["cluster"] == "narval"
+    @test manifest["routing"]["project_dir"] == "/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691"
     @test manifest["authorization"]["s11_campaign"] === true
     @test manifest["authorization"]["promotion"] === false
     @test manifest["authorization"]["release"] === false
