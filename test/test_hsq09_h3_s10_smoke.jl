@@ -105,6 +105,7 @@ else
             @test occursin("--campaigns=h3_rg,h3_ram", launcher)
             @test occursin("JULIA_NUM_THREADS", launcher)
             @test occursin("OPENBLAS_NUM_THREADS", launcher)
+            @test occursin("HSQ09_H3_S10_JULIA_BIN", launcher)
             @test occursin("mktemp -d", launcher)
             @test occursin(raw"mv \"$STAGE_DIR\" \"$FINAL_DIR\"", launcher)
             @test occursin("validate_hsq09_h3_s10_smoke.jl", launcher)
