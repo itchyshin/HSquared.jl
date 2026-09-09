@@ -1,5 +1,20 @@
 # Check Log
 
+## 2026-09-08 A4-1 private Binomial observation-scale candidate (Julia)
+
+- Candidate `95b82ebdc441073ceb194bf9377116089ac48a88` follows
+  `547114a9491effc27aca274fca4c8cbcc922451a`: the private three-field envelope
+  returns a finite, in-range, numerically integrated observation-scale value for
+  Bernoulli and scalar/common-trial Binomial logit fits.  A varying trial vector
+  remains `NaN` with `varying_trials_no_scalar_estimand`; it is not averaged.
+- Checks: A4 focused payload **23/23**; A3 focused envelope **44/44**; full
+  `Pkg.test()` exit 0; independent parent Unlazy re-verification **3/3**; and
+  `git diff --check origin/main...HEAD` pass.  The all-one vector initially
+  failed the intended reduction invariant, was repaired in `95b82ebd`, and is
+  now a regression check.
+- This is experimental private-envelope evidence only: no public/API promotion,
+  calibration, campaign/compute, version/tag/registry action, or release claim.
+
 > **Frozen as of 2026-06-19.** New check evidence now lives per-slice in
 > [`check-log.d/`](check-log.d/) to avoid merge conflicts across parallel slices.
 > Do not append below; add a new `check-log.d/YYYY-MM-DD-<slice>.md` instead.
