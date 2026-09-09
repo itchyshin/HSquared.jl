@@ -3,10 +3,10 @@ id = "HSQ09-H1T-IDENTIFIED-S9-01"
 kind = "ratified_replacement_path_fixture"
 
 [candidate]
-julia_commit = "dc1a3632e9842a808b2bfd64ce55eaf6f850db3b"
+julia_commit = "06eb008767e2da7b9d6a0d6b237b1d6ff72bd95f"
 r_commit = "fd2825795d3d481311912d29f3c377f2897d321d"
 runtime_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
-driver_sha256 = "b8581cb31a45ca3cb7832ae284bae1022ea3adcc6e8c02a7c2397e959dc2321d"
+driver_sha256 = "777aa802d485e054f996234efa74e63448879ef691d551601b436c887fbd098b"
 
 [fixture]
 seed = 20260701
