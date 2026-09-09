@@ -34,7 +34,8 @@ readonly STAGE_DIR="$(mktemp -d "$RESULTS_ROOT/.hsq09-s10-$RUN_ID.stage.XXXXXX")
 publish_failure() {
   local rc="$1"
   printf 'S10_FAILED exit=%s\n' "$rc" >"$STAGE_DIR/launcher_failure.txt"
-  find "$STAGE_DIR" -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum >"$STAGE_DIR/SHA256SUMS" || true
+  find "$STAGE_DIR" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z |
+    xargs -0 sha256sum >"$STAGE_DIR/SHA256SUMS" || true
   mv "$STAGE_DIR" "$FAILED_DIR"
   trap - EXIT
   echo "S10_FAILURE_RETAINED dir=$FAILED_DIR exit=$rc" >&2
