@@ -1,0 +1,45 @@
+[manifest]
+id = "HSQ09-H3-S10-01"
+kind = "sealed_path_only_smoke"
+source_inert = true
+
+[s9_a4_prerequisite]
+julia_candidate = "4d4a55c14c9234270979a76c53888d65634a6eaf"
+r_candidate = "fd2825795d3d481311912d29f3c377f2897d321d"
+validator = "HSQ09_S9_A4_MANIFEST_OK"
+status = "reverified_before_h3_s10"
+
+[candidate]
+engine_commit = "82f836f368e37cf75609f721f7a03bde3113e10b"
+driver_sha256 = "6c1b74cc207247241e395bd78143c07f01b0091682d3049e57bfdbb1a8d0401d"
+runtime_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+
+[run]
+target = "Totoro"
+mode = "smoke"
+campaigns = ["h3_rg", "h3_ram"]
+reps = 1
+seed = 20260903
+level = 0.95
+julia_threads = 1
+openblas_threads = 1
+timeout_seconds = 1470
+claim = "PATH_ONLY"
+publication = "stage_then_atomic_rename"
+
+[s11_if_triggered]
+target = "DRAC"
+trigger = "measured S10 estimate exceeds 30 minutes"
+reps_per_cell = 2000
+task_unit = "one seed per task"
+retention = "all successes and failures with interval-success denominators"
+
+[authorizations]
+h3_ratification = true
+s10_compute = true
+s11_if_measured_estimate_exceeds_30_minutes = true
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
