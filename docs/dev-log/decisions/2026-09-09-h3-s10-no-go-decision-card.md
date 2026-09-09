@@ -50,8 +50,9 @@ Choose exactly one of these routes in a new ratification record.
    compute.
 2. **Keep H3 unpaid for 0.9.0.**  Amend the 0.9 release decision map to remove
    any H3 interval claim from the release target.  This is a scope decision,
-   not a hidden downgrade: it must be reconciled with H0/H1 requirements and
-   the R/Julia public contract before Gate B can be considered.
+   not a hidden downgrade: it must be reconciled with the already-ratified H0
+   scope, the held H1 characterization, and the R/Julia public contract before
+   Gate B can be considered.
 
 ## Explicitly not authorized
 

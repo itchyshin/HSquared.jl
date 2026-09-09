@@ -13,7 +13,7 @@ version, tag, registry action, or publication is authorized.
 | --- | --- | --- | --- |
 | Fresh isolated twins / S0 | clean candidate worktrees at verified heads | Julia candidate worktrees exist; the Dropbox R checkout remains intentionally dirty and untouched | complete for evidence lanes; candidate integration held |
 | S1 NG-1 three-field contract | admitted Poisson/Binomial scales, explicit undefined cases | private three-field contract and NaN-only varying-trial Binomial observation field are pinned by S9-A4 | complete at private/experimental scope |
-| S2 H0/H1/H3 protocol | immutable fixtures, denominators, pass bands, mutation controls | S9-A4 pins the protocol/inputs; H1 replacement fixture ran; H0 is unratified and H3 failed S10 | provenance complete; scientific gates incomplete |
+| S2 H0/H1/H3 protocol | immutable fixtures, denominators, pass bands, mutation controls | H0 Layer B is ratified at its route-specific directional-conservative tier; S9-A4 pins the later H1/H3 inputs; H1 replacement fixture ran; H3 failed S10 | H0 complete at earned scope; H1 held characterization; H3 incomplete |
 | S3 R–Julia signing | exact accepted/rejected payload matrix and parity | locked R→Julia transport receipt passed, but no final public/G10 signing exists | partial / held |
 | A3 paired implementation | ratified private three-field fields, tests, docs | Julia A3 and R candidate work were completed in isolated lanes; R candidate `fd28257` remains unintegrated | implementation complete; integration held |
 | S9 evidence controls | frozen inputs and non-promoting manifests | S9-A4 manifest and mutation test re-verified on 2026-09-09 | complete / non-promoting |
@@ -41,7 +41,6 @@ version, tag, registry action, or publication is authorized.
 - **H3:** ratify a replacement identified protocol, or explicitly remove any H3
   interval claim from 0.9.0.  The governing choice is
   `docs/dev-log/decisions/2026-09-09-h3-s10-no-go-decision-card.md`.
-- **H0:** ratify its fixture/claim tier before compute or public interpretation.
 - **Release scope:** decide whether 0.9.0 remains contingent on H0/H3, then
   reconcile that decision across both twins before candidate integration.
 
