@@ -28,9 +28,19 @@ readonly RESULTS_ROOT="${HSQ09_S10_RESULTS_ROOT:-$HOME/hsq_work/results}"
 mkdir -p "$RESULTS_ROOT"
 readonly FINAL_DIR="$RESULTS_ROOT/hsq09-s10-$RUN_ID"
 [[ ! -e "$FINAL_DIR" ]] || { echo "REFUSING: final directory already exists" >&2; exit 86; }
+readonly FAILED_DIR="$FINAL_DIR.failed"
+[[ ! -e "$FAILED_DIR" ]] || { echo "REFUSING: failure directory already exists" >&2; exit 87; }
 readonly STAGE_DIR="$(mktemp -d "$RESULTS_ROOT/.hsq09-s10-$RUN_ID.stage.XXXXXX")"
-cleanup() { rm -rf "$STAGE_DIR"; }
-trap cleanup EXIT
+publish_failure() {
+  local rc="$1"
+  printf 'S10_FAILED exit=%s\n' "$rc" >"$STAGE_DIR/launcher_failure.txt"
+  find "$STAGE_DIR" -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum >"$STAGE_DIR/SHA256SUMS" || true
+  mv "$STAGE_DIR" "$FAILED_DIR"
+  trap - EXIT
+  echo "S10_FAILURE_RETAINED dir=$FAILED_DIR exit=$rc" >&2
+  exit "$rc"
+}
+trap 'rc=$?; if [[ -d "$STAGE_DIR" ]]; then publish_failure "$rc"; fi' EXIT
 
 echo "S10_START candidate=$S10_EXPECTED_GIT_SHA run_id=$RUN_ID timeout_seconds=$S10_TIMEOUT_SECONDS"
 set +e
@@ -42,8 +52,12 @@ timeout --foreground "$S10_TIMEOUT_SECONDS" /usr/bin/time -v -o "$STAGE_DIR/reso
 readonly RUN_RC=$?
 set -e
 [[ "$RUN_RC" -eq 0 ]] || { echo "S10_FAILED exit=$RUN_RC" >&2; exit "$RUN_RC"; }
+set +e
 julia --project=. tools/validate_hsq09_s10_smoke.jl --validate "$STAGE_DIR/detail.tsv" "$STAGE_DIR/summary.tsv" \
   >"$STAGE_DIR/validator.log" 2>&1
+readonly VALIDATOR_RC=$?
+set -e
+[[ "$VALIDATOR_RC" -eq 0 ]] || { echo "S10_VALIDATOR_FAILED exit=$VALIDATOR_RC" >&2; exit "$VALIDATOR_RC"; }
 sha256sum "$STAGE_DIR/detail.tsv" "$STAGE_DIR/summary.tsv" "$STAGE_DIR/resource.txt" \
   >"$STAGE_DIR/SHA256SUMS"
 printf '%s\n' "$S10_EXPECTED_GIT_SHA" >"$STAGE_DIR/candidate.sha"
