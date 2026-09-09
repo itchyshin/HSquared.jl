@@ -53,7 +53,7 @@ _fit(; family::Symbol = :poisson, n_trials = nothing, beta = [0.3],
               "ArgumentError: nongaussian_three_field_payload refuses a non-converged fit (converged = false)"
     end
 
-    @testset "logit fields retain literal NaN and exact reason" begin
+    @testset "logit fields retain scalar observation h2 and a varying-trial sentinel" begin
         bernoulli = HSquared.nongaussian_three_field_payload(
             _fit(family = :bernoulli),
         )
@@ -65,12 +65,16 @@ _fit(; family::Symbol = :poisson, n_trials = nothing, beta = [0.3],
         )
         expected_liability = 0.4 / (0.4 + pi^2 / 3)
 
-        for result in (bernoulli, binomial, scalar_binomial)
+        for result in (bernoulli, scalar_binomial)
             @test result.h2_latent == 1.0
             @test result.h2_liability == expected_liability
-            @test isnan(result.h2_observation)
-            @test result.h2_observation_undefined_reason == "not_yet_ratified"
+            @test isfinite(result.h2_observation)
+            @test 0.0 < result.h2_observation < 1.0
+            @test result.h2_observation_undefined_reason === nothing
         end
+        @test isnan(binomial.h2_observation)
+        @test binomial.h2_observation_undefined_reason ==
+              "varying_trials_no_scalar_estimand"
         @test bernoulli.n_trials === nothing
         @test binomial.n_trials == [2, 3]
         @test scalar_binomial.n_trials === 3
