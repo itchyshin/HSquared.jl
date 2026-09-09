@@ -47,7 +47,7 @@ set +e
 timeout --foreground "$S10_TIMEOUT_SECONDS" /usr/bin/time -v -o "$STAGE_DIR/resource.txt" \
   julia --project=. sim/phase1_interval_coverage_ext.jl \
   --mode=smoke --reps=1 --seed=20260903 --levels=0.95 --resume=false \
-  --output="$STAGE_DIR/summary.tsv" --detail-out="$STAGE_DIR/detail.tsv" \
+  --out="$STAGE_DIR/summary.tsv" --detail-out="$STAGE_DIR/detail.tsv" \
   >"$STAGE_DIR/driver.log" 2>&1
 readonly RUN_RC=$?
 set -e

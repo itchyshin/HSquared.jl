@@ -95,6 +95,8 @@ end
     @test occursin(raw"mv \"$STAGE_DIR\" \"$FINAL_DIR\"", launcher)
     @test occursin(raw"sha256sum \"$STAGE_DIR/detail.tsv\"", launcher)
     @test occursin(raw"--validate \"$STAGE_DIR/detail.tsv\"", launcher)
+    @test occursin(raw"--out=\"$STAGE_DIR/summary.tsv\"", launcher)
+    @test !occursin(raw"--output=\"$STAGE_DIR/summary.tsv\"", launcher)
 end
 
 println("S10_SMOKE_VALIDATOR_TESTS_OK")
