@@ -42,9 +42,12 @@ promoting the existing `8:16:96`, two-record scaffold without evidence:
 - `G = [1 .35; .35 .7]` and `R = [.8 .2; .2 .55]`;
 - intercept-only fixed-effect design; one record-to-animal incidence `Z` per
   trait; unstructured multivariate REML; and
-- a cold start distinct from the truth parameters, recorded verbatim in the
-  new fixture.  The historical recovery statement must not be mistaken for an
-  interval result when deciding this start.
+- the existing, documented `--cold-start=true` initializer: the fitter's
+  phenotypic-scale default with no truth-valued `initial` argument.  Its exact
+  driver route and iteration budget must be pinned in the new fixture.
+
+The historical cold-start result establishes that this *initializer* has been
+exercised on the point-recovery fixture; it is still not interval evidence.
 
 The existing `G12=.9` near-boundary cell remains a **negative control** only:
 the documented SE path throws and therefore must retain a non-interval/
@@ -70,10 +73,12 @@ failure must be retained separately and excluded from the interior denominator.
 ## Proposed S10 rule (requires a future, separate authorization)
 
 The replacement manifest must pin a candidate source commit, Julia executable,
-`Manifest.toml`, driver, fixture, test, and one disjoint master seed **per cell**
-before execution.  This draft deliberately does not pick seeds: a seed plus the
-new cold-start specification is part of the immutable artifact to be reviewed,
-not an unreviewed choice embedded in prose.
+`Manifest.toml`, driver, fixture, test, exact initializer, and one disjoint
+master seed **per cell** before execution.  The `r_g` initializer is the
+documented existing `--cold-start=true` route; the `r_am` initializer must be
+made equally explicit in its new fixture.  This draft deliberately does not
+pick seeds: a seed is part of the immutable artifact to be reviewed, not an
+unreviewed choice embedded in prose.
 
 One pinned-thread, one-rep Totoro S10 run would execute each interior cell once.
 For each cell separately, the sole PATH_ONLY success criterion is:

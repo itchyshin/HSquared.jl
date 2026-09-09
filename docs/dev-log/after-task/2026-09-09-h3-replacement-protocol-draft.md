@@ -10,7 +10,9 @@ state.
 
 Added one unratified decision draft.  It gives a separate symbolic contract,
 identified DGM, interval method, negative control, S10 success rule, and S11
-denominator for `r_g` and `r_am`.
+denominator for `r_g` and `r_am`.  A post-draft driver check corrected the
+`r_g` initialization to the existing `--cold-start=true` phenotypic-scale
+default, rather than proposing an unspecified alternate start.
 
 ## 3a. Decisions and Rejected Alternatives
 
@@ -29,6 +31,9 @@ authorization for the sealed candidate as authority for a changed fixture.
 
 - Read the current H3 driver, ADEMP predeclaration, direct–maternal recovery
   receipt, sealed S10 receipt, and no-go decision card.
+- Re-read `sim/phase4_multivariate_reml_recovery.jl` and its cold-start
+  checkpoint: `--cold-start=true` omits truth-valued initials and uses the
+  fitter's phenotypic-scale default.
 - `git diff --check` passed before recording the decision draft.
 
 ## 6. Tests of the Tests
