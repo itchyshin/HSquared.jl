@@ -1,0 +1,38 @@
+[manifest]
+id = "HSQ09-S10-TOTORO-SMOKE-01"
+kind = "path_only_prerun"
+created_utc = "2026-09-09"
+
+[candidate]
+julia_commit = "4d492dc24b96e3b3d1eb273bf38585c8c83030ee"
+r_commit = "fd2825795d3d481311912d29f3c377f2897d321d"
+runtime_manifest_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+
+[inputs]
+driver_sha256 = "d6a8d307881b58e44b024562232b6dd638e4feaae4785aa99ea6897a79973002"
+launcher_sha256 = "0bcb044063407c8443a772e4ad34baa450d318bb1b1f461128806f032b5f054a"
+validator_sha256 = "51ed28d958cd3967fb902f6234daecd4607cf9ebddb75cda3e3859988113c80d"
+
+[run]
+target = "Totoro"
+mode = "smoke"
+campaigns = ["h1_two", "h1_multi", "h1_t", "h3_rg", "h3_ram"]
+reps = 1
+seed = 20260903
+level = 0.95
+julia_threads = 1
+blas_threads = 1
+timeout_seconds = 1470
+output_publication = "stage_then_atomic_rename"
+
+[authorizations]
+s10_compute = true
+s11_campaign = false
+claim_promotion = false
+release = false
+
+[interpretation]
+gate = "PATH_ONLY"
+coverage_claim = false
+calibration_claim = false
+required_receipts = ["detail.tsv", "summary.tsv", "resource.txt", "SHA256SUMS", "validator.log"]
