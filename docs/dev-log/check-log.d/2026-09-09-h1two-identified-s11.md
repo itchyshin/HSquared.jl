@@ -1,6 +1,6 @@
 # H1-two identified S11 — sealed local pre-submission receipt
 
-Status: **LOCAL PRE-SUBMISSION PASS; DRAC TRANSFER NOT AUTHORIZED.**
+Status: **LOCAL PRE-SUBMISSION PASS; FIR STAGING BLOCKED BY PROJECT INODE QUOTA.**
 
 This receipt records only local sealing and read-only Fir discovery. It does
 not report a submitted job, a received DRAC file, a coverage result, a
@@ -45,12 +45,22 @@ The existing non-interactive Fir socket reports account
 `/project/6098264/snakagaw`. The S10 measurement was approximately 4.12
 seconds/replicate, so S11 requests 5 minutes and 2 GB per one-thread task.
 
-## Held action
+## Fir transfer attempt — retained failure
 
-The external transfer was refused because its source bundle and destination
-were not named in the user authorization. No remote directory was created,
-no files were copied, and no `sbatch` command was run. The exact next authority
-needed is permission to transfer only the sealed Git bundle, `Manifest.toml`,
-S11 manifest, and S11 sbatch script to
-`/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691/staging/` on Fir,
-then verify hashes, precompile, and submit the frozen `--array=1-2000%100`.
+The user subsequently authorized the exact four-file transfer. Fir accepted the
+top-level empty directory but refused its child staging/log/receipt/depot
+directories with `Disk quota exceeded`; no file was copied and no `sbatch`
+command was run.
+
+`lfs quota` identifies the reason: project `6098264` has 499,736 of its 500,000
+inode limit consumed (264 remain), although byte storage remains available.
+The candidate source alone has 1,187 tracked files, before a Julia depot,
+2,000 receipts + SHA files, and Slurm logs. This destination therefore cannot
+retain the authorized campaign safely. The empty root directory remains at
+`/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691/`; it contains no
+staged payload.
+
+Next authority is either (a) a user-managed reclamation of sufficient Fir
+inodes followed by reauthorization, or (b) a named alternative durable DRAC
+project path/cluster with adequate inode headroom. No redirection, cleanup of
+user files, promotion, or release is authorized here.
