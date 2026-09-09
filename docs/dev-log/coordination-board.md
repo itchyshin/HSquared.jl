@@ -23,6 +23,16 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-09 — H3 G0 unarmed pre-run card (Julia-only, held)
+
+Lane: `codex/hsq09-h3-prerun-20260909`, isolated candidate `4d4a55c`.
+The lane adds a closed manifest, validator, focused mutation test, and decision
+card for a **proposed** single-thread Totoro H3 smoke.  `r_g` and `r_am` remain
+separate fixed cells; all compute, promotion, version, tag, registry, and
+release fields are false.  No H3 simulation, job submission, R change,
+capability claim, or public-state change occurred.  The next action needs an
+explicit H3 smoke authorization; DRAC remains a later separate gate.
+
 ### 2026-09-08 — A3 three-field contract (isolated paired candidate)
 
 Julia private-envelope and R bridge work is locally verified in separate

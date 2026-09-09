@@ -1,0 +1,53 @@
+[manifest]
+id = "HSQ09-H3-G0-PRERUN-01"
+kind = "unarmed_h3_prerun_card"
+engine_capability_inert = true
+
+[candidate]
+julia_commit = "4d4a55c14c9234270979a76c53888d65634a6eaf"
+driver_sha256 = "d6a8d307881b58e44b024562232b6dd638e4feaae4785aa99ea6897a79973002"
+sbatch_template_sha256 = "660208954d881076e6a848a2729e0ee992bac9f65243fc572d62ee5737f6ab17"
+predeclaration_sha256 = "0c8a6b27e08fcae25be1f5051066c80c34fcc561cc4ffc955800161cb216922e"
+
+[h3_rg]
+estimand = "r_g"
+interval = "genetic_correlation_interval"
+scale = "Fisher-z"
+smoke_cell = "tiny; 3 sires, 4 dams, 12 offspring, 2 records; G12=0.35"
+confirm_cell = "small; 8 sires, 16 dams, 96 offspring, 2 records; r_g≈0.418"
+boundary = "|r_g|=0.9; characterization only"
+
+[h3_ram]
+estimand = "r_am"
+interval = "direct_maternal_interval"
+scale = "Fisher-z"
+smoke_cell = "tiny maternal; 3 dams, 2 sires, 4 offspring, 2 generations; r_am=-0.3"
+confirm_cell = "30 dams, 6 sires, 8 offspring, 4 generations; n=960; r_am=-0.3"
+boundary = "|r_am|→0.9; non-interpretable if interval path throws"
+
+[proposed_smoke]
+target = "Totoro"
+mode = "smoke"
+campaigns = ["h3_rg", "h3_ram"]
+reps = 1
+seed = 20260903
+julia_threads = 1
+openblas_threads = 1
+claim = "PATH_ONLY"
+
+[proposed_confirm]
+target = "DRAC"
+mode = "confirm"
+reps_per_cell = 2000
+retention = "one retained row per estimand, cell, seed; failures remain in interval_success accounting"
+
+[authorizations]
+h3_ratification = false
+totoro_smoke = false
+drac_confirm = false
+compute = false
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
