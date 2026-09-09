@@ -93,3 +93,23 @@ respectively,
 The Narval manifest test (15/15), sbatch test (13/13), manifest mutation
 validator, and shell syntax check all pass. Transfer and submission remain
 the next authorized actions; no Narval file has yet been created.
+
+## Narval staging and scheduler submission — retained failure
+
+The four authorized files were transferred to Narval and their remote SHA-256
+values exactly matched the local sealed values. The bundle was cloned and
+checked out at driver commit `36ae0691c9e4d30dda8947e162716ebaf30de762`;
+the copied runtime manifest and driver hashes matched their manifest pins.
+`julia/1.10.10` instantiated and precompiled into the dedicated Narval depot,
+then `using HSquared` printed `H1T_S11_NARVAL_PRECOMPILE_OK`.
+
+The exact authorized `sbatch --array=1-2000%100` submission was rejected
+before a job was created with `AssocMaxSubmitJobLimit`. Read-only accounting
+then reported `MaxSubmitJobs=1000` for `snakagaw|def-snakagaw_cpu` and zero
+current jobs. No task, receipt, log, result, promotion, or release was
+created. The 2,000-task protocol is intact, but its one-array launch is
+incompatible with this live account limit.
+
+The only compliant continuation is a separately authorized two-wave launch:
+`--array=1-1000%100`, then `--array=1001-2000%100`, with the same sealed
+driver, one task per seed, retained receipts, and no other scope change.
