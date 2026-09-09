@@ -64,3 +64,19 @@ Next authority is either (a) a user-managed reclamation of sufficient Fir
 inodes followed by reauthorization, or (b) a named alternative durable DRAC
 project path/cluster with adequate inode headroom. No redirection, cleanup of
 user files, promotion, or release is authorized here.
+
+## Read-only alternative-path reconnaissance
+
+On 2026-09-09, the connected DRAC paths were checked read-only for project
+`6098264`:
+
+| Cluster | Project file slots used / limit | Verdict |
+| --- | ---: | --- |
+| Fir | 499,736 / 500,000 | blocked |
+| Narval | 184,777 / 500,000 | viable: 315,223 slots remain; `/project/6098264/snakagaw` exists |
+| Rorqual | 498,272 / 500,000 | not viable for this retained campaign |
+| tamIA | no project allocation | unavailable |
+| Nibi | non-Lustre quota response | not selected without a live storage contract |
+
+Narval is a concrete alternative but remains **unselected and unmodified**
+until a new user authorization names its destination and submission route.
