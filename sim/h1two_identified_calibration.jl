@@ -12,6 +12,7 @@ const H1T_OFFSPRING = 200
 const H1T_GROUPS = 40
 const H1T_TRUTH = (sigma1 = 1.0, sigma2 = 0.5, sigma_e2 = 1.0)
 const H1T_LEVEL = 0.95
+const H1T_RECEIPT_COLUMNS = ("estimand", "estimate", "lower", "upper", "se", "boundary", "fit_converged", "claim_eligible")
 
 function h1two_identified_fixture(; seed::Integer = H1T_SEED,
                                   sires::Integer = H1T_SIRES,
@@ -52,7 +53,30 @@ function h1two_identified_fixture(; seed::Integer = H1T_SEED,
     return (fit = fit, interval = interval, n = n, claim_eligible = false)
 end
 
+function write_h1two_identified_receipt(path::AbstractString)
+    result = h1two_identified_fixture()
+    mkpath(dirname(path))
+    open(path, "w") do io
+        println(io, join(H1T_RECEIPT_COLUMNS, '\t'))
+        for (name, interval) in (("ratio1", result.interval.ratio1),
+                                 ("ratio2", result.interval.ratio2))
+            println(io, join((name, interval.estimate, interval.lower, interval.upper,
+                              interval.se, interval.boundary, result.fit.converged,
+                              result.claim_eligible), '\t'))
+        end
+    end
+    return path
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
     result = h1two_identified_fixture()
+    out_args = filter(arg -> startswith(arg, "--out="), ARGS)
+    length(out_args) <= 1 || error("--out may be supplied at most once")
+    out = isempty(out_args) ? nothing : only(out_args)
+    if out !== nothing
+        write_h1two_identified_receipt(split(out, "="; limit = 2)[2])
+    elseif !isempty(ARGS)
+        error("only --out=PATH is supported")
+    end
     println("H1T_IDENTIFIED_PATH_ONLY converged=$(result.fit.converged) n=$(result.n) claim_eligible=false")
 end

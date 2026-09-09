@@ -19,6 +19,14 @@ include(joinpath(@__DIR__, "..", "sim", "h1two_identified_calibration.jl"))
 
     @test_throws ArgumentError h1two_identified_fixture(; seed = 1)
     @test_throws ArgumentError h1two_identified_fixture(; groups = 39)
+
+    mktempdir() do dir
+        path = write_h1two_identified_receipt(joinpath(dir, "receipt.tsv"))
+        lines = readlines(path)
+        @test lines[1] == join(H1T_RECEIPT_COLUMNS, '\t')
+        @test length(lines) == 3
+        @test all(occursin("\tfalse", line) for line in lines[2:3])
+    end
 end
 
 println("H1T_IDENTIFIED_TESTS_OK")
