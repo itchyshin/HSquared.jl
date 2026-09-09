@@ -36,6 +36,9 @@ test include in `test/runtests.jl`.
   warnings remain non-fatal.
 - `git diff --check` — PASS.
 - Unlazy A3 ledger — 8/8 gates met and reverified.
+- Post-review: full `Pkg.test()` passed, including the A3 envelope 43/43;
+  `docs/make.jl` passed. A targeted R-to-Julia bridge check on the paired R
+  worktree also passed with the configured A3 Julia project.
 
 ## 6. Tests of the Tests
 
@@ -48,6 +51,11 @@ exercised that file through the normal harness.
 
 Resolved: stale legacy fixture/status phrases contradicted the narrow A3
 boundary. They now retain legacy scope while identifying the separate A3 path.
+The independent A3 review also found stale source-line citations and a duplicate
+Rose paragraph in this report; the citations now name the stable implementation
+function and the duplicate was removed. Direct-private-payload defensive checks
+remain a non-blocking future hardening item because the R normalizer already
+rejects malformed public bridge values.
 Deferred: calibration, retained campaign evidence, and external comparator
 work remain outside this source amendment.
 
