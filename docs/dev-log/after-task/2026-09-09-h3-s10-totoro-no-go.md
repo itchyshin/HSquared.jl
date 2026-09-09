@@ -38,6 +38,10 @@ the sealed S10 validator rejected both cells.
   shell syntax and `git diff --check` passed.
 - Full Julia `Pkg.test()` returned exit success in the local package lane; its
   verbose terminal capture was truncated, so no count is claimed here.
+- `Rscript /Users/z3437171/shinichi-brain/tools/check-after-task.R` passed the
+  report structure.  It reports the Unlazy gate parser as unavailable because
+  Node/gate-check is absent; the command gates were instead manually re-run and
+  their receipt is retained in the ignored H3-S10 ledger.
 - Totoro bundle and `Manifest.toml` SHA-256 values matched locally and remotely;
   isolated `Pkg.instantiate()`/`Pkg.precompile()` completed.
 - The one actual S10 driver ran in 12.04 s, but the validator failed because
