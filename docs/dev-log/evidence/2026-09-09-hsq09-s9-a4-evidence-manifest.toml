@@ -1,0 +1,134 @@
+[manifest]
+id = "HSQ09-S9-A4"
+schema_version = 1
+source_inert = true
+
+[repositories.julia]
+base_commit = "4d4a55c14c9234270979a76c53888d65634a6eaf"
+allowed_dirty_paths = [
+  "docs/dev-log/evidence/2026-09-09-hsq09-s9-a4-evidence-manifest.toml",
+  "docs/dev-log/evidence/2026-09-09-hsq09-s9-a4-supersession.md",
+  "tools/validate_hsq09_s9_a4_manifest.jl",
+  "test/test_hsq09_s9_a4_manifest.jl",
+  "docs/dev-log/check-log.d/2026-09-09-s9-a4-evidence-manifest.md",
+  "docs/dev-log/after-task/2026-09-09-s9-a4-evidence-manifest.md",
+]
+
+[repositories.r]
+commit = "fd2825795d3d481311912d29f3c377f2897d321d"
+root_env = "HSQ09_S9_A4_R_ROOT"
+
+[legacy_s9]
+commit = "dd1bfa77"
+manifest_path = "docs/dev-log/evidence/2026-09-07-hsq09-s9-evidence-manifest.toml"
+sha256 = "066a74087dffa0a56e008495345bf0c446455d3cd0c8af04740c3a7b8e2fedd2"
+status = "superseded_for_candidate_pins_only"
+
+[contract]
+claim_eligible = false
+gate = "PATH_ONLY"
+coverage_denominator = "interval_success"
+master_seed = 20260903
+screen_reps_per_cell = 48
+confirm_interpretable_reps_target = 2000
+
+[authorizations]
+compute = false
+smoke = false
+screen = false
+confirm = false
+campaign = false
+promotion = false
+release = false
+public_count = false
+version = false
+h0_ratification = false
+h1_h3_coverage_claim = false
+outcomes_import = false
+
+[results]
+results_imported = false
+result_values_present = false
+outcomes_imported = false
+
+[sbatch_template]
+armed = false
+effective_exit_code = 78
+execution = "refusal_only"
+
+[[inputs]]
+id = "r_h0_univariate_coverage_flip"
+repository = "r"
+path = "docs/design/39-h0-univariate-coverage-flip.md"
+role = "H0 protocol"
+sha256 = "9ad969312cb1994855ddfafe4835aca1636a0aa1151854fe1fc9acfa95fb472c"
+
+[[inputs]]
+id = "r_h1_interval_recovery_preregistration"
+repository = "r"
+path = "docs/design/34-interval-recovery-pre-registration.md"
+role = "H1 protocol"
+sha256 = "e110b424182569fa9c6652be15045331358ce9b25e240b7511bbb76645016679"
+
+[[inputs]]
+id = "r_h1_h3_path_pointer"
+repository = "r"
+path = "docs/dev-log/recovery-checkpoints/2026-09-03-c1-ext-h1-h3-r-pointer.md"
+role = "H1/H3 pointer protocol"
+sha256 = "511fda4c72d53e1379564eeab14cf4a5dded0cdb269cf48ea0feb202f2b15324"
+
+[[inputs]]
+id = "julia_h1_h3_predeclaration"
+repository = "julia"
+path = "docs/dev-log/recovery-checkpoints/2026-09-03-c1-ext-h1-h3-ademp-predeclaration.md"
+role = "H1/H3 protocol"
+sha256 = "0c8a6b27e08fcae25be1f5051066c80c34fcc561cc4ffc955800161cb216922e"
+
+[[inputs]]
+id = "julia_phase1_interval_driver"
+repository = "julia"
+path = "sim/phase1_interval_coverage_ext.jl"
+role = "phase1 interval Julia driver"
+sha256 = "d6a8d307881b58e44b024562232b6dd638e4feaae4785aa99ea6897a79973002"
+
+[[inputs]]
+id = "julia_phase1_interval_test"
+repository = "julia"
+path = "test/test_phase1_interval_coverage_ext.jl"
+role = "phase1 interval Julia test"
+sha256 = "726aa8f918efb54bdc66d2adacfb5f170ab66a3207810368ca836fb565a5c5a2"
+
+[[inputs]]
+id = "julia_phase1_interval_sbatch"
+repository = "julia"
+path = "sim/drac/phase1_interval_coverage_ext.sbatch"
+role = "unarmed phase1 interval sbatch template"
+sha256 = "660208954d881076e6a848a2729e0ee992bac9f65243fc572d62ee5737f6ab17"
+
+[[inputs]]
+id = "julia_real_data_validation_manifest"
+repository = "julia"
+path = "docs/design/real-data-validation-manifest.toml"
+role = "Julia real-data validation manifest"
+sha256 = "38a8a19e8b11b0a95d024c0975803ef1644806c3d84c38d2ed22bd57cd60f859"
+
+[[inputs]]
+id = "r_phase1_interval_pointer"
+repository = "r"
+path = "sim/phase1_interval_coverage_ext.R"
+role = "R path-only pointer driver"
+sha256 = "0a778816ba04a94f629ecb17b52328c5528631c9e1b96c9f109f2de83d22a391"
+
+[[inputs]]
+id = "r_phase1_interval_pointer_test"
+repository = "r"
+path = "tests/testthat/test-c1-ext-h1-h3-harness.R"
+role = "R pointer test"
+sha256 = "9649bf92d6f9745170f27f954619e60d1571475cf4f9db680f71e17f5660aa55"
+
+[[inputs]]
+id = "r_real_data_validation_manifest"
+repository = "r"
+path = "docs/design/real-data-validation-manifest.toml"
+role = "R real-data validation manifest"
+sha256 = "aa3a96d590359fe29f43cc77d7711afadcb5f3076d303fb39ff8bdcc291def33"
