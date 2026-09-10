@@ -1,8 +1,9 @@
 using Test
 include(joinpath(@__DIR__, "..", "tools", "reconcile_hsq09_h3_replacement_s11.jl"))
 
-function _h3_s11_test_write(dir; corrupt=false)
-    for (i, seed) in enumerate(H3_S11_RANGES["rg"])
+function _h3_s11_test_write(dir; corrupt=false, task_start=1, task_end=2000)
+    for i in task_start:task_end
+        seed = H3_S11_RANGES["rg"][i]
         ok=i <= 1800; covered=ok && i <= 1710
         values=(H3_S11_ID, seed, "r_g", .4183300132670378, .95, ok, ok,
             ok ? "" : "retained_failure", corrupt && i == 2000 ? true : covered,
@@ -24,6 +25,13 @@ end
     mktempdir() do dir
         _h3_s11_test_write(dir;corrupt=true)
         @test_throws ErrorException h3_replacement_s11_reconcile(dir;cell="rg")
+    end
+    mktempdir() do dir
+        _h3_s11_test_write(dir;task_start=1,task_end=1000)
+        result=h3_replacement_s11_reconcile(dir;cell="rg",task_start=1,task_end=1000)
+        @test result.requested == 1000 && result.retained == 1000
+        @test !result.complete_cell && result.classification == :partial_wave
+        @test !result.claim_eligible
     end
 end
 println("H3_REPLACEMENT_S11_RECONCILE_TESTS_OK")

@@ -18,6 +18,7 @@ const H3_S11_EXPECTED = Dict(
     ("retention", "one_task_per_seed") => true, ("retention", "retain_successes_and_failures") => true,
     ("retention", "atomic_non_overwrite") => true, ("retention", "claim_eligible") => false,
     ("governed_inputs", "driver_sha256") => "1c9ea950a7113a968b03e369a35657ff9e4968786536c34a1cc73d5fa91c845d",
+    ("governed_inputs", "reconciler_sha256") => "92436e411e0e73d316342054ac5f11e156096747f704a161d3eb688422bb58d2",
     ("governed_inputs", "sbatch_sha256") => "a743953c37cc2fc36fd7ba0cfdc73847b32a7c5baf2d67c71200a07fbc7d4517",
     ("governed_inputs", "lock_sha256") => "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221",
     ("governed_inputs", "prerun_sbatch_sha256") => "91df204b1f4242657e70a524c9c2b2d732d04c000b6e1329f1d91d36c0924c49",
@@ -29,7 +30,7 @@ const H3_S11_SCHEMA = Dict("manifest" => ["id","schema_version","status","engine
     "estimands" => ["rg","ram"], "classification" => ["coverage_denominator","mcse","band","separate_per_estimand"],
     "compute" => ["route","account","partition","cpus_per_task","threads","array_cap","pre_run_array","campaign_array"],
     "retention" => ["one_task_per_seed","retain_successes_and_failures","atomic_non_overwrite","claim_eligible"],
-    "governed_inputs" => ["driver_sha256","sbatch_sha256","lock_sha256","prerun_sbatch_sha256"], "authorizations" => ["s11","compute","promotion","versioning","tag","registry","release"])
+    "governed_inputs" => ["driver_sha256","reconciler_sha256","sbatch_sha256","lock_sha256","prerun_sbatch_sha256"], "authorizations" => ["s11","compute","promotion","versioning","tag","registry","release"])
 const H3_S11_EST_SCHEMA = ["estimand","seed_start","seed_stop","replicates","interval_success_floor"]
 
 function h3_replacement_s11_manifest_validate(path=H3_S11_MANIFEST)
@@ -46,7 +47,7 @@ function h3_replacement_s11_manifest_validate(path=H3_S11_MANIFEST)
         stop - start + 1 == 2000 || error("H3 S11 seed range is not contiguous")
     end
     isempty(intersect(202609110001:202609112000, 202609120001:202609122000)) || error("H3 S11 ranges overlap")
-    root=normpath(joinpath(@__DIR__, "..")); for (file,key) in (("sim/hsq09_h3_replacement_s11.jl","driver_sha256"),("sim/drac/hsq09_h3_replacement_s11.sbatch","sbatch_sha256"),("sim/drac/hsq09_h3_replacement_s11_prerun.sbatch","prerun_sbatch_sha256"))
+    root=normpath(joinpath(@__DIR__, "..")); for (file,key) in (("sim/hsq09_h3_replacement_s11.jl","driver_sha256"),("tools/reconcile_hsq09_h3_replacement_s11.jl","reconciler_sha256"),("sim/drac/hsq09_h3_replacement_s11.sbatch","sbatch_sha256"),("sim/drac/hsq09_h3_replacement_s11_prerun.sbatch","prerun_sbatch_sha256"))
         bytes2hex(sha256(read(joinpath(root,file)))) == data["governed_inputs"][key] || error("H3 S11 governed input hash mismatch")
     end
     bytes2hex(sha256(read(joinpath(root,"Manifest.toml")))) == data["governed_inputs"]["lock_sha256"] || error("H3 S11 lock hash mismatch")
