@@ -1,9 +1,10 @@
-# H3 replacement protocol — unratified scientific draft
+# H3 replacement protocol — ratified scientific contract
 
-**Status:** DRAFT ONLY.  This document is a recommendation produced after the
-sealed H3 S10 no-go.  It changes no source, fixture, manifest, public/API/bridge
-contract, capability status, or release state.  It authorizes neither an S10
-rerun nor S11/DRAC compute.
+**Status:** RATIFIED 2026-09-09 for source-inert materialization only.  The
+maintainer authorizes immutable fixture, manifest, validator, and deterministic
+local-test materialization in fresh isolated worktrees.  It does **not**
+authorize S10/S11 compute, promotion, versioning, integration, tags, registry
+action, or release.
 
 ## Why a replacement is needed
 
@@ -18,7 +19,7 @@ The proposed replacement isolates the two scientific targets.  They have
 different models, incidence structures, failure modes, and denominators; they
 must never be pooled.
 
-## Proposed contract, before any new fixture is materialized
+## Ratified contract
 
 | Cell | Target and truth | DGP / fitted model | Interval and required output | Evidence already available | Not yet evidenced |
 | --- | --- | --- | --- | --- | --- |
@@ -29,7 +30,7 @@ The stated methods are asymptotic delta/Fisher-z methods.  This draft makes no
 claim of REML for an unrelated non-Gaussian path, of profile/bootstrap coverage,
 or of public R promotion.
 
-## Proposed replacement DGMs
+## Ratified replacement DGMs
 
 ### H3-rg — repeated-record identified fixture
 
@@ -70,7 +71,7 @@ direct–maternal confounding mechanism).  Its role is to show the fixture guard
 is sensitive to identification, not to create a replacement success.  Its
 failure must be retained separately and excluded from the interior denominator.
 
-## Proposed S10 rule (requires a future, separate authorization)
+## S10 rule (requires a future, separate authorization)
 
 The replacement manifest must pin a candidate source commit, Julia executable,
 `Manifest.toml`, driver, fixture, test, exact initializer, and one disjoint
@@ -108,15 +109,12 @@ the first campaign task.  A passing numerical count may support only the
 predeclared per-cell phrase (for example, directional-conservative); it cannot
 promote capability, version, tag, registry, or release state.
 
-## Decision requested
+## Ratification and next decision
 
-Choose one of these mutually exclusive next moves:
+The maintainer ratified this contract on 2026-09-09 and authorized only the
+source-inert materialization described above.  The next reversible slice is
+therefore the sealed fixture/manifest/validator/local-test package, followed by
+a **new explicit S10 authorization** after the exact fixture bytes are reviewed.
 
-1. **Ratify this replacement protocol as a scientific contract.**  Then the
-   next reversible slice is source-inert fixture/manifest/validator
-   materialization followed by a new explicit S10 authorization.
-2. **Keep H3 outside 0.9.0.**  Reconcile the release programme around its
-   currently earned H0 and H1 evidence without an H3 interval claim.
-
-This draft is deliberately not a release decision and does not revise the
+This contract is deliberately not a release decision and does not revise the
 existing H3 no-go receipt.

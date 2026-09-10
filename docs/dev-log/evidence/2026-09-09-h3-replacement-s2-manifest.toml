@@ -1,0 +1,56 @@
+[manifest]
+id = "HSQ09-H3-REPLACEMENT-S2-01"
+kind = "ratified_h3_fixture_materialization"
+source_inert = true
+compute_permitted = false
+
+[candidate]
+base_commit = "df704655208dccef859229832738e60f8a6d96c3"
+julia_executable = "/Users/z3437171/.juliaup/bin/julia"
+fixture_path = "test/fixtures/h3_replacement_interval/fixture.toml"
+fixture_sha256 = "8c3ccaf70e005d9b0b7b5e96cf4b3cbaf7b489522b30a37c31dfaf12e1e0c82a"
+driver_path = "sim/h3_replacement_interval_fixture.jl"
+driver_sha256 = "617d0b90c9eddb612567d544d6c6f5068b8187dbc55f792b63edb09b1b442d67"
+test_path = "test/test_hsq09_h3_replacement_s2.jl"
+test_sha256 = "12ab13fbf772139bf85f0e90e2d9a41676d5eb4325d45775c67fa95a5200b4f5"
+manifest_lock_path = "Manifest.toml"
+manifest_lock_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+
+[rg]
+estimand = "r_g"
+animals = 80
+records = 240
+seed = 2026090901
+iterations = 5000
+fit = "fit_multivariate_reml"
+interval = "genetic_correlation_interval"
+method = "delta"
+level = 0.95
+initializer = "phenotypic_scale_default; initial=nothing"
+
+[ram]
+estimand = "r_am"
+animals = 996
+records = 960
+seed = 2026090902
+iterations = 200
+fit = "fit_direct_maternal_reml"
+interval = "direct_maternal_interval"
+method = "fisher_z"
+level = 0.95
+initializer = "G_dm=I2; sigma_e2=1.0; initial is not truth"
+
+[negative_controls]
+rg = "G12=0.9; non_interpretable; excluded"
+ram = "dam_own_records=false; retained separately; excluded"
+no_pooling = true
+
+[authorizations]
+s10 = false
+s11 = false
+compute = false
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false

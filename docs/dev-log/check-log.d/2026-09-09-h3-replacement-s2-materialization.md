@@ -1,0 +1,10 @@
+# H3 replacement S2 source-inert materialization
+
+- Authority: the maintainer ratified the 2026-09-09 H3 replacement protocol and authorized only immutable fixture, manifest, validator, and deterministic local-test materialization in a fresh isolated worktree. S10/S11, remote compute, promotion, versioning, integration, tags, registry action, and release remain unauthorized.
+- Base candidate: `df704655208dccef859229832738e60f8a6d96c3`. The copied local environment lock is SHA-256 `a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221`.
+- Frozen governed inputs: fixture SHA-256 `8c3ccaf70e005d9b0b7b5e96cf4b3cbaf7b489522b30a37c31dfaf12e1e0c82a`, source-inert fixture reader SHA-256 `617d0b90c9eddb612567d544d6c6f5068b8187dbc55f792b63edb09b1b442d67`, and focused-test SHA-256 `12ab13fbf772139bf85f0e90e2d9a41676d5eb4325d45775c67fa95a5200b4f5`.
+- Separate cells: `r_g` uses the 80-animal/240-record three-repeat half-sib DGP, seed `2026090901`, 5,000 iterations, and the explicit phenotypic-scale cold start (`initial=nothing`). `r_am` uses the 996-animal/960-record confound-broken direct-maternal DGP, seed `2026090902`, 200 iterations, and the neutral identity start `G_dm=I2, sigma_e2=1.0` (not truth-valued). The cells cannot be pooled.
+- Negative controls are declared and excluded from an interior denominator: `r_g` fixes `G12=0.9` as non-interpretable; `r_am` removes dams' own records.
+- Local checks passed: focused fixture test **16/16**; `--validate` emitted `H3_REPLACEMENT_S2_FIXTURE_OK` and `H3_REPLACEMENT_S2_MANIFEST_OK`; `--self-test` emitted `H3_REPLACEMENT_S2_MUTATION_CONTROLS_OK`. The mutation suite rejects each closed manifest field, an unknown section, and altered fixture, driver, test, or lockfile bytes.
+- Normal Julia verification: single-threaded `Pkg.test()` completed successfully, including the new normal-test include.
+- This receipt is source-inert preparation, not a successful interval, S10 smoke, S11 campaign, calibration result, capability promotion, or release evidence.

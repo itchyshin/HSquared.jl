@@ -23,6 +23,17 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-09 — H3 replacement S2 materialization (Julia-only, no compute)
+
+Lane: `codex/hsq09-h3-materialization-20260909`, isolated from `df704655`.
+The maintainer ratified the separate `r_g`/`r_am` replacement contract and
+authorized only a source-inert fixture, manifest, validator, and deterministic
+local tests. Both cells are sealed separately, their negative controls are
+excluded, and all authorization fields remain false. No S10/S11, Totoro/DRAC,
+R/bridge/API work, promotion, version/tag/registry action, or release occurred.
+A new explicit S10 authorization is required after review of the exact
+materialized inputs.
+
 ### 2026-09-09 — H3 S10 Totoro PATH_ONLY smoke (no-go, held)
 
 Lane: `codex/hsq09-h3-prerun-20260909`, sealed engine candidate `82f836f3`;
