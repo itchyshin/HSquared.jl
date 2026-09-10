@@ -1,0 +1,49 @@
+[manifest]
+id = "HSQ09-H3-REPLACEMENT-S10-01"
+kind = "separate_path_only_smokes"
+source_inert = true
+path_only = true
+no_pooling = true
+
+[candidate]
+materialization_commit = "46232fbc"
+fixture_path = "test/fixtures/h3_replacement_interval/fixture.toml"
+fixture_sha256 = "8c3ccaf70e005d9b0b7b5e96cf4b3cbaf7b489522b30a37c31dfaf12e1e0c82a"
+materialization_manifest_path = "docs/dev-log/evidence/2026-09-09-h3-replacement-s2-manifest.toml"
+materialization_manifest_sha256 = "d1183b3a6f13373f293ab333d94ecbdfdc18af7b519a7b56943318d6a7ff1510"
+runner_path = "sim/hsq09_h3_replacement_s10.jl"
+runner_sha256 = "983816a3a5a426fccc260c27c479a0fdcced9e53ed4fd359b42caefb0b66dfb3"
+launcher_path = "tools/run_hsq09_h3_replacement_s10_totoro.sh"
+launcher_sha256 = "d96f9dbe297d9bde4a96eeeb3a2baeecb4c4b040610f1b38c4f8ba90166b38d4"
+manifest_lock_path = "Manifest.toml"
+manifest_lock_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
+
+[authorization]
+s10 = true
+compute = true
+s11 = false
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
+
+[rg]
+estimand = "r_g"
+seed = 2026090901
+animals = 80
+records = 240
+iterations = 5000
+threads = 1
+path_only = true
+initializer = "phenotypic_scale_default; initial=nothing"
+
+[ram]
+estimand = "r_am"
+seed = 2026090902
+animals = 996
+records = 960
+iterations = 200
+threads = 1
+path_only = true
+initializer = "G_dm=I2; sigma_e2=1.0; initial is not truth"
