@@ -23,6 +23,16 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-09 — H3 replacement S11 decision template (Julia-only, unratified)
+
+Lane: `codex/hsq09-h3-s11-prereg-20260909`, isolated from H3 S10 closeout
+`93cdc044`. The template pins the separate successful PATH_ONLY S10 receipts
+for `r_g` and `r_am`, but mechanically leaves seed schedule, replicate count,
+denominator floor, MCSE/classification rule, and compute route as maintainer
+decisions. Every execution/promotion/release field is false and the only mode
+is refusal-only. No S11, R/bridge work, capability flip, version/tag/registry
+action, or release occurred.
+
 ### 2026-09-09 — H3 replacement S2 materialization (Julia-only, no compute)
 
 Lane: `codex/hsq09-h3-materialization-20260909`, isolated from `df704655`.

@@ -1,5 +1,22 @@
 # Check Log
 
+## 2026-09-09 — H3 replacement S11 decision template (Julia-only, unratified)
+
+- Built an authorization-ready, engine-/capability-inert refusal-only template from the
+  separately retained successful H3 replacement S10 receipts at closeout
+  `93cdc044`. It pins receipt provenance but keeps seed schedule, replicate
+  count, denominator floor, MCSE/classification rule, and compute route as
+  literal maintainer decisions; every execution/promotion/release flag is false.
+- Checks: baseline and post-change `Pkg.test()` exit success; focused template
+  test first failed on missing artifacts, then passed 6/6; validator self-test
+  rejected authorization, campaign-field, receipt, and schema mutations;
+  `git diff --check` clean. Evidence:
+  `docs/dev-log/check-log.d/2026-09-09-h3-replacement-s11-template.md`.
+- Boundary: no S11 compute, R/bridge work, capability/status/debt change,
+  version/tag/registry action, or release. The next action is an explicit
+  maintainer ratification of the six unresolved S11 fields and separate compute
+  authority.
+
 ## 2026-09-08 A4-1 private Binomial observation-scale candidate (Julia)
 
 - Candidate `95b82ebdc441073ceb194bf9377116089ac48a88` follows

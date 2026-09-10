@@ -1,0 +1,48 @@
+[template]
+id = "HSQ09-H3-REPLACEMENT-S11-TEMPLATE-01"
+schema_version = 1
+status = "unratified_refusal_only"
+engine_capability_inert = true
+no_pooling = true
+
+[candidate]
+s10_closeout_commit = "93cdc044148ef9f70fa7b03a536d1c44ade05b6b"
+s10_runner_commit = "dd7eeb60"
+fixture_path = "test/fixtures/h3_replacement_interval/fixture.toml"
+fixture_sha256 = "8c3ccaf70e005d9b0b7b5e96cf4b3cbaf7b489522b30a37c31dfaf12e1e0c82a"
+s10_manifest_path = "docs/dev-log/evidence/2026-09-09-hsq09-h3-replacement-s10-manifest.toml"
+s10_manifest_sha256 = "5f690a73904b099ef9721ba11d38bf8d9c687c02919c58597695ecc07bc1e9dd"
+
+[s10_receipts.rg]
+cell = "rg"
+estimand = "r_g"
+receipt_sha256 = "0c6bb55ee0a9c8188f01a0c1fe7f8ae3a2adb45ed4ad478aba24ee439be09ca9"
+runtime_seconds = 8.15
+
+[s10_receipts.ram]
+cell = "ram"
+estimand = "r_am"
+receipt_sha256 = "79e657ce01fefa24bb1564ebe2aeb9e2301e31a80ee66e6e6b53ab36c4725a26"
+runtime_seconds = 43.26
+
+[maintainer_fields]
+seed_schedule = "MAINTAINER_DECISION_REQUIRED"
+replicates_per_estimand = "MAINTAINER_DECISION_REQUIRED"
+interval_success_floor = "MAINTAINER_DECISION_REQUIRED"
+mcse_rule = "MAINTAINER_DECISION_REQUIRED"
+classification_rule = "MAINTAINER_DECISION_REQUIRED"
+compute_route = "MAINTAINER_DECISION_REQUIRED"
+
+[authorizations]
+s11 = false
+compute = false
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
+
+[execution]
+armed = false
+mode = "refusal_only"
+effective_exit_code = 78

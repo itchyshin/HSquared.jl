@@ -10667,9 +10667,10 @@ include(joinpath(@__DIR__, "a3_three_field.jl"))
 # A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
 include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
 
-# Ratified H3 replacement fixture/materialization (source-inert; no S10/S11 fit).
+# Ratified H3 replacement fixture/materialization (engine-/capability-inert; no S10/S11 fit).
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s2.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s10.jl"))
+include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_template.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
