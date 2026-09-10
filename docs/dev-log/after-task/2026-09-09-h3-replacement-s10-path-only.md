@@ -32,6 +32,10 @@ action was taken.  The decision is HOLD, not promotion.
 - Totoro bundle and lock SHA-256 matched; isolated precompile succeeded.
 - Totoro and local paired validators: `H3_REPLACEMENT_S10_RECEIPTS_OK`.
 - Every retained non-self payload hash verified independently for both cells.
+- This lane's Unlazy `hsq-09` re-verification: 5/5 gates met.  The generic
+  repo-level after-task wrapper also detects an unrelated active H2 ledger and
+  therefore cannot be used as a whole-repository completion verdict; it does
+  not alter the H3 lane result.
 
 ## 6. Tests of the Tests
 
