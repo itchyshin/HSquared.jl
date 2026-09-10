@@ -52,6 +52,7 @@ claim_eligible = false
 [governed_inputs]
 driver_sha256 = "1c9ea950a7113a968b03e369a35657ff9e4968786536c34a1cc73d5fa91c845d"
 sbatch_sha256 = "1dce3d43aa865f52c2df24f8527615b89fc245c759a5149da5718020b7ed66f6"
+lock_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
 
 [authorizations]
 s11 = true
