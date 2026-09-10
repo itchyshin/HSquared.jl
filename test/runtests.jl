@@ -10671,6 +10671,10 @@ include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s2.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s10.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_template.jl"))
+include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_manifest.jl"))
+include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_driver.jl"))
+include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_sbatch.jl"))
+include(joinpath(@__DIR__, "test_reconcile_hsq09_h3_replacement_s11.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))

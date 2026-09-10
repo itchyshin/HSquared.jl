@@ -1,0 +1,63 @@
+[manifest]
+id = "HSQ09-H3-REPLACEMENT-S11-01"
+schema_version = 1
+status = "ratified_pending_prerun"
+engine_capability_inert = true
+no_pooling = true
+
+[candidate]
+s10_closeout_commit = "93cdc044148ef9f70fa7b03a536d1c44ade05b6b"
+template_commit = "9e226a08"
+fixture_sha256 = "8c3ccaf70e005d9b0b7b5e96cf4b3cbaf7b489522b30a37c31dfaf12e1e0c82a"
+s10_manifest_sha256 = "5f690a73904b099ef9721ba11d38bf8d9c687c02919c58597695ecc07bc1e9dd"
+rg_s10_receipt_sha256 = "0c6bb55ee0a9c8188f01a0c1fe7f8ae3a2adb45ed4ad478aba24ee439be09ca9"
+ram_s10_receipt_sha256 = "79e657ce01fefa24bb1564ebe2aeb9e2301e31a80ee66e6e6b53ab36c4725a26"
+
+[estimands.rg]
+estimand = "r_g"
+seed_start = 202609110001
+seed_stop = 202609112000
+replicates = 2000
+interval_success_floor = 1800
+
+[estimands.ram]
+estimand = "r_am"
+seed_start = 202609120001
+seed_stop = 202609122000
+replicates = 2000
+interval_success_floor = 1800
+
+[classification]
+coverage_denominator = "interval_success"
+mcse = "sqrt(coverage * (1 - coverage) / interval_success)"
+band = "nominal_0.95_plus_or_minus_2_mcse"
+separate_per_estimand = true
+
+[compute]
+route = "narval"
+account = "def-snakagaw_cpu"
+partition = "cpubase_bycore_b1"
+cpus_per_task = 1
+threads = 1
+array_cap = 100
+pre_run_array = "1-1%1"
+campaign_array = "1-2000%100"
+
+[retention]
+one_task_per_seed = true
+retain_successes_and_failures = true
+atomic_non_overwrite = true
+claim_eligible = false
+
+[governed_inputs]
+driver_sha256 = "1c9ea950a7113a968b03e369a35657ff9e4968786536c34a1cc73d5fa91c845d"
+sbatch_sha256 = "1dce3d43aa865f52c2df24f8527615b89fc245c759a5149da5718020b7ed66f6"
+
+[authorizations]
+s11 = true
+compute = true
+promotion = false
+versioning = false
+tag = false
+registry = false
+release = false
