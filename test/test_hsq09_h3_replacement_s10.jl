@@ -39,6 +39,7 @@ end
     @test occursin("--validate-receipt", source)
     @test occursin("H3_REPLACEMENT_S10_FAILURE_RETAINED", source)
     @test occursin("--dry-run", source)
+    @test occursin("! -name SHA256SUMS", source)
     @test !occursin("phase1_interval_coverage_ext", source)
     @test !occursin("h3_rg,h3_ram", source)
 end

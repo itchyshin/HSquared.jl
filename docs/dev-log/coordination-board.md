@@ -34,6 +34,18 @@ R/bridge/API work, promotion, version/tag/registry action, or release occurred.
 A new explicit S10 authorization is required after review of the exact
 materialized inputs.
 
+### 2026-09-09 — H3 replacement S10 PATH_ONLY (Julia-only, held)
+
+Lane: `codex/hsq09-h3-s10-replacement-20260909`, source basis `dd7eeb60` and
+materialization base `46232fbc`.  The two separately authorized, one-thread
+Totoro smokes succeeded: `r_g` seed `2026090901` (8.15 s) and `r_am` seed
+`2026090902` (43.26 s), each with a retained finite strictly interior interval.
+This is **PATH_ONLY**, never pooled and not calibration evidence.  A raw
+checksum self-entry defect was preserved and independently bounded by verified
+non-self payload hashes; the future launcher was repaired test-first without a
+rerun.  No S11, R/bridge work, capability flip, version/tag/registry action, or
+release occurred.
+
 ### 2026-09-09 — H3 S10 Totoro PATH_ONLY smoke (no-go, held)
 
 Lane: `codex/hsq09-h3-prerun-20260909`, sealed engine candidate `82f836f3`;

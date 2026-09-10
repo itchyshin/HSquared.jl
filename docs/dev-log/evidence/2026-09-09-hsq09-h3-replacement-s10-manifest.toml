@@ -14,7 +14,7 @@ materialization_manifest_sha256 = "d1183b3a6f13373f293ab333d94ecbdfdc18af7b519a7
 runner_path = "sim/hsq09_h3_replacement_s10.jl"
 runner_sha256 = "983816a3a5a426fccc260c27c479a0fdcced9e53ed4fd359b42caefb0b66dfb3"
 launcher_path = "tools/run_hsq09_h3_replacement_s10_totoro.sh"
-launcher_sha256 = "d96f9dbe297d9bde4a96eeeb3a2baeecb4c4b040610f1b38c4f8ba90166b38d4"
+launcher_sha256 = "bbf877f55d54091dbaf4ab4619f4734fc3edd94b6ae2b530674adb2bda5c3f1c"
 manifest_lock_path = "Manifest.toml"
 manifest_lock_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
 

@@ -56,7 +56,7 @@ readonly STAGE_DIR="$(mktemp -d "$RESULTS_ROOT/.hsq09-h3-replacement-s10-${CELL}
 publish_failure() {
   local rc="$1"
   printf 'S10_FAILURE_RETAINED cell=%s exit=%s\n' "$CELL" "$rc" >"$STAGE_DIR/launcher_failure.txt"
-  (cd "$STAGE_DIR" && find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS) || true
+  (cd "$STAGE_DIR" && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS) || true
   mv "$STAGE_DIR" "$FAILED_DIR"; trap - EXIT
   echo "H3_REPLACEMENT_S10_FAILURE_RETAINED cell=$CELL dir=$FAILED_DIR exit=$rc" >&2
   exit "$rc"
@@ -78,6 +78,6 @@ set +e
 VALIDATOR_RC=$?
 set -e
 [[ "$VALIDATOR_RC" -eq 0 ]] || publish_failure "$VALIDATOR_RC"
-(cd "$STAGE_DIR" && find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+(cd "$STAGE_DIR" && find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 mv "$STAGE_DIR" "$FINAL_DIR"; trap - EXIT
 echo "H3_REPLACEMENT_S10_PUBLISHED cell=$CELL dir=$FINAL_DIR"
