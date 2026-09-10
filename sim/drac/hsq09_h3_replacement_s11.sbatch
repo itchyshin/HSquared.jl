@@ -7,6 +7,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4G
 #SBATCH --array=1-2000%100
+#SBATCH --output=/project/6098264/snakagaw/hsq09-h3-replacement-s11-20260910/logs/%x_%A_%a.out
+#SBATCH --error=/project/6098264/snakagaw/hsq09-h3-replacement-s11-20260910/logs/%x_%A_%a.err
 
 set -euo pipefail
 : "${CELL:?set CELL=rg or CELL=ram}"
