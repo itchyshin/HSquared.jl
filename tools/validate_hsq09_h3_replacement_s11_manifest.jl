@@ -20,7 +20,7 @@ const H3_S11_EXPECTED = Dict(
     ("governed_inputs", "driver_sha256") => "1c9ea950a7113a968b03e369a35657ff9e4968786536c34a1cc73d5fa91c845d",
     ("governed_inputs", "sbatch_sha256") => "a743953c37cc2fc36fd7ba0cfdc73847b32a7c5baf2d67c71200a07fbc7d4517",
     ("governed_inputs", "lock_sha256") => "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221",
-    ("governed_inputs", "prerun_sbatch_sha256") => "50376ad39609d1c6a51bd14077bdeff900aa9ef16896769dba5939885ea7891a",
+    ("governed_inputs", "prerun_sbatch_sha256") => "91df204b1f4242657e70a524c9c2b2d732d04c000b6e1329f1d91d36c0924c49",
     ("authorizations", "s11") => true, ("authorizations", "compute") => true,
     ("authorizations", "promotion") => false, ("authorizations", "versioning") => false,
     ("authorizations", "tag") => false, ("authorizations", "registry") => false, ("authorizations", "release") => false)

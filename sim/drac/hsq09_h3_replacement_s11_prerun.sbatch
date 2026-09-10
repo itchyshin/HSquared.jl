@@ -12,11 +12,13 @@
 set -euo pipefail
 readonly ROOT=/project/6098264/snakagaw/hsq09-h3-replacement-s11-20260910
 readonly SOURCE="$ROOT/source"; readonly RECEIPTS="$ROOT/prerun/receipts"
+readonly H1_DEPOT=/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691/julia-depot
 module load julia/1.10.10
 export JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
-export JULIA_DEPOT_PATH="$ROOT/julia-depot:${JULIA_DEPOT_PATH:-}"
+export JULIA_DEPOT_PATH="$ROOT/julia-depot:$H1_DEPOT"
+export JULIA_PKG_OFFLINE=true
 mkdir -p "$RECEIPTS"
-julia --project="$SOURCE" -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+julia --project="$SOURCE" -e 'using Pkg; Pkg.instantiate(; update_registry=false); Pkg.precompile()'
 for cell in rg ram; do
   seed=$([[ "$cell" == rg ]] && echo 202609110001 || echo 202609120001)
   receipt="$RECEIPTS/$cell-$seed.tsv"

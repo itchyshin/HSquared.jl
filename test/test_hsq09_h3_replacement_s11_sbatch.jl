@@ -6,7 +6,7 @@ const H3_S11_PRERUN = read(joinpath(@__DIR__, "..", "sim", "drac", "hsq09_h3_rep
         @test occursin(text, H3_S11_SBATCH)
     end
     @test !occursin("--array=1-2000%101", H3_S11_SBATCH)
-    for text in ("#SBATCH --time=00:20:00", "Pkg.instantiate(); Pkg.precompile()", "for cell in rg ram", "H3_REPLACEMENT_S11_PRERUN_OK")
+    for text in ("#SBATCH --time=00:20:00", "H1_DEPOT=/project/6098264/snakagaw/hsq09-h1t-identified-s11-36ae0691/julia-depot", "JULIA_PKG_OFFLINE=true", "Pkg.instantiate(; update_registry=false); Pkg.precompile()", "for cell in rg ram", "H3_REPLACEMENT_S11_PRERUN_OK")
         @test occursin(text, H3_S11_PRERUN)
     end
 end
