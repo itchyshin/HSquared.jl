@@ -9,7 +9,8 @@ any release action.
 ## 2. Implemented
 
 The candidate has 0.9.0 candidate metadata, an unreleased citation fence, and
-generated status documentation that calls the non-Gaussian GLLVM objective the
+current-facing documentation reconciled to the 0.9.0 candidate/count 7. Its
+generated status documentation calls the non-Gaussian GLLVM objective the
 Laplace marginal likelihood. The historical function name is retained; exact
 REML is stated only for the Gaussian reduction. Codex held the narrow Julia
 lease; no subagents were used.
@@ -42,6 +43,8 @@ its assertions in `test/runtests.jl`.
   declared dependencies were materialized without source changes.
 - `JL-GATEB-TERMS-01` resolved: the status row used a non-Gaussian REML label
   despite a Laplace marginal objective.
+- `JL-GATEB-DOCSYNC-01` resolved: reader-facing 0.8.0/count-6 wording was
+  stale against the candidate and is now corrected or explicitly historical.
 - `JL-GATEB-RELEASE-01` deferred: remote CI, independent audit, merge, tag,
   registry action, and release remain outside this candidate.
 

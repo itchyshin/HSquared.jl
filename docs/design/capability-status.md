@@ -1,5 +1,11 @@
 # Capability Status
 
+> **Current-state amendment (2026-09-11):** this ledger accompanies an
+> experimental **0.9.0 candidate** with R-public `public_covered_count` **7**.
+> Earlier in-row references to experimental 0.8.0 are historical provenance,
+> not the current release state. No capability flip, tag, registry action, or
+> release is authorized by this amendment.
+
 > **A3 non-Gaussian reconciliation (2026-09-08).** Older V6 rows preserve the
 > family-uniform legacy payload and its historical “Laplace/VA REML” shorthand.
 > They do not describe the current narrow R transport: private

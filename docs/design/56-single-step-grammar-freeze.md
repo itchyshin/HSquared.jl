@@ -219,7 +219,7 @@ are custom-kernel markers.
 - Non-default `τ`/`ω`/`blend`/`ridge` (G7 retained debt).
 - R catch-up / element-wise parity for the n≫6 cell.
 - Interval coverage prereg.
-- Any `partial → covered` row, count 7→8, or experimental 0.8.0.
+- Any `partial → covered` row, count 7→8, or version/candidate-state change.
 
 ---
 

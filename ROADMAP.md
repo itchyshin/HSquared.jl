@@ -12,11 +12,11 @@ cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, wor
 Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
 
 > **Record status (2026-09-07):** The paired website and named honesty
-> documentation milestone is complete, but it is not a science-plan completion
-> or release decision. Experimental **0.8.0** / public count **7** stay pinned;
-> package numbering, tags, registration, and release remain undecided. H1/H3
-> are deferred, G10 promotion holds remain, and no new S5 execution occurred in
-> this record cleanup. See
+> documentation milestone is complete, and the ratified narrow 0.9 evidence
+> programme has produced an experimental **0.9.0 candidate** / public count
+> **7**. This is not a release decision: tags, registration, and public release
+> remain held pending the independent Gate-B audit and external evidence. No
+> capability promotion is implied. See
 > [`docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md`](docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
 
 ## Current Status
