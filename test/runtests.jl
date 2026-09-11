@@ -231,6 +231,19 @@ include("test_aqua.jl")
     @test occursin("reported-not-gated", lowercase(nbinom_row.evidence)) ||
           occursin("REPORTED-NOT-GATED", nbinom_row.evidence)
     @test occursin("not a covered claim", nbinom_row.claim_boundary)
+    legacy_v6_ids = ("V6-NBINOM", "V6-BETABINOMIAL", "V6-PROBIT", "V6-ORDINAL", "V6-GAMMA")
+    @test all(
+        occursin(
+            "outside the 0.9 three-field delivery",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
+    @test all(
+        occursin(
+            "not REML or AI-REML",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
     # H2: beta-binomial overdispersed-logit family row.
     betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
     @test betabin_row.status == "partial"
@@ -253,11 +266,13 @@ include("test_aqua.jl")
     @test occursin("OrderedProbitResponse", ordinal_row.evidence)
     @test occursin("REDUCTION to", ordinal_row.evidence)
     @test occursin("public default", ordinal_row.claim_boundary)
+    @test !occursin("ML-vs-REML", ordinal_row.evidence)
     # T-Gamma: Gamma (log-link) family row.
     gamma_row = only(row for row in validation if row.id == "V6-GAMMA")
     @test gamma_row.status == "covered"
     @test occursin("GammaResponse", gamma_row.evidence)
     @test occursin("EXPONENTIAL", gamma_row.evidence)
+    @test !occursin("REML leg", gamma_row.evidence)
     @test occursin("public default", gamma_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
@@ -10660,6 +10675,12 @@ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
+
+# A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
+include(joinpath(@__DIR__, "a3_three_field.jl"))
+
+# A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
+include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
