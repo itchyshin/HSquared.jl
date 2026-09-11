@@ -2,6 +2,15 @@
 using SHA, TOML
 
 const H3_S11_MANIFEST = joinpath(@__DIR__, "..", "docs", "dev-log", "evidence", "2026-09-10-h3-replacement-s11-manifest.toml")
+const H3_S11_RECOVERY = Dict{String,Any}(
+    "cell" => "ram",
+    "failure_windows" => Any[
+        Dict("task_start" => 490, "task_stop" => 494, "failure_reason" => "scheduler_sigbus_nc10901"),
+        Dict("task_start" => 495, "task_stop" => 504, "failure_reason" => "launcher_missing_optim_depot"),
+    ],
+    "excluded_node" => "nc10901", "resume_task_start" => 505, "resume_task_stop" => 2000,
+    "rerun_failed_seeds" => false, "scientific_fixture_change" => false,
+)
 const H3_S11_EXPECTED = Dict(
     ("manifest", "id") => "HSQ09-H3-REPLACEMENT-S11-01", ("manifest", "schema_version") => 1,
     ("manifest", "status") => "ratified_recovery_pending_execution", ("manifest", "engine_capability_inert") => true,
@@ -17,14 +26,10 @@ const H3_S11_EXPECTED = Dict(
     ("compute", "pre_run_array") => "1-1%1", ("compute", "campaign_array") => "1-2000%100",
     ("retention", "one_task_per_seed") => true, ("retention", "retain_successes_and_failures") => true,
     ("retention", "atomic_non_overwrite") => true, ("retention", "claim_eligible") => false,
-    ("recovery", "cell") => "ram", ("recovery", "task_start") => 490, ("recovery", "task_stop") => 494,
-    ("recovery", "failure_reason") => "scheduler_sigbus_nc10901", ("recovery", "excluded_node") => "nc10901",
-    ("recovery", "resume_task_start") => 495, ("recovery", "resume_task_stop") => 2000,
-    ("recovery", "rerun_failed_seeds") => false, ("recovery", "scientific_fixture_change") => false,
     ("governed_inputs", "driver_sha256") => "3c934f67a856f3eb1bcaac65a7f5eaaefcee99d833f917f18ebf37c1f1d2b64b",
     ("governed_inputs", "external_failure_materializer_sha256") => "d6d3994d5d12826e947f95a3fe291d83aff51bfe2e81c115fde9ed31fee0625d",
     ("governed_inputs", "reconciler_sha256") => "92436e411e0e73d316342054ac5f11e156096747f704a161d3eb688422bb58d2",
-    ("governed_inputs", "sbatch_sha256") => "a743953c37cc2fc36fd7ba0cfdc73847b32a7c5baf2d67c71200a07fbc7d4517",
+    ("governed_inputs", "sbatch_sha256") => "293bb4aacb2bedb7ea3cbb74e414f12e64db14b038dec0c0dc61ef7861dcd814",
     ("governed_inputs", "lock_sha256") => "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221",
     ("governed_inputs", "prerun_sbatch_sha256") => "91df204b1f4242657e70a524c9c2b2d732d04c000b6e1329f1d91d36c0924c49",
     ("authorizations", "s11") => true, ("authorizations", "compute") => true,
@@ -35,7 +40,7 @@ const H3_S11_SCHEMA = Dict("manifest" => ["id","schema_version","status","engine
     "estimands" => ["rg","ram"], "classification" => ["coverage_denominator","mcse","band","separate_per_estimand"],
     "compute" => ["route","account","partition","cpus_per_task","threads","array_cap","pre_run_array","campaign_array"],
     "retention" => ["one_task_per_seed","retain_successes_and_failures","atomic_non_overwrite","claim_eligible"],
-    "recovery" => ["cell","task_start","task_stop","failure_reason","excluded_node","resume_task_start","resume_task_stop","rerun_failed_seeds","scientific_fixture_change"],
+    "recovery" => ["cell","failure_windows","excluded_node","resume_task_start","resume_task_stop","rerun_failed_seeds","scientific_fixture_change"],
     "governed_inputs" => ["driver_sha256","external_failure_materializer_sha256","reconciler_sha256","sbatch_sha256","lock_sha256","prerun_sbatch_sha256"], "authorizations" => ["s11","compute","promotion","versioning","tag","registry","release"])
 const H3_S11_EST_SCHEMA = ["estimand","seed_start","seed_stop","replicates","interval_success_floor"]
 
@@ -47,6 +52,7 @@ function h3_replacement_s11_manifest_validate(path=H3_S11_MANIFEST)
     for ((section,key), value) in H3_S11_EXPECTED
         data[section][key] == value || error("H3 S11 manifest mismatch at $(section).$(key)")
     end
+    data["recovery"] == H3_S11_RECOVERY || error("H3 S11 recovery plan differs")
     for (cell, start, stop, estimand) in (("rg",202609110001,202609112000,"r_g"), ("ram",202609120001,202609122000,"r_am"))
         value=data["estimands"][cell]; Set(keys(value)) == Set(H3_S11_EST_SCHEMA) || error("H3 S11 estimand schema is not closed")
         value["estimand"] == estimand && value["seed_start"] == start && value["seed_stop"] == stop && value["replicates"] == 2000 && value["interval_success_floor"] == 1800 || error("H3 S11 estimand differs")

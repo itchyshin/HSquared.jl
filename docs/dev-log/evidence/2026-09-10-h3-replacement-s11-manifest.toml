@@ -51,11 +51,12 @@ claim_eligible = false
 
 [recovery]
 cell = "ram"
-task_start = 490
-task_stop = 494
-failure_reason = "scheduler_sigbus_nc10901"
+failure_windows = [
+  { task_start = 490, task_stop = 494, failure_reason = "scheduler_sigbus_nc10901" },
+  { task_start = 495, task_stop = 504, failure_reason = "launcher_missing_optim_depot" },
+]
 excluded_node = "nc10901"
-resume_task_start = 495
+resume_task_start = 505
 resume_task_stop = 2000
 rerun_failed_seeds = false
 scientific_fixture_change = false
@@ -64,7 +65,7 @@ scientific_fixture_change = false
 driver_sha256 = "3c934f67a856f3eb1bcaac65a7f5eaaefcee99d833f917f18ebf37c1f1d2b64b"
 external_failure_materializer_sha256 = "d6d3994d5d12826e947f95a3fe291d83aff51bfe2e81c115fde9ed31fee0625d"
 reconciler_sha256 = "92436e411e0e73d316342054ac5f11e156096747f704a161d3eb688422bb58d2"
-sbatch_sha256 = "a743953c37cc2fc36fd7ba0cfdc73847b32a7c5baf2d67c71200a07fbc7d4517"
+sbatch_sha256 = "293bb4aacb2bedb7ea3cbb74e414f12e64db14b038dec0c0dc61ef7861dcd814"
 lock_sha256 = "a3d4803f05af9738bc5796b1534bdb3249a263efb6c618cae6088d3f0c7ce221"
 prerun_sbatch_sha256 = "91df204b1f4242657e70a524c9c2b2d732d04c000b6e1329f1d91d36c0924c49"
 

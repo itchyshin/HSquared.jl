@@ -21,3 +21,15 @@ unchanged.
 
 This is not authority for promotion, versioning, tags, registry action, merge,
 or release.
+
+## Launcher recovery extension
+
+Recovery array `2833083` exposed a separate source-inert launcher defect before
+any fit began: tasks 495–504 could not load `Optim` because their depot path
+omitted the existing H1 offline depot. Those ten tasks are retained exactly once
+as `launcher_missing_optim_depot` non-interval failures and are never rerun.
+The corrected launcher fixes its depot path to the H3 writable depot followed by
+the H1 read-only offline depot and sets `JULIA_PKG_OFFLINE=true`. A no-fit
+remote package-load precompile is required before only untouched tasks
+505–1000, then 1001–2000, may run. The original scientific fixture, seed
+universe, estimator, denominators, and release prohibitions remain unchanged.

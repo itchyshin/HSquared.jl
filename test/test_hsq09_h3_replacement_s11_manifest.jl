@@ -7,9 +7,12 @@ include(joinpath(@__DIR__, "..", "tools", "validate_hsq09_h3_replacement_s11_man
     haskey(manifest["governed_inputs"], "external_failure_materializer_sha256") && @test manifest["governed_inputs"]["external_failure_materializer_sha256"] == bytes2hex(sha256(read(joinpath(@__DIR__, "..", "tools", "materialize_hsq09_h3_replacement_s11_failure.jl"))))
     @test haskey(manifest, "recovery")
     haskey(manifest, "recovery") && @test manifest["recovery"] == Dict(
-        "cell" => "ram", "task_start" => 490, "task_stop" => 494,
-        "failure_reason" => "scheduler_sigbus_nc10901", "excluded_node" => "nc10901",
-        "resume_task_start" => 495, "resume_task_stop" => 2000,
+        "cell" => "ram",
+        "failure_windows" => Any[
+            Dict("task_start" => 490, "task_stop" => 494, "failure_reason" => "scheduler_sigbus_nc10901"),
+            Dict("task_start" => 495, "task_stop" => 504, "failure_reason" => "launcher_missing_optim_depot"),
+        ],
+        "excluded_node" => "nc10901", "resume_task_start" => 505, "resume_task_stop" => 2000,
         "rerun_failed_seeds" => false, "scientific_fixture_change" => false,
     )
     @test h3_replacement_s11_manifest_validate() === nothing
