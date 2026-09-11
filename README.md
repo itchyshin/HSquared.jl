@@ -5,17 +5,17 @@ R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
 > [!WARNING]
-> **Experimental 0.8.0 — not production.** Version number tracks covered
+> **Experimental 0.9.0 candidate — not production.** Version number tracks covered
 > capability, not maturity. Not in the Julia General registry. An earlier
 > attempt
 > ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
 > v0.5.0) was closed. Install with `Pkg.add(url=...)` only — do **not** use
-> `Pkg.add("HSquared")` by name. `public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
+> `Pkg.add("HSquared")` by name. `public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
 
 I used language-model tools (Claude, Codex, and Cursor) on substantial
 parts of this engine: source, tests, and docs. I review the code I
 ship, and I am responsible for it. Tests and Documenter run in CI.
-This release is experimental 0.8.0. It is not a production engine and
+This 0.9.0 candidate is experimental. It is not a production engine and
 it is not version 1.0. HSquared is not in the Julia General registry
 yet; until a later registration actually merges, install with
 `Pkg.add(url=...)` only.
@@ -39,12 +39,12 @@ default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
 
-**Experimental 0.8.0.** Version number only. Not in Julia General. An
+**Experimental 0.9.0 candidate.** Version number only. Not in Julia General. An
 earlier attempt
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
 v0.5.0) was closed. Use `Pkg.add(url=...)` only; do **not** use
 `Pkg.add("HSquared")` by name. Not production-ready.
-`public_covered_count` is **7** (R-public; G10 multivariate + 0.7 genomic GREML default-route).
+`public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
 Language-model tools were used on this package; I review the code I ship.
 
 This repository has moved beyond the scaffold. It has experimental
