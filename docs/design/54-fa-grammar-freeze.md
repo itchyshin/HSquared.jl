@@ -203,7 +203,7 @@ S4 pass definition and are not frozen as a covered FA claim here.
 - `K > 1`, `t ≠ 4`, Ledermann-saturated `t = 3 K = 1` as a covered cell
   (S2 forbids the last).
 - Loadings+SE; production sparse FA; WOMBAT parity; interval coverage.
-- Any `partial → covered` row, count 7→8, or experimental 0.8.0.
+- Any `partial → covered` row, count 7→8, or version/candidate-state change.
 
 ---
 

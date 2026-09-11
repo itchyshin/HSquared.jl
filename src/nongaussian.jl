@@ -873,6 +873,124 @@ function nongaussian_result_payload(fit::NonGaussianFit)
 end
 
 """
+    nongaussian_three_field_payload(fit::NonGaussianFit;
+                                    predictor_variance = 0.0,
+                                    response_length = nothing)
+
+Private versioned transport envelope for the ratified 0.9 conditional
+Poisson/Bernoulli/Binomial three-field contract.  This deliberately does not
+alter [`nongaussian_result_payload`](@ref), whose family-uniform experimental
+shape remains a separate legacy bridge surface.
+
+The currently fitted non-Gaussian model has one additive component and no
+additional random-effect or observation components.  The envelope therefore
+records `components = (V_A, V_RE = 0, V_O = 0)`, derives `mu` from exactly one
+intercept, and rejects a nonzero fixed-effect predictor variance.  A vector
+Binomial denominator requires `response_length` so its shape is checked without
+confusing the number of records with the number of animal effects.
+"""
+function nongaussian_three_field_payload(
+    fit::NonGaussianFit;
+    predictor_variance::Real = 0.0,
+    response_length::Union{Nothing,Integer} = nothing,
+)
+    fit.converged ||
+        throw(ArgumentError("nongaussian_three_field_payload refuses a non-converged fit (converged = false)"))
+    fit.family in (:poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("nongaussian_three_field_payload supports only :poisson, :bernoulli, and :binomial; got :$(fit.family)"))
+    iszero(predictor_variance) ||
+        throw(ArgumentError("the 0.9 three-field contract requires predictor_variance = 0"))
+    length(fit.beta) == 1 ||
+        throw(ArgumentError("the 0.9 three-field contract requires exactly one (Intercept) fixed effect"))
+
+    V_A = Float64(fit.variance_components.sigma_a2)
+    isfinite(V_A) && V_A > 0.0 ||
+        throw(ArgumentError("the 0.9 three-field contract requires a finite positive sigma_a2"))
+    μ = Float64(only(fit.beta))
+    isfinite(μ) || throw(ArgumentError("the 0.9 three-field contract requires a finite intercept"))
+    components = (V_A = V_A, V_RE = 0.0, V_O = 0.0)
+    V_eta_random = components.V_A + components.V_RE + components.V_O
+
+    trials = if fit.family === :binomial
+        _three_field_binomial_trials(fit.n_trials, response_length)
+    else
+        fit.n_trials === nothing ||
+            throw(ArgumentError("family :$(fit.family) must transport n_trials = nothing in the 0.9 three-field contract"))
+        nothing
+    end
+
+    h2_liability, h2_observation, observation_reason = if fit.family === :poisson
+        # Eq. 26, written as 1/lambda_bar to avoid an unnecessary intermediate.
+        (nothing,
+         V_A / (expm1(V_eta_random) + exp(-(μ + V_eta_random / 2))),
+         nothing)
+    elseif fit.family === :binomial && trials isa AbstractVector &&
+           !all(==(first(trials)), trials)
+        # A vector denominator has no scalar proportion-scale estimand until its
+        # population weighting rule is separately declared.  In particular, do
+        # not silently replace it with a mean trial count.
+        (V_A / (V_eta_random + _VAR_LOGISTIC),
+         NaN,
+         "varying_trials_no_scalar_estimand")
+    else
+        # The ratified Bernoulli/common-trial Binomial data scale is the existing
+        # Gauss--Hermite proportion estimand.  `trials` is `nothing` only for
+        # Bernoulli, which is the n_trials = 1 special case; a constant trial
+        # vector is exactly the common-trial Binomial case, not an averaging rule.
+        # An all-one vector is the per-record representation of Bernoulli, so
+        # use the same family in the h2 calculation.
+        scalar_family = if fit.family === :bernoulli ||
+                           (trials isa AbstractVector && all(==(1), trials))
+            BernoulliResponse()
+        else
+            BinomialResponse(trials isa AbstractVector ? first(trials) : trials)
+        end
+        observation = nongaussian_heritability(V_A, μ, scalar_family).h2_observation
+        (V_A / (V_eta_random + _VAR_LOGISTIC), observation, nothing)
+    end
+
+    return (
+        schema = "nongaussian_three_field_v09",
+        family = String(fit.family),
+        method = _marginal_method_string(_marginal_method(fit.marginal)),
+        loglik = fit.marginal_loglik,
+        converged = fit.converged,
+        breeding_ids = string.(collect(fit.ids)),
+        breeding_values = collect(Float64, fit.breeding_values),
+        components = components,
+        fixed_effects = (names = ["(Intercept)"], values = [μ]),
+        h2_latent = V_A / V_eta_random,
+        h2_liability = h2_liability,
+        h2_observation = h2_observation,
+        h2_observation_undefined_reason = observation_reason,
+        n_trials = trials,
+    )
+end
+
+function _three_field_binomial_trials(
+    n_trials::Union{Int,Vector{Int},Nothing},
+    response_length::Union{Nothing,Integer},
+)
+    n_trials === nothing &&
+        throw(ArgumentError("family :binomial requires n_trials in the 0.9 three-field contract"))
+    if n_trials isa Int
+        n_trials > 1 ||
+            throw(ArgumentError("family :binomial requires a scalar n_trials greater than one; n_trials = 1 is Bernoulli"))
+        return n_trials
+    end
+
+    response_length === nothing &&
+        throw(ArgumentError("a vector n_trials requires response_length for exact shape validation"))
+    response_length > 0 ||
+        throw(ArgumentError("response_length must be positive when n_trials is a vector"))
+    length(n_trials) == response_length ||
+        throw(ArgumentError("vector n_trials must have response_length entries"))
+    all(>(0), n_trials) ||
+        throw(ArgumentError("vector n_trials must contain only positive integers"))
+    return copy(n_trials)
+end
+
+"""
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200)
 

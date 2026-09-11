@@ -131,7 +131,8 @@ claim).
 ## H · Non-Gaussian & GLLVM (Phase 6)
 
 > Note: genetic-GLLVM #50 slices 1–3 are already built on the engine
-> (descriptors, Gaussian + non-Gaussian latent solve, REML over G_lat, per-trait
+> (descriptors, Gaussian + non-Gaussian latent solve, Laplace-marginal fitting over
+> `G_lat` (exact REML only for Gaussian), per-trait
 > families). H8/H9 build on that.
 
 - **H1** ✅ Negative-binomial family + overdispersion (Laplace). [JL] (`NegativeBinomialResponse` + joint `(σ²a,θ)` profile + oracle merged #165; `V6-NBINOM` row + recovery sim + .md mirrors closed in the deferred-ledger close-out; partial)

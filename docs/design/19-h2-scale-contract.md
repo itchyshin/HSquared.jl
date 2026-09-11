@@ -5,14 +5,16 @@ Status: **design contract — pins the convention; claims nothing covered.** Rec
 every family added under the v0.6 plan (and the non-Gaussian RR `k=2` aim) follows ONE
 scale convention rather than each slice re-inventing it. The convention is the
 **de Villemereuil (QGglmm) / Nakagawa–Schielzeth** framework; it is already implemented
-for the four wired families in `src/nongaussian.jl:949–1092` (`nongaussian_heritability`)
+for the four wired families in `src/nongaussian.jl` (`nongaussian_heritability`)
 and stated as a principle in the family-plan decision
 (`docs/dev-log/decisions/2026-06-30-rr-aim-and-nongaussian-family-plan.md`, §Part 2). This
 doc makes the principle a precise per-family contract and extends it to the owed families.
 
-**Honesty pins unchanged.** This is a docs/contract slice: no code, no API, no default, no
-R wording changes; `validation_status()` stays 48 rows; public-covered FITTING surface
-stays **1** (v0.1 univariate Gaussian). Every non-Gaussian h² surface below is
+**Honesty pins unchanged.** This contract makes no default-route or public-covered
+capability change.  The later A3 amendment adds a separate private versioned envelope
+(`nongaussian_three_field_payload`; see
+`docs/dev-log/after-task/2026-09-08-a3-three-field-contract.md`), not a public
+extractor. `validation_status()` and every non-Gaussian h² surface below remain
 `experimental`/`partial` (no same-estimand QGglmm/MCMCglmm comparator yet).
 
 ---
@@ -20,22 +22,36 @@ stays **1** (v0.1 univariate Gaussian). Every non-Gaussian h² surface below is
 ## 1. The rule
 
 > **A non-Gaussian heritability is never reported as a bare `h²`. It always carries an
-> explicit scale label — `latent`, `observation`, or `liability` — and the family-uniform
-> result payload carries NO `heritability` field at all.**
+> explicit scale label — `latent`, `observation`, or `liability`. The legacy
+> family-uniform result payload carries NO `heritability` field; the separate,
+> private versioned 0.9 R transport carries only its ratified labelled fields.**
 
 Off the identity link there is no single heritability: `V_A / (V_A + V_E)` is only the
 *latent*-scale ratio, and it is the wrong number to hand a breeder who measured counts or
 0/1 outcomes. So:
 
-- `nongaussian_result_payload` is deliberately **family-uniform and h²-free** — it would be
-  wrong to "reuse the Gaussian ratio" (`src/nongaussian.jl:1020–1023`).
+- The legacy `nongaussian_result_payload` is deliberately **family-uniform and
+  h²-free** — it would be wrong to "reuse the Gaussian ratio". It is distinct
+  from the private `nongaussian_three_field_payload`, whose narrow R-facing
+  0.9 contract has separately ratified fields and must not be generalized from
+  this legacy rule.
 - Heritability is a **separate, opt-in, self-describing call**, `nongaussian_heritability`,
   returning a `NamedTuple` whose fields name the scale: `h2_latent`, `h2_observation`,
   `var_link`, `var_distribution`, plus `caveat`, `information_limited`, `method`
-  (`src/nongaussian.jl:1025–1027`).
+  (`nongaussian_heritability`).
 - A degenerate scale is returned as **`NaN` with a caveat**, never silently dropped or
   back-filled from another scale (Poisson latent h²; per-record-varying `n_trials`
   observation h²).
+
+**A4-1 private-envelope amendment (2026-09-08).** The private 0.9 three-field
+transport now uses this established Gauss--Hermite proportion-scale observation
+estimand for Bernoulli and scalar/common-trial Binomial logit fits.  A
+per-record-varying Binomial denominator remains `NaN` with
+`h2_observation_undefined_reason = "varying_trials_no_scalar_estimand"`: its
+population weighting rule is not part of the 0.9 contract, and it is never
+silently replaced by an average trial count.  A vector with every entry equal
+is a representation of the common-trial case and receives the same scalar
+observation-scale result.
 
 This is the cross-cutting, expensive-to-retrofit decision: pin it before adding families.
 
@@ -62,7 +78,7 @@ h²_latent = V_A / (V_A + V_link + V_fixed)
 the standard logistic), `1` for probit (the classic Gaussian-liability scale), `π²/6` for
 complementary-log-log (the Gumbel/extreme-value variance; an owed family), and `σ²e` for the
 Gaussian identity link. The **log link is family-dependent**: **`0` for Poisson** — no latent
-residual, so its latent h² is **degenerate (`NaN`)** (`src/nongaussian.jl:952–954, 982`), the
+residual, so its latent h² is **degenerate (`NaN`)** (`nongaussian_heritability`), the
 exact reason the uniform payload refuses a single h² — but **`ψ₁(ν)` (trigamma of the shape) for
 Gamma**, a genuine multiplicative log-scale residual (`Var[log Y] = ψ₁(ν)`), so the **Gamma
 latent h² is NON-degenerate** (§3.1). (Link variances verified against Nakagawa & Schielzeth 2017
@@ -85,7 +101,7 @@ with the expectations taken over the **linear-predictor distribution `η ~ N(μ,
 > is **NOT** added to the integration variance. `V_link` is an observation-process term; on
 > the data scale it reappears as the **sampling variance** `E[Var(y|η)]`, not as predictor
 > spread. Adding `π²/3` to the integration variance double-counts it. This matches QGglmm's
-> `binom1.logit` (`src/nongaussian.jl:955–962`).
+> `binom1.logit` (`nongaussian_heritability`).
 
 > **Two methods, do not conflate (the genuinely confusing bit).** The engine uses the
 > **QGglmm integration** method (de Villemereuil 2016): integrate the inverse-link exactly,
@@ -200,7 +216,7 @@ subject of de Villemereuil et al. (2018, *J. Evol. Biol.*) on whether/how to inc
 - Default `0` (no fixed-effect spread beyond the intercept).
 - With **>1 fixed effect** the intercept is ambiguous, so `mu` (link-scale population mean)
   is **required** and `predictor_variance` should be supplied
-  (`src/nongaussian.jl:1060–1066`).
+  (`nongaussian_heritability`).
 - Convention: `V_fixed` enters **both** the latent denominator and the observation-scale
   integration variance (it is genuine predictor spread), **unlike** `V_link` which enters
   only the latent denominator. This is the asymmetry that makes the contract non-obvious.
@@ -212,13 +228,13 @@ subject of de Villemereuil et al. (2018, *J. Evol. Biol.*) on whether/how to inc
 - **Laplace bias.** The latent `σ²a` from the Laplace/penalized-IRLS fit is downward-biased
   for binary and low-count data (the information effect); the observation- and liability-scale
   h² inherit that bias. Single-trial Bernoulli sets `information_limited = true` with a caveat;
-  never present it as clean (`src/nongaussian.jl:1001–1002`). glmmTMB shares the same Laplace
+  never present it as clean (`nongaussian_heritability`). glmmTMB shares the same Laplace
   bias, so glmmTMB *agreement ≠ unbiasedness*.
 - **No same-estimand comparator yet.** The h² transform is exact in its closed-form limbs and
   checked against an independent Gauss–Hermite quadrature oracle in `test/runtests.jl`, but it
   has **no external QGglmm/MCMCglmm same-estimand comparator**. Per doc-16 (G11) and doc-04,
   promotion off `partial` needs that comparator + a Fisher/Falconer review
-  (`src/nongaussian.jl:1049–1053`).
+  (`nongaussian_heritability`).
 - **Scope.** Everything here is dense / validation-scale / experimental. None of it is the
   public default; the R bridge does not expose `nongaussian_heritability`.
 

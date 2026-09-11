@@ -202,11 +202,15 @@ include("test_aqua.jl")
     @test occursin("25,000", matfree.evidence)
     @test occursin("public_covered_count", matfree.claim_boundary)
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-REML"
+    @test validation[end].id == "V6-GGLLVM-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
-    @test "V6-GGLLVM-REML" in [row.id for row in validation]
+    @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
+    gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
+    @test occursin("Laplace marginal likelihood", gllvm_row.evidence)
+    @test occursin("not REML", gllvm_row.claim_boundary)
+    @test occursin("Gaussian reduction", gllvm_row.claim_boundary)
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -231,6 +235,19 @@ include("test_aqua.jl")
     @test occursin("reported-not-gated", lowercase(nbinom_row.evidence)) ||
           occursin("REPORTED-NOT-GATED", nbinom_row.evidence)
     @test occursin("not a covered claim", nbinom_row.claim_boundary)
+    legacy_v6_ids = ("V6-NBINOM", "V6-BETABINOMIAL", "V6-PROBIT", "V6-ORDINAL", "V6-GAMMA")
+    @test all(
+        occursin(
+            "outside the 0.9 three-field delivery",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
+    @test all(
+        occursin(
+            "not REML or AI-REML",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
     # H2: beta-binomial overdispersed-logit family row.
     betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
     @test betabin_row.status == "partial"
@@ -253,11 +270,13 @@ include("test_aqua.jl")
     @test occursin("OrderedProbitResponse", ordinal_row.evidence)
     @test occursin("REDUCTION to", ordinal_row.evidence)
     @test occursin("public default", ordinal_row.claim_boundary)
+    @test !occursin("ML-vs-REML", ordinal_row.evidence)
     # T-Gamma: Gamma (log-link) family row.
     gamma_row = only(row for row in validation if row.id == "V6-GAMMA")
     @test gamma_row.status == "covered"
     @test occursin("GammaResponse", gamma_row.evidence)
     @test occursin("EXPONENTIAL", gamma_row.evidence)
+    @test !occursin("REML leg", gamma_row.evidence)
     @test occursin("public default", gamma_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
@@ -318,6 +337,23 @@ include("test_aqua.jl")
     @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
     @test occursin("0.8.0", ss_row.claim_boundary)
 
+    # Gate B candidate: public wording must retain the explicit genomic target
+    # and must not call a non-Gaussian Laplace objective REML.
+    index_page = read(joinpath(@__DIR__, "..", "docs", "src", "index.md"), String)
+    grammar_page = read(joinpath(@__DIR__, "..", "docs", "src", "model-spec-grammar.md"), String)
+    bridge_page = read(joinpath(@__DIR__, "..", "docs", "design", "12-bridge-compatibility.md"), String)
+    gllvm_source = read(joinpath(@__DIR__, "..", "src", "genetic_gllvm.jl"), String)
+    @test occursin("the explicit", index_page)
+    @test occursin("`target = \"genomic\"`", index_page)
+    @test !occursin("genomic GREML default-route", index_page)
+    @test !occursin("default-routed and covered", status_page)
+    @test !occursin("default-routed and covered", grammar_page)
+    @test !occursin("R-public default route", bridge_page)
+    gllvm_source_normalized = replace(gllvm_source, "\r\n" => "\n")
+    @test occursin("fitted\nmarginal-likelihood optimum", gllvm_source_normalized)
+    @test !occursin("structured non-Gaussian REML recovery", gllvm_source)
+    @test !occursin("at the REML optimum", gllvm_source)
+
     # FA/SS engine coverage must remain separate from R-public coverage in
     # both status ledgers; this locks claim boundaries without changing rows.
     capability_page = read(joinpath(@__DIR__, "..", "docs", "design", "capability-status.md"), String)
@@ -333,6 +369,9 @@ include("test_aqua.jl")
     @test occursin("V2-SSHINV", debt_page)
     @test occursin("R FA planned", debt_page)
     @test occursin("R `single_step()` stays opt-in partial", debt_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", capability_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", debt_page)
+    @test !occursin("REML-style", capability_page)
 
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
@@ -8745,7 +8784,7 @@ end
     end
 end
 
-@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting)" begin
     # 8-animal interior fixture (where the REML optimum is interior)
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,
@@ -10660,6 +10699,12 @@ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
+
+# A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
+include(joinpath(@__DIR__, "a3_three_field.jl"))
+
+# A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
+include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))

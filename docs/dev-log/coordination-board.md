@@ -23,6 +23,15 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-08 — A3 three-field contract (isolated paired candidate)
+
+Julia private-envelope and R bridge work is locally verified in separate
+worktrees. Both A3 Unlazy ledgers are 8/8 met; the Julia normal harness includes
+the 43-assertion A3 file and the R candidate has an ordinary `R CMD check`
+Status: OK. This is experimental/partial only: no S10/S11, remote compute,
+calibration, comparator evidence, promotion, version, tag, registry, or release.
+Candidate integration remains a maintainer decision.
+
 ### 2026-09-07 — paired release-record cleanup (local documentation-only)
 
 Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
@@ -1380,3 +1389,12 @@ JOINT contract task per AGENTS.md rule 2.
   evidence rules, and cross-project scout cadence.
 - `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
   fitted/planned/missing separation.
+
+## 2026-09-11 — Gate-B candidate handoff boundary
+
+- Codex owns `codex/hsq09-gateb-julia-integration-20260911` and
+  `codex/hsq09-gateb-r-artifact-20260911` only.
+- Julia candidate begins at PR #322 exact head and retains A3/A4; R candidate
+  artifact is frozen at `a1bd525e`. Neither PR #322 nor PR #202 was updated.
+- Both candidates remain local and unmerged. Gate B is not authorized by this
+  record: no release, tag, registry, CRAN submission, merge, or promotion.
