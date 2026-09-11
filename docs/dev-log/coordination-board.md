@@ -23,6 +23,18 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-11 — 0.9.0 isolated candidate artifact gate PASS; release held
+
+Julia candidate `89ab34247d0cdebd13c6c62a54ac7a571d8c1933` and R candidate
+`a1bd525e8594ccc346f43d7741eb37b1e7e112d2` were independently audited with
+the sealed R source artifact SHA-256
+`942898152a45ea27533ee0a13e4647cdf045e45735e6e1a8ffb1ce43f99f678b`.
+Rose PASS covers canonical non-Gaussian Laplace/ELBO wording, the current
+`V6-GGLLVM-LAPLACE` identifier, and the experimental opt-in genomic fence.
+This is only an artifact-gate result: no push, merge, tag, CRAN submission,
+Julia registry action, or publication occurred. External CI at the final heads
+and a separate Gate B maintainer decision remain required.
+
 ### 2026-09-05 — 0.9 honesty status (NOT 0.9.0; count stays 7)
 
 Lane: `docs/coord-board-09-status-2026-09-05` (scratch clone
