@@ -10675,6 +10675,7 @@ include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_manifest.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_driver.jl"))
 include(joinpath(@__DIR__, "test_hsq09_h3_replacement_s11_sbatch.jl"))
 include(joinpath(@__DIR__, "test_reconcile_hsq09_h3_replacement_s11.jl"))
+include(joinpath(@__DIR__, "test_materialize_hsq09_h3_replacement_s11_failure.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))

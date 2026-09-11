@@ -49,9 +49,8 @@ function h3_replacement_s11_rep(cell::AbstractString, seed::Integer)
         endpoint_scale=get(receipt, "endpoint_scale", ""), claim_eligible=false)
 end
 
-function write_h3_replacement_s11_receipt(path::AbstractString; cell::AbstractString, seed::Integer)
+function _write_h3_replacement_s11_row(path::AbstractString, row)
     ispath(path) && throw(ArgumentError("refusing to overwrite retained receipt: $(path)"))
-    row = h3_replacement_s11_rep(cell, seed)
     mkpath(dirname(path)); temp = tempname(dirname(path))
     try
         open(temp, "w") do io
@@ -63,6 +62,26 @@ function write_h3_replacement_s11_receipt(path::AbstractString; cell::AbstractSt
         ispath(temp) && rm(temp; force=true)
     end
     path
+end
+
+function write_h3_replacement_s11_receipt(path::AbstractString; cell::AbstractString, seed::Integer)
+    _write_h3_replacement_s11_row(path, h3_replacement_s11_rep(cell, seed))
+end
+
+function write_h3_replacement_s11_external_failure_receipt(path::AbstractString;
+    cell::AbstractString, seed::Integer, failure_reason::AbstractString)
+    haskey(H3_S11_RANGES, cell) || throw(ArgumentError("cell must be rg or ram"))
+    seed in H3_S11_RANGES[cell] || throw(ArgumentError("seed is outside frozen $(cell) S11 range"))
+    reason = strip(failure_reason)
+    isempty(reason) && throw(ArgumentError("failure_reason must be non-empty"))
+    occursin(r"[\t\n\r]", reason) && throw(ArgumentError("failure_reason must be one TSV field"))
+    spec = h3_replacement_s10_cell(cell)
+    estimand = cell == "rg" ? "r_g" : "r_am"
+    row = (campaign=H3_S11_ID, seed=seed, estimand=estimand, truth=spec["truth"], level=spec["level"],
+        fit_converged=false, interval_success=false, failure_reason=reason, covered=false,
+        estimate=NaN, lower=NaN, upper=NaN, method="not_run", endpoint_scale="not_applicable",
+        claim_eligible=false)
+    _write_h3_replacement_s11_row(path, row)
 end
 
 function _h3_s11_main(args=ARGS)
