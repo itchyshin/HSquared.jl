@@ -11,7 +11,7 @@ The new guard was observed failing before the correction, then passing.
 
 ## Checks
 
-- `julia --project=. -e 'using Pkg; Pkg.test()'` — PASS (including 429/429
+- `julia --project=. -e 'using Pkg; Pkg.test()'` — PASS (including 432/432
   Phase-0 assertions).
 - `julia --project=docs docs/make.jl` — PASS. The pre-existing 43
   undocumented-docstring warnings remain; local deployment is intentionally

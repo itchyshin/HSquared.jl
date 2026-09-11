@@ -368,6 +368,9 @@ include("test_aqua.jl")
     @test occursin("V2-SSHINV", debt_page)
     @test occursin("R FA planned", debt_page)
     @test occursin("R `single_step()` stays opt-in partial", debt_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", capability_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", debt_page)
+    @test !occursin("REML-style", capability_page)
 
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
