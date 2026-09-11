@@ -337,6 +337,22 @@ include("test_aqua.jl")
     @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
     @test occursin("0.8.0", ss_row.claim_boundary)
 
+    # Gate B candidate: public wording must retain the explicit genomic target
+    # and must not call a non-Gaussian Laplace objective REML.
+    index_page = read(joinpath(@__DIR__, "..", "docs", "src", "index.md"), String)
+    grammar_page = read(joinpath(@__DIR__, "..", "docs", "src", "model-spec-grammar.md"), String)
+    bridge_page = read(joinpath(@__DIR__, "..", "docs", "design", "12-bridge-compatibility.md"), String)
+    gllvm_source = read(joinpath(@__DIR__, "..", "src", "genetic_gllvm.jl"), String)
+    @test occursin("the explicit", index_page)
+    @test occursin("`target = \"genomic\"`", index_page)
+    @test !occursin("genomic GREML default-route", index_page)
+    @test !occursin("default-routed and covered", status_page)
+    @test !occursin("default-routed and covered", grammar_page)
+    @test !occursin("R-public default route", bridge_page)
+    @test occursin("fitted\nmarginal-likelihood optimum", gllvm_source)
+    @test !occursin("structured non-Gaussian REML recovery", gllvm_source)
+    @test !occursin("at the REML optimum", gllvm_source)
+
     # FA/SS engine coverage must remain separate from R-public coverage in
     # both status ledgers; this locks claim boundaries without changing rows.
     capability_page = read(joinpath(@__DIR__, "..", "docs", "design", "capability-status.md"), String)

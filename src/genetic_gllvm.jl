@@ -358,7 +358,8 @@ latent_structure(fit::GeneticGLLVMFit) = fit.latent_structure
 """
     loglik(fit::GeneticGLLVMFit)
 
-Return the Laplace-approximate marginal log-likelihood at the REML optimum
+Return the Laplace-approximate marginal log-likelihood at the fitted
+marginal-likelihood optimum
 from a `GeneticGLLVMFit` (internal struct).
 """
 loglik(fit::GeneticGLLVMFit) = fit.loglik
@@ -367,7 +368,7 @@ loglik(fit::GeneticGLLVMFit) = fit.loglik
     fit_gllvm_laplace_reml(Y, Ainv, family; rank, structure = :lowrank, X = ones(size(Y,1), 1),
                            initial = nothing, initial_uniqueness = nothing, ...)
 
-Genetic-GLLVM REML (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
+Genetic-GLLVM Laplace-marginal fitting (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
 maximizing the K-factor Laplace marginal [`gllvm_laplace_marginal_loglik`](@ref) over
 the loadings (NelderMead). The among-trait genetic covariance is `G_lat = ΛΛ'`
 (`structure = :lowrank`) or `G_lat = ΛΛ' + diag(Ψ)` (`structure = :factor_analytic`,
@@ -396,7 +397,7 @@ For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not es
 the non-Gaussian families have no residual. The `K = 1, T = 1` Poisson `:lowrank` case
 reduces to the single-factor [`fit_laplace_reml`](@ref) (`σ²a = λ̂²`). EXPERIMENTAL,
 dense/validation-scale, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a
-known-truth recovery claim (structured non-Gaussian REML recovery is a separate opt-in
+known-truth recovery claim (structured non-Gaussian Laplace-marginal recovery is a separate opt-in
 study, and the multivariate FA recovery has not passed); no R model-spec or bridge payload.
 """
 function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,

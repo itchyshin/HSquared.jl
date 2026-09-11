@@ -35,7 +35,7 @@ engine version each R surface is validated against.
 | Capability | Engine status | Bridge target | R surface | Engine ver. tested | Parity fixture |
 | --- | --- | --- | --- | --- | --- |
 | Gaussian animal model (v0.1) | covered | `fit_animal_model`/`fit_ai_reml` | R-public `hsquared()` default | current `main` | existing v0.1 |
-| Narrow genomic GREML | covered at validation scale | `genomic` | R-public default route; count contribution is recorded in the R ledger | current `main` | genomic GREML target and route fixtures |
+| Narrow genomic GREML | covered at validation scale | `genomic` | R-public explicit `target = "genomic"` route; count contribution is recorded in the R ledger | current `main` | genomic GREML target and route fixtures |
 | SNP-BLUP | partial | `snp_blup` | opt-in target; not a default or a genomic-wide promotion | current `main` | `genomic_gblup_snpblup_target` |
 | Ordinary single-step H/Hinv | engine-covered narrow cell | `single_step` | R supplied/constructed routes remain opt-in partial; Hinv-cell parity is not fitted ssGBLUP parity | current `main` | Hinv-cell parity; fitted comparator still owed |
 | Supplied-Γ / HΓ single-step | experimental | `metafounder_single_step` / `fit_metafounder_single_step[_reml]` | live R bridge partial; no general R formula activation implied | current `main` | nonzero-Γ REML payload smoke |
