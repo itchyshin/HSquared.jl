@@ -1,9 +1,9 @@
 # Progression and evidence
 
-This is an evidence history, not a release timeline. `HSquared.jl` is currently
-experimental **0.8.0**; the R-public `public_covered_count` is **7**. Neither
-fact means production readiness, Julia General registration, calibrated
-intervals, or a **0.9** release. For applied work, begin in
+This is an evidence history, not a release timeline. `HSquared.jl` has an
+experimental **0.9.0** source candidate; the R-public `public_covered_count` is
+**7**. Neither fact means production readiness, Julia General registration, or
+calibrated intervals. For applied work, begin in
 [hsquared](https://itchyshin.github.io/hsquared/).
 
 ## Where we are now
@@ -72,12 +72,16 @@ must match the estimand.
   partial. See the
   [0.8.0 changelog](changelog.md#0.8.0-experimental) and
   [current status](validation-status.md).
+- **0.9.0 candidate — narrow three-field contract and interval evidence.**
+  The Poisson/Binomial three-field contract and retained H0/H1/H3 evidence are
+  bounded evidence records, not a count increase or a general interval-
+  calibration claim. This candidate has not been registered or published.
 
 ## What remains separate
 
-Julia registry status, any future Julia-package release decision, interval
-calibration, production readiness, and future roadmaps are separate decisions.
-This page does not announce a release or change a status row. For technical plans, use the
+Julia registry status, publication, interval calibration, production readiness,
+and future roadmaps are separate decisions. This page does not announce a
+registration or change a status row. For technical plans, use the
 [roadmap](roadmap.md) and [developer pages](backend-algorithm-roadmap.md);
 for an applied reporting decision, return to the
 [twin boundary](twin-boundary.md).

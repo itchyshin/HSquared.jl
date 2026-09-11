@@ -11,6 +11,14 @@ contract agree.
 cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, work-unit estimates).
 Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
 
+> **Current record (2026-09-11):** the isolated twins carry an experimental
+> **0.9.0 source candidate** after the ratified three-field contract and
+> retained H0/H1/H3 evidence. The R-public count remains **7** and no
+> capability flips are implied. This candidate is not production, not a Julia
+> General registration, and not a published release; the paired R frozen-
+> artifact gate and independent audit remain prerequisites for any release
+> decision.
+
 > **Record status (2026-09-07):** The paired website and named honesty
 > documentation milestone is complete, but it is not a science-plan completion
 > or release decision. Experimental **0.8.0** / public count **7** stay pinned;

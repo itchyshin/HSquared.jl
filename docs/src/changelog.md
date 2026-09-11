@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 (experimental source candidate)
+
+The candidate records the narrow Poisson/Binomial three-field contract and the
+retained H0/H1/H3 interval-evidence boundary. It does not increase the R-public
+covered count of **7**, activate an R formula/default, establish a general
+interval-calibration claim, register HSquared.jl in Julia General, or publish a
+release.
+
 ## Unreleased
 
 ## 0.8.0 (experimental)

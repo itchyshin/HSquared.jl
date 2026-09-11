@@ -331,7 +331,7 @@ include("test_aqua.jl")
     @test occursin("NO-ANCHOR", ss_row.claim_boundary)
     @test occursin("opt-in partial", ss_row.claim_boundary)
     @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
-    @test occursin("0.8.0", ss_row.claim_boundary)
+    @test occursin("0.9.0", ss_row.claim_boundary)
 
     # FA/SS engine coverage must remain separate from R-public coverage in
     # both status ledgers; this locks claim boundaries without changing rows.
