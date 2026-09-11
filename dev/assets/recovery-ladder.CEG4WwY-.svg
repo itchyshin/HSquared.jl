@@ -36,6 +36,6 @@
   <text x="520" y="218" text-anchor="middle" font-family="IBM Plex Sans, Helvetica Neue, Arial, sans-serif" font-size="11.5" fill="#7c2d12">not known truth.</text>
 
   <text x="24" y="478" font-family="IBM Plex Sans, Helvetica Neue, Arial, sans-serif" font-size="12" fill="#0f2533">Covered at validation scale can still be opt-in, dense, and REML-only. It is not 1.0, not production, and not interval-calibrated.</text>
-  <text x="24" y="500" font-family="IBM Plex Sans, Helvetica Neue, Arial, sans-serif" font-size="12" fill="#64748b">Caption dated 2026-09-02 post-G10: public_covered_count = 6. Live table is validation_status(); this figure does not flip a row.</text>
+  <text x="24" y="500" font-family="IBM Plex Sans, Helvetica Neue, Arial, sans-serif" font-size="12" fill="#64748b">Caption updated 2026-09-11: public_covered_count = 7. Live table is validation_status(); this figure does not flip a row.</text>
   <text x="24" y="532" font-family="IBM Plex Sans, Helvetica Neue, Arial, sans-serif" font-size="12" fill="#64748b">Read "Can I fit and report this?" before putting a number in a paper.</text>
 </svg>
