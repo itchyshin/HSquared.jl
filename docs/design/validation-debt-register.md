@@ -13,7 +13,9 @@
 > and older recovery filenames retain their historical identifiers. For a
 > non-Gaussian family, the fitted objective is the Laplace marginal likelihood,
 > not REML; exact REML is only the Gaussian reduction. The current contract is
-> authoritative where older row prose uses the historical shorthand.
+> authoritative where older row prose uses the historical shorthand. The
+> canonical validation-status ID is `V6-GGLLVM-LAPLACE`; the legacy
+> `V6-GGLLVM-REML` label in older ledger rows is superseded, not a capability alias.
 
 | ID | Capability | Status | Required evidence |
 | --- | --- | --- | --- |

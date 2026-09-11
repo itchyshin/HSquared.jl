@@ -202,11 +202,11 @@ include("test_aqua.jl")
     @test occursin("25,000", matfree.evidence)
     @test occursin("public_covered_count", matfree.claim_boundary)
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-REML"
+    @test validation[end].id == "V6-GGLLVM-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
-    @test "V6-GGLLVM-REML" in [row.id for row in validation]
+    @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -10162,7 +10162,7 @@ end
     @test isfinite(ll)
     @test ll ≈ fit_scalar.loglik
 
-    # (d) All existing GLLVM REML tests still produce GeneticGLLVMFit (not NamedTuple).
+    # (d) All existing GLLVM latent-fit tests still produce GeneticGLLVMFit (not NamedTuple).
     #     Spot-check the K=1,T=1 Poisson reduction fit (same fixture as slice-3 testset).
     yp = reshape(Float64[2, 1, 3, 0, 4, 2, 1, 5], q, 1)
     gr = fitr(yp, Ainv, HSquared.PoissonResponse(); rank = 1, initial = reshape([1.0], 1, 1))

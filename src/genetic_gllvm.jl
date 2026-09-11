@@ -36,7 +36,8 @@ rotation-INVARIANT functionals of `Σ_g` are returned — never the raw loadings
 returned quantity invariant (the `genetic_pca` eigenvectors up to sign). Guards
 (dimension / positivity / rank) are delegated to [`lowrank_covariance`](@ref) and
 [`factor_analytic_covariance`](@ref). The first foundation step of the genetic
-GLLVM (#50); the supplied-covariance latent marginal and REML estimation are later
+GLLVM (#50); the supplied-covariance latent marginal and Laplace-marginal fitting
+(exact REML only for Gaussian) are later
 slices.
 """
 function genetic_gllvm_descriptors(loadings::AbstractMatrix; uniqueness = nothing)
@@ -173,7 +174,7 @@ positive definite (`P = I_K ⊗ Ainv` is full-rank regardless), so `K < T` /
 ([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The convergence
 flag lags the mode by one Newton step (as in the single-factor kernel), so an exact
 Gaussian solve needs `maxiter ≥ 2`. EXPERIMENTAL, dense / validation-scale, SUPPLIED
-loadings (NOT estimated — slice 3 REML), balanced/fully-observed `Y` only; INTERNAL
+loadings (NOT estimated — slice 3 Laplace-marginal fit; exact REML only for Gaussian), balanced/fully-observed `Y` only; INTERNAL
 (not exported, mirroring the single-factor kernel), no R model-spec.
 """
 function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
@@ -358,7 +359,7 @@ latent_structure(fit::GeneticGLLVMFit) = fit.latent_structure
 """
     loglik(fit::GeneticGLLVMFit)
 
-Return the Laplace-approximate marginal log-likelihood at the REML optimum
+Return the Laplace-approximate marginal log-likelihood at the fitted optimum
 from a `GeneticGLLVMFit` (internal struct).
 """
 loglik(fit::GeneticGLLVMFit) = fit.loglik

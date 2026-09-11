@@ -522,7 +522,7 @@ const VALIDATION_STATUS_DATA = (
         "Experimental, dense/validation-scale, SUPPLIED loadings (NOT estimated), one family for all traits, balanced/fully-observed `Y` only; INTERNAL (not exported, mirroring the single-factor kernel's visibility), no R model-spec or bridge payload. The genuinely new genetic-GLLVM capability (a `K>1` latent field carrying a genetic relationship under a non-Gaussian response), validated by independent reductions but not by an external comparator; `GLLVM-style animal models` stays `planned`. Nothing promoted to covered.",
     ),
     (
-        "V6-GGLLVM-REML",
+        "V6-GGLLVM-LAPLACE",
         "genetic-GLLVM latent-`G_lat` fit — Laplace marginal; Gaussian REML reduction (#50 slice 3)",
         "Phase 6",
         "partial",
