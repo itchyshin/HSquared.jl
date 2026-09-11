@@ -1389,3 +1389,8 @@ JOINT contract task per AGENTS.md rule 2.
   evidence rules, and cross-project scout cadence.
 - `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
   fitted/planned/missing separation.
+
+## 2026-09-11 — 0.9 candidate terminology repair `[JL]`
+
+- Owner: Codex isolated Julia candidate. Commit `c5303d75` clarifies non-Gaussian objective wording only; package tests and local Documenter succeeded.
+- Boundary: no R edit, no bridge/API/fixture change, no compute, no promotion or release. The R default-genomic conflict is held for maintainer reconciliation before the final independent artifact audit.

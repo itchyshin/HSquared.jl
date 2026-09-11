@@ -5287,3 +5287,9 @@ Newest entries go at the top.
 - Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
   after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
   Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
+
+## 2026-09-11 — 0.9 candidate terminology correction `[JL]`
+
+- Candidate commit `c5303d75` corrects the fitted non-Gaussian status row: Gaussian retains its exact-REML reduction, while non-Gaussian families are described as using a Laplace marginal likelihood or variational ELBO, not REML/AI-REML. Historical exported API names are preserved.
+- Checks: complete `Pkg.test()` pass; Documenter build pass; focused Unlazy wording oracle pass. No status flip, release, tag, merge, registry action, or publication.
+- This does not resolve the separate R default-genomic authority conflict or satisfy the still-required independent frozen-artifact release audit.
