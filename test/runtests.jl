@@ -8745,7 +8745,7 @@ end
     end
 end
 
-@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA marginal objectives over variance components)" begin
     # 8-animal interior fixture (where the REML optimum is interior)
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,
@@ -10020,7 +10020,7 @@ end
     @test_throws ArgumentError gl(Y2, Ainv, Λ2, HSquared.PoissonResponse(); X = X)                          # non-count Y
 end
 
-@testset "Genetic-GLLVM REML over G_lat (#50 slice 3)" begin
+@testset "Genetic-GLLVM Laplace-marginal fit over G_lat (#50 slice 3)" begin
     ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
         ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
@@ -10112,8 +10112,8 @@ end
         X = X)    # length 3 ≠ T=2
 end
 
-@testset "Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50)" begin
-    # Shared 8-animal pedigree fixture (same as the other GLLVM REML testsets above).
+@testset "Genetic-GLLVM consumability: per-trait families in the latent fit + GeneticGLLVMFit (#50)" begin
+    # Shared 8-animal pedigree fixture (same as the other GLLVM latent-fit testsets above).
     ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
         ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])

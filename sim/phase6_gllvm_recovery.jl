@@ -4,13 +4,13 @@ using Printf
 using Random
 
 """
-Opt-in known-truth recovery harness for the genetic-GLLVM REML estimator
+Opt-in known-truth recovery harness for the genetic-GLLVM Laplace-marginal estimator
 (`fit_gllvm_laplace_reml`).
 
 Deliberately OUTSIDE `test/` so the committed suite stays RNG-free. It simulates a
 half-sib pedigree, draws `K` independent genetic latent factors `g[·,k] ~ N(0, A)`,
 forms `η[i,t] = μ + Σ_k Λ[t,k] g[i,k]`, samples responses from the chosen family, fits
-the genetic-GLLVM REML, and measures recovery of the ROTATION-INVARIANT among-trait
+the genetic-GLLVM Laplace-marginal fit, and measures recovery of the ROTATION-INVARIANT among-trait
 genetic covariance `G_lat = ΛΛ'` (the loadings themselves are rotation-nonidentified).
 
 Four predeclared scenarios:
@@ -23,7 +23,7 @@ Four predeclared scenarios:
 - **D — Binomial(20) rank-1 (`K=1`)**, `q=240`: 20 binary trials per record; more
   information than Bernoulli ⇒ less downward bias.
 
-Structured non-Gaussian (Laplace) REML recovery is HARD and is NOT claimed to pass a
+Structured non-Gaussian Laplace-marginal recovery is HARD and is NOT claimed to pass a
 tight gate; this records the honest empirical recovery, mirroring the other
 `sim/phase6_*_recovery.jl` opt-in studies.
 
@@ -161,7 +161,7 @@ function _scenario(name, family_label, Λtrue, μ, seeds, nsire, ndam, noffsprin
 end
 
 function main()
-    println("Genetic-GLLVM REML known-truth recovery (Poisson + Bernoulli + Binomial)")
+    println("Genetic-GLLVM Laplace-marginal known-truth recovery (Poisson + Bernoulli + Binomial)")
 
     # ------------------------------------------------------------------
     # Scenarios A and B: Poisson (existing, unchanged)
@@ -214,7 +214,7 @@ function main()
               (rng, η) -> _rand_binomial(rng, η, n_trials))
 
     println()
-    println("NOTE: structured non-Gaussian REML recovery is HARD; this is an HONEST opt-in")
+    println("NOTE: structured non-Gaussian Laplace-marginal recovery is HARD; this is an HONEST opt-in")
     println("record, not a tight-gate claim. Rank-1 ⇒ ±1 correlations by construction (recovery")
     println("on G_lat); rank-2 has non-degenerate ρ so it also reports correlation recovery.")
     println("Bernoulli scenario C is REPORTED-NOT-GATED due to known Laplace-for-binary bias.")

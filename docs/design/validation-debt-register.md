@@ -9,6 +9,12 @@
 > discovery data and a new untouched holdout before any nine-cell recovery.
 > See `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
 
+> **Non-Gaussian GLLVM terminology (2026-09-11):** `fit_gllvm_laplace_reml`
+> and older recovery filenames retain their historical identifiers. For a
+> non-Gaussian family, the fitted objective is the Laplace marginal likelihood,
+> not REML; exact REML is only the Gaussian reduction. The current contract is
+> authoritative where older row prose uses the historical shorthand.
+
 | ID | Capability | Status | Required evidence |
 | --- | --- | --- | --- |
 | V0-LOAD | Package loading | covered | `using HSquared` in test suite |
