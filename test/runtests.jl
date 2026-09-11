@@ -344,6 +344,16 @@ include("test_aqua.jl")
     @test occursin("V4-FA", capability_page)
     @test occursin("V2-SSHINV", capability_page)
     @test occursin("not R-public", capability_page)
+    # Public documentation must not describe the non-Gaussian fitted route as
+    # REML: Gaussian is exact REML, while Poisson/Binomial use a Laplace
+    # marginal likelihood or variational ELBO.  The legacy API names remain
+    # stable but are not a scientific-estimand claim.
+    fitted_nongaussian_line = only(
+        line for line in capability_lines if startswith(line, "| Fitted non-Gaussian")
+    )
+    @test occursin("Laplace marginal / variational", fitted_nongaussian_line)
+    @test occursin("not REML/AI-REML", fitted_nongaussian_line)
+    @test !occursin("REML-style", fitted_nongaussian_line)
     @test occursin("V4-FA", debt_page)
     @test occursin("V2-SSHINV", debt_page)
     @test occursin("R FA planned", debt_page)
