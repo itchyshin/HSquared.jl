@@ -11,7 +11,8 @@
 
 > **HISTORICAL — v0.7 genomic *runtime* gate (2026-07-13): held.** That
 > dated performance-localization gate is not the live R-activation state.
-> Live: R default `genomic()` route is on (owner G5 YES 2026-09-03); count
+> Live: the narrow R genomic GREML route is explicit (`engine = "julia"`,
+> `target = "genomic"`), experimental, and covered at validation scale; count
 > stays **7**. The preregistered
 > closed-boundary candidate resolved all 240 sealed holdout datasets (30
 > improvements, 0 losses, 0 invalid), but failed the conjunctive runtime gate
@@ -22,14 +23,20 @@
 > remains 5 historically for that gate. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
 >
-> **Experimental 0.8.0:** version tracks the 0.8 engine pillar pair (FA + single-step) after G10
-> multivariate + 0.7 genomic GREML (R default-route G5 YES 2026-09-03). Engine-covered
+> **Experimental 0.9.0 candidate:** version tracks the earned 0.9 contract after the 0.8
+> engine pillar pair (FA + single-step), G10
+> multivariate + 0.7 genomic GREML (explicit R route). Engine-covered
 > rows include `V4-MV-REML`, `V2-GREML` supplied-`Ginv`, `V4-FA` (S4 G/R cell;
 > not R-public), and `V2-SSHINV` (H-scale σ²a / σ²e; not R-public). Not
 > production-ready, not yet in Julia General. `public_covered_count` is **7**
-> (R-public; G10 multivariate + 0.7 genomic GREML; R default-route activated under owner G5 YES 2026-09-03; count stays 7).
+> (R-public; G10 multivariate + explicit 0.7 genomic GREML route; count stays 7).
 > Engine-row G10 flips of `V4-FA` (2026-09-03) and `V2-SSHINV` (2026-09-04)
-> do **not** increment that count (engine ≠ R-public). Experimental stays **0.8.0**.
+> do **not** increment that count (engine ≠ R-public). The 0.9.0 candidate remains experimental.
+
+> **Non-Gaussian GLLVM terminology (2026-09-11):** the historical identifiers
+> `fit_gllvm_laplace_reml` and older recovery files remain for compatibility.
+> Their non-Gaussian objective is the Laplace marginal likelihood, not REML;
+> exact REML applies only to the Gaussian reduction.
 
 | Capability | Status | Evidence |
 | --- | --- | --- |

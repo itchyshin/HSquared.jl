@@ -202,11 +202,15 @@ include("test_aqua.jl")
     @test occursin("25,000", matfree.evidence)
     @test occursin("public_covered_count", matfree.claim_boundary)
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-REML"
+    @test validation[end].id == "V6-GGLLVM-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
-    @test "V6-GGLLVM-REML" in [row.id for row in validation]
+    @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
+    gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
+    @test occursin("Laplace marginal likelihood", gllvm_row.evidence)
+    @test occursin("not REML", gllvm_row.claim_boundary)
+    @test occursin("Gaussian reduction", gllvm_row.claim_boundary)
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -8760,7 +8764,7 @@ end
     end
 end
 
-@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting)" begin
     # 8-animal interior fixture (where the REML optimum is interior)
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,

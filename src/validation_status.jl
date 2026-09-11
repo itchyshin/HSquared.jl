@@ -538,7 +538,17 @@ const _VALIDATION_STATUS_DATA_RAW = (
 # contract changes here.
 const VALIDATION_STATUS_DATA = map(_VALIDATION_STATUS_DATA_RAW) do row
     id, capability, phase, status, evidence, missing, claim_boundary = row
-    if id == "V6-ORDINAL"
+    if id == "V6-GGLLVM-REML"
+        id = "V6-GGLLVM-LAPLACE"
+        capability = "genetic-GLLVM latent-G_lat fit — Laplace marginal; Gaussian REML reduction (#50 slice 3)"
+        evidence = replace(
+            evidence,
+            "by maximizing the K-factor Laplace marginal" =>
+                "by maximizing the K-factor Laplace marginal likelihood (not REML for non-Gaussian families; exact REML only in the Gaussian reduction)",
+        )
+        missing = "No non-Gaussian REML claim; " * missing
+        claim_boundary = "The historical `fit_gllvm_laplace_reml` name is retained for compatibility. Its non-Gaussian objective is the Laplace marginal likelihood, not REML; exact REML applies only to the Gaussian reduction. " * claim_boundary
+    elseif id == "V6-ORDINAL"
         evidence = replace(
             evidence,
             "ML-vs-REML" => "cross-engine Laplace-ML difference; no REML equivalence claimed",

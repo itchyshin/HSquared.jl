@@ -5287,3 +5287,16 @@ Newest entries go at the top.
 - Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
   after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
   Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
+
+## 2026-09-11 — 0.9 Gate-B Julia exact-head candidate `[JL]`
+
+- Candidate starts from PR #322 exact head `99a1af2e`; it retains the newer
+  A3/A4 contract rather than replaying a divergent older candidate.
+- Candidate-only metadata is `0.9.0` with no `date-released`; README and status
+  pages call it experimental/unreleased and preserve `public_covered_count = 7`.
+- `V6-GGLLVM-LAPLACE` names the non-Gaussian objective as the Laplace marginal
+  likelihood; the historical `fit_gllvm_laplace_reml` name remains compatibility
+  only, with exact REML restricted to the Gaussian reduction.
+- Local checks pass: focused status contract, generated Documenter/Vitepress
+  page, `Pkg.test()`, `git diff --check`, and six Unlazy gates. No PR update,
+  push, merge, tag, registry action, or release occurred.
