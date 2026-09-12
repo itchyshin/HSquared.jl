@@ -3,8 +3,8 @@
 > **Current-state amendment (2026-09-11):** this ledger accompanies an
 > experimental **0.9.0 release** with R-public `public_covered_count` **7**.
 > Earlier in-row references to experimental 0.8.0 are historical provenance,
-> not the current release state. No capability flip, tag, registry action, or
-> release is authorized by this amendment.
+> not the current release state. This amendment itself makes no capability
+> flip; release decisions are recorded separately.
 
 > **A3 non-Gaussian reconciliation (2026-09-08).** Older V6 rows preserve the
 > family-uniform legacy payload and its historical “Laplace/VA REML” shorthand.
@@ -37,7 +37,7 @@
 > production-ready, not yet in Julia General. `public_covered_count` is **7**
 > (R-public; G10 multivariate + explicit 0.7 genomic GREML route; count stays 7).
 > Engine-row G10 flips of `V4-FA` (2026-09-03) and `V2-SSHINV` (2026-09-04)
-> do **not** increment that count (engine ≠ R-public). The 0.9.0 candidate remains experimental.
+> do **not** increment that count (engine ≠ R-public). The 0.9.0 release remains experimental.
 
 > **Non-Gaussian GLLVM terminology (2026-09-11):** the historical identifiers
 > `fit_gllvm_laplace_reml` and older recovery files remain for compatibility.
