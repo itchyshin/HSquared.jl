@@ -9,7 +9,7 @@ hero:
   # question reading as one block; this is the same move in our teal.
   name: "HSquared<span class='hs-jl'>.jl</span>"
   text: "How much is genetic?"
-  tagline: "The Julia engine behind hsquared: sparse pedigrees, REML, EBVs, and heritability extractors. Experimental 0.9.0 candidate — an engine, not the package you type a formula into."
+  tagline: "The Julia engine behind hsquared: sparse pedigrees, REML, EBVs, and heritability extractors. Experimental 0.9.0 release — an engine, not the package you type a formula into."
   image:
     src: /logo.png
     alt: "HSquared.jl hex mark (PROPOSAL): deep teal hexagon, three hollow gold pedigree rings, h-squared. Not a settled brand."
@@ -48,7 +48,7 @@ features:
 ---
 ```
 
-!!! warning "Experimental 0.9.0 candidate — not production"
+!!! warning "Experimental 0.9.0 release — not production"
     Version number tracks covered capability, not maturity. **Not** in the
     Julia General registry. An earlier attempt
     ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
@@ -56,12 +56,12 @@ features:
     use `Pkg.add("HSquared")` by name.
     `public_covered_count` is **7** (R-public; G10 multivariate + the explicit
     `target = "genomic"` 0.7 genomic-GREML route).
-    **0.9.0 is a local candidate, not released.**
+    **0.9.0 is an experimental GitHub release, not a Julia General registration.**
 
 I used language-model tools (Claude, Codex, and Cursor) on substantial
 parts of this engine: source, tests, and docs. I review the code I ship,
 and I am responsible for it. Tests and Documenter run in CI. This
-candidate is experimental 0.9.0. It is not a production engine and it is
+release is experimental 0.9.0. It is not a production engine and it is
 not version 1.0.
 
 `HSquared.jl` is the Julia engine twin of the R package
