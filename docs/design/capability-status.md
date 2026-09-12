@@ -1,7 +1,7 @@
 # Capability Status
 
 > **Current-state amendment (2026-09-11):** this ledger accompanies an
-> experimental **0.9.0 candidate** with R-public `public_covered_count` **7**.
+> experimental **0.9.0 release** with R-public `public_covered_count` **7**.
 > Earlier in-row references to experimental 0.8.0 are historical provenance,
 > not the current release state. No capability flip, tag, registry action, or
 > release is authorized by this amendment.
@@ -29,7 +29,7 @@
 > remains 5 historically for that gate. See
 > `docs/dev-log/recovery-checkpoints/2026-07-13-v07-genomic-boundary-holdout.md`.
 >
-> **Experimental 0.9.0 candidate:** version tracks the earned 0.9 contract after the 0.8
+> **Experimental 0.9.0 release:** version tracks the earned 0.9 contract after the 0.8
 > engine pillar pair (FA + single-step), G10
 > multivariate + 0.7 genomic GREML (explicit R route). Engine-covered
 > rows include `V4-MV-REML`, `V2-GREML` supplied-`Ginv`, `V4-FA` (S4 G/R cell;

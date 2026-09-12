@@ -21,8 +21,8 @@ The current `public_covered_count` is **7**. It counts the R-public covered
 surface; it is not the number of engine rows marked `covered`. The count must
 not increase merely because an engine-only validation row is promoted.
 
-The current state is an **experimental 0.9.0 candidate**, not a public release.
-It does not claim production readiness or a covered-status flip.
+The current state is an **experimental 0.9.0 release**. It does not claim
+production readiness or a covered-status flip.
 
 In particular:
 
