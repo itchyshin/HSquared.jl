@@ -13,10 +13,9 @@ Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the ge
 
 > **Record status (2026-09-07):** The paired website and named honesty
 > documentation milestone is complete, and the ratified narrow 0.9 evidence
-> programme has produced an experimental **0.9.0 candidate** / public count
-> **7**. This is not a release decision: tags, registration, and public release
-> remain held pending the independent Gate-B audit and external evidence. No
-> capability promotion is implied. See
+> programme has produced an experimental **0.9.0 release** / public count
+> **7**. The release does not promote a capability, imply production readiness,
+> or create Julia General registration. See
 > [`docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md`](docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
 
 ## Current Status

@@ -1,9 +1,9 @@
 # Progression and evidence
 
 This is an evidence history, not a release timeline. `HSquared.jl` currently
-has an experimental **0.9.0 candidate**; the R-public `public_covered_count`
+has an experimental **0.9.0 release**; the R-public `public_covered_count`
 is **7**. Neither fact means production readiness, Julia General registration,
-calibrated intervals, or a public release. For applied work, begin in
+or calibrated intervals. For applied work, begin in
 [hsquared](https://itchyshin.github.io/hsquared/).
 
 ## Where we are now
