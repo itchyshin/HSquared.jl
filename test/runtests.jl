@@ -9314,7 +9314,9 @@ end
     mv2_lr = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :lowrank, rank = 1)
     lrt_lr = covariance_structure_lrt(mv2_lr, mv2)
     @test lrt_lr.df == 1
-    @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
+    @test lrt_lr.boundary == true           # rank/PSD-boundary null; naive χ² tail, direction unknown (#331)
+    @test lrt_lr.reference == :chisq_naive_boundary
+    @test lrt_lr.pvalue ≈ HSquared._chisq_sf(max(lrt_lr.statistic, 0.0), 1) atol = 1e-12   # was 0.5x this before #331
 
     # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
     # is on the genetic-correlation boundary, so standard errors are unavailable
@@ -10696,6 +10698,9 @@ end
 
 # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
 include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
+
+# #331 — covariance_structure_lrt / _mv_nparams FA/low-rank rotational-indeterminacy df fix.
+include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
 
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
