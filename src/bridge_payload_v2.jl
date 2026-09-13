@@ -406,9 +406,9 @@ this dispatcher previously hardcoded with neither, silently discarding
 for both reproduces the exact pre-#212-fix call (each underlying fitter's own
 default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
 `fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). Every
-other dispatch arm (`:animal`, `:two_effect`) is unaffected; passing either
-kwarg for those payloads is silently ignored, matching the pre-existing
-byte-identical default path.
+other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises
+`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is
+silently ignored, matching the pre-existing byte-identical default path.
 
 The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
 `Phase0NotImplementedError` for it (§6: "no multi-block coefcov estimator is
@@ -454,8 +454,10 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         # the large-scale matrix-free path is experimental (opt-in).
         y = parsed.y
         per_block_ids = [b.ids for b in blocks]
-        # hsquared#212: `initial`/`iterations` forward to the dense fitter only (the
-        # :auto/matrix-free path does not take these controls and is unaffected).
+        # hsquared#212: forwarded to the dense fitter only. The `:auto` path DOES accept `initial`/
+        # `iterations` (both `fit_sparse_multi_effect_aireml` and `fit_multi_effect_mc_reml` take
+        # them through `fit_multi_effect`'s `kwargs...`), but this dispatcher does not forward them
+        # there — a known remaining silent drop on the opt-in `:auto` route, not fixed in this PR.
         multi_effect_kwargs = iterations === nothing ?
             (initial === nothing ? NamedTuple() : (initial = initial,)) :
             (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
