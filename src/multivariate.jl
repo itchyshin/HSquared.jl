@@ -1312,10 +1312,11 @@ already removes the `r(r-1)/2` rotational indeterminacy of the loadings `Λ`
 (`Λ` and `ΛQ` for orthogonal `Q` give the same `G`), the same correction
 `ledermann_slack` implies.
 
-Two kinds of structured null are distinguished, and the plain-χ² reference
-weight computation in `nested_lrt`'s own convex-cone (`boundary_df ≥ 1`)
-branches is never invoked for either — those branches are for genuine
-variance-at-zero boundaries, which neither structured null here is:
+Two kinds of structured null are distinguished. For neither of them is
+`nested_lrt`'s chi-bar weighting invoked: this function always requests the
+plain, unmixed tail (`boundary_df = 0`), because `nested_lrt`'s convex-cone
+(`boundary_df ≥ 1`) branches are for genuine variance-at-zero boundaries and
+neither structured null here is one:
 
 - **Regular** nulls (`:diagonal` or `:factor_analytic` nested in
   `:unstructured`, `reference = :chisq`, `boundary = false`): a
@@ -1328,6 +1329,14 @@ variance-at-zero boundaries, which neither structured null here is:
   `:diagonal`-in-`:unstructured` interior case, and the Self & Liang (1987) /
   Stram & Lee (1994) 50:50 chi-bar-squared correction must **not** be applied.
 
+  This regularity argument assumes `Ψ` is interior. `fit_multivariate_reml`
+  parameterises `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)`, so `Ψ > 0` always
+  holds, but a fit whose `ψ̂` has been driven onto that `1e-4` floor is a
+  Heywood case on a constraint boundary, where the χ²`df` reference is not
+  exact. This function does not inspect `ψ̂` and reports `boundary = false`
+  regardless; check `genetic_uniqueness(fit)` yourself before relying on the
+  p-value.
+
 - **PSD-boundary** nulls (`:lowrank` nested in `:unstructured`,
   `reference = :chisq_naive_boundary`, `boundary = true`): a low-rank null
   `G = ΛΛ'` (rank `r < t`) genuinely lies on the boundary of the PSD cone —
@@ -1337,6 +1346,13 @@ variance-at-zero boundaries, which neither structured null here is:
   this function does not compute, so the reported p-value is the **naive**
   χ²`df` tail and its direction relative to the true mixture is **not
   knowable** here — never call it conservative.
+
+Changed in #331: because `boundary_df = 0` is now always requested, a
+structured comparison whose `df` is 1 no longer receives the 50:50 chi-bar
+mixture it received before. The `:lowrank`-in-`:unstructured` `t = 2`,
+`rank = 1` case is the reachable instance: its reported p-value is now the
+full χ²₁ tail, exactly twice the previously reported value. The statistic
+and `df` are unchanged; only the reference distribution is.
 
 Experimental, asymptotic, dense/validation-scale.
 """

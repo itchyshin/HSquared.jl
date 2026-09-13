@@ -9314,7 +9314,9 @@ end
     mv2_lr = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :lowrank, rank = 1)
     lrt_lr = covariance_structure_lrt(mv2_lr, mv2)
     @test lrt_lr.df == 1
-    @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
+    @test lrt_lr.boundary == true           # rank/PSD-boundary null; naive χ² tail, direction unknown (#331)
+    @test lrt_lr.reference == :chisq_naive_boundary
+    @test lrt_lr.pvalue ≈ HSquared._chisq_sf(max(lrt_lr.statistic, 0.0), 1) atol = 1e-12   # was 0.5x this before #331
 
     # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
     # is on the genetic-correlation boundary, so standard errors are unavailable
