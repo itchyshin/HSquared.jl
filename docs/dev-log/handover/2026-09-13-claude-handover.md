@@ -75,7 +75,7 @@ owner decision and the project compute gates.
 | --- | --- | --- | --- | --- |
 | `HSquared.jl` `main` `b1f8f14` | yes | yes | #324 merged | LANDED |
 | `HSquared.jl` tag `v0.9.0` | yes | yes | GitHub release published | LANDED |
-| `handover/2026-09-13-claude` | pending | pending | pending | CARRIED-OVER until this document is committed, pushed, and proposed |
+| `handover/2026-09-13-claude` `e483f503` | yes | yes | #325 open | CARRIED-OVER until a maintainer merges the documentation-only PR |
 | historical local branches listed below | yes, local only | no | none | PROTECTED / CARRIED-OVER; do not delete, push, merge, or infer scope without inspection |
 
 FINDINGS-OF-RECORD: none. The protected local branches have not been audited in
