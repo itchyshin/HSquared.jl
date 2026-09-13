@@ -1305,23 +1305,40 @@ Likelihood-ratio test comparing a nested constrained genetic-covariance fit
 against the `full` (less-constrained) fit, both from
 [`fit_multivariate_reml`](@ref) on the **same data**. Returns a `NamedTuple`
 with the LRT `statistic` `= 2(ℓ_full − ℓ_constrained)`, the parameter-count
-difference `df`, the asymptotic χ²`df` `pvalue`, a `boundary` flag, and a `note`.
-`df` counts **identified** parameters: for `:lowrank`/`:factor_analytic`,
-`_mv_nparams` already removes the `r(r-1)/2` rotational indeterminacy of
-the loadings `Λ` (`Λ` and `ΛQ` for orthogonal `Q` give the same `G`), the same
-correction `ledermann_slack` implies.
+difference `df`, the `pvalue`, a `reference` symbol naming which reference
+distribution produced it, a `boundary` flag, and a `note`. `df` counts
+**identified** parameters: for `:lowrank`/`:factor_analytic`, `_mv_nparams`
+already removes the `r(r-1)/2` rotational indeterminacy of the loadings `Λ`
+(`Λ` and `ΛQ` for orthogonal `Q` give the same `G`), the same correction
+`ledermann_slack` implies.
 
-The χ²`df` reference is exact only for an **interior** null — testing whether the
-off-diagonal genetic covariances are zero (`:diagonal` nested in
-`:unstructured`), where the constrained parameters lie in the interior of the
-full space (`boundary = false`). For **rank/PSD-boundary** nulls
-(`:lowrank`/`:factor_analytic` nested in `:unstructured`), the true null
-distribution is a χ² mixture over a null set that is a non-convex algebraic
-variety (`{ΛΛ' + Ψ : rank(Λ) = K}`), not the convex cone the standard chi-bar
-weight results assume — so whether the reported naive χ²`df` p-value is
-conservative or anti-conservative relative to that mixture is **not knowable**
-without the mixture weights, which this function does not compute
-(`boundary = true`). Experimental, asymptotic, dense/validation-scale.
+Two kinds of structured null are distinguished, and the plain-χ² reference
+weight computation in `nested_lrt`'s own convex-cone (`boundary_df ≥ 1`)
+branches is never invoked for either — those branches are for genuine
+variance-at-zero boundaries, which neither structured null here is:
+
+- **Regular** nulls (`:diagonal` or `:factor_analytic` nested in
+  `:unstructured`, `reference = :chisq`, `boundary = false`): a
+  factor-analytic null `G = ΛΛ' + Ψ` with `Ψ > 0` is a regular
+  lower-dimensional **submanifold** of the unstructured parameter space, not a
+  variance-at-zero boundary — once `_mv_nparams` removes the loadings'
+  `r(r-1)/2` rotational indeterminacy, `df` counts genuinely identified
+  parameters and standard MLE regularity conditions hold. The classical
+  χ²`df` reference is therefore **exact** asymptotically, the same as the
+  `:diagonal`-in-`:unstructured` interior case, and the Self & Liang (1987) /
+  Stram & Lee (1994) 50:50 chi-bar-squared correction must **not** be applied.
+
+- **PSD-boundary** nulls (`:lowrank` nested in `:unstructured`,
+  `reference = :chisq_naive_boundary`, `boundary = true`): a low-rank null
+  `G = ΛΛ'` (rank `r < t`) genuinely lies on the boundary of the PSD cone —
+  the null set `{ΛΛ' : rank(Λ) = r}` is a non-convex algebraic variety, not
+  the convex cone the standard chi-bar weight results assume. The true
+  reference distribution is a χ² mixture over that boundary whose weights
+  this function does not compute, so the reported p-value is the **naive**
+  χ²`df` tail and its direction relative to the true mixture is **not
+  knowable** here — never call it conservative.
+
+Experimental, asymptotic, dense/validation-scale.
 """
 function covariance_structure_lrt(constrained, full)
     npc = _mv_nparams(constrained)
@@ -1331,23 +1348,32 @@ function covariance_structure_lrt(constrained, full)
         throw(ArgumentError("`full` must have more covariance parameters than `constrained` (df = $df); call as covariance_structure_lrt(constrained, full)"))
     sc = getproperty(constrained, :genetic_structure)
     sf = getproperty(full, :genetic_structure)
-    interior = sc == :diagonal && sf == :unstructured
-    # interior (:diagonal in :unstructured) -> χ²_df; rank/PSD boundary
-    # (:lowrank/:factor_analytic) -> naive χ² over a non-convex rank-constrained
-    # null (not the convex-cone case the chi-bar weight theory assumes), so its
-    # direction vs. the true mixture is not knowable here. Delegates the
-    # statistic + tail to `nested_lrt`; `df` now counts identified parameters
-    # (rotational indeterminacy removed by `_mv_nparams`, #331).
-    res = nested_lrt(constrained.loglik, full.loglik; df = df,
-                     boundary_df = interior ? 0 : df, label = "covariance_structure_lrt")
+    # :diagonal and :factor_analytic nulls are regular lower-dimensional
+    # submanifolds of the unstructured parameter space (standard MLE
+    # regularity holds once `_mv_nparams` removes the loadings' rotational
+    # indeterminacy from `df`), so the classical χ²_df reference is exact.
+    # :lowrank genuinely sits on the PSD-cone boundary, where the true
+    # reference is an uncomputed chi-bar mixture, so only the naive χ²_df tail
+    # is reported (direction vs. that mixture left explicitly unknown).
+    regular = sf == :unstructured && (sc == :diagonal || sc == :factor_analytic)
+    # Always request the plain, unmixed χ²_df tail from `nested_lrt`
+    # (`boundary_df = 0`): exact for the regular case, and the (flagged)
+    # naive reference for the PSD-boundary case. `nested_lrt`'s own
+    # convex-cone (`boundary_df ≥ 1`) branches are for genuine
+    # variance-at-zero boundaries and do not apply to either structured null
+    # here, so they are never entered (#331/F1).
+    res = nested_lrt(constrained.loglik, full.loglik; df = df, boundary_df = 0,
+                     label = "covariance_structure_lrt")
     stat = res.statistic
-    boundary = !interior
+    boundary = !regular
+    reference = regular ? :chisq : :chisq_naive_boundary
     note = if stat < -1e-6
         "negative statistic ($(round(stat, digits = 6))): `full` did not dominate `constrained` — check they are nested and both converged"
-    elseif boundary
-        "rank/PSD-boundary null: df counts identified parameters (rotational indeterminacy removed); the χ²_$df p-value's direction relative to the true χ² mixture is not knowable without the chi-bar mixture weights, which are not computed here"
+    elseif regular
+        "regular null ($(sc) nested in $(sf)): df counts identified parameters (rotational indeterminacy removed); χ²_$df is the exact asymptotic reference"
     else
-        "interior null (off-diagonal genetic covariances = 0): χ²_$df asymptotics apply"
+        "rank/PSD-boundary null ($(sc) nested in $(sf)): df counts identified parameters (rotational indeterminacy removed); the reported χ²_$df p-value is the naive tail, not the true chi-bar mixture over the PSD boundary, and its direction relative to that mixture is not knowable here — the mixture weights are not computed"
     end
-    return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary, note = note)
+    return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary,
+            reference = reference, note = note)
 end

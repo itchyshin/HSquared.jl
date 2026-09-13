@@ -13,10 +13,26 @@
 # identical on both sides of every `covariance_structure_lrt` comparison here,
 # so it cancels in `df` — the assertions below use the REAL return value of
 # `_mv_nparams`, not the issue's genetic-only shorthand.
+#
+# F1 (Rose BLOCK on #339, resolution 1, Ada/Noether-decided): a factor-analytic
+# null (`G = ΛΛ' + Ψ`, `Ψ > 0`) is a regular lower-dimensional submanifold of
+# the unstructured parameter space, not a variance-at-zero boundary, so the
+# classical χ²_df reference (df = identified-parameter difference) applies and
+# the Self & Liang (1987) / Stram & Lee (1994) 50:50 chi-bar mixture must NOT
+# be entered for structured nulls. A low-rank null (`G = ΛΛ'`, rank r < t)
+# lies on the boundary of the PSD cone, where the true reference is a chi-bar
+# mixture whose weights this function does not compute, so the naive χ²_df
+# tail is reported with its direction relative to that mixture explicitly
+# unknown. The assertions below pin `covariance_structure_lrt`'s
+# `reference`/`boundary` fields and its `pvalue` against an independent
+# `Distributions.jl` χ² tail, and pin that the 50:50 chi-bar mixture
+# (`nested_lrt`'s own `boundary_df = 1` branch, left untouched) is never the
+# source of that `pvalue` for either structured null.
 
 using HSquared
 using LinearAlgebra
 using Test
+using Distributions: Chisq, ccdf
 
 @testset "#331 structured LRT df counts identified parameters" begin
     @testset "factor_analytic t=5 K=2 (Ledermann slack = 2, was wrongly refused)" begin
@@ -66,17 +82,45 @@ using Test
 
         lrt = covariance_structure_lrt(fa, full)   # (constrained, full) — fa nests inside unstructured
         @test lrt.df == 1                        # was: npf == npc == 30 => ArgumentError (df = 0)
-        @test lrt.boundary == true
+
+        # F1 resolution 1: a factor-analytic null is a regular submanifold, not
+        # a variance-at-zero boundary — `boundary` must be false and the
+        # reference distribution the plain χ²_df, not a chi-bar mixture.
+        @test lrt.boundary == false
+        @test lrt.reference == :chisq
         @test 0.0 <= lrt.pvalue <= 1.0
+        @test lrt.pvalue ≈ ccdf(Chisq(lrt.df), lrt.statistic)
         @test !occursin("conservative", lowercase(lrt.note))  # direction is not knowable; must not claim it is
+
+        # Pin that the Self & Liang (1987) / Stram & Lee (1994) 50:50 chi-bar
+        # mixture is never the source of `lrt.pvalue`: `nested_lrt`'s own
+        # `boundary_df = 1` branch (left untouched, per F1's resolution) is
+        # exactly what the pre-fix `covariance_structure_lrt` delegated to for
+        # this df == 1 case, and it disagrees with the plain χ²_df tail above.
+        buggy = HSquared.nested_lrt(fa.loglik, full.loglik; df = lrt.df, boundary_df = 1)
+        @test buggy.mixture == :chibar_5050
+        @test !isapprox(lrt.pvalue, buggy.pvalue)
     end
 
     @testset "lowrank t=6 rank=3 (rotational indeterminacy r(r-1)/2 = 3)" begin
-        fake_full = (genetic_covariance = zeros(6, 6), genetic_structure = :unstructured, genetic_rank = 0)
-        fake_lr = (genetic_covariance = zeros(6, 6), genetic_structure = :lowrank, genetic_rank = 3)
+        fake_full = (genetic_covariance = zeros(6, 6), genetic_structure = :unstructured,
+                     genetic_rank = 0, loglik = -95.0)
+        fake_lr = (genetic_covariance = zeros(6, 6), genetic_structure = :lowrank,
+                  genetic_rank = 3, loglik = -100.0)
 
         # ngen(:lowrank) = t*r - r(r-1)/2 = 6*3-3 = 15, plus R0 t(t+1)/2 = 21 => 36.
         @test HSquared._mv_nparams(fake_lr) == 36
         @test HSquared._mv_nparams(fake_full) == 42   # unstructured t=6: t(t+1)/2 * 2 = 42
+
+        # F1 resolution 1: a low-rank null genuinely sits on the PSD-cone
+        # boundary — `boundary` stays true, but the reported p-value is the
+        # naive (not the true chi-bar-mixture) χ²_df tail, direction unknown.
+        lrt2 = covariance_structure_lrt(fake_lr, fake_full)
+        @test lrt2.df == 6
+        @test lrt2.boundary == true
+        @test lrt2.reference == :chisq_naive_boundary
+        @test 0.0 <= lrt2.pvalue <= 1.0
+        @test lrt2.pvalue ≈ ccdf(Chisq(lrt2.df), lrt2.statistic)
+        @test !occursin("conservative", lowercase(lrt2.note))
     end
 end
