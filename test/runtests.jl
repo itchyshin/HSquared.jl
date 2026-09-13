@@ -1276,7 +1276,7 @@ end
     @test_throws ArgumentError HSquared.nongaussian_heritability(fp2)            # ambiguous μ
     @test HSquared.nongaussian_heritability(fp2; mu = 0.0).family === :bernoulli # works with μ
     nf = HSquared.NonGaussianFit((sigma_a2 = 1.0,), -3.0, [0.0], zeros(8), collect(1:8),
-                                 false, :poisson, :laplace, nothing, nothing)
+                                 false, :poisson, :laplace, nothing, nothing, false, nothing)
     @test_throws ArgumentError HSquared.nongaussian_heritability(nf)             # non-converged refused
     @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.NegativeBinomialResponse(2.0))
 
@@ -10705,6 +10705,9 @@ include(joinpath(@__DIR__, "a3_three_field.jl"))
 
 # A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
 include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
+
+# #327 NonGaussianFit.boundary honesty flag + three-field payload refusal.
+include(joinpath(@__DIR__, "test_327_boundary_flag.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))

@@ -13,6 +13,8 @@ _a4_fit(; family::Symbol = :bernoulli, n_trials = nothing, beta = [0.3]) =
         :laplace,
         n_trials,
         nothing,
+        false,
+        nothing,
     )
 
 @testset "A4-1 Binomial-logit observation-scale payload" begin
