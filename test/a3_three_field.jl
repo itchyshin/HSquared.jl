@@ -14,6 +14,8 @@ _fit(; family::Symbol = :poisson, n_trials = nothing, beta = [0.3],
         :laplace,
         n_trials,
         nothing,
+        false,
+        nothing,
     )
 
 @testset "A3 three-field private Julia envelope" begin
