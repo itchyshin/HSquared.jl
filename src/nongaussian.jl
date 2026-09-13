@@ -1029,31 +1029,42 @@ extractor methods `breeding_values(fit)` / `variance_components(fit)` /
 
 **Every family's variance-component search is bounded**, and `converged = true`
 alone does NOT mean the estimate is informative: a search that stops on its own
-boundary reports a point estimate that is a function of the START VALUE
-(`initial`), not the data (#327). `fit.boundary` reports this honestly for every
-family — the bracket endpoint `exp(log(sa0) ± 6)` for the single-variance families
-(`:poisson`, `:bernoulli`, `:binomial`, `:beta_binomial`, `:bernoulli_probit`) and
-`:gaussian`/`:nbinom` (which now share the same ±8-log-unit joint safety rail as
-`:gamma`/`:ordered_probit`), or the ±8-log-unit rail for the jointly-estimated
-families (`:gaussian`, `:nbinom`, `:gamma`, `:ordered_probit`). Binary `:bernoulli`
-data carries little variance information at small scale, so `sigma_a2` is prone to
-running to a search-bound boundary; `:binomial` with more trials per record is more
-informative and recovers `sigma_a2` far better (see `sim/phase6_binomial_recovery.jl`).
+boundary reports a point estimate that is a function of the START VALUE (`initial`),
+not the data (#327). `fit.boundary` reports this honestly for every family. Two
+mechanisms produce it: a **Brent bracket endpoint** at `exp(log(sa0) ± 6)` — the
+single-variance families (`:poisson`, `:bernoulli`, `:binomial`, `:beta_binomial`,
+`:bernoulli_probit`) and `:ordered_probit` with `K = 2`, where only `σ²a` is free —
+and a **±8-log-unit joint safety rail** around the supplied start, for the
+jointly-estimated searches (`:gamma`, `:ordered_probit` with `K ≥ 3`, and now
+`:gaussian` and `:nbinom`, which had no rail at all before #327 and gained the one
+`:gamma` already used). Binary `:bernoulli` data carries little variance information
+at small scale, so `sigma_a2` is prone to running to a search-bound boundary;
+`:binomial` with more trials per record is more informative and recovers `sigma_a2`
+far better (see `sim/phase6_binomial_recovery.jl`).
 `nongaussian_three_field_payload` (private) refuses a `boundary = true` fit.
 
 `restart_check = true` (opt-in, doubles the cost of the fit) refits ONCE from a
 second start `sa0 * exp(3.0)` (hard-coded `restart_check = false` on that inner
 call, so there is no recursion) and compares the two `sigma_a2` point estimates on
 the log scale: a gap `> 0.01` sets `boundary = true` even when neither fit landed
-exactly on its own rail (measured in the #327 wave-4 campaign comment: 27/27
-detection, 0 false positives over 80 replicate pairs). The second estimate is
-exposed in `restart_estimate` (`nothing` when `restart_check = false`).
+exactly on its own rail (the two-start fence itself was sized in the #327 wave-4
+campaign comment — 27/27 truncated replicates detected, 0 false positives over 80
+replicate pairs — but that measurement used `:poisson` only, a second start of `sa0
+* 10` rather than `sa0 * exp(3)`, and a relative rather than a log-scale gap; the
+threshold shipped here is the same order of magnitude, not the measured
+configuration, and is unmeasured for the other eight families) The second estimate
+is exposed in `restart_estimate` (`nothing` when `restart_check = false`).
 
-EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
-For the Gaussian family the objective is the exact REML log-likelihood, so this
-recovers the same estimate as [`fit_sparse_reml`](@ref). Exported as an
-experimental fitter; not the public default, not wired into the R formula path,
-no R model-spec, no external comparator.
+EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step. For the
+Gaussian family the objective is the exact REML log-likelihood **inside the
+±8-log-unit box around the supplied `initial`** that #327 added, so it recovers the
+same estimate as [`fit_sparse_reml`](@ref) whenever the optimum lies inside that box
+— which the default `initial = (sigma_a2 = 1.0, sigma_e2 = 1.0)` makes `σ² ∈ [e⁻⁸,
+e⁸]`. Outside it the search stops on the rail, returns a start-dependent estimate,
+and sets `boundary = true`; pass an `initial` on the scale of the data (or read
+`fit.boundary`) rather than assuming agreement. Exported as an experimental fitter;
+not the public default, not wired into the R formula path, no R model-spec, no
+external comparator.
 """
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
