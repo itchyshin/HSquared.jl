@@ -48,3 +48,6 @@
 # session scratchpad (working files, never tracked)
 /scratchpad/
 /comparator/blupf90_atscale/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
