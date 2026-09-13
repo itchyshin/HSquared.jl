@@ -26,17 +26,26 @@ on both twins.
   (`src/likelihood.jl`, `direct_heritability`/`maternal_ratio`/
   `total_heritability` docstrings and the returned `convention` field).
 
-**Not included in this pass** — #331 (`covariance_structure_lrt` df should
-count identified parameters), #327 (`boundary` field / payload refusing
-boundary-riding non-Gaussian fits / opt-in `restart_check`), the engine half
-of hsquared#212 (`initial`/`iterations` forwarded on payload-v2
-`multi_effect`/`direct_maternal` and `iterations` on single-step fitters), and
-the engine half of hsquared#214/#217 (`max_dense_cells` kwarg on the
-`repeatability` target; a repeatability dense-cell guard). Verified against
-this worktree and all four sibling fixer branches (`claude/h2-fixer-j1..j4`)
-at hand-off time: none carry any commit implementing these five items, so no
-changelog entry for them would be truthful yet. Add the entries once the
-corresponding code lands.
+- Fixed hsquared#212 (Julia half): `fit_payload_v2` accepts and forwards
+  `initial`/`iterations` on the `:multi_effect` (dense) and `:direct_maternal`
+  arms, which previously hardcoded the engine call and discarded both;
+  `fit_gblup_reml`, `fit_single_step_reml` and
+  `fit_metafounder_single_step_reml` gain an `iterations` keyword. Defaults
+  unchanged (`nothing` omits the keyword entirely). The R half of #212 is
+  separate and does not land here.
+- Fixed #331: `covariance_structure_lrt`'s `df` counts identified
+  parameters — `_mv_nparams` removes the `r(r−1)/2` rotational
+  indeterminacy of `Λ` for `:lowrank` and `:factor_analytic`, so a
+  Ledermann-valid comparison is no longer refused with `df = 0`. The
+  boundary note no longer calls the p-value "conservative".
+- Fixed hsquared#214/#217 (Julia half): `max_dense_cells` is a keyword on
+  the dense-validation fitters, and `fit_repeatability_reml` now runs the
+  dense-cell guard.
+- Fixed #327: `NonGaussianFit` gains a `boundary` field;
+  `nongaussian_three_field_payload` refuses boundary-riding fits; an opt-in
+  `restart_check` (with `restart_estimate`) is added; the `:nbinom` and
+  `:gaussian` branches gain the same log-unit rail the gamma branch already
+  has. Defaults unchanged; no capability-status or count changes.
 
 ## 0.8.0 (experimental)
 

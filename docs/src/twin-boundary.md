@@ -71,8 +71,9 @@ the R-facing page that reports the same result, and an R-side input
 requirement (e.g. a required default or a validated range) must be reachable
 from the engine function that consumes it.
 
-The R twin's `vignettes/articles/twin-boundary.Rmd` carries the same
-paragraph, added as the matching R-side half of this rule.
+The matching R-side half of this rule is owed in the R twin's
+`vignettes/articles/twin-boundary.Rmd` (hsquared, R docs slice); until it
+lands, this rule is stated on the Julia side only.
 
 ## Reporting route-scoped results
 
