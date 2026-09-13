@@ -5300,3 +5300,29 @@ Newest entries go at the top.
 - Local checks pass: focused status contract, generated Documenter/Vitepress
   page, `Pkg.test()`, `git diff --check`, and six Unlazy gates. No PR update,
   push, merge, tag, registry action, or release occurred.
+
+## 2026-09-13 — 0.9.0 release closed; handover reconciled; test campaign opened `[JL]`
+
+- Reconciliation of `docs/dev-log/handover/2026-09-13-claude-handover.md` against
+  live state (Claude lane, this date). `origin/main` tip `b1f8f14a` = PR #324 merge;
+  `Project.toml` `0.9.0`; annotated tag `v0.9.0` resolves to `b1f8f14a`; GitHub
+  release published 2026-09-12 (not draft, not prerelease). Exact-main CI run
+  `34667219579` (Julia 1 / 1.10 on Ubuntu and Windows) and Documenter run
+  `34667207341` passed per the handover; the plotting job is opt-in and skipped.
+  Twin `hsquared`: tag `v0.9.0` = `e54d0528`; `main` one chore merge later
+  (`4ec4cfb`, #207). CRAN: not submitted. HSquared.jl: not registered.
+- Handover PR #325 merged 2026-09-13 through `pr_merge_when_green.sh` after all
+  five required checks settled `SUCCESS` (plotting `SKIPPED`); `main` is now
+  `4ee366ad`. Classification: 0.9.0 release DONE; 36 local-only historical
+  branches PROTECTED and unaudited; the 2026-09-08 three-scale h² handover branch
+  (`claude/h2-three-scale-naming-20260908`, 3 doc commits, no PR) is superseded by
+  the A3 implementation already on `main` (`nongaussian_three_field_payload`,
+  `test/a3_three_field.jl`) and left as is.
+- Owner decision (Shinichi, 2026-09-13): the deferred post-0.9 hardening campaign
+  is opened as an independent multi-lane test campaign on both twins; charter at
+  `docs/design/57-h2-test-campaign-charter.md`. Testers change no source; findings
+  are filed as issues after a Rose claim-vs-evidence audit. No capability row,
+  version, public claim, or speed statement changes by this entry.
+- Not run this entry: `Pkg.test()`, `docs/make.jl`, `preamble_cap.sh` (docs-only
+  lane; the campaign's bridge gate and lanes carry their own receipts in the
+  vault under `projects/H2-twin/`).
