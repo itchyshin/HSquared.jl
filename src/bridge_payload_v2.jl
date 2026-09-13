@@ -392,22 +392,36 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    fit_payload_v2(payload) → fit NamedTuple
+    fit_payload_v2(payload; scale_method = :dense, initial = nothing,
+                  iterations = nothing) → fit NamedTuple
 
 Parse a payload-v2 request and run the dispatched estimator, returning the
 estimator's raw `NamedTuple` result.  For a single-pedigree-block payload
 this is exactly the result of `fit_animal_model(…)`.
 
+`initial` and `iterations` (hsquared#212) are forwarded ONLY to the
+`:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls
+this dispatcher previously hardcoded with neither, silently discarding
+`engine_control\$initial`/`\$iterations` from the R side. Default `nothing`
+for both reproduces the exact pre-#212-fix call (each underlying fitter's own
+default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
+`fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). Every
+other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises
+`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is
+silently ignored, matching the pre-existing byte-identical default path.
+
 The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
 `Phase0NotImplementedError` for it (§6: "no multi-block coefcov estimator is
 wired yet").
 """
-function fit_payload_v2(payload; scale_method::Symbol = :dense)
+function fit_payload_v2(payload; scale_method::Symbol = :dense,
+                        initial = nothing, iterations::Union{Nothing,Integer} = nothing)
     parsed = parse_payload_v2(payload)
-    return _dispatch_fit(parsed; scale_method = scale_method)
+    return _dispatch_fit(parsed; scale_method = scale_method, initial = initial, iterations = iterations)
 end
 
-function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense)
+function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
+                       initial = nothing, iterations::Union{Nothing,Integer} = nothing)
     dispatch = parsed.dispatch
     blocks   = parsed.blocks
     X        = parsed.X
@@ -440,13 +454,20 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense)
         # the large-scale matrix-free path is experimental (opt-in).
         y = parsed.y
         per_block_ids = [b.ids for b in blocks]
+        # hsquared#212: forwarded to the dense fitter only. The `:auto` path DOES accept `initial`/
+        # `iterations` (both `fit_sparse_multi_effect_aireml` and `fit_multi_effect_mc_reml` take
+        # them through `fit_multi_effect`'s `kwargs...`), but this dispatcher does not forward them
+        # there — a known remaining silent drop on the opt-in `:auto` route, not fixed in this PR.
+        multi_effect_kwargs = iterations === nothing ?
+            (initial === nothing ? NamedTuple() : (initial = initial,)) :
+            (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
         if scale_method === :auto
             effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in blocks]
             return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
                                     compute_loglik = true, verbose = false)
         elseif scale_method === :dense
             effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
-            return fit_multi_effect_reml(y, X, effects; ids = per_block_ids)
+            return fit_multi_effect_reml(y, X, effects; ids = per_block_ids, multi_effect_kwargs...)
         else
             throw(ArgumentError("scale_method must be :dense (default) or :auto"))
         end
@@ -455,11 +476,16 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense)
         # §6 row 4: one correlated block → fit_direct_maternal_reml.
         b = blocks[1]   # only correlated block (mixed correlated+independent rejected at parse)
         y = parsed.y
+        # hsquared#212: forward `initial`/`iterations` (both default nothing -> the
+        # fitter's own defaults, byte-identical to the pre-#212-fix call).
+        dm_kwargs = iterations === nothing ?
+            (initial === nothing ? NamedTuple() : (initial = initial,)) :
+            (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
         return fit_direct_maternal_reml(y, X,
                                         Matrix{Float64}(b.Z),
                                         Matrix{Float64}(b.Zm),
                                         Matrix{Float64}(b.relmat_inverse);
-                                        ids = b.ids)
+                                        ids = b.ids, dm_kwargs...)
 
     elseif dispatch == :multivariate
         # §6 row 5: multivariate Y (one pedigree block) → fit_multivariate_reml.
