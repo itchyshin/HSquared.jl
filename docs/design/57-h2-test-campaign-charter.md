@@ -20,9 +20,18 @@ speed or ASReml claim; does not touch the R repo's source, tests, or docs from t
 ## 2. Scope
 
 - Repos: `HSquared.jl` (main `b1f8f14`) and `hsquared` (main `4ec4cfb`).
-- The 7 R-public covered routes under test: `gryphon` (default engine and `engine = "julia"`),
-  `common_env`, `permanent`, `multivariate` (`cbind()`, t=2), `genomic`, `random_regression`,
-  `direct_maternal`.
+- The 7 R-public covered routes under test: `gryphon` (the default univariate Gaussian animal
+  model, default engine and `engine = "julia"`), `multivariate` (`cbind()`, t=2, routed on the
+  default path), `genomic` (`target = "genomic"`), `common_env` (`target = "two_effect"`,
+  common-environment leg), `multi_effect` (arbitrary-N independent `(1 | g)`,
+  `target = "multi_effect"`), `random_regression` (k = 2), and `direct_maternal`.
+  `permanent` / `target = "repeatability"` is **not** among them: both twins mark repeatability
+  experimental (`HSquared.jl/docs/design/capability-status.md:89-90`, whose 2,000-seed confirm is
+  a banked negative; `hsquared/vignettes/articles/model-status.Rmd:240-241`, filed under "Opt-in
+  and experimental (not the default)"). Exercising it is still in scope as a bridge-liveness
+  check, but a PASS there means the call completed and returned the documented shape, never
+  that the route is covered. (Correction 2026-09-13, Rose audit of wave 1: the first version of
+  this list named `permanent` in place of `multi_effect`.)
 - The 89 non-covered R exports (96 total exports minus the 7 covered routes) as a coverage target
   for the Code Reviewer lane — each export is a ship / blocked / stop verdict, not a promotion.
 - Cold documentation (both twins' install-through-first-fit path) and the standing question "is the
