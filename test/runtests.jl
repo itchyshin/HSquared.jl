@@ -1276,7 +1276,7 @@ end
     @test_throws ArgumentError HSquared.nongaussian_heritability(fp2)            # ambiguous μ
     @test HSquared.nongaussian_heritability(fp2; mu = 0.0).family === :bernoulli # works with μ
     nf = HSquared.NonGaussianFit((sigma_a2 = 1.0,), -3.0, [0.0], zeros(8), collect(1:8),
-                                 false, :poisson, :laplace, nothing, nothing)
+                                 false, :poisson, :laplace, nothing, nothing, false, nothing)
     @test_throws ArgumentError HSquared.nongaussian_heritability(nf)             # non-converged refused
     @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.NegativeBinomialResponse(2.0))
 
@@ -9314,7 +9314,9 @@ end
     mv2_lr = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :lowrank, rank = 1)
     lrt_lr = covariance_structure_lrt(mv2_lr, mv2)
     @test lrt_lr.df == 1
-    @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
+    @test lrt_lr.boundary == true           # rank/PSD-boundary null; naive χ² tail, direction unknown (#331)
+    @test lrt_lr.reference == :chisq_naive_boundary
+    @test lrt_lr.pvalue ≈ HSquared._chisq_sf(max(lrt_lr.statistic, 0.0), 1) atol = 1e-12   # was 0.5x this before #331
 
     # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
     # is on the genetic-correlation boundary, so standard errors are unavailable
@@ -10697,6 +10699,9 @@ end
 # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
 include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
+# #331 — covariance_structure_lrt / _mv_nparams FA/low-rank rotational-indeterminacy df fix.
+include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
+
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
@@ -10709,6 +10714,9 @@ include(joinpath(@__DIR__, "a3_three_field.jl"))
 
 # A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
 include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
+
+# #327 NonGaussianFit.boundary honesty flag + three-field payload refusal.
+include(joinpath(@__DIR__, "test_327_boundary_flag.jl"))
 
 # Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
 include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))

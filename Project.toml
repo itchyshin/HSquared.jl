@@ -25,6 +25,7 @@ Aqua = "0.8"
 CUDA = "5"
 Dates = "1.10"
 DelimitedFiles = "1.9"
+Distributions = "0.25"
 JSON3 = "1"
 LinearAlgebra = "1.10"
 Makie = "0.24"
@@ -42,6 +43,7 @@ julia = "1.10"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -50,6 +52,10 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 # Dates is test-only: it is needed to load comparator/run_targets.jl (which
 # timestamps its manifest) inside the test environment. The engine itself does
-# not depend on it. Aqua is test-only registry hygiene (A19).
+# not depend on it. Aqua is test-only registry hygiene (A19). Distributions is
+# test-only: #339/F1's test independently pins `covariance_structure_lrt`'s
+# plain-χ² reference against `Distributions.Chisq`/`ccdf`, rather than reusing
+# the package's own dependency-free `_chisq_sf`. The engine itself stays
+# dependency-free (`_chisq_sf`, no Distributions/SpecialFunctions).
 [targets]
-test = ["Aqua", "Dates", "DelimitedFiles", "JSON3", "Printf", "Statistics", "TOML", "Test"]
+test = ["Aqua", "Dates", "DelimitedFiles", "Distributions", "JSON3", "Printf", "Statistics", "TOML", "Test"]
