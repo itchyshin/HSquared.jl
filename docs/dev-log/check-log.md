@@ -5326,3 +5326,110 @@ Newest entries go at the top.
 - Not run this entry: `Pkg.test()`, `docs/make.jl`, `preamble_cap.sh` (docs-only
   lane; the campaign's bridge gate and lanes carry their own receipts in the
   vault under `projects/H2-twin/`).
+
+## 2026-09-13 — H2 fixer campaign: Julia half merged (#337 #341 #342 #339 #338) `[JL]`
+
+- Five PRs merged on `main`, in Rose's required order (each rebased onto the new
+  `main` and re-CI'd before the next merged): **#337** `d5b45b01` — forward
+  `initial`/`iterations` through `fit_payload_v2`'s `:multi_effect`/`:direct_maternal`
+  dispatch arms and through `fit_gblup_reml`/`fit_single_step_reml`/
+  `fit_metafounder_single_step_reml` (engine half of hsquared#212; does not close
+  the issue, R half is separate). **#341** `3c16298e` — generalized
+  `_check_dense_validation_size` to name the effective `max_dense_cells` cap in its
+  error text, and added the same kwarg + guard to `fit_repeatability_reml`, which
+  previously built its dense `n×n` inverse with no size guard at all (engine half
+  of hsquared#214/#217). **#342** `28b58581` — `NonGaussianFit` gains `boundary::Bool`
+  (and `restart_estimate`), set in every one of `fit_laplace_reml`'s nine family
+  branches including new ±8-log-unit safety rails on `:gaussian`/`:nbinom` (which
+  had none before); `nongaussian_three_field_payload` refuses a `boundary = true`
+  fit; opt-in `restart_check::Bool = false` two-start fence (closes HSquared.jl#327).
+  **#339** `885f884f` — `_mv_nparams` subtracts the `r(r-1)/2` rotational-
+  indeterminacy of `Λ` for `:lowrank`/`:factor_analytic`, so `covariance_structure_lrt`
+  no longer wrongly refuses a Ledermann-valid comparison with `df = 0`; the function
+  now always requests the plain `boundary_df = 0` χ² tail from `nested_lrt` (never
+  the 50:50 chi-bar mixture its own docstring says it cannot compute) — closes
+  HSquared.jl#331; follow-on **#340** filed for `fit_multivariate_reml`'s optimizer
+  parameter count (`ngen`), deliberately not touched here. **#338** `a4cf08e5` —
+  docs-only: `fit_snp_blup` docstring no longer overclaims exactness (#333, pointer
+  moved to the issue for the measured ridge gap); `write_validation_status_page.jl`
+  drops the `regenerated:` timestamp comment so `docs/make.jl` no longer dirties a
+  tracked file on every run (#334, with an idempotency test); `σ_P` → `σ²_P` on every
+  user-visible string in `src/` (hsquared#210, Julia half); a twin-contract-rule
+  paragraph added to `docs/src/twin-boundary.md` (self-limiting: states the R-side
+  paragraph is not yet on `hsquared` main). Merged last by design — its changelog
+  entries for #331/#327 are only true once #339/#342 land.
+- Rose pre-merge audit, three rounds, all CHANGES applied verbatim before merge
+  (verified character-by-character by Rose herself on re-audit, not merely
+  asserted by the builders): **Round A** (`rose-julia-a.md`, #337/#338/#339) —
+  #337 CHANGES (2 docstring/comment corrections), #338 CHANGES (3 false-claim
+  corrections), #339 **BLOCK** on finding F1: the df fix silently routed the
+  headline FA case into `nested_lrt`'s 50:50 chi-bar-mixture branch, which the
+  PR's own new docstring said was not computed — a genuine statistical-honesty
+  defect, resolved by making `covariance_structure_lrt` always request the plain
+  χ² tail (never the mixture) for a structured null. **Round B** (`rose-julia-b.md`,
+  #341/#342 + re-audit #337) — #341 CHANGES (2 items: an undisclosed NOT-COVERED
+  gap on `repeatability_interval`, and binding the exact R-side kwarg name the
+  error text forward-references), #342 CHANGES (4 items: a self-contradicting
+  family-grouping sentence, a fence-provenance correction, an now-false
+  Gaussian/`fit_sparse_reml` exactness claim, and two missing follow-on issues for
+  `Closes #327`'s own deferred items), #337 **APPROVE** (C1/C2 applied verbatim).
+  **Round C** (`rose-julia-c.md`, re-audit #339/#338/#342 after their repairs) —
+  #339 CHANGES (6 items: F1 confirmed resolved by tracing the code, plus a
+  substantive finding J1R-3 that the fix silently doubles the p-value on an
+  already-tested `:lowrank t=2 rank=1` case, now pinned by a new assertion),
+  #338 CHANGES (7 items: a false "0.8.0 on both twins" version claim, two
+  changelog entries describing the pre-repair fix, a stale PR-body claim about
+  the R twin, a dangling evidence pointer amplified into three places, and the
+  gh-pages push race below), #342 CHANGES (4 items: a lost sentence break, a
+  stale issue line-citation, an issue filed where the R lane will never see it,
+  and a stale per-family PR-body bullet). No round returned a second BLOCK.
+- Checks: `Pkg.test()` — **not re-run this session**; passed on this exact merged
+  main (`a4cf08e5`) at the orchestrator's own run, 2026-09-13 ~13:3x local
+  (`Testing HSquared tests passed`, exit 0) — cited, not repeated, per this task's
+  brief. `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=4 julia --project=docs
+  docs/make.jl` — re-run fresh in this records worktree: clean VitePress build,
+  deployment correctly skipped locally (no `CI` env set), only the pre-existing
+  "docstrings not included in @docs/@autodocs" warning list (unrelated,
+  pre-existing); `git status --porcelain` **clean** afterward — confirms #334's
+  fix holds on merged main (no tracked file dirtied). `bash tools/preamble_cap.sh`
+  — `CAP OK`, 11024 B (~2756 tok) of 14000 B cap, 1 snapshot entry of cap 1.
+- CI on `main`: green throughout. Each merge's own `Documenter`/`CI` legs
+  completed `success` before the next PR was rebased onto the new main and
+  re-run, per Rose's explicit "a green run measured against the previous main
+  carries no information about the new one" rule. One transient exception: the
+  `Documenter` run at #337's merge commit `d5b45b01` (run `34773980346`) **failed**
+  — the VitePress build itself completed clean; the failure was `git push -q
+  upstream HEAD:gh-pages` exiting 1 with `! [rejected] HEAD -> gh-pages (fetch
+  first)`, a non-fast-forward push race against a concurrent gh-pages write, not
+  a Documenter or content error. The very next Documenter run, at #341's merge
+  commit `3c16298e` (run `34774458164`), **succeeded** — confirmed the race was
+  transient infrastructure, not a regression; Rose's J5R-7 required re-running
+  the job rather than "fixing" the docs to chase it, and that is what happened.
+- Follow-on issues opened by this campaign, all `OPEN`, none closed here:
+  **#340** — `fit_multivariate_reml`'s `ngen` optimizer parameter-vector sizing
+  still overcounts the FA/low-rank rotational indeterminacy that #331 corrected
+  only in the *reporting* `df` (follow-on to #331; deliberately deferred, larger
+  blast radius). **#343** — `fit_payload_v2`'s `:multi_effect` dispatch still
+  drops `initial`/`iterations` on the opt-in `scale_method = :auto` path, which
+  does accept them via `fit_multi_effect`'s `kwargs...` (follow-on to hsquared#212
+  / #337; experimental path, no test coverage, not fixed here). **#344** —
+  `laplace_reml_interval` does not consume `NonGaussianFit.boundary`, so a
+  boundary-riding point estimate still yields a self-consistent but uninformative
+  interval (follow-on to #327/#342). **#345** — the R bridge's generic wrapper
+  (`R/julia-bridge.R:767-778`) reads only `converged`, never the new `boundary`
+  field (follow-on to #327/#342; R-lane work, tracked with a pointer to the twin
+  issue `itchyshin/hsquared#222` since the fix itself belongs in that repo).
+- State: no version bump — `Project.toml` stayed `0.9.0` on every branch and on
+  `main` throughout (a pre-existing, pre-campaign value the changelog's newest
+  released section, `0.8.0`, does not reconcile with; #338's own PR body and
+  Rose's J5R-1 both flag this as belonging to the release owner, not to this
+  campaign). No capability-status or validation-debt **status-cell** change:
+  `#337`/`#341`/`#342` touch neither ledger file at all; `#339` touches both, but
+  only inside the evidence/description prose of three already-existing rows
+  (`V4-FA`, `C10-LRT`, "Multivariate REML (estimate G0/R0)") — `| covered |
+  | covered | | partial |` identically before and after. That wording is Rose's
+  own **wave-C** text (J1R-3b/c), which explicitly **supersedes** her earlier
+  wave-A L1–L3 draft (written before the F1 resolution was picked, and
+  under-stated what the chosen resolution actually does — in particular the
+  `:lowrank t=2 rank=1` p-value doubling). `public_covered_count` stays **7**
+  throughout all five PRs.
