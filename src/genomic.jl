@@ -494,7 +494,7 @@ end
 
 """
     fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
-                   target = :ai_reml, ids = nothing)
+                   target = :ai_reml, iterations = nothing, ids = nothing)
 
 GBLUP with REML-estimated variance components: build the genomic animal-model
 spec (genomic precision `Ginv` in the `Ainv` slot) and estimate `(sigma_a2,
@@ -503,6 +503,13 @@ one-call convenience over `animal_model_spec(...; method = :REML)` +
 [`fit_animal_model`](@ref); `target = :ai_reml` (default) or `:sparse_reml`.
 Returns the [`AnimalModelFit`](@ref) (estimated `variance_components`, genomic
 `breeding_values`, `likelihood`, `converged`, …).
+
+`iterations` (hsquared#212), when supplied, forwards to whichever `target`
+optimizer is selected (`fit_ai_reml`'s own default is 100; `fit_sparse_reml`'s
+and `fit_variance_components`'s is 1000) via [`fit_animal_model`](@ref)'s
+`kwargs...` passthrough. Default `nothing` omits the keyword entirely, so the
+call is byte-identical to the pre-#212-fix behaviour (each target's own
+hardcoded default).
 
 Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
 selected-inversion advantage); no external comparator, no R model-spec.
@@ -514,10 +521,12 @@ function fit_gblup_reml(
     Ginv::AbstractMatrix;
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     target::Symbol = :ai_reml,
+    iterations::Union{Nothing,Integer} = nothing,
     ids = nothing,
 )
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
-    return fit_animal_model(spec; target = target, initial = initial)
+    iterations === nothing && return fit_animal_model(spec; target = target, initial = initial)
+    return fit_animal_model(spec; target = target, initial = initial, iterations = iterations)
 end
 
 """
@@ -2473,23 +2482,30 @@ end
 """
     fit_single_step_reml(y, X, Z, Ainv, A, G, genotyped_rows;
                          tau = 1.0, omega = 1.0, blend_weight = 0.0, ridge = 0.0,
-                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target = :ai_reml, ids = nothing)
+                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target = :ai_reml,
+                         iterations = nothing, ids = nothing)
 
 Single-step GBLUP with REML-estimated variance components: build `H⁻¹`
 ([`single_step_inverse`](@ref)) and estimate `(sigma_a2, sigma_e2)` by REML on the
 single-step spec (via [`fit_gblup_reml`](@ref)). When `G = A₂₂` it reproduces the
 pedigree-REML optimum. Experimental, dense/validation-scale.
+
+`iterations` (hsquared#212) forwards to [`fit_gblup_reml`](@ref) (and from there
+to the `target` optimizer). Default `nothing` is byte-identical to the
+pre-#212-fix call (this keyword did not previously exist).
 """
 function fit_single_step_reml(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
     Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
     genotyped_rows::AbstractVector{<:Integer};
     tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
-    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml, ids = nothing,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml,
+    iterations::Union{Nothing,Integer} = nothing, ids = nothing,
 )
     Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
-    return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target, ids = ids)
+    return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target,
+                          iterations = iterations, ids = ids)
 end
 
 """
@@ -2557,12 +2573,17 @@ function fit_metafounder_single_step(
 end
 
 """
-    fit_metafounder_single_step_reml(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows; ...)
+    fit_metafounder_single_step_reml(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows;
+                                     iterations = nothing, ...)
 
 REML-estimated variance components for the dense validation-scale
 `H^Γ⁻¹` relationship precision. The metafounder covariance `Gamma` is supplied,
 not estimated. External comparator parity and R-facing formula syntax remain
 separate gates.
+
+`iterations` (hsquared#212) forwards to [`fit_gblup_reml`](@ref). Default
+`nothing` is byte-identical to the pre-#212-fix call (this keyword did not
+previously exist).
 """
 function fit_metafounder_single_step_reml(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
@@ -2571,13 +2592,14 @@ function fit_metafounder_single_step_reml(
     tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
     max_relationship_cache::Integer = 10_000,
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml,
-    ids = pedigree.ids,
+    iterations::Union{Nothing,Integer} = nothing, ids = pedigree.ids,
 )
     Hγinv = metafounder_single_step_inverse(pedigree, group_of, Gamma, G, genotyped_rows;
                                             tau = tau, omega = omega,
                                             blend_weight = blend_weight, ridge = ridge,
                                             max_relationship_cache = max_relationship_cache)
-    return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target, ids = ids)
+    return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target,
+                          iterations = iterations, ids = ids)
 end
 
 # ---------------------------------------------------------------------------
