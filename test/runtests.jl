@@ -10700,6 +10700,10 @@ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
+# hsquared#212 (engine half): initial/iterations threading through payload-v2
+# multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
+include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
+
 # A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
 include(joinpath(@__DIR__, "a3_three_field.jl"))
 
