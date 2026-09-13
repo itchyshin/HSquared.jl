@@ -535,11 +535,15 @@ independent), and the per-marker variance is `sigma_g2 / k` with
 p)` where `marker_effects = â`, `gebv = W·â` are the implied genomic breeding
 values, and `beta` are the fixed effects.
 
-`gebv` equals the GBLUP genomic breeding values for the same data and variances
-(the GBLUP↔SNP-BLUP equivalence). The random block is deliberately labelled
-`marker_effects` (not `breeding_values`/EBV), because on this spec the random
-effects are marker effects, not animal breeding values. Experimental,
-supplied-variance only (no variance-component estimation); unweighted VanRaden
+`gebv` equals the GBLUP genomic breeding values for the same data and variances,
+exactly for `G` itself (the GBLUP↔SNP-BLUP equivalence) — but through
+[`fit_gblup`](@ref)'s required `Ginv = inv(G + ridge·I)`, the package's only
+GBLUP route, the two differ by O(ridge): about 1–2 % of `sd(gebv)` at the
+package default `ridge = 0.01`, because the ridge changes the covariance kernel.
+See [Genomic models](genomic-models.md) for the measured gap. The random block is
+deliberately labelled `marker_effects` (not `breeding_values`/EBV), because on
+this spec the random effects are marker effects, not animal breeding values.
+Experimental, supplied-variance only (no variance-component estimation); unweighted VanRaden
 method-1 / single identity prior only.
 """
 function fit_snp_blup(

@@ -10711,3 +10711,7 @@ include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
 @testset "Repeatability ratio-bias decomposition kernel" begin
     @test_nowarn RepeatabilityRatioBiasAnalysis._self_test()
 end
+
+# #334: docs/make.jl must not dirty docs/src/validation-status.md on a
+# no-content-change rebuild (regeneration must be idempotent, no timestamp).
+include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))

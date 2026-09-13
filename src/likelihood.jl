@@ -2056,7 +2056,7 @@ and a PRE-DECLARED 48-seed bias/MCSE recovery gate (48/48 converged, all four
 `|bias| ≤ 2·MCSE`; see
 `docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-covered-evidence.md`).
 INTERPRETATION FENCE (Willham): a negative `r_am` is real and expected; the
-direct heritability `σ_ad/σ_P` is NOT "the heritability" (the selection-relevant
+direct heritability `σ²_ad/σ²_P` is NOT "the heritability" (the selection-relevant
 total additive variance involves `σ_dm`); callers must label direct-vs-total,
 never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
 can sit on a boundary (`converged = false`); identifiability generally needs
@@ -2159,10 +2159,10 @@ delta machinery as [`repeatability_interval`](@ref).
 Returns a `NamedTuple` with per-component `(estimate, se, lower, upper)` records
 for the variance components (`sigma_ad`, `sigma_am`, `sigma_dm`, `sigma_e2`), the
 direct–maternal genetic correlation `r_am` (Fisher-`z` interval, so it stays in
-`(-1, 1)`), and the Willham labelled triple `direct_heritability` (`σ²_ad/σ_P`),
-`maternal_ratio` (`σ²_am/σ_P`), and `total_heritability`
-(`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ_P`, Willham (1972), with
-`σ_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
+`(-1, 1)`), and the Willham labelled triple `direct_heritability` (`σ²_ad/σ²_P`),
+`maternal_ratio` (`σ²_am/σ²_P`), and `total_heritability`
+(`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ²_P`, Willham (1972), with
+`σ²_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
 `total_heritability()` surface).
 
 INTERVALS ARE ASYMPTOTIC / UNCALIBRATED (normal-`z` Wald / delta on the observed
@@ -2253,7 +2253,7 @@ function direct_maternal_interval(
     r_ci = (estimate = r, se = se_r, method = :fisher_z,
             lower = tanh(zr - zq * se_zr), upper = tanh(zr + zq * se_zr))
 
-    # Willham labelled triple over σ_P = σ²_ad + σ²_am + σ_dm + σ²e
+    # Willham labelled triple over σ²_P = σ²_ad + σ²_am + σ_dm + σ²e
     sP2 = sP^2
     direct_h2 = wald(sad / sP, [(sP - sad) / sP2, -sad / sP2, -sad / sP2, -sad / sP2])
     m2 = wald(sam / sP, [-sam / sP2, (sP - sam) / sP2, -sam / sP2, -sam / sP2])
@@ -2269,7 +2269,7 @@ function direct_maternal_interval(
         direct_heritability = direct_h2,
         maternal_ratio = m2,
         total_heritability = merge(total_h2,
-            (convention = "Willham (1972): (σ²_ad + 1.5σ_dm + 0.5σ²_am)/σ_P, σ_P = σ²_ad+σ²_am+σ_dm+σ²e",)),
+            (convention = "Willham (1972): (σ²_ad + 1.5σ_dm + 0.5σ²_am)/σ²_P, σ²_P = σ²_ad+σ²_am+σ_dm+σ²e",)),
         interval_method = "asymptotic_delta_uncalibrated",
         information_posdef = true,
     )

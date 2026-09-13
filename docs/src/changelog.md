@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+None of the entries below change any capability status, row count, or
+package version. `public_covered_count` stays **7**; version stays **0.8.0**
+on both twins.
+
+- Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
+  `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
+  The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
+  so a plain `docs/make.jl` build dirtied the tracked page even when the
+  generated table body was unchanged. The BEGIN/END generated-block markers are
+  unchanged. Docs-build hygiene only; no table content changed.
+- Clarified #333: `fit_snp_blup`'s docstring no longer states the
+  GBLUP↔SNP-BLUP equivalence unconditionally. The equivalence is exact for the
+  unregularized `G`; through `fit_gblup`'s required
+  `Ginv = inv(G + ridge·I)` — the package's only GBLUP route — the two differ
+  by `O(ridge)`, about 1–2 % of `sd(gebv)` at the package default
+  `ridge = 0.01`, because the ridge changes the covariance kernel.
+  Docstring-only; no arithmetic changed; see `docs/src/genomic-models.md`.
+- Fixed hsquared#210 (Julia half): the Willham total-heritability docstrings
+  and the stored `convention` string in `direct_maternal_interval` wrote
+  `σ_P` for a variance. Changed every such user-visible string in `src/` to
+  `σ²_P`, consistently, with no change to any arithmetic
+  (`src/likelihood.jl`, `direct_heritability`/`maternal_ratio`/
+  `total_heritability` docstrings and the returned `convention` field).
+
+**Not included in this pass** — #331 (`covariance_structure_lrt` df should
+count identified parameters), #327 (`boundary` field / payload refusing
+boundary-riding non-Gaussian fits / opt-in `restart_check`), the engine half
+of hsquared#212 (`initial`/`iterations` forwarded on payload-v2
+`multi_effect`/`direct_maternal` and `iterations` on single-step fitters), and
+the engine half of hsquared#214/#217 (`max_dense_cells` kwarg on the
+`repeatability` target; a repeatability dense-cell guard). Verified against
+this worktree and all four sibling fixer branches (`claude/h2-fixer-j1..j4`)
+at hand-off time: none carry any commit implementing these five items, so no
+changelog entry for them would be truthful yet. Add the entries once the
+corresponding code lands.
+
 ## 0.8.0 (experimental)
 
 Experimental numbered bump after both 0.8 engine pillars are covered

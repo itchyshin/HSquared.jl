@@ -58,6 +58,22 @@ Only the second scope changes `public_covered_count`, and only after the
 cross-twin bridge and R-side evidence are complete. Engine coverage alone is
 not permission to describe an R formula as fitted or production-ready.
 
+## Twin contract rule
+
+Where one twin states an input contract, an output definition, an
+identifiability claim, or an exactness claim, the other twin's corresponding
+page must state it or link to it. A contract stated once, silently, on only
+one side of the boundary is not a twin contract — it is a claim the other
+twin's reader has no way to find. This applies regardless of which twin the
+claim originates in: an engine docstring that narrows an equivalence (e.g. an
+exactness claim that holds only before regularization) must be reachable from
+the R-facing page that reports the same result, and an R-side input
+requirement (e.g. a required default or a validated range) must be reachable
+from the engine function that consumes it.
+
+The R twin's `vignettes/articles/twin-boundary.Rmd` carries the same
+paragraph, added as the matching R-side half of this rule.
+
 ## Reporting route-scoped results
 
 Use the R package to decide what an applied workflow exposes. A point estimate
