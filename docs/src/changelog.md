@@ -2,6 +2,64 @@
 
 ## Unreleased
 
+None of the entries below change any capability status, row count, or
+package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
+(`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
+is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
+this pass and belongs to the release owner.)
+
+- Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
+  `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
+  The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
+  so a plain `docs/make.jl` build dirtied the tracked page even when the
+  generated table body was unchanged. The BEGIN/END generated-block markers are
+  unchanged. Docs-build hygiene only; no table content changed.
+- Clarified #333: `fit_snp_blup`'s docstring no longer states the
+  GBLUP↔SNP-BLUP equivalence unconditionally. The equivalence is exact for the
+  unregularized `G`; through `fit_gblup`'s required
+  `Ginv = inv(G + ridge·I)` — the package's only GBLUP route — the two differ
+  by `O(ridge)`, about 1–2 % of `sd(gebv)` at the package default
+  `ridge = 0.01`, because the ridge changes the covariance kernel.
+  Docstring-only; no arithmetic changed; the per-cell measurement is in
+  issue #333; `docs/src/genomic-models.md` gives the reason, not the numbers.
+- Fixed hsquared#210 (Julia half): the Willham total-heritability docstrings
+  and the stored `convention` string in `direct_maternal_interval` wrote
+  `σ_P` for a variance. Changed every such user-visible string in `src/` to
+  `σ²_P`, consistently, with no change to any arithmetic
+  (`src/likelihood.jl`, `direct_heritability`/`maternal_ratio`/
+  `total_heritability` docstrings and the returned `convention` field).
+
+- Fixed hsquared#212 (Julia half): `fit_payload_v2` accepts and forwards
+  `initial`/`iterations` on the `:multi_effect` (dense) and `:direct_maternal`
+  arms, which previously hardcoded the engine call and discarded both;
+  `fit_gblup_reml`, `fit_single_step_reml` and
+  `fit_metafounder_single_step_reml` gain an `iterations` keyword. Defaults
+  unchanged (`nothing` omits the keyword entirely). The R half of #212 is
+  separate and does not land here.
+- Fixed #331: `covariance_structure_lrt`'s `df` counts identified parameters —
+  `_mv_nparams` removes the `r(r−1)/2` rotational indeterminacy of `Λ` for
+  `:lowrank` and `:factor_analytic`, so a Ledermann-valid comparison is no
+  longer refused with `df = 0`. The function now always uses the plain
+  χ²`df` reference and never the 50:50 chi-bar mixture: a `:factor_analytic`
+  null is a regular submanifold and reports `boundary = false`, while a
+  `:lowrank` null stays `boundary = true` with the naive tail and its
+  direction explicitly unknown — the word "conservative" is gone. A new
+  `reference` field names which distribution produced `pvalue`.
+  **Behaviour change:** a structured comparison with `df = 1` (reachable at
+  `:lowrank`, `t = 2`, `rank = 1`) now reports twice its former p-value.
+- Fixed hsquared#214/#217 (Julia half): `max_dense_cells` is a keyword on
+  the dense-validation fitters, and `fit_repeatability_reml` now runs the
+  dense-cell guard.
+- Fixed #327: `NonGaussianFit` gains a `boundary` field;
+  `nongaussian_three_field_payload` refuses boundary-riding fits; an opt-in
+  `restart_check` (with `restart_estimate`) is added; the `:nbinom` and
+  `:gaussian` branches gain the same log-unit rail the gamma branch already
+  has. No capability-status or count changes. Defaults are unchanged for the
+  seven families that already had a bound; for `:gaussian` and `:nbinom` the
+  new rail applies on the default path, so a fit whose optimum lies outside
+  `exp(log(initial) ± 8)` now stops on the rail and sets `boundary = true`
+  where it previously searched unbounded.
+
 ## 0.8.0 (experimental)
 
 Experimental numbered bump after both 0.8 engine pillars are covered
