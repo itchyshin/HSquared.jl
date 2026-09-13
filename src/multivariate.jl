@@ -1287,9 +1287,11 @@ function _mv_nparams(fit)
     elseif s == :diagonal
         t
     elseif s == :lowrank
-        t * Int(r)
+        rr = Int(r)
+        t * rr - rr * (rr - 1) ÷ 2  # subtract the O(r) rotational indeterminacy (Λ vs ΛQ)
     elseif s == :factor_analytic
-        t * Int(r) + t
+        rr = Int(r)
+        t * rr + t - rr * (rr - 1) ÷ 2  # same rotational indeterminacy on the loadings Λ
     else
         throw(ArgumentError("unknown genetic_structure $s"))
     end
@@ -1304,15 +1306,22 @@ against the `full` (less-constrained) fit, both from
 [`fit_multivariate_reml`](@ref) on the **same data**. Returns a `NamedTuple`
 with the LRT `statistic` `= 2(ℓ_full − ℓ_constrained)`, the parameter-count
 difference `df`, the asymptotic χ²`df` `pvalue`, a `boundary` flag, and a `note`.
+`df` counts **identified** parameters: for `:lowrank`/`:factor_analytic`,
+`_mv_nparams` already removes the `r(r-1)/2` rotational indeterminacy of
+the loadings `Λ` (`Λ` and `ΛQ` for orthogonal `Q` give the same `G`), the same
+correction `ledermann_slack` implies.
 
 The χ²`df` reference is exact only for an **interior** null — testing whether the
 off-diagonal genetic covariances are zero (`:diagonal` nested in
 `:unstructured`), where the constrained parameters lie in the interior of the
 full space (`boundary = false`). For **rank/PSD-boundary** nulls
 (`:lowrank`/`:factor_analytic` nested in `:unstructured`), the true null
-distribution is a χ² mixture, so the reported χ²`df` p-value is asymptotically
-**conservative** (`boundary = true`). Experimental, asymptotic,
-dense/validation-scale.
+distribution is a χ² mixture over a null set that is a non-convex algebraic
+variety (`{ΛΛ' + Ψ : rank(Λ) = K}`), not the convex cone the standard chi-bar
+weight results assume — so whether the reported naive χ²`df` p-value is
+conservative or anti-conservative relative to that mixture is **not knowable**
+without the mixture weights, which this function does not compute
+(`boundary = true`). Experimental, asymptotic, dense/validation-scale.
 """
 function covariance_structure_lrt(constrained, full)
     npc = _mv_nparams(constrained)
@@ -1324,9 +1333,11 @@ function covariance_structure_lrt(constrained, full)
     sf = getproperty(full, :genetic_structure)
     interior = sc == :diagonal && sf == :unstructured
     # interior (:diagonal in :unstructured) -> χ²_df; rank/PSD boundary
-    # (:lowrank/:factor_analytic) -> flagged-conservative naive χ² (multi-parameter
-    # boundary, no closed-form chi-bar weights). Delegates the statistic + tail to
-    # `nested_lrt`; both arms reproduce the previous output bit-for-bit.
+    # (:lowrank/:factor_analytic) -> naive χ² over a non-convex rank-constrained
+    # null (not the convex-cone case the chi-bar weight theory assumes), so its
+    # direction vs. the true mixture is not knowable here. Delegates the
+    # statistic + tail to `nested_lrt`; `df` now counts identified parameters
+    # (rotational indeterminacy removed by `_mv_nparams`, #331).
     res = nested_lrt(constrained.loglik, full.loglik; df = df,
                      boundary_df = interior ? 0 : df, label = "covariance_structure_lrt")
     stat = res.statistic
@@ -1334,7 +1345,7 @@ function covariance_structure_lrt(constrained, full)
     note = if stat < -1e-6
         "negative statistic ($(round(stat, digits = 6))): `full` did not dominate `constrained` — check they are nested and both converged"
     elseif boundary
-        "rank/PSD-boundary null: the χ²_$df p-value is asymptotically conservative (true null is a χ² mixture)"
+        "rank/PSD-boundary null: df counts identified parameters (rotational indeterminacy removed); the χ²_$df p-value's direction relative to the true χ² mixture is not knowable without the chi-bar mixture weights, which are not computed here"
     else
         "interior null (off-diagonal genetic covariances = 0): χ²_$df asymptotics apply"
     end

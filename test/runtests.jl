@@ -10697,6 +10697,9 @@ end
 # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
 include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
 
+# #331 — covariance_structure_lrt / _mv_nparams FA/low-rank rotational-indeterminacy df fix.
+include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
+
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
