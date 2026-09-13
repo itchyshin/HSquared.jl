@@ -10711,3 +10711,7 @@ include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
 @testset "Repeatability ratio-bias decomposition kernel" begin
     @test_nowarn RepeatabilityRatioBiasAnalysis._self_test()
 end
+
+# max_dense_cells kwarg on the dense-validation fitters (engine half of
+# hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
+include("test_214_217_dense_cells.jl")
