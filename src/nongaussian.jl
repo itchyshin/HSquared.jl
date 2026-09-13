@@ -1052,7 +1052,7 @@ campaign comment — 27/27 truncated replicates detected, 0 false positives over
 replicate pairs — but that measurement used `:poisson` only, a second start of `sa0
 * 10` rather than `sa0 * exp(3)`, and a relative rather than a log-scale gap; the
 threshold shipped here is the same order of magnitude, not the measured
-configuration, and is unmeasured for the other eight families) The second estimate
+configuration, and is unmeasured for the other eight families). The second estimate
 is exposed in `restart_estimate` (`nothing` when `restart_check = false`).
 
 EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step. For the
