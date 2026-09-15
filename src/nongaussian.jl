@@ -903,6 +903,13 @@ function nongaussian_three_field_payload(
 )
     fit.converged ||
         throw(ArgumentError("nongaussian_three_field_payload refuses a non-converged fit (converged = false)"))
+    fit.family in (:poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("nongaussian_three_field_payload supports only :poisson, :bernoulli, and :binomial; got :$(fit.family)"))
+    # #347: the family gate runs FIRST so the boundary message below can name the exact
+    # bound. The three supported families are all single-variance Brent searches, whose
+    # bound is the bracket endpoint exp(log(sa0) ± 6). The jointly-estimated families
+    # (:gamma, :nbinom, :gaussian, :ordered_probit with K ≥ 3) stop on a ±8-log-unit rail
+    # instead and must never be told "± 6"; they cannot reach this line.
     fit.boundary &&
         throw(ArgumentError("nongaussian_three_field_payload refuses a fit at its search boundary " *
                              "(boundary = true): the estimate sits on the rail of the log-scale search " *
@@ -910,8 +917,6 @@ function nongaussian_three_field_payload(
                              "`initial`, not the data; retry with a different `initial` to recentre the " *
                              "bracket -- restart_check = true only makes the boundary check stricter and " *
                              "cannot clear an already-flagged boundary (#327)"))
-    fit.family in (:poisson, :bernoulli, :binomial) ||
-        throw(ArgumentError("nongaussian_three_field_payload supports only :poisson, :bernoulli, and :binomial; got :$(fit.family)"))
     iszero(predictor_variance) ||
         throw(ArgumentError("the 0.9 three-field contract requires predictor_variance = 0"))
     length(fit.beta) == 1 ||

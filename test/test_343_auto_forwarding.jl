@@ -19,7 +19,7 @@ using Test
 using LinearAlgebra
 using SparseArrays
 
-@testset "hsquared#343 engine controls: initial/iterations on the :multi_effect :auto path" begin
+@testset "#343 engine controls: initial/iterations on the :multi_effect :auto path" begin
     # Shared small pedigree fixture (same shape as the #212 payload-v2 testset) so the
     # sparse AI-REML `:auto` path runs in well under a second.
     ped_ids  = [1, 2, 3, 4]
@@ -76,7 +76,7 @@ using SparseArrays
     # call exactly (the stronger parity check).
     # -----------------------------------------------------------------------
     @testset "(b) initial/iterations forwarded on the :auto path" begin
-        extreme_initial = [500.0, 500.0, 500.0, 500.0]  # K=2 effects + residual
+        extreme_initial = [500.0, 500.0, 500.0, 500.0]  # K=3 effects + residual
 
         fit_default = fit_payload_v2(payload_three; scale_method = :auto)
         fit_probe = fit_payload_v2(payload_three; scale_method = :auto,

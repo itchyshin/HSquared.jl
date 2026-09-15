@@ -71,7 +71,7 @@ this pass and belongs to the release owner.)
   clear a flagged boundary — that check is one-directional and can only make
   `boundary` stricter, never clear it. Both now name the actual lever: a
   different `initial`, which recentres the log-scale search bracket/rail.
-  Message/docstring wording only; no behaviour change.
+  Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
 
 ## 0.8.0 (experimental)
 
