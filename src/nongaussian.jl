@@ -903,12 +903,20 @@ function nongaussian_three_field_payload(
 )
     fit.converged ||
         throw(ArgumentError("nongaussian_three_field_payload refuses a non-converged fit (converged = false)"))
-    fit.boundary &&
-        throw(ArgumentError("nongaussian_three_field_payload refuses a fit at its search boundary " *
-                             "(boundary = true): the point estimate is a function of the start value, " *
-                             "not the data; retry with restart_check = true or a different initial (#327)"))
     fit.family in (:poisson, :bernoulli, :binomial) ||
         throw(ArgumentError("nongaussian_three_field_payload supports only :poisson, :bernoulli, and :binomial; got :$(fit.family)"))
+    # #347: the family gate runs FIRST so the boundary message below can name the exact
+    # bound. The three supported families are all single-variance Brent searches, whose
+    # bound is the bracket endpoint exp(log(sa0) ± 6). The jointly-estimated families
+    # (:gamma, :nbinom, :gaussian, :ordered_probit with K ≥ 3) stop on a ±8-log-unit rail
+    # instead and must never be told "± 6"; they cannot reach this line.
+    fit.boundary &&
+        throw(ArgumentError("nongaussian_three_field_payload refuses a fit at its search boundary " *
+                             "(boundary = true): the estimate sits on the rail of the log-scale search " *
+                             "bracket exp(log(initial.sigma_a2) ± 6), a function of the supplied " *
+                             "`initial`, not the data; retry with a different `initial` to recentre the " *
+                             "bracket -- restart_check = true only makes the boundary check stricter and " *
+                             "cannot clear an already-flagged boundary (#327)"))
     iszero(predictor_variance) ||
         throw(ArgumentError("the 0.9 three-field contract requires predictor_variance = 0"))
     length(fit.beta) == 1 ||
@@ -1053,7 +1061,11 @@ replicate pairs — but that measurement used `:poisson` only, a second start of
 * 10` rather than `sa0 * exp(3)`, and a relative rather than a log-scale gap; the
 threshold shipped here is the same order of magnitude, not the measured
 configuration, and is unmeasured for the other eight families). The second estimate
-is exposed in `restart_estimate` (`nothing` when `restart_check = false`).
+is exposed in `restart_estimate` (`nothing` when `restart_check = false`). This check
+is one-directional (#347): it can only turn `boundary` from `false` to `true`, never
+the reverse, so `restart_check = true` cannot clear an already-flagged boundary — it
+is a stricter detector, not a fix. The only lever that changes the point estimate
+itself is a different `initial`, which recentres the search bracket/rail.
 
 EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step. For the
 Gaussian family the objective is the exact REML log-likelihood **inside the

@@ -39,6 +39,12 @@ end
         end
         @test err isa ArgumentError
         @test occursin("boundary", err.msg)
+        # #347: the message must name the actual lever (`initial`, which recentres the
+        # log-scale search bracket) and must not suggest `restart_check = true` can clear
+        # an already-flagged boundary -- it only makes the check stricter (never a rescue).
+        @test occursin("initial", err.msg)
+        @test occursin("restart_check", err.msg)
+        @test occursin("cannot clear", err.msg)
     end
 
     @testset "(b) informative Poisson DGP (~300 animals) stays interior" begin

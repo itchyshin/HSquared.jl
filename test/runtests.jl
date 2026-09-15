@@ -10709,6 +10709,10 @@ include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 # multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
 include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
 
+# #343 (follow-on to hsquared#212 / #337): initial/iterations threading through
+# payload-v2 multi_effect dispatch on the opt-in scale_method = :auto route.
+include(joinpath(@__DIR__, "test_343_auto_forwarding.jl"))
+
 # A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
 include(joinpath(@__DIR__, "a3_three_field.jl"))
 

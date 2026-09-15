@@ -59,6 +59,19 @@ this pass and belongs to the release owner.)
   new rail applies on the default path, so a fit whose optimum lies outside
   `exp(log(initial) ± 8)` now stops on the rail and sets `boundary = true`
   where it previously searched unbounded.
+- Fixed #343 (follow-on to hsquared#212/#337): `fit_payload_v2`'s
+  `:multi_effect` dispatch now forwards `initial`/`iterations` on the opt-in
+  `scale_method = :auto` route too (previously forwarded on `:dense` only),
+  via `fit_multi_effect`'s own `kwargs...` to whichever engine `:auto`
+  selects. Default calls on either route are unaffected (`nothing` omits the
+  keyword entirely).
+- Clarified #347 (follow-on to #327): `nongaussian_three_field_payload`'s
+  boundary-refusal `ArgumentError`, and the corresponding `fit_laplace_reml`
+  docstring paragraph, no longer advise `restart_check = true` as a way to
+  clear a flagged boundary — that check is one-directional and can only make
+  `boundary` stricter, never clear it. Both now name the actual lever: a
+  different `initial`, which recentres the log-scale search bracket/rail.
+  Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
 
 ## 0.8.0 (experimental)
 
