@@ -5433,3 +5433,72 @@ Newest entries go at the top.
   under-stated what the chosen resolution actually does — in particular the
   `:lowrank t=2 rank=1` p-value doubling). `public_covered_count` stays **7**
   throughout all five PRs.
+
+## 2026-09-15 — :auto multi_effect path forwards initial/iterations; boundary refusal names the real lever (#343 #347 / PR #348) `[JL]`
+
+- PR #348 (`e25e2831`, merged to `main`) closes two follow-on issues from the 2026-09-13
+  H2 fixer campaign. **#343** — `_dispatch_fit`'s `:multi_effect` arm in
+  `src/bridge_payload_v2.jl` forwarded `initial`/`iterations` to the dense fitter
+  (`scale_method = :dense`) but silently dropped both on the opt-in `scale_method = :auto`
+  route, even though `fit_multi_effect` forwards `kwargs...` to both engines it can select
+  (`fit_sparse_multi_effect_aireml`, `fit_multi_effect_mc_reml`), both of which accept these
+  controls (follow-on to hsquared#212/#337). Fix: `multi_effect_kwargs` (already built for
+  the `:dense` branch) is now also splatted into the `:auto` branch's `fit_multi_effect`
+  call; empty when both kwargs are `nothing`, so the default call on either route stays
+  byte-identical. **#347** — `nongaussian_three_field_payload`'s `ArgumentError` for
+  `fit.boundary = true` advised "retry with `restart_check = true` or a different initial",
+  but the restart path in `fit_laplace_reml` sets `boundary2 = fit_result.boundary ||
+  abs(log(σ²a) − log(σ²a₂)) > 0.01` — monotone, so `restart_check = true` can only turn
+  `boundary` from `false` to `true`, never clear it. Fix: reworded the message and the
+  `fit_laplace_reml` docstring's `restart_check` paragraph to name the real lever — a
+  different `initial`, which recentres the log-scale search bracket — and to state plainly
+  that `restart_check = true` cannot clear an already-flagged boundary. In
+  `src/nongaussian.jl`, the family gate (`fit.family in (:poisson, :bernoulli, :binomial)`)
+  now runs **before** the boundary gate (Rose's required change, applied before merge): the
+  message's `exp(log(sa0) ± 6)` bracket is exact only for the single-variance Brent-search
+  families; the jointly-estimated families (`:gamma`, `:nbinom`, `:gaussian`,
+  `:ordered_probit` with `K ≥ 3`) stop on a ±8-log-unit rail instead, and with the old gate
+  order a boundary-flagged fit of one of those families would have been told the wrong
+  bound and the wrong mechanism before ever reaching the family-unsupported message.
+  Reordering makes every family that can reach the boundary message one of the three the
+  ±6 bracket is true for, by construction — not by a premise about which families the
+  payload happens to accept.
+- Touched: `src/bridge_payload_v2.jl` (`:multi_effect` `:auto` arm), `src/nongaussian.jl`
+  (`nongaussian_three_field_payload` gate order + message; `fit_laplace_reml` docstring),
+  `test/test_343_auto_forwarding.jl` (new), `test/test_327_boundary_flag.jl` (case (a)
+  extended), `test/runtests.jl` (two new includes), `docs/src/changelog.md`.
+- Rose pre-merge claim-vs-evidence audit (`rose-j6.md`): **1 required change** — the
+  gate-order finding above, verified by tracing every `fit_laplace_reml` family branch
+  against which bound it actually stops on (table in the audit), and confirmed reachable
+  because `test/test_327_boundary_flag.jl` cases (d)/(e) already construct
+  boundary-flagged `:gamma`/`:nbinom` fits one function call away from the false message —
+  applied before merge (family gate now first). **2 minor** — a test comment miscounting
+  the fixture's random effects (`K=2` → `K=3`) and a cross-repo issue-number mislabel in a
+  testset name (`hsquared#343` → `#343`, since #343 is an HSquared.jl issue, not an
+  hsquared one) — both applied. Rose also independently measured the #343 test's
+  discriminating power by calling `fit_multi_effect` directly on the test's own fixture
+  rather than trusting the PR body: default vs. extreme-`initial`/`iterations=1` parity
+  gap = **702.11** pre-fix (matches the PR body's "~700"), **0.0** post-fix against a
+  direct `:auto` call with the same controls.
+- Twin context: hsquared PR #229 (merged 2026-09-15) carries the same wording for the
+  R-side `hs_ng09_boundary()` message and forwards `initial`/`restart_check` into
+  `HSquared.fit_laplace_reml()`; hsquared #230 (open) tracks exposing the boundary flag
+  through `fit_diagnostics()`.
+- Checks (this records pass, worktree `claude/h2-auto-forwarding-records` = merged
+  `main`, `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=4`, run fresh, real output): `julia
+  --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'` — full suite **passed**
+  (`Testing HSquared tests passed`); `grep -c -E "Error|ERROR|Test Failed|error\(s\)"`
+  over the whole log returned **0**; both touched testsets green in the log — `#343
+  engine controls: initial/iterations on the :multi_effect :auto path | 3 3`, `#327
+  boundary flag: honest search-bound reporting | 13 13`. `julia --project=docs
+  docs/make.jl` — exit clean, VitePress build completed, deployment correctly skipped
+  locally (no `CI` env set); only the pre-existing "docstrings not in @docs/@autodocs"
+  warning list; `git status --porcelain` clean afterward (`docs/build/` is gitignored).
+  `bash tools/preamble_cap.sh` — `CAP OK`. CI on `main` (`gh run list --branch main
+  -L 4`): the `Documenter` run on the merge commit `e25e2831` (run `35034608843`) —
+  `success`. This repo's `CI` workflow (Julia 1 / 1.10 × ubuntu/windows) is
+  `workflow_dispatch`-only, not triggered on push to `main`; its last run
+  (`34667219579`, 2026-09-12) predates this merge and is not evidence for this commit —
+  noted, not silently treated as coverage.
+- Constraints honored: `Project.toml` stays `0.9.0`, untouched; no capability-status or
+  validation-debt row added or changed; no version bump.
