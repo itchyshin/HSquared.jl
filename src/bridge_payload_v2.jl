@@ -405,7 +405,12 @@ this dispatcher previously hardcoded with neither, silently discarding
 `engine_control\$initial`/`\$iterations` from the R side. Default `nothing`
 for both reproduces the exact pre-#212-fix call (each underlying fitter's own
 default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
-`fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). Every
+`fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). For
+`:multi_effect`, forwarding applies on BOTH `scale_method` routes (#343): the
+default `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's
+`fit_multi_effect`, which itself forwards `kwargs...` to whichever engine it
+selects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,
+or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). Every
 other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises
 `Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is
 silently ignored, matching the pre-existing byte-identical default path.
@@ -454,17 +459,18 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         # the large-scale matrix-free path is experimental (opt-in).
         y = parsed.y
         per_block_ids = [b.ids for b in blocks]
-        # hsquared#212: forwarded to the dense fitter only. The `:auto` path DOES accept `initial`/
-        # `iterations` (both `fit_sparse_multi_effect_aireml` and `fit_multi_effect_mc_reml` take
-        # them through `fit_multi_effect`'s `kwargs...`), but this dispatcher does not forward them
-        # there — a known remaining silent drop on the opt-in `:auto` route, not fixed in this PR.
+        # hsquared#212 / #343: forwarded to both the dense fitter (`:dense`) and, via
+        # `fit_multi_effect`'s `kwargs...`, to whichever engine `:auto` selects
+        # (`fit_sparse_multi_effect_aireml` or `fit_multi_effect_mc_reml` — both accept
+        # `initial`/`iterations`). Only forwarded when supplied (not `nothing`), so the
+        # default call on either path stays byte-identical to each fitter's own defaults.
         multi_effect_kwargs = iterations === nothing ?
             (initial === nothing ? NamedTuple() : (initial = initial,)) :
             (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
         if scale_method === :auto
             effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in blocks]
             return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
-                                    compute_loglik = true, verbose = false)
+                                    compute_loglik = true, verbose = false, multi_effect_kwargs...)
         elseif scale_method === :dense
             effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
             return fit_multi_effect_reml(y, X, effects; ids = per_block_ids, multi_effect_kwargs...)
