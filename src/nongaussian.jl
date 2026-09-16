@@ -796,10 +796,15 @@ Experimental fitted-object container for the non-Gaussian animal model returned 
 `beta`, `breeding_values` (the posterior-mode random effect), `ids`, `converged`,
 `family`, `marginal`, `n_trials` (the Binomial trials denominator for
 `family = :binomial` — a scalar common denominator or a per-record `Vector{Int}`;
-`nothing` for every other family), and `dispersion` (the FIXED supplied
+`nothing` for every other family), `dispersion` (the FIXED supplied
 overdispersion `ρ` for `family = :beta_binomial`; `nothing` for every other family —
 the negative-binomial `theta` is ESTIMATED and lives in `variance_components`, not
-here). Use the extractor
+here), `boundary` (`true` when the returned variance-component estimate sits at the
+search boundary — the bracket endpoint for the single-variance families, or the
+±8-log-unit safety rail for the jointly-estimated families — meaning the point
+estimate is a function of the START VALUE, not the data; see #327), and
+`restart_estimate` (the second-start point estimate of `sigma_a2` from an opt-in
+`restart_check = true` fit, `nothing` otherwise). Use the extractor
 functions [`breeding_values`](@ref) (→ `BreedingValues(ids, values)`),
 [`variance_components`](@ref), and [`fixed_effects`](@ref) for the same access
 contract as [`AnimalModelFit`](@ref); this is a distinct type so its extractors do
@@ -816,6 +821,8 @@ struct NonGaussianFit
     marginal::Symbol
     n_trials::Union{Int,Vector{Int},Nothing}
     dispersion::Union{Float64,Nothing}
+    boundary::Bool
+    restart_estimate::Union{Nothing,Float64}
 end
 
 variance_components(fit::NonGaussianFit) = fit.variance_components
@@ -873,8 +880,139 @@ function nongaussian_result_payload(fit::NonGaussianFit)
 end
 
 """
+    nongaussian_three_field_payload(fit::NonGaussianFit;
+                                    predictor_variance = 0.0,
+                                    response_length = nothing)
+
+Private versioned transport envelope for the ratified 0.9 conditional
+Poisson/Bernoulli/Binomial three-field contract.  This deliberately does not
+alter [`nongaussian_result_payload`](@ref), whose family-uniform experimental
+shape remains a separate legacy bridge surface.
+
+The currently fitted non-Gaussian model has one additive component and no
+additional random-effect or observation components.  The envelope therefore
+records `components = (V_A, V_RE = 0, V_O = 0)`, derives `mu` from exactly one
+intercept, and rejects a nonzero fixed-effect predictor variance.  A vector
+Binomial denominator requires `response_length` so its shape is checked without
+confusing the number of records with the number of animal effects.
+"""
+function nongaussian_three_field_payload(
+    fit::NonGaussianFit;
+    predictor_variance::Real = 0.0,
+    response_length::Union{Nothing,Integer} = nothing,
+)
+    fit.converged ||
+        throw(ArgumentError("nongaussian_three_field_payload refuses a non-converged fit (converged = false)"))
+    fit.family in (:poisson, :bernoulli, :binomial) ||
+        throw(ArgumentError("nongaussian_three_field_payload supports only :poisson, :bernoulli, and :binomial; got :$(fit.family)"))
+    # #347: the family gate runs FIRST so the boundary message below can name the exact
+    # bound. The three supported families are all single-variance Brent searches, whose
+    # bound is the bracket endpoint exp(log(sa0) ± 6). The jointly-estimated families
+    # (:gamma, :nbinom, :gaussian, :ordered_probit with K ≥ 3) stop on a ±8-log-unit rail
+    # instead and must never be told "± 6"; they cannot reach this line.
+    fit.boundary &&
+        throw(ArgumentError("nongaussian_three_field_payload refuses a fit at its search boundary " *
+                             "(boundary = true): the estimate sits on the rail of the log-scale search " *
+                             "bracket exp(log(initial.sigma_a2) ± 6), a function of the supplied " *
+                             "`initial`, not the data; retry with a different `initial` to recentre the " *
+                             "bracket -- restart_check = true only makes the boundary check stricter and " *
+                             "cannot clear an already-flagged boundary (#327)"))
+    iszero(predictor_variance) ||
+        throw(ArgumentError("the 0.9 three-field contract requires predictor_variance = 0"))
+    length(fit.beta) == 1 ||
+        throw(ArgumentError("the 0.9 three-field contract requires exactly one (Intercept) fixed effect"))
+
+    V_A = Float64(fit.variance_components.sigma_a2)
+    isfinite(V_A) && V_A > 0.0 ||
+        throw(ArgumentError("the 0.9 three-field contract requires a finite positive sigma_a2"))
+    μ = Float64(only(fit.beta))
+    isfinite(μ) || throw(ArgumentError("the 0.9 three-field contract requires a finite intercept"))
+    components = (V_A = V_A, V_RE = 0.0, V_O = 0.0)
+    V_eta_random = components.V_A + components.V_RE + components.V_O
+
+    trials = if fit.family === :binomial
+        _three_field_binomial_trials(fit.n_trials, response_length)
+    else
+        fit.n_trials === nothing ||
+            throw(ArgumentError("family :$(fit.family) must transport n_trials = nothing in the 0.9 three-field contract"))
+        nothing
+    end
+
+    h2_liability, h2_observation, observation_reason = if fit.family === :poisson
+        # Eq. 26, written as 1/lambda_bar to avoid an unnecessary intermediate.
+        (nothing,
+         V_A / (expm1(V_eta_random) + exp(-(μ + V_eta_random / 2))),
+         nothing)
+    elseif fit.family === :binomial && trials isa AbstractVector &&
+           !all(==(first(trials)), trials)
+        # A vector denominator has no scalar proportion-scale estimand until its
+        # population weighting rule is separately declared.  In particular, do
+        # not silently replace it with a mean trial count.
+        (V_A / (V_eta_random + _VAR_LOGISTIC),
+         NaN,
+         "varying_trials_no_scalar_estimand")
+    else
+        # The ratified Bernoulli/common-trial Binomial data scale is the existing
+        # Gauss--Hermite proportion estimand.  `trials` is `nothing` only for
+        # Bernoulli, which is the n_trials = 1 special case; a constant trial
+        # vector is exactly the common-trial Binomial case, not an averaging rule.
+        # An all-one vector is the per-record representation of Bernoulli, so
+        # use the same family in the h2 calculation.
+        scalar_family = if fit.family === :bernoulli ||
+                           (trials isa AbstractVector && all(==(1), trials))
+            BernoulliResponse()
+        else
+            BinomialResponse(trials isa AbstractVector ? first(trials) : trials)
+        end
+        observation = nongaussian_heritability(V_A, μ, scalar_family).h2_observation
+        (V_A / (V_eta_random + _VAR_LOGISTIC), observation, nothing)
+    end
+
+    return (
+        schema = "nongaussian_three_field_v09",
+        family = String(fit.family),
+        method = _marginal_method_string(_marginal_method(fit.marginal)),
+        loglik = fit.marginal_loglik,
+        converged = fit.converged,
+        breeding_ids = string.(collect(fit.ids)),
+        breeding_values = collect(Float64, fit.breeding_values),
+        components = components,
+        fixed_effects = (names = ["(Intercept)"], values = [μ]),
+        h2_latent = V_A / V_eta_random,
+        h2_liability = h2_liability,
+        h2_observation = h2_observation,
+        h2_observation_undefined_reason = observation_reason,
+        n_trials = trials,
+    )
+end
+
+function _three_field_binomial_trials(
+    n_trials::Union{Int,Vector{Int},Nothing},
+    response_length::Union{Nothing,Integer},
+)
+    n_trials === nothing &&
+        throw(ArgumentError("family :binomial requires n_trials in the 0.9 three-field contract"))
+    if n_trials isa Int
+        n_trials > 1 ||
+            throw(ArgumentError("family :binomial requires a scalar n_trials greater than one; n_trials = 1 is Bernoulli"))
+        return n_trials
+    end
+
+    response_length === nothing &&
+        throw(ArgumentError("a vector n_trials requires response_length for exact shape validation"))
+    response_length > 0 ||
+        throw(ArgumentError("response_length must be positive when n_trials is a vector"))
+    length(n_trials) == response_length ||
+        throw(ArgumentError("vector n_trials must have response_length entries"))
+    all(>(0), n_trials) ||
+        throw(ArgumentError("vector n_trials must contain only positive integers"))
+    return copy(n_trials)
+end
+
+"""
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
-                     initial = nothing, ids = nothing, iterations = 200)
+                     initial = nothing, ids = nothing, iterations = 200,
+                     restart_check = false)
 
 Estimate the variance component(s) of the non-Gaussian animal model by maximising
 the marginal log-likelihood (`marginal = :laplace`) or the ELBO
@@ -893,25 +1031,59 @@ fixed ρ, and is Laplace-only (`marginal = :variational` is rejected).
 response-dependent; `marginal = :variational` is rejected). Returns a
 [`NonGaussianFit`](@ref)
 with fields `variance_components`, `marginal_loglik`, `beta`, `breeding_values`,
-`ids`, `converged`, `family`, `marginal`, and the extractor methods
-`breeding_values(fit)` / `variance_components(fit)` / `fixed_effects(fit)`.
+`ids`, `converged`, `family`, `marginal`, `boundary`, `restart_estimate`, and the
+extractor methods `breeding_values(fit)` / `variance_components(fit)` /
+`fixed_effects(fit)`.
 
-Binary `:bernoulli` data carries little variance information at small scale, so
-`sigma_a2` is prone to running to a search-bound boundary; `:binomial` with more
-trials per record is more informative and recovers `sigma_a2` far better (see
-`sim/phase6_binomial_recovery.jl`).
+**Every family's variance-component search is bounded**, and `converged = true`
+alone does NOT mean the estimate is informative: a search that stops on its own
+boundary reports a point estimate that is a function of the START VALUE (`initial`),
+not the data (#327). `fit.boundary` reports this honestly for every family. Two
+mechanisms produce it: a **Brent bracket endpoint** at `exp(log(sa0) ± 6)` — the
+single-variance families (`:poisson`, `:bernoulli`, `:binomial`, `:beta_binomial`,
+`:bernoulli_probit`) and `:ordered_probit` with `K = 2`, where only `σ²a` is free —
+and a **±8-log-unit joint safety rail** around the supplied start, for the
+jointly-estimated searches (`:gamma`, `:ordered_probit` with `K ≥ 3`, and now
+`:gaussian` and `:nbinom`, which had no rail at all before #327 and gained the one
+`:gamma` already used). Binary `:bernoulli` data carries little variance information
+at small scale, so `sigma_a2` is prone to running to a search-bound boundary;
+`:binomial` with more trials per record is more informative and recovers `sigma_a2`
+far better (see `sim/phase6_binomial_recovery.jl`).
+`nongaussian_three_field_payload` (private) refuses a `boundary = true` fit.
 
-EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step.
-For the Gaussian family the objective is the exact REML log-likelihood, so this
-recovers the same estimate as [`fit_sparse_reml`](@ref). Exported as an
-experimental fitter; not the public default, not wired into the R formula path,
-no R model-spec, no external comparator.
+`restart_check = true` (opt-in, doubles the cost of the fit) refits ONCE from a
+second start `sa0 * exp(3.0)` (hard-coded `restart_check = false` on that inner
+call, so there is no recursion) and compares the two `sigma_a2` point estimates on
+the log scale: a gap `> 0.01` sets `boundary = true` even when neither fit landed
+exactly on its own rail (the two-start fence itself was sized in the #327 wave-4
+campaign comment — 27/27 truncated replicates detected, 0 false positives over 80
+replicate pairs — but that measurement used `:poisson` only, a second start of `sa0
+* 10` rather than `sa0 * exp(3)`, and a relative rather than a log-scale gap; the
+threshold shipped here is the same order of magnitude, not the measured
+configuration, and is unmeasured for the other eight families). The second estimate
+is exposed in `restart_estimate` (`nothing` when `restart_check = false`). This check
+is one-directional (#347): it can only turn `boundary` from `false` to `true`, never
+the reverse, so `restart_check = true` cannot clear an already-flagged boundary — it
+is a stricter detector, not a fix. The only lever that changes the point estimate
+itself is a different `initial`, which recentres the search bracket/rail.
+
+EXPERIMENTAL, dense/validation-scale — the first *fitted* non-Gaussian step. For the
+Gaussian family the objective is the exact REML log-likelihood **inside the
+±8-log-unit box around the supplied `initial`** that #327 added, so it recovers the
+same estimate as [`fit_sparse_reml`](@ref) whenever the optimum lies inside that box
+— which the default `initial = (sigma_a2 = 1.0, sigma_e2 = 1.0)` makes `σ² ∈ [e⁻⁸,
+e⁸]`. Outside it the search stops on the rail, returns a start-dependent estimate,
+and sets `boundary = true`; pass an `initial` on the scale of the data (or read
+`fit.boundary`) rather than assuming agreement. Exported as an experimental fitter;
+not the public default, not wired into the R formula path, no R model-spec, no
+external comparator.
 """
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
-                          theta_init::Real = 1.0, iterations::Integer = 200)
+                          theta_init::Real = 1.0, iterations::Integer = 200,
+                          restart_check::Bool = false)
     family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, :gamma) ||
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, or :gamma"))
     # probit (threshold) is Laplace-only at this slice: its variational expected
@@ -951,31 +1123,49 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
     val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
-    if family === :gaussian
-        sa0, se0 = initial === nothing ? (1.0, 1.0) :
-                   (Float64(initial.sigma_a2), Float64(initial.sigma_e2))
+    # Shared start value for sigma_a2, used by every branch below AND by the
+    # opt-in restart (so the restart's bumped start is anchored to the same
+    # `initial` the caller actually supplied).
+    sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
+    fit_result = if family === :gaussian
+        se0 = initial === nothing ? 1.0 : Float64(initial.sigma_e2)
         (sa0 > 0 && se0 > 0) || throw(ArgumentError("initial variances must be positive"))
-        obj(p) = -val(margfun(y, X, Z, Ainv, exp(p[1]), GaussianResponse(exp(p[2]))))
-        res = optimize(obj, log.([sa0, se0]), NelderMead(), Optim.Options(iterations = iterations))
-        sa2, se2 = exp.(Optim.minimizer(res))
+        # ±8-log-unit safety rail on BOTH (log σ²a, log σ²e), matching :gamma/:nbinom
+        # (#327): an unbounded joint search can otherwise run away with no signal at all.
+        lsa0 = log(sa0); lse0 = log(se0)
+        function objgs(p)
+            (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lse0) > 8.0) && return 1.0e12   # σ²a + σ²e safety rails
+            -val(margfun(y, X, Z, Ainv, exp(p[1]), GaussianResponse(exp(p[2]))))
+        end
+        res = optimize(objgs, log.([sa0, se0]), NelderMead(), Optim.Options(iterations = iterations))
+        pmin = Optim.minimizer(res); sa2, se2 = exp.(pmin)
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
-        return NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
-                              marginal === :variational ? fit.m : fit.u, aids,
-                              Optim.converged(res) && fit.converged, :gaussian, marginal, nothing, nothing)
+        boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lse0) >= 8.0 - 1e-6
+        NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
+                       marginal === :variational ? fit.m : fit.u, aids,
+                       Optim.converged(res) && fit.converged, :gaussian, marginal, nothing, nothing,
+                       boundary, nothing)
     elseif family === :nbinom
         # negative-binomial: TWO estimable scalars (sigma_a2 + the overdispersion theta),
         # profiled jointly by NelderMead. Laplace-only (the NB ELBO has no closed form).
         mm isa Laplace ||
             throw(ArgumentError("family = :nbinom supports only marginal = :laplace at this slice (the NB variational ELBO has no closed form); got :$(marginal)"))
-        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
-        objnb(p) = -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), NegativeBinomialResponse(exp(p[2]))).loglik
+        # ±8-log-unit safety rail on BOTH (log σ²a, log θ), matching :gamma (#327): an
+        # uninformative design can otherwise run θ to the degenerate Poisson limit.
+        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        function objnb(p)
+            (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + θ safety rails
+            -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), NegativeBinomialResponse(exp(p[2]))).loglik
+        end
         res = optimize(objnb, log.([sa0, Float64(theta_init)]), NelderMead(),
                        Optim.Options(iterations = iterations))
-        sa2, theta = exp.(Optim.minimizer(res))
+        pmin = Optim.minimizer(res); sa2, theta = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
-        return NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
-                              fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing)
+        boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
+                       fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing,
+                       boundary, nothing)
     elseif family === :ordered_probit
         # ordered-categorical probit: JOINTLY estimate σ²a AND the K-1 cutpoints θ.
         # IDENTIFICATION: fix θ_1 = 0 (drop the intercept location, standard for a
@@ -989,7 +1179,6 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             throw(ArgumentError("family = :ordered_probit requires integer category codes >= 1"))
         K = Int(maximum(y))
         K >= 2 || throw(ArgumentError("family = :ordered_probit needs >= 2 categories in the data"))
-        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
         ndelta = K - 2                                   # free cutpoints beyond the fixed θ_1 = 0
         _cuts(δ) = ndelta == 0 ? [0.0] : cumsum(vcat(0.0, exp.(collect(δ))))  # length K-1
@@ -1015,18 +1204,20 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             end
             (m === nothing || !isfinite(m.loglik)) ? 1.0e12 : -m.loglik
         end
-        if ndelta == 0                                   # K = 2: only σ²a (1-D Brent), θ = [0]
+        boundary = if ndelta == 0                        # K = 2: only σ²a (1-D Brent), θ = [0]
             res = optimize(s -> objord([s]), log(sa0) - 6.0, log(sa0) + 6.0)
             sa2 = exp(Optim.minimizer(res)); thetahat = [0.0]
+            abs(log(sa2) - logsa0) >= 6.0 - 1e-6
         else
             res = optimize(objord, vcat(log(sa0), zeros(ndelta)), NelderMead(),
                            Optim.Options(iterations = iterations))
             pmin = Optim.minimizer(res); sa2 = exp(pmin[1]); thetahat = _cuts(pmin[2:end])
+            abs(pmin[1] - logsa0) >= 8.0 - 1e-6
         end
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, OrderedProbitResponse(thetahat))
-        return NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
-                              fit.u, aids, Optim.converged(res) && fit.converged,
-                              :ordered_probit, :laplace, nothing, nothing)
+        NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
+                       fit.u, aids, Optim.converged(res) && fit.converged,
+                       :ordered_probit, :laplace, nothing, nothing, boundary, nothing)
     elseif family === :gamma
         # Gamma (log link): TWO estimable scalars (σ²a + the shape ν), profiled jointly by
         # NelderMead over (log σ²a, log ν) — the same shape as :nbinom. Well identified GIVEN
@@ -1040,7 +1231,6 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             throw(ArgumentError("family = :gamma supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
         all(yi -> yi > 0, y) ||
             throw(ArgumentError("family = :gamma requires strictly positive responses"))
-        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
         lsa0 = log(sa0); lth0 = log(Float64(theta_init))
         function objg(p)
@@ -1055,29 +1245,59 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         end
         res = optimize(objg, log.([sa0, Float64(theta_init)]), NelderMead(),
                        Optim.Options(iterations = iterations))
-        sa2, shape = exp.(Optim.minimizer(res))
+        pmin = Optim.minimizer(res); sa2, shape = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, GammaResponse(shape))
-        return NonGaussianFit((sigma_a2 = sa2, shape = shape), fit.loglik, fit.beta,
-                              fit.u, aids, Optim.converged(res) && fit.converged, :gamma, :laplace, nothing, nothing)
+        boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        NonGaussianFit((sigma_a2 = sa2, shape = shape), fit.loglik, fit.beta,
+                       fit.u, aids, Optim.converged(res) && fit.converged, :gamma, :laplace, nothing, nothing,
+                       boundary, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial
         # (logit), and beta-binomial (logit, σ²a estimated at the supplied fixed ρ)
         fam = _resolve_single_family(family, n_trials; rho = rho)
-        sa0 = initial === nothing ? 1.0 : Float64(initial.sigma_a2)
         sa0 > 0 || throw(ArgumentError("initial sigma_a2 must be positive"))
-        res = optimize(s -> -val(margfun(y, X, Z, Ainv, exp(s), fam)),
-                       log(sa0) - 6.0, log(sa0) + 6.0)
+        lsa0 = log(sa0)
+        function objsv(s)
+            m = try
+                margfun(y, X, Z, Ainv, exp(s), fam)
+            catch err
+                err isa Union{LinearAlgebra.SingularException, LinearAlgebra.PosDefException, DomainError} ?
+                    nothing : rethrow(err)
+            end
+            (m === nothing || !isfinite(val(m))) ? 1.0e12 : -val(m)
+        end
+        res = optimize(objsv, lsa0 - 6.0, lsa0 + 6.0)
         sa2 = exp(Optim.minimizer(res))
         fit = margfun(y, X, Z, Ainv, sa2, fam)
         stored_n = family === :binomial ?
                    (n_trials isa AbstractVector ? Vector{Int}(n_trials) : Int(n_trials)) :
                    family === :beta_binomial ? Int(n_trials) : nothing
         stored_disp = family === :beta_binomial ? Float64(rho) : nothing
-        return NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
-                              marginal === :variational ? fit.m : fit.u, aids,
-                              Optim.converged(res) && fit.converged, family, marginal,
-                              stored_n, stored_disp)
+        boundary = abs(log(sa2) - lsa0) >= 6.0 - 1e-6
+        NonGaussianFit((sigma_a2 = sa2,), val(fit), fit.beta,
+                       marginal === :variational ? fit.m : fit.u, aids,
+                       Optim.converged(res) && fit.converged, family, marginal,
+                       stored_n, stored_disp, boundary, nothing)
     end
+    !restart_check && return fit_result
+    # Opt-in two-start restart (#327 wave-4): refit ONCE from a second start, hard-coded
+    # `restart_check = false` on the inner call so there is no recursion. Compares the
+    # two point estimates on the log scale (consistent with the bracket units above);
+    # a gap this large means the estimate moved with the start, so flag boundary = true
+    # even when neither individual fit landed exactly on its own rail.
+    restart_initial = family === :gaussian ?
+        (sigma_a2 = sa0 * exp(3.0), sigma_e2 = (initial === nothing ? 1.0 : Float64(initial.sigma_e2))) :
+        (sigma_a2 = sa0 * exp(3.0),)
+    fit2 = fit_laplace_reml(y, X, Z, Ainv; family = family, marginal = marginal,
+                            initial = restart_initial, n_trials = n_trials, rho = rho,
+                            ids = ids, theta_init = theta_init, iterations = iterations,
+                            restart_check = false)
+    sa2_2 = fit2.variance_components.sigma_a2
+    boundary2 = fit_result.boundary || abs(log(fit_result.variance_components.sigma_a2) - log(sa2_2)) > 0.01
+    return NonGaussianFit(fit_result.variance_components, fit_result.marginal_loglik, fit_result.beta,
+                          fit_result.breeding_values, fit_result.ids, fit_result.converged,
+                          fit_result.family, fit_result.marginal, fit_result.n_trials,
+                          fit_result.dispersion, boundary2, sa2_2)
 end
 
 """

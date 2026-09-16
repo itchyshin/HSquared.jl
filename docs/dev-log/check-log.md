@@ -1,5 +1,20 @@
 # Check Log
 
+## 2026-09-08 A4-1 private Binomial observation-scale candidate (Julia)
+
+- Candidate `95b82ebdc441073ceb194bf9377116089ac48a88` follows
+  `547114a9491effc27aca274fca4c8cbcc922451a`: the private three-field envelope
+  returns a finite, in-range, numerically integrated observation-scale value for
+  Bernoulli and scalar/common-trial Binomial logit fits.  A varying trial vector
+  remains `NaN` with `varying_trials_no_scalar_estimand`; it is not averaged.
+- Checks: A4 focused payload **23/23**; A3 focused envelope **44/44**; full
+  `Pkg.test()` exit 0; independent parent Unlazy re-verification **3/3**; and
+  `git diff --check origin/main...HEAD` pass.  The all-one vector initially
+  failed the intended reduction invariant, was repaired in `95b82ebd`, and is
+  now a regression check.
+- This is experimental private-envelope evidence only: no public/API promotion,
+  calibration, campaign/compute, version/tag/registry action, or release claim.
+
 > **Frozen as of 2026-06-19.** New check evidence now lives per-slice in
 > [`check-log.d/`](check-log.d/) to avoid merge conflicts across parallel slices.
 > Do not append below; add a new `check-log.d/YYYY-MM-DD-<slice>.md` instead.
@@ -5272,3 +5287,218 @@ Newest entries go at the top.
 - Checks: `Pkg.test()` green (count 52/covered 13); R CMD check green (0 errors|0 warnings|0 notes
   after em-dash fix); both-lane CI green (Julia 1 + 1.10 + docs + R-CMD-check). Maintainer G10 delegated.
   Merged PRs #238 (`HSquared.jl`) + #120 (`hsquared`).
+
+## 2026-09-11 — 0.9 Gate-B Julia exact-head candidate `[JL]`
+
+- Candidate starts from PR #322 exact head `99a1af2e`; it retains the newer
+  A3/A4 contract rather than replaying a divergent older candidate.
+- Candidate-only metadata is `0.9.0` with no `date-released`; README and status
+  pages call it experimental/unreleased and preserve `public_covered_count = 7`.
+- `V6-GGLLVM-LAPLACE` names the non-Gaussian objective as the Laplace marginal
+  likelihood; the historical `fit_gllvm_laplace_reml` name remains compatibility
+  only, with exact REML restricted to the Gaussian reduction.
+- Local checks pass: focused status contract, generated Documenter/Vitepress
+  page, `Pkg.test()`, `git diff --check`, and six Unlazy gates. No PR update,
+  push, merge, tag, registry action, or release occurred.
+
+## 2026-09-13 — 0.9.0 release closed; handover reconciled; test campaign opened `[JL]`
+
+- Reconciliation of `docs/dev-log/handover/2026-09-13-claude-handover.md` against
+  live state (Claude lane, this date). `origin/main` tip `b1f8f14a` = PR #324 merge;
+  `Project.toml` `0.9.0`; annotated tag `v0.9.0` resolves to `b1f8f14a`; GitHub
+  release published 2026-09-12 (not draft, not prerelease). Exact-main CI run
+  `34667219579` (Julia 1 / 1.10 on Ubuntu and Windows) and Documenter run
+  `34667207341` passed per the handover; the plotting job is opt-in and skipped.
+  Twin `hsquared`: tag `v0.9.0` = `e54d0528`; `main` one chore merge later
+  (`4ec4cfb`, #207). CRAN: not submitted. HSquared.jl: not registered.
+- Handover PR #325 merged 2026-09-13 through `pr_merge_when_green.sh` after all
+  five required checks settled `SUCCESS` (plotting `SKIPPED`); `main` is now
+  `4ee366ad`. Classification: 0.9.0 release DONE; 36 local-only historical
+  branches PROTECTED and unaudited; the 2026-09-08 three-scale h² handover branch
+  (`claude/h2-three-scale-naming-20260908`, 3 doc commits, no PR) is superseded by
+  the A3 implementation already on `main` (`nongaussian_three_field_payload`,
+  `test/a3_three_field.jl`) and left as is.
+- Owner decision (Shinichi, 2026-09-13): the deferred post-0.9 hardening campaign
+  is opened as an independent multi-lane test campaign on both twins; charter at
+  `docs/design/57-h2-test-campaign-charter.md`. Testers change no source; findings
+  are filed as issues after a Rose claim-vs-evidence audit. No capability row,
+  version, public claim, or speed statement changes by this entry.
+- Not run this entry: `Pkg.test()`, `docs/make.jl`, `preamble_cap.sh` (docs-only
+  lane; the campaign's bridge gate and lanes carry their own receipts in the
+  vault under `projects/H2-twin/`).
+
+## 2026-09-13 — H2 fixer campaign: Julia half merged (#337 #341 #342 #339 #338) `[JL]`
+
+- Five PRs merged on `main`, in Rose's required order (each rebased onto the new
+  `main` and re-CI'd before the next merged): **#337** `d5b45b01` — forward
+  `initial`/`iterations` through `fit_payload_v2`'s `:multi_effect`/`:direct_maternal`
+  dispatch arms and through `fit_gblup_reml`/`fit_single_step_reml`/
+  `fit_metafounder_single_step_reml` (engine half of hsquared#212; does not close
+  the issue, R half is separate). **#341** `3c16298e` — generalized
+  `_check_dense_validation_size` to name the effective `max_dense_cells` cap in its
+  error text, and added the same kwarg + guard to `fit_repeatability_reml`, which
+  previously built its dense `n×n` inverse with no size guard at all (engine half
+  of hsquared#214/#217). **#342** `28b58581` — `NonGaussianFit` gains `boundary::Bool`
+  (and `restart_estimate`), set in every one of `fit_laplace_reml`'s nine family
+  branches including new ±8-log-unit safety rails on `:gaussian`/`:nbinom` (which
+  had none before); `nongaussian_three_field_payload` refuses a `boundary = true`
+  fit; opt-in `restart_check::Bool = false` two-start fence (closes HSquared.jl#327).
+  **#339** `885f884f` — `_mv_nparams` subtracts the `r(r-1)/2` rotational-
+  indeterminacy of `Λ` for `:lowrank`/`:factor_analytic`, so `covariance_structure_lrt`
+  no longer wrongly refuses a Ledermann-valid comparison with `df = 0`; the function
+  now always requests the plain `boundary_df = 0` χ² tail from `nested_lrt` (never
+  the 50:50 chi-bar mixture its own docstring says it cannot compute) — closes
+  HSquared.jl#331; follow-on **#340** filed for `fit_multivariate_reml`'s optimizer
+  parameter count (`ngen`), deliberately not touched here. **#338** `a4cf08e5` —
+  docs-only: `fit_snp_blup` docstring no longer overclaims exactness (#333, pointer
+  moved to the issue for the measured ridge gap); `write_validation_status_page.jl`
+  drops the `regenerated:` timestamp comment so `docs/make.jl` no longer dirties a
+  tracked file on every run (#334, with an idempotency test); `σ_P` → `σ²_P` on every
+  user-visible string in `src/` (hsquared#210, Julia half); a twin-contract-rule
+  paragraph added to `docs/src/twin-boundary.md` (self-limiting: states the R-side
+  paragraph is not yet on `hsquared` main). Merged last by design — its changelog
+  entries for #331/#327 are only true once #339/#342 land.
+- Rose pre-merge audit, three rounds, all CHANGES applied verbatim before merge
+  (verified character-by-character by Rose herself on re-audit, not merely
+  asserted by the builders): **Round A** (`rose-julia-a.md`, #337/#338/#339) —
+  #337 CHANGES (2 docstring/comment corrections), #338 CHANGES (3 false-claim
+  corrections), #339 **BLOCK** on finding F1: the df fix silently routed the
+  headline FA case into `nested_lrt`'s 50:50 chi-bar-mixture branch, which the
+  PR's own new docstring said was not computed — a genuine statistical-honesty
+  defect, resolved by making `covariance_structure_lrt` always request the plain
+  χ² tail (never the mixture) for a structured null. **Round B** (`rose-julia-b.md`,
+  #341/#342 + re-audit #337) — #341 CHANGES (2 items: an undisclosed NOT-COVERED
+  gap on `repeatability_interval`, and binding the exact R-side kwarg name the
+  error text forward-references), #342 CHANGES (4 items: a self-contradicting
+  family-grouping sentence, a fence-provenance correction, an now-false
+  Gaussian/`fit_sparse_reml` exactness claim, and two missing follow-on issues for
+  `Closes #327`'s own deferred items), #337 **APPROVE** (C1/C2 applied verbatim).
+  **Round C** (`rose-julia-c.md`, re-audit #339/#338/#342 after their repairs) —
+  #339 CHANGES (6 items: F1 confirmed resolved by tracing the code, plus a
+  substantive finding J1R-3 that the fix silently doubles the p-value on an
+  already-tested `:lowrank t=2 rank=1` case, now pinned by a new assertion),
+  #338 CHANGES (7 items: a false "0.8.0 on both twins" version claim, two
+  changelog entries describing the pre-repair fix, a stale PR-body claim about
+  the R twin, a dangling evidence pointer amplified into three places, and the
+  gh-pages push race below), #342 CHANGES (4 items: a lost sentence break, a
+  stale issue line-citation, an issue filed where the R lane will never see it,
+  and a stale per-family PR-body bullet). No round returned a second BLOCK.
+- Checks: `Pkg.test()` — **not re-run this session**; passed on this exact merged
+  main (`a4cf08e5`) at the orchestrator's own run, 2026-09-13 ~13:3x local
+  (`Testing HSquared tests passed`, exit 0) — cited, not repeated, per this task's
+  brief. `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=4 julia --project=docs
+  docs/make.jl` — re-run fresh in this records worktree: clean VitePress build,
+  deployment correctly skipped locally (no `CI` env set), only the pre-existing
+  "docstrings not included in @docs/@autodocs" warning list (unrelated,
+  pre-existing); `git status --porcelain` **clean** afterward — confirms #334's
+  fix holds on merged main (no tracked file dirtied). `bash tools/preamble_cap.sh`
+  — `CAP OK`, 11024 B (~2756 tok) of 14000 B cap, 1 snapshot entry of cap 1.
+- CI on `main`: green throughout. Each merge's own `Documenter`/`CI` legs
+  completed `success` before the next PR was rebased onto the new main and
+  re-run, per Rose's explicit "a green run measured against the previous main
+  carries no information about the new one" rule. One transient exception: the
+  `Documenter` run at #337's merge commit `d5b45b01` (run `34773980346`) **failed**
+  — the VitePress build itself completed clean; the failure was `git push -q
+  upstream HEAD:gh-pages` exiting 1 with `! [rejected] HEAD -> gh-pages (fetch
+  first)`, a non-fast-forward push race against a concurrent gh-pages write, not
+  a Documenter or content error. The very next Documenter run, at #341's merge
+  commit `3c16298e` (run `34774458164`), **succeeded** — confirmed the race was
+  transient infrastructure, not a regression; Rose's J5R-7 required re-running
+  the job rather than "fixing" the docs to chase it, and that is what happened.
+- Follow-on issues opened by this campaign, all `OPEN`, none closed here:
+  **#340** — `fit_multivariate_reml`'s `ngen` optimizer parameter-vector sizing
+  still overcounts the FA/low-rank rotational indeterminacy that #331 corrected
+  only in the *reporting* `df` (follow-on to #331; deliberately deferred, larger
+  blast radius). **#343** — `fit_payload_v2`'s `:multi_effect` dispatch still
+  drops `initial`/`iterations` on the opt-in `scale_method = :auto` path, which
+  does accept them via `fit_multi_effect`'s `kwargs...` (follow-on to hsquared#212
+  / #337; experimental path, no test coverage, not fixed here). **#344** —
+  `laplace_reml_interval` does not consume `NonGaussianFit.boundary`, so a
+  boundary-riding point estimate still yields a self-consistent but uninformative
+  interval (follow-on to #327/#342). **#345** — the R bridge's generic wrapper
+  (`R/julia-bridge.R:767-778`) reads only `converged`, never the new `boundary`
+  field (follow-on to #327/#342; R-lane work, tracked with a pointer to the twin
+  issue `itchyshin/hsquared#222` since the fix itself belongs in that repo).
+- State: no version bump — `Project.toml` stayed `0.9.0` on every branch and on
+  `main` throughout (a pre-existing, pre-campaign value the changelog's newest
+  released section, `0.8.0`, does not reconcile with; #338's own PR body and
+  Rose's J5R-1 both flag this as belonging to the release owner, not to this
+  campaign). No capability-status or validation-debt **status-cell** change:
+  `#337`/`#341`/`#342` touch neither ledger file at all; `#339` touches both, but
+  only inside the evidence/description prose of three already-existing rows
+  (`V4-FA`, `C10-LRT`, "Multivariate REML (estimate G0/R0)") — `| covered |
+  | covered | | partial |` identically before and after. That wording is Rose's
+  own **wave-C** text (J1R-3b/c), which explicitly **supersedes** her earlier
+  wave-A L1–L3 draft (written before the F1 resolution was picked, and
+  under-stated what the chosen resolution actually does — in particular the
+  `:lowrank t=2 rank=1` p-value doubling). `public_covered_count` stays **7**
+  throughout all five PRs.
+
+## 2026-09-15 — :auto multi_effect path forwards initial/iterations; boundary refusal names the real lever (#343 #347 / PR #348) `[JL]`
+
+- PR #348 (`e25e2831`, merged to `main`) closes two follow-on issues from the 2026-09-13
+  H2 fixer campaign. **#343** — `_dispatch_fit`'s `:multi_effect` arm in
+  `src/bridge_payload_v2.jl` forwarded `initial`/`iterations` to the dense fitter
+  (`scale_method = :dense`) but silently dropped both on the opt-in `scale_method = :auto`
+  route, even though `fit_multi_effect` forwards `kwargs...` to both engines it can select
+  (`fit_sparse_multi_effect_aireml`, `fit_multi_effect_mc_reml`), both of which accept these
+  controls (follow-on to hsquared#212/#337). Fix: `multi_effect_kwargs` (already built for
+  the `:dense` branch) is now also splatted into the `:auto` branch's `fit_multi_effect`
+  call; empty when both kwargs are `nothing`, so the default call on either route stays
+  byte-identical. **#347** — `nongaussian_three_field_payload`'s `ArgumentError` for
+  `fit.boundary = true` advised "retry with `restart_check = true` or a different initial",
+  but the restart path in `fit_laplace_reml` sets `boundary2 = fit_result.boundary ||
+  abs(log(σ²a) − log(σ²a₂)) > 0.01` — monotone, so `restart_check = true` can only turn
+  `boundary` from `false` to `true`, never clear it. Fix: reworded the message and the
+  `fit_laplace_reml` docstring's `restart_check` paragraph to name the real lever — a
+  different `initial`, which recentres the log-scale search bracket — and to state plainly
+  that `restart_check = true` cannot clear an already-flagged boundary. In
+  `src/nongaussian.jl`, the family gate (`fit.family in (:poisson, :bernoulli, :binomial)`)
+  now runs **before** the boundary gate (Rose's required change, applied before merge): the
+  message's `exp(log(sa0) ± 6)` bracket is exact only for the single-variance Brent-search
+  families; the jointly-estimated families (`:gamma`, `:nbinom`, `:gaussian`,
+  `:ordered_probit` with `K ≥ 3`) stop on a ±8-log-unit rail instead, and with the old gate
+  order a boundary-flagged fit of one of those families would have been told the wrong
+  bound and the wrong mechanism before ever reaching the family-unsupported message.
+  Reordering makes every family that can reach the boundary message one of the three the
+  ±6 bracket is true for, by construction — not by a premise about which families the
+  payload happens to accept.
+- Touched: `src/bridge_payload_v2.jl` (`:multi_effect` `:auto` arm), `src/nongaussian.jl`
+  (`nongaussian_three_field_payload` gate order + message; `fit_laplace_reml` docstring),
+  `test/test_343_auto_forwarding.jl` (new), `test/test_327_boundary_flag.jl` (case (a)
+  extended), `test/runtests.jl` (two new includes), `docs/src/changelog.md`.
+- Rose pre-merge claim-vs-evidence audit (`rose-j6.md`): **1 required change** — the
+  gate-order finding above, verified by tracing every `fit_laplace_reml` family branch
+  against which bound it actually stops on (table in the audit), and confirmed reachable
+  because `test/test_327_boundary_flag.jl` cases (d)/(e) already construct
+  boundary-flagged `:gamma`/`:nbinom` fits one function call away from the false message —
+  applied before merge (family gate now first). **2 minor** — a test comment miscounting
+  the fixture's random effects (`K=2` → `K=3`) and a cross-repo issue-number mislabel in a
+  testset name (`hsquared#343` → `#343`, since #343 is an HSquared.jl issue, not an
+  hsquared one) — both applied. Rose also independently measured the #343 test's
+  discriminating power by calling `fit_multi_effect` directly on the test's own fixture
+  rather than trusting the PR body: default vs. extreme-`initial`/`iterations=1` parity
+  gap = **702.11** pre-fix (matches the PR body's "~700"), **0.0** post-fix against a
+  direct `:auto` call with the same controls.
+- Twin context: hsquared PR #229 (merged 2026-09-15) carries the same wording for the
+  R-side `hs_ng09_boundary()` message and forwards `initial`/`restart_check` into
+  `HSquared.fit_laplace_reml()`; hsquared #230 (open) tracks exposing the boundary flag
+  through `fit_diagnostics()`.
+- Checks (this records pass, worktree `claude/h2-auto-forwarding-records` = merged
+  `main`, `OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=4`, run fresh, real output): `julia
+  --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'` — full suite **passed**
+  (`Testing HSquared tests passed`); `grep -c -E "Error|ERROR|Test Failed|error\(s\)"`
+  over the whole log returned **0**; both touched testsets green in the log — `#343
+  engine controls: initial/iterations on the :multi_effect :auto path | 3 3`, `#327
+  boundary flag: honest search-bound reporting | 13 13`. `julia --project=docs
+  docs/make.jl` — exit clean, VitePress build completed, deployment correctly skipped
+  locally (no `CI` env set); only the pre-existing "docstrings not in @docs/@autodocs"
+  warning list; `git status --porcelain` clean afterward (`docs/build/` is gitignored).
+  `bash tools/preamble_cap.sh` — `CAP OK`. CI on `main` (`gh run list --branch main
+  -L 4`): the `Documenter` run on the merge commit `e25e2831` (run `35034608843`) —
+  `success`. This repo's `CI` workflow (Julia 1 / 1.10 × ubuntu/windows) is
+  `workflow_dispatch`-only, not triggered on push to `main`; its last run
+  (`34667219579`, 2026-09-12) predates this merge and is not evidence for this commit —
+  noted, not silently treated as coverage.
+- Constraints honored: `Project.toml` stays `0.9.0`, untouched; no capability-status or
+  validation-debt row added or changed; no version bump.

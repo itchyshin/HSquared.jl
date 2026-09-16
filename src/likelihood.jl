@@ -99,7 +99,9 @@ This Phase 1 evaluator is deliberately conservative: it forms dense matrices
 from the validated `AnimalModelSpec` so the likelihood can be tested before the
 production sparse solver lands. It does not optimize variance components and
 does not return a fitted model. `max_dense_cells` is a safety guard for this
-temporary dense path.
+temporary dense path: if `nobs^2 + nanimals^2` exceeds it, this throws an
+`ArgumentError` naming the observed cell count and the effective cap
+(hsquared#214) before any dense object is formed.
 """
 function gaussian_loglik(
     spec::AnimalModelSpec,
@@ -215,7 +217,11 @@ components.
 
 The optimizer works on log-variance parameters and uses `Optim.NelderMead()`.
 This is an experimental Phase 1 path for tiny validation examples. It is not
-AI-REML and is not the production sparse solver.
+AI-REML and is not the production sparse solver. `max_dense_cells` guards this
+dense path (hsquared#214): if `nobs^2 + nanimals^2` exceeds it, this throws an
+`ArgumentError` naming the observed cell count and the effective cap. This is
+also the path the R default `animal()` route reaches, via
+`fit_animal_model(...; kwargs...)` forwarding `max_dense_cells` here.
 """
 function fit_variance_components(
     spec::AnimalModelSpec;
@@ -2056,7 +2062,7 @@ and a PRE-DECLARED 48-seed bias/MCSE recovery gate (48/48 converged, all four
 `|bias| ≤ 2·MCSE`; see
 `docs/dev-log/recovery-checkpoints/2026-07-01-direct-maternal-covered-evidence.md`).
 INTERPRETATION FENCE (Willham): a negative `r_am` is real and expected; the
-direct heritability `σ_ad/σ_P` is NOT "the heritability" (the selection-relevant
+direct heritability `σ²_ad/σ²_P` is NOT "the heritability" (the selection-relevant
 total additive variance involves `σ_dm`); callers must label direct-vs-total,
 never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
 can sit on a boundary (`converged = false`); identifiability generally needs
@@ -2159,10 +2165,10 @@ delta machinery as [`repeatability_interval`](@ref).
 Returns a `NamedTuple` with per-component `(estimate, se, lower, upper)` records
 for the variance components (`sigma_ad`, `sigma_am`, `sigma_dm`, `sigma_e2`), the
 direct–maternal genetic correlation `r_am` (Fisher-`z` interval, so it stays in
-`(-1, 1)`), and the Willham labelled triple `direct_heritability` (`σ²_ad/σ_P`),
-`maternal_ratio` (`σ²_am/σ_P`), and `total_heritability`
-(`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ_P`, Willham (1972), with
-`σ_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
+`(-1, 1)`), and the Willham labelled triple `direct_heritability` (`σ²_ad/σ²_P`),
+`maternal_ratio` (`σ²_am/σ²_P`), and `total_heritability`
+(`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ²_P`, Willham (1972), with
+`σ²_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
 `total_heritability()` surface).
 
 INTERVALS ARE ASYMPTOTIC / UNCALIBRATED (normal-`z` Wald / delta on the observed
@@ -2253,7 +2259,7 @@ function direct_maternal_interval(
     r_ci = (estimate = r, se = se_r, method = :fisher_z,
             lower = tanh(zr - zq * se_zr), upper = tanh(zr + zq * se_zr))
 
-    # Willham labelled triple over σ_P = σ²_ad + σ²_am + σ_dm + σ²e
+    # Willham labelled triple over σ²_P = σ²_ad + σ²_am + σ_dm + σ²e
     sP2 = sP^2
     direct_h2 = wald(sad / sP, [(sP - sad) / sP2, -sad / sP2, -sad / sP2, -sad / sP2])
     m2 = wald(sam / sP, [-sam / sP2, (sP - sam) / sP2, -sam / sP2, -sam / sP2])
@@ -2269,7 +2275,7 @@ function direct_maternal_interval(
         direct_heritability = direct_h2,
         maternal_ratio = m2,
         total_heritability = merge(total_h2,
-            (convention = "Willham (1972): (σ²_ad + 1.5σ_dm + 0.5σ²_am)/σ_P, σ_P = σ²_ad+σ²_am+σ_dm+σ²e",)),
+            (convention = "Willham (1972): (σ²_ad + 1.5σ_dm + 0.5σ²_am)/σ²_P, σ²_P = σ²_ad+σ²_am+σ_dm+σ²e",)),
         interval_method = "asymptotic_delta_uncalibrated",
         information_posdef = true,
     )
@@ -2283,7 +2289,8 @@ function _repeatability_dense(y, X, Z, A, sigma_a2, sigma_pe2, sigma_e2)
 end
 
 """
-    fit_repeatability_reml(y, X, Z, Ainv; initial, iterations = 200, ids = nothing)
+    fit_repeatability_reml(y, X, Z, Ainv; initial, iterations = 200, ids = nothing,
+                           max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
 
 Estimate the three variance components `(sigma_a2, sigma_pe2, sigma_e2)` of the
 repeatability / permanent-environment animal model by REML, by maximizing the
@@ -2298,6 +2305,13 @@ so it is for small problems, not production. REML-only. Uncertainty intervals fo
 `t` / `h²` and the R model-spec mapping are not part of this function. Separating
 `sigma_a2` from `sigma_pe2` needs relationship contrast and replication; on small
 data the optimum can sit on a boundary (one variance → 0).
+
+Unlike [`fit_variance_components`](@ref)/[`gaussian_loglik`](@ref), this function
+takes raw `y`/`X`/`Z`/`Ainv` (no `AnimalModelSpec`) and previously formed the dense
+`n×n` marginal via `inv(Symmetric(Matrix{Float64}(Ainv)))` with no size guard at
+all (hsquared#217). `max_dense_cells` (default `$(DEFAULT_MAX_DENSE_CELLS)`) now
+guards this path the same way the spec-based fitters are guarded, checked BEFORE
+the dense inverse is formed.
 """
 function fit_repeatability_reml(
     y::AbstractVector,
@@ -2307,6 +2321,7 @@ function fit_repeatability_reml(
     initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
     iterations::Integer = 200,
     ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     initial.sigma_a2 > 0 && initial.sigma_pe2 > 0 && initial.sigma_e2 > 0 ||
         throw(ArgumentError("initial variance components must be positive"))
@@ -2319,6 +2334,7 @@ function fit_repeatability_reml(
     encoded_ids = ids === nothing ? collect(1:na) : collect(ids)
     length(encoded_ids) == na ||
         throw(ArgumentError("ids length must match Ainv dimensions"))
+    _check_dense_validation_size(n, na, max_dense_cells)
 
     A = inv(Symmetric(Matrix{Float64}(Ainv)))
     Xd = Matrix{Float64}(X)
@@ -3232,21 +3248,32 @@ function _sparse_mme_system(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Rea
     return lhs, rhs, residual_precision * dot(y, y)
 end
 
-function _check_dense_validation_size(spec::AnimalModelSpec, max_dense_cells::Integer)
+# Shared dense-validation-size guard (hsquared#214, #217). Takes the raw
+# `nobs`/`nanimals` counts so every dense-Gaussian fitter -- whether it
+# already holds an `AnimalModelSpec` or, like `fit_repeatability_reml`, only
+# raw `y`/`X`/`Z`/`Ainv` -- can call it before paying the O(n^3) dense
+# inverse. The error text names the effective cap so a raw Julia trace that
+# reaches an R user (hsquared#214) or an unguarded caller (hsquared#217)
+# always states the exact `engine_control` value to raise.
+function _check_dense_validation_size(nobs::Integer, nanimals::Integer, max_dense_cells::Integer)
     max_dense_cells > 0 ||
         throw(ArgumentError("max_dense_cells must be a positive integer"))
 
-    nobs = length(spec.y)
-    nanimals = size(spec.Ainv, 1)
     dense_cells = nobs * nobs + nanimals * nanimals
     dense_cells <= max_dense_cells ||
         throw(
             ArgumentError(
-                "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
+                "dense validation size nobs^2+nanimals^2 = $(dense_cells) exceeds max_dense_cells = $(max_dense_cells); raise max_dense_cells (engine_control on the R side) or use a sparse route",
             ),
         )
 
     return dense_cells
+end
+
+function _check_dense_validation_size(spec::AnimalModelSpec, max_dense_cells::Integer)
+    nobs = length(spec.y)
+    nanimals = size(spec.Ainv, 1)
+    return _check_dense_validation_size(nobs, nanimals, max_dense_cells)
 end
 
 function _dense_mme_random_inverse_block(
@@ -3328,11 +3355,14 @@ The interval FUNCTION is deterministic: `rng` defaults to a fixed-seed
 harnesses vary the seed).
 
 EXPERIMENTAL, REML-only, univariate-Gaussian, dense/validation-scale (it forms
-`inv(Ainv)` + `chol(A)`, guarded by `max_dense_cells`). It is a PERCENTILE bootstrap
-(BCa is out of scope); its OWN coverage is NOT calibrated in CI (an opt-in coverage
-sim is deferred follow-up) — it is the cross-check the delta/profile interval debt
-names, not evidence that those intervals are correct. Rejects non-REML fits;
-multivariate / non-Gaussian bootstrap CIs are separate slices.
+`inv(Ainv)` + `chol(A)`, guarded by `max_dense_cells`: if `nobs^2 + nanimals^2`
+exceeds it, this throws an `ArgumentError` naming the observed cell count and
+the effective cap, hsquared#214, before the dense inverse is formed). It is a
+PERCENTILE bootstrap (BCa is out of scope); its OWN coverage is NOT calibrated
+in CI (an opt-in coverage sim is deferred follow-up) — it is the cross-check
+the delta/profile interval debt names, not evidence that those intervals are
+correct. Rejects non-REML fits; multivariate / non-Gaussian bootstrap CIs are
+separate slices.
 """
 function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
                                                n_boot::Integer = 1000,

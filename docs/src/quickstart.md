@@ -1,7 +1,32 @@
 # Get Started
 
-`HSquared.jl` currently exposes engine utilities, not a full model-fitting
-workflow.
+!!! warning "Experimental · engine utilities, not a formula API"
+    `HSquared.jl` is the computational twin of [hsquared](https://itchyshin.github.io/hsquared/).
+    Applied users type the R formula. These pages document the engine.
+    Not in Julia General — `Pkg.add(url=...)` only; do **not** `Pkg.add("HSquared")`
+    by name. `public_covered_count` is a claims-register label; read
+    [`validation_status()`](validation-status.md) rather than a screenshot.
+
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/animal-model-path.svg" alt="Flowchart of the engine-side univariate animal model: pedigree and phenotype become a validated spec, AI-REML returns variance components, heritability, and breeding values. Genomic and multivariate paths are not shown.">
+<figcaption>v0.1 univariate Gaussian REML on the engine. Genomic, QTL, and multivariate paths are not this arrow.</figcaption>
+</figure>
+```
+
+`HSquared.jl` is the Julia engine twin of
+[hsquared](https://github.com/itchyshin/hsquared). R users who want a
+formula should start there. This page walks engine utilities and
+experimental low-level fitting — not a public formula API.
+
+## Route this first
+
+For an applied analysis, start in the
+[hsquared R package](https://itchyshin.github.io/hsquared/). Continue here
+only when you need an engine utility or want to inspect the Julia layer.
+Before a fit, use [Standard QG models](standard-qg-models.md) to choose a
+route and its scope. After a fit, use [Validation status](validation-status.md)
+before extracting or reporting a point estimate.
 
 ## Normalize A Pedigree
 
@@ -67,6 +92,16 @@ Z_from_slots = sparse_csc_matrix(
 
 Z_from_slots == Z
 ```
+
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/twin-bridge.svg" alt="Two-column diagram of the R to Julia twin bridge. Formula language stays in R; y, X, Z CSC, pedigree indices, and target metadata cross the bridge; solvers stay in Julia; result_payload returns variance components, heritability, and breeding values. Default engine equals fit for v0.1; other targets are opt-in experimental.">
+<figcaption>What crosses the bridge vs what stays lane-local. Default <code>engine = "fit"</code> is the v0.1 path; opt-in targets need <code>engine = "julia"</code> and an explicit <code>target</code>. Not a production claim for every model.</figcaption>
+</figure>
+```
+
+The twin R article is
+[Fitting quantitative-genetic models](https://itchyshin.github.io/hsquared/articles/fitting-models.html).
 
 ## Evaluate The Gaussian Likelihood
 

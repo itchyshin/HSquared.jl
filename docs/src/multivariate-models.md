@@ -1,11 +1,27 @@
 # Multivariate (Multi-Trait) Models
 
-`HSquared.jl` has a first **multivariate (multi-trait) animal model** engine
-slice: `multivariate_mme` solves the balanced multi-trait model at **supplied**
-genetic and residual covariance matrices. It is an **engine API** —
-experimental, engine-internal, and **not yet wired to the public R formula** —
-and it does **not** estimate the covariance matrices (that is a separate
-REML/EM slice). The dense path is validation-scale.
+```@raw html
+```
+
+!!! warning "Experimental · validation-scale · dense · REML-only"
+    The experimental label is retained. The R twin exposes `cbind()` as a
+    public surface — covered-vs-partial is the R limits page, not this engine
+    article. Intervals are not coverage-calibrated. Not ASReml-style production
+    multi-trait software.
+
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/g0-rg-teaching.svg" alt="Teaching panel of an illustrative two-trait genetic covariance matrix G0 beside its genetic-correlation triangle r_g. Mass and length show a positive correlation; values are illustrative. Experimental opt-in multivariate; rotation-invariant; loadings not shown; point display only.">
+<figcaption>G0 is trait-scale genetic covariance; r_g is the standardized triangle. Illustrative numbers. Rotation-invariant — loadings not shown. Twin R article: Reading G matrices.</figcaption>
+</figure>
+```
+
+`HSquared.jl` has a **multivariate (multi-trait) animal model** engine
+slice. `multivariate_mme` solves the balanced multi-trait model at **supplied**
+genetic and residual covariance matrices. `fit_multivariate_reml` estimates
+those covariances. These are **engine APIs**. The R twin's `cbind()` formula
+is a separate public surface with its own status row — do not read this page
+as “not wired to R”.
 
 ## The balanced multi-trait animal model
 
@@ -99,18 +115,13 @@ Julia-side convenience wrappers over the existing result metadata:
 `heritability` for REML results. They do not widen `result_payload()` or change
 the R bridge contract.
 
-!!! warning "Experimental estimator"
-    Multivariate REML is **experimental**. Its correctness is checked by
-    deterministic self-consistency (the `t = 1` fit recovers the univariate REML
-    estimate; the REML log-likelihood matches the univariate package scale; the
-    optimum beats a coarse grid) plus an opt-in seeded recovery harness outside
-    CI. The recovery harness is not multi-seed calibrated and there is **no
-    external-comparator parity (sommer / ASReml / JWAS) yet**. The multivariate
-    engine has had an adversarial review; confirmed robustness findings were
-    fixed and regression-tested.
-    Treat multi-trait variance estimates as provisional. On small fixtures the
-    optimum can sit on a boundary (a genetic correlation of ±1, or a zero
-    variance).
+!!! warning "Experimental estimator · not coverage-calibrated"
+    Multivariate REML is experimental and dense. Engine evidence includes
+    fixture self-consistency plus same-estimand `sommer` and `blupf90+` legs
+    recorded on the `V4-MV-REML` row — that is **not** ASReml-style production
+    software, not interval calibration, and not a k≥3 or diagonal-G claim.
+    On small fixtures the optimum can sit on a boundary (a genetic correlation
+    of ±1, or a zero variance).
 
 ## Structured genetic covariance
 
@@ -179,9 +190,11 @@ seed lists with per-case summaries. Both use loose, version-robust thresholds.
 The shared calibration protocol in
 `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
 defines the seed-count, run-plan, and reporting gate required before any broad
-multi-seed calibration claim. It was executed on the predeclared seed sets and
+multi-seed calibration claim. Phase 4B calibration (2026-06-14; did not pass)
+was executed on the predeclared seed sets and
 did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
-low-rank passed 9/10, with all fits converged. The raw logs and summary live in
+low-rank passed 9/10, with all fits converged. That Phase 4B 8/10 is **not**
+the later S4 covered gate (`docs/dev-log/recovery-checkpoints/2026-09-03-v08-s4-fa-d4-k1.md`). The raw logs and summary live in
 `docs/dev-log/recovery-checkpoints/`.
 The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
 the Markdown case summary, failure-mode table, and failed-seed list from those

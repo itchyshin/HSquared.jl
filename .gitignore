@@ -6,6 +6,10 @@
 /docs/Manifest.toml
 /docs/build/
 /docs/node_modules/
+# DocumenterVitepress copies these defaults only when they are absent.
+# Never commit a local theme/style.css — it takes over the default sheet.
+/docs/src/.vitepress/theme/style.css
+/docs/src/.vitepress/theme/docstrings.css
 /docs/package-lock.json
 /docs/package.json
 /coverage/
@@ -14,6 +18,7 @@
 /comparator/_jwas_pedigree.csv
 /comparator/IDs_for_individuals_with_pedigree.txt
 /comparator/results/
+/comparator/asreml_matfree/
 /comparator/blupf90_multitrait/blupf90_multitrait.dat
 /comparator/blupf90_multitrait/blupf90_multitrait.ped
 /comparator/blupf90_multitrait/animal_id_map.csv
@@ -37,6 +42,7 @@
 /comparator/bin/
 /sim/*.log.txt
 /sim/.*.log.txt
+/sim/recipes/exact_G_packet/
 .claude/worktrees/
 
 # session scratchpad (working files, never tracked)
@@ -45,3 +51,6 @@
 
 # private messages
 /messages/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

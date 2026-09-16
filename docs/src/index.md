@@ -1,116 +1,104 @@
-# HSquared.jl
+```@raw html
+---
+layout: home
 
-`HSquared.jl` is the Julia engine twin of the R package `hsquared`.
+hero:
+  # VitePress renders hero name/text/tagline with v-html, so the wordmark can
+  # be two-tone without a theme component or a DOM patch. DRM.jl's near-black
+  # `DRM` + coloured `.jl` is the single move that stops the brand line and the
+  # question reading as one block; this is the same move in our teal.
+  name: "HSquared<span class='hs-jl'>.jl</span>"
+  text: "How much is genetic?"
+  tagline: "The Julia engine behind hsquared: sparse pedigrees, REML, EBVs, and heritability extractors. Experimental 0.9.0 release — an engine, not the package you type a formula into."
+  image:
+    src: /logo.png
+    alt: "HSquared.jl hex mark (PROPOSAL): deep teal hexagon, three hollow gold pedigree rings, h-squared. Not a settled brand."
+  actions:
+    - theme: brand
+      text: "R users: get started in hsquared"
+      link: https://itchyshin.github.io/hsquared/
+    - theme: alt
+      text: First engine utility
+      link: /quickstart
+    - theme: alt
+      text: Choose an engine route
+      link: /standard-qg-models
 
-Its scope is inheritance-aware quantitative genetics: pedigree and genomic
-precision matrices, Gaussian animal models, breeding values, heritability,
-G matrices, factor-analytic genetic covariance, and later high-dimensional
-GLLVM-style extensions.
+features:
+  - title: "1. Get started"
+    details: "For applied analysis, begin in hsquared. This site starts with engine utilities."
+    link: https://itchyshin.github.io/hsquared/
+    linkText: "Start in hsquared"
+  - title: "2. Choose a model"
+    details: "Read the route scope and engine requirement before running a fit."
+    link: /standard-qg-models
+    linkText: "Choose a route"
+  - title: "3. Fit"
+    details: "Run the low-level experimental engine fit; keep opt-in routes explicit."
+    link: /quickstart#Fit-Variance-Components-Experimentally
+    linkText: "Experimental engine fit"
+  - title: "4. Diagnose"
+    details: "Check status and diagnostics before extracting or reporting an estimate."
+    link: /validation-status
+    linkText: "Read live status"
+  - title: "5. Report"
+    details: "Report point estimates only within the stated route scope."
+    link: /twin-boundary
+    linkText: "Check reporting scope"
+---
+```
 
-## What Works Today
+!!! warning "Experimental 0.9.0 release — not production"
+    Version number tracks covered capability, not maturity. **Not** in the
+    Julia General registry. An earlier attempt
+    ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
+    v0.5.0) was closed. Install with `Pkg.add(url=...)` only — do **not**
+    use `Pkg.add("HSquared")` by name.
+    `public_covered_count` is **7** (R-public; G10 multivariate + the explicit
+    `target = "genomic"` 0.7 genomic-GREML route).
+    **0.9.0 is an experimental GitHub release, not a Julia General registration.**
 
-This repository is still early. It has a low-level experimental dense fitting
-path for validated Julia specs, and the R twin has an opt-in tiny/local
-JuliaCall path over that engine. It does not yet provide production
-animal-model fitting or production R bridge execution.
+I used language-model tools (Claude, Codex, and Cursor) on substantial
+parts of this engine: source, tests, and docs. I review the code I ship,
+and I am responsible for it. Tests and Documenter run in CI. This
+release is experimental 0.9.0. It is not a production engine and it is
+not version 1.0.
 
-Implemented engine utilities:
+`HSquared.jl` is the Julia engine twin of the R package
+[hsquared](https://itchyshin.github.io/hsquared/).
+This is not the package you type a formula into.
 
-- package loading and control/backend marker types;
-- planned backend and accelerator control vocabulary for CPU, threaded CPU,
-  CUDA, AMDGPU, Metal, oneAPI, generic GPU preference, and auto selection;
-- `backend_info()` status diagnostics showing selectable planned backend names
-  with execution unavailable;
-- `formula_status()` grammar diagnostics showing parsed, reserved, and planned
-  syntax rows without enabling fitting;
-- `validation_status()` diagnostics showing covered, external, partial, and
-  planned validation rows without running comparator packages;
-- planned model-term vocabulary reservations through `planned_model_terms()`,
-  including genomic/QTL terms and standard quantitative-genetic terms such as
-  `permanent()`, `common_env()`, `maternal_genetic()`, `dominance()`,
-  `relmat()`, and `HSquared.precision()`; these error honestly and do not
-  build model specs yet;
-- honest placeholder entry points for future model fitting;
-- pedigree validation, ID recoding, unknown-parent handling, and topological
-  sorting;
-- direct sparse inverse additive relationship matrix construction for validated
-  pedigrees;
-- low-level animal-model spec validation;
-- dense Gaussian ML/REML log-likelihood evaluation at supplied variance
-  components, with a `max_dense_cells` guard for the temporary dense path;
-- sparse REML log-likelihood evaluation at supplied variance components via
-  the Henderson MME determinant identity;
-- experimental sparse REML validation optimization for low-level validated
-  specs;
-- experimental average-information REML for two-component Gaussian animal
-  models, with known-truth and published-anchor evidence recorded through the
-  R lane;
-- experimental dense variance-component optimization for validated specs;
-- experimental variance-component, fixed-effect, MME-backed EBV/BLUP aliases,
-  fitted-value, heritability, PEV, reliability, and checked accuracy extractors
-  for the dense spec and supplied-variance Henderson MME validation paths;
-- `fit_diagnostics()` metadata extraction for low-level fit objects;
-- experimental direct payload fitting target for `y`, `X`, `Z`, `Ainv`;
-- experimental direct supplied-variance Henderson target through
-  `fit_animal_model(...; target = :henderson_mme, variance_components = ...)`;
-- sparse Henderson mixed-model-equation solve at supplied variance components,
-  with a shared R/Julia fixture for Ainv, fixed effects, EBVs, fitted values,
-  and `h2`;
-- sparse CSC marshalling helper for R sparse matrix slots;
-- `HSData` in-memory data-container diagnostics for component presence,
-  ID-overlap counts, pedigree status, genotype metadata status, marker
-  alignment, expression metadata status, annotation-feature metadata status,
-  and environment-key metadata status;
-- experimental genomic utilities: VanRaden `G`,
-  `genomic_relationship_inverse`, supplied-variance `fit_gblup`,
-  `fit_snp_blup`, single-step `H`-inverse construction, genomic REML over a
-  `Ginv` spec, direct fixed-effect `single_marker_scan`, supplied-variance
-  `mixed_model_marker_scan`, dense LOCO precision construction via
-  `loco_relationship_precisions`, supplied `loco_mixed_model_marker_scan`, and
-  row-aligned marker-scan tables, GWAS/QTL/eQTL labelled table wrappers,
-  marker-effect summaries, marker-variance contribution summaries, nominal
-  returned-marker-set significance summaries, and marker-map-backed
-  `marker_manhattan_data`, `marker_region_data`, and `marker_qq_data`
-  plot-data preparation, plus an opt-in marker-scan recovery
-  harness outside CI;
-- experimental repeatability, two-effect, multivariate, and structured
-  genetic-covariance utilities, all validation-scale and not public R formula
-  defaults;
-- external opt-in R bridge evidence from the `hsquared` twin;
-- small deterministic tests for malformed pedigrees, hand-checked `Ainv`
-  matrices, and supplied-variance Henderson MME outputs.
-- optional R-side `nadiv::Mrode9` comparator evidence for `pedigree_inverse()`.
+R users: start at `hsquared(y ~ sex + age + animal(1 | id, pedigree = ped))`,
+or the [hsquared pkgdown site](https://itchyshin.github.io/hsquared/).
+That is the applied-user interface. These pages document the engine.
 
-Planned, but not implemented yet:
+`hsquared()` here still throws. Lower-level `fit_animal_model` and
+`fit_ai_reml` exist as experimental engine paths, not the applied
+default. Choose a route before fitting, then read
+[Validation status](validation-status.md) before treating any result as
+production-ready or reportable.
 
-- sparse production REML/ML and AI-REML fitting;
-- production sparse EBVs/BLUPs, reliability, prediction error variance, and
-  heritability extraction;
-- production R-to-Julia fitting bridge;
-- genotype parsing, imputation, public genomic model-spec fitting,
-  formula-driven mixed-model marker scans, public LOCO workflows, calibrated
-  mixed-model p-values, calibrated PVE/model R² claims, interval-mapping or
-  mixed-model LOD workflows, genome-wide multiple-testing calibration, and
-  QTL/eQTL intervals;
-- environmental model terms, automatic environment joins, and
-  multi-environment animal-model workflows;
-- expression-feature joins and eQTL/omics fitting from expression metadata;
-- annotation joins, eQTL/omics fitting, and GLLVM workflows from annotation
-  metadata;
-- R-facing multivariate model-spec syntax and comparator parity;
-- non-standard inheritance models;
-- GLLVM-style high-dimensional animal models.
-- backend execution dispatch, runtime backend availability probing, GPU
-  execution, backend benchmarking, and CPU/GPU numerical agreement tests.
+## What works today
+
+This repository is still early. It has experimental validation-scale
+engine utilities — pedigree checks, sparse `Ainv`, low-level REML and
+Henderson MME solves, and extractors for heritability, EBVs, and PEV.
+Those are engine utilities, not a public formula API and not a
+production sparse pipeline. Engine `covered` rows are **not**
+R-public covered. See [Validation status](validation-status.md) for the
+live ladder; do not read this page as a capability dump.
 
 ## Install
+
+HSquared is **not** in the Julia General registry. Do **not** use
+`Pkg.add("HSquared")` by name.
 
 ```julia
 using Pkg
 Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")
 ```
 
-## First Engine Utility
+## First engine utility
 
 ```@example pedigree
 using HSquared
@@ -129,25 +117,30 @@ Ainv = pedigree_inverse(ped)
 Matrix(Ainv)
 ```
 
-## Twin Boundary
+## Twin boundary
 
 - `hsquared` is the R-facing package identity: formulas, validation, user
   documentation, S3 methods, plotting, and bridge calls.
 - `HSquared.jl` is the computational engine: sparse relationship matrices,
   likelihoods, solvers, EBVs, G matrices, and low-level diagnostics.
 
-The R package can describe planned syntax, but public executable examples must
-not claim model fitting until the Julia engine implements and validates it.
+The R package can describe planned syntax, but public executable examples
+must not claim model fitting until the Julia engine implements and
+validates it. `public_covered_count` is **7** and counts the R-public
+covered surface only.
 
-## Start Here
+## Continue by task
 
-- [Mission control](mission-control.md)
-- [Get started](quickstart.md)
-- [Model spec grammar](model-spec-grammar.md)
-- [Data containers](data.md)
-- [Pedigrees and Ainv](pedigree-ainv.md)
-- [Audience and comparators](audience-comparators.md)
-- [Genomics, QTL, GPU, and HPC](genomics-qtl-gpu-hpc.md)
-- [Backend and algorithm roadmap](backend-algorithm-roadmap.md)
-- [Roadmap](roadmap.md)
-- [Reference](api.md)
+```@raw html
+<ol start="1">
+  <li><a href="./quickstart">Get started</a> with an engine utility, or use <a href="https://itchyshin.github.io/hsquared/">hsquared</a> for the applied formula.</li>
+  <li><a href="./standard-qg-models">Choose a model</a> and read its scope before fitting.</li>
+  <li><a href="./fitting-at-scale">Fit</a> with the route's explicit engine controls.</li>
+  <li><a href="./validation-status">Diagnose</a> the route before extracting an estimate.</li>
+  <li><a href="./twin-boundary">Report</a> only the point-estimate claim the route supports.</li>
+</ol>
+```
+
+The [progression and evidence](progression-evidence.md) page separates this
+history from release status. [Mission control](mission-control.md) is a
+developer dashboard, not a first-click applied path.

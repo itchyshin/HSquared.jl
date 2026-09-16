@@ -326,6 +326,66 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
     return L * transpose(L) + Diagonal(ψ)
 end
 
+# Heywood interior bound for fitted FA uniqueness (0.8 S3).
+# Parameterization: ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i), so min(ψ̂) ≥ 1e-4.
+# Matches the frozen S2 pass cut
+# (`docs/dev-log/decisions/2026-09-03-v08-s2-fa-recovery-gate-prereg.md`).
+# The constructor above still accepts any positive Ψ (truth DGPs, diagnostics).
+const FA_UNIQUENESS_FLOOR = 1e-4
+
+"""
+    ledermann_slack(t, K)
+
+Ledermann degrees of freedom for a `t`-trait rank-`K` factor-analytic
+covariance: `(t − K)² − (t + K)`. Strictly positive slack is required
+before a cell can be a covered-flip candidate; slack `≤ 0` is
+Ledermann-saturated (S1 `t=3 K=1` is the disclosure cell).
+"""
+function ledermann_slack(t::Integer, K::Integer)
+    t >= 1 || throw(ArgumentError("t (trait count) must be ≥ 1"))
+    K >= 1 || throw(ArgumentError("K (factor rank) must be ≥ 1"))
+    K <= t || throw(ArgumentError("K must be between 1 and t"))
+    return (Int(t) - Int(K))^2 - (Int(t) + Int(K))
+end
+
+"""
+    fa_covered_flip_cell(t, K) -> Bool
+
+Return `true` only when `ledermann_slack(t, K) > 0`. Saturated cells may
+still be *fitted* for diagnosis; they are refused as a covered-flip cell.
+"""
+fa_covered_flip_cell(t::Integer, K::Integer) = ledermann_slack(t, K) > 0
+
+"""
+    require_fa_covered_flip_cell(t, K)
+
+Throw if `(t, K)` is Ledermann-saturated (`slack ≤ 0`). Does not block
+fitting; it is the honest refuse path for a covered-flip cell.
+Returns the positive slack.
+"""
+function require_fa_covered_flip_cell(t::Integer, K::Integer)
+    slack = ledermann_slack(t, K)
+    slack > 0 || throw(ArgumentError(
+        "Ledermann-saturated FA (t=$t, K=$K, slack=$slack ≤ 0) is not a covered-flip cell. " *
+        "S1 (t=3 K=1) showed uniqueness collapse is typical at slack ≤ 0. " *
+        "The frozen S2 gate cell is t=4 K=1 (slack=4). Saturated cells remain diagnostic only."))
+    return slack
+end
+
+function _fa_uniqueness_from_unconstrained(θ)
+    return FA_UNIQUENESS_FLOOR .+ exp.(θ)
+end
+
+function _fa_uniqueness_to_unconstrained(ψ)
+    excess = Float64.(collect(ψ)) .- FA_UNIQUENESS_FLOOR
+    all(isfinite, excess) || throw(ArgumentError(
+        "uniqueness must be finite and exceed the interior floor $(FA_UNIQUENESS_FLOOR)"))
+    all(>(0), excess) || throw(ArgumentError(
+        "uniqueness values must exceed the uniqueness-interior floor $(FA_UNIQUENESS_FLOOR); " *
+        "values at or below the floor are Heywood starts"))
+    return log.(excess)
+end
+
 function _canonicalize_loadings(loadings::AbstractMatrix)
     L = _check_finite_matrix(loadings, "loadings")
     size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
@@ -560,7 +620,7 @@ function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol,
     else
         nload = t * rank
         L = _canonicalize_loadings(reshape(collect(@view(params[1:nload])), t, rank))
-        ψ = exp.(params[(nload + 1):end])
+        ψ = _fa_uniqueness_from_unconstrained(@view(params[(nload + 1):end]))
         return factor_analytic_covariance(L, ψ), L, ψ
     end
 end
@@ -594,12 +654,11 @@ function _structured_genetic_params0(G0_start, genetic_structure::Symbol, rank::
         ψ0 = Float64.(collect(initial.uniqueness))
         length(ψ0) == t || throw(ArgumentError("initial.uniqueness length must match the number of traits"))
         all(isfinite, ψ0) || throw(ArgumentError("initial.uniqueness must not contain Inf or NaN"))
-        all(>(0), ψ0) || throw(ArgumentError("initial.uniqueness values must be positive"))
         ψ0
     else
-        max.(0.5 .* diag(G0_start), eps(Float64))
+        max.(0.5 .* diag(G0_start), 2 * FA_UNIQUENESS_FLOOR)
     end
-    return vcat(vec(L), log.(ψ))
+    return vcat(vec(L), _fa_uniqueness_to_unconstrained(ψ))
 end
 
 # Validate the observed data. `present` is the n×t observed mask. Throws a clear
@@ -736,8 +795,11 @@ The additive genetic covariance can be constrained with `genetic_structure`:
   - `:unstructured` (default) — full positive-definite `G0`;
   - `:diagonal` — independent trait-specific genetic variances;
   - `:lowrank` — `G0 = ΛΛ'`, requiring `rank`;
-  - `:factor_analytic` — `G0 = ΛΛ' + Ψ`, requiring `rank` and positive diagonal
-    uniquenesses.
+  - `:factor_analytic` — `G0 = ΛΛ' + Ψ`, requiring `rank`. Fitted uniqueness
+    uses `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)` so `min(ψ̂) ≥ 1e-4` (Heywood
+    interior bound). Ledermann-saturated cells (`ledermann_slack(t, K) ≤ 0`)
+    may still be fitted for diagnosis; `require_fa_covered_flip_cell`
+    refuses them as a covered-flip cell.
 
 For structured fits, `initial` may supply `G0`, `R0`, `loadings`
 (`traits × rank`), and `uniqueness` for `:factor_analytic`; omitted fields use
@@ -754,9 +816,16 @@ validated by deterministic self-consistency checks (the `t = 1` reduction
 recovers the univariate REML estimate; the multivariate REML log-likelihood is on
 the same full-constant scale as the univariate one; the optimum beats a coarse
 grid). Known-truth covariance recovery for `t ≥ 2` is exercised only by one-off
-simulations (the test suite is RNG-free), and external-comparator (sommer /
-ASReml / JWAS) parity is still missing — treat multi-trait variance estimates as
-experimental. There is no R-facing multivariate model-spec.
+simulations (the test suite is RNG-free); same-estimand external-comparator
+parity is discharged on ONE deterministic fixture (point-estimate) by `sommer`
+4.4.5 and `blupf90+` 2.60, with no ASReml or JWAS leg — treat multi-trait
+variance estimates as experimental. There is no published textbook anchor for
+estimated multivariate `G0`/`R0`: the R lane's Mrode Example 5.1 leg is a
+*supplied*-covariance BLUP/MME anchor, so it does not check the estimated
+covariances. The R twin reaches this fitter on its default `cbind()` route
+(hsquared MV-4); that claim stays `partial`, and R↔engine element-wise parity at
+the promotion fixture is discharged locally (hsquared A26) but is not CI-backed
+— the R lane's CI provisions no Julia, so the parity legs skip there.
 
 Returns a `NamedTuple`:
 
@@ -1080,7 +1149,9 @@ the raw `information` matrix.
 Experimental, asymptotic, dense/validation-scale, REML-only. SEs are
 finite-difference approximations and are wide/unreliable at small `n`; not
 coverage-calibrated. Throws if the observed information is not finite
-positive-definite (a flat or boundary optimum). Structured/factor-analytic fits
+positive-definite (a flat or boundary optimum). A fitted off-diagonal
+`|r| ≥ 1 − 1e-6` is treated as a boundary even when the finite-difference
+Hessian appears PD (platform/roundoff). Structured/factor-analytic fits
 are **not** supported — their loadings are rotation-nonidentified.
 """
 function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Real = 1e-4)
@@ -1089,6 +1160,16 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     G0 = Matrix(Float64.(Matrix(fit.genetic_covariance)))
     R0 = Matrix(Float64.(Matrix(fit.residual_covariance)))
     t = size(G0, 1)
+    if t > 1
+        # Optimizer and finite-difference roundoff can make the information
+        # matrix appear positive definite even when a fitted correlation is
+        # numerically on the covariance boundary.  Reject that case directly
+        # so the documented boundary contract is platform-independent.
+        for C in (genetic_correlation(G0), genetic_correlation(R0))
+            any(abs(C[i, j]) >= 1 - 1e-6 for j in 1:t for i in (j + 1):t) &&
+                throw(ArgumentError("observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable"))
+        end
+    end
     ng = t * (t + 1) ÷ 2
     phat = vcat(_cov_to_chol_params(G0, t), _cov_to_chol_params(R0, t))
     loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,
@@ -1206,9 +1287,11 @@ function _mv_nparams(fit)
     elseif s == :diagonal
         t
     elseif s == :lowrank
-        t * Int(r)
+        rr = Int(r)
+        t * rr - rr * (rr - 1) ÷ 2  # subtract the O(r) rotational indeterminacy (Λ vs ΛQ)
     elseif s == :factor_analytic
-        t * Int(r) + t
+        rr = Int(r)
+        t * rr + t - rr * (rr - 1) ÷ 2  # same rotational indeterminacy on the loadings Λ
     else
         throw(ArgumentError("unknown genetic_structure $s"))
     end
@@ -1222,16 +1305,56 @@ Likelihood-ratio test comparing a nested constrained genetic-covariance fit
 against the `full` (less-constrained) fit, both from
 [`fit_multivariate_reml`](@ref) on the **same data**. Returns a `NamedTuple`
 with the LRT `statistic` `= 2(ℓ_full − ℓ_constrained)`, the parameter-count
-difference `df`, the asymptotic χ²`df` `pvalue`, a `boundary` flag, and a `note`.
+difference `df`, the `pvalue`, a `reference` symbol naming which reference
+distribution produced it, a `boundary` flag, and a `note`. `df` counts
+**identified** parameters: for `:lowrank`/`:factor_analytic`, `_mv_nparams`
+already removes the `r(r-1)/2` rotational indeterminacy of the loadings `Λ`
+(`Λ` and `ΛQ` for orthogonal `Q` give the same `G`), the same correction
+`ledermann_slack` implies.
 
-The χ²`df` reference is exact only for an **interior** null — testing whether the
-off-diagonal genetic covariances are zero (`:diagonal` nested in
-`:unstructured`), where the constrained parameters lie in the interior of the
-full space (`boundary = false`). For **rank/PSD-boundary** nulls
-(`:lowrank`/`:factor_analytic` nested in `:unstructured`), the true null
-distribution is a χ² mixture, so the reported χ²`df` p-value is asymptotically
-**conservative** (`boundary = true`). Experimental, asymptotic,
-dense/validation-scale.
+Two kinds of structured null are distinguished. For neither of them is
+`nested_lrt`'s chi-bar weighting invoked: this function always requests the
+plain, unmixed tail (`boundary_df = 0`), because `nested_lrt`'s convex-cone
+(`boundary_df ≥ 1`) branches are for genuine variance-at-zero boundaries and
+neither structured null here is one:
+
+- **Regular** nulls (`:diagonal` or `:factor_analytic` nested in
+  `:unstructured`, `reference = :chisq`, `boundary = false`): a
+  factor-analytic null `G = ΛΛ' + Ψ` with `Ψ > 0` is a regular
+  lower-dimensional **submanifold** of the unstructured parameter space, not a
+  variance-at-zero boundary — once `_mv_nparams` removes the loadings'
+  `r(r-1)/2` rotational indeterminacy, `df` counts genuinely identified
+  parameters and standard MLE regularity conditions hold. The classical
+  χ²`df` reference is therefore **exact** asymptotically, the same as the
+  `:diagonal`-in-`:unstructured` interior case, and the Self & Liang (1987) /
+  Stram & Lee (1994) 50:50 chi-bar-squared correction must **not** be applied.
+
+  This regularity argument assumes `Ψ` is interior. `fit_multivariate_reml`
+  parameterises `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)`, so `Ψ > 0` always
+  holds, but a fit whose `ψ̂` has been driven onto that `1e-4` floor is a
+  Heywood case on a constraint boundary, where the χ²`df` reference is not
+  exact. This function does not inspect `ψ̂` and reports `boundary = false`
+  regardless; check `genetic_uniqueness(fit)` yourself before relying on the
+  p-value.
+
+- **PSD-boundary** nulls (`:lowrank` nested in `:unstructured`,
+  `reference = :chisq_naive_boundary`, `boundary = true`): a low-rank null
+  `G = ΛΛ'` (rank `r < t`) genuinely lies on the boundary of the PSD cone —
+  the null set `{ΛΛ' : rank(Λ) = r}` is a non-convex algebraic variety, not
+  the convex cone the standard chi-bar weight results assume. The true
+  reference distribution is a χ² mixture over that boundary whose weights
+  this function does not compute, so the reported p-value is the **naive**
+  χ²`df` tail and its direction relative to the true mixture is **not
+  knowable** here — never call it conservative.
+
+Changed in #331: because `boundary_df = 0` is now always requested, a
+structured comparison whose `df` is 1 no longer receives the 50:50 chi-bar
+mixture it received before. The `:lowrank`-in-`:unstructured` `t = 2`,
+`rank = 1` case is the reachable instance: its reported p-value is now the
+full χ²₁ tail, exactly twice the previously reported value. The statistic
+and `df` are unchanged; only the reference distribution is.
+
+Experimental, asymptotic, dense/validation-scale.
 """
 function covariance_structure_lrt(constrained, full)
     npc = _mv_nparams(constrained)
@@ -1241,21 +1364,32 @@ function covariance_structure_lrt(constrained, full)
         throw(ArgumentError("`full` must have more covariance parameters than `constrained` (df = $df); call as covariance_structure_lrt(constrained, full)"))
     sc = getproperty(constrained, :genetic_structure)
     sf = getproperty(full, :genetic_structure)
-    interior = sc == :diagonal && sf == :unstructured
-    # interior (:diagonal in :unstructured) -> χ²_df; rank/PSD boundary
-    # (:lowrank/:factor_analytic) -> flagged-conservative naive χ² (multi-parameter
-    # boundary, no closed-form chi-bar weights). Delegates the statistic + tail to
-    # `nested_lrt`; both arms reproduce the previous output bit-for-bit.
-    res = nested_lrt(constrained.loglik, full.loglik; df = df,
-                     boundary_df = interior ? 0 : df, label = "covariance_structure_lrt")
+    # :diagonal and :factor_analytic nulls are regular lower-dimensional
+    # submanifolds of the unstructured parameter space (standard MLE
+    # regularity holds once `_mv_nparams` removes the loadings' rotational
+    # indeterminacy from `df`), so the classical χ²_df reference is exact.
+    # :lowrank genuinely sits on the PSD-cone boundary, where the true
+    # reference is an uncomputed chi-bar mixture, so only the naive χ²_df tail
+    # is reported (direction vs. that mixture left explicitly unknown).
+    regular = sf == :unstructured && (sc == :diagonal || sc == :factor_analytic)
+    # Always request the plain, unmixed χ²_df tail from `nested_lrt`
+    # (`boundary_df = 0`): exact for the regular case, and the (flagged)
+    # naive reference for the PSD-boundary case. `nested_lrt`'s own
+    # convex-cone (`boundary_df ≥ 1`) branches are for genuine
+    # variance-at-zero boundaries and do not apply to either structured null
+    # here, so they are never entered (#331/F1).
+    res = nested_lrt(constrained.loglik, full.loglik; df = df, boundary_df = 0,
+                     label = "covariance_structure_lrt")
     stat = res.statistic
-    boundary = !interior
+    boundary = !regular
+    reference = regular ? :chisq : :chisq_naive_boundary
     note = if stat < -1e-6
         "negative statistic ($(round(stat, digits = 6))): `full` did not dominate `constrained` — check they are nested and both converged"
-    elseif boundary
-        "rank/PSD-boundary null: the χ²_$df p-value is asymptotically conservative (true null is a χ² mixture)"
+    elseif regular
+        "regular null ($(sc) nested in $(sf)): df counts identified parameters (rotational indeterminacy removed); χ²_$df is the exact asymptotic reference"
     else
-        "interior null (off-diagonal genetic covariances = 0): χ²_$df asymptotics apply"
+        "rank/PSD-boundary null ($(sc) nested in $(sf)): df counts identified parameters (rotational indeterminacy removed); the reported χ²_$df p-value is the naive tail, not the true chi-bar mixture over the PSD boundary, and its direction relative to that mixture is not knowable here — the mixture weights are not computed"
     end
-    return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary, note = note)
+    return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary,
+            reference = reference, note = note)
 end

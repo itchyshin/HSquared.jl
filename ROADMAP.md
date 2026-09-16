@@ -11,7 +11,21 @@ contract agree.
 cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, work-unit estimates).
 Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
 
+> **Record status (2026-09-07):** The paired website and named honesty
+> documentation milestone is complete, and the ratified narrow 0.9 evidence
+> programme has produced an experimental **0.9.0 release** / public count
+> **7**. The release does not promote a capability, imply production readiness,
+> or create Julia General registration. See
+> [`docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md`](docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
+
 ## Current Status
+
+> **Historical snapshot, not current capability status (notice added 2026-09-07).**
+> The narrative below preserves earlier phase and genomic-route decisions. Its
+> held-route wording must not be applied to the later narrow R genomic GREML
+> default activation. Read the [capability ledger](docs/design/capability-status.md)
+> and [twin bridge matrix](docs/design/12-bridge-compatibility.md) for current
+> fitted scope and remaining limits. No older hold is released by this notice.
 
 Phase 0 public scaffold is complete. Phases 1-3 have landed as experimental,
 validation-scale Julia engine utilities (pedigree/Ainv, supplied-variance and
@@ -162,6 +176,7 @@ high-level genomic fitting remains unimplemented.
   extractors (`variance_components`, `fixed_effects`, `heritability`, and
   `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
   without changing `result_payload()` or the R bridge. Phase 4B now has
+engine-internal utilities; V4-FA coverage does not activate R `cov = fa(K)` syntax or change the R twin's planned FA status.
   structured genetic
   covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, copy-returning structured-metadata accessors, plus its

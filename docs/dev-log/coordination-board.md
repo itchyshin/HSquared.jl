@@ -23,6 +23,282 @@
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits
 `hsquared`.
 
+### 2026-09-08 — A3 three-field contract (isolated paired candidate)
+
+Julia private-envelope and R bridge work is locally verified in separate
+worktrees. Both A3 Unlazy ledgers are 8/8 met; the Julia normal harness includes
+the 43-assertion A3 file and the R candidate has an ordinary `R CMD check`
+Status: OK. This is experimental/partial only: no S10/S11, remote compute,
+calibration, comparator evidence, promotion, version, tag, registry, or release.
+Candidate integration remains a maintainer decision.
+
+### 2026-09-07 — paired release-record cleanup (local documentation-only)
+
+Lane: `codex/release-records-20260907`, locally reviewed and awaiting PR
+publication approval. This
+record reconciles the completed website and named honesty-documentation
+milestone with the unchanged experimental **0.8.0** / public count **7** pins.
+It authorizes no package number, tag, registration, release, capability flip,
+source/API change, or new S5 execution. The historical 0.9/1.0 science plan is
+still planned; H1/H3 remain deferred and the G10 promotion hold remains.
+
+### 2026-09-07 — applied-reader website candidate (draft-only)
+
+Lane: `codex/web-journey-20260907`, local source-freeze `e45831e`.
+Reader navigation now follows Get started → Choose model → Fit → Diagnose →
+Report, with a separate progression/evidence page and engine-versus-R boundary.
+Fresh local `Pkg.test` and Documenter PASS are recorded in
+`check-log.d/2026-09-07-julia-applied-reader-website.md`; parent browser
+revalidation remains pending. Do not publish or deploy this website candidate.
+
+Related Julia honesty PRs stay separate: #317 merged as `5471354`; #318 is a
+non-duplicate correction to #316 and is held for rebase and fresh CI. No
+covered flip, version bump, API change, tag, or release is authorized.
+
+### 2026-09-07 — 0.9 honesty continuous (NOT 0.9.0; count stays 7)
+
+Lane: `docs/09-post191-gate6-evidence-2026-09-07` (scratch clone
+`~/local-scratch/HSquared.jl-09-post191`). Engine-board mirror of R
+Shannon table row. Read-only cross-lane intel for Layer B #191.
+
+**Pins:** `public_covered_count` stays **7**. Experimental **0.8.0**.
+**0.9.0 NOT authorized.** No tag / General / CRAN / 1.0. No covered
+flip.
+
+**Paid (R lane, 2026-09-07):** Layer B B1/B2 honesty **MERGED** R #191
+@ `06bce492`; H0 Layer B **ratified**; L-4 plot/man demotion **MERGED**
+R #192 @ `fc7230c`. Fresh Rose Layer B **CLEAN WITH NITS** @ `8a3f597`.
+Gate-6 Rose **CLEAN WITH NITS** (read-only audit @ R `fc7230c` · Julia
+`b571184`). Check-log + after-task for both tracks **this PR**.
+
+**Still open / deferred:** H1/H3 science **deferred** (not in 0.9).
+G10 S1/S2/S3 **hold banked** (V1-MATFREE-REML). Six-surface
+ratification + FA/SS R+Julia + bridge fences pre-authorized but unpaid.
+Side PRs: R #185 style; after-task DRAFTs R #188 / Julia #310.
+
+**Next:** Do **not** authorize 0.9.0. Continue EARNED_09 landing drafts.
+
+### 2026-09-05 — 0.9 honesty status (NOT 0.9.0; count stays 7) — SUPERSEDED
+
+Lane: `docs/coord-board-09-status-2026-09-05` (merged #311 @ `b571184`).
+**Historical snapshot only** — Gate-6 Rose and Layer B Rose blockers
+cleared 2026-09-07. Rehydrate from the 2026-09-07 section above.
+
+**Pins (snapshot):** count **7** · version **0.8.0** · 0.9.0 NOT
+authorized.
+
+**Paid (snapshot):** Option B 12/12 · NG-1 + #173 · #184 · Fisher yes
+Table 2 (Layer B track) · Gate 5 FA/SS PASS (scratch).
+
+**Was waiting (now cleared):** Gate-6 Rose do-not-spawn · Layer B Rose
+BLOCKED · live-main check-log/after-task unpaid.
+
+### 2026-09-04 — CI flake: n=8 mv covariance SE throw (count stays 7)
+
+Lane: `cursor/mv-se-flake-20260904` (WT
+`~/local-scratch/lanes/HSquared.jl-mv-se-flake-20260904`).
+Pre-existing flake hit DRAFT #303 Julia 1.10 (`runtests.jl` Phase 4
+multivariate covariance SEs + LRTs): n=8 single-record unstructured
+fit has `|r_g|≈1`, but the FD Hessian can look PD so
+`multivariate_covariance_standard_errors` returned SEs instead of
+`ArgumentError`. Helper now rejects `|r| ≥ 1−1e-6` before the Hessian
+(same 10-line pin already on the genomic lane `609c8bb3`). Not an
+#303 docs change. Do not merge #303 from this slice. Count stays
+**7**. Experimental **0.8.0**. No 1.0.
+
+### 2026-09-04 — experimental version 0.7.0 → 0.8.0 (count stays 7)
+
+Lane: `cursor/08-ver-080-jl-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ver-080-20260903`).
+Owner phrase **`bump 0.8.0`**. Number only. Both 0.8 engine pillars
+already covered (`V4-FA`, `V2-SSHINV`). `public_covered_count` stays
+**7**. Experimental label **retained**. R FA stays **planned**. R
+`single_step()` stays **opt-in partial**. No tag / General / CRAN / 1.0.
+
+### 2026-09-04 — V2-SSHINV engine-row G10 flip (H-scale VCs; count stays 7)
+
+Lane: `cursor/08-ss-flip-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-flip-20260903`).
+Owner phrase **`G10 SS`** on Rose CLEAN packet
+`~/local-scratch/h2-08-ss-rose-packet-2026-09-03-post-missing-fix.md`.
+`V2-SSHINV` `partial→covered` (engine-only; validation-scale; opt-in;
+Julia API; H-scale σ²a / σ²e; ordinary defaults). R SS stays
+**opt-in partial**. `public_covered_count` stays **7**. Experimental
+**0.7.0**. No 0.8.0. `V4-FA` stays **covered**. R FA stays **planned**.
+
+### 2026-09-03 — V2-SSHINV claim-surface honesty (AGHmatrix + #167 exist; no flip)
+
+Lane: `cursor/08-ss-honesty-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-honesty-20260903`).
+Rewrote stale `V2-SSHINV` field-7 / capability / debt language that
+still said “no external-comparator” after #295 AGHmatrix construction
+AGREE and hsquared #167 Hinv-cell R↔engine parity landed. Evidence
+named as **existing**; n≫6 recovery stays known-truth, not
+external-comparator-complete for REML/fit. Field-4 stays **partial**.
+Count stays **7**. Experimental **0.7.0**. No 0.8.0. No covered
+prediction claim. No flip. Rebased onto FA G10 tip `058ef956`
+(`V4-FA` stays **covered**).
+
+### 2026-09-03 — V4-FA engine-row G10 flip (S4 G/R cell; count stays 7)
+
+Lane: `cursor/08-fa-g10-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-fa-g10-20260903`).
+Owner phrase **"Go ahead and G10"** on Rose CLEAN packet
+`~/local-scratch/h2-08-fa-rose-packet-2026-09-03-post-sign.md`.
+`V4-FA` `partial→covered` (engine-only; validation-scale; opt-in;
+Julia API; S4 `t=4 K=1` rotation-invariant G/R/ψ). R FA stays
+**planned**. `public_covered_count` stays **7**. Experimental
+**0.7.0**. No 0.8.0. SS `V2-SSHINV` **not** flipped (Rose NOT CLEAN
+pending honesty rewrite #299/#168). Flip landed; Rose was CLEAN
+pre-flip.
+
+### 2026-09-03 — V2-SSHINV h² fence (reported, not claim-gated; no flip)
+
+Lane: `cursor/08-ss-h2-fence-20260903` (WT
+`~/local-scratch/lanes/HSquared.jl-08-ss-20260903`).
+PR [#295](https://github.com/itchyshin/HSquared.jl/pull/295).
+design-41 §3 #3 cheap path: H-scale `h²` is **reported, not
+claim-gated** (n=240 dump 0.4147 vs 0.40; 0.79·MCSE; not a PASS
+object). Identity+citation not written. `V2-SSHINV` stays **partial**.
+Count stays **7**. Experimental **0.7.0**. Darwin UNSIGNED. No Rose
+CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — Boole `single_step()` freeze (n≫6 ordinary defaults, no flip)
+
+Lane: `cursor/08-ss-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-ss-20260903`).
+PR [#295](https://github.com/itchyshin/HSquared.jl/pull/295). Design-56.
+Boole froze `single_step_inverse` / `fit_single_step[_reml]`, knobs
+`tau`/`omega`/`blend_weight`/`ridge` at ordinary defaults **1/1/0/0**, and
+the reserved `single_step()` spellings as **names only**. Covered-claim
+cell if a later flip happens: univariate Gaussian REML, `G = A₂₂ + 0.05 I`.
+`markers = M` (VanRaden) stays out. `V2-SSHINV` stays **partial**. Count
+stays **7**. Experimental **0.7.0**. Maintainer nod still required before
+any flip (design-41 §5). No Rose CLEAN. No 1.0 / CRAN. FA sibling
+(design-54) untouched.
+
+### 2026-09-03 — Boole `cov=fa` freeze (S4-scoped, no flip)
+
+Lane: `cursor/08-fa-20260903`. Design-54 + decision stamp. Boole froze
+`genetic_structure = :factor_analytic`, `rank`, `G0 = ΛΛ' + Ψ`, and the
+planned constructor `fa(K = k)`. Engine-control route is the S4-supported
+predicate. Formula parser / default-path auto-route / R bridge activation
+stay **draft**. Covered-claim cell if a later flip happens: `t=4 K=1`.
+`V4-FA` stays **partial**. Count stays **7**. Experimental **0.7.0**.
+Maintainer nod still required before any flip (design-41 §5). No Rose
+CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S4 FA d4-k1 Totoro campaign (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S2 FROZEN at `eff57e3d` (driver not edited). S3 tip `3d1de490` on Totoro
+worktree. Frozen `--cell=d4-k1 --mode=fit` seeds `20260914:20260923`:
+**8/10 `ok_recovery` · PASS vs 8/10 bar.** Misses: 20260915 cap-exhaustion
+(`unclassified`); 20260916 `sampling_vs_threshold`. Zero Heywood, zero
+`optimizer_miss`. TSV banked. `V4-FA` / `V2-SSHINV` stay **partial**.
+Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+Next: Rose packet only — no auto-flip.
+
+### 2026-09-03 — 0.8 S3 FA uniqueness-interior bound (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S2 stays FROZEN at `eff57e3d` (driver not edited). S3 engine change:
+fitted `ψ = 1e-4 + exp(θ)` so `min(ψ̂) ≥ 1e-4`; `require_fa_covered_flip_cell`
+refuses slack ≤ 0 as a covered-flip cell (fits still allowed for diagnosis).
+**Not** EM warm-start. S4 now run (see row above). `V4-FA` / `V2-SSHINV` stay **partial**.
+Count stays **7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S2 FA recovery-gate prereg FROZEN (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+S1 CLOSED (`5f07d026` contrast + `80e91d75` panel). S2 FROZEN at
+`eff57e3d`. SHA-locked:
+`t=4 K=1` (`ledermann_slack=4`) + `min(ψ̂) ≥ 1e-4` as a first-class pass
+cut. Old G/R gates accept collapsed uniqueness (S1: 5/8 "passes" Heywood).
+Driver `sim/v08_fa_s2_prereg.jl` blob `370cf697`. `t=5 K=2` rejected (rank
+confound). S3 = uniqueness bound / Ledermann guard, **not** EM warm-start,
+**not** a campaign. `V4-FA` / `V2-SSHINV` stay **partial**. Count stays
+**7**. Experimental **0.7.0**. No Rose CLEAN. No 1.0 / CRAN.
+
+### 2026-09-03 — 0.8 S1 FA diagnose scaffold + Totoro panel (no flip)
+
+Lane: `cursor/08-fa-20260903` (WT `~/local-scratch/lanes/HSquared.jl-08-fa-20260903`).
+Owner 0.8 G0 YES. Design-42 S1 driver + Totoro d3-contrast and **d3-panel**
+(10/10 converged; 8 `ok_recovery` / 2 `heywood_boundary`; 0 `optimizer_miss`;
+`heywood_flag` on 7/10; Ledermann-saturated). `V4-FA` / `V2-SSHINV` stay
+**partial**. Count stays **7**. Experimental **0.7.0**. G5 #157/#291 cite-only.
+No 1.0 / CRAN. Next: S2 prereg FROZEN (see row above) — no flip.
+
+### 2026-09-02 — 0.7 genomic GREML covered flip (twin honesty)
+
+Lane: `cursor/07-greml-20260902`. Version **0.7.0**; R `public_covered_count` **7**.
+Engine Genomic REML already covered — not re-covered. Experimental retained.
+No General force-merge.
+
+### 2026-09-02 — 0.7 GREML Rose gap-clear G1–G6 (no flip)
+
+Lane: `cursor/07-greml-20260902` (WT `~/local-scratch/lanes/HSquared.jl-07-greml-20260902`).
+Twin R same branch. design-53 SUPERSEDE · design-51 Boole RATIFIED · canon genomic
+citation lock · Totoro exact-G PASS shard · after-task. Engine Genomic REML
+**covered** unchanged. R count stays **6**; Version **0.6.0** experimental.
+No General / CRAN / 1.0. Next: merge → Rose tip re-audit → lockstep flip iff CLEAN.
+
+### 2026-09-02 — Florence P0 docs figures (draft PR)
+
+Lane: `cursor/docs-quality-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-docs-quality-20260902`).
+F5 banners, F1 animal-model path, F3 recovery ladder on Documenter. No covered
+flip; experimental retained; `public_covered_count` unchanged at **6**. Twin R
+branch of the same name. Not a G10 claim-surface edit.
+
+### 2026-09-02 — G10 R-public multivariate + experimental 0.6.0 (twin honesty)
+
+Lane: `cursor/post-g10-060-20260902` (WT `~/local-scratch/lanes/HSquared.jl-post-g10-060-20260902`).
+Owner G10 ink: Shinichi; chat `"G10 - you keep going"` (2026-09-02). R multivariate
+`partial → covered`; `public_covered_count` **5 → 6**. Julia twin: version
+`0.6.0` + R-count honesty only. Engine `V4-MV-REML` already covered — **not**
+re-covered. Experimental label retained. No General force-merge. Next pillar
+named only: Genomic GREML → 0.7.0.
+
+### 2026-09-02 — A19 experimental 0.5.0 bump (draft PR)
+
+Lane: `chore/a19-experimental-050-bump` from `origin/main` `69f16572`
+(worktree `~/local-scratch/lanes/HSquared.jl-a19-050-20260902`). Version
+`0.0.1` → `0.5.0` in `Project.toml` + `CITATION.cff`; changelog heading;
+experimental / not-in-General wording kept. `public_covered_count` stays
+**5**. No covered flip. No Registrator. **Do not merge** until owner
+**A19 GO** + **A13 SIGNED**.
+
+### 2026-09-02 — A21 C9 wave-1 ledger
+
+JL-7 `ca4b4fcf` + JL-8 `c0f53e0d` indexed in `docs/dev-log/after-task/2026-09-02-h2-a21-c9-wave1-after-task.md`. Fence: `public_covered_count` **5**; draft #277; no G10 / Darwin / Registrator / merge.
+
+### 2026-09-02 — Block 1 + MV prep (campaign lane; not pushed)
+
+Campaign branch `claude/lane-h2-twin-20260901` in worktree
+`~/local-scratch/lanes/HSquared.jl-h2-twin-20260901` (R twin same branch name).
+**Not on either remote.** Tip on this branch — measured **ahead 62** of `origin/main` at board edit
+(recount with `git rev-list --count origin/main..HEAD`; do not trust a frozen
+number after the next commit).
+
+Honest live state (no hype):
+
+- Block 1 B0–B6 and pass-3 hygiene landed **locally**; after-task debt for
+  B0–B3/B5–B6/pass-3 closed under the adopted Option B substitution policy
+  (`docs/dev-log/decisions/2026-09-02-block1-check-log-substitution.md`).
+- A24–A29 MV honesty / identity / no-anchor / A26 language sync are local;
+  consolidated after-task: `docs/dev-log/after-task/2026-09-02-h2-a24-a29-mv-prep-after-task.md`.
+- Fences held: `V4-MV-REML` stays **covered**; rows/covered counts unchanged;
+  `public_covered_count` **5**; R multivariate stays **partial**.
+- Gate item 2 (estimated-`G0`/`R0` no-anchor disclosure) **MET** on both lanes.
+- Still **NOT MET** for a 0.6 R flip: Darwin ink (owner), DP-10 (owner), and —
+  until this DoD backfill lands — criterion 9. CI is **unverified** because
+  nothing has been pushed.
+- Foreign lane `codex/2026-07-13-v07-performance-localization` is live elsewhere;
+  do not bleed into it.
+
+Next: owner ink / DP-10 decision / push readiness only. Agents may land the R
+loud-failure guard for DP-10; **do not flip** `bridge-parity-tier1.stub.yaml`
+and **do not** enable Tier-1 on every PR.
+
 ### 2026-07-13 — v0.7 genomic boundary candidate stopped on runtime
 
 Codex held both twins sequentially for the preregistered doc-46 boundary slice.
@@ -141,6 +417,10 @@ Julia engine status and the R user-facing package without inferring bridge
 support beyond the recorded evidence.
 
 ## Current Slice
+
+- 2026-09-02: Twin honesty after R G10. Experimental `0.6.0`; R-public
+  `public_covered_count` is **6** (t=2 unstructured multivariate covered).
+  Engine `V4-MV-REML` already covered. No engine status word moved.
 
 - 2026-07-02: R lane (cross-lane heads-up) / covered-status surface reconciliation
   in `hsquared` (R `main` `5389f23`, pushed, pkgdown CI green). Propagated four
@@ -1109,3 +1389,12 @@ JOINT contract task per AGENTS.md rule 2.
   evidence rules, and cross-project scout cadence.
 - `drmTMB` / `gllvmTMB`: R-side documentation/status discipline and public
   fitted/planned/missing separation.
+
+## 2026-09-11 — Gate-B candidate handoff boundary
+
+- Codex owns `codex/hsq09-gateb-julia-integration-20260911` and
+  `codex/hsq09-gateb-r-artifact-20260911` only.
+- Julia candidate begins at PR #322 exact head and retains A3/A4; R candidate
+  artifact is frozen at `a1bd525e`. Neither PR #322 nor PR #202 was updated.
+- Both candidates remain local and unmerged. Gate B is not authorized by this
+  record: no release, tag, registry, CRAN submission, merge, or promotion.

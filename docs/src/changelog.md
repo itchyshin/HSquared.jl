@@ -2,6 +2,109 @@
 
 ## Unreleased
 
+None of the entries below change any capability status, row count, or
+package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
+(`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
+is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
+this pass and belongs to the release owner.)
+
+- Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
+  `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
+  The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
+  so a plain `docs/make.jl` build dirtied the tracked page even when the
+  generated table body was unchanged. The BEGIN/END generated-block markers are
+  unchanged. Docs-build hygiene only; no table content changed.
+- Clarified #333: `fit_snp_blup`'s docstring no longer states the
+  GBLUP↔SNP-BLUP equivalence unconditionally. The equivalence is exact for the
+  unregularized `G`; through `fit_gblup`'s required
+  `Ginv = inv(G + ridge·I)` — the package's only GBLUP route — the two differ
+  by `O(ridge)`, about 1–2 % of `sd(gebv)` at the package default
+  `ridge = 0.01`, because the ridge changes the covariance kernel.
+  Docstring-only; no arithmetic changed; the per-cell measurement is in
+  issue #333; `docs/src/genomic-models.md` gives the reason, not the numbers.
+- Fixed hsquared#210 (Julia half): the Willham total-heritability docstrings
+  and the stored `convention` string in `direct_maternal_interval` wrote
+  `σ_P` for a variance. Changed every such user-visible string in `src/` to
+  `σ²_P`, consistently, with no change to any arithmetic
+  (`src/likelihood.jl`, `direct_heritability`/`maternal_ratio`/
+  `total_heritability` docstrings and the returned `convention` field).
+
+- Fixed hsquared#212 (Julia half): `fit_payload_v2` accepts and forwards
+  `initial`/`iterations` on the `:multi_effect` (dense) and `:direct_maternal`
+  arms, which previously hardcoded the engine call and discarded both;
+  `fit_gblup_reml`, `fit_single_step_reml` and
+  `fit_metafounder_single_step_reml` gain an `iterations` keyword. Defaults
+  unchanged (`nothing` omits the keyword entirely). The R half of #212 is
+  separate and does not land here.
+- Fixed #331: `covariance_structure_lrt`'s `df` counts identified parameters —
+  `_mv_nparams` removes the `r(r−1)/2` rotational indeterminacy of `Λ` for
+  `:lowrank` and `:factor_analytic`, so a Ledermann-valid comparison is no
+  longer refused with `df = 0`. The function now always uses the plain
+  χ²`df` reference and never the 50:50 chi-bar mixture: a `:factor_analytic`
+  null is a regular submanifold and reports `boundary = false`, while a
+  `:lowrank` null stays `boundary = true` with the naive tail and its
+  direction explicitly unknown — the word "conservative" is gone. A new
+  `reference` field names which distribution produced `pvalue`.
+  **Behaviour change:** a structured comparison with `df = 1` (reachable at
+  `:lowrank`, `t = 2`, `rank = 1`) now reports twice its former p-value.
+- Fixed hsquared#214/#217 (Julia half): `max_dense_cells` is a keyword on
+  the dense-validation fitters, and `fit_repeatability_reml` now runs the
+  dense-cell guard.
+- Fixed #327: `NonGaussianFit` gains a `boundary` field;
+  `nongaussian_three_field_payload` refuses boundary-riding fits; an opt-in
+  `restart_check` (with `restart_estimate`) is added; the `:nbinom` and
+  `:gaussian` branches gain the same log-unit rail the gamma branch already
+  has. No capability-status or count changes. Defaults are unchanged for the
+  seven families that already had a bound; for `:gaussian` and `:nbinom` the
+  new rail applies on the default path, so a fit whose optimum lies outside
+  `exp(log(initial) ± 8)` now stops on the rail and sets `boundary = true`
+  where it previously searched unbounded.
+- Fixed #343 (follow-on to hsquared#212/#337): `fit_payload_v2`'s
+  `:multi_effect` dispatch now forwards `initial`/`iterations` on the opt-in
+  `scale_method = :auto` route too (previously forwarded on `:dense` only),
+  via `fit_multi_effect`'s own `kwargs...` to whichever engine `:auto`
+  selects. Default calls on either route are unaffected (`nothing` omits the
+  keyword entirely).
+- Clarified #347 (follow-on to #327): `nongaussian_three_field_payload`'s
+  boundary-refusal `ArgumentError`, and the corresponding `fit_laplace_reml`
+  docstring paragraph, no longer advise `restart_check = true` as a way to
+  clear a flagged boundary — that check is one-directional and can only make
+  `boundary` stricter, never clear it. Both now name the actual lever: a
+  different `initial`, which recentres the log-scale search bracket/rail.
+  Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
+
+## 0.8.0 (experimental)
+
+Experimental numbered bump after both 0.8 engine pillars are covered
+(FA `V4-FA` + single-step `V2-SSHINV`). Version tracks the engine pillar
+pair, not R-public count. `public_covered_count` stays **7**.
+Experimental label retained. Not production, not Julia General.
+R FA stays planned. R `single_step()` stays opt-in partial.
+
+## 0.7.0 (experimental)
+
+Experimental numbered bump after R G10. Version tracks R-public covered
+capability (`public_covered_count` **6 → 7**). Engine `V4-MV-REML` was already
+covered; this is **not** an engine covered flip. Experimental label retained.
+Not production, not Julia General. k≥3 / diagonal multivariate and interval
+calibration stay out of the covered claim.
+
+## 0.6.0 (experimental; historical)
+
+This historical experimental marker followed the R-public unstructured
+multivariate route, which changed `public_covered_count` from **5 to 6**.
+`V4-MV-REML` was already engine-covered, so this was not an engine covered-row
+promotion. It did not establish production readiness, a Julia General
+registration, interval calibration, or a 0.9 release. The dated coordination
+record is [2026-09-02](https://github.com/itchyshin/HSquared.jl/blob/main/docs/dev-log/coordination-board.md#2026-09-02--g10-r-public-multivariate--experimental-060-twin-honesty).
+
+## 0.5.0 (experimental)
+
+Experimental numbering change (`0.0.1` → `0.5.0`). The engine
+remains experimental. This is not a covered flip, not a production-ready
+release, and not a Julia General registration. `public_covered_count` stays
+**5**. Install from the GitHub URL until a General PR merges.
+
 - Corrected the Julia #44/R-bridge status wording after hsquared PR #96. The R
   twin already has an opt-in `target = "nongaussian"` bridge for Poisson and
   Binomial LA/VA fits plus the PR #95 normalizer fixture; the remaining bridge

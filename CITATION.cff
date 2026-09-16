@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use HSquared.jl (or the R twin hsquared), please cite it as below."
+title: "HSquared.jl: sparse quantitative-genetic modelling in Julia"
+abstract: >-
+  Julia engine twin of the R package hsquared for open, sparse,
+  inheritance-aware quantitative genetics (animal models, relationship
+  matrices, REML/ML, breeding values, and planned genomic / non-standard
+  inheritance surfaces). Twin DOI pending (hub D-23); cite both repositories
+  together once the shared DOI is deposited after Julia General registration.
+type: software
+authors:
+  - family-names: Nakagawa
+    given-names: Shinichi
+    orcid: "https://orcid.org/0000-0002-7765-5182"
+    email: itchyshin@gmail.com
+license: MIT
+repository-code: "https://github.com/itchyshin/HSquared.jl"
+url: "https://itchyshin.github.io/HSquared.jl/"
+# Matches Project.toml. Twin DOI still pending (hub D-23) — do not invent
+# identifiers.doi until the Zenodo deposit after both twins are tagged v0.9.0.
+# This is an unreleased candidate; do not add date-released before Gate B.
+version: 0.9.0
+keywords:
+  - quantitative genetics
+  - animal model
+  - heritability
+  - REML
+  - pedigree
+  - Julia
+  - mixed models
