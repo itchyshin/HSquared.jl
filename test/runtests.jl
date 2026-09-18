@@ -3054,14 +3054,15 @@ end
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
     mme = henderson_mme(spec, 1.2, 0.8)
 
-    pev_dense = prediction_error_variance(mme)
+    pev_dense = prediction_error_variance(mme; method = :dense)
     pev_selinv = prediction_error_variance(mme; method = :selinv)
     @test pev_selinv.ids == pev_dense.ids
     @test pev_selinv.values ≈ pev_dense.values rtol = 1e-10
-    @test reliability(mme; method = :selinv).values ≈ reliability(mme).values rtol = 1e-10
+    @test reliability(mme; method = :selinv).values ≈ reliability(mme; method = :dense).values rtol = 1e-10
 
-    # default stays :dense (contract unchanged)
-    @test prediction_error_variance(mme).values == pev_dense.values
+    # default is :selinv since #350 (:dense stays the explicit oracle)
+    @test prediction_error_variance(mme).values == pev_selinv.values
+    @test reliability(mme).values == reliability(mme; method = :selinv).values
 
     # AnimalModelFit path also supports :selinv
     fit = fit_variance_components(
