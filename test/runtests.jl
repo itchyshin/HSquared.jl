@@ -10735,3 +10735,7 @@ include("test_214_217_dense_cells.jl")
 # #334: docs/make.jl must not dirty docs/src/validation-status.md on a
 # no-content-change rebuild (regeneration must be idempotent, no timestamp).
 include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))
+
+# #350: sparse (Takahashi selected-inverse) defaults for prediction_error_variance
+# and the reliability denominator; result_payload / breeding_values_plot_data budget.
+include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
