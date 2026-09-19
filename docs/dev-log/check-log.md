@@ -5843,8 +5843,11 @@ generation (100 sires), fill of `L_Ainv` = 170.8:
 - `pedigree_inverse(ped)`: **39.3 s**, essentially all of it the Meuwissen & Luo pass
   (`inbreeding_coefficients` alone, separate call: 39.9 s) — so `1 + F` is FREE at the
   point `Ainv` is built.
-- selected-inverse diagonal of the same `Ainv` (`takahashi_diag`, the kernel on `main`):
-  **878.4 s**.
+- selected-inverse diagonal of the same `Ainv` (`takahashi_diag`): **878.4 s** with the
+  kernel on `main`, **35.7 s** with the cap-free scatter kernel of the same date
+  (`perf/selinv-capfree-scatter`, 24.6x). Both are the honest comparison: after that kernel
+  lands the denominator costs 36 s rather than 15 minutes, and `1 + F` still makes it free —
+  and the kernel is what a SUPPLIED `Ainv` (R-built, genomic, metafounder) still depends on.
 - `max|selinv − (1 + F)| = 6.2e-14` — the two agree, so this is a cost change, not a
   numerical one.
 

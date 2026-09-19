@@ -57,10 +57,13 @@ one thread, Julia 1.13.0:
 | `pedigree_inverse(ped)` (includes the Meuwissen & Luo pass) | 39.3 s |
 | `inbreeding_coefficients(ped)` alone, separate call | 39.9 s |
 | selected-inverse diagonal of the same `Ainv` (kernel on `main`) | 878.4 s |
+| the same, with the cap-free scatter kernel of the same date | 35.7 s |
 | `max|selinv − (1 + F)|` | 6.2e-14 |
 
-So the denominator goes from ~15 minutes to free at q = 100,000, with the same numbers. At
-validation scale the two are indistinguishable.
+So the denominator goes from ~15 minutes to free at q = 100,000, with the same numbers — or
+from 36 s to free once the cap-free kernel lands. At validation scale the two are
+indistinguishable. The kernel change is what a SUPPLIED `Ainv` still depends on, so the two
+changes are complements, not alternatives.
 
 ## 5. Rose claim-vs-evidence audit
 
