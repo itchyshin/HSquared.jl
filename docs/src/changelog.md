@@ -15,7 +15,11 @@ this pass and belongs to the release owner.)
   `Ainv` instead of forming the dense inverse, so `result_payload` and
   `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv` (q = 5,000:
   5.9 s / 832 MB → 0.008 s / 33 MB and 11.4 s / 1.8 GB → 0.004 s / 20 MB; numerics
-  unchanged to machine precision). Szymon Drobniak (finding).
+  unchanged to machine precision). Szymon Drobniak (finding). The selected-inverse path
+  refuses a numerically singular coefficient matrix (e.g. a duplicated column of `X`) with a
+  named `ArgumentError`, using a relative-pivot test (`L_ii² / C_ii`) that is invariant to the
+  units of a covariate: a well-posed fit with a covariate stored at magnitude 10⁶ or more is
+  not refused.
 - Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
   `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
   The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
