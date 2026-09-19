@@ -2653,9 +2653,12 @@ experimental low-level [`AnimalModelFit`](@ref).
 (a pedigree precision) and `:dense` when it is dense (a genomic `Ginv`), because
 the Takahashi recursion over a dense factor is slower than a dense inverse.
 `:selinv` reads the random-effect diagonal of the mixed-model-equation
-coefficient-matrix inverse through the `O(nnz(L))` Takahashi selected inverse of
-the sparse coefficient matrix. `:dense` forms and inverts the dense coefficient
-matrix; it is the validation oracle and agrees with `:selinv` to machine precision.
+coefficient-matrix inverse through the Takahashi selected inverse of the sparse
+coefficient matrix, whose cost is `Θ(Σⱼ|L[:,j]|²)`: it tracks the fill-in of the
+factor, not `nnz(L)`, so `:selinv` is always memory-safe at pedigree scale but not
+uniformly faster than `:dense` at moderate size on a high-fill pedigree. `:dense`
+forms and inverts the dense coefficient matrix; it is the validation oracle and
+agrees with `:selinv` to machine precision.
 """
 function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :auto)
     values = _pev_values(
@@ -3124,7 +3127,8 @@ validation paths.
 
 The payload includes `prediction_error_variance` and `reliability` as standard
 fields (each a `(ids, values)` named tuple). The PEV is computed through the
-`O(nnz(L))` (sparse-scalable) Takahashi selected inverse (`method = :selinv`),
+sparse Takahashi selected inverse (`method = :selinv`, cost `Θ(Σⱼ|L[:,j]|²)`,
+tracking fill-in; no dense matrix is formed),
 which matches the dense MME inverse diagonal to machine precision for
 well-conditioned validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks
 these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
@@ -3377,7 +3381,8 @@ end
 # Prediction error variances = diagonal of the random-effect block of the MME
 # coefficient-matrix inverse. `:dense` forms and inverts the dense MME (the tiny
 # validation reference); `:selinv` uses the Takahashi selected inverse of the
-# sparse MME coefficient matrix in O(nnz(L)). Both paths use the identical
+# sparse MME coefficient matrix (cost Θ(Σⱼ|L[:,j]|²), tracking fill-in, not
+# O(nnz(L)); see src/takahashi_selinv.jl). Both paths use the identical
 # coefficient matrix, so the diagonal agrees to machine precision.
 # `:auto` resolves by the storage of `Ainv` (#350): the Takahashi recursion over a
 # fully dense factor (a genomic `Ginv`) runs in scalar Julia and is far slower
@@ -3414,10 +3419,14 @@ end
 # A sparse Cholesky with `check = true` accepts any positive pivot, so a numerically
 # singular matrix (a rank-deficient X duplicates a column of the MME: measured
 # min pivot 4e-8, cond 1e16) factors "successfully" and the Takahashi recursion
-# then returns quietly wrong PEV/reliability where the dense oracle threw
-# `SingularException`. Refuse the same cases loudly: the squared ratio of the
-# smallest to the largest pivot is a cheap reciprocal-condition estimate.
-const _SELINV_RCOND_FLOOR = 1e-12
+# then returns quietly wrong PEV/reliability. Refuse those cases loudly with a
+# RELATIVE pivot test: `L_ii^2 / C_ii` (in the factor's permuted order) is `1 - R^2`
+# of equation `i` on the equations eliminated before it, so it collapses to
+# rounding level for a duplicated column and is invariant to rescaling any row and
+# column of `C`. A min/max pivot ratio is not: a well-posed fit with one covariate
+# stored at magnitude >= 1e6 (a date coded as YYYYMMDD) drove it below 1e-12 and
+# refused a payload whose dense PEV was identical to 10 significant figures.
+const _SELINV_REL_PIVOT_FLOOR = 1e-12
 
 # One contract on every platform: CHOLMOD builds differ in whether a numerically
 # singular matrix factors with a tiny pivot (Mac: accepted, 4e-8) or fails outright
@@ -3429,26 +3438,33 @@ function _selinv_cholesky(A::Symmetric, what::AbstractString)
     catch err
         err isa LinearAlgebra.PosDefException || rethrow()
         throw(ArgumentError("selected inverse refused: the " * what *
-                            " is not positive definite (Cholesky failed); the dense oracle would throw here"))
+                            " is not positive definite (Cholesky failed)"))
     end
-    _check_selinv_factor(factor, what)
+    _check_selinv_factor(factor, A, what)
     return factor
 end
 
-function _check_selinv_factor(factor::SparseArrays.CHOLMOD.Factor{Float64}, what::AbstractString)
-    d = diag(sparse(factor.L))
-    dmin, dmax = extrema(d)
-    rcond = (dmin / dmax)^2
-    (isfinite(rcond) && rcond >= _SELINV_RCOND_FLOOR) || throw(ArgumentError(
+function _check_selinv_factor(factor::SparseArrays.CHOLMOD.Factor{Float64}, A::Symmetric,
+                              what::AbstractString)
+    Ldiag = diag(factor)                 # L_ii, permuted order; no CSC copy of L
+    Cdiag = diag(parent(A))
+    perm = factor.p
+    worst = Inf
+    @inbounds for i in eachindex(Ldiag)
+        r = Ldiag[i]^2 / Cdiag[perm[i]]
+        r < worst && (worst = r)
+    end
+    (isfinite(worst) && worst >= _SELINV_REL_PIVOT_FLOOR) || throw(ArgumentError(
         "selected inverse refused: the " * what * " is numerically singular " *
-        "(pivot ratio squared = " * string(rcond) * " < " * string(_SELINV_RCOND_FLOOR) *
-        "); the dense oracle would throw SingularException here"))
+        "(smallest relative pivot L_ii^2/C_ii = " * string(worst) * " < " *
+        string(_SELINV_REL_PIVOT_FLOOR) * "); check for duplicated or collinear columns"))
     return nothing
 end
 
 # Animal self-relationships `diag(A) = diag(inv(Ainv))` for the reliability
 # denominator (#350). `:selinv` reads the diagonal through the Takahashi selected
-# inverse of the sparse `Ainv` in O(nnz(L)) -- for a pedigree `Ainv` this equals
+# inverse of the sparse `Ainv` (cost Θ(Σⱼ|L[:,j]|²) over the factor of `Ainv`,
+# tracking pedigree fill-in) -- for a pedigree `Ainv` this equals
 # `1 + F_i`, for a genomic `Ginv` it is `diag(G) + ridge`, exactly as the dense
 # path; `:dense` forms `inv(Ainv)` (the tiny validation oracle).
 function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)

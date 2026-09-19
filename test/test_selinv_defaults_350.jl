@@ -181,3 +181,28 @@ end
     @test d32 == d64
     @test HSquared._resolve_pev_method(Ainv32, :auto) === :selinv
 end
+
+@testset "350 (vi): the singularity guard is invariant to rescaling a column of X" begin
+    # Review finding on #355: the first guard compared the smallest and largest
+    # pivots of L, so a well-posed fit with one covariate stored at magnitude ~1e7
+    # (a date coded as YYYYMMDD) was refused -- `result_payload` threw although the
+    # dense PEV was unchanged to 10 significant figures. The relative-pivot test
+    # (L_ii^2 / C_ii, i.e. 1 - R^2 of each equation on those eliminated before it)
+    # must accept every rescaling of a full-rank design and refuse a duplicated
+    # column at every scale.
+    ped = _halfsib_pedigree_350(300)
+    Ainv = HSquared.pedigree_inverse(ped)
+    q = size(Ainv, 1); n = 2q
+    rng = MersenneTwister(3506)
+    y = randn(rng, n)
+    w = 3.0 .+ 0.5 .* randn(rng, n)
+    Z = sparse(1:n, repeat(1:q, inner = 2), 1.0, n, q)
+    spec(X) = HSquared.animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+    pev_ref = HSquared._pev_values(spec(hcat(ones(n), w)), 1.2, 0.8, :dense)
+    for scale in (1.0, 1e4, 1e7, 1e9)
+        pev = HSquared._selinv_mme_random_pev(spec(hcat(ones(n), scale .* w)), 1.2, 0.8)
+        @test maximum(abs.(pev .- pev_ref)) <= 1e-10
+        @test_throws ArgumentError HSquared._selinv_mme_random_pev(
+            spec(hcat(ones(n), scale .* w, scale .* w)), 1.2, 0.8)
+    end
+end
