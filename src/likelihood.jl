@@ -3426,7 +3426,16 @@ end
 # column of `C`. A min/max pivot ratio is not: a well-posed fit with one covariate
 # stored at magnitude >= 1e6 (a date coded as YYYYMMDD) drove it below 1e-12 and
 # refused a payload whose dense PEV was identical to 10 significant figures.
-const _SELINV_REL_PIVOT_FLOOR = 1e-12
+#
+# The floor is `eps`-level, not a conditioning preference: below it the pivot has no
+# significant digits left (`eps(Float64) ~ 2.2e-16`). Measured minimum relative pivots:
+#   full-rank design, one covariate                      4.5e-2
+#   near-collinear but legitimate (1e-6 relative noise)   5.7e-13
+#   the 3-animal quickstart toy at its REML boundary      1.5e-13  (docs example)
+#   duplicated column of X (the case this guard exists for) 7.4e-18
+# A floor of 1e-12 refused the middle two: the quickstart `@example` block, whose fit
+# collapses to sigma_a2 ~ 4e-31 on some platforms, stopped the docs build.
+const _SELINV_REL_PIVOT_FLOOR = 1e-15
 
 # One contract on every platform: CHOLMOD builds differ in whether a numerically
 # singular matrix factors with a tiny pivot (Mac: accepted, 4e-8) or fails outright

@@ -206,3 +206,23 @@ end
             spec(hcat(ones(n), scale .* w, scale .* w)), 1.2, 0.8)
     end
 end
+
+@testset "350 (vii): the quickstart toy fixture is accepted, not refused" begin
+    # The published quickstart `@example` blocks call prediction_error_variance(fit) and
+    # reliability(fit) on a 3-animal, 3-record toy whose REML optimum collapses to
+    # sigma_a2 ~ 4e-31 on some platforms (min relative pivot 1.5e-13, cond(C) 1.2e14).
+    # The first singularity guard refused it and stopped the docs build, while its own
+    # Documenter CI passed on a platform where the optimizer lands elsewhere. The guard
+    # must fire on rank deficiency, not on a degenerate-but-well-posed boundary fit.
+    ped = HSquared.normalize_pedigree(["offspring", "parent_a", "parent_b"],
+                                      ["parent_a", "0", "0"], ["parent_b", "0", "0"])
+    Ainv = HSquared.pedigree_inverse(ped)
+    spec = HSquared.animal_model_spec([1.0, 2.0, 3.0], [1.0 0.0; 1.0 1.0; 1.0 2.0],
+                                      sparse(I, 3, 3), Ainv; ids = ped.ids, method = "REML")
+    fit = HSquared.fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    pev = HSquared.prediction_error_variance(fit)          # :auto -> :selinv; must not throw
+    @test length(pev.values) == 3
+    @test all(isfinite, pev.values)
+    @test length(HSquared.reliability(fit).values) == 3
+    @test length(HSquared.accuracy(fit).values) == 3
+end
