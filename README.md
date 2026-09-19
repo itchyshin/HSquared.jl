@@ -369,7 +369,8 @@ This solves Henderson's mixed-model equations for fixed effects and animal
 effects. It does not estimate variance components. Validation-scale
 `variance_components(mme)`, `heritability(mme)`,
 `prediction_error_variance(mme)`, `reliability(mme)`, and `accuracy(mme)`
-methods report supplied variances and dense-MME-inverse outputs for tiny
+methods report supplied variances and MME-inverse-diagonal outputs (sparse
+selected inverse by default, `method = :dense` as the oracle) for tiny
 fixtures only. `accuracy()` is derived from reliability and errors instead of
 clipping when reliability is outside `[0, 1]`.
 
