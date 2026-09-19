@@ -630,7 +630,8 @@ computed through the `:selinv` selected-inversion path.
 `method = :dense` or `method = :selinv`. The `:selinv` path computes the diagonal of the sparse
 Henderson MME coefficient-matrix inverse with a Takahashi selected inverse
 (`takahashi_diag` / `takahashi_selinv`, adapted from DRM.jl under the MIT
-License) in `O(nnz(L))`. The selected inverse is exact only at the `L+Lᵀ`
+License) at cost `Θ(Σⱼ|L[:,j]|²)` — it tracks the fill-in of the factor, not
+`nnz(L)`. The selected inverse is exact only at the `L+Lᵀ`
 sparsity pattern; the diagonal — and therefore PEV — is always in pattern and is
 exact. Both methods use the identical coefficient matrix, so they agree to
 machine precision on tiny, Mrode9-shaped, 110-animal, 420-animal, and highly

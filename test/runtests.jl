@@ -2544,7 +2544,7 @@ end
     @test payload.nobs == 3
     @test payload.predictions ≈ [1.5, 2.0, 2.5]
     # #43: PEV/reliability are now standard payload fields, computed via the
-    # O(nnz(L)) (sparse-scalable) Takahashi selected inverse (:selinv), shaped
+    # sparse Takahashi selected inverse (:selinv, cost Θ(Σⱼ|L[:,j]|²)), shaped
     # (ids, values) to match the R bridge's hs_julia_id_values() unpack (hsquared#21).
     # (Non-trivial off-diagonal-Ainv / nfixed>1 parity is in the selinv testset.)
     @test payload.prediction_error_variance.ids == ["a", "b", "c"]
@@ -4374,7 +4374,7 @@ end
     @test fixed_effects(fit) ≈ hm.beta atol = 1e-8
     @test breeding_values(fit).values ≈ hm.animal_effects.values atol = 1e-7
 
-    # the O(nnz(L)) Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
+    # the Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
     # diagonal at 420 animals (extends V1-SELINV-PEV from a 110-animal pedigree to 420)
     @test prediction_error_variance(fit; method = :selinv).values ≈
           prediction_error_variance(fit; method = :dense).values atol = 1e-8
