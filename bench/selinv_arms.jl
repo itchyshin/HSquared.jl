@@ -581,7 +581,7 @@ end
 
 function gate_record()
     _assert_kernel_sha!()
-    threads = Threads.nthreads()
+    threads = parse(Int, get(ENV, "OPENBLAS_NUM_THREADS", "1"))
     outfile = joinpath(@__DIR__, "results", "selinv_arms_$(_harness_commit_sha())_t$(threads).tsv")
     isfile(outfile) || run_grid()
     ok, detail = _verify_grid_tsv(outfile)
@@ -689,7 +689,7 @@ end
 
 function run_grid()
     _assert_kernel_sha!()
-    threads = Threads.nthreads()
+    threads = parse(Int, get(ENV, "OPENBLAS_NUM_THREADS", "1"))
     rows = NamedTuple[]
 
     for (name, build) in MAIN_FIXTURES
@@ -838,6 +838,12 @@ function measure_install_weight(; selinv_version::AbstractString = "0.2.1")
     cp(joinpath(root, "Project.toml"), joinpath(tmp, "Project.toml"))
     manifest_src = joinpath(root, "Manifest.toml")
     isfile(manifest_src) && cp(manifest_src, joinpath(tmp, "Manifest.toml"))
+    # The root Project.toml declares HSquared itself (name/uuid/version), so
+    # Pkg treats this activated environment as THAT package -- it requires
+    # src/HSquared.jl to exist (and precompiles it) even though this
+    # measurement only cares about SelectedInversion's added weight. Copy the
+    # real src/ tree (read-only copy; nothing here writes to it).
+    cp(joinpath(root, "src"), joinpath(tmp, "src"))
 
     script = """
     import Pkg
