@@ -5509,7 +5509,7 @@ Newest entries go at the top.
   takes 0.03 s but `result_payload` spent 5.9 s / 832 MB forming `inv(Ainv)` inside
   `reliability` for its diagonal, and `breeding_values_plot_data` 11.4 s / 1.8 GB through
   the `prediction_error_variance` `:dense` default. Branch `claude/selinv-defaults-350`
-  (scratch worktree, NOT pushed): `prediction_error_variance`/`reliability` default to
+  (branch `claude/selinv-defaults-350`, PR #355): `prediction_error_variance`/`reliability` default to
   `:selinv`; the reliability denominator `diag(inv(Ainv))` is read through the Takahashi
   selected inverse of `Ainv` (`_relationship_diag`; the spec holds no `Pedigree`, so this
   is the sparse route rather than `1 .+ inbreeding_coefficients` — the `1 + F_i` identity

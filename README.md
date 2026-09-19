@@ -370,7 +370,8 @@ effects. It does not estimate variance components. Validation-scale
 `variance_components(mme)`, `heritability(mme)`,
 `prediction_error_variance(mme)`, `reliability(mme)`, and `accuracy(mme)`
 methods report supplied variances and MME-inverse-diagonal outputs (sparse
-selected inverse by default, `method = :dense` as the oracle) for tiny
+selected inverse by default for a sparse `Ainv`, the dense path for a dense genomic
+`Ginv`, `method = :dense` as the oracle) for tiny
 fixtures only. `accuracy()` is derived from reliability and errors instead of
 clipping when reliability is outside `[0, 1]`.
 
