@@ -19,7 +19,8 @@ this pass and belongs to the release owner.)
   refuses a numerically singular coefficient matrix (e.g. a duplicated column of `X`) with a
   named `ArgumentError`, using a relative-pivot test (`L_ii² / C_ii`) that is invariant to the
   units of a covariate: a well-posed fit with a covariate stored at magnitude 10⁶ or more is
-  not refused.
+  not refused, and neither is a degenerate-but-well-posed boundary fit (the guard's floor is
+  `eps`-level, 1e-15; a duplicated column of `X` measures 7.4e-18).
 - Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
   `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
   The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
