@@ -825,6 +825,87 @@ end
 # CLI
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Totoro arm (G2.6): the banked fill-471 point. F0 adversarial at q=20000
+# with the DEFAULT nfounder_frac=0.005 (NOT a fill search -- 0.005 is the
+# historically banked value that gives fill~471 at this q; see
+# docs/dev-log/recovery-checkpoints/2026-08-04-f6-matfree-tail-recovery-predeclaration.md
+# and validation-debt-register.md's "q=20,000 / fill 471"). One process, one
+# thread (OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1, set by the caller via
+# ENV before this process starts). Arms a and c only (no arm b -- not asked
+# for here), each timed TWICE after one warm-up.
+# ---------------------------------------------------------------------------
+
+function totoro_arm()
+    spec = f0adv_fixture(20_000; nfounder_frac = 0.005)
+    Ainv = sparse(Float64.(spec.Ainv))
+    nfixed = size(spec.X, 2)
+    n = size(spec.X, 2) + size(spec.Z, 2)
+
+    lhs, _, _ = HSquared._sparse_mme_system(spec, 1.0, 1.0)
+    lhs_sym = Symmetric(lhs)
+    GC.gc()
+    F = cholesky(lhs_sym; check = true)
+    is_super = _is_super(F)
+    nnzC = nnz(lhs)
+    nnzL = nnz(sparse(F.L))
+    fill = nnzL / n
+    idx_eltype = eltype(rowvals(Ainv))
+    @printf("f0adv q=20000 nfounder_frac=0.005 (banked point): is_super=%s nnz(L)=%d fill=%.3f\n",
+            is_super, nnzL, fill)
+    flush(stdout)
+
+    # T_fact: median of 3 numeric refactorizations reusing symbolic analysis.
+    cholesky!(F, lhs_sym; check = true)  # warm-up
+    fact_times = Float64[]
+    for _ in 1:3
+        stats = @timed cholesky!(F, lhs_sym; check = true)
+        push!(fact_times, stats.time)
+    end
+    T_fact = _median(fact_times)
+
+    # Arm (a): one warm-up, then 2 timed repeats.
+    pass_a(F, Ainv, nfixed)
+    ta1, da1, wa1, ba1 = pass_a(F, Ainv, nfixed)
+    ta2, da2, wa2, ba2 = pass_a(F, Ainv, nfixed)
+    @printf("arm a rep1: %.4f s (%d bytes)   rep2: %.4f s (%d bytes)\n", wa1, ba1, wa2, ba2)
+    flush(stdout)
+
+    # Arm (c): one warm-up, then 2 timed repeats.
+    B_perm = build_B_perm(F, Ainv, n, nfixed)
+    pass_c(F, B_perm)
+    tc1, dc1, wc1, bc1 = pass_c(F, B_perm)
+    tc2, dc2, wc2, bc2 = pass_c(F, B_perm)
+    @printf("arm c rep1: %.4f s (%d bytes)   rep2: %.4f s (%d bytes)\n", wc1, bc1, wc2, bc2)
+    flush(stdout)
+
+    T_a = _median([wa1, wa2]); T_c = _median([wc1, wc2])
+    err_trace_c = abs(tc2 - ta2) / max(abs(ta2), eps())
+    err_diag_c = maximum(abs.(dc2 .- da2)) / max(maximum(abs.(da2)), eps())
+    err_c = max(err_trace_c, err_diag_c)
+    S_c = T_a / T_c
+    R_c = T_c / T_fact
+
+    outdir = joinpath(@__DIR__, "results")
+    mkpath(outdir)
+    outfile = joinpath(outdir, "selinv_arms_$(_harness_commit_sha())_totoro_q20000_fill471.tsv")
+    open(outfile, "w") do io
+        println(io, join(_header_lines(), "\n"))
+        println(io, "# Totoro arm (G2.6): host=$(gethostname())")
+        cols = ["fixture", "threads", "q", "nfixed", "nnz_C", "nnz_L", "fill", "is_super",
+                "index_eltype", "T_fact", "T_a_rep1", "T_a_rep2", "bytes_a_rep1", "bytes_a_rep2",
+                "T_c_rep1", "T_c_rep2", "bytes_c_rep1", "bytes_c_rep2", "S_c", "R_c", "err_c"]
+        println(io, join(cols, "\t"))
+        @printf(io, "%s\t%d\t%d\t%d\t%d\t%d\t%.3f\t%s\t%s\t%.6f\t%.6f\t%.6f\t%d\t%d\t%.6f\t%.6f\t%d\t%d\t%.2f\t%.4f\t%.3e\n",
+                "f0adv_q20000_fill471_totoro", 1, n, nfixed, nnzC, nnzL, fill, is_super, idx_eltype,
+                T_fact, wa1, wa2, ba1, ba2, wc1, wc2, bc1, bc2, S_c, R_c, err_c)
+    end
+    @printf("\nTOTORO ARM DONE: T_fact=%.4fs T_a=%.4fs(median of %.4f,%.4f) T_c=%.4fs(median of %.4f,%.4f) S_c=%.2f R_c=%.4f err_c=%.3e\n",
+            T_fact, T_a, wa1, wa2, T_c, wc1, wc2, S_c, R_c, err_c)
+    println("wrote ", outfile)
+    return outfile
+end
+
 function main(args)
     gate = length(args) >= 2 && args[1] == "--gate" ? args[2] : nothing
     if gate == "agree"
@@ -837,6 +918,11 @@ function main(args)
         return gate_preconds()
     elseif gate !== nothing
         error("unknown --gate $(gate)")
+    end
+
+    if length(args) >= 1 && args[1] == "--totoro-arm"
+        totoro_arm()
+        return 0
     end
 
     if length(args) >= 1 && args[1] == "--probe-a-q20000-fill150"
