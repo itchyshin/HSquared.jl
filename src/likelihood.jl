@@ -3338,8 +3338,7 @@ end
 # `takahashi_diag` returns it exactly.
 function _selinv_mme_random_pev(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     lhs, _, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
-    factor = cholesky(Symmetric(lhs); check = true)
-    _check_selinv_factor(factor, "mixed-model-equation coefficient matrix (rank-deficient X?)")
+    factor = _selinv_cholesky(Symmetric(lhs), "mixed-model-equation coefficient matrix (rank-deficient X?)")
     diag_inv = takahashi_diag(factor)
     nfixed = size(spec.X, 2)
     return Vector{Float64}(diag_inv[(nfixed + 1):end])
@@ -3352,6 +3351,22 @@ end
 # `SingularException`. Refuse the same cases loudly: the squared ratio of the
 # smallest to the largest pivot is a cheap reciprocal-condition estimate.
 const _SELINV_RCOND_FLOOR = 1e-12
+
+# One contract on every platform: CHOLMOD builds differ in whether a numerically
+# singular matrix factors with a tiny pivot (Mac: accepted, 4e-8) or fails outright
+# (`PosDefException` on the Linux and Windows CI runners). Both become the same
+# named `ArgumentError`, so callers and tests see one failure mode.
+function _selinv_cholesky(A::Symmetric, what::AbstractString)
+    factor = try
+        cholesky(A; check = true)
+    catch err
+        err isa LinearAlgebra.PosDefException || rethrow()
+        throw(ArgumentError("selected inverse refused: the " * what *
+                            " is not positive definite (Cholesky failed); the dense oracle would throw here"))
+    end
+    _check_selinv_factor(factor, what)
+    return factor
+end
 
 function _check_selinv_factor(factor::SparseArrays.CHOLMOD.Factor{Float64}, what::AbstractString)
     d = diag(sparse(factor.L))
@@ -3376,8 +3391,7 @@ function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)
         # arrays, and a caller may hand in an `Int32`-indexed `Ainv`.
         A = issparse(Ainv) ? SparseMatrixCSC{Float64, Int}(sparse(Ainv)) :
                              sparse(Matrix{Float64}(Ainv))
-        factor = cholesky(Symmetric(A); check = true)
-        _check_selinv_factor(factor, "relationship precision Ainv")
+        factor = _selinv_cholesky(Symmetric(A), "relationship precision Ainv")
         return takahashi_diag(factor)
     elseif method === :dense
         return diag(inv(Symmetric(Matrix{Float64}(Ainv))))
