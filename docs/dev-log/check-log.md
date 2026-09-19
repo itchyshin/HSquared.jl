@@ -5698,13 +5698,66 @@ version changed; `V1-REML` and `V1-SELINV-PEV` stay `partial`.
 `docs/design/capability-status.md` in three more places beyond the five already fixed on
 2026-09-17.
 
-**Follow-ups.** Six are drafted as ready-to-file GitHub issue bodies in
-`docs/dev-log/2026-09-19-followup-issue-drafts.md` (this session had no `gh` CLI, so none
-could be opened): `fitted_values` densifying `Z`; `henderson_mme` using UMFPACK LU instead
-of Cholesky and solving twice per payload; the missing dense-size guard on the
-`prediction_error_variance`/`reliability` defaults; the unreconciled q=300k DRAC figure;
-real-pedigree and external-comparator measurement; and a blocked/supernodal selected
-inverse. The first two are the largest remaining items on the `result_payload` path.
+**Follow-ups, now filed (2026-09-19).** A duplicate check first: the maintainer had already
+opened **#350** (2026-09-18) recording THIS defect — `reliability`'s dense `inv(Ainv)` and
+the PEV `:dense` default — from Szymek's own Discord report, with measurements at q=5,000
+and explicit acceptance criteria; and **#353** (2026-09-19) proposing `SelectedInversion.jl`
+as a replacement for `takahashi_selinv.jl`. So two of the six drafts were NOT filed as new
+issues; they were posted as comments on those instead.
+
+- **#350** — commented. This arc meets **1 of its 4 acceptance bullets**: `reliability` no
+  longer forms a dense `A` ON THE `:selinv` PATH, but `prediction_error_variance` and
+  `breeding_values_plot_data` still default to `:dense`, `reliability(fit)` at its default
+  still forms dense `A`, and there is no q=5,000 under-1 s/100 MB test. Also recorded there:
+  the issue's own suggested fix (`1 .+ inbreeding_coefficients(...)`, O(n) via Meuwissen-Luo)
+  is BETTER than the selected inverse used here for the pedigree case — `1 + F` was used only
+  as a test oracle and should have been the implementation; the selected inverse remains the
+  right general fallback because it is matrix-only and a genomic `Ginv` has
+  `diag(inv(Ginv)) ≠ 1 + F`.
+- **#353** — commented: the baseline it benchmarks against moved by 6.65x-9.97x, so measuring
+  `SelectedInversion.jl` against current `main` would overstate the win by ~8x. Its README
+  claim (selected inversion ≈ cost of a CHOLMOD Cholesky) is still far beyond this fix, which
+  remains ~25x-45x the Cholesky cost of the same matrix. Also flagged that `selinv_diag`
+  covers PEV/reliability but NOT the AI-REML hot path, which needs off-diagonal entries.
+- **#356** (new) — `fitted_values` densifies `Z`; O(n²) on every `result_payload`, a sibling
+  of #350 but a distinct defect (dense design matrix, not a dense inverse).
+- **#357** (new) — `henderson_mme` uses UMFPACK LU on an SPD system: 60x slower than Cholesky
+  with bit-identical solutions, and `result_payload` pays it twice.
+- **#358** (new) — reconcile the q=300,000 / 2.3 s DRAC figure with the per-iteration profile.
+- **#359** (new) — no real-pedigree or external-comparator measurement behind any of these
+  numbers; the ASReml-R gap is narrowed, not closed.
+
+**Collision found AFTER filing — check open PRs, not just open issues.** `gh pr list` (run
+only after the issues were filed) shows **PR #355**, open since 00:06 on 2026-09-19 by the
+maintainer, `claude/selinv-defaults-350`, "fix: sparse selected-inverse defaults for PEV and
+the reliability denominator (#350)". It fixes the SAME `reliability` defect this arc fixed,
+and is a SUPERSET of that half: it also flips the `prediction_error_variance` default to
+`:selinv` (deliberately not done here), adds an `:auto` method, takes
+`breeding_values_plot_data` sparse end to end, carries the q=3,000 budget test #350's
+acceptance asks for (written red-first), and fixes `fitted_values`' dense `Z` as a drive-by.
+Its `_resolve_pev_method` guards the dense genomic `Ginv` case the same way this arc's
+`_effectively_sparse` does, via `issparse` rather than an `nnz/n²` ratio.
+
+Consequences, recorded rather than quietly patched:
+
+- **#356 was a duplicate and is now CLOSED** — `fitted_values`' dense `Z` is already fixed in
+  PR #355. It was filed from a review finding after checking open ISSUES but not open PRs.
+- **PR #355 now conflicts with `main`**, which moved to `b9f30a64` under it. Its own lane note
+  says "If his branch lands first, this one should be rebased onto it, not the reverse" — that
+  condition has triggered. Commented on the PR recommending the rebase take ITS version of the
+  `reliability`/`_relationship_diag` work wholesale and drop this arc's
+  `_selinv_ainv_diag`/`_effectively_sparse`/`_relationship_self_variance_diag`, since #355's is
+  the more complete piece.
+- **The `_selinv_zvals` kernel rewrite is complementary, not duplicated** — PR #355 does not
+  touch `src/takahashi_selinv.jl` and scopes itself "AI-REML loop untouched". It should survive
+  the rebase, and it improves #355's own after-column, since `:selinv` PEV and reliability both
+  run through that kernel; its measured 0.002-0.003 s rows were taken against the old one.
+- #357 (henderson_mme UMFPACK LU) is unaffected and remains the largest untouched item on the
+  `result_payload` path.
+
+Also confirmed now that the commits are on the remote: the **Documenter CI run on `b9f30a64`
+passed** (run 35451712014, 3m01s), so the local `docs/make.jl` vitepress failure was purely
+this machine's Node toolchain, as diagnosed.
 
 Checks (fresh, this worktree): `julia --project=. -e 'using Pkg; Pkg.test()'` — full suite
 **passed**, `grep -inE "fail|error"` over the log **empty**, with `test_aqua.jl` temporarily
