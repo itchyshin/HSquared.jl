@@ -218,12 +218,32 @@ end
 # Environment / header info
 # ---------------------------------------------------------------------------
 
-function _git_short_sha()
+# The commit that last touched THIS file, not whatever HEAD happens to be at
+# run time. Using `git rev-parse --short HEAD` here would rename (and orphan)
+# the banked ladder TSV every time an unrelated commit lands (e.g. a
+# checkpoint.md update) even though the harness itself did not change.
+function _harness_commit_sha()
     try
-        return strip(read(`git rev-parse --short HEAD`, String))
+        sha = strip(read(`git log -1 --format=%h -- $(@__FILE__)`, String))
+        return isempty(sha) ? "uncommitted" : sha
     catch
         return "unknown"
     end
+end
+
+function ladder_tsv_path()
+    outdir = joinpath(@__DIR__, "results")
+    mkpath(outdir)
+    return joinpath(outdir, "ai_reml_sections_$(_harness_commit_sha()).tsv")
+end
+
+# Ad-hoc single-rung smoke runs (no --gate, --fixture/--q given) write here,
+# NOT to `ladder_tsv_path()` -- that path is the banked full-ladder deliverable
+# and must never be clobbered by a one-rung smoke invocation.
+function smoke_tsv_path()
+    outdir = joinpath(@__DIR__, "results")
+    mkpath(outdir)
+    return joinpath(outdir, "ai_reml_sections_$(_harness_commit_sha())_smoke.tsv")
 end
 
 function _cpu_model()
@@ -238,7 +258,7 @@ end
 function _header_lines()
     return [
         "# HSquared.jl AI-REML per-section profiler  $(Dates.now())",
-        "# git_sha=$(_git_short_sha())  julia=$(VERSION)  os=$(Sys.KERNEL) $(Sys.MACHINE)",
+        "# git_sha=$(_harness_commit_sha())  julia=$(VERSION)  os=$(Sys.KERNEL) $(Sys.MACHINE)",
         "# blas=$(BLAS.get_config())",
         "# JULIA_NUM_THREADS=$(Threads.nthreads())  OPENBLAS_NUM_THREADS=$(get(ENV, "OPENBLAS_NUM_THREADS", "unset"))",
         "# cpu=$(_cpu_model())",
@@ -540,51 +560,97 @@ function gate_pins(qs::Vector{Int})
     end
 end
 
-function gate_tsv()
-    q = 1000
-    spec = halfsib_fixture(q)
-    rows, inst, shares, n_samples = _rows_for_fixture("halfsib", q, spec)
+# ---------------------------------------------------------------------------
+# TSV reader/verifier for gate G1.3. Read-only against the banked ladder file
+# -- gate_tsv() below must never regenerate/overwrite an existing TSV, only
+# verify it (and create it via run_ladder() the one time none exists yet).
+# ---------------------------------------------------------------------------
 
-    if isempty(rows)
-        println("GATE G1.3 FAIL no rows produced")
-        return 1
+function _read_tsv_rows(path::AbstractString)
+    lines = readlines(path)
+    data_lines = filter(l -> !isempty(l) && !startswith(l, "#"), lines)
+    isempty(data_lines) && return NamedTuple[]
+    header = split(data_lines[1], "\t")
+    rows = NamedTuple[]
+    for line in data_lines[2:end]
+        fields = split(line, "\t")
+        length(fields) == length(header) || continue
+        d = Dict(zip(header, fields))
+        push!(rows, (
+            fixture = d["fixture"],
+            q = parse(Int, d["q"]),
+            fill = parse(Float64, d["fill"]),
+            iteration = parse(Int, d["iteration"]),
+            section = d["section"],
+            method = d["method"],
+            wall_s = parse(Float64, d["wall_s"]),
+            bytes = d["bytes"] == "NaN" ? NaN : parse(Float64, d["bytes"]),
+            factorizations = parse(Int, d["factorizations"]),
+        ))
     end
-    if any(r -> isnan(r.wall_s) || r.wall_s < 0, rows)
-        println("GATE G1.3 FAIL NaN or negative wall_s present")
-        return 1
+    return rows
+end
+
+# The full ladder's six rungs: halfsib q=1000/5000/20000/50000 (fill ~4 for
+# this pedigree shape) and f0adv q=5000 at the two DISTINCT achieved fills
+# (~74 and ~150 -- the target-471 rung collapses onto the ~150 rung; see the
+# file header's target-fill note, and G1.4's measured finding).
+const _REQUIRED_LADDER_RUNGS = Set([
+    ("halfsib", 1000, 4), ("halfsib", 5000, 4), ("halfsib", 20000, 4), ("halfsib", 50000, 4),
+    ("f0adv", 5000, 74), ("f0adv", 5000, 150),
+])
+
+function _verify_ladder_tsv(path::AbstractString)
+    isfile(path) || return (false, "file does not exist: $(path)")
+    rows = _read_tsv_rows(path)
+    isempty(rows) && return (false, "no data rows")
+
+    if any(r -> !isfinite(r.wall_s) || r.wall_s < 0, rows)
+        return (false, "NaN/Inf or negative wall_s present")
+    end
+    if any(r -> r.method == "instrumented" && !isfinite(r.bytes), rows)
+        return (false, "NaN/Inf bytes on an instrumented row")
     end
 
-    # 5% self-consistency: sum of instrumented section walls per iteration
-    # vs. that same iteration's own "iteration_total" wall.
-    inst_rows = filter(r -> r.method == "instrumented", rows)
-    by_iter = Dict{Int,Vector{NamedTuple}}()
-    for r in inst_rows
-        push!(get!(by_iter, r.iteration, NamedTuple[]), r)
+    rung_key(r) = (r.fixture, r.q, round(Int, r.fill))
+    rungs = Set(rung_key(r) for r in rows if r.method == "instrumented")
+    missing_rungs = setdiff(_REQUIRED_LADDER_RUNGS, rungs)
+    isempty(missing_rungs) || return (false, "missing rungs: $(collect(missing_rungs))")
+
+    # 5% self-consistency per (rung, iteration): sum of instrumented section
+    # walls vs. that iteration's own "iteration_total" wall.
+    by_group = Dict{Tuple{String,Int,Int,Int},Vector{NamedTuple}}()
+    for r in rows
+        r.method == "instrumented" || continue
+        key = (r.fixture, r.q, round(Int, r.fill), r.iteration)
+        push!(get!(by_group, key, NamedTuple[]), r)
     end
     bad = String[]
-    for (it, rs) in by_iter
+    for (key, rs) in by_group
         total_row = filter(r -> r.section == "iteration_total", rs)
         isempty(total_row) && continue
         total = total_row[1].wall_s
-        section_sum = sum(r.wall_s for r in rs if r.section != "iteration_total")
         total <= 0 && continue
+        section_sum = sum(r.wall_s for r in rs if r.section != "iteration_total")
         rel = abs(section_sum - total) / total
-        rel > 0.05 && push!(bad, @sprintf("iter=%d section_sum=%.6f total=%.6f rel=%.3f", it, section_sum, total, rel))
+        rel > 0.05 && push!(bad, @sprintf("%s q=%d fill~%d iter=%d rel=%.3f", key[1], key[2], key[3], key[4], rel))
     end
+    isempty(bad) || return (false, "section-sum vs iteration-total mismatch: " * join(bad, "; "))
 
-    outdir = joinpath(@__DIR__, "results")
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ai_reml_sections_$(_git_short_sha()).tsv")
-    open(outfile, "w") do io
-        write_tsv(io, rows)
-    end
+    return (true, "$(length(rungs)) rungs, $(length(rows)) rows")
+end
 
-    if isempty(bad)
-        println("GATE G1.3 PASS")
-        println("  wrote ", outfile)
+function gate_tsv()
+    path = ladder_tsv_path()
+    isfile(path) || run_ladder()   # create the ladder TSV only if none exists yet
+
+    ok, detail = _verify_ladder_tsv(path)
+    if ok
+        println("GATE G1.3 PASS ", detail)
+        println("  verified ", path)
         return 0
     else
-        println("GATE G1.3 FAIL section-sum vs iteration-total mismatch: ", join(bad, "; "))
+        println("GATE G1.3 FAIL ", detail)
         return 1
     end
 end
@@ -644,9 +710,7 @@ function run_ladder(; halfsib_qs::Vector{Int} = [1000, 5000, 20000, 50000],
                 f0adv_q, target, achieved_fill, inst.sigma_a2, inst.converged, gap)
     end
 
-    outdir = joinpath(@__DIR__, "results")
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ai_reml_sections_$(_git_short_sha()).tsv")
+    outfile = ladder_tsv_path()
     open(outfile, "w") do io
         write_tsv(io, all_rows)
     end
@@ -716,9 +780,7 @@ function main(args)
         if fixture == "halfsib"
             spec = halfsib_fixture(q)
             rows, inst, shares, n_samples = _rows_for_fixture("halfsib", q, spec)
-            outdir = joinpath(@__DIR__, "results")
-            mkpath(outdir)
-            outfile = joinpath(outdir, "ai_reml_sections_$(_git_short_sha()).tsv")
+            outfile = smoke_tsv_path()
             open(outfile, "w") do io
                 write_tsv(io, rows)
             end
@@ -731,9 +793,7 @@ function main(args)
             frac, achieved_fill = find_nfounder_frac_for_fill(q, target)
             spec = f0adv_fixture(q; nfounder_frac = frac)
             rows, inst, shares, n_samples = _rows_for_fixture("f0adv", q, spec)
-            outdir = joinpath(@__DIR__, "results")
-            mkpath(outdir)
-            outfile = joinpath(outdir, "ai_reml_sections_$(_git_short_sha()).tsv")
+            outfile = smoke_tsv_path()
             open(outfile, "w") do io
                 write_tsv(io, rows)
             end
