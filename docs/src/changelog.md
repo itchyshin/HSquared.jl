@@ -8,6 +8,14 @@ package version. `public_covered_count` stays **7**, and no entry below touches 
 is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
 this pass and belongs to the release owner.)
 
+- Fixed #350: `prediction_error_variance` and `reliability` default to `method = :auto`,
+  which takes the sparse Takahashi selected-inverse path for a sparse `Ainv` and the
+  dense path for a dense genomic `Ginv` (`:selinv` and `:dense` stay explicit; the
+  recursion over a dense factor is 67x slower than `inv`), and `reliability` reads `diag(inv(Ainv))` through the selected inverse of
+  `Ainv` instead of forming the dense inverse, so `result_payload` and
+  `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv` (q = 5,000:
+  5.9 s / 832 MB → 0.008 s / 33 MB and 11.4 s / 1.8 GB → 0.004 s / 20 MB; numerics
+  unchanged to machine precision). Szymon Drobniak (finding).
 - Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
   `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
   The stamp came from `now(UTC)` on every call and was rewritten unconditionally,

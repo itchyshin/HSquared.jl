@@ -613,8 +613,9 @@ utility. Production sparse fitting remains planned; experimental sparse
 prediction error variance and reliability are available via the `method =
 :selinv` selected-inversion path described below.
 
-`prediction_error_variance(fit)` and `reliability(fit)` use the dense
-mixed-model-equation inverse by default for tiny validation examples. The same
+`prediction_error_variance(fit)` and `reliability(fit)` default to `method = :auto`
+(since #350): the sparse `:selinv` selected inverse for a sparse pedigree `Ainv`, the
+dense inverse for a dense genomic `Ginv`. The same
 extractor names can be used on a supplied-variance `mme` result.
 `variance_components(mme)` returns the supplied values and `heritability(mme)`
 computes the simple univariate ratio from those supplied values. `EBV()` and
@@ -625,15 +626,15 @@ validation. For `AnimalModelFit`, the base `result_payload(fit)` now includes
 `prediction_error_variance` and `reliability` as standard `(ids, values)` fields,
 computed through the `:selinv` selected-inversion path.
 
-`prediction_error_variance` and `reliability` accept `method = :dense` (default)
-or `method = :selinv`. The `:selinv` path computes the diagonal of the sparse
+`prediction_error_variance` and `reliability` accept `method = :auto` (default),
+`method = :dense` or `method = :selinv`. The `:selinv` path computes the diagonal of the sparse
 Henderson MME coefficient-matrix inverse with a Takahashi selected inverse
 (`takahashi_diag` / `takahashi_selinv`, adapted from DRM.jl under the MIT
 License) in `O(nnz(L))`. The selected inverse is exact only at the `L+Lᵀ`
 sparsity pattern; the diagonal — and therefore PEV — is always in pattern and is
 exact. Both methods use the identical coefficient matrix, so they agree to
 machine precision on tiny, Mrode9-shaped, 110-animal, 420-animal, and highly
-inbred validation fixtures. The default standalone extractor stays `:dense`;
+inbred validation fixtures. The default standalone extractor is `:auto` (sparse `Ainv` → `:selinv`, dense → `:dense`);
 `result_payload(::AnimalModelFit)` deliberately uses `:selinv` once and reuses
 that PEV for reliability. This is an experimental validation-scale path, not a
 large-pedigree or comparator-validated production reliability claim.

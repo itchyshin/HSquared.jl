@@ -124,7 +124,7 @@ function _caterpillar(d::NamedTuple; title = "Estimated breeding values", kwargs
     se = sqrt.(max.(Float64.(d.pev)[perm], 0.0))
     xs = collect(1:length(v))
     caveat = d.pev_scale == "validation" ?
-        "EBV ± √PEV — PEV is VALIDATION-scale (dense inv(Ainv)), not a production reliability claim" :
+        "EBV ± √PEV — PEV is VALIDATION-scale (sparse selected inverse, validated against the dense oracle), not a production reliability claim" :
         "EBV ± √PEV"
     table = (rank = xs, value = v)
     fg = draw(data(table) * mapping(:rank, :value) *

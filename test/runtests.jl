@@ -3054,14 +3054,15 @@ end
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
     mme = henderson_mme(spec, 1.2, 0.8)
 
-    pev_dense = prediction_error_variance(mme)
+    pev_dense = prediction_error_variance(mme; method = :dense)
     pev_selinv = prediction_error_variance(mme; method = :selinv)
     @test pev_selinv.ids == pev_dense.ids
     @test pev_selinv.values ≈ pev_dense.values rtol = 1e-10
-    @test reliability(mme; method = :selinv).values ≈ reliability(mme).values rtol = 1e-10
+    @test reliability(mme; method = :selinv).values ≈ reliability(mme; method = :dense).values rtol = 1e-10
 
-    # default stays :dense (contract unchanged)
-    @test prediction_error_variance(mme).values == pev_dense.values
+    # default is :selinv since #350 (:dense stays the explicit oracle)
+    @test prediction_error_variance(mme).values == pev_selinv.values
+    @test reliability(mme).values == reliability(mme; method = :selinv).values
 
     # AnimalModelFit path also supports :selinv
     fit = fit_variance_components(
@@ -3070,9 +3071,9 @@ end
         method = :REML,
     )
     @test prediction_error_variance(fit; method = :selinv).values ≈
-          prediction_error_variance(fit).values rtol = 1e-9
+          prediction_error_variance(fit; method = :dense).values rtol = 1e-9
     @test reliability(fit; method = :selinv).values ≈
-          reliability(fit).values rtol = 1e-9 atol = 1e-8
+          reliability(fit; method = :dense).values rtol = 1e-9 atol = 1e-8
 
     # Non-trivial fixture: 8-animal Mrode9-shaped pedigree (genuinely off-diagonal
     # Ainv that exercises the :selinv recursion) and nfixed = 2 (intercept +
@@ -10735,3 +10736,7 @@ include("test_214_217_dense_cells.jl")
 # #334: docs/make.jl must not dirty docs/src/validation-status.md on a
 # no-content-change rebuild (regeneration must be idempotent, no timestamp).
 include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))
+
+# #350: sparse (Takahashi selected-inverse) defaults for prediction_error_variance
+# and the reliability denominator; result_payload / breeding_values_plot_data budget.
+include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
