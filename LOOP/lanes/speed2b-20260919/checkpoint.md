@@ -6,7 +6,7 @@ DONE. All 4 auto-checkable gates (G2b.1, G2b.2, G2b.3, G2b.5) PASS via
 `gate-check.mjs --approve`. G2b.4 is the ledger's manual gate (no CHECK
 line) -- the numbers below are handed to the orchestrator to record it.
 
-Worktree: `/Users/z3437171/local-scratch/lanes/HSquared.jl-speed2b-20260919`
+Worktree: `<lane worktree>`
 Branch: `claude/lane-speed2b-20260919` (based on `origin/main` b9f30a64)
 Commits (newest first): 6e7e814d (measurements), d6a55667 (header-line fix),
 b1a18896 (GIT_SHAS.txt), ff019def (git-shas cache mechanism), 49d63c49
