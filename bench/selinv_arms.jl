@@ -398,12 +398,30 @@ end
 # Header / environment info
 # ---------------------------------------------------------------------------
 
+# Totoro receives an rsync of this worktree WITHOUT .git (see the ROLE's own
+# sync step), so `git log` there always fails. `bench/GIT_SHAS.txt` (written
+# by `_write_git_shas_cache` on the Mac, where .git IS present, and synced
+# alongside the rest of bench/) is the fallback read on any host where the
+# live git query fails, so the Totoro run still prints/asserts the same shas
+# instead of silently degrading to "unknown".
+function _cached_git_shas()
+    path = joinpath(@__DIR__, "GIT_SHAS.txt")
+    isfile(path) || return Dict{String,String}()
+    d = Dict{String,String}()
+    for line in readlines(path)
+        parts = split(line, "="; limit = 2)
+        length(parts) == 2 && (d[parts[1]] = parts[2])
+    end
+    return d
+end
+
 function _harness_commit_sha()
     try
         sha = strip(read(`git log -1 --format=%h -- $(@__FILE__)`, String))
-        return isempty(sha) ? "uncommitted" : sha
+        isempty(sha) && error("empty git log (uncommitted)")
+        return sha
     catch
-        return "unknown"
+        return get(_cached_git_shas(), "harness_sha", "unknown")
     end
 end
 
@@ -411,10 +429,25 @@ function _kernel_commit_sha()
     try
         path = joinpath(@__DIR__, "..", "src", "takahashi_selinv.jl")
         sha = strip(read(`git log -1 --format=%H -- $(path)`, String))
-        return isempty(sha) ? "unknown" : sha
+        isempty(sha) && error("empty git log")
+        return sha
     catch
-        return "unknown"
+        return get(_cached_git_shas(), "kernel_sha", "unknown")
     end
+end
+
+# Run on the Mac (where .git exists) after committing bench/selinv_arms.jl,
+# so the cache reflects the FINAL harness commit. Call via:
+#   julia --project=bench -e 'include("bench/selinv_arms.jl")' --write-git-shas
+# (invoked from the CLI branch below) then rsync bench/GIT_SHAS.txt to Totoro.
+function _write_git_shas_cache()
+    path = joinpath(@__DIR__, "GIT_SHAS.txt")
+    open(path, "w") do io
+        println(io, "harness_sha=$(_harness_commit_sha())")
+        println(io, "kernel_sha=$(_kernel_commit_sha())")
+    end
+    println("wrote ", path)
+    return path
 end
 
 function _cpu_model()
@@ -906,6 +939,11 @@ function main(args)
 
     if length(args) >= 1 && args[1] == "--install-weight"
         measure_install_weight()
+        return 0
+    end
+
+    if length(args) >= 1 && args[1] == "--write-git-shas"
+        _write_git_shas_cache()
         return 0
     end
 
