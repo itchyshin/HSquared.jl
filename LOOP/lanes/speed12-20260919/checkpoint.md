@@ -1,8 +1,9 @@
 # Checkpoint: speed12-20260919
 
 GOAL: see GOAL.md.
-STATE: arc S1 done+repaired (see prior entry, kept below); arc S2 done. All
-five automated leaf-S2 gates (G2.1-G2.5) PASS under
+STATE: arc S1 done+repaired; arc S2 done, including the Totoro arm (G2.6),
+run after Shinichi's approval. All five automated leaf-S2 gates (G2.1-G2.5)
+PASS under
 `node ~/shinichi-brain/skills/unlazy/scripts/gate-check.mjs --approve --root "$PWD" --cwd "$PWD" --timeout 1800 .unlazy/julia-speed-20260919/gates/leaf-S2.md`
 run from the worktree root (cwd = repo root, "$PWD" resolved to
 `<lane worktree>`); overall
@@ -71,39 +72,118 @@ via public CHOLMOD APIs alone (S_b~1.00 on every supernodal row) -- the
 raw-pointer nzval-refresh shortcut only exists for simplicial factors
 (confirmed: S_b=1.46-1.50 on the two simplicial/benign rows).
 
+TOTORO ARM RESULT (G2.6, run after Shinichi's approval): F0 adversarial
+q=20000, DEFAULT nfounder_frac=0.005 (the banked point, not a fill search).
+Ran on totoro.biology.ualberta.ca via the ControlMaster socket (never a fresh
+login), one process, one thread (OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1),
+under nohup with a pidfile, polled every 60s from this Mac, never killed
+(finished before the 60-minute cap). Arms a and c only, two repeats each
+after one warm-up:
+  achieved fill=473.937 (nnz(L)=9,479,216), is_super=true -- reproduces the
+    banked ~471 closely.
+  T_fact=0.2956s (median of 3 numeric refactorisations reusing symbolic).
+  arm a (selinv_trace_against + takahashi_diag): rep1=1211.638s,
+    rep2=1226.344s -> T_a=1211.638s (min-of-2 by this file's own `_median`).
+  arm c (SelectedInversion.selinv + selinv_diag): rep1=4.0304s,
+    rep2=4.0312s -> T_c=4.0304s.
+  S_c=300.62, R_c=13.6337 (arm c is NOT free relative to a bare
+    refactorisation -- it costs ~13.6x one T_fact), err_c=1.671e-14 (the two
+    arms agree, this is not just a speed number).
+  Wall of the WHOLE remote run: 3425s (~57 min) -- well above the
+    coordinator's stated 15-30 min estimate (arm a alone, at this much
+    higher fill than the Mac's q=20000/fill150 rung, cost ~2.5-3.5x that
+    rung's ~237s per pass) but under the 60-minute kill cap, so nothing was
+    killed. State this plainly if a future estimate at this fill is needed:
+    ~1200s for one arm-a pass at fill~471, not ~237s (that was fill~150).
+  Read against the historically banked number (trace alone, 381s at
+    q=20,000/fill 471): T_a here measures trace+diag COMBINED (this file's
+    "one selected-inverse pass" convention throughout arc S2), so it is not
+    a like-for-like re-measurement of the banked 381s -- roughly 2-3x of
+    381s (760-1143s) would be the naive trace-only-scaled-up expectation,
+    and the measured 1211-1226s is in that neighbourhood, on the high side.
+    G2.6's own PASS/PASS-as-finding/FAIL judgment against the banked number
+    and its 2x band is the orchestrator's to make and record in the ledger
+    (not touched here).
+  TSV: bench/results/selinv_arms_b68bde5a_totoro_q20000_fill471.tsv (renamed
+    from the "unknown"-sha name Totoro's git-less rsync copy produced, to
+    this worktree's own harness commit b68bde5a); full nohup output at the
+    sibling `.log` file. Commit: (see TRUTH LIVES IN below).
+  Totoro left clean: no lingering julia process after the run (checked);
+    ~14MB working copy remains under `~/hsq_work/speed12-20260919/` on
+    Totoro (small, matches "keep the repo under ~/hsq_work, persists" -- not
+    deleted, nothing to clean up beyond the process).
+
+INSTALL WEIGHT (D-271's exact input, measured separately/locally, package env
+untouched): a scratch copy of this worktree's Project.toml + Manifest.toml +
+src/ (src/ was needed for Pkg to resolve the self-referencing HSquared
+package; a Project.toml/Manifest.toml-only copy errors) in a /tmp directory,
+`Pkg.activate`d there, `Pkg.add(PackageSpec(name="SelectedInversion",
+version="0.2.1"))`:
+  packages added: exactly ONE -- SelectedInversion itself (59 -> 60 packages
+    in the full dependency closure; every one of its own dependencies,
+    including PrecompileTools/Preferences, was ALREADY satisfied by the
+    package env's existing 59-package closure via Optim/ForwardDiff's own
+    tree).
+  new `_jll` packages: NONE.
+  precompile SelectedInversion alone: 1.51s -- AGENT-CAVEAT: this Mac's
+    depot already had SelectedInversion 0.2.1 compiled for this exact Julia
+    version/platform (from bench/'s own instantiate earlier today), and
+    Julia's compile cache is depot-wide, not per-environment, so this is a
+    cache hit, not a genuine cold-install measurement; a truly fresh depot
+    would take longer (bench/'s own first instantiate+precompile, also
+    likely a partial cache hit, measured ~2-6s for the whole 55-package
+    grouping, i.e. an even smaller apples-to-apples slice was NOT isolated
+    for SelectedInversion alone before today).
+  Bottom line for D-271: adding SelectedInversion.jl to the package would
+    cost exactly one extra registered package, no new binary (`_jll`)
+    weight, riding entirely on dependencies the package already pulls in
+    via Optim -- the install-weight side of D-271's decision is about as
+    cheap as a weak dependency can be; the >=10x kernel-win side is met
+    decisively (this arc's own numbers, up to 300x) but ONLY in the
+    large/high-fill/supernodal regime (see "WHY THE SIGN FLIPS" above).
+
 TRUTH LIVES IN:
   - branch claude/lane-speed12-20260919 in this worktree (unpushed), HEAD
-    5ac80d48.
+    d475019c (Mac grid at 9be11566; --totoro-arm mode added at b68bde5a;
+    Totoro result committed at d475019c). Note: an external commit
+    (0c2d5bb2, "push-safety" path redaction) landed on this branch between
+    the Mac-grid checkpoint and the Totoro-arm work -- not made by this
+    lane, touched only checkpoint.md/sim/profile_ai_reml_sections.jl
+    comments (absolute-path redaction), no functional change; left as-is
+    per "take it as the current state rather than reverting."
   - bench/Project.toml, bench/Manifest.toml (SelectedInversion pinned
     `=0.2.1`; HSquared developed from `..`; package Project.toml/Manifest.toml
-    untouched, G2.3 confirms), bench/selinv_arms.jl (the harness, commit
-    9be11566 -- its own last-commit sha, used to name the TSV; unaffected by
-    later commits that do not touch this file, same lesson as S1's harness).
-  - bench/results/selinv_arms_9be11566_t1.tsv (10 rows; renamed from the
-    "uncommitted"-named file the ~23-minute run actually produced, after
-    committing the harness -- see that commit's message for why re-running
-    was not worth it purely to rename the file).
+    untouched, G2.3 confirms), bench/selinv_arms.jl (the harness, now at
+    commit b68bde5a -- its own last-commit sha, used to name each TSV;
+    unaffected by later commits that do not touch this file).
+  - bench/results/selinv_arms_9be11566_t1.tsv (10-row Mac grid, threads=1).
+  - bench/results/selinv_arms_b68bde5a_totoro_q20000_fill471.tsv + sibling
+    `.log` (the Totoro arm, G2.6's evidence).
   - ledger .unlazy/julia-speed-20260919/gates/leaf-S2.md (git-ignored; G2.1-
-    G2.5 [x] with EVIDENCE keyed to
-    cwd=<lane worktree>;
-    G2.6 left pending, manual, Totoro).
+    G2.5 [x] with EVIDENCE keyed to cwd=<lane worktree>; G2.6 left pending --
+    "do not edit the ledger's G2.6, the orchestrator records it").
+  - install-weight scratch test: /tmp (not committed, not the real package
+    env; see INSTALL WEIGHT above for the numbers, which ARE what matters).
   - S1's own TRUTH LIVES IN (sim/profile_ai_reml_sections.jl at c8cf8e05,
     sim/results/ai_reml_sections_c8cf8e05.tsv) is unchanged by this arc.
 
-NEXT: the Totoro arm (G2.6) is a STOP gate -- do not launch it without
-Shinichi's yes, with this checkpoint's numbers shown (S_c up to 284x at
-q=20000/fill150, ~240x at q=50000/fill75; both far past D-271's 10x bar in
-the supernodal regime). Per D-271, SelectedInversion.jl can only ever enter
+NEXT: arc S2 is complete, including the Totoro arm. This checkpoint's numbers
+(S_c up to 300x at q=20000/fill471 on Totoro, up to 284x at q=20000/fill150
+on the Mac; install weight = +1 package, 0 new `_jll`s) are D-271's full
+measured input. Per D-271, SelectedInversion.jl can only ever enter
 HSquared.jl as an optional weak-dependency extension behind the existing
 fallback (never a hard dependency, never in the package Project.toml) --
 this arc's numbers are the measured basis for that decision, not a
-recommendation to add it yet. Before trusting any future leaf-S2
-`--reverify`, use the SAME `--root "$PWD" --cwd "$PWD"` pair (not just
-`--cwd`) -- this is what made every G2.x approval reusable across this
-arc's separate `--approve` and gate-record invocations.
+recommendation to add it yet; the decision itself (and G2.6's ledger
+checkbox) belongs to the orchestrator/Shinichi, not this lane. Before
+trusting any future leaf-S2 `--reverify`, use the SAME
+`--root "$PWD" --cwd "$PWD"` pair (not just `--cwd`) -- this is what made
+every G2.x approval reusable across this arc's separate `--approve` and
+gate-record invocations.
 
 RESUME: read LOOP/lanes/speed12-20260919/GOAL.md -> this file -> ultra-plan.md
--> repo AGENTS.md; then await Shinichi's decision on the Totoro arm (G2.6).
+-> repo AGENTS.md; then await the orchestrator's next instruction (this
+lane's own work is done pending that).
 
 ---
 Prior entry (arc S1, kept for continuity):
