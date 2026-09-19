@@ -5766,3 +5766,38 @@ failure (confirmed identical on unmodified `main` via `git stash` on 2026-09-17)
 afterwards. `tools/write_validation_status_page.jl` re-run; `docs/src/validation-status.md`
 in sync at 56 rows. `bash tools/preamble_cap.sh` — `CAP OK`. `docs/make.jl` still fails at the
 `npm`/vitepress step, pre-existing and unrelated (confirmed on clean `main` on 2026-09-17).
+
+## 2026-09-19 — PR #355 review (Szymek): scale-invariant singularity guard, complexity wording, merge with `main` `[JL]`
+
+Review of the rebased #355 (`76f36d02`) before sign-off, per handover #360 item 1. The split
+was taken as proposed and `src/takahashi_selinv.jl` is untouched; three findings, fixed in
+commits stacked on the PR head (branch `review/355-merge-main`):
+
+- **Regression, fixed (`3a7d337c`).** The new guard refused a factor when
+  `(min L_ii / max L_ii)² < 1e-12`. That ratio moves with the units of a covariate. Probe: a
+  converged `fit_ai_reml` fit (q = 1,000, two records per animal, intercept + one covariate),
+  identical `sigma_a2` at every scale; with the covariate multiplied by 1, 1e4, 1e5 the payload
+  is fine, at 1e6, 1e7, 2e7 `result_payload` threw "numerically singular ... the dense oracle
+  would throw SingularException", while the dense PEV was identical to 10 significant figures
+  at every scale (pivot ratio² 1.2e-2 at scale 1, 1.2e-14 at 1e6). On `main`, `result_payload`
+  already used `:selinv` without a guard, so these fits used to return a payload. The guard now
+  tests the relative pivot `L_ii² / C_ii` (1 − R² of each equation on those eliminated before
+  it; invariant to rescaling a row and column of `C`) and reads `L_ii` via
+  `diag(::CHOLMOD.Factor)` (verified equal to `diag(sparse(F.L))` for simplicial and
+  supernodal factors) instead of an O(nnz(L)) CSC copy. Testset 350 (vi): full-rank design
+  at scale 1, 1e4, 1e7, 1e9 accepted and equal to the dense oracle to 1e-10, duplicated column
+  refused at every scale; red on the old guard at 1e7, green after; 350 (iv) unchanged.
+- **Wording (`9fc51aa1`).** `O(nnz(L))` reappeared in the PEV and `result_payload` docstrings
+  and the `_relationship_diag` comment, and survived at four sites the `6bb10c97` sweep missed
+  (`03-engine-contract.md`, `validation_status.jl` for `selinv_block_traces`, two test
+  comments). All now say `Θ(Σⱼ|L[:,j]|²)`, tracking fill-in; the PEV docstring regains the
+  caveat that `:selinv` is memory-safe but not uniformly faster than `:dense` at moderate size
+  on a high-fill pedigree.
+- **Merge with `main` (`ef4fd744`).** `f5023afe` appended #356–#359 to the `V1-SELINV-PEV` debt
+  row this PR rewrote; kept this PR's row, folded the pointers in, and marked `fitted_values`'
+  dense `Z` as fixed by this PR (#356 closed as its duplicate) instead of "NOT fixed".
+
+Checks on the merged tree (`8d88e6d8`): `julia --project=. -e 'using Pkg; Pkg.test()'` —
+**passed** (`Testing HSquared tests passed`, 166 test summaries, no failures; Julia 1.13.0,
+Aqua included). `tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
+tools/preamble_cap.sh` — `CAP OK`.
