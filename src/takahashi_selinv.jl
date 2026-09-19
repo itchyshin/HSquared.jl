@@ -33,10 +33,11 @@
 # symmetric contributions into a length-`m` accumulator: no search, no `m×m` block,
 # no width cap, and the same per-entry summation order (see its own comment), so the
 # output stays BIT-IDENTICAL to the original per-pair recursion.
-# Measured on one thread, same matrices, bit-identical output (see the check-log):
-#   q=5,000  fill 107-151   1.7x-1.8x over the capped dense-block kernel
+# Measured on one thread (Mac Studio M1 Ultra), f0adv adversarial pedigrees, full MME,
+# bit-identical output, against the capped dense-block kernel (see the check-log):
+#   q=5,000  fill 107-151   1.7x-1.8x
 #   q=10,000 fill 262       4.2x
-#   q=20,000 fill 471       see the check-log entry for the D-271 bench
+#   q=20,000 fill 471       28x   (416.8 s -> 14.9 s per selected-inverse pass)
 #
 # IMPORTANT CAVEAT (read before using)
 # ------------------------------------
