@@ -11,15 +11,19 @@
 #       the same PEV in 0.002 s / 10 MB.
 #
 # Pinned here: (i) parity -- at q = 1,000 the `:selinv` and `:dense` PEV agree
-# on every diagonal entry to 1e-8, the sparse selected-inverse `diag(inv(Ainv))`
+# on every diagonal entry to 1e-10, the sparse selected-inverse `diag(inv(Ainv))`
 # used by `reliability` equals the old dense `diag(inv(Ainv))` AND `1 + F_i`
-# (inbreeding) to 1e-8, and the new `reliability` equals the old dense formula
-# to 1e-8; (ii) budget -- at q = 3,000, `result_payload` + `breeding_values_plot_data`
+# (inbreeding) to 1e-10, and the new `reliability` equals the old dense formula
+# to 1e-10; (ii) budget -- at q = 3,000, `result_payload` + `breeding_values_plot_data`
 # together allocate under 100 MB and take under 1 s (warm).
 #
 # Fixture: half-sib pedigree (sires 5 %, dams 10 %, offspring 85 %), two records
-# per animal, `y = 0.3 * randn` under a fixed seed (the same shape as the
-# measuring script). Fitted by `fit_ai_reml`, the bridge's fitter.
+# per animal, simulated WITH additive signal (founders a ~ N(0, sa2), offspring
+# a = 0.5 (a_s + a_d) + N(0, 0.5 sa2), y = Z a + N(0, se2); sa2 = 0.04, se2 = 0.06)
+# so AI-REML converges to an interior optimum on every Julia RNG stream. A pure-
+# noise fixture (true sa2 = 0) sat on the boundary and failed `converged` on
+# Julia >= 1.12, where `MersenneTwister` draws differ from 1.10. Fitted by
+# `fit_ai_reml`, the bridge's fitter.
 
 using HSquared
 using LinearAlgebra
@@ -42,12 +46,21 @@ function _halfsib_pedigree_350(q::Int)
     return HSquared.normalize_pedigree(ids, sire, dam)
 end
 
-function _halfsib_fit_350(q::Int; seed::Integer = 350)
+function _halfsib_fit_350(q::Int; seed::Integer = 350, sa2 = 0.04, se2 = 0.06)
     ped = _halfsib_pedigree_350(q)
     Ainv = HSquared.pedigree_inverse(ped)
     n = 2q
     rng = MersenneTwister(seed)
-    y = 0.3 .* randn(rng, n)
+    a = zeros(q)
+    for i in 1:q                                  # topological order: parents first
+        s_i, d_i = ped.sire[i], ped.dam[i]
+        if s_i == 0 && d_i == 0
+            a[i] = sqrt(sa2) * randn(rng)
+        else
+            a[i] = 0.5 * (a[s_i] + a[d_i]) + sqrt(0.5 * sa2) * randn(rng)
+        end
+    end
+    y = repeat(a, inner = 2) .+ sqrt(se2) .* randn(rng, n)
     X = ones(n, 1)
     Z = sparse(1:n, repeat(1:q, inner = 2), 1.0, n, q)
     spec = HSquared.animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
@@ -64,7 +77,7 @@ end
     pev_selinv = HSquared.prediction_error_variance(fit; method = :selinv)
     @test pev_selinv.ids == pev_dense.ids
     @test length(pev_selinv.values) == 1_000
-    @test maximum(abs.(pev_selinv.values .- pev_dense.values)) <= 1e-8
+    @test maximum(abs.(pev_selinv.values .- pev_dense.values)) <= 1e-10
 
     # The default is now the sparse path (was :dense).
     @test HSquared.prediction_error_variance(fit).values == pev_selinv.values
@@ -73,16 +86,16 @@ end
     # identity) == the sparse selected-inverse diagonal that reliability now uses.
     Ainv = fit.spec.Ainv
     diag_dense = diag(inv(Symmetric(Matrix{Float64}(Ainv))))
-    @test maximum(abs.(diag_dense .- (1 .+ HSquared.inbreeding_coefficients(ped)))) <= 1e-8
-    @test maximum(abs.(HSquared._relationship_diag(Ainv) .- diag_dense)) <= 1e-8
+    @test maximum(abs.(diag_dense .- (1 .+ HSquared.inbreeding_coefficients(ped)))) <= 1e-10
+    @test maximum(abs.(HSquared._relationship_diag(Ainv) .- diag_dense)) <= 1e-10
 
     # New reliability == the old implementation (dense inv(Ainv) denominator).
     rel_old = 1 .- pev_dense.values ./ (vc.sigma_a2 .* diag_dense)
     rel_new = HSquared.reliability(fit)
     @test rel_new.ids == pev_dense.ids
-    @test maximum(abs.(rel_new.values .- rel_old)) <= 1e-8
-    @test maximum(abs.(HSquared.reliability(fit; method = :dense).values .- rel_old)) <= 1e-8
-    @test maximum(abs.(HSquared.reliability(fit; method = :selinv).values .- rel_old)) <= 1e-8
+    @test maximum(abs.(rel_new.values .- rel_old)) <= 1e-10
+    @test maximum(abs.(HSquared.reliability(fit; method = :dense).values .- rel_old)) <= 1e-10
+    @test maximum(abs.(HSquared.reliability(fit; method = :selinv).values .- rel_old)) <= 1e-10
 
     # Inbred pedigree (full-sib and half-sib matings, F_i > 0): the 1 + F_i
     # identity and the sparse diagonal hold off the F = 0 special case too.
@@ -95,8 +108,8 @@ end
     F8 = HSquared.inbreeding_coefficients(ped8)
     @test any(F8 .> 0)
     diag8_dense = diag(inv(Symmetric(Matrix{Float64}(Ainv8))))
-    @test maximum(abs.(diag8_dense .- (1 .+ F8))) <= 1e-8
-    @test maximum(abs.(HSquared._relationship_diag(Ainv8) .- diag8_dense)) <= 1e-8
+    @test maximum(abs.(diag8_dense .- (1 .+ F8))) <= 1e-10
+    @test maximum(abs.(HSquared._relationship_diag(Ainv8) .- diag8_dense)) <= 1e-10
 end
 
 @testset "350 (ii): result_payload + breeding_values_plot_data budget, q = 3,000" begin
@@ -117,4 +130,24 @@ end
           HSquared.prediction_error_variance(fit; method = :selinv).values
     @test plot_data.pev == HSquared.prediction_error_variance(fit; method = :selinv).values
     @test payload.reliability.values == HSquared.reliability(fit; method = :selinv).values
+end
+
+@testset "350 (iii): :auto keeps the dense path for a dense genomic Ginv" begin
+    # A dense `Ginv` in the `Ainv` slot must NOT be routed through the Takahashi
+    # recursion (scalar Julia over a fully dense factor: measured 67x slower than
+    # `inv` at q = 1,000). `:auto` resolves by storage; results agree either way.
+    q = 300
+    rng = MersenneTwister(3500)
+    M = randn(rng, q, 2q)
+    G = Symmetric(M * M' ./ (2q) + 0.05 * I(q))
+    Ginv = Symmetric(Matrix(inv(G)))
+    @test HSquared._resolve_pev_method(Ginv, :auto) === :dense
+    @test HSquared._resolve_pev_method(sparse(Ginv), :auto) === :selinv
+    @test HSquared._resolve_pev_method(Ginv, :selinv) === :selinv
+    d_auto = HSquared._relationship_diag(Ginv)
+    d_dense = HSquared._relationship_diag(Ginv, :dense)
+    d_sel = HSquared._relationship_diag(sparse(Matrix(Ginv)), :selinv)
+    @test d_auto == d_dense
+    @test maximum(abs.(d_sel .- d_dense)) <= 1e-10 * maximum(abs.(d_dense))
+    @test maximum(abs.(d_dense .- diag(G))) <= 1e-8 * maximum(abs.(diag(G)))
 end

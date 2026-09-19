@@ -2643,18 +2643,20 @@ function heritability(result::HendersonMMEResult)
 end
 
 """
-    prediction_error_variance(fit; method = :selinv)
+    prediction_error_variance(fit; method = :auto)
 
 Return prediction error variances for animal-effect BLUPs/EBVs from an
 experimental low-level [`AnimalModelFit`](@ref).
 
-`method = :selinv` (the default since #350) reads the random-effect diagonal of
-the mixed-model-equation coefficient-matrix inverse through the `O(nnz(L))`
-Takahashi selected inverse of the sparse coefficient matrix. `method = :dense`
-forms and inverts the dense coefficient matrix; it is the validation oracle for
-tiny examples and agrees with `:selinv` to machine precision.
+`method = :auto` (the default since #350) picks `:selinv` when `Ainv` is sparse
+(a pedigree precision) and `:dense` when it is dense (a genomic `Ginv`), because
+the Takahashi recursion over a dense factor is slower than a dense inverse.
+`:selinv` reads the random-effect diagonal of the mixed-model-equation
+coefficient-matrix inverse through the `O(nnz(L))` Takahashi selected inverse of
+the sparse coefficient matrix. `:dense` forms and inverts the dense coefficient
+matrix; it is the validation oracle and agrees with `:selinv` to machine precision.
 """
-function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :selinv)
+function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :auto)
     values = _pev_values(
         fit.spec,
         fit.variance_components.sigma_a2,
@@ -2665,22 +2667,23 @@ function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :selinv
 end
 
 """
-    prediction_error_variance(result::HendersonMMEResult; method = :selinv)
+    prediction_error_variance(result::HendersonMMEResult; method = :auto)
 
 Return prediction error variances for a supplied-variance Henderson MME
 result.
 
 Same `method` choices as [`prediction_error_variance(::AnimalModelFit)`](@ref):
-`:selinv` (default, sparse Takahashi selected inverse) or `:dense` (the dense
+`:auto` (default: `:selinv` for a sparse `Ainv`, `:dense` for a dense one),
+`:selinv` (sparse Takahashi selected inverse) or `:dense` (the dense
 coefficient-matrix inverse, validation oracle).
 """
-function prediction_error_variance(result::HendersonMMEResult; method::Symbol = :selinv)
+function prediction_error_variance(result::HendersonMMEResult; method::Symbol = :auto)
     values = _pev_values(result.spec, result.sigma_a2, result.sigma_e2, method)
     return (ids = collect(result.spec.ids), values = values)
 end
 
 """
-    reliability(fit; method = :selinv, pev = nothing)
+    reliability(fit; method = :auto, pev = nothing)
 
 Return animal-level reliability values for the Phase 1 univariate animal
 model.
@@ -2692,12 +2695,13 @@ coefficient); for a genomic spec (`Ainv = Ginv`) it is
 `diag(inv(Ginv)) = diag(G) + ridge` (the regularized genomic self-relationship,
 often ≠ 1), so the ridge perturbs the reported reliability/accuracy and the same
 extractor yields genomic reliabilities. `method` selects both the PEV path and
-the `A_ii` path: `:selinv` (default since #350) reads `diag(inv(Ainv))` through
+the `A_ii` path: `:auto` (default since #350) resolves to `:selinv` for a sparse
+`Ainv` and `:dense` for a dense one; `:selinv` reads `diag(inv(Ainv))` through
 the sparse Takahashi selected inverse of `Ainv` (no dense `A` is formed);
 `:dense` forms `inv(Ainv)` densely (validation oracle). Values are not clipped;
 small examples can expose weakly informed animals directly.
 """
-function reliability(fit::AnimalModelFit; method::Symbol = :selinv, pev = nothing)
+function reliability(fit::AnimalModelFit; method::Symbol = :auto, pev = nothing)
     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
     animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec.Ainv, method)
 
@@ -2710,7 +2714,7 @@ function reliability(fit::AnimalModelFit; method::Symbol = :selinv, pev = nothin
     )
 end
 
-function reliability(result::HendersonMMEResult; method::Symbol = :selinv)
+function reliability(result::HendersonMMEResult; method::Symbol = :auto)
     pev = prediction_error_variance(result; method = method)
     animal_variance = result.sigma_a2 .* _relationship_diag(result.spec.Ainv, method)
 
@@ -3131,8 +3135,8 @@ function result_payload(fit::AnimalModelFit)
     beta = fixed_effects(fit)
     bv = breeding_values(fit)
     predictions = fitted_values(fit)
-    pev = prediction_error_variance(fit; method = :selinv)
-    rel = reliability(fit; method = :selinv, pev = pev)
+    pev = prediction_error_variance(fit; method = :auto)
+    rel = reliability(fit; method = :auto, pev = pev)
 
     return (
         variance_components = vc,
@@ -3307,14 +3311,23 @@ end
 # validation reference); `:selinv` uses the Takahashi selected inverse of the
 # sparse MME coefficient matrix in O(nnz(L)). Both paths use the identical
 # coefficient matrix, so the diagonal agrees to machine precision.
+# `:auto` resolves by the storage of `Ainv` (#350): the Takahashi recursion over a
+# fully dense factor (a genomic `Ginv`) runs in scalar Julia and is far slower
+# than a dense inverse, so sparse -> `:selinv`, dense -> `:dense`.
+function _resolve_pev_method(Ainv::AbstractMatrix, method::Symbol)
+    method === :auto || return method
+    return issparse(Ainv) ? :selinv : :dense
+end
+
 function _pev_values(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real, method::Symbol)
+    method = _resolve_pev_method(spec.Ainv, method)
     if method === :selinv
         return _selinv_mme_random_pev(spec, sigma_a2, sigma_e2)
     elseif method === :dense
         block = _dense_mme_random_inverse_block(spec, sigma_a2, sigma_e2)
         return Vector{Float64}(diag(block))
     else
-        throw(ArgumentError("prediction-error-variance method must be :dense or :selinv"))
+        throw(ArgumentError("prediction-error-variance method must be :auto, :dense or :selinv"))
     end
 end
 
@@ -3335,14 +3348,15 @@ end
 # inverse of the sparse `Ainv` in O(nnz(L)) -- for a pedigree `Ainv` this equals
 # `1 + F_i`, for a genomic `Ginv` it is `diag(G) + ridge`, exactly as the dense
 # path; `:dense` forms `inv(Ainv)` (the tiny validation oracle).
-function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :selinv)
+function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)
+    method = _resolve_pev_method(Ainv, method)
     if method === :selinv
         factor = cholesky(Symmetric(sparse(Float64.(Ainv))); check = true)
         return takahashi_diag(factor)
     elseif method === :dense
         return diag(inv(Symmetric(Matrix{Float64}(Ainv))))
     else
-        throw(ArgumentError("prediction-error-variance method must be :dense or :selinv"))
+        throw(ArgumentError("prediction-error-variance method must be :auto, :dense or :selinv"))
     end
 end
 

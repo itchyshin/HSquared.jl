@@ -3071,9 +3071,9 @@ end
         method = :REML,
     )
     @test prediction_error_variance(fit; method = :selinv).values ≈
-          prediction_error_variance(fit).values rtol = 1e-9
+          prediction_error_variance(fit; method = :dense).values rtol = 1e-9
     @test reliability(fit; method = :selinv).values ≈
-          reliability(fit).values rtol = 1e-9 atol = 1e-8
+          reliability(fit; method = :dense).values rtol = 1e-9 atol = 1e-8
 
     # Non-trivial fixture: 8-animal Mrode9-shaped pedigree (genuinely off-diagonal
     # Ainv that exercises the :selinv recursion) and nfixed = 2 (intercept +
