@@ -492,8 +492,9 @@ end
 function _install_weight_lines()
     path = joinpath(@__DIR__, "results", "install_weight_b9f30a64.txt")
     if isfile(path)
-        cached = strip(read(path, String))
-        return ["# install weight (package env + SelectedInversion, measured separately via --install-weight):", cached]
+        cached_lines = split(strip(read(path, String)), "\n")
+        return vcat("# install weight (package env + SelectedInversion, measured separately via --install-weight):",
+                    ["#   $(l)" for l in cached_lines])
     else
         return ["# install weight: NOT YET MEASURED (run `julia --project=bench bench/selinv_arms.jl --install-weight` first)"]
     end
