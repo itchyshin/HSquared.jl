@@ -151,3 +151,33 @@ end
     @test maximum(abs.(d_sel .- d_dense)) <= 1e-10 * maximum(abs.(d_dense))
     @test maximum(abs.(d_dense .- diag(G))) <= 1e-8 * maximum(abs.(diag(G)))
 end
+
+@testset "350 (iv): a numerically singular MME fails loudly, never quietly wrong" begin
+    # Verifier finding on the first cut: with a rank-deficient X (duplicate column)
+    # the dense oracle threw SingularException, while the sparse Cholesky accepted a
+    # 4e-8 pivot and the Takahashi recursion returned PEV 0.08 where the truth is
+    # 0.25. The selected-inverse path must refuse such a factor.
+    ped = _halfsib_pedigree_350(100)
+    Ainv = HSquared.pedigree_inverse(ped)
+    q = size(Ainv, 1); n = 2q
+    rng = MersenneTwister(3501)
+    y = randn(rng, n)
+    Xdup = hcat(ones(n), ones(n))                 # rank-deficient fixed effects
+    Z = sparse(1:n, repeat(1:q, inner = 2), 1.0, n, q)
+    spec = HSquared.animal_model_spec(y, Xdup, Z, Ainv; ids = ped.ids, method = :REML)
+    @test_throws ArgumentError HSquared._selinv_mme_random_pev(spec, 1.2, 0.8)
+    # and the same call on the full-rank design is fine
+    spec_ok = HSquared.animal_model_spec(y, ones(n, 1), Z, Ainv; ids = ped.ids, method = :REML)
+    pev_ok = HSquared._selinv_mme_random_pev(spec_ok, 1.2, 0.8)
+    @test all(isfinite, pev_ok) && all(>(0), pev_ok)
+end
+
+@testset "350 (v): Int32-indexed sparse Ainv takes the selinv path" begin
+    ped = _halfsib_pedigree_350(200)
+    Ainv = HSquared.pedigree_inverse(ped)
+    Ainv32 = SparseMatrixCSC{Float64, Int32}(Ainv)
+    d64 = HSquared._relationship_diag(Ainv)
+    d32 = HSquared._relationship_diag(Ainv32)
+    @test d32 == d64
+    @test HSquared._resolve_pev_method(Ainv32, :auto) === :selinv
+end

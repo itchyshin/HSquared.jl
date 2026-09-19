@@ -206,7 +206,7 @@ EBV(mme).values
 This solves for fixed effects and animal-effect BLUPs/EBVs given variance
 components. It does not estimate those variance components. The same tiny
 validation path can expose supplied variance components, simple `h2`,
-PEV (sparse selected inverse by default), and reliability for the
+PEV (sparse selected inverse by default for a sparse `Ainv`), and reliability for the
 supplied-variance MME result:
 
 ```@example quickstart

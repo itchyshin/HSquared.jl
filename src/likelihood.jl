@@ -3094,7 +3094,7 @@ vectors `(id, trait, value, pev, pev_scale)` shaped to drop directly into the R
 `autoplot.R` breeding-value plot (per the #93 R-twin alignment — this closes the last
 live-parity gap R flagged). `value` is the EBV ([`breeding_values`](@ref)), `pev` the
 prediction error variance ([`prediction_error_variance`](@ref), sparse `:selinv`
-path since #350 — no dense MME inverse is formed), and `pev_scale = "validation"`
+path since #350 for a sparse `Ainv`; a dense genomic `Ginv` keeps the dense path), and `pev_scale = "validation"`
 is the honest-status flag: the PEV is validated against the dense oracle at
 validation scale (`V1-SELINV-PEV`), NOT yet a production large-pedigree
 reliability claim. The R column convention is followed exactly (EBV as `value`).
@@ -3131,8 +3131,9 @@ these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
 the opportunistic per-extractor enrichment is no longer required. The PEV is
 computed once here and reused by `reliability` (no second factorization). Since
 #350 the `reliability` denominator also reads the animal self-relationships
-`diag(inv(Ainv))` through the sparse selected inverse of `Ainv`, so no dense
-matrix is formed anywhere in this payload. This remains a validation-scale
+`diag(inv(Ainv))` through the sparse selected inverse of `Ainv`, so for a sparse
+(pedigree) `Ainv` no dense matrix is formed anywhere in this payload; a dense
+genomic `Ginv` keeps its dense path (`:auto`). This remains a validation-scale
 claim, not a production large-pedigree reliability claim.
 """
 function result_payload(fit::AnimalModelFit)
@@ -3405,9 +3406,29 @@ end
 function _selinv_mme_random_pev(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     lhs, _, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
     factor = cholesky(Symmetric(lhs); check = true)
+    _check_selinv_factor(factor, "mixed-model-equation coefficient matrix (rank-deficient X?)")
     diag_inv = takahashi_diag(factor)
     nfixed = size(spec.X, 2)
     return Vector{Float64}(diag_inv[(nfixed + 1):end])
+end
+
+# A sparse Cholesky with `check = true` accepts any positive pivot, so a numerically
+# singular matrix (a rank-deficient X duplicates a column of the MME: measured
+# min pivot 4e-8, cond 1e16) factors "successfully" and the Takahashi recursion
+# then returns quietly wrong PEV/reliability where the dense oracle threw
+# `SingularException`. Refuse the same cases loudly: the squared ratio of the
+# smallest to the largest pivot is a cheap reciprocal-condition estimate.
+const _SELINV_RCOND_FLOOR = 1e-12
+
+function _check_selinv_factor(factor::SparseArrays.CHOLMOD.Factor{Float64}, what::AbstractString)
+    d = diag(sparse(factor.L))
+    dmin, dmax = extrema(d)
+    rcond = (dmin / dmax)^2
+    (isfinite(rcond) && rcond >= _SELINV_RCOND_FLOOR) || throw(ArgumentError(
+        "selected inverse refused: the " * what * " is numerically singular " *
+        "(pivot ratio squared = " * string(rcond) * " < " * string(_SELINV_RCOND_FLOOR) *
+        "); the dense oracle would throw SingularException here"))
+    return nothing
 end
 
 # Animal self-relationships `diag(A) = diag(inv(Ainv))` for the reliability
@@ -3418,7 +3439,12 @@ end
 function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)
     method = _resolve_pev_method(Ainv, method)
     if method === :selinv
-        factor = cholesky(Symmetric(sparse(Float64.(Ainv))); check = true)
+        # Int-indexed CSC: the Takahashi kernel is written for `Vector{Int}` index
+        # arrays, and a caller may hand in an `Int32`-indexed `Ainv`.
+        A = issparse(Ainv) ? SparseMatrixCSC{Float64, Int}(sparse(Ainv)) :
+                             sparse(Matrix{Float64}(Ainv))
+        factor = cholesky(Symmetric(A); check = true)
+        _check_selinv_factor(factor, "relationship precision Ainv")
         return takahashi_diag(factor)
     elseif method === :dense
         return diag(inv(Symmetric(Matrix{Float64}(Ainv))))
