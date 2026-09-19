@@ -23,7 +23,7 @@
 #   halfsib -- the w4 half-sib ladder. `_halfsib_pedigree`, `_sizes_for`, and
 #     `_make_y_animal_indexed` (reps = 2) below are copied VERBATIM from the
 #     READ-ONLY vault file
-#       "/Users/z3437171/Dropbox/Github Local/Shinichi/projects/H2-twin/repros/w4-speed-gen-fit.jl"
+#       "<vault>/projects/H2-twin/repros/w4-speed-gen-fit.jl (Shinichi's second brain, not in this repo)"
 #     including how that file's main() builds Ainv/X/Z and calls the fit.
 #     That vault file is never edited.
 #   f0adv -- the F0 adversarial (high-fill, random-mating) pedigree. The

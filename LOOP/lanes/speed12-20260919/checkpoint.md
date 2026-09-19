@@ -5,7 +5,7 @@ STATE: arc S1 done+repaired (see prior entry, kept below); arc S2 done. All
 five automated leaf-S2 gates (G2.1-G2.5) PASS under
 `node ~/shinichi-brain/skills/unlazy/scripts/gate-check.mjs --approve --root "$PWD" --cwd "$PWD" --timeout 1800 .unlazy/julia-speed-20260919/gates/leaf-S2.md`
 run from the worktree root (cwd = repo root, "$PWD" resolved to
-`/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919`); overall
+`<lane worktree>`); overall
 tool exit=1 because G2.6 (Totoro arm) is the one remaining UNMET gate, by
 design ("Manual gate... leave it pending" -- not a failure of anything else).
 
@@ -85,7 +85,7 @@ TRUTH LIVES IN:
     was not worth it purely to rename the file).
   - ledger .unlazy/julia-speed-20260919/gates/leaf-S2.md (git-ignored; G2.1-
     G2.5 [x] with EVIDENCE keyed to
-    cwd=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919;
+    cwd=<lane worktree>;
     G2.6 left pending, manual, Totoro).
   - S1's own TRUTH LIVES IN (sim/profile_ai_reml_sections.jl at c8cf8e05,
     sim/results/ai_reml_sections_c8cf8e05.tsv) is unchanged by this arc.
@@ -113,7 +113,7 @@ committed TSV held only the halfsib q=1000 rung (`--gate tsv`'s own smoke run
 was overwriting the same path the full ladder wrote to). Fixed and
 re-verified in a repair loop; all five leaf-S1 gates (G1.1-G1.5) PASS under
 both `--approve` and `--reverify` (exit 0 both times) with
-cwd=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919,
+cwd=<lane worktree>,
 path=.unlazy/julia-speed-20260919/gates/leaf-S1.md. Root cause: `--gate tsv`
 and the full ladder shared one output path; fixed to verify-not-overwrite,
 name by the harness's own commit (not HEAD), dedupe f0adv target-fill rungs,
