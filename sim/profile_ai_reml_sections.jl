@@ -286,6 +286,13 @@ function instrumented_ai_reml(spec::AnimalModelSpec;
     nrandom = size(Z, 2)
     nobs = length(y)
 
+    # Collect garbage from building the fixture/spec before starting the
+    # timed loop, so a GC sweep triggered by that prior allocation does not
+    # land inside iteration 1's timed sections (same precaution as
+    # sim/drac/f0_adversarial_fill.jl's bench()); reduces, does not
+    # eliminate, run-to-run noise in the G1.3 5% self-consistency check.
+    GC.gc()
+
     rows = NamedTuple[]   # (iteration, section, wall_s, bytes)
     fill = NaN
     converged = false
@@ -666,15 +673,29 @@ function gate_tsv()
     end
 end
 
-function gate_prerun(q::Int, target_fill::Real)
+function gate_prerun(q::Int, target_fill::Real; reps::Int = 3)
     frac, achieved_fill = find_nfounder_frac_for_fill(q, target_fill)
     spec = f0adv_fixture(q; nfounder_frac = frac)
-
-    lhs, _, _ = HSquared._sparse_mme_system(spec, 1.0, 1.0)
-    t_factor = @elapsed (factor = cholesky(Symmetric(lhs); check = true))
     nfixed = size(spec.X, 2)
     Ainv = sparse(Float64.(spec.Ainv))
-    t_selinv = @elapsed HSquared.selinv_trace_against(factor, Ainv, nfixed)
+
+    # Median of `reps` repeated timings, not a single sample: t_factor is tens
+    # of milliseconds while t_selinv is seconds, so ordinary scheduler/thermal
+    # jitter on this shared machine swings the RATIO by a large relative
+    # amount even though it barely moves either wall time. Same technique
+    # (median over repeated @elapsed calls) as sim/cpu_fit_benchmark.jl and
+    # the vault w4-speed-gen-fit.jl use for their own timings.
+    factor_times = Float64[]
+    selinv_times = Float64[]
+    local factor
+    for _ in 1:reps
+        GC.gc()
+        lhs, _, _ = HSquared._sparse_mme_system(spec, 1.0, 1.0)
+        push!(factor_times, (@elapsed (factor = cholesky(Symmetric(lhs); check = true))))
+        push!(selinv_times, (@elapsed HSquared.selinv_trace_against(factor, Ainv, nfixed)))
+    end
+    t_factor = sort(factor_times)[cld(reps, 2)]
+    t_selinv = sort(selinv_times)[cld(reps, 2)]
 
     ratio = t_selinv / max(t_factor, eps())
     gap_note = abs(achieved_fill - target_fill) > 0.15 * target_fill ?
