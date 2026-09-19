@@ -1,0 +1,14 @@
+# HSquared.jl selected-inverse arm bench (arc S2b, re-based on Szymek's kernel)  2026-09-19T13:43:50.041
+# harness_git_sha=ff019def  kernel_git_sha=6bb10c97ea82cfa492dfe454912dfa9c9176dce3  julia=1.10.0  os=Linux x86_64-linux-gnu
+# blas=LBTConfig([ILP64] libopenblas64_.so)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# cpu=AMD EPYC 9655 96-Core Processor
+# SelectedInversion=0.2.1  SuiteSparse(LibSuiteSparse module)=1.10.0
+# NOT CI / OPT-IN measurement only. No performance claim, no regression gate.
+# bench Manifest: 61 packages total, 55 added vs the package env's 5 direct deps (this is the BENCH env's own resolution cost, NOT the package-env install weight -- see the install-weight line below for G2b.3's actual quantity)
+# bench Manifest _jll packages: CompilerSupportLibraries_jll, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, SuiteSparse_jll, libblastrampoline_jll
+# bench Manifest added (non-stdlib, non-root-dep): ADTypes, Adapt, AliasTables, ArrayInterface, Artifacts, CommonSubexpressions, Compat, CompilerSupportLibraries_jll, ConstructionBase, DataAPI, DataStructures, Dates, DiffResults, DiffRules, DifferentiationInterface, Distributed, DocStringExtensions, EnumX, FillArrays, FiniteDiff, ForwardDiff, Future, IrrationalConstants, JLLWrappers, Libdl, LineSearches, LogExpFunctions, MacroTools, Missings, NLSolversBase, NaNMath, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, OrderedCollections, PositiveFactorizations, PrecompileTools, Preferences, Printf, PtrArrays, SelectedInversion, Serialization, Setfield, Sockets, SortingAlgorithms, SpecialFunctions, StaticArraysCore, Statistics, StatsAPI, StatsBase, SuiteSparse_jll, TOML, UUIDs, Unicode, libblastrampoline_jll
+# install weight: NOT YET MEASURED (run `julia --project=bench bench/selinv_arms.jl --install-weight` first)
+# Totoro arm (G2b.4): host=totoro
+fixture	threads	q	nfixed	nnz_C	nnz_L	fill	is_super	index_eltype	T_fact	T_a_trace_rep1	T_a_trace_rep2	T_a_diag_rep1	T_a_diag_rep2	T_c_trace_rep1	T_c_trace_rep2	T_c_diag_rep1	T_c_diag_rep2	S_c_trace	S_c_diag	R_c_trace	err_c
+f0adv_q20000_fill474_totoro	1	20001	1	179343	9479216	473.937	true	Int64	0.757772	565.625128	547.438469	585.250647	558.804670	1.941702	1.905515	1.909459	1.918389	287.29	292.65	2.5146	1.671e-14

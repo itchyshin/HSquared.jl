@@ -1,0 +1,23 @@
+# HSquared.jl selected-inverse arm bench (arc S2b, re-based on Szymek's kernel)  2026-09-19T13:03:55.047
+# harness_git_sha=ff019def  kernel_git_sha=6bb10c97ea82cfa492dfe454912dfa9c9176dce3  julia=1.10.0  os=Darwin arm64-apple-darwin22.4.0
+# blas=LBTConfig([ILP64] libopenblas64_.dylib)
+# JULIA_NUM_THREADS=4  OPENBLAS_NUM_THREADS=1
+# cpu=Apple M1 Ultra
+# SelectedInversion=0.2.1  SuiteSparse(LibSuiteSparse module)=1.10.0
+# NOT CI / OPT-IN measurement only. No performance claim, no regression gate.
+# bench Manifest: 61 packages total, 55 added vs the package env's 5 direct deps (this is the BENCH env's own resolution cost, NOT the package-env install weight -- see the install-weight line below for G2b.3's actual quantity)
+# bench Manifest _jll packages: CompilerSupportLibraries_jll, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, SuiteSparse_jll, libblastrampoline_jll
+# bench Manifest added (non-stdlib, non-root-dep): ADTypes, Adapt, AliasTables, ArrayInterface, Artifacts, CommonSubexpressions, Compat, CompilerSupportLibraries_jll, ConstructionBase, DataAPI, DataStructures, Dates, DiffResults, DiffRules, DifferentiationInterface, Distributed, DocStringExtensions, EnumX, FillArrays, FiniteDiff, ForwardDiff, Future, IrrationalConstants, JLLWrappers, Libdl, LineSearches, LogExpFunctions, MacroTools, Missings, NLSolversBase, NaNMath, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, OrderedCollections, PositiveFactorizations, PrecompileTools, Preferences, Printf, PtrArrays, SelectedInversion, Serialization, Setfield, Sockets, SortingAlgorithms, SpecialFunctions, StaticArraysCore, Statistics, StatsAPI, StatsBase, SuiteSparse_jll, TOML, UUIDs, Unicode, libblastrampoline_jll
+# install weight (package env + SelectedInversion, measured separately via --install-weight):
+#   packages_added=1 (SelectedInversion) / new_jll=0 () / precompile_seconds=0.624555333 / measured_on_copy_of=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed2b-20260919//Project.toml+Manifest.toml  selinv_version=0.2.1
+fixture	threads	forced_mode	q	nfixed	nnz_C	nnz_L	fill	is_super	index_eltype	T_fact	T_a_trace	T_a_diag	T_c_trace	T_c_diag	S_c_trace	S_c_diag	R_c_trace	err_c
+f0adv_q20000_fill150	1	auto	20001	1	143995	4273279	213.653	true	Int64	0.171972	74.586235	73.469223	0.457413	0.413110	163.06	177.84	2.6598	1.644e-14
+boundary_q2000	1	auto	2001	1	13361	7761	3.879	false	Int64	0.000151	0.000096	0.000092	0.021257	0.000329	0.00	0.28	140.3493	1.281e-14
+f0scale_q20000	1	auto	20001	1	133601	77601	3.880	false	Int64	0.001474	0.000841	0.000753	2.186183	0.004130	0.00	0.18	1483.4984	7.975e-14
+f0adv_q20000_fill75	1	auto	20001	1	120001	881198	44.058	true	Int64	0.019060	0.638377	0.616720	0.045296	0.044691	14.09	13.80	2.3765	4.445e-14
+f0adv_q50000_fill75	1	auto	50001	1	300001	4167410	83.347	true	Int64	0.177478	54.159562	51.182781	0.403997	0.395396	134.06	129.45	2.2763	1.139e-13
+f0adv_q20000_fill150_forced_simplicial	1	simplicial(economy reps=1)	20001	1	143995	3581888	179.085	false	Int64	2.045839	61.828810	62.886146	75.554258	71.856432	0.82	0.88	36.9307	1.328e-14
+dense_pin_n50	1	supernodal	51	1	1251	701	13.745	true	Int64	0.000022	0.000029	0.000014	0.000015	0.000013	1.98	1.12	0.6686	3.062e-16
+dense_pin_n50	1	simplicial	51	1	1251	697	13.667	false	Int64	0.000019	0.000025	0.000020	0.000102	0.000055	0.25	0.36	5.2781	4.593e-16
+dense_pin_n500	1	supernodal	501	1	15501	33937	67.739	true	Int64	0.000371	0.004072	0.003789	0.000805	0.000746	5.06	5.08	2.1695	7.004e-15
+dense_pin_n500	1	simplicial	501	1	15501	30647	61.172	false	Int64	0.001056	0.003280	0.003093	0.020241	0.014530	0.16	0.21	19.1626	6.144e-16
