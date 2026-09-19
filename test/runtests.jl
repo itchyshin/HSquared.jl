@@ -5938,6 +5938,158 @@ end
 
     # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
     @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
+
+    # reliability(:selinv)'s A_ii denominator (now via _selinv_ainv_diag(Ginv), not the
+    # unconditional dense inv(Ainv) this replaced) still matches the INDEPENDENT genomic
+    # reliability on this dense Ginv fixture, and accuracy(:selinv) forwards method through
+    @test reliability(res; method = :selinv).values ≈ rel_indep atol = 1e-8
+    @test accuracy(res; method = :selinv).values ≈ sqrt.(rel_indep) atol = 1e-8
+end
+
+@testset "_selinv_ainv_diag matches dense diag(inv(Ainv)) directly (pedigree + genomic)" begin
+    # Direct pin of the new helper against an independent dense reference, so a future
+    # regression in _selinv_ainv_diag itself (not just its downstream reliability() callers)
+    # is caught even if the dense-vs-selinv parity tests above happened to compare two
+    # equally-wrong values.
+    ped = normalize_pedigree([1, 2, 3, 4, 5], [0, 0, 1, 1, 3], [0, 0, 2, 2, 4])
+    Ainv = pedigree_inverse(ped)
+    @test HSquared._selinv_ainv_diag(Ainv) ≈ diag(inv(Symmetric(Matrix(Ainv)))) atol = 1e-8
+
+    M = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]
+    Ginv = genomic_relationship_inverse(genomic_relationship_matrix(M); ridge = 0.05)
+    @test HSquared._selinv_ainv_diag(Ginv) ≈ diag(inv(Symmetric(Matrix(Ginv)))) atol = 1e-8
+
+    # non-positive-definite Ainv: :selinv throws a named ArgumentError (wrapping the
+    # cholesky check=true PosDefException), unlike :dense's general LDLᵀ inv(), which
+    # would return a finite-but-meaningless value instead
+    non_pd = [1.0 2.0; 2.0 1.0]  # eigenvalues -1, 3: indefinite, not PD
+    @test_throws ArgumentError HSquared._selinv_ainv_diag(non_pd)
+
+    # density gate: a dense Ginv-shaped Ainv must NOT take the sparse selinv route even
+    # when method = :selinv is requested (Gauss review: 68-189x slower on a dense matrix).
+    # The Phase 2 genomic reliability testset separately pins reliability(:selinv) ≈
+    # reliability(:dense) numerically on this same Ginv fixture.
+    @test !HSquared._effectively_sparse(Matrix(Ginv))
+    @test !HSquared._effectively_sparse(Ginv)
+    # a genuinely sparse pedigree Ainv only reads as sparse once n is large enough that
+    # nnz/n^2 is small; this tiny 5-animal Ainv is ~85% dense by cell count (typical for
+    # any pedigree at this scale) and correctly reads as NOT effectively sparse, so the
+    # gate is exercised at a size where sparsity is real (a 110-animal 4-generation
+    # deterministic pedigree, same generator pattern as the PCG large-fixture testset).
+    @test !HSquared._effectively_sparse(Ainv)
+    nf = 20
+    bids = String[]; bsire = String[]; bdam = String[]
+    for i in 1:nf
+        push!(bids, "f$i"); push!(bsire, "0"); push!(bdam, "0")
+    end
+    gens = [["f$i" for i in 1:nf]]
+    for g in 1:3
+        prev = gens[end]; half = length(prev) ÷ 2
+        spool = prev[1:half]; dpool = prev[(half + 1):end]; cur = String[]
+        for k in 1:30
+            push!(bids, "g$(g)_$(k)"); push!(bsire, spool[1 + (k % length(spool))])
+            push!(bdam, dpool[1 + (k % length(dpool))]); push!(cur, "g$(g)_$(k)")
+        end
+        push!(gens, cur)
+    end
+    big_ped = normalize_pedigree(bids, bsire, bdam)
+    @test length(big_ped) == 110
+    @test HSquared._effectively_sparse(pedigree_inverse(big_ped))
+end
+
+@testset "_sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit" begin
+    # Gauss review: confirms the fit_ai_reml loop's cross-product caching (this slice) is not
+    # merely algebraically equal to the old per-iteration rebuild but bitwise identical, at
+    # several representative (sigma_a2, sigma_e2) pairs including extreme ratios. A future edit
+    # to either builder that silently changes lhs/rhs would fail this immediately.
+    ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    sire = [0, 0, 1, 1, 3, 3, 5, 6]
+    dam = [0, 0, 2, 2, 4, 4, 4, 7]
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    y = [2.0, 4, 3, 5, 2, 6, 3, 4]
+    X = [ones(q, 1) collect(1.0:q)]
+    Z = sparse(1.0I, q, q)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+
+    Xs = sparse(Float64.(spec.X))
+    Zs = sparse(Float64.(spec.Z))
+    Ainvs = sparse(Float64.(spec.Ainv))
+    cp = HSquared._sparse_mme_cross_products(Xs, Zs, Ainvs, Float64.(spec.y))
+
+    for (sa, se) in ((1.0, 1.0), (0.3, 0.7), (1e-10, 1.0), (1e10, 1e-10), (0.123, 9.88))
+        lhs1, rhs1, ypy1 = HSquared._sparse_mme_system(spec, sa, se)
+        lhs2, rhs2, ypy2 = HSquared._sparse_mme_from_cross_products(cp, sa, se)
+        @test lhs1.colptr == lhs2.colptr
+        @test lhs1.rowval == lhs2.rowval
+        @test reinterpret(UInt64, lhs1.nzval) == reinterpret(UInt64, lhs2.nzval)
+        @test reinterpret(UInt64, rhs1) == reinterpret(UInt64, rhs2)
+        @test reinterpret(UInt64, [ypy1]) == reinterpret(UInt64, [ypy2])
+    end
+end
+
+@testset "_selinv_zvals dense-block path == per-pair fallback path, bitwise" begin
+    # The selected-inverse recursion materialises a dense per-clique block (fast path)
+    # unless a clique is wider than `DEFAULT_SELINV_BLOCK_CAP`, in which case it keeps
+    # the original per-pair binary-search path. Both must produce IDENTICAL values --
+    # the optimization changes only HOW an already-correct entry is fetched, and the
+    # `k` accumulation order is unchanged, so the agreement is expected to be BITWISE,
+    # not merely approximate. Forcing `block_cap = 0` selects the fallback for every
+    # column, so this pins the two paths against each other on a small fixture.
+    rng = Random.MersenneTwister(20260919)
+    for (n, p) in ((40, 0.12), (150, 0.05))
+        B = sprandn(rng, n, n, p)
+        A = sparse(B * B' + (n * 0.1) * I)
+        ch = cholesky(Symmetric(A); check = true)
+        fast, = HSquared._selinv_zvals(ch)
+        slow, = HSquared._selinv_zvals(ch; block_cap = 0)
+        @test reinterpret(UInt64, fast) == reinterpret(UInt64, slow)
+    end
+
+    # same check on a real pedigree Ainv and on a full Henderson MME coefficient matrix
+    ped = normalize_pedigree([1, 2, 3, 4, 5, 6, 7, 8], [0, 0, 1, 1, 3, 3, 5, 6],
+                             [0, 0, 2, 2, 4, 4, 4, 7])
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    ch_a = cholesky(Symmetric(sparse(Ainv)); check = true)
+    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_a)[1]) ==
+          reinterpret(UInt64, HSquared._selinv_zvals(ch_a; block_cap = 0)[1])
+
+    spec = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q), collect(1.0:q)),
+                             sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
+    lhs, = HSquared._sparse_mme_system(spec, 1.3, 0.9)
+    ch_m = cholesky(Symmetric(lhs); check = true)
+    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_m)[1]) ==
+          reinterpret(UInt64, HSquared._selinv_zvals(ch_m; block_cap = 0)[1])
+end
+
+@testset "_selinv_ainv_diag matches the analytic 1+F oracle beyond dense-feasible scale" begin
+    # Gauss review: diag(inv(Ainv)) == 1 .+ F is an exact analytic identity for ANY pedigree
+    # size, independent of the dense reference's own O(n^2)/O(n^3) feasibility limit. This
+    # validates _selinv_ainv_diag's correctness at a scale the dense-vs-selinv parity tests
+    # elsewhere in this file cannot reach (they are capped by needing a dense comparison).
+    rng = Random.MersenneTwister(20260917)
+    n = 3000
+    founders = 30
+    window = 300
+    ids = collect(1:n)
+    sire = zeros(Int, n)
+    dam = zeros(Int, n)
+    for i in (founders + 1):n
+        lo = max(1, i - window)
+        s = rand(rng, lo:(i - 1))
+        d = rand(rng, lo:(i - 1))
+        while d == s
+            d = rand(rng, lo:(i - 1))
+        end
+        sire[i] = s
+        dam[i] = d
+    end
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    F = inbreeding_coefficients(ped)
+    @test HSquared._selinv_ainv_diag(Ainv) ≈ 1 .+ F atol = 1e-8
 end
 
 @testset "Phase 2 single-step H-inverse construction" begin

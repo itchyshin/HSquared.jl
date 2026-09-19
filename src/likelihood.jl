@@ -412,6 +412,7 @@ function _fit_ai_reml_diagnostics(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    cp = _sparse_mme_cross_products(sparse(X), Z, Ainv, y)
     factorizations = 0
     em_steps = 0
     step_halvings = 0
@@ -430,7 +431,7 @@ function _fit_ai_reml_diagnostics(
     # → byte-identical to the pre-warm-start path); the step is taken only while it stays finite
     # and positive, otherwise we stop warming up and let the AI step run.
     for _ in 1:max(0, em_warmup)
-        lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        lhs, rhs, _ = _sparse_mme_from_cross_products(cp, sigma_a2, sigma_e2)
         factorizations += 1
         factor = try
             cholesky(Symmetric(lhs); check = true)
@@ -456,7 +457,7 @@ function _fit_ai_reml_diagnostics(
     iters = 0
     for it in 1:iterations
         iters = it
-        lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+        lhs, rhs, _ = _sparse_mme_from_cross_products(cp, sigma_a2, sigma_e2)
         factorizations += 1
         factor = cholesky(Symmetric(lhs); check = true)
         solution = factor \ rhs
@@ -2643,14 +2644,17 @@ function heritability(result::HendersonMMEResult)
 end
 
 """
-    prediction_error_variance(fit)
+    prediction_error_variance(fit; method = :dense)
 
-Return dense prediction error variances for animal-effect BLUPs/EBVs from an
+Return prediction error variances for animal-effect BLUPs/EBVs from an
 experimental low-level [`AnimalModelFit`](@ref).
 
-The current implementation forms and inverts the dense mixed-model-equation
-coefficient matrix. It is a validation-path extractor for tiny examples, not a
-production sparse reliability calculation.
+`method = :dense` (the default) forms and inverts the dense mixed-model-equation
+coefficient matrix `C` — a validation-path reference for tiny examples, not a
+production sparse reliability calculation. `method = :selinv` computes the same
+diagonal via an `O(nnz(L_C))` Takahashi selected inverse of the sparse `C`
+(`V1-SELINV-PEV`), matching `:dense` to machine precision on tested fixtures;
+this is the path [`result_payload`](@ref) uses.
 """
 function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :dense)
     values = _pev_values(
@@ -2663,14 +2667,13 @@ function prediction_error_variance(fit::AnimalModelFit; method::Symbol = :dense)
 end
 
 """
-    prediction_error_variance(result::HendersonMMEResult)
+    prediction_error_variance(result::HendersonMMEResult; method = :dense)
 
-Return dense prediction error variances for a supplied-variance Henderson MME
-result.
+Return prediction error variances for a supplied-variance Henderson MME result.
 
-This uses the same dense inverse of the mixed-model-equation coefficient matrix
-as [`prediction_error_variance(::AnimalModelFit)`](@ref). It is a tiny
-validation-path extractor, not production sparse selected inversion.
+Accepts the same `method` (`:dense` default, or `:selinv`) as
+[`prediction_error_variance(::AnimalModelFit)`](@ref); see that docstring for
+the dense-vs-selinv distinction.
 """
 function prediction_error_variance(result::HendersonMMEResult; method::Symbol = :dense)
     values = _pev_values(result.spec, result.sigma_a2, result.sigma_e2, method)
@@ -2678,23 +2681,55 @@ function prediction_error_variance(result::HendersonMMEResult; method::Symbol = 
 end
 
 """
-    reliability(fit)
+    reliability(fit; method = :dense, pev = nothing)
 
-Return dense animal-level reliability values for the Phase 1 univariate animal
-model.
+Return animal-level reliability values for the Phase 1 univariate animal model.
 
-Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)` using the dense
-relationship matrix `A = inv(Ainv)` implied by the supplied precision. For a
-genomic spec (`Ainv = Ginv`) this `A_ii` is `diag(inv(Ginv)) = diag(G) + ridge`
-(the regularized genomic self-relationship, often ≠ 1), so the ridge perturbs the
-reported reliability/accuracy and the same extractor yields genomic reliabilities.
-Values are not clipped; small examples can expose weakly informed animals
-directly.
+Reliability is computed as `1 - PEV_i / (sigma_a2 * A_ii)`, where `A_ii` is the
+diagonal of the relationship matrix implied by the supplied precision `Ainv`
+(pedigree `A = inv(Ainv)`; genomic `G + ridge`; metafounder/single-step `H^Γ`).
+For a genomic spec (`Ainv = Ginv`) this `A_ii` is `diag(inv(Ginv)) = diag(G) +
+ridge` (the regularized genomic self-relationship, often ≠ 1), so the ridge
+perturbs the reported reliability/accuracy and the same extractor yields
+genomic reliabilities. Values are not clipped; small examples can expose
+weakly informed animals directly. If a precomputed `pev` is supplied, it must
+have been computed with the SAME `method` — `method` otherwise only controls
+`A_ii`, silently decoupling the numerator and denominator.
+
+`method = :dense` forms `A_ii` by densely inverting `Ainv` (the tiny validation
+reference; `O(n²)` memory / `O(n³)` compute — do not use at large pedigree
+scale). `method = :selinv` computes the same `A_ii` via a Takahashi selected
+inverse of a sparse Cholesky factorization of `Ainv` itself, matching the dense
+result to machine precision (`V1-SELINV-PEV`) without ever forming the dense
+`n×n` relationship matrix — but ONLY when `Ainv` is actually sparse-STORED and
+sparse-STRUCTURED (a density check routes a dense or near-dense `Ainv`, e.g. a
+genomic `Ginv` — which `genomic_relationship_inverse` returns fully dense —
+through the SAME dense computation as `:dense`, since sparse-factorizing an
+already-dense matrix measured 68-189x SLOWER than `inv` directly). The selected-
+inverse recursion's own cost is `O(sum_j nnz(L_Ainv[:,j])²)`, not linear in
+`nnz(L_Ainv)` — it tracks FILL-IN, not raw nonzero count, and a pedigree with
+little temporal/generational locality in its matings can fill in badly. For a
+generation-structured real pedigree this stays fast at large `n` (measured:
+~142s / ~1.15GB at a synthetic, realistically-mated 100,000-animal pedigree,
+vs. >=80GB and effectively infeasible for `:dense` at that scale) but this has
+NOT been measured on a genuinely production-scale dataset — measure on the
+actual data before relying on it at very large `n`. `:selinv` is NOT uniformly
+FASTER than `:dense`, only uniformly SMALLER in memory: at a moderate `n`
+where `:dense` is still feasible, `:selinv` can be markedly SLOWER (measured
+~31s vs. ~4s at n=8,000 on a fill-heavy pedigree, Karpinski review) — reach
+for `:selinv` when `:dense` is memory-infeasible, not as a general speed
+default. `:selinv` throws an
+`ArgumentError` (wrapping the underlying `PosDefException`) on a non-positive-
+definite `Ainv` (e.g. an under-ridged genomic `Ginv`, though that case is now
+routed to `:dense` by the density check regardless) where `:dense` would
+instead return a finite (but meaningless) value from a general `LDLᵀ`
+factorization — a real difference in behavior between the two methods, not
+just performance.
 """
 function reliability(fit::AnimalModelFit; method::Symbol = :dense, pev = nothing)
     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
-    A = inv(Symmetric(Matrix{Float64}(fit.spec.Ainv)))
-    animal_variance = fit.variance_components.sigma_a2 .* diag(A)
+    animal_variance = fit.variance_components.sigma_a2 .*
+                       _relationship_self_variance_diag(fit.spec.Ainv, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -2707,8 +2742,8 @@ end
 
 function reliability(result::HendersonMMEResult; method::Symbol = :dense)
     pev = prediction_error_variance(result; method = method)
-    A = inv(Symmetric(Matrix{Float64}(result.spec.Ainv)))
-    animal_variance = result.sigma_a2 .* diag(A)
+    animal_variance = result.sigma_a2 .*
+                       _relationship_self_variance_diag(result.spec.Ainv, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -2720,16 +2755,20 @@ function reliability(result::HendersonMMEResult; method::Symbol = :dense)
 end
 
 """
-    accuracy(fit)
+    accuracy(fit; method = :dense)
 
-Return animal-level accuracy values as `sqrt(reliability(fit))`.
+Return animal-level accuracy values as `sqrt(reliability(fit; method))`.
 
 This is a validation-scale extractor over the existing reliability method. It
 does not add independent accuracy validation and it rejects non-finite or
-out-of-range reliability values instead of silently clipping them.
+out-of-range reliability values instead of silently clipping them. `method` is
+forwarded to `reliability` unchanged (`:dense` is the tiny-validation reference;
+`:selinv` avoids forming the dense `n×n` relationship matrix — see
+[`reliability`](@ref)). The default stays `:dense` for byte-identical behavior;
+callers at large pedigree scale should pass `method = :selinv` explicitly.
 """
-function accuracy(fit)
-    return _accuracy_from_reliability(reliability(fit))
+function accuracy(fit; method::Symbol = :dense)
+    return _accuracy_from_reliability(reliability(fit; method = method))
 end
 
 function _accuracy_from_reliability(reliability_result)
@@ -3081,9 +3120,11 @@ vectors `(id, trait, value, pev, pev_scale)` shaped to drop directly into the R
 `autoplot.R` breeding-value plot (per the #93 R-twin alignment — this closes the last
 live-parity gap R flagged). `value` is the EBV ([`breeding_values`](@ref)), `pev` the
 prediction error variance ([`prediction_error_variance`](@ref), dense path), and
-`pev_scale = "validation"` is the honest-status flag: the PEV denominator forms the
-dense `inv(Ainv)`, so it is VALIDATION-scale, NOT a production large-pedigree
-reliability claim. The R column convention is followed exactly (EBV as `value`).
+`pev_scale = "validation"` is the honest-status flag: the PEV is read from the
+dense mixed-model-equation coefficient-matrix inverse (`method = :dense`, the
+default this function uses), so it is VALIDATION-scale, NOT a production
+large-pedigree reliability claim. The R column convention is followed exactly
+(EBV as `value`).
 Univariate `AnimalModelFit`; `trait` is the (single) trait label. Plot-DATA only —
 no drawing backend, no estimation.
 """
@@ -3110,16 +3151,30 @@ validation paths.
 
 The payload includes `prediction_error_variance` and `reliability` as standard
 fields (each a `(ids, values)` named tuple). The PEV is computed through the
-`O(nnz(L))` (sparse-scalable) Takahashi selected inverse (`method = :selinv`),
-which matches the dense MME inverse diagonal to machine precision for
-well-conditioned validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks
-these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
-the opportunistic per-extractor enrichment is no longer required. The PEV is
-computed once here and reused by `reliability` (no second factorization). This
-remains a validation-scale path, not a production large-pedigree reliability
-claim: in particular the `reliability` denominator still forms the dense
-`A = inv(Ainv)` for the animal self-relationships (a sparse selected-inverse
-diagonal of `Ainv` is the production-direction follow-up).
+`O(nnz(L_C))` (sparse-scalable) Takahashi selected inverse of the sparse
+Henderson MME coefficient matrix `C` (`method = :selinv`), which matches the
+dense MME inverse diagonal to machine precision for well-conditioned
+validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks these top-level
+fields directly via `hs_julia_id_values()` (`hsquared#21`), so the
+opportunistic per-extractor enrichment is no longer required. The PEV is
+computed once here and reused by `reliability` (no second factorization of
+`C`). The `reliability` denominator (the animal self-relationship
+`A_ii = diag(inv(Ainv))`) ALSO uses a sparse Takahashi selected inverse when
+`method = :selinv` AND `Ainv` is actually sparse-structured, but of `Ainv`
+itself (a SEPARATE, smaller factorization than `C`), rather than forming the
+dense `n×n` `A = inv(Ainv)` — previously this denominator was formed densely
+regardless of the requested `method`, which is what made a genuinely large
+pedigree fit exhaust memory. A dense or near-dense `Ainv` (a genomic `Ginv` is
+fully dense) is automatically routed to the SAME dense computation `:dense`
+uses instead, since sparse-factorizing an already-dense matrix is markedly
+slower, not faster. This remains a validation-scale path — matched to the
+dense reference at the tested tolerances (atol 1e-8–1e-10) on existing small
+fixtures, and separately confirmed at n=3000 against the exact analytic
+`diag(inv(Ainv)) = 1 + F` identity (beyond the dense reference's own
+feasibility). It has NOT been comparator-checked or timed on a genuine
+production-scale pedigree; the selected-inverse recursion's cost tracks
+fill-in (`O(sum_j nnz(L_Ainv[:,j])²)`, not linear in `nnz(L_Ainv)`), so its
+practical cost depends on how generation-structured the pedigree is.
 """
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
@@ -3248,6 +3303,68 @@ function _sparse_mme_system(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Rea
     return lhs, rhs, residual_precision * dot(y, y)
 end
 
+# REML-iteration-invariant sparse cross products for the Henderson MME
+# coefficient matrix. `XtX`/`XtZ`/`ZtZ`/`Xty`/`Zty`/`yty` do not depend on the
+# variance components, only on `spec`, so an iterative fitter that revisits the
+# same `spec` many times (`fit_ai_reml`'s EM-warmup + AI-Newton loops) should
+# compute them ONCE rather than re-deriving them (and re-sparsifying X/Z/Ainv)
+# from `_sparse_mme_system` on every iteration. `_sparse_mme_from_cross_products`
+# then only rescales and re-sums already-built sparse matrices, which is far
+# cheaper than the sparse matrix-matrix products this replaces. Algebraically
+# identical to calling `_sparse_mme_system(spec, sigma_a2, sigma_e2)` fresh each
+# time; NOT asserted bit-identical, since `ZtX` here is derived as
+# `transpose(XtZ)` (a relabelling of `XtZ`'s existing values, no new arithmetic)
+# rather than an independent `Zt * X` sparse matrix product, and sparse
+# matrix-matrix multiplication's internal accumulation order is not guaranteed
+# to reproduce the same floating-point rounding as its transpose's own
+# multiplication (hsquared perf follow-up; no behavior change intended, and the
+# full test suite's existing `fit_ai_reml` optimum/self-consistency assertions
+# are unaffected by this order-of-operations distinction).
+struct _SparseMMECrossProducts
+    XtX::SparseMatrixCSC{Float64,Int}
+    XtZ::SparseMatrixCSC{Float64,Int}
+    ZtX::SparseMatrixCSC{Float64,Int}
+    ZtZ::SparseMatrixCSC{Float64,Int}
+    Xty::Vector{Float64}
+    Zty::Vector{Float64}
+    yty::Float64
+    Ainv::SparseMatrixCSC{Float64,Int}
+end
+
+function _sparse_mme_cross_products(X::SparseMatrixCSC, Z::SparseMatrixCSC,
+                                     Ainv::SparseMatrixCSC, y::AbstractVector)
+    yv = Float64.(y)
+    Xt = transpose(X)
+    Zt = transpose(Z)
+    XtZ = sparse(Xt * Z)
+    return _SparseMMECrossProducts(
+        sparse(Xt * X),
+        XtZ,
+        sparse(transpose(XtZ)),
+        sparse(Zt * Z),
+        Vector{Float64}(Xt * yv),
+        Vector{Float64}(Zt * yv),
+        dot(yv, yv),
+        Ainv,
+    )
+end
+
+function _sparse_mme_from_cross_products(cp::_SparseMMECrossProducts, sigma_a2::Real, sigma_e2::Real)
+    residual_precision = inv(Float64(sigma_e2))
+    relationship_precision = inv(Float64(sigma_a2))
+
+    lhs = [
+        residual_precision * cp.XtX residual_precision * cp.XtZ
+        residual_precision * cp.ZtX residual_precision * cp.ZtZ + relationship_precision * cp.Ainv
+    ]
+    rhs = [
+        residual_precision * cp.Xty;
+        residual_precision * cp.Zty
+    ]
+
+    return lhs, rhs, residual_precision * cp.yty
+end
+
 # Shared dense-validation-size guard (hsquared#214, #217). Takes the raw
 # `nobs`/`nanimals` counts so every dense-Gaussian fitter -- whether it
 # already holds an `AnimalModelSpec` or, like `fit_repeatability_reml`, only
@@ -3323,6 +3440,71 @@ function _selinv_mme_random_pev(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2:
     diag_inv = takahashi_diag(factor)
     nfixed = size(spec.X, 2)
     return Vector{Float64}(diag_inv[(nfixed + 1):end])
+end
+
+# Sparse selected-inversion diagonal of A = inv(Ainv), the animal-level
+# self-relationships used to standardize `reliability`. `Ainv` (the pedigree- or
+# genomic-derived precision matrix) is its OWN sparse matrix, separate from the
+# larger MME coefficient matrix, so factorizing it directly and reading the
+# diagonal off `takahashi_diag` never materializes the dense n×n `A` — a real
+# memory saving regardless of the separate Cholesky factorization cost itself.
+# The recursion's own cost is NOT `O(nnz(L_Ainv))`: it is `O(sum_j nnz(L[:,j])^2)`
+# (Gauss review), so it tracks FILL-IN, not raw nonzero count, and degrades
+# faster than linear as fill grows. For a real, GENERATION-STRUCTURED pedigree
+# (mating stays local in time) fill is typically low and this stays fast (a
+# synthetic 100,000-animal windowed-mating pedigree measured ~142s / ~1.15GB
+# here, vs. an adversarial fully-random-mating one at n=20,000 measuring 485s);
+# a pedigree with little temporal locality could be far worse. Measure on the
+# actual data before relying on this at very large scale (previously
+# `reliability` formed dense `A` unconditionally even when `method = :selinv`,
+# which is the O(n^2)/O(n^3) failure this replaces for a genuinely sparse
+# `Ainv` — see `_relationship_self_variance_diag` for the density gate that
+# keeps a DENSE `Ainv`, e.g. a genomic `Ginv`, off this path entirely, since
+# sparse-factorizing an already-dense matrix is strictly worse than `:dense`).
+function _selinv_ainv_diag(Ainv::AbstractMatrix)
+    # avoid Float64.(Ainv), which densifies a Symmetric-wrapped sparse matrix via generic
+    # broadcast (Gauss review); avoid a redundant second copy when Ainv is already the
+    # target type (Karpinski review)
+    Ainv_sparse = Ainv isa SparseMatrixCSC{Float64,Int} ? Ainv :
+                  SparseMatrixCSC{Float64,Int}(sparse(Ainv))
+    factor = try
+        cholesky(Symmetric(Ainv_sparse); check = true)
+    catch err
+        err isa LinearAlgebra.PosDefException &&
+            throw(ArgumentError("reliability(method = :selinv): Ainv is not positive definite " *
+                                 "(cholesky factorization failed); pass method = :dense, or check " *
+                                 "the supplied relationship/precision matrix (e.g. a genomic Ginv " *
+                                 "ridge that is too small)"))
+        rethrow(err)
+    end
+    return takahashi_diag(factor)
+end
+
+# A dense-storage or high-fill-ratio Ainv (e.g. a genomic Ginv, which
+# `genomic_relationship_inverse` returns fully dense with zero structural
+# zeros) gains nothing from a sparse Cholesky + Takahashi selected inverse:
+# sparse-factorizing a dense matrix measured 68-189x SLOWER than the dense
+# `inv` it would replace, at n=400-1200 (Gauss review). So `:selinv` only takes
+# the sparse route for an ACTUALLY sparse `Ainv`; a dense/near-dense `Ainv`
+# silently falls back to the same dense computation `:dense` uses, regardless
+# of the requested method — this is a performance routing decision, not a
+# numerical difference (both branches compute the same `diag(inv(Ainv))`).
+function _effectively_sparse(Ainv::AbstractMatrix; max_density::Real = 0.1)
+    issparse(Ainv) || return false
+    n = size(Ainv, 1)
+    n == 0 && return true
+    return nnz(sparse(Ainv)) / (Float64(n)^2) <= max_density
+end
+
+function _relationship_self_variance_diag(Ainv::AbstractMatrix, method::Symbol)
+    if method === :selinv
+        return _effectively_sparse(Ainv) ? _selinv_ainv_diag(Ainv) :
+               diag(inv(Symmetric(Matrix{Float64}(Ainv))))
+    elseif method === :dense
+        return diag(inv(Symmetric(Matrix{Float64}(Ainv))))
+    else
+        throw(ArgumentError("reliability method must be :dense or :selinv"))
+    end
 end
 
 """
