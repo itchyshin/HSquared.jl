@@ -2476,9 +2476,11 @@ function fit_animal_model(
     method = :REML,
     target = :variance_components,
     variance_components = nothing,
+    relationship_diag = nothing,
     kwargs...,
 )
-    spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method,
+                             relationship_diag = relationship_diag)
     return fit_animal_model(
         spec;
         target = target,
@@ -2707,7 +2709,7 @@ small examples can expose weakly informed animals directly.
 """
 function reliability(fit::AnimalModelFit; method::Symbol = :auto, pev = nothing)
     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
-    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec.Ainv, method)
+    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -2720,7 +2722,7 @@ end
 
 function reliability(result::HendersonMMEResult; method::Symbol = :auto)
     pev = prediction_error_variance(result; method = method)
-    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec.Ainv, method)
+    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -3492,6 +3494,17 @@ function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)
     end
 end
 
+# Spec-level entry: under `:auto`, a precomputed `diag(inv(Ainv))` carried by the spec
+# (`1 .+ F` of the pedigree that built `Ainv`, attached by the bridge) replaces the
+# selected inverse of `Ainv` -- Meuwissen & Luo already paid for `F` inside
+# `pedigree_inverse`, whereas the selected inverse costs Θ(Σⱼ|L[:,j]|²) over the factor
+# of `Ainv`. Explicit `:selinv` / `:dense` keep their literal paths (the parity oracles).
+function _relationship_diag(spec::AnimalModelSpec, method::Symbol = :auto)
+    d = spec.relationship_diag
+    (d !== nothing && method === :auto) && return d
+    return _relationship_diag(spec.Ainv, method)
+end
+
 """
     bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
         n_boot = 1000, estimator = :sparse_reml,
@@ -3561,7 +3574,8 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
     for _ in 1:n_boot
         ystar = mu .+ Z * (LA * randn(rng, q) .* sqrt(s2a)) .+ randn(rng, n) .* sqrt(s2e)
         try
-            spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML)
+            spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML,
+                                       relationship_diag = spec.relationship_diag)
             fb = refit(spec_b)
             sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
             (isfinite(sab) && isfinite(seb) && sab > 0 && seb > 0) || continue
