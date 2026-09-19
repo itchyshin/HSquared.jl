@@ -6019,7 +6019,11 @@ end
     # no clique-width cap). Every accumulator receives its terms in the same ascending
     # order as the original per-pair binary-search recursion, so the agreement must be
     # BITWISE, not approximate. `per_pair = true` runs that original recursion.
-    zbits(ch; kw...) = reinterpret(UInt64, HSquared._selinv_zvals(ch; kw...)[1])
+    #
+    # The DEFAULT path additionally vectorises the aligned clique tail, which reassociates
+    # one reduction, so the bitwise claim is on `strict_order = true`; the default is pinned
+    # against it at rtol in the "aligned-tail SIMD path" testset below.
+    zbits(ch; kw...) = reinterpret(UInt64, HSquared._selinv_zvals(ch; strict_order = true, kw...)[1])
     rng = Random.MersenneTwister(20260919)
     for (n, p) in ((40, 0.12), (150, 0.05), (300, 0.2))
         B = sprandn(rng, n, n, p)
@@ -6135,8 +6139,6 @@ end
                    rtol = 1e-10)
     @test all(isfinite, pev_simd) && all(>(0), pev_simd)
 end
-
-@testset "_selinv_ainv_diag matches the analytic 1+F oracle beyond dense-feasible scale" begin
 
 @testset "_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale" begin
     # Gauss review: diag(inv(Ainv)) == 1 .+ F is an exact analytic identity for ANY pedigree
