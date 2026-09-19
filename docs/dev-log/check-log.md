@@ -5695,7 +5695,37 @@ issues; they were posted as comments on those instead.
 - **#359** (new) — no real-pedigree or external-comparator measurement behind any of these
   numbers; the ASReml-R gap is narrowed, not closed.
 
-#356 and #357 are the largest remaining items on the `result_payload` path.
+**Collision found AFTER filing — check open PRs, not just open issues.** `gh pr list` (run
+only after the issues were filed) shows **PR #355**, open since 00:06 on 2026-09-19 by the
+maintainer, `claude/selinv-defaults-350`, "fix: sparse selected-inverse defaults for PEV and
+the reliability denominator (#350)". It fixes the SAME `reliability` defect this arc fixed,
+and is a SUPERSET of that half: it also flips the `prediction_error_variance` default to
+`:selinv` (deliberately not done here), adds an `:auto` method, takes
+`breeding_values_plot_data` sparse end to end, carries the q=3,000 budget test #350's
+acceptance asks for (written red-first), and fixes `fitted_values`' dense `Z` as a drive-by.
+Its `_resolve_pev_method` guards the dense genomic `Ginv` case the same way this arc's
+`_effectively_sparse` does, via `issparse` rather than an `nnz/n²` ratio.
+
+Consequences, recorded rather than quietly patched:
+
+- **#356 was a duplicate and is now CLOSED** — `fitted_values`' dense `Z` is already fixed in
+  PR #355. It was filed from a review finding after checking open ISSUES but not open PRs.
+- **PR #355 now conflicts with `main`**, which moved to `b9f30a64` under it. Its own lane note
+  says "If his branch lands first, this one should be rebased onto it, not the reverse" — that
+  condition has triggered. Commented on the PR recommending the rebase take ITS version of the
+  `reliability`/`_relationship_diag` work wholesale and drop this arc's
+  `_selinv_ainv_diag`/`_effectively_sparse`/`_relationship_self_variance_diag`, since #355's is
+  the more complete piece.
+- **The `_selinv_zvals` kernel rewrite is complementary, not duplicated** — PR #355 does not
+  touch `src/takahashi_selinv.jl` and scopes itself "AI-REML loop untouched". It should survive
+  the rebase, and it improves #355's own after-column, since `:selinv` PEV and reliability both
+  run through that kernel; its measured 0.002-0.003 s rows were taken against the old one.
+- #357 (henderson_mme UMFPACK LU) is unaffected and remains the largest untouched item on the
+  `result_payload` path.
+
+Also confirmed now that the commits are on the remote: the **Documenter CI run on `b9f30a64`
+passed** (run 35451712014, 3m01s), so the local `docs/make.jl` vitepress failure was purely
+this machine's Node toolchain, as diagnosed.
 
 Checks (fresh, this worktree): `julia --project=. -e 'using Pkg; Pkg.test()'` — full suite
 **passed**, `grep -inE "fail|error"` over the log **empty**, with `test_aqua.jl` temporarily
