@@ -2544,7 +2544,7 @@ end
     @test payload.nobs == 3
     @test payload.predictions ≈ [1.5, 2.0, 2.5]
     # #43: PEV/reliability are now standard payload fields, computed via the
-    # O(nnz(L)) (sparse-scalable) Takahashi selected inverse (:selinv), shaped
+    # sparse Takahashi selected inverse (:selinv, cost Θ(Σⱼ|L[:,j]|²)), shaped
     # (ids, values) to match the R bridge's hs_julia_id_values() unpack (hsquared#21).
     # (Non-trivial off-diagonal-Ainv / nfixed>1 parity is in the selinv testset.)
     @test payload.prediction_error_variance.ids == ["a", "b", "c"]
@@ -3054,14 +3054,15 @@ end
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
     mme = henderson_mme(spec, 1.2, 0.8)
 
-    pev_dense = prediction_error_variance(mme)
+    pev_dense = prediction_error_variance(mme; method = :dense)
     pev_selinv = prediction_error_variance(mme; method = :selinv)
     @test pev_selinv.ids == pev_dense.ids
     @test pev_selinv.values ≈ pev_dense.values rtol = 1e-10
-    @test reliability(mme; method = :selinv).values ≈ reliability(mme).values rtol = 1e-10
+    @test reliability(mme; method = :selinv).values ≈ reliability(mme; method = :dense).values rtol = 1e-10
 
-    # default stays :dense (contract unchanged)
-    @test prediction_error_variance(mme).values == pev_dense.values
+    # default is :selinv since #350 (:dense stays the explicit oracle)
+    @test prediction_error_variance(mme).values == pev_selinv.values
+    @test reliability(mme).values == reliability(mme; method = :selinv).values
 
     # AnimalModelFit path also supports :selinv
     fit = fit_variance_components(
@@ -3070,9 +3071,9 @@ end
         method = :REML,
     )
     @test prediction_error_variance(fit; method = :selinv).values ≈
-          prediction_error_variance(fit).values rtol = 1e-9
+          prediction_error_variance(fit; method = :dense).values rtol = 1e-9
     @test reliability(fit; method = :selinv).values ≈
-          reliability(fit).values rtol = 1e-9 atol = 1e-8
+          reliability(fit; method = :dense).values rtol = 1e-9 atol = 1e-8
 
     # Non-trivial fixture: 8-animal Mrode9-shaped pedigree (genuinely off-diagonal
     # Ainv that exercises the :selinv recursion) and nfixed = 2 (intercept +
@@ -4373,7 +4374,7 @@ end
     @test fixed_effects(fit) ≈ hm.beta atol = 1e-8
     @test breeding_values(fit).values ≈ hm.animal_effects.values atol = 1e-7
 
-    # the O(nnz(L)) Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
+    # the Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
     # diagonal at 420 animals (extends V1-SELINV-PEV from a 110-animal pedigree to 420)
     @test prediction_error_variance(fit; method = :selinv).values ≈
           prediction_error_variance(fit; method = :dense).values atol = 1e-8
@@ -5939,62 +5940,45 @@ end
     # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
     @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
 
-    # reliability(:selinv)'s A_ii denominator (now via _selinv_ainv_diag(Ginv), not the
-    # unconditional dense inv(Ainv) this replaced) still matches the INDEPENDENT genomic
-    # reliability on this dense Ginv fixture, and accuracy(:selinv) forwards method through
+    # reliability(:selinv)'s A_ii denominator (now via _relationship_diag(Ginv, :selinv),
+    # not the unconditional dense inv(Ainv) this replaced) still matches the INDEPENDENT
+    # genomic reliability on this dense Ginv fixture, and accuracy(:selinv) forwards
+    # method through
     @test reliability(res; method = :selinv).values ≈ rel_indep atol = 1e-8
     @test accuracy(res; method = :selinv).values ≈ sqrt.(rel_indep) atol = 1e-8
 end
 
-@testset "_selinv_ainv_diag matches dense diag(inv(Ainv)) directly (pedigree + genomic)" begin
-    # Direct pin of the new helper against an independent dense reference, so a future
-    # regression in _selinv_ainv_diag itself (not just its downstream reliability() callers)
-    # is caught even if the dense-vs-selinv parity tests above happened to compare two
-    # equally-wrong values.
+@testset "_relationship_diag(:selinv) matches dense diag(inv(Ainv)) directly (pedigree + genomic)" begin
+    # Direct pin of the selected-inverse helper against an independent dense reference, so a
+    # future regression in _relationship_diag itself (not just its downstream reliability()
+    # callers) is caught even if the dense-vs-selinv parity tests above happened to compare
+    # two equally-wrong values. Ported from PR #355's `_selinv_ainv_diag` pin (Szymek
+    # Drobniak, `6bb10c97`) onto our own `_relationship_diag(Ainv, :selinv)`, which forces
+    # the selected-inverse route regardless of Ainv's storage/density (same behavior his
+    # standalone helper had) -- the #350 rebase (Szymek's #355 comment) took `reliability`/
+    # `_relationship_diag`/`_resolve_pev_method`/the `:auto` default from this branch
+    # wholesale and dropped his `_selinv_ainv_diag` as a duplicate of this.
     ped = normalize_pedigree([1, 2, 3, 4, 5], [0, 0, 1, 1, 3], [0, 0, 2, 2, 4])
     Ainv = pedigree_inverse(ped)
-    @test HSquared._selinv_ainv_diag(Ainv) ≈ diag(inv(Symmetric(Matrix(Ainv)))) atol = 1e-8
+    @test HSquared._relationship_diag(Ainv, :selinv) ≈ diag(inv(Symmetric(Matrix(Ainv)))) atol = 1e-8
 
     M = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]
     Ginv = genomic_relationship_inverse(genomic_relationship_matrix(M); ridge = 0.05)
-    @test HSquared._selinv_ainv_diag(Ginv) ≈ diag(inv(Symmetric(Matrix(Ginv)))) atol = 1e-8
+    @test HSquared._relationship_diag(Ginv, :selinv) ≈ diag(inv(Symmetric(Matrix(Ginv)))) atol = 1e-8
 
     # non-positive-definite Ainv: :selinv throws a named ArgumentError (wrapping the
     # cholesky check=true PosDefException), unlike :dense's general LDLᵀ inv(), which
     # would return a finite-but-meaningless value instead
     non_pd = [1.0 2.0; 2.0 1.0]  # eigenvalues -1, 3: indefinite, not PD
-    @test_throws ArgumentError HSquared._selinv_ainv_diag(non_pd)
+    @test_throws ArgumentError HSquared._relationship_diag(non_pd, :selinv)
 
-    # density gate: a dense Ginv-shaped Ainv must NOT take the sparse selinv route even
-    # when method = :selinv is requested (Gauss review: 68-189x slower on a dense matrix).
-    # The Phase 2 genomic reliability testset separately pins reliability(:selinv) ≈
-    # reliability(:dense) numerically on this same Ginv fixture.
-    @test !HSquared._effectively_sparse(Matrix(Ginv))
-    @test !HSquared._effectively_sparse(Ginv)
-    # a genuinely sparse pedigree Ainv only reads as sparse once n is large enough that
-    # nnz/n^2 is small; this tiny 5-animal Ainv is ~85% dense by cell count (typical for
-    # any pedigree at this scale) and correctly reads as NOT effectively sparse, so the
-    # gate is exercised at a size where sparsity is real (a 110-animal 4-generation
-    # deterministic pedigree, same generator pattern as the PCG large-fixture testset).
-    @test !HSquared._effectively_sparse(Ainv)
-    nf = 20
-    bids = String[]; bsire = String[]; bdam = String[]
-    for i in 1:nf
-        push!(bids, "f$i"); push!(bsire, "0"); push!(bdam, "0")
-    end
-    gens = [["f$i" for i in 1:nf]]
-    for g in 1:3
-        prev = gens[end]; half = length(prev) ÷ 2
-        spool = prev[1:half]; dpool = prev[(half + 1):end]; cur = String[]
-        for k in 1:30
-            push!(bids, "g$(g)_$(k)"); push!(bsire, spool[1 + (k % length(spool))])
-            push!(bdam, dpool[1 + (k % length(dpool))]); push!(cur, "g$(g)_$(k)")
-        end
-        push!(gens, cur)
-    end
-    big_ped = normalize_pedigree(bids, bsire, bdam)
-    @test length(big_ped) == 110
-    @test HSquared._effectively_sparse(pedigree_inverse(big_ped))
+    # PR #355's density-gate assertions (`_effectively_sparse`, a standalone nnz/n^2 ratio
+    # check) are NOT ported: that helper was dropped entirely in the #350 rebase in favor of
+    # `:auto`'s simpler storage-type gate (`_resolve_pev_method`'s `issparse` check, which
+    # Szymek's own #355 comment endorsed as "the more complete piece of work" and "a better
+    # interface than my hard gate"). That routing decision -- a dense genomic Ginv stays on
+    # :dense under :auto, a sparse pedigree Ainv routes to :selinv -- is pinned directly on
+    # `_resolve_pev_method` in test/test_selinv_defaults_350.jl, testset "350 (iii)".
 end
 
 @testset "_sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit" begin
@@ -6064,11 +6048,13 @@ end
           reinterpret(UInt64, HSquared._selinv_zvals(ch_m; block_cap = 0)[1])
 end
 
-@testset "_selinv_ainv_diag matches the analytic 1+F oracle beyond dense-feasible scale" begin
+@testset "_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale" begin
     # Gauss review: diag(inv(Ainv)) == 1 .+ F is an exact analytic identity for ANY pedigree
     # size, independent of the dense reference's own O(n^2)/O(n^3) feasibility limit. This
-    # validates _selinv_ainv_diag's correctness at a scale the dense-vs-selinv parity tests
-    # elsewhere in this file cannot reach (they are capped by needing a dense comparison).
+    # validates _relationship_diag(:selinv)'s correctness at a scale the dense-vs-selinv
+    # parity tests elsewhere in this file cannot reach (they are capped by needing a dense
+    # comparison). Ported from PR #355's `_selinv_ainv_diag` pin onto our own
+    # `_relationship_diag(Ainv, :selinv)` -- see the testset above for why.
     rng = Random.MersenneTwister(20260917)
     n = 3000
     founders = 30
@@ -6089,7 +6075,7 @@ end
     ped = normalize_pedigree(ids, sire, dam)
     Ainv = pedigree_inverse(ped)
     F = inbreeding_coefficients(ped)
-    @test HSquared._selinv_ainv_diag(Ainv) ≈ 1 .+ F atol = 1e-8
+    @test HSquared._relationship_diag(Ainv, :selinv) ≈ 1 .+ F atol = 1e-8
 end
 
 @testset "Phase 2 single-step H-inverse construction" begin
@@ -10887,3 +10873,7 @@ include("test_214_217_dense_cells.jl")
 # #334: docs/make.jl must not dirty docs/src/validation-status.md on a
 # no-content-change rebuild (regeneration must be idempotent, no timestamp).
 include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))
+
+# #350: sparse (Takahashi selected-inverse) defaults for prediction_error_variance
+# and the reliability denominator; result_payload / breeding_values_plot_data budget.
+include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))

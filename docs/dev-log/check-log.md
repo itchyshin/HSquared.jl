@@ -5603,6 +5603,38 @@ Constraints honored: `Project.toml` untouched; `public_covered_count` untouched;
 capability-status row's `covered`/`experimental` STATUS word changed (only evidence text);
 `V1-SELINV-PEV` and `V1-REML` stay `partial`; no version bump; not committed or pushed.
 
+## 2026-09-18 — #350 sparse selected-inverse defaults for PEV / reliability; result_payload and breeding_values_plot_data no longer form a dense inverse `[JL]`
+
+- Finding (Szymon Drobniak, measured at q = 5,000, one BLAS thread): the AI-REML fit
+  takes 0.03 s but `result_payload` spent 5.9 s / 832 MB forming `inv(Ainv)` inside
+  `reliability` for its diagonal, and `breeding_values_plot_data` 11.4 s / 1.8 GB through
+  the `prediction_error_variance` `:dense` default. Branch `claude/selinv-defaults-350`
+  (branch `claude/selinv-defaults-350`, PR #355): `prediction_error_variance`/`reliability` default to
+  `:selinv`; the reliability denominator `diag(inv(Ainv))` is read through the Takahashi
+  selected inverse of `Ainv` (`_relationship_diag`; the spec holds no `Pedigree`, so this
+  is the sparse route rather than `1 .+ inbreeding_coefficients` — the `1 + F_i` identity
+  is pinned in the test instead, and the genomic `diag(G) + ridge` behaviour is preserved);
+  `fitted_values` no longer densifies `Z`. `:dense` stays the explicit oracle; AI-REML
+  loop untouched.
+- New `test/test_selinv_defaults_350.jl` (included from `runtests.jl`): red on `main`
+  (`962.5 MB / 3.74 s` at q = 3,000; default still dense; helper missing) → green after
+  the fix (`31.6 MB / 0.007 s`); q = 1,000 half-sib `fit_ai_reml` parity to the dense
+  oracle on every PEV entry and reliability (atol 1e-8).
+- Re-measured with the bridge phase-timing script at q = 5,000
+  (`JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1`, warm, `@timed`): `result_payload`
+  5.874 s / 831.8 MB → 0.008 s / 33.2 MB; `prediction_error_variance` default
+  11.600 s / 1803.0 MB → 0.002 s / 10.1 MB; `reliability` 5.840 s / 412.9 MB →
+  0.003 s / 14.3 MB; `breeding_values_plot_data` 11.430 s / 1812.5 MB → 0.004 s / 19.5 MB.
+  `fit_ai_reml` itself unchanged (0.24 s on a seeded q = 5,000 fit before and after; the
+  script's unseeded fit row varies with iteration count, 12 vs 100).
+- Checks (run fresh, real output): `julia --project=. -e 'using Pkg; Pkg.test()'` on
+  `6ff1e624` — **passed** (`Testing HSquared tests passed`, 158 testsets, 0
+  `Test Failed`/`Error During Test`, 3 min 11 s); `bash tools/preamble_cap.sh` — `CAP OK`.
+  `docs/make.jl` not run this slice.
+- Constraints honored: `Project.toml` stays `0.9.0`; no capability-status or
+  validation-debt STATUS changed (evidence wording only, where it had become false);
+  no push, no PR.
+
 ## 2026-09-19 — selected-inverse kernel: dense per-clique block (the AI-REML bottleneck) `[JL]`
 
 Lane: local uncommitted working tree, continuing directly from the 2026-09-17 entry above,
@@ -5734,3 +5766,54 @@ failure (confirmed identical on unmodified `main` via `git stash` on 2026-09-17)
 afterwards. `tools/write_validation_status_page.jl` re-run; `docs/src/validation-status.md`
 in sync at 56 rows. `bash tools/preamble_cap.sh` — `CAP OK`. `docs/make.jl` still fails at the
 `npm`/vitepress step, pre-existing and unrelated (confirmed on clean `main` on 2026-09-17).
+
+## 2026-09-19 — PR #355 review (Szymek): scale-invariant singularity guard, complexity wording, merge with `main` `[JL]`
+
+Review of the rebased #355 (`76f36d02`) before sign-off, per handover #360 item 1. The split
+was taken as proposed and `src/takahashi_selinv.jl` is untouched; three findings, fixed in
+commits stacked on the PR head (branch `review/355-merge-main`):
+
+- **Regression, fixed (`3a7d337c`).** The new guard refused a factor when
+  `(min L_ii / max L_ii)² < 1e-12`. That ratio moves with the units of a covariate. Probe: a
+  converged `fit_ai_reml` fit (q = 1,000, two records per animal, intercept + one covariate),
+  identical `sigma_a2` at every scale; with the covariate multiplied by 1, 1e4, 1e5 the payload
+  is fine, at 1e6, 1e7, 2e7 `result_payload` threw "numerically singular ... the dense oracle
+  would throw SingularException", while the dense PEV was identical to 10 significant figures
+  at every scale (pivot ratio² 1.2e-2 at scale 1, 1.2e-14 at 1e6). On `main`, `result_payload`
+  already used `:selinv` without a guard, so these fits used to return a payload. The guard now
+  tests the relative pivot `L_ii² / C_ii` (1 − R² of each equation on those eliminated before
+  it; invariant to rescaling a row and column of `C`) and reads `L_ii` via
+  `diag(::CHOLMOD.Factor)` (verified equal to `diag(sparse(F.L))` for simplicial and
+  supernodal factors) instead of an O(nnz(L)) CSC copy. Testset 350 (vi): full-rank design
+  at scale 1, 1e4, 1e7, 1e9 accepted and equal to the dense oracle to 1e-10, duplicated column
+  refused at every scale; red on the old guard at 1e7, green after; 350 (iv) unchanged.
+- **Wording (`9fc51aa1`).** `O(nnz(L))` reappeared in the PEV and `result_payload` docstrings
+  and the `_relationship_diag` comment, and survived at four sites the `6bb10c97` sweep missed
+  (`03-engine-contract.md`, `validation_status.jl` for `selinv_block_traces`, two test
+  comments). All now say `Θ(Σⱼ|L[:,j]|²)`, tracking fill-in; the PEV docstring regains the
+  caveat that `:selinv` is memory-safe but not uniformly faster than `:dense` at moderate size
+  on a high-fill pedigree.
+- **Docs example broken by the guard, fixed (`3d0f396c`).** Found by `docs/make.jl`, not by
+  the suite. The quickstart's 3-animal / 3-record `@example` toy has a REML optimum that
+  collapses to `sigma_a2 ~ 3.8e-31`, `sigma_e2 ~ 5.6e-44` on this platform (min relative pivot
+  1.5e-13, `(min/max pivot)² = 7.6e-14`, `cond(C) = 1.2e14`). BOTH guards refuse it at a 1e-12
+  floor, so `prediction_error_variance(fit)` and `reliability(fit)` — published `@example`
+  blocks — throw and the build stops. Verified on the unmodified PR head (`76f36d02`): both
+  calls throw there too, while its Documenter CI passed, so the failure is platform-dependent
+  (the optimizer lands elsewhere on the CI runner). The floor is now **1e-15**, `eps`-level
+  rather than a conditioning preference: measured minimum relative pivots are 4.5e-2 for a
+  full-rank design, 5.7e-13 near-collinear but legitimate (1e-6 relative noise), 1.5e-13 for
+  the quickstart toy, and **7.4e-18 for a duplicated column of `X`** — so the guard still
+  refuses rank deficiency by three orders of magnitude while accepting degenerate-but-well-posed
+  boundary fits. Testset 350 (vii) pins the exact quickstart fixture.
+- **Merge with `main` (`ef4fd744`).** `f5023afe` appended #356–#359 to the `V1-SELINV-PEV` debt
+  row this PR rewrote; kept this PR's row, folded the pointers in, and marked `fitted_values`'
+  dense `Z` as fixed by this PR (#356 closed as its duplicate) instead of "NOT fixed".
+
+Checks on the merged tree (`3d0f396c`): `julia --project=. -e 'using Pkg; Pkg.test()'` —
+**passed** (`Testing HSquared tests passed`, 166 test summaries, no failures; Julia 1.13.0,
+Aqua included; re-run after the floor change, 43/43 in `test_selinv_defaults_350.jl`).
+`julia --project=docs docs/make.jl` — **passed, EXIT 0, zero failed `@example` blocks**
+(it fails on the PR head, see the docs finding above).
+`tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
+tools/preamble_cap.sh` — `CAP OK`.
