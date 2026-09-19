@@ -1,0 +1,8 @@
+f0adv q=20000 nfounder_frac=0.005 (banked point): is_super=true nnz(L)=9479216 fill=473.937
+arm a rep1: 1211.6377 s (897991888 bytes)   rep2: 1226.3441 s (897991920 bytes)
+arm c rep1: 4.0304 s (698141904 bytes)   rep2: 4.0312 s (698141904 bytes)
+fatal: your current branch 'main' does not have any commits yet
+fatal: your current branch 'main' does not have any commits yet
+
+TOTORO ARM DONE: T_fact=0.2956s T_a=1211.6377s(median of 1211.6377,1226.3441) T_c=4.0304s(median of 4.0304,4.0312) S_c=300.62 R_c=13.6337 err_c=1.671e-14
+wrote /home/snakagaw/hsq_work/speed12-20260919/bench/results/selinv_arms_unknown_totoro_q20000_fill471.tsv
