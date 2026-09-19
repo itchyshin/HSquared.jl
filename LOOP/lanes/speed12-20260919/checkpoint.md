@@ -1,102 +1,125 @@
 # Checkpoint: speed12-20260919
 
 GOAL: see GOAL.md.
-STATE: arc S1 done, REPAIRED. A coordinator-side verifier found the first
-committed TSV held only the halfsib q=1000 rung (`--gate tsv`'s own smoke run
-was overwriting the same path the full ladder wrote to). Fixed and
-re-verified in this repair loop; see commits below. All five leaf-S1 gates
-(G1.1-G1.5) PASS under BOTH
-`--approve --timeout 1800 --cwd <worktree root> .unlazy/julia-speed-20260919/gates/leaf-S1.md`
-(exit 0) and, immediately after,
-`--reverify --timeout 1800 --cwd <worktree root> .unlazy/julia-speed-20260919/gates/leaf-S1.md`
-(exit 0, "ALL MET (5 met, reran: 5, previously met reverified: 5)").
-EXACT cwd + ledger path used (approvals are bound to this pair -- a
-differently-formed path, e.g. no `--cwd`, resolves CHECK lines relative to
-the gate file's own directory and every CHECK fails):
-  cwd:  /Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919
-  path: .unlazy/julia-speed-20260919/gates/leaf-S1.md
+STATE: arc S1 done+repaired (see prior entry, kept below); arc S2 done. All
+five automated leaf-S2 gates (G2.1-G2.5) PASS under
+`node ~/shinichi-brain/skills/unlazy/scripts/gate-check.mjs --approve --root "$PWD" --cwd "$PWD" --timeout 1800 .unlazy/julia-speed-20260919/gates/leaf-S2.md`
+run from the worktree root (cwd = repo root, "$PWD" resolved to
+`/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919`); overall
+tool exit=1 because G2.6 (Totoro arm) is the one remaining UNMET gate, by
+design ("Manual gate... leave it pending" -- not a failure of anything else).
 
-WHAT WAS WRONG AND WHAT CHANGED (commits 1fce83a6, 2dc5f8f7, c8cf8e05):
-  - `--gate tsv` ran only halfsib q=1000 and wrote it to the SAME path
-    `run_ladder()` uses for the full 6-rung deliverable -- any `--gate tsv`
-    invocation (including a bare `--reverify`) silently clobbered the ladder
-    TSV with a 1-rung stub, and G1.3 still PASSed on structure alone. Fixed:
-    `gate_tsv()` now only VERIFIES an existing ladder TSV in place (six
-    required rungs, one row per (fixture,q,fill,iteration,section), no
-    duplicate keys, per-iteration section-sum within 5% of iteration_total,
-    no NaN/Inf); it runs the full ladder only when no TSV exists yet, and
-    never overwrites one that is already on disk. Ad-hoc single-rung smoke
-    runs now write to a separate `..._smoke.tsv` path instead.
-  - The output filename is now keyed to `git log -1 -- <harness file>` (the
-    harness's own last commit), not `git rev-parse HEAD` -- HEAD drifts on
-    every unrelated commit (e.g. a checkpoint.md update), which is exactly
-    what let the wrong filename go unnoticed the first time.
-  - Two different `--target-fill` values (150 and 471) resolve to the
-    identical achieved fill at q=5000 (see G1.4 note below), so
-    `run_ladder()` was running that fixture twice and writing duplicate
-    (fixture,q,fill,iteration,section) rows -- a literal G1.3 violation.
-    `run_ladder()` now dedupes by achieved fill; the verifier now also
-    rejects any duplicate row key outright.
-  - A live `--reverify` then exposed two measurement-noise flakes (real
-    physical variance, not logic bugs): a 5.6% section-sum mismatch on one
-    halfsib q=20000 iteration (plausibly a GC sweep landing inside iteration
-    1), and a G1.4 ratio that dipped to 82.3 (< 100) driven by t_factor
-    jitter (0.037s vs 0.071s between runs) swamping a ratio whose numerator
-    barely moves. Fixed: `instrumented_ai_reml()` now calls `GC.gc()` once
-    before its timed loop (same precaution `sim/drac/f0_adversarial_fill.jl`
-    already takes); `gate_prerun()` now takes the median of 3 repeated
-    factor/selinv timings (same technique `sim/cpu_fit_benchmark.jl` and the
-    vault `w4-speed-gen-fit.jl` already use). Neither change alters what is
-    measured, only how many samples each estimate draws from.
+HEADLINE FINDING: arm (c) (SelectedInversion.jl v0.2.1) is ~280x faster than
+the current kernel at the highest-fill Mac fixture (f0adv q=20000, fill~150,
+supernodal): T_a=236.9s, T_c=0.833s, S_c=284.4. Far past D-271's >=10x
+threshold -- but ONLY at large, high-fill, SUPERNODAL scale. The advantage
+inverts at small/simplicial scale (see table).
 
-SECTION-SHARE TABLE (instrumented per-section @timed measurement, method
-(ii); top 3 sections by share of total instrumented wall per rung -- more
-informative than the stdlib Profile.@profile cross-check, method (i), whose
-leaf-nearest-known-function attribution puts ~75-80% of samples in "other" at
-every rung, most plausibly because thin wrapper calls (`cholesky`, `\`)
-inline into their caller and GC/dispatch samples have no named-function
-match; both methods are in the TSV, distinguished by its `method` column):
-  halfsib q=1000  fill=3.8  : cholmod_factor~9-10% mme_assembly~6-9% (other dominates, small-q dispatch overhead)
-  halfsib q=5000  fill=3.8  : cholmod_factor~46%   mme_assembly~30%  selinv~11%
-  halfsib q=20000 fill=3.8  : cholmod_factor~46%   mme_assembly~29%  selinv~12%
-  halfsib q=50000 fill=3.8  : cholmod_factor~48%   mme_assembly~32%  selinv~11%
-  f0adv   q=5000  fill~74   : selinv~99%           cholmod_factor~0.6%
-  f0adv   q=5000  fill~150  : selinv~99%           cholmod_factor~0.6%
-(exact per-run percentages vary by a point or two run-to-run; ranges above
-span the values observed across this repair's several regenerations.)
+BUDGET OVERRUN, STATED PLAINLY: the coordinator's own budget probe instruction
+caught this -- ONE arm-a pass at f0adv q=20000/fill150 measured at ~237s (not
+the "a few seconds" implicitly assumed by the original reps=3/threads={1,4}
+grid design). Honouring "whole step under 30 min of compute" required cutting
+much further than the coordinator's own fallback (threads=1 + 2 repeats for
+q=20000 rungs): the three expensive F0-adversarial high-fill rungs
+(q=20000 fill75/150, q=50000 fill75) ran with reps=1, no warm-up, and arm (b)
+INFERRED rather than independently re-measured (justified: arm (b)'s own
+`refresh_L!` provably falls back to arm (a)'s exact computation when
+is_super=true, so T_b=T_a is not a guess there, it is the code path actually
+taken); threads=4 was dropped entirely, not just for the expensive rungs.
+G2.1/G2.2/G2.5's correctness/precondition checks use small/cheap stand-in
+fixtures of the SAME generator/algorithm instead of re-paying the ~237s cost
+per check (agreement is a scale-independent property of the math). The
+run_grid() invocation itself still took ~23 minutes wall (measured, see
+bench/results/); combined with the two budget-probe invocations before it,
+this arc's total Julia compute is well over the 30-minute target -- reported
+as the finding it is, not hidden. bench/Project.toml's own instantiate+
+precompile (~2-6s each run, deps already cached from the package env's own
+Pkg.instantiate()) is NOT compute time per the goal's own rule and is
+excluded from that estimate.
 
-G1.4 RATIO: at q=5000, target-fill 471 is NOT reachable by varying
-nfounder_frac (this generator's fill saturates at ~150 once nfounder_frac
-hits its floor of 4 founders; the historically banked fill=471 point is at
-q=20,000 at the default nfounder_frac=0.005 -- see the file's header comment
-and docs/dev-log/recovery-checkpoints/2026-08-04-f6-matfree-tail-recovery-predeclaration.md).
-Measured at the closest achievable fill (150.3, nfounder_frac=0.0008), median
-of 3 repeated timings: selinv wall ~5.5-5.8 s / factorization wall ~0.036 s =
-ratio ~150-160 (>= 100 -> PASS across every re-run in this repair loop,
-including the final --reverify's 151.3).
+PER-FIXTURE TABLE (threads=1; full table in
+bench/results/selinv_arms_9be11566_t1.tsv):
+fixture                        | is_super | T_fact(s) | T_a(s)   | T_b(s)   | T_c(s)  | S_b  | S_c    | R_c    | err_c
+f0adv_q20000_fill150           | true     | 0.1788    | 236.894  | 236.894* | 0.8330  | 1.00 | 284.39 | 4.659  | 1.6e-14
+f0adv_q20000_fill75            | true     | 0.0177    | 10.600   | 10.600*  | 0.0828  | 1.00 | 128.00 | 4.679  | 4.4e-14
+f0adv_q50000_fill75            | true     | 0.1690    | 199.473  | 199.473* | 0.8325  | 1.00 | 239.60 | 4.927  | 1.1e-13
+f0adv_q20000_fill150_forced_simplicial | false | 1.9476 | 209.241 | 213.340 | 145.777 | 0.98 | 1.44 | 74.85 | 1.3e-14
+boundary_q2000                 | false    | 0.00015   | 0.000176 | 0.000117 | 0.02145 | 1.50 | 0.01   | 141.68 | 1.3e-14
+f0scale_q20000 (benign)        | false    | 0.00149   | 0.001935 | 0.001327 | 2.2053  | 1.46 | 0.00087| 1479.0 | 8.0e-14
+dense_pin_n50 (supernodal)     | true     | 2.2e-5    | 7.4e-5   | 6.9e-5   | 2.5e-5  | 1.06 | 2.89   | 1.135  | 3.1e-16
+dense_pin_n50 (simplicial)     | false    | 1.9e-5    | 7.4e-5   | 6.5e-5   | 1.2e-4  | 1.13 | 0.60   | 6.656  | 4.6e-16
+dense_pin_n500 (supernodal)    | true     | 3.8e-4    | 0.03258  | 0.03351  | 0.00151 | 0.97 | 21.61  | 3.986  | 7.0e-15
+dense_pin_n500 (simplicial)    | false    | 1.0e-3    | 0.02691  | 0.02823  | 0.03161 | 0.95 | 0.85   | 30.48  | 6.1e-16
+(* = arm b INFERRED = arm a, not independently re-measured; see budget note
+above and `b_inferred` column in the TSV.)
+
+WHY THE SIGN FLIPS: SelectedInversion's speed comes specifically from its
+supernodal-block decode (`SupernodalMatrix`); the "forced_simplicial" row at
+the SAME q=20000/fill150 fixture shows S_c collapsing from 284 to 1.44 the
+moment is_super is forced false. At small scale (boundary_q2000, dense
+pins n<=500) or on a large but BENIGN/simplicial fixture (f0scale_q20000),
+arm (c) has fixed overhead that makes it SLOWER than arm (a) -- up to
+~1479x slower on the benign q=20000 case. D-271's rule should therefore be
+read as scoped to "large, high-fill, supernodal" specifically, not a
+package-wide always-win.
+
+ARM (b) FINDING: bitwise-identical to arm (a) on every row measured
+(`bitwise_b=true` throughout the TSV). The dependency-free half-step's own
+structural-hoist savings (S_b) are real but small (up to ~1.5x) and, per
+`refresh_L!`'s own logic, provide NO savings at all for supernodal factors
+via public CHOLMOD APIs alone (S_b~1.00 on every supernodal row) -- the
+raw-pointer nzval-refresh shortcut only exists for simplicial factors
+(confirmed: S_b=1.46-1.50 on the two simplicial/benign rows).
 
 TRUTH LIVES IN:
   - branch claude/lane-speed12-20260919 in this worktree (unpushed), HEAD
-    2c466ae4 (harness fixed at c8cf8e05; the TSV filename is keyed to that
-    commit, not to whatever HEAD happens to be later).
-  - sim/profile_ai_reml_sections.jl (the harness).
-  - sim/results/ai_reml_sections_c8cf8e05.tsv (the current, verified,
-    6-rung, 405-row ladder TSV -- CURRENT banked file; two earlier,
-    incorrectly-named/incomplete/duplicated attempts
-    (ai_reml_sections_4c4b6d9b.tsv, ai_reml_sections_2dc5f8f7.tsv) were
-    generated and removed during this repair; do not resurrect them).
-  - ledger .unlazy/julia-speed-20260919/gates/leaf-S1.md (git-ignored, all
-    5 gates [x] with EVIDENCE keyed to
-    cwd=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919).
-  - vault plan copy LOOP/lanes/speed12-20260919/ultra-plan.md.
+    5ac80d48.
+  - bench/Project.toml, bench/Manifest.toml (SelectedInversion pinned
+    `=0.2.1`; HSquared developed from `..`; package Project.toml/Manifest.toml
+    untouched, G2.3 confirms), bench/selinv_arms.jl (the harness, commit
+    9be11566 -- its own last-commit sha, used to name the TSV; unaffected by
+    later commits that do not touch this file, same lesson as S1's harness).
+  - bench/results/selinv_arms_9be11566_t1.tsv (10 rows; renamed from the
+    "uncommitted"-named file the ~23-minute run actually produced, after
+    committing the harness -- see that commit's message for why re-running
+    was not worth it purely to rename the file).
+  - ledger .unlazy/julia-speed-20260919/gates/leaf-S2.md (git-ignored; G2.1-
+    G2.5 [x] with EVIDENCE keyed to
+    cwd=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919;
+    G2.6 left pending, manual, Totoro).
+  - S1's own TRUTH LIVES IN (sim/profile_ai_reml_sections.jl at c8cf8e05,
+    sim/results/ai_reml_sections_c8cf8e05.tsv) is unchanged by this arc.
 
-NEXT: arc S2 (bench/ SelectedInversion.jl arms; see arcs.md). Totoro arm
-(q=20000 fill-471) is a STOP gate per GOAL.md and G1.4's number above. Before
-trusting any future leaf-S2 gate-check run, always pass the SAME
-`--cwd <worktree root>` explicitly -- the tool's own default CHECK directory
-is the gate file's directory, not the process's shell cwd, and a mismatched
-cwd produces an unrelated approval that a later `--reverify` cannot reuse
-(exactly the G1.5 issue hit and fixed in this repair loop).
+NEXT: the Totoro arm (G2.6) is a STOP gate -- do not launch it without
+Shinichi's yes, with this checkpoint's numbers shown (S_c up to 284x at
+q=20000/fill150, ~240x at q=50000/fill75; both far past D-271's 10x bar in
+the supernodal regime). Per D-271, SelectedInversion.jl can only ever enter
+HSquared.jl as an optional weak-dependency extension behind the existing
+fallback (never a hard dependency, never in the package Project.toml) --
+this arc's numbers are the measured basis for that decision, not a
+recommendation to add it yet. Before trusting any future leaf-S2
+`--reverify`, use the SAME `--root "$PWD" --cwd "$PWD"` pair (not just
+`--cwd`) -- this is what made every G2.x approval reusable across this
+arc's separate `--approve` and gate-record invocations.
 
 RESUME: read LOOP/lanes/speed12-20260919/GOAL.md -> this file -> ultra-plan.md
--> repo AGENTS.md; then run arc S2.
+-> repo AGENTS.md; then await Shinichi's decision on the Totoro arm (G2.6).
+
+---
+Prior entry (arc S1, kept for continuity):
+
+STATE: arc S1 done, REPAIRED. A coordinator-side verifier found the first
+committed TSV held only the halfsib q=1000 rung (`--gate tsv`'s own smoke run
+was overwriting the same path the full ladder wrote to). Fixed and
+re-verified in a repair loop; all five leaf-S1 gates (G1.1-G1.5) PASS under
+both `--approve` and `--reverify` (exit 0 both times) with
+cwd=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed12-20260919,
+path=.unlazy/julia-speed-20260919/gates/leaf-S1.md. Root cause: `--gate tsv`
+and the full ladder shared one output path; fixed to verify-not-overwrite,
+name by the harness's own commit (not HEAD), dedupe f0adv target-fill rungs,
+and reduce GC/timing noise (GC.gc() before the timed loop; median-of-3 in
+gate_prerun). Final state: sim/profile_ai_reml_sections.jl at commit
+c8cf8e05; sim/results/ai_reml_sections_c8cf8e05.tsv (6 rungs, 405 rows).
+G1.4 ratio ~150-160x (selinv/factor) at the closest achievable fill (150.3)
+for target-fill 471 at q=5000 (471 itself is not reachable at that q; the
+banked point is q=20,000).
