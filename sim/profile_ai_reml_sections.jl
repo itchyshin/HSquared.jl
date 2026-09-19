@@ -612,6 +612,17 @@ function _verify_ladder_tsv(path::AbstractString)
         return (false, "NaN/Inf bytes on an instrumented row")
     end
 
+    # One row per (fixture, q, fill, iteration, section) -- literal G1.3
+    # requirement. Two different f0adv --target-fill values can resolve to
+    # the identical achieved fill (measured; run_ladder() dedupes for this),
+    # so a duplicate key here is a real defect, not an artifact of rounding.
+    seen = Set{Tuple{String,Int,Float64,Int,String,String}}()
+    for r in rows
+        key = (r.fixture, r.q, r.fill, r.iteration, r.section, r.method)
+        key in seen && return (false, "duplicate row for (fixture,q,fill,iteration,section,method)=$(key)")
+        push!(seen, key)
+    end
+
     rung_key(r) = (r.fixture, r.q, round(Int, r.fill))
     rungs = Set(rung_key(r) for r in rows if r.method == "instrumented")
     missing_rungs = setdiff(_REQUIRED_LADDER_RUNGS, rungs)
@@ -699,8 +710,21 @@ function run_ladder(; halfsib_qs::Vector{Int} = [1000, 5000, 20000, 50000],
                 q, inst.sigma_a2, inst.converged, inst.iterations, inst.fill, n_samples)
     end
 
+    # Two or more targets can resolve to the identical nfounder_frac (measured:
+    # 150 and 471 both land on the same closest-achievable fill at q=5000 --
+    # see the file header). Running the identical deterministic fixture twice
+    # would duplicate every (fixture,q,fill,iteration,section) row in the TSV,
+    # so skip a target once its achieved fill matches one already run.
+    seen_fill_buckets = Set{Int}()
     for target in f0adv_targets
         frac, achieved_fill = find_nfounder_frac_for_fill(f0adv_q, target)
+        fill_bucket = round(Int, achieved_fill)
+        if fill_bucket in seen_fill_buckets
+            @printf("f0adv  q=%-6d target_fill=%-6.0f achieved_fill=%-7.1f  [skipped: duplicate of an already-run rung]\n",
+                    f0adv_q, target, achieved_fill)
+            continue
+        end
+        push!(seen_fill_buckets, fill_bucket)
         spec = f0adv_fixture(f0adv_q; nfounder_frac = frac)
         rows, inst, shares, n_samples = _rows_for_fixture("f0adv", f0adv_q, spec)
         append!(all_rows, rows)
