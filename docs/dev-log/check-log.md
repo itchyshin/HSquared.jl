@@ -5502,3 +5502,182 @@ Newest entries go at the top.
   noted, not silently treated as coverage.
 - Constraints honored: `Project.toml` stays `0.9.0`, untouched; no capability-status or
   validation-debt row added or changed; no version bump.
+
+## 2026-09-17 — reliability() large-pedigree memory fix + AI-REML bottleneck diagnosis `[JL]`
+
+Lane: local uncommitted working tree, `main` tip `3281372c` (not yet a PR/branch). Owner
+reported HSquared.jl running much slower than ASReml-R on a standard single-response
+animal model, and blowing up to ~35 GB memory on a ~100,000-row pedigree while ASReml-R
+handles it fine. This entry records diagnosis + a targeted fix, verified by three
+independent review-lens subagents (Gauss, Karpinski, Noether) plus a Rose claim audit,
+all of whom ran real measurements rather than reading only.
+
+**Root cause found and fixed:** `reliability(fit)`/`reliability(result::HendersonMMEResult)`
+in `src/likelihood.jl`, called by `result_payload()` after every fit, UNCONDITIONALLY built
+`A = inv(Symmetric(Matrix{Float64}(Ainv)))` — a DENSE `n×n` inversion of the pedigree/genomic
+precision matrix — regardless of the requested `method` (`:dense` or `:selinv`). At
+n≈100,000 that is an ≥80 GB allocation; `method` had NO effect on this specific computation
+before this fix (a latent bug the codebase's own docstring had flagged but never closed —
+`V1-SELINV-PEV`). New `_selinv_ainv_diag(Ainv)` computes the same `diag(inv(Ainv))` via a
+Takahashi selected inverse of a sparse Cholesky factorization of `Ainv` ITSELF (not the
+larger MME coefficient matrix), reusing the existing `takahashi_diag` kernel
+(`src/takahashi_selinv.jl`). Gated by a new `_effectively_sparse(Ainv)` density check so a
+dense/near-dense `Ainv` (a genomic `Ginv`, always fully dense) is automatically routed to
+the SAME dense computation `:dense` uses instead — Gauss's review measured the naive
+sparse-of-dense route at 68-189x SLOWER than `inv` directly at n=400-1200, a real regression
+this gate closes. `accuracy()` now also forwards `method` (previously silently dropped to
+`:dense` regardless of fit scale). `:selinv` now throws `ArgumentError` (wrapping the
+underlying `PosDefException`) on a non-PD `Ainv` instead of `:dense`'s finite-but-meaningless
+fallback.
+
+**Verified at scale (local, non-committed, synthetic — NOT the owner's own dataset):** a
+window-mated (generation-structured) synthetic 100,000-animal pedigree confirms the
+mechanism and effect — the old dense path would need ≥80 GB for one matrix; the new path
+completes using ~1.15 GB (~70x less) in ~142 s single-threaded. An adversarial
+fully-random-mating synthetic pedigree measured far worse at smaller n (485 s at only
+n=20,000) — this cost tracks pedigree FILL-IN, not animal count, and has NOT been measured
+on the owner's actual data. The exact reported "~35 GB" figure does not cleanly arithmetic
+against a completed 80 GB allocation (Gauss review); the most likely reconciliation is an
+OOM-kill partway through the allocation on a machine with less RAM than 80 GB, but this is
+inference, not a measured allocation trace, and is stated as such in the updated docs.
+
+**Secondary fix (real but small):** `fit_ai_reml`'s EM-warmup + AI-Newton loops previously
+rebuilt sparse cross-products (`XᵀX`, `XᵀZ`, `ZᵀZ`) from scratch every iteration via
+`_sparse_mme_system`, though these are iteration-invariant. New
+`_SparseMMECrossProducts`/`_sparse_mme_cross_products`/`_sparse_mme_from_cross_products`
+compute them once and reuse. Karpinski verified this is bit-for-bit identical to the old
+per-iteration rebuild (not merely algebraically equal) across five σ pairs including extreme
+ratios — but also measured it at only ~0.03% of one AI-REML iteration's wall time at
+n=100,000. **This is NOT the fix for "much slower than ASReml-R."**
+
+**The actual dominant bottleneck, found by Karpinski, NOT fixed in this slice:**
+`selinv_trace_against` (the REML score trace term, called once per AI-REML iteration) costs
+233x-1780x the wall time of the `cholesky(Symmetric(C))` factorization it reuses, on the SAME
+matrix, at n=8,000-100,000 — ~98.6% of one iteration's time at n=100,000. `src/takahashi_selinv.jl`
+had documented this recursion as `O(nnz(L))` in five places; it is actually `Θ(Σⱼ|L[:,j]|²)`
+(same order as the Cholesky factorization itself), an unevidenced complexity claim now
+corrected in the file (all five spots) and in the two new spots this diff added. This APPEARS
+to conflict with an existing q=300,000/"2.3s converged" DRAC measurement in the `V1-REML` row
+(`docs/design/validation-debt-register.md`) — flagged as NOT YET RECONCILED (most likely
+explanation: that benchmark pedigree has much lower fill-in, since this cost is fill-dependent
+not animal-count-dependent, but this has not been checked). Identified, NOT-yet-implemented
+next step: replace `_selinv_zvals`'s per-pair binary-search lookup (`_csc_rowidx`) with a
+dense scatter/gather workspace (Karpinski: "contained change, entirely inside `_selinv_zvals`,
+existing `V1-SELINV-PEV` equality tests are the regression gate," estimated 5-20x); a full
+blocked/supernodal selected inverse would close the remaining gap but is a larger job.
+
+**Also found, NOT fixed in this slice (Gauss review, named as follow-up debt):**
+`fitted_values(fit)` densifies `Z` (`Matrix{Float64}(spec.Z)`) — an equally-severe `O(n²)`
+blow-up for a fully-phenotyped animal model where `Z` is `n_obs × n_animals`, called
+unconditionally by `result_payload`; `henderson_mme` solves the SPD MME via generic sparse LU
+(`lhs \ rhs`) rather than `cholesky(Symmetric(lhs))` (measured 60x slower, more factor fill,
+at n=4000, bit-identical answer), and pays this twice per `result_payload` call (via
+`breeding_values` and `fitted_values`); neither `prediction_error_variance` nor `reliability`
+has a `max_dense_cells`-style guard on their (still-default) `:dense` path. **If the owner's
+report went through `accuracy()` or `breeding_values_plot_data` rather than `result_payload`,
+this slice's fix does not reach it** — both still default to `:dense`.
+
+Checks (fresh, this worktree, `main` tip `3281372c`, uncommitted):
+`julia --project=. -e 'using Pkg; Pkg.test()'` — full suite **passed**
+(`Testing HSquared tests passed`); `grep -inE "fail|error"` over the full log returned
+**empty** (with `test_aqua.jl` temporarily commented out to isolate one pre-existing,
+env-specific Aqua `persistent_tasks` failure — confirmed via `git stash` to reproduce
+IDENTICALLY on unmodified `main`, i.e. not caused by this change; restored before finishing).
+Includes two new committed regression tests: `_selinv_ainv_diag` vs. the exact analytic
+`diag(inv(Ainv)) = 1 + F` identity at n=3000 (beyond the dense reference's own feasibility),
+and a bitwise (`reinterpret(UInt64, ...)`) pin of the cross-product-caching invariant.
+`julia --project=docs docs/make.jl` — the `npm run … vitepress build` step fails with
+`ProcessExited(127)`; confirmed via the same `git stash` technique to fail IDENTICALLY on
+unmodified `main` (pre-existing Node/vitepress toolchain issue in this environment, not
+caused by this change). `bash tools/preamble_cap.sh` — `CAP OK`. `tools/write_validation_status_page.jl`
+re-run after every `src/validation_status.jl` edit; `docs/src/validation-status.md` committed
+in sync (56 rows, unchanged count).
+
+Review: real subagent spawns per the `src/` numerics lane-routing contract (Gauss + Karpinski
++ Noether), plus a Rose claim audit of the doc/status edits (initial verdict BLOCKED on a
+stale generated status page + one overclaim; both fixed, then Gauss/Karpinski's further
+findings applied on top — this entry reflects the fully-corrected state, not the
+intermediate one Rose audited). No re-audit of the final state was run; flagged as a residual.
+
+Constraints honored: `Project.toml` untouched; `public_covered_count` untouched; no
+capability-status row's `covered`/`experimental` STATUS word changed (only evidence text);
+`V1-SELINV-PEV` and `V1-REML` stay `partial`; no version bump; not committed or pushed.
+
+## 2026-09-19 — selected-inverse kernel: dense per-clique block (the AI-REML bottleneck) `[JL]`
+
+Lane: local uncommitted working tree, continuing directly from the 2026-09-17 entry above,
+which DIAGNOSED but did not fix the dominant cost. Owner instruction: "continue straight on
+to the deeper REML performance fix."
+
+**What changed.** `_selinv_zvals` (`src/takahashi_selinv.jl`) is the Takahashi selected-inverse
+recursion behind `takahashi_diag`, `selinv_trace_against` (the `tr(A⁻¹C^uu)` REML score term,
+called once per AI-REML iteration) and `selinv_block_traces`. It needed `Z[k, r]` for every
+ordered pair in a column's clique and fetched each one with a binary search into another
+column — branchy, cache-hostile, and profiled at ~98.6% of an AI-REML iteration at n=100,000.
+It now materialises each column's `m×m` clique block ONCE and accumulates over it with unit
+stride. Two facts make that exact: entries are stored at column `min(row, col)` and the block
+is symmetric, so walking each clique member's own column fills the whole block; and the
+Cholesky fill-path property guarantees that if `i_p` and `i_q` are both in column `j`'s
+pattern then `i_q` IS in column `i_p`'s pattern, so nothing needed is structurally absent.
+Both row lists are sorted, so each block row comes from a linear MERGE (no binary search),
+with per-entry search retained only where a column is long relative to the wanted tail.
+`Θ(Σⱼ|L[:,j]|²)` is UNCHANGED — this is a constant-factor fix, not a complexity-class change.
+
+**Exactness.** The `k` accumulation still runs in ascending `k` and fetches the same stored
+values, so output is BIT-IDENTICAL to the previous kernel. Verified with
+`reinterpret(UInt64, ·)` equality (not `≈`) against a verbatim copy of the pre-optimization
+kernel on: five random sparse SPD matrices (n=50-500, densities 0.02-0.20), pedigree `Ainv`
+at n=200/1000/3000 under generation-structured mating and n=200/800 under fully-random
+mating, and a full Henderson MME coefficient matrix — all `maxdiff = 0.0`. Two committed
+tests pin it going forward: the dense-block path vs. the retained per-pair FALLBACK path
+(forced via an injectable `block_cap`, so the fallback is no longer unexercised), on random
+SPD matrices, a pedigree `Ainv`, and an MME matrix.
+
+**Measured (this machine, single-threaded; old kernel timed by stashing ONLY
+`src/takahashi_selinv.jl`, so the comparison is genuine, not extrapolated):**
+
+- selected inverse alone: **6.65x-9.97x** faster. Generation-structured pedigree `Ainv`:
+  n=2,000 0.572→0.077 s (7.46x); n=8,000 10.279→1.159 s (8.87x); n=30,000 38.412→4.779 s
+  (8.04x). Fully-random-mating (adversarial fill) `Ainv`: n=2,000 6.65x; n=8,000
+  23.139→2.320 s (9.97x). Full Henderson MME matrix: n=2,002 6.69x; n=8,002 8.028→1.023 s
+  (7.85x); n=30,002 42.446→5.063 s (8.38x).
+- end-to-end `fit_ai_reml` on a standard animal model (one response, animal term on the
+  pedigree, intercept + two fixed effects, breeding values simulated DOWN the pedigree so
+  the additive signal is real): n=2,000 **7.32 → 2.96 s (2.5x)**; n=8,000
+  **56.77 → 6.87 s (8.3x)**. Identical iteration counts (7 and 6), identical convergence,
+  identical estimates (h²=0.5163 / 0.4878; σ²a 1.0864 / 0.9987) — as bit-identity predicts.
+  The ratio grows with n because the selected inverse is a larger share of the total at
+  larger n.
+
+**Memory fence.** The dense block is capped at `DEFAULT_SELINV_BLOCK_CAP = 2000` (≈32 MB);
+any wider clique keeps the per-pair path, so a pathological factor cannot turn this into a
+memory blow-up. The buffer is sized `min(maxm, cap)²`, so ordinary small-clique factors
+allocate proportionally little.
+
+**NOT claimed.** No external comparator was run — nothing here is an ASReml-R (or BLUPF90,
+sommer, …) comparison, and the owner's original "slower than ASReml-R" report is NOT closed
+by these numbers, only made much smaller. No real production pedigree was used (all
+synthetic). No end-to-end timing beyond n=8,000 and no selected-inverse timing beyond
+n=30,000. The q=300,000 / "2.3 s converged" DRAC figure in `V1-REML` remains UNRECONCILED
+with the per-iteration profile. No status word, row count, `public_covered_count`, or
+version changed; `V1-REML` and `V1-SELINV-PEV` stay `partial`.
+
+**Also corrected here:** the false `O(nnz(L))` complexity claim, which had survived in
+`docs/design/capability-status.md` in three more places beyond the five already fixed on
+2026-09-17.
+
+**Follow-ups.** Six are drafted as ready-to-file GitHub issue bodies in
+`docs/dev-log/2026-09-19-followup-issue-drafts.md` (this session had no `gh` CLI, so none
+could be opened): `fitted_values` densifying `Z`; `henderson_mme` using UMFPACK LU instead
+of Cholesky and solving twice per payload; the missing dense-size guard on the
+`prediction_error_variance`/`reliability` defaults; the unreconciled q=300k DRAC figure;
+real-pedigree and external-comparator measurement; and a blocked/supernodal selected
+inverse. The first two are the largest remaining items on the `result_payload` path.
+
+Checks (fresh, this worktree): `julia --project=. -e 'using Pkg; Pkg.test()'` — full suite
+**passed**, `grep -inE "fail|error"` over the log **empty**, with `test_aqua.jl` temporarily
+commented out for the run to isolate the pre-existing env-specific Aqua `persistent_tasks`
+failure (confirmed identical on unmodified `main` via `git stash` on 2026-09-17) and restored
+afterwards. `tools/write_validation_status_page.jl` re-run; `docs/src/validation-status.md`
+in sync at 56 rows. `bash tools/preamble_cap.sh` — `CAP OK`. `docs/make.jl` still fails at the
+`npm`/vitepress step, pre-existing and unrelated (confirmed on clean `main` on 2026-09-17).
