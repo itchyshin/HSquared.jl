@@ -5793,11 +5793,27 @@ commits stacked on the PR head (branch `review/355-merge-main`):
   comments). All now say `Θ(Σⱼ|L[:,j]|²)`, tracking fill-in; the PEV docstring regains the
   caveat that `:selinv` is memory-safe but not uniformly faster than `:dense` at moderate size
   on a high-fill pedigree.
+- **Docs example broken by the guard, fixed (`3d0f396c`).** Found by `docs/make.jl`, not by
+  the suite. The quickstart's 3-animal / 3-record `@example` toy has a REML optimum that
+  collapses to `sigma_a2 ~ 3.8e-31`, `sigma_e2 ~ 5.6e-44` on this platform (min relative pivot
+  1.5e-13, `(min/max pivot)² = 7.6e-14`, `cond(C) = 1.2e14`). BOTH guards refuse it at a 1e-12
+  floor, so `prediction_error_variance(fit)` and `reliability(fit)` — published `@example`
+  blocks — throw and the build stops. Verified on the unmodified PR head (`76f36d02`): both
+  calls throw there too, while its Documenter CI passed, so the failure is platform-dependent
+  (the optimizer lands elsewhere on the CI runner). The floor is now **1e-15**, `eps`-level
+  rather than a conditioning preference: measured minimum relative pivots are 4.5e-2 for a
+  full-rank design, 5.7e-13 near-collinear but legitimate (1e-6 relative noise), 1.5e-13 for
+  the quickstart toy, and **7.4e-18 for a duplicated column of `X`** — so the guard still
+  refuses rank deficiency by three orders of magnitude while accepting degenerate-but-well-posed
+  boundary fits. Testset 350 (vii) pins the exact quickstart fixture.
 - **Merge with `main` (`ef4fd744`).** `f5023afe` appended #356–#359 to the `V1-SELINV-PEV` debt
   row this PR rewrote; kept this PR's row, folded the pointers in, and marked `fitted_values`'
   dense `Z` as fixed by this PR (#356 closed as its duplicate) instead of "NOT fixed".
 
-Checks on the merged tree (`8d88e6d8`): `julia --project=. -e 'using Pkg; Pkg.test()'` —
+Checks on the merged tree (`3d0f396c`): `julia --project=. -e 'using Pkg; Pkg.test()'` —
 **passed** (`Testing HSquared tests passed`, 166 test summaries, no failures; Julia 1.13.0,
-Aqua included). `tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
+Aqua included; re-run after the floor change, 43/43 in `test_selinv_defaults_350.jl`).
+`julia --project=docs docs/make.jl` — **passed, EXIT 0, zero failed `@example` blocks**
+(it fails on the PR head, see the docs finding above).
+`tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
 tools/preamble_cap.sh` — `CAP OK`.
