@@ -5603,6 +5603,38 @@ Constraints honored: `Project.toml` untouched; `public_covered_count` untouched;
 capability-status row's `covered`/`experimental` STATUS word changed (only evidence text);
 `V1-SELINV-PEV` and `V1-REML` stay `partial`; no version bump; not committed or pushed.
 
+## 2026-09-18 — #350 sparse selected-inverse defaults for PEV / reliability; result_payload and breeding_values_plot_data no longer form a dense inverse `[JL]`
+
+- Finding (Szymon Drobniak, measured at q = 5,000, one BLAS thread): the AI-REML fit
+  takes 0.03 s but `result_payload` spent 5.9 s / 832 MB forming `inv(Ainv)` inside
+  `reliability` for its diagonal, and `breeding_values_plot_data` 11.4 s / 1.8 GB through
+  the `prediction_error_variance` `:dense` default. Branch `claude/selinv-defaults-350`
+  (scratch worktree, NOT pushed): `prediction_error_variance`/`reliability` default to
+  `:selinv`; the reliability denominator `diag(inv(Ainv))` is read through the Takahashi
+  selected inverse of `Ainv` (`_relationship_diag`; the spec holds no `Pedigree`, so this
+  is the sparse route rather than `1 .+ inbreeding_coefficients` — the `1 + F_i` identity
+  is pinned in the test instead, and the genomic `diag(G) + ridge` behaviour is preserved);
+  `fitted_values` no longer densifies `Z`. `:dense` stays the explicit oracle; AI-REML
+  loop untouched.
+- New `test/test_selinv_defaults_350.jl` (included from `runtests.jl`): red on `main`
+  (`962.5 MB / 3.74 s` at q = 3,000; default still dense; helper missing) → green after
+  the fix (`31.6 MB / 0.007 s`); q = 1,000 half-sib `fit_ai_reml` parity to the dense
+  oracle on every PEV entry and reliability (atol 1e-8).
+- Re-measured with the bridge phase-timing script at q = 5,000
+  (`JULIA_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1`, warm, `@timed`): `result_payload`
+  5.874 s / 831.8 MB → 0.008 s / 33.2 MB; `prediction_error_variance` default
+  11.600 s / 1803.0 MB → 0.002 s / 10.1 MB; `reliability` 5.840 s / 412.9 MB →
+  0.003 s / 14.3 MB; `breeding_values_plot_data` 11.430 s / 1812.5 MB → 0.004 s / 19.5 MB.
+  `fit_ai_reml` itself unchanged (0.24 s on a seeded q = 5,000 fit before and after; the
+  script's unseeded fit row varies with iteration count, 12 vs 100).
+- Checks (run fresh, real output): `julia --project=. -e 'using Pkg; Pkg.test()'` on
+  `6ff1e624` — **passed** (`Testing HSquared tests passed`, 158 testsets, 0
+  `Test Failed`/`Error During Test`, 3 min 11 s); `bash tools/preamble_cap.sh` — `CAP OK`.
+  `docs/make.jl` not run this slice.
+- Constraints honored: `Project.toml` stays `0.9.0`; no capability-status or
+  validation-debt STATUS changed (evidence wording only, where it had become false);
+  no push, no PR.
+
 ## 2026-09-19 — selected-inverse kernel: dense per-clique block (the AI-REML bottleneck) `[JL]`
 
 Lane: local uncommitted working tree, continuing directly from the 2026-09-17 entry above,
