@@ -1,0 +1,21 @@
+# HSquared.jl selected-inverse three-arm bench (arc S2)  2026-09-19T09:24:15.701
+# git_sha=9be11566  julia=1.10.0  os=Darwin arm64-apple-darwin22.4.0
+# blas=LBTConfig([ILP64] libopenblas64_.dylib)
+# JULIA_NUM_THREADS=4  OPENBLAS_NUM_THREADS=1
+# cpu=Apple M1 Ultra
+# SelectedInversion=0.2.1  SuiteSparse(LibSuiteSparse module)=1.10.0
+# NOT CI / OPT-IN measurement only. No performance claim, no regression gate.
+# bench Manifest: 61 packages total, 55 added vs the package env's 5 direct deps
+# bench Manifest _jll packages: CompilerSupportLibraries_jll, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, SuiteSparse_jll, libblastrampoline_jll
+# bench Manifest added (non-stdlib, non-root-dep): ADTypes, Adapt, AliasTables, ArrayInterface, Artifacts, CommonSubexpressions, Compat, CompilerSupportLibraries_jll, ConstructionBase, DataAPI, DataStructures, Dates, DiffResults, DiffRules, DifferentiationInterface, Distributed, DocStringExtensions, EnumX, FillArrays, FiniteDiff, ForwardDiff, Future, IrrationalConstants, JLLWrappers, Libdl, LineSearches, LogExpFunctions, MacroTools, Missings, NLSolversBase, NaNMath, OpenBLAS_jll, OpenLibm_jll, OpenSpecFun_jll, OrderedCollections, PositiveFactorizations, PrecompileTools, Preferences, Printf, PtrArrays, SelectedInversion, Serialization, Setfield, Sockets, SortingAlgorithms, SpecialFunctions, StaticArraysCore, Statistics, StatsAPI, StatsBase, SuiteSparse_jll, TOML, UUIDs, Unicode, libblastrampoline_jll
+fixture	threads	forced_mode	q	nfixed	nnz_C	nnz_L	fill	is_super	index_eltype	T_fact	bytes_fact	T_a	bytes_a	T_b	bytes_b	b_inferred	T_c	bytes_c	S_b	S_c	R_c	err_c	bitwise_b
+f0adv_q20000_fill150	1	auto(economy)	20001	1	143995	4273279	213.653	true	Int64	0.178794	32293656	236.894042	403928112	236.894042	403928112	true	0.832978	377284688	1.00	284.39	4.6589	1.644e-14	true
+boundary_q2000	1	auto	2001	1	13361	7761	3.879	false	Int64	0.000151	599144	0.000176	913312	0.000117	156816	false	0.021452	1414160	1.50	0.01	141.6781	1.281e-14	true
+f0scale_q20000	1	auto	20001	1	133601	77601	3.880	false	Int64	0.001491	5984744	0.001935	9092032	0.001327	1562096	false	2.205270	13640976	1.46	0.00	1479.0133	7.975e-14	true
+f0adv_q20000_fill75	1	auto(economy)	20001	1	120001	881198	44.058	true	Int64	0.017701	8030408	10.600377	84279984	10.600377	84279984	true	0.082815	64952272	1.00	128.00	4.6786	4.445e-14	true
+f0adv_q50000_fill75	1	auto(economy)	50001	1	300001	4167410	83.347	true	Int64	0.168988	37677144	199.473174	396524656	199.473174	396524656	true	0.832518	359946880	1.00	239.60	4.9265	1.139e-13	true
+f0adv_q20000_fill150_forced_simplicial	1	simplicial(economy)	20001	1	143995	3581888	179.085	false	Int64	1.947569	6400504	209.240798	289434736	213.339794	57630576	false	145.776904	294484304	0.98	1.44	74.8507	1.328e-14	true
+dense_pin_n50	1	supernodal	51	1	1251	701	13.745	true	Int64	0.000022	41424	0.000074	78528	0.000069	44976	false	0.000025	43808	1.06	2.89	1.1354	3.062e-16	true
+dense_pin_n50	1	simplicial	51	1	1251	697	13.667	false	Int64	0.000019	52312	0.000074	67296	0.000065	12560	false	0.000123	82640	1.13	0.60	6.6561	4.593e-16	true
+dense_pin_n500	1	supernodal	501	1	15501	33937	67.739	true	Int64	0.000378	547248	0.032579	3084128	0.033507	1813616	false	0.001507	1330912	0.97	21.61	3.9859	7.004e-15	true
+dense_pin_n500	1	simplicial	501	1	15501	30647	61.172	false	Int64	0.001037	636712	0.026913	2527712	0.028225	498832	false	0.031608	2661008	0.95	0.85	30.4829	6.144e-16	true

@@ -1,0 +1,4 @@
+packages_added=1 (SelectedInversion)
+new_jll=0 ()
+precompile_seconds=0.624555333
+measured_on_copy_of=/Users/z3437171/local-scratch/lanes/HSquared.jl-speed2b-20260919//Project.toml+Manifest.toml  selinv_version=0.2.1
