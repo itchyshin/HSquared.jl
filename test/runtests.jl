@@ -10869,6 +10869,7 @@ end
 # max_dense_cells kwarg on the dense-validation fitters (engine half of
 # hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
 include("test_214_217_dense_cells.jl")
+include("test_352_multi_effect_se.jl")
 
 # #334: docs/make.jl must not dirty docs/src/validation-status.md on a
 # no-content-change rebuild (regeneration must be idempotent, no timestamp).
