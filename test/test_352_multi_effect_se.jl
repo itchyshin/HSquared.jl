@@ -116,3 +116,71 @@
         y, X, effs, [1e-12, sigmas[2]], sigma_e2,
     )
 end
+
+@testset "sparse summed-ratio (repeatability) interval (#352)" begin
+    # The sparse repeatability route had no interval: the engine's
+    # repeatability_interval() REFITS densely, so calling it for a fit that only
+    # succeeded by escaping the dense ceiling would re-impose that ceiling. This
+    # forms the interval from the already-fitted components instead.
+    rng = MersenneTwister(4242)
+    nf, no = 80, 170
+    n_animal = nf + no
+    sire = zeros(Int, n_animal); dam = zeros(Int, n_animal)
+    for k in (nf + 1):n_animal
+        sire[k] = rand(rng, 1:nf); dam[k] = rand(rng, 1:nf)
+        while dam[k] == sire[k]; dam[k] = rand(rng, 1:nf); end
+    end
+    Ainv = pedigree_inverse(collect(1:n_animal), sire, dam)
+    Va, Vpe, Ve = 1.0, 0.6, 0.8
+    a = zeros(n_animal); a[1:nf] = randn(rng, nf) .* sqrt(Va)
+    for k in (nf + 1):n_animal
+        a[k] = 0.5 * (a[sire[k]] + a[dam[k]]) + randn(rng) * sqrt(Va / 2)
+    end
+    pe = randn(rng, n_animal) .* sqrt(Vpe)
+    reps = 3; nobs = n_animal * reps; rec = repeat(1:n_animal, reps)
+    y = [2.0 + a[i] + pe[i] + randn(rng) * sqrt(Ve) for i in rec]
+    X = ones(nobs, 1)
+    Z = sparse(1:nobs, rec, 1.0, nobs, n_animal)
+    effs = [(Z, Ainv), (Z, spdiagm(0 => ones(n_animal)))]
+
+    fit = fit_multi_effect(y, X, effs; method = :auto, verbose = false)
+    s = fit.variance_components.sigmas
+    se2 = fit.variance_components.sigma_e2
+    ci = multi_effect_sum_ratio_interval(y, X, effs, s, se2; which = 1:2)
+
+    @test !ci.boundary
+    @test 0 < ci.lower < ci.estimate < ci.upper < 1
+    @test isfinite(ci.se) && ci.se > 0
+
+    # INDEPENDENT cross-check: the dense repeatability_interval, which REFITS
+    # from the raw matrices -- a different estimator and a different interval
+    # code path reaching the same number.
+    dense = repeatability_interval(
+        y, X, Z, Ainv;
+        initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+        iterations = 200,
+    )
+    @test isapprox(ci.estimate, dense.repeatability; atol = 1e-4)
+    @test isapprox(ci.se, dense.se; atol = 1e-4)
+    @test isapprox(ci.lower, dense.lower; atol = 1e-4)
+    @test isapprox(ci.upper, dense.upper; atol = 1e-4)
+
+    # Narrower level gives a narrower interval, same point estimate.
+    ci90 = multi_effect_sum_ratio_interval(y, X, effs, s, se2; which = 1:2, level = 0.90)
+    @test ci90.lower > ci.lower && ci90.upper < ci.upper
+    @test isapprox(ci90.estimate, ci.estimate)
+
+    # which = 1 reduces to the single-component (h2) ratio.
+    ci1 = multi_effect_sum_ratio_interval(y, X, effs, s, se2; which = 1:1)
+    @test isapprox(ci1.estimate, s[1] / (s[1] + s[2] + se2))
+
+    # A ratio on the rail returns NaN endpoints and boundary = true, never throws.
+    rail = multi_effect_sum_ratio_interval(y, X, effs, [1e-14, s[2]], se2; which = 1:1)
+    @test rail.boundary
+    @test isnan(rail.lower) && isnan(rail.upper)
+
+    @test_throws ArgumentError multi_effect_sum_ratio_interval(
+        y, X, effs, s, se2; which = 1:2, level = 1.5)
+    @test_throws ArgumentError multi_effect_sum_ratio_interval(
+        y, X, effs, s, se2; which = 1:5)
+end

@@ -1747,6 +1747,80 @@ function multi_effect_variance_component_standard_errors(
 end
 
 """
+    multi_effect_sum_ratio_interval(y, X, effects, sigmas, sigma_e2;
+                                    which = 1:length(effects), level = 0.95,
+                                    fd_step = 1e-4, boundary_tol = 1e-6)
+
+Delta-method confidence interval for a SUMMED variance ratio
+
+    r = (Σ_{i ∈ which} σᵢ²) / (Σⱼ σⱼ² + σ_e²)
+
+of a K-effect REML fit, on the logit scale so the interval lies in `(0, 1)` —
+the same construction as [`_ratio_delta_ci`](@ref)'s single-component case and
+as [`repeatability_interval`](@ref), generalised to a sum of components.
+
+With `which = 1:2` on an animal + permanent-environment fit this is the
+REPEATABILITY coefficient `t = (σ²_a + σ²_pe) / σ²_P`. Unlike
+`repeatability_interval`, it takes the components from an already-computed fit
+and differentiates the SPARSE [`sparse_multi_reml_loglik`](@ref), so it does not
+refit densely and carries no dense ceiling.
+
+Returns a `NamedTuple` matching the single-ratio shape: `estimate`, `lower`,
+`upper`, `se`, `lower_clamped`, `upper_clamped`, `boundary`. Returns `NaN`
+endpoints with `boundary = true` rather than throwing when the ratio sits on a
+rail or the information is not positive definite. Asymptotic; REML only.
+"""
+function multi_effect_sum_ratio_interval(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    which = 1:length(effects),
+    level::Real = 0.95,
+    fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    K = length(effects)
+    idx = collect(which)
+    all(i -> 1 <= i <= K, idx) ||
+        throw(ArgumentError("which must index components 1..$K"))
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+    total = sum(theta)
+    numer = sum(theta[i] for i in idx)
+    ratio = numer / total
+    na = (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+          lower_clamped = false, upper_clamped = false, boundary = true)
+    # On a rail the logit transform is undefined and the delta SE meaningless.
+    (ratio > boundary_tol && ratio < 1 - boundary_tol) || return na
+
+    cov = try
+        multi_effect_variance_component_covariance(
+            y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+        )
+    catch
+        # The covariance refuses at a flat/boundary optimum by design; an
+        # interval is simply unavailable there, which is not an error.
+        return na
+    end
+
+    # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
+    g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
+    se = sqrt(max(dot(g, cov * g), 0.0))
+    (isfinite(se) && se > 0) || return merge(na, (se = se,))
+
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(ratio / (1 - ratio))
+    se_eta = se / (ratio * (1 - ratio))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (estimate = ratio, lower = lower, upper = upper, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            boundary = false)
+end
+
+"""
     multi_effect_ratio_standard_errors(y, X, effects, sigmas, sigma_e2;
                                        fd_step = 1e-4)
 
