@@ -33,6 +33,16 @@
 # symmetric contributions into a length-`m` accumulator: no search, no `m×m` block,
 # no width cap, and the same per-entry summation order (see its own comment), so the
 # output stays BIT-IDENTICAL to the original per-pair recursion.
+# A further constant-factor step rides on top: when a clique member's column tail IS the
+# clique tail (the dense trailing supernode of a high-fill factor), the merge becomes a
+# unit-stride `@simd` loop. That reassociates ONE reduction, so THAT path is gated at a
+# stated rtol (1.3e-15 relative, measured at fill 471) rather than bitwise;
+# `_selinv_zvals(ch; strict_order = true)` keeps the bit-identical merge, and
+# `per_pair = true` the original recursion. Measured on top of the scatter, same machine:
+#   q=10,000 fill 262   1.957 s -> 0.946 s  (2.07x, max rel diff 1.2e-15)
+#   q=20,000 fill 471  14.825 s -> 5.451 s  (2.72x, max rel diff 1.3e-15)
+# so against the capped dense-block kernel the two steps together are 416.8 s -> 5.45 s (76x).
+#
 # Measured on one thread (Mac Studio M1 Ultra), f0adv adversarial pedigrees, full MME,
 # bit-identical output, against the capped dense-block kernel (see the check-log):
 #   q=5,000  fill 107-151   1.7x-1.8x
@@ -81,7 +91,8 @@ end
 # arrays and permutation to map back to the original ordering. Cost is
 # `Θ(Σⱼ|L[:,j]|²)` (see the WHY block above), NOT `O(nnz(L))`; the
 # `L + Lᵀ` pattern entries are exact regardless of that cost.
-function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool = false)
+function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool = false,
+                       strict_order::Bool = false)
     L = sparse(ch.L)
     perm = ch.p
     n = size(L, 1)
@@ -136,7 +147,23 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool 
             sp = acc[p] + lp * Zvals[pcs]               # p == q: Z[i_p, i_p]
             ntail = m - p
             if ntail > 0
-                if (pce - pcs) <= 11 * ntail
+                # ALIGNED TAIL. When column `i_p`'s first `ntail` off-diagonal rows ARE the
+                # clique tail, the merge degenerates to a unit-stride walk. The three cheap
+                # tests below are exact, not heuristic: the tail is a subset of column `i_p`'s
+                # pattern (fill-path property), it has `ntail` elements, they lie in
+                # `[i_{p+1}, i_m]`, and column `i_p` holds exactly `ntail` rows in that range
+                # when its `ntail`-th row is `i_m` — so the two lists coincide. `@simd`
+                # reassociates the `sp` reduction, which is why this path is gated at rtol
+                # rather than bitwise (measured 1.3e-15 relative on a fill-471 factor);
+                # `strict_order = true` keeps the bit-identical merge.
+                if !strict_order && (pce - pcs) >= ntail &&
+                   rowval[pcs + 1] == rowval[cs + p + 1] && rowval[pcs + ntail] == rowval[cs + m]
+                    @simd for t in 1:ntail
+                        v = Zvals[pcs + t]
+                        sp += Lvals[cs + p + t] * v
+                        acc[p + t] = muladd(lp, v, acc[p + t])
+                    end
+                elseif (pce - pcs) <= 11 * ntail
                     # linear merge of two ascending row lists
                     a = pcs + 1
                     q = p + 1

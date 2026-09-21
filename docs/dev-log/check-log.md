@@ -5917,3 +5917,45 @@ Checks (this worktree, stacked on the #355 review branch): `julia --project=. -e
 Pkg.test()'` — **passed** (`Testing HSquared tests passed`, 170 test summaries, no failures,
 Julia 1.13.0, Aqua included). `bash tools/preamble_cap.sh` — `CAP OK`. No status flips; no
 capability row moves; `public_covered_count` stays 7. CI pending the push.
+
+## 2026-09-19 — selected-inverse kernel: aligned-tail SIMD path (rtol-gated, on top of the cap-free scatter) `[JL]`
+
+Handover #360 item 4, taken first because it decides D-271 (#353). In the dense trailing
+supernode of a high-fill factor, a clique member's column tail IS the clique tail, so the
+merge degenerates to a unit-stride walk that `@simd` can vectorise. Three cheap tests select
+that path and they are EXACT, not heuristic: the clique tail is a subset of column `i_p`'s
+pattern (Cholesky fill-path property), it has `ntail` elements lying in `[i_{p+1}, i_m]`, and
+column `i_p` holds exactly `ntail` rows in that range when its `ntail`-th row is `i_m` — so
+the two lists coincide.
+
+`@simd` reassociates the `sp` reduction, so unlike the cap-free scatter this path is gated at
+a STATED rtol, not bitwise. `_selinv_zvals(ch; strict_order = true)` keeps the bit-identical
+merge and `per_pair = true` the original recursion; both stay as references.
+
+Measured (Mac Studio M1 Ultra, one thread, Julia 1.13.0, f0adv MME, in-package):
+
+| fixture | fill | strict (bitwise) | SIMD | ratio | max rel diff |
+|---|---|---|---|---|---|
+| q=10,000 frac 0.005 | 262.4 | 1.957 s | 0.946 s | 2.07x | 1.2e-15 |
+| q=20,000 frac 0.005 | 471.1 | 14.825 s | 5.451 s | 2.72x | 1.3e-15 |
+
+Against the capped dense-block kernel on `main`, the two steps together are **416.8 s → 5.45 s
+(76x)** at the D-271 banked point.
+
+**D-271 consequence:** SelectedInversion.jl takes 1.19 s on that same factor, so its lead over
+our kernel is now **4.6x — under the 10x bar**. Per D-271 that means keep ours and close #353
+with the number, once this and #361 are on `main` and the banked point has been re-run on
+Totoro (Shinichi's machine; `bench/selinv_arms.jl --totoro-arm` with `EXPECTED_KERNEL_SHA`
+bumped). The decision is recorded on #353; no extension was built.
+
+Tests: new testset "_selinv_zvals aligned-tail SIMD path" (15 assertions) asserts the
+fill-path property itself on four CHOLMOD factors (8-animal MME and `Ainv`, 400-animal
+random-mating MME and `Ainv`) — supernodal amalgamation pads columns with explicit zeros, so
+the property is pinned rather than assumed — then `strict_order` output bitwise-equal to the
+per-pair reference, the SIMD path within 1e-12 relative of it, a converged `fit_ai_reml` on
+the same fixture (the fixture carries additive signal; a noise-only `y` sits on the REML
+boundary and would test the fixture, not the kernel), and `selinv_trace_against` equal to the
+materialised selected inverse to rtol 1e-10.
+
+Checks: full `Pkg.test()` and `docs/make.jl` — see the commit's own CI; the new testset runs
+15/15 locally. `bash tools/preamble_cap.sh` — `CAP OK`.
