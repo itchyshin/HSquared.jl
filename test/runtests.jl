@@ -207,6 +207,7 @@ include("test_aqua.jl")
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
     @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
+    @test Docs.hasdoc(HSquared, :multi_effect_variance_component_covariance)
     gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
     @test occursin("Laplace marginal likelihood", gllvm_row.evidence)
     @test occursin("not REML", gllvm_row.claim_boundary)
