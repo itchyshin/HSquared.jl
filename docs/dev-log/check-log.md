@@ -5870,3 +5870,50 @@ Checks (this worktree, `93711c9a` + these docs): `julia --project=. -e 'using Pk
 — **passed** (`Testing HSquared tests passed`, 160 test summaries, no failures, Julia 1.13.0,
 Aqua included). `tools/write_validation_status_page.jl` — 56 rows, no diff.
 `bash tools/preamble_cap.sh` — `CAP OK`. CI pending the push.
+
+## 2026-09-19 — reliability denominator from 1 + F where Julia builds Ainv from a pedigree `[JL]`
+
+Handover #360 item 3 (my own #350 suggestion, split out as its own change). `reliability`
+needs `diag(A) = diag(inv(Ainv))`. #355 reads it through a selected inverse of `Ainv`
+(`Θ(Σⱼ|L[:,j]|²)` over the factor of `Ainv`). For a pedigree `Ainv` it is `1 + F`, and
+`pedigree_inverse` already runs Meuwissen & Luo for `F` because Henderson's rules need the
+Mendelian sampling variance `d_i = 0.5 − 0.25(F_sire + F_dam)`. So the diagonal is already
+paid for wherever `Ainv` is built from pedigree rows.
+
+Implemented: `_pedigree_inverse_and_inbreeding(ped) -> (Ainv, F)` with `pedigree_inverse`
+delegating to it (`Ainv` byte-identical, pinned); `AnimalModelSpec.relationship_diag`
+(`Union{Nothing,Vector{Float64}}`, 7-arg constructor unchanged); `animal_model_spec` and the
+4-matrix `fit_animal_model` accept it (length/finite/positive checked — consistency with
+`Ainv` stays the caller's contract, stated in the docstring); `reliability` under `:auto`
+reads it, while explicit `:selinv`/`:dense` keep their literal paths as the parity oracles;
+payload-v2 `build_in_julia` pedigree blocks carry `1 .+ F` in `Ainv`'s own normalized row
+order and the `:animal` dispatch forwards it (supplied/identity relmats carry `nothing`).
+
+Measured (Mac Studio M1 Ultra, one thread, Julia 1.13.0), generation-structured pedigree,
+50 generations x 2,000 = **100,000 animals**, parents drawn at random from the previous
+generation (100 sires), fill of `L_Ainv` = 170.8:
+
+- `pedigree_inverse(ped)`: **39.3 s**, essentially all of it the Meuwissen & Luo pass
+  (`inbreeding_coefficients` alone, separate call: 39.9 s) — so `1 + F` is FREE at the
+  point `Ainv` is built.
+- selected-inverse diagonal of the same `Ainv` (`takahashi_diag`): **878.4 s** with the
+  kernel on `main`, **35.7 s** with the cap-free scatter kernel of the same date
+  (`perf/selinv-capfree-scatter`, 24.6x). Both are the honest comparison: after that kernel
+  lands the denominator costs 36 s rather than 15 minutes, and `1 + F` still makes it free —
+  and the kernel is what a SUPPLIED `Ainv` (R-built, genomic, metafounder) still depends on.
+- `max|selinv − (1 + F)| = 6.2e-14` — the two agree, so this is a cost change, not a
+  numerical one.
+
+At validation scale the two paths are indistinguishable in time; the point is the large
+pedigree, where the reliability denominator goes from ~15 minutes to free.
+
+Tests: `test/test_relationship_diag_1pF.jl`, 21 assertions (byte-identical `Ainv`, `F` equal
+to `inbreeding_coefficients`; `:auto` takes the carried diagonal by identity and equals
+`:selinv` and `:dense` reliability to 1e-10 on an inbred 240-animal pedigree; short/zero/NaN
+diagonals refused; payload-v2 path attaches `1 + F` and its payload reliability equals the
+selected-inverse one to 1e-10; a supplied `Ainv` keeps the selected inverse).
+
+Checks (this worktree, stacked on the #355 review branch): `julia --project=. -e 'using Pkg;
+Pkg.test()'` — **passed** (`Testing HSquared tests passed`, 170 test summaries, no failures,
+Julia 1.13.0, Aqua included). `bash tools/preamble_cap.sh` — `CAP OK`. No status flips; no
+capability row moves; `public_covered_count` stays 7. CI pending the push.

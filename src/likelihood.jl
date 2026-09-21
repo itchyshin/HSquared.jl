@@ -1683,13 +1683,14 @@ rather than returning `NaN` when the information is not finite positive-definite
 (a flat or boundary optimum), or when a component sits so close to zero that the
 finite-difference step would take it non-positive. Experimental; REML only.
 """
-function multi_effect_variance_component_covariance(
+function _multi_effect_variance_component_covariance(
     y::AbstractVector,
     X::AbstractMatrix,
     effects::AbstractVector,
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
+    unavailable::Symbol = :throw,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -1705,19 +1706,38 @@ function multi_effect_variance_component_covariance(
     # positive" from inside the difference quotient — an opaque failure that
     # looks like a bug rather than a boundary. Refuse up front instead.
     h = fd_step .* max.(abs.(theta), 1e-3)
-    all(theta .- 2 .* h .> 0) || throw(ArgumentError(
-        "a variance component is too close to zero for a finite-difference " *
-        "information matrix (boundary optimum); standard errors are unavailable",
-    ))
+    if !all(theta .- 2 .* h .> 0)
+        unavailable === :nothing && return nothing
+        throw(ArgumentError(
+            "a variance component is too close to zero for a finite-difference " *
+            "information matrix (boundary optimum); standard errors are unavailable",
+        ))
+    end
 
     # `sparse_multi_reml_loglik` returns the plain tuple (loglik, beta, us).
     loglik(t) = sparse_multi_reml_loglik(y, X, effects, t[1:K], t[K + 1])[1]
     info = _reml_fd_information(loglik, theta, fd_step)
-    (all(isfinite, info) && isposdef(info)) || throw(ArgumentError(
-        "observed information is not finite positive-definite at the estimate " *
-        "(flat/boundary optimum); standard errors are unavailable",
-    ))
+    if !(all(isfinite, info) && isposdef(info))
+        unavailable === :nothing && return nothing
+        throw(ArgumentError(
+            "observed information is not finite positive-definite at the estimate " *
+            "(flat/boundary optimum); standard errors are unavailable",
+        ))
+    end
     return inv(info)
+end
+
+function multi_effect_variance_component_covariance(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    fd_step::Real = 1e-4,
+)
+    return _multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :throw,
+    )
 end
 
 """
@@ -1784,6 +1804,7 @@ function multi_effect_sum_ratio_interval(
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     K = length(effects)
     idx = collect(which)
+    isempty(idx) && throw(ArgumentError("which must select at least one component"))
     all(i -> 1 <= i <= K, idx) ||
         throw(ArgumentError("which must index components 1..$K"))
     theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
@@ -1795,18 +1816,15 @@ function multi_effect_sum_ratio_interval(
     # On a rail the logit transform is undefined and the delta SE meaningless.
     (ratio > boundary_tol && ratio < 1 - boundary_tol) || return na
 
-    cov = try
-        multi_effect_variance_component_covariance(
-            y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
-        )
-    catch
-        # The covariance refuses at a flat/boundary optimum by design; an
-        # interval is simply unavailable there, which is not an error.
-        return na
-    end
+    cov = _multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :nothing,
+    )
+    cov === nothing && return na
 
     # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
-    g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
+    selected = falses(K + 1)
+    selected[idx] .= true
+    g = [((selected[j]) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
     se = sqrt(max(dot(g, cov * g), 0.0))
     (isfinite(se) && se > 0) || return merge(na, (se = se,))
 
@@ -2670,9 +2688,11 @@ function fit_animal_model(
     method = :REML,
     target = :variance_components,
     variance_components = nothing,
+    relationship_diag = nothing,
     kwargs...,
 )
-    spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ids, family = family, method = method,
+                             relationship_diag = relationship_diag)
     return fit_animal_model(
         spec;
         target = target,
@@ -2901,7 +2921,7 @@ small examples can expose weakly informed animals directly.
 """
 function reliability(fit::AnimalModelFit; method::Symbol = :auto, pev = nothing)
     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
-    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec.Ainv, method)
+    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -2914,7 +2934,7 @@ end
 
 function reliability(result::HendersonMMEResult; method::Symbol = :auto)
     pev = prediction_error_variance(result; method = method)
-    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec.Ainv, method)
+    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec, method)
 
     all(>(0), animal_variance) ||
         throw(ArgumentError("animal-level additive variances must be positive"))
@@ -3686,6 +3706,17 @@ function _relationship_diag(Ainv::AbstractMatrix, method::Symbol = :auto)
     end
 end
 
+# Spec-level entry: under `:auto`, a precomputed `diag(inv(Ainv))` carried by the spec
+# (`1 .+ F` of the pedigree that built `Ainv`, attached by the bridge) replaces the
+# selected inverse of `Ainv` -- Meuwissen & Luo already paid for `F` inside
+# `pedigree_inverse`, whereas the selected inverse costs Θ(Σⱼ|L[:,j]|²) over the factor
+# of `Ainv`. Explicit `:selinv` / `:dense` keep their literal paths (the parity oracles).
+function _relationship_diag(spec::AnimalModelSpec, method::Symbol = :auto)
+    d = spec.relationship_diag
+    (d !== nothing && method === :auto) && return d
+    return _relationship_diag(spec.Ainv, method)
+end
+
 """
     bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
         n_boot = 1000, estimator = :sparse_reml,
@@ -3755,7 +3786,8 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
     for _ in 1:n_boot
         ystar = mu .+ Z * (LA * randn(rng, q) .* sqrt(s2a)) .+ randn(rng, n) .* sqrt(s2e)
         try
-            spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML)
+            spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML,
+                                       relationship_diag = spec.relationship_diag)
             fb = refit(spec_b)
             sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
             (isfinite(sab) && isfinite(seb) && sab > 0 && seb > 0) || continue
