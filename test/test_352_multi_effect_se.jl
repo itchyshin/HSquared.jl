@@ -110,6 +110,9 @@
     @test_throws ArgumentError multi_effect_variance_component_covariance(
         y, X, effs, sigmas, -1.0,
     )
+    @test_throws ArgumentError HSquared._multi_effect_variance_component_covariance(
+        y, X, effs, sigmas, sigma_e2; unavailable = :bogus,
+    )
     # A component at the boundary is refused up front, with the boundary named,
     # rather than failing opaquely inside the difference quotient.
     @test_throws ArgumentError multi_effect_variance_component_covariance(

@@ -1267,15 +1267,35 @@ end
 # vector `theta` (length `d`), by central finite differences with a
 # component-relative step `fd_step · max(|θ_i|, 1e-3)`. Shared by the two-effect
 # and K-effect ratio-interval paths.
+#
+# PERFORMANCE. The loop runs the UPPER TRIANGLE only (`j in i:d`) and mirrors
+# each cell, cutting `4·d²` evaluations of `f` to `4·d·(d+1)/2` — at `d = K+1 = 3`
+# (the animal + permanent-environment fit), 36 evaluations to 24. The result is
+# BITWISE UNCHANGED, for two reasons that are worth stating because neither is
+# obvious:
+#   * the return is `Symmetric(-H)`, which reads the upper triangle, so the
+#     `i > j` cells were computed and then DISCARDED;
+#   * for `i ≠ j` the `(j, i)` cell perturbs the same two coordinates as `(i, j)`,
+#     and because `ei` and `ej` touch disjoint components, `theta + ei + ej` is
+#     bitwise equal whichever order the two vectors are added in. So mirroring
+#     reproduces the discarded cell exactly rather than approximating it.
+# The DIAGONAL is deliberately left alone. Its four points are `(θ±h)±h`, not
+# `θ` and `θ±2h`: collapsing the two middle points to `θ` would be one fewer
+# evaluation per diagonal cell but is NOT value-preserving — measured, it moves
+# the covariance by ~6e-5 relative, because the `4·h_i·h_j ≈ 1.4e-8` divisor
+# amplifies the ~1e-11 absolute noise in a REML log-likelihood of order 2e4.
+# That noise floor is a property of this estimand (see the `fd_step` caveat on
+# `multi_effect_variance_component_covariance`), not of the loop.
 function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)
     d = length(theta)
     h = fd_step .* max.(abs.(theta), 1e-3)
     H = zeros(d, d)
-    for i in 1:d, j in 1:d
+    for i in 1:d, j in i:d
         ei = zeros(d); ei[i] = h[i]
         ej = zeros(d); ej[j] = h[j]
         H[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
                    f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+        H[j, i] = H[i, j]
     end
     return Symmetric(-H)
 end
@@ -1692,6 +1712,8 @@ function _multi_effect_variance_component_covariance(
     fd_step::Real = 1e-4,
     unavailable::Symbol = :throw,
 )
+    unavailable in (:throw, :nothing) ||
+        throw(ArgumentError("unavailable must be :throw or :nothing"))
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
     length(sigmas) == K ||
@@ -1714,8 +1736,11 @@ function _multi_effect_variance_component_covariance(
         ))
     end
 
-    # `sparse_multi_reml_loglik` returns the plain tuple (loglik, beta, us).
-    loglik(t) = sparse_multi_reml_loglik(y, X, effects, t[1:K], t[K + 1])[1]
+    # ONE workspace across every finite-difference point. Those points differ only
+    # in σ, so the conversions, cross-products, `log|Aᵢ⁻¹|` and the symbolic
+    # factorization are shared rather than rebuilt 24 times (`_MultiREMLWorkspace`).
+    ws = _multi_reml_workspace(y, X, effects)
+    loglik(t) = _multi_reml_loglik!(ws, t[1:K], t[K + 1])[1]
     info = _reml_fd_information(loglik, theta, fd_step)
     if !(all(isfinite, info) && isposdef(info))
         unavailable === :nothing && return nothing
@@ -1760,10 +1785,49 @@ function multi_effect_variance_component_standard_errors(
     cov = multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
     )
-    return (
-        sigmas = [sqrt(cov[i, i]) for i in 1:K],
-        sigma_e2 = sqrt(cov[K + 1, K + 1]),
-    )
+    return _vc_se_from_cov(cov, K)
+end
+
+# --- derivations from an already-computed variance-component covariance ---
+#
+# Each of these was inline in the function below it. They are split out so that
+# `multi_effect_uncertainty` can produce all three products from ONE covariance
+# instead of three identical ones, WITHOUT restating a single formula: the
+# standalone functions and the combined one now run the same code on the same
+# matrix. The arithmetic is byte-for-byte what it was inline.
+
+_vc_se_from_cov(cov, K::Integer) =
+    (sigmas = [sqrt(cov[i, i]) for i in 1:K], sigma_e2 = sqrt(cov[K + 1, K + 1]))
+
+function _ratio_se_from_cov(cov, theta::AbstractVector, K::Integer)
+    total = sum(theta)
+    ses = Vector{Float64}(undef, K)
+    for i in 1:K
+        # ratio_i = θ_i / Σθ  =>  ∂ratio_i/∂θ_j = (δ_ij·Σθ − θ_i) / (Σθ)²
+        g = [((j == i ? total : 0.0) - theta[i]) / total^2 for j in 1:(K + 1)]
+        ses[i] = sqrt(max(0.0, dot(g, cov * g)))
+    end
+    return ses
+end
+
+function _sum_ratio_ci_from_cov(cov, theta::AbstractVector, idx, K::Integer,
+                                level::Real, na)
+    total = sum(theta)
+    numer = sum(theta[i] for i in idx)
+    ratio = numer / total
+    # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
+    g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
+    se = sqrt(max(dot(g, cov * g), 0.0))
+    (isfinite(se) && se > 0) || return merge(na, (se = se,))
+
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(ratio / (1 - ratio))
+    se_eta = se / (ratio * (1 - ratio))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (estimate = ratio, lower = lower, upper = upper, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            boundary = false)
 end
 
 """
@@ -1776,7 +1840,7 @@ Delta-method confidence interval for a SUMMED variance ratio
     r = (Σ_{i ∈ which} σᵢ²) / (Σⱼ σⱼ² + σ_e²)
 
 of a K-effect REML fit, on the logit scale so the interval lies in `(0, 1)` —
-the same construction as [`_ratio_delta_ci`](@ref)'s single-component case and
+the same construction as `_ratio_delta_ci`'s single-component case and
 as [`repeatability_interval`](@ref), generalised to a sum of components.
 
 With `which = 1:2` on an animal + permanent-environment fit this is the
@@ -1821,21 +1885,7 @@ function multi_effect_sum_ratio_interval(
     )
     cov === nothing && return na
 
-    # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
-    selected = falses(K + 1)
-    selected[idx] .= true
-    g = [((selected[j]) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
-    se = sqrt(max(dot(g, cov * g), 0.0))
-    (isfinite(se) && se > 0) || return merge(na, (se = se,))
-
-    z = _standard_normal_quantile((1 + level) / 2)
-    eta = log(ratio / (1 - ratio))
-    se_eta = se / (ratio * (1 - ratio))
-    lower = 1 / (1 + exp(-(eta - z * se_eta)))
-    upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (estimate = ratio, lower = lower, upper = upper, se = se,
-            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
-            boundary = false)
+    return _sum_ratio_ci_from_cov(cov, theta, idx, K, level, na)
 end
 
 """
@@ -1864,14 +1914,86 @@ function multi_effect_ratio_standard_errors(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
     )
     theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+    return _ratio_se_from_cov(cov, theta, K)
+end
+
+"""
+    multi_effect_uncertainty(y, X, effects, sigmas, sigma_e2;
+                             which = 1:length(effects), level = 0.95,
+                             fd_step = 1e-4, boundary_tol = 1e-6)
+
+Every asymptotic uncertainty product of a `K`-effect REML fit, from ONE
+information matrix. Returns a `NamedTuple` with
+
+  * `covariance` — the `(K+1)×(K+1)` asymptotic covariance of
+    `[σ₁²,…,σ_K², σ_e²]` ([`multi_effect_variance_component_covariance`](@ref));
+  * `variance_component_se` — `(sigmas, sigma_e2)`, as
+    [`multi_effect_variance_component_standard_errors`](@ref);
+  * `ratio_se` — the length-`K` vector of
+    [`multi_effect_ratio_standard_errors`](@ref);
+  * `sum_ratio_interval` — the summed-ratio CI of
+    [`multi_effect_sum_ratio_interval`](@ref) over `which`;
+  * `level`.
+
+WHY IT EXISTS. Those three functions each build the covariance, and the
+covariance is a finite-difference Hessian of the REML log-likelihood — the
+single most expensive post-fit quantity in this package. A caller that wants
+all three (the R twin's `target = "repeatability"` sparse route wants exactly
+these three) was paying for three IDENTICAL information matrices. Measured on
+the great tit animal + permanent-environment fit: 4.40 s for the three separate
+calls, against 1.47 s for one covariance — and that 1.47 s is itself down from
+the pre-workspace cost (see `_MultiREMLWorkspace`).
+
+The returned values are identical to calling the three functions separately;
+this only stops paying three times for one matrix.
+
+Failure behaviour follows the individual functions. The covariance THROWS at a
+flat or boundary optimum, so this throws too, once, rather than reporting three
+separate failures for one cause. A summed ratio sitting on a `0`/`1` rail is
+different — the covariance is fine and only the logit interval is undefined, so
+`sum_ratio_interval` carries `boundary = true` with `NaN` endpoints while the
+standard errors are returned normally.
+
+Experimental, REML only, asymptotic and NOT coverage-calibrated (the same fence
+as every component of it).
+"""
+function multi_effect_uncertainty(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    which = 1:length(effects),
+    level::Real = 0.95,
+    fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    K = length(effects)
+    idx = collect(which)
+    all(i -> 1 <= i <= K, idx) ||
+        throw(ArgumentError("which must index components 1..$K"))
+
+    cov = multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+    )
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
     total = sum(theta)
-    ses = Vector{Float64}(undef, K)
-    for i in 1:K
-        # ratio_i = θ_i / Σθ  =>  ∂ratio_i/∂θ_j = (δ_ij·Σθ − θ_i) / (Σθ)²
-        g = [((j == i ? total : 0.0) - theta[i]) / total^2 for j in 1:(K + 1)]
-        ses[i] = sqrt(max(0.0, dot(g, cov * g)))
-    end
-    return ses
+    ratio = sum(theta[i] for i in idx) / total
+    na = (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+          lower_clamped = false, upper_clamped = false, boundary = true)
+    # Same rail guard as `multi_effect_sum_ratio_interval`: on a rail the logit
+    # transform is undefined and the delta SE meaningless.
+    sum_ratio = (ratio > boundary_tol && ratio < 1 - boundary_tol) ?
+        _sum_ratio_ci_from_cov(cov, theta, idx, K, level, na) : na
+
+    return (
+        covariance = cov,
+        variance_component_se = _vc_se_from_cov(cov, K),
+        ratio_se = _ratio_se_from_cov(cov, theta, K),
+        sum_ratio_interval = sum_ratio,
+        level = level,
+    )
 end
 
 # Assemble the SPARSE Henderson mixed-model-equation coefficient matrix `C` and
@@ -1892,6 +2014,135 @@ function _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigm
     ]
     rhs = vcat(rp .* Xty, rp .* Zty)
     return lhs, rhs
+end
+
+# Reusable workspace for repeated `sparse_multi_reml_loglik` evaluations at DIFFERENT
+# variance components on the SAME data.
+#
+# WHY THIS EXISTS. `multi_effect_variance_component_covariance` differentiates the
+# REML log-likelihood by finite differences, so it evaluates it `4·d·(d+1)/2` times
+# (24 at `K = 2`) at points that differ ONLY in `(σ₁²,…,σ_K², σ_e²)`. Everything
+# else is identical at every one of those points, and was being rebuilt at every
+# one of them: the `Float64`/`sparse` conversions of `y`, `X`, each `Zᵢ` and each
+# `Aᵢ⁻¹`; the four cross-products `X'X, X'Z, Z'X, Z'Z` and `X'y, Z'y`; `y'y`; each
+# `log|Aᵢ⁻¹|`; and — the largest single item — the SYMBOLIC analysis (AMD ordering,
+# elimination tree, supernode structure) inside `cholesky`, even though the
+# sparsity pattern of the Henderson coefficient matrix `C` never changes across
+# those points. Only `C`'s VALUES do.
+#
+# Measured on the great tit animal + permanent-environment fit (n = 11,856,
+# q = 10,937, `C` 21,937 × 21,937, one thread): one evaluation 43.2 ms → 9.08 ms
+# (4.8x), of which `cholesky` → `cholesky!` is 26.3 ms → 7.7 ms and the hoisted
+# `log|Aᵢ⁻¹|` is a further 5.7 ms. The loglik is BITWISE unchanged (`test/`
+# pins it), because the arithmetic and its order are untouched — only the point
+# at which each σ-independent term is computed moved.
+mutable struct _MultiREMLWorkspace
+    yv::Vector{Float64}
+    Xs::SparseMatrixCSC{Float64,Int}
+    Zs::Vector{SparseMatrixCSC{Float64,Int}}
+    Ainvs::Vector{SparseMatrixCSC{Float64,Int}}
+    qs::Vector{Int}
+    XtX::SparseMatrixCSC{Float64,Int}
+    XtZ::SparseMatrixCSC{Float64,Int}
+    ZtX::SparseMatrixCSC{Float64,Int}
+    ZtZ::SparseMatrixCSC{Float64,Int}
+    Xty::Vector{Float64}
+    Zty::Vector{Float64}
+    logdet_ainv::Vector{Float64}     # log|Aᵢ⁻¹|, constant in σ
+    yty::Float64                     # y'y, constant in σ
+    n::Int
+    nfixed::Int
+    factor::Union{Nothing,SparseArrays.CHOLMOD.Factor{Float64}}   # symbolic reused
+end
+
+# Validate `(y, X, effects)` and precompute every σ-independent quantity. Carries
+# the SAME argument checks, in the same order, that `sparse_multi_reml_loglik`
+# applied inline before the split, so malformed input still throws identically.
+function _multi_reml_workspace(y::AbstractVector, X::AbstractMatrix,
+                               effects::AbstractVector)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    n = length(y)
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    yv = Float64.(y)
+    Xs = sparse(Float64.(X))
+    nfixed = size(Xs, 2)
+    nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+
+    Zs = SparseMatrixCSC{Float64,Int}[]
+    Ainvs = SparseMatrixCSC{Float64,Int}[]
+    qs = Int[]
+    for (i, pair) in enumerate(effects)
+        Zi, Ainvi = pair
+        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+        qi = size(Ainvi, 1)
+        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+        push!(Zs, sparse(Float64.(Zi)))
+        push!(Ainvs, sparse(Float64.(Ainvi)))
+        push!(qs, qi)
+    end
+
+    Zf = reduce(hcat, Zs)
+    Xt = transpose(Xs); Zft = transpose(Zf)
+    return _MultiREMLWorkspace(
+        yv, Xs, Zs, Ainvs, qs,
+        sparse(Xt * Xs), sparse(Xt * Zf), sparse(Zft * Xs), sparse(Zft * Zf),
+        Vector(Xt * yv), Vector(Zft * yv),
+        [logdet(cholesky(Symmetric(A); check = true)) for A in Ainvs],
+        dot(yv, yv), n, nfixed, nothing,
+    )
+end
+
+# σ-dependent half of `sparse_multi_reml_loglik`. Reuses `ws.factor`'s symbolic
+# analysis through `cholesky!` once it exists. `cholesky!` can only fail here if
+# `C` is not positive definite at these components, which a fresh `cholesky`
+# would reject too — but it is also the one call that depends on cached state,
+# so a failure falls back to a fresh factorization rather than propagating a
+# cache artefact as if it were a property of the data.
+function _multi_reml_loglik!(ws::_MultiREMLWorkspace, sigmas::AbstractVector,
+                             sigma_e2::Real)
+    K = length(ws.Ainvs)
+    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    ss = Float64.(collect(sigmas))
+    se2 = Float64(sigma_e2)
+    n = ws.n; nfixed = ws.nfixed
+
+    lhs, rhs = _sparse_multi_lhs_rhs(ws.XtX, ws.XtZ, ws.ZtX, ws.ZtZ, ws.Xty, ws.Zty,
+                                     ws.Ainvs, ss, se2)
+    sym = Symmetric(lhs)
+    if ws.factor === nothing
+        ws.factor = cholesky(sym; check = true)
+    else
+        try
+            cholesky!(ws.factor, sym; check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            ws.factor = cholesky(sym; check = true)
+        end
+    end
+    factor = ws.factor
+    solution = factor \ rhs
+
+    beta = Vector{Float64}(solution[1:nfixed])
+    us = Vector{Vector{Float64}}(undef, K)
+    off = nfixed
+    for i in 1:K
+        us[i] = Vector{Float64}(solution[(off + 1):(off + ws.qs[i])])
+        off += ws.qs[i]
+    end
+
+    logdetR = n * log(se2)
+    logdetG = 0.0
+    for i in 1:K
+        logdetG += ws.qs[i] * log(ss[i]) - ws.logdet_ainv[i]
+    end
+    logdetC = logdet(factor)
+    quad = inv(se2) * ws.yty - dot(rhs, solution)      # y'Py
+    loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+    return loglik, beta, us
 end
 
 """
@@ -1919,60 +2170,14 @@ function sparse_multi_reml_loglik(
     sigmas::AbstractVector,
     sigma_e2::Real,
 )
+    # Argument checks stay in this order, and ahead of the workspace build, so a
+    # malformed call throws exactly what it threw before the workspace split.
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
     length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
     all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
     sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
-    n = length(y)
-    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
-    yv = Float64.(y)
-    Xs = sparse(Float64.(X))
-    nfixed = size(Xs, 2)
-    nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
-
-    Zs = SparseMatrixCSC{Float64,Int}[]
-    Ainvs = SparseMatrixCSC{Float64,Int}[]
-    qs = Int[]
-    for (i, pair) in enumerate(effects)
-        Zi, Ainvi = pair
-        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
-        qi = size(Ainvi, 1)
-        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
-        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
-        push!(Zs, sparse(Float64.(Zi)))
-        push!(Ainvs, sparse(Float64.(Ainvi)))
-        push!(qs, qi)
-    end
-
-    ss = Float64.(collect(sigmas))
-    se2 = Float64(sigma_e2)
-    Zf = reduce(hcat, Zs)
-    Xt = transpose(Xs); Zft = transpose(Zf)
-    XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
-    ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
-    Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
-    lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, ss, se2)
-    factor = cholesky(Symmetric(lhs); check = true)
-    solution = factor \ rhs
-
-    beta = Vector{Float64}(solution[1:nfixed])
-    us = Vector{Vector{Float64}}(undef, K)
-    off = nfixed
-    for i in 1:K
-        us[i] = Vector{Float64}(solution[(off + 1):(off + qs[i])])
-        off += qs[i]
-    end
-
-    logdetR = n * log(se2)
-    logdetG = 0.0
-    for i in 1:K
-        logdetG += qs[i] * log(ss[i]) - logdet(cholesky(Symmetric(Ainvs[i]); check = true))
-    end
-    logdetC = logdet(factor)
-    quad = inv(se2) * dot(yv, yv) - dot(rhs, solution)      # y'Py
-    loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
-    return loglik, beta, us
+    return _multi_reml_loglik!(_multi_reml_workspace(y, X, effects), sigmas, sigma_e2)
 end
 
 # AI/Newton step for the (K+1)×(K+1) average-information matrix (symmetric PSD).
