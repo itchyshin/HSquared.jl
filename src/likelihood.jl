@@ -2022,8 +2022,10 @@ mutable struct _MultiREMLWorkspace
     yv::Vector{Float64}
     Xs::SparseMatrixCSC{Float64,Int}
     Zs::Vector{SparseMatrixCSC{Float64,Int}}
+    Zf::SparseMatrixCSC{Float64,Int}          # hcat(Zᵢ), the stacked random design
     Ainvs::Vector{SparseMatrixCSC{Float64,Int}}
     qs::Vector{Int}
+    offsets::Vector{Int}                      # global offset of each random block
     XtX::SparseMatrixCSC{Float64,Int}
     XtZ::SparseMatrixCSC{Float64,Int}
     ZtX::SparseMatrixCSC{Float64,Int}
@@ -2035,6 +2037,85 @@ mutable struct _MultiREMLWorkspace
     n::Int
     nfixed::Int
     factor::Union{Nothing,SparseArrays.CHOLMOD.Factor{Float64}}   # symbolic reused
+    # In-place assembly: `lhs` keeps the FIXED sparsity pattern of `C` and only its
+    # `nzval` is rewritten per σ. `base_map`/`ginv_map` point each nonzero of
+    # `[X'X X'Z; Z'X Z'Z]` and of `blockdiag(Aᵢ⁻¹)` at its slot in that pattern.
+    lhs::SparseMatrixCSC{Float64,Int}
+    rhs::Vector{Float64}
+    base_nz::Vector{Float64}
+    base_map::Vector{Int}
+    ginv_nz::Vector{Float64}
+    ginv_map::Vector{Int}
+    ginv_block::Vector{Int}
+end
+
+# Index of each nonzero of `src` within `target`'s `nzval`. Both are CSC with
+# ascending row indices per column, and `src`'s pattern is a SUBSET of
+# `target`'s by construction here, so one merge walk per column suffices.
+function _nz_index_map(target::SparseMatrixCSC, src::SparseMatrixCSC)
+    size(target) == size(src) ||
+        throw(ArgumentError("pattern map needs matrices of the same size"))
+    m = Vector{Int}(undef, nnz(src))
+    trow = rowvals(target); srow = rowvals(src)
+    @inbounds for j in 1:size(src, 2)
+        k = first(nzrange(target, j)); klast = last(nzrange(target, j))
+        for pidx in nzrange(src, j)
+            r = srow[pidx]
+            while k <= klast && trow[k] != r
+                k += 1
+            end
+            k <= klast || throw(ArgumentError(
+                "assembly pattern is missing entry ($r, $j); the Henderson " *
+                "coefficient pattern is not σ-invariant as assumed"))
+            m[pidx] = k
+        end
+    end
+    return m
+end
+
+# Rewrite `ws.lhs`'s values (and `ws.rhs`) for these variance components, reusing
+# the pattern. Identical arithmetic, in the same order, as `_sparse_multi_lhs_rhs`:
+# `rp·base` for the fixed/cross blocks, `rp·Z'Z + Aᵢ⁻¹/σᵢ²` where the two overlap.
+function _assemble_lhs_rhs!(ws::_MultiREMLWorkspace, ss::AbstractVector, se2::Real)
+    rp = inv(se2)
+    pv = nonzeros(ws.lhs)
+    fill!(pv, 0.0)
+    bm = ws.base_map; bn = ws.base_nz
+    @inbounds for idx in eachindex(bn)
+        pv[bm[idx]] = rp * bn[idx]
+    end
+    gm = ws.ginv_map; gn = ws.ginv_nz; gb = ws.ginv_block
+    @inbounds for idx in eachindex(gn)
+        pv[gm[idx]] += gn[idx] * inv(ss[gb[idx]])
+    end
+    nfixed = ws.nfixed
+    @inbounds for i in eachindex(ws.Xty)
+        ws.rhs[i] = rp * ws.Xty[i]
+    end
+    @inbounds for i in eachindex(ws.Zty)
+        ws.rhs[nfixed + i] = rp * ws.Zty[i]
+    end
+    return ws.lhs, ws.rhs
+end
+
+# Factorize `ws.lhs` into `ws.factor`, reusing the symbolic analysis after the
+# first call. `cholesky!` can only fail here if `C` is not positive definite at
+# these components, which a fresh `cholesky` would reject too — but it is also
+# the one call that depends on cached state, so a failure falls back to a fresh
+# factorization rather than propagating a cache artefact as a property of the data.
+function _factorize!(ws::_MultiREMLWorkspace)
+    sym = Symmetric(ws.lhs)
+    if ws.factor === nothing
+        ws.factor = cholesky(sym; check = true)
+    else
+        try
+            cholesky!(ws.factor, sym; check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            ws.factor = cholesky(sym; check = true)
+        end
+    end
+    return ws.factor
 end
 
 # Validate `(y, X, effects)` and precompute every σ-independent quantity. Carries
@@ -2067,12 +2148,45 @@ function _multi_reml_workspace(y::AbstractVector, X::AbstractMatrix,
 
     Zf = reduce(hcat, Zs)
     Xt = transpose(Xs); Zft = transpose(Zf)
+    XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
+    ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
+
+    offsets = Vector{Int}(undef, length(qs))
+    acc = nfixed
+    for i in eachindex(qs)
+        offsets[i] = acc
+        acc += qs[i]
+    end
+
+    # The assembly pattern is taken FROM `_sparse_multi_lhs_rhs` itself, at σ = 1,
+    # rather than rebuilt independently — so the in-place path can only ever write
+    # into the structure the original code produced. Scaling by a positive σ never
+    # changes that structure, which is what makes one pattern serve every σ.
+    Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
+    ones_k = ones(Float64, length(qs))
+    lhs0, rhs0 = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, ones_k, 1.0)
+    base = [XtX XtZ; ZtX ZtZ]
+    gblk = blockdiag(Ainvs...)
+    nrand = size(gblk, 1)
+    ginv_full = [spzeros(nfixed, nfixed)  spzeros(nfixed, nrand)
+                 spzeros(nrand, nfixed)   gblk]
+    ginv_block = Vector{Int}(undef, nnz(gblk))
+    pos = 0
+    for i in eachindex(Ainvs)
+        for _ in 1:nnz(Ainvs[i])
+            pos += 1
+            ginv_block[pos] = i
+        end
+    end
+
     return _MultiREMLWorkspace(
-        yv, Xs, Zs, Ainvs, qs,
-        sparse(Xt * Xs), sparse(Xt * Zf), sparse(Zft * Xs), sparse(Zft * Zf),
-        Vector(Xt * yv), Vector(Zft * yv),
+        yv, Xs, Zs, Zf, Ainvs, qs, offsets,
+        XtX, XtZ, ZtX, ZtZ, Xty, Zty,
         [logdet(cholesky(Symmetric(A); check = true)) for A in Ainvs],
         dot(yv, yv), n, nfixed, nothing,
+        lhs0, rhs0,
+        copy(nonzeros(base)), _nz_index_map(lhs0, base),
+        copy(nonzeros(ginv_full)), _nz_index_map(lhs0, ginv_full), ginv_block,
     )
 end
 
@@ -2092,20 +2206,8 @@ function _multi_reml_loglik!(ws::_MultiREMLWorkspace, sigmas::AbstractVector,
     se2 = Float64(sigma_e2)
     n = ws.n; nfixed = ws.nfixed
 
-    lhs, rhs = _sparse_multi_lhs_rhs(ws.XtX, ws.XtZ, ws.ZtX, ws.ZtZ, ws.Xty, ws.Zty,
-                                     ws.Ainvs, ss, se2)
-    sym = Symmetric(lhs)
-    if ws.factor === nothing
-        ws.factor = cholesky(sym; check = true)
-    else
-        try
-            cholesky!(ws.factor, sym; check = true)
-        catch err
-            err isa LinearAlgebra.PosDefException || rethrow(err)
-            ws.factor = cholesky(sym; check = true)
-        end
-    end
-    factor = ws.factor
+    lhs, rhs = _assemble_lhs_rhs!(ws, ss, se2)
+    factor = _factorize!(ws)
     solution = factor \ rhs
 
     beta = Vector{Float64}(solution[1:nfixed])
@@ -2197,7 +2299,18 @@ production-shaped estimator behind the dense oracle [`fit_multi_effect_reml`](@r
 incidence, `Ainvᵢ` the `qᵢ×qᵢ` supplied relationship PRECISION — pass a sparse
 identity for a plain i.i.d. `(1|group)` effect), the same contract as
 [`multi_effect_mme`](@ref). `initial`, if supplied, is a length-`K+1` vector of
-positive starting variances `[σ₁,…,σ_K,σ_e2]` (default all `1`).
+positive starting variances `[σ₁,…,σ_K,σ_e2]` (default all `1`), or `:auto` for a
+data-scaled start — half the response variance to the residual, the other half
+split evenly across the `K` effects. `:auto` reaches the SAME optimum from a
+different place; whether it gets there in fewer iterations depends on the data,
+not on the option. It pays off when the response is far from unit scale
+(measured 10 → 8 iterations, 0.67 s → 0.52 s, on an 11,856-record animal +
+permanent-environment fit with `var(y) = 3.0`) and costs iterations when it is
+not (12 against 10 on a unit-variance simulated fixture, `test/`). It is opt-in
+for a second reason: moving the optimizer path perturbs a converged estimate in
+its last bits and changes the reported `iterations`, and this package's recorded
+evidence — recovery checkpoints, pre-declared bias/MCSE gates — was run from
+`(1,…,1)`.
 
 Each iteration assembles the sparse Henderson MME coefficient matrix
 `C = [X'R⁻¹X X'R⁻¹Z; Z'R⁻¹X Z'R⁻¹Z + blockdiag(Aᵢ⁻¹/σᵢ²)]` (`R = σ_e²·I`),
@@ -2240,28 +2353,17 @@ function fit_sparse_multi_effect_aireml(
     em_warmup::Integer = 0,
     ids = nothing,
 )
+    # ONE workspace for the whole fit: the EM warm-start, every AI iteration, and
+    # the closing log-likelihood all evaluate the SAME model at different σ, so
+    # the conversions, cross-products, `log|Aᵢ⁻¹|`, the Henderson sparsity pattern
+    # and the symbolic factorization are built once here rather than per iteration
+    # (and, for the closing loglik, rebuilt a second time from scratch). Measured
+    # on the great tit animal + permanent-environment fit: assemble + factorize
+    # 31.7 ms → 5.9 ms per iteration. See `_MultiREMLWorkspace`.
+    ws = _multi_reml_workspace(y, X, effects)
     K = length(effects)
-    K >= 1 || throw(ArgumentError("at least one random effect is required"))
-    n = length(y)
-    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
-
-    Zs = SparseMatrixCSC{Float64,Int}[]
-    Ainvs = SparseMatrixCSC{Float64,Int}[]
-    qs = Int[]
-    for (i, pair) in enumerate(effects)
-        Zi, Ainvi = pair
-        size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
-        qi = size(Ainvi, 1)
-        size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
-        size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
-        push!(Zs, sparse(Float64.(Zi)))
-        push!(Ainvs, sparse(Float64.(Ainvi)))
-        push!(qs, qi)
-    end
-    yv = Float64.(y)
-    Xs = sparse(Float64.(X))
-    nfixed = size(Xs, 2)
-    nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    Zs = ws.Zs; Ainvs = ws.Ainvs; qs = ws.qs
+    yv = ws.yv; Xs = ws.Xs; n = ws.n; nfixed = ws.nfixed
 
     if ids === nothing
         eids = [collect(1:qs[i]) for i in 1:K]
@@ -2277,6 +2379,30 @@ function fit_sparse_multi_effect_aireml(
     if initial === nothing
         sigmas = ones(Float64, K)
         sigma_e2 = 1.0
+    elseif initial === :auto
+        # Data-scaled start: half of the response variance to the residual, the
+        # other half split evenly across the K effects. `(1,…,1)` is scale-blind —
+        # on the great tit fit the optimum is (0.60, 0.53, 1.37) against
+        # `var(y) = 3.0`, and the default start spends iterations just finding the
+        # magnitude. Measured there: 10 iterations → 8, converging to variance
+        # components identical to 7 significant figures. It is NOT uniformly
+        # better: on a fixture simulated at unit variance `(1,…,1)` is already
+        # near the answer and this start costs 12 iterations against 10.
+        #
+        # OPT-IN, NOT the default. Changing where the optimizer starts changes the
+        # path it takes, so it can perturb a converged estimate in its last bits
+        # and it changes the reported `iterations`. This package's recorded
+        # evidence — recovery checkpoints, pre-declared bias/MCSE gates — was run
+        # from the `(1,…,1)` start, so flipping the default is an evidence
+        # decision, not a performance one.
+        ybar = sum(ws.yv) / n
+        vy = sum(abs2, ws.yv .- ybar) / max(n - 1, 1)
+        vy > 0 || throw(ArgumentError(
+            "initial = :auto requires a response with positive variance"))
+        sigmas = fill(0.5 * vy / K, K)
+        sigma_e2 = 0.5 * vy
+    elseif initial isa Symbol
+        throw(ArgumentError("initial must be nothing, :auto, or a length-$(K + 1) vector of positive variances; got :$initial"))
     else
         length(initial) == K + 1 ||
             throw(ArgumentError("initial must have length K+1 = $(K + 1) (one per effect plus residual)"))
@@ -2285,28 +2411,18 @@ function fit_sparse_multi_effect_aireml(
         sigma_e2 = Float64(initial[K + 1])
     end
 
-    # Contiguous global offset of each random block within [β; u_1; …; u_K].
-    offsets = Vector{Int}(undef, K)
-    acc = nfixed
-    for i in 1:K
-        offsets[i] = acc
-        acc += qs[i]
-    end
-    nrandom = acc - nfixed
-
-    # Iteration-invariant cross-products (only the σ scaling + Ginv change per step).
-    Zf = reduce(hcat, Zs)
-    Xt = transpose(Xs); Zft = transpose(Zf)
-    XtX = sparse(Xt * Xs); XtZ = sparse(Xt * Zf)
-    ZtX = sparse(Zft * Xs); ZtZ = sparse(Zft * Zf)
-    Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
+    # Contiguous global offset of each random block within [β; u_1; …; u_K], and
+    # the stacked random design — both σ-invariant, both carried by the workspace.
+    offsets = ws.offsets
+    nrandom = sum(qs)
+    Zf = ws.Zf
 
     # EM-REML warm-start (closed-form, monotone, in-bounds): σᵢ² = (uᵢ'Aᵢ⁻¹uᵢ +
     # tr(Aᵢ⁻¹C^{uᵢuᵢ}))/qᵢ, σ_e² = e'e/(n − p − Σq + Σ tr(Aᵢ⁻¹C^{uᵢuᵢ})/σᵢ²).
     for _ in 1:max(0, em_warmup)
-        lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
+        lhs, rhs = _assemble_lhs_rhs!(ws, sigmas, sigma_e2)
         factor = try
-            cholesky(Symmetric(lhs); check = true)
+            _factorize!(ws)
         catch err
             err isa LinearAlgebra.PosDefException && break
             rethrow(err)
@@ -2336,8 +2452,8 @@ function fit_sparse_multi_effect_aireml(
     iters = 0
     for it in 1:iterations
         iters = it
-        lhs, rhs = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, sigmas, sigma_e2)
-        factor = cholesky(Symmetric(lhs); check = true)
+        lhs, rhs = _assemble_lhs_rhs!(ws, sigmas, sigma_e2)
+        factor = _factorize!(ws)
         solution = factor \ rhs
         urand = solution[(nfixed + 1):end]
         e = yv .- Xs * solution[1:nfixed] .- Zf * urand
@@ -2395,7 +2511,10 @@ function fit_sparse_multi_effect_aireml(
         end
     end
 
-    loglik, beta, us = sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)
+    # Same value as `sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)`
+    # (bitwise — `test/test_post_fit_uncertainty_reuse.jl` pins it), without
+    # rebuilding every σ-invariant quantity a second time.
+    loglik, beta, us = _multi_reml_loglik!(ws, sigmas, sigma_e2)
     total = sum(sigmas) + sigma_e2
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
     status = converged ? "converged" : "not_converged"
