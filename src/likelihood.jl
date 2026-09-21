@@ -1822,7 +1822,9 @@ function multi_effect_sum_ratio_interval(
     cov === nothing && return na
 
     # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
-    g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
+    selected = falses(K + 1)
+    selected[idx] .= true
+    g = [((selected[j]) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
     se = sqrt(max(dot(g, cov * g), 0.0))
     (isfinite(se) && se > 0) || return merge(na, (se = se,))
 
