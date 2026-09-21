@@ -6013,22 +6013,23 @@ end
     end
 end
 
-@testset "_selinv_zvals dense-block path == per-pair fallback path, bitwise" begin
-    # The selected-inverse recursion materialises a dense per-clique block (fast path)
-    # unless a clique is wider than `DEFAULT_SELINV_BLOCK_CAP`, in which case it keeps
-    # the original per-pair binary-search path. Both must produce IDENTICAL values --
-    # the optimization changes only HOW an already-correct entry is fetched, and the
-    # `k` accumulation order is unchanged, so the agreement is expected to be BITWISE,
-    # not merely approximate. Forcing `block_cap = 0` selects the fallback for every
-    # column, so this pins the two paths against each other on a small fixture.
+@testset "_selinv_zvals clique-scatter path == per-pair reference, bitwise" begin
+    # The selected-inverse recursion walks each clique member's column once and scatters
+    # both symmetric contributions into a length-m accumulator (no search, no m×m block,
+    # no clique-width cap). Every accumulator receives its terms in the same ascending
+    # order as the original per-pair binary-search recursion, so the agreement must be
+    # BITWISE, not approximate. `per_pair = true` runs that original recursion.
+    #
+    # The DEFAULT path additionally vectorises the aligned clique tail, which reassociates
+    # one reduction, so the bitwise claim is on `strict_order = true`; the default is pinned
+    # against it at rtol in the "aligned-tail SIMD path" testset below.
+    zbits(ch; kw...) = reinterpret(UInt64, HSquared._selinv_zvals(ch; strict_order = true, kw...)[1])
     rng = Random.MersenneTwister(20260919)
-    for (n, p) in ((40, 0.12), (150, 0.05))
+    for (n, p) in ((40, 0.12), (150, 0.05), (300, 0.2))
         B = sprandn(rng, n, n, p)
         A = sparse(B * B' + (n * 0.1) * I)
         ch = cholesky(Symmetric(A); check = true)
-        fast, = HSquared._selinv_zvals(ch)
-        slow, = HSquared._selinv_zvals(ch; block_cap = 0)
-        @test reinterpret(UInt64, fast) == reinterpret(UInt64, slow)
+        @test zbits(ch) == zbits(ch; per_pair = true)
     end
 
     # same check on a real pedigree Ainv and on a full Henderson MME coefficient matrix
@@ -6037,15 +6038,106 @@ end
     Ainv = pedigree_inverse(ped)
     q = length(ped.ids)
     ch_a = cholesky(Symmetric(sparse(Ainv)); check = true)
-    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_a)[1]) ==
-          reinterpret(UInt64, HSquared._selinv_zvals(ch_a; block_cap = 0)[1])
+    @test zbits(ch_a) == zbits(ch_a; per_pair = true)
 
     spec = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q), collect(1.0:q)),
                              sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
     lhs, = HSquared._sparse_mme_system(spec, 1.3, 0.9)
     ch_m = cholesky(Symmetric(lhs); check = true)
-    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_m)[1]) ==
-          reinterpret(UInt64, HSquared._selinv_zvals(ch_m; block_cap = 0)[1])
+    @test zbits(ch_m) == zbits(ch_m; per_pair = true)
+
+    # fully random mating from 4 founders: the factor has wide cliques and long columns,
+    # so both the merge and the per-entry-search branches of the scatter run
+    rq = 600
+    rsire = zeros(Int, rq); rdam = zeros(Int, rq)
+    for i in 5:rq
+        rsire[i] = rand(rng, 1:(i - 1))
+        rdam[i] = rand(rng, 1:(i - 1))
+        while rdam[i] == rsire[i]
+            rdam[i] = rand(rng, 1:(i - 1))
+        end
+    end
+    rped = normalize_pedigree(collect(1:rq), rsire, rdam)
+    rAinv = pedigree_inverse(rped)
+    rspec = animal_model_spec(randn(rng, rq), ones(rq, 1), sparse(1.0I, rq, rq), rAinv;
+                              ids = rped.ids, method = :REML)
+    rlhs, = HSquared._sparse_mme_system(rspec, 1.0, 1.0)
+    ch_r = cholesky(Symmetric(rlhs); check = true)
+    widest = maximum(diff(sparse(ch_r.L).colptr)) - 1
+    @test widest > 100
+    @test zbits(ch_r) == zbits(ch_r; per_pair = true)
+    ch_ra = cholesky(Symmetric(sparse(rAinv)); check = true)
+    @test zbits(ch_ra) == zbits(ch_ra; per_pair = true)
+end
+
+@testset "_selinv_zvals aligned-tail SIMD path: fill-path property, rtol, fit-level equality" begin
+    # The aligned-tail fast path takes column i_p's first `ntail` rows as the clique tail
+    # after three cheap tests. That is exact ONLY because the tail is a subset of column
+    # i_p's pattern -- the Cholesky fill-path property. Assert the property itself on
+    # CHOLMOD's patterns (supernodal amalgamation pads columns with explicit zeros, so this
+    # is worth pinning rather than assuming), then pin the path's numerics at a stated rtol
+    # (it reassociates one reduction, so it is NOT bitwise) and the fit-level estimates.
+    function fillpath_holds(ch)
+        L = sparse(ch.L); cp = L.colptr; rv = L.rowval
+        for j in 1:size(L, 1)
+            rows = @view rv[(cp[j] + 1):(cp[j + 1] - 1)]
+            for (a, ip) in enumerate(rows)
+                own = @view rv[(cp[ip] + 1):(cp[ip + 1] - 1)]
+                for iq in @view rows[(a + 1):end]
+                    insorted(iq, own) || return false
+                end
+            end
+        end
+        return true
+    end
+
+    rng = Random.MersenneTwister(20260920)
+    ped = normalize_pedigree([1, 2, 3, 4, 5, 6, 7, 8], [0, 0, 1, 1, 3, 3, 5, 6],
+                             [0, 0, 2, 2, 4, 4, 4, 7])
+    Ainv = pedigree_inverse(ped)
+    q8 = length(ped.ids)
+    spec8 = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q8), collect(1.0:q8)),
+                              sparse(1.0I, q8, q8), Ainv; ids = ped.ids, method = :REML)
+    lhs8, = HSquared._sparse_mme_system(spec8, 1.3, 0.9)
+
+    # a wider, higher-fill factor: 400-animal fully random mating
+    rq = 400
+    rsire = zeros(Int, rq); rdam = zeros(Int, rq)
+    for i in 5:rq
+        rsire[i] = rand(rng, 1:(i - 1)); rdam[i] = rand(rng, 1:(i - 1))
+        while rdam[i] == rsire[i]; rdam[i] = rand(rng, 1:(i - 1)); end
+    end
+    rped = normalize_pedigree(collect(1:rq), rsire, rdam)
+    rAinv = pedigree_inverse(rped)
+    # additive signal, not pure noise: a noise-only y sits on the REML boundary and
+    # `converged` is false, which would test the fixture rather than the kernel
+    ra = zeros(rq)
+    for i in 1:rq
+        si, di = rped.sire[i], rped.dam[i]
+        ra[i] = (si == 0 && di == 0) ? randn(rng) : 0.5 * (ra[si] + ra[di]) + sqrt(0.5) * randn(rng)
+    end
+    ry = ra .+ 0.5 .* randn(rng, rq)
+    rspec = animal_model_spec(ry, ones(rq, 1), sparse(1.0I, rq, rq), rAinv;
+                              ids = rped.ids, method = :REML)
+    rlhs, = HSquared._sparse_mme_system(rspec, 1.0, 1.0)
+
+    for A in (sparse(Symmetric(lhs8)), sparse(Symmetric(rlhs)), sparse(Ainv), sparse(rAinv))
+        ch = cholesky(Symmetric(A); check = true)
+        @test fillpath_holds(ch)
+        strict, = HSquared._selinv_zvals(ch; strict_order = true)
+        simd, = HSquared._selinv_zvals(ch)
+        @test reinterpret(UInt64, strict) == reinterpret(UInt64, HSquared._selinv_zvals(ch; per_pair = true)[1])
+        @test maximum(abs.(simd .- strict)) <= 1e-12 * maximum(abs.(strict))
+    end
+
+    # fit level: the reassociation must not move the REML optimum beyond rtol 1e-10
+    fit_simd = HSquared.fit_ai_reml(rspec)
+    pev_simd = HSquared.prediction_error_variance(fit_simd; method = :selinv).values
+    @test fit_simd.converged
+    @test isapprox(HSquared.selinv_trace_against(cholesky(Symmetric(sparse(Symmetric(rlhs)))), rAinv, 1),
+                   sum(rAinv .* HSquared.takahashi_selinv(cholesky(Symmetric(sparse(Symmetric(rlhs)))))[2:end, 2:end]);
+                   rtol = 1e-10)
+    @test all(isfinite, pev_simd) && all(>(0), pev_simd)
 end
 
 @testset "_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale" begin
@@ -10879,3 +10971,7 @@ include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))
 # #350: sparse (Takahashi selected-inverse) defaults for prediction_error_variance
 # and the reliability denominator; result_payload / breeding_values_plot_data budget.
 include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
+
+# 1 + F: the reliability denominator from the inbreeding coefficients pedigree_inverse
+# already computes, carried on the spec (Szymek Drobniak, #350 follow-up).
+include(joinpath(@__DIR__, "test_relationship_diag_1pF.jl"))

@@ -60,6 +60,14 @@ end
 # The block's `pedigree` field is a Dict/NamedTuple with fields
 # `id`, `sire`, `dam` (matching the top-level pedigree row shape in §2).
 function _build_ainv_from_block_pedigree(ped)
+    return first(_build_ainv_and_diag_from_block_pedigree(ped))
+end
+
+# Same, plus the animal self-relationships `diag(inv(Ainv)) = 1 .+ F` from the
+# inbreeding coefficients `pedigree_inverse` already computes, in `Ainv`'s own
+# (normalized) row order. `reliability` reads its denominator from them instead of a
+# selected inverse of `Ainv`.
+function _build_ainv_and_diag_from_block_pedigree(ped)
     # Accept both Dict (JuliaCall) and NamedTuple forms.
     ids_raw  = _field(ped, "id",   :id)
     sire_raw = _field(ped, "sire", :sire)
@@ -67,7 +75,9 @@ function _build_ainv_from_block_pedigree(ped)
     ids_raw  === nothing && throw(ArgumentError("pedigree block missing field 'id'"))
     sire_raw === nothing && throw(ArgumentError("pedigree block missing field 'sire'"))
     dam_raw  === nothing && throw(ArgumentError("pedigree block missing field 'dam'"))
-    return pedigree_inverse(collect(ids_raw), collect(sire_raw), collect(dam_raw))
+    pedigree = normalize_pedigree(collect(ids_raw), collect(sire_raw), collect(dam_raw))
+    Ainv, F = _pedigree_inverse_and_inbreeding(pedigree)
+    return Ainv, 1 .+ F
 end
 
 # Flexible field accessor: checks string key then symbol key; returns nothing if absent.
@@ -79,23 +89,27 @@ function _field(d, str_key, sym_key)
 end
 
 # Resolve the relmat_inverse for one block.  §2 field table.
-function _resolve_relmat_inverse(block, Z)
+_resolve_relmat_inverse(block, Z) = first(_resolve_relmat(block, Z))
+
+# `(relmat_inverse, relationship_diag)`: the diagonal of `inv(relmat_inverse)` is
+# known for free only when Julia builds a pedigree `Ainv` itself; otherwise `nothing`.
+function _resolve_relmat(block, Z)
     status = _field(block, "relmat_status", :relmat_status)
     status = status === nothing ? "build_in_julia" : string(status)
 
     if status == "identity"
         q = size(Z, 2)
-        return _build_iid_relmat_inverse(q)
+        return _build_iid_relmat_inverse(q), nothing
     elseif status == "build_in_julia"
         ped = _field(block, "pedigree", :pedigree)
         ped === nothing && throw(ArgumentError(
             "block with relmat_status='build_in_julia' must supply a 'pedigree' field"))
-        return _build_ainv_from_block_pedigree(ped)
+        return _build_ainv_and_diag_from_block_pedigree(ped)
     elseif status == "supplied"
         ri = _field(block, "relmat_inverse", :relmat_inverse)
         ri === nothing && throw(ArgumentError(
             "block with relmat_status='supplied' must supply 'relmat_inverse'"))
-        return ri
+        return ri, nothing
     else
         throw(ArgumentError("unknown relmat_status: '$status'"))
     end
@@ -119,7 +133,7 @@ function _parse_one_block(block)
     status_raw = _field(block, "relmat_status", :relmat_status)
     status_raw === nothing && throw(ArgumentError(
         "payload-v2 block '$name' is missing required field 'relmat_status'"))
-    relmat_inverse = _resolve_relmat_inverse(block, Z)
+    relmat_inverse, relationship_diag = _resolve_relmat(block, Z)
 
     # §2: ids field for this block (level ids vector)
     ids_raw = _field(block, "ids", :ids)
@@ -137,7 +151,8 @@ function _parse_one_block(block)
         return (name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse,
                 ids=block_ids, Zm=Zm, partner_name=string(partner_name))
     else
-        return (name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse, ids=block_ids)
+        return (name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse, ids=block_ids,
+                relationship_diag=relationship_diag)
     end
 end
 
@@ -343,10 +358,11 @@ function _lift_legacy_payload(payload)
 
     # Build first block
     q = size(Z, 2)
+    relationship_diag = nothing
     if string(ainv_status) == "build_in_julia"
         ped === nothing && throw(ArgumentError(
             "legacy payload with ainv_status='build_in_julia' must supply 'pedigree'"))
-        Ainv = _build_ainv_from_block_pedigree(ped)
+        Ainv, relationship_diag = _build_ainv_and_diag_from_block_pedigree(ped)
     elseif string(ainv_status) == "supplied"
         Ainv_raw = _field(payload, "Ainv", :Ainv)
         Ainv_raw === nothing && throw(ArgumentError(
@@ -356,7 +372,8 @@ function _lift_legacy_payload(payload)
         Ainv = _build_iid_relmat_inverse(q)
     end
 
-    block1 = (name="animal", type="pedigree", Z=Z, relmat_inverse=Ainv, ids=block_ids)
+    block1 = (name="animal", type="pedigree", Z=Z, relmat_inverse=Ainv, ids=block_ids,
+              relationship_diag=relationship_diag)
 
     # Check for legacy two-effect slot (Z2 + effect2).  §4 transition alias.
     Z2_raw = _field(payload, "Z2", :Z2)
@@ -438,7 +455,8 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         y = parsed.y
         return fit_animal_model(y, X, sparse(Matrix{Float64}(b.Z)),
                                 sparse(Matrix{Float64}(b.relmat_inverse));
-                                ids = b.ids, method = method)
+                                ids = b.ids, method = method,
+                                relationship_diag = get(b, :relationship_diag, nothing))
 
     elseif dispatch == :two_effect
         # §6 row 2: two independent blocks → fit_two_effect_reml.

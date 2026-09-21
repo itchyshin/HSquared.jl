@@ -183,4 +183,10 @@ end
         y, X, effs, s, se2; which = 1:2, level = 1.5)
     @test_throws ArgumentError multi_effect_sum_ratio_interval(
         y, X, effs, s, se2; which = 1:5)
+    @test_throws ArgumentError multi_effect_sum_ratio_interval(
+        y, X, effs, s, se2; which = Int[])
+
+    # Unexpected input bugs should still surface, not be swallowed as "boundary".
+    @test_throws ArgumentError multi_effect_sum_ratio_interval(
+        y, X[1:(end - 1), :], effs, s, se2; which = 1:2)
 end

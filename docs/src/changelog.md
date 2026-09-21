@@ -8,6 +8,12 @@ package version. `public_covered_count` stays **7**, and no entry below touches 
 is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
 this pass and belongs to the release owner.)
 
+- `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
+  from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
+  (Meuwissen & Luo) for Henderson's rules, so the spec now carries them
+  (`animal_model_spec(...; relationship_diag)`, attached by the payload-v2 bridge) and
+  `method = :auto` reads them instead of a selected inverse of `Ainv`. Values unchanged to
+  1e-10; explicit `:selinv` and `:dense` keep their own paths. Szymon Drobniak.
 - Fixed #350: `prediction_error_variance` and `reliability` default to `method = :auto`,
   which takes the sparse Takahashi selected-inverse path for a sparse `Ainv` and the
   dense path for a dense genomic `Ginv` (`:selinv` and `:dense` stay explicit; the
