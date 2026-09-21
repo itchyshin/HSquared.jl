@@ -1784,6 +1784,7 @@ function multi_effect_sum_ratio_interval(
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     K = length(effects)
     idx = collect(which)
+    isempty(idx) && throw(ArgumentError("which must select at least one component"))
     all(i -> 1 <= i <= K, idx) ||
         throw(ArgumentError("which must index components 1..$K"))
     theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
@@ -1799,10 +1800,15 @@ function multi_effect_sum_ratio_interval(
         multi_effect_variance_component_covariance(
             y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
         )
-    catch
-        # The covariance refuses at a flat/boundary optimum by design; an
-        # interval is simply unavailable there, which is not an error.
-        return na
+    catch err
+        if err isa ArgumentError &&
+           (contains(string(err), "standard errors are unavailable") ||
+            contains(string(err), "boundary optimum"))
+            # The covariance refuses at a flat/boundary optimum by design; an
+            # interval is simply unavailable there, which is not an error.
+            return na
+        end
+        rethrow()
     end
 
     # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
