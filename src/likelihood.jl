@@ -1712,6 +1712,8 @@ function _multi_effect_variance_component_covariance(
     fd_step::Real = 1e-4,
     unavailable::Symbol = :throw,
 )
+    unavailable in (:throw, :nothing) ||
+        throw(ArgumentError("unavailable must be :throw or :nothing"))
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
     length(sigmas) == K ||
