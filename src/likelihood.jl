@@ -1818,7 +1818,7 @@ Delta-method confidence interval for a SUMMED variance ratio
     r = (Σ_{i ∈ which} σᵢ²) / (Σⱼ σⱼ² + σ_e²)
 
 of a K-effect REML fit, on the logit scale so the interval lies in `(0, 1)` —
-the same construction as [`_ratio_delta_ci`](@ref)'s single-component case and
+the same construction as `_ratio_delta_ci`'s single-component case and
 as [`repeatability_interval`](@ref), generalised to a sum of components.
 
 With `which = 1:2` on an animal + permanent-environment fit this is the
