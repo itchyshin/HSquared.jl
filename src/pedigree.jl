@@ -296,6 +296,15 @@ each animal adds a scaled outer product of `[1, -1/2, -1/2]` over itself and its
 known parents. The matrix is returned as a `SparseMatrixCSC{Float64,Int}`.
 """
 function pedigree_inverse(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
+    return first(_pedigree_inverse_and_inbreeding(pedigree; max_relationship_cache = max_relationship_cache))
+end
+
+# `Ainv` together with the inbreeding coefficients `F` it was built from (Henderson's
+# rules need `F` of every parent for the Mendelian sampling variances, so the
+# Meuwissen & Luo pass is already paid here). `1 .+ F` is then `diag(inv(Ainv))`,
+# the animal self-relationships `reliability` needs, at no extra cost and in the same
+# (normalized) row order as `Ainv`.
+function _pedigree_inverse_and_inbreeding(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
     n = length(pedigree)
     parent_inbreeding = inbreeding_coefficients(pedigree; max_relationship_cache = max_relationship_cache)
 
@@ -324,7 +333,7 @@ function pedigree_inverse(pedigree::Pedigree; max_relationship_cache::Integer = 
         end
     end
 
-    return sparse(rows, cols, vals, n, n)
+    return sparse(rows, cols, vals, n, n), parent_inbreeding
 end
 
 function pedigree_inverse(ids, sire, dam; kwargs...)

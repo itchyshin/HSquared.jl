@@ -218,6 +218,10 @@ export AMDGPUBackend,
     variance_component_covariance,
     variance_component_interval,
     variance_component_standard_errors,
+    multi_effect_variance_component_covariance,
+    multi_effect_variance_component_standard_errors,
+    multi_effect_ratio_standard_errors,
+    multi_effect_sum_ratio_interval,
     variance_components
 
 include("backends.jl")
