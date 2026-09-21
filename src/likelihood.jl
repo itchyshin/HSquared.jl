@@ -1662,6 +1662,200 @@ function multi_effect_ratio_interval(
     return (ratios = ratios, level = level, converged = fit.converged)
 end
 
+"""
+    multi_effect_variance_component_covariance(y, X, effects, sigmas, sigma_e2;
+                                               fd_step = 1e-4)
+
+Asymptotic covariance of the estimated `[σ_1², …, σ_K², σ_e²]` for a K-effect
+REML fit: the inverse of the observed information, formed as the central
+finite-difference Hessian of the REML log-likelihood at the estimate — the same
+machinery as [`multi_effect_ratio_interval`](@ref) and
+[`two_effect_ratio_interval`](@ref), and the K-block analogue of
+[`variance_component_covariance`](@ref).
+
+Unlike `multi_effect_ratio_interval`, this differentiates the SPARSE
+[`sparse_multi_reml_loglik`](@ref) rather than the dense `_multi_effect_dense`,
+so it is usable on the same large problems `fit_multi_effect(:auto)` fits; it
+never densifies `Aᵢ⁻¹`.
+
+Large-sample approximation, unreliable where the REML surface is flat. Throws
+rather than returning `NaN` when the information is not finite positive-definite
+(a flat or boundary optimum), or when a component sits so close to zero that the
+finite-difference step would take it non-positive. Experimental; REML only.
+"""
+function multi_effect_variance_component_covariance(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    fd_step::Real = 1e-4,
+)
+    K = length(effects)
+    K >= 1 || throw(ArgumentError("at least one random effect is required"))
+    length(sigmas) == K ||
+        throw(ArgumentError("sigmas length must match number of effects"))
+    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+
+    # `_reml_fd_information` perturbs coordinate i by at most 2·h[i] (the i == j
+    # diagonal term). A component near the boundary would be pushed non-positive
+    # there, and `sparse_multi_reml_loglik` would throw "all sigmas must be
+    # positive" from inside the difference quotient — an opaque failure that
+    # looks like a bug rather than a boundary. Refuse up front instead.
+    h = fd_step .* max.(abs.(theta), 1e-3)
+    all(theta .- 2 .* h .> 0) || throw(ArgumentError(
+        "a variance component is too close to zero for a finite-difference " *
+        "information matrix (boundary optimum); standard errors are unavailable",
+    ))
+
+    # `sparse_multi_reml_loglik` returns the plain tuple (loglik, beta, us).
+    loglik(t) = sparse_multi_reml_loglik(y, X, effects, t[1:K], t[K + 1])[1]
+    info = _reml_fd_information(loglik, theta, fd_step)
+    (all(isfinite, info) && isposdef(info)) || throw(ArgumentError(
+        "observed information is not finite positive-definite at the estimate " *
+        "(flat/boundary optimum); standard errors are unavailable",
+    ))
+    return inv(info)
+end
+
+"""
+    multi_effect_variance_component_standard_errors(y, X, effects, sigmas, sigma_e2;
+                                                    fd_step = 1e-4)
+
+Asymptotic standard errors of `[σ_1², …, σ_K²]` and `σ_e²` for a K-effect REML
+fit, as a `NamedTuple` `(sigmas, sigma_e2)`. See
+[`multi_effect_variance_component_covariance`](@ref) for the caveats.
+"""
+function multi_effect_variance_component_standard_errors(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    fd_step::Real = 1e-4,
+)
+    K = length(effects)
+    cov = multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+    )
+    return (
+        sigmas = [sqrt(cov[i, i]) for i in 1:K],
+        sigma_e2 = sqrt(cov[K + 1, K + 1]),
+    )
+end
+
+"""
+    multi_effect_sum_ratio_interval(y, X, effects, sigmas, sigma_e2;
+                                    which = 1:length(effects), level = 0.95,
+                                    fd_step = 1e-4, boundary_tol = 1e-6)
+
+Delta-method confidence interval for a SUMMED variance ratio
+
+    r = (Σ_{i ∈ which} σᵢ²) / (Σⱼ σⱼ² + σ_e²)
+
+of a K-effect REML fit, on the logit scale so the interval lies in `(0, 1)` —
+the same construction as [`_ratio_delta_ci`](@ref)'s single-component case and
+as [`repeatability_interval`](@ref), generalised to a sum of components.
+
+With `which = 1:2` on an animal + permanent-environment fit this is the
+REPEATABILITY coefficient `t = (σ²_a + σ²_pe) / σ²_P`. Unlike
+`repeatability_interval`, it takes the components from an already-computed fit
+and differentiates the SPARSE [`sparse_multi_reml_loglik`](@ref), so it does not
+refit densely and carries no dense ceiling.
+
+Returns a `NamedTuple` matching the single-ratio shape: `estimate`, `lower`,
+`upper`, `se`, `lower_clamped`, `upper_clamped`, `boundary`. Returns `NaN`
+endpoints with `boundary = true` rather than throwing when the ratio sits on a
+rail or the information is not positive definite. Asymptotic; REML only.
+"""
+function multi_effect_sum_ratio_interval(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    which = 1:length(effects),
+    level::Real = 0.95,
+    fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    K = length(effects)
+    idx = collect(which)
+    all(i -> 1 <= i <= K, idx) ||
+        throw(ArgumentError("which must index components 1..$K"))
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+    total = sum(theta)
+    numer = sum(theta[i] for i in idx)
+    ratio = numer / total
+    na = (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+          lower_clamped = false, upper_clamped = false, boundary = true)
+    # On a rail the logit transform is undefined and the delta SE meaningless.
+    (ratio > boundary_tol && ratio < 1 - boundary_tol) || return na
+
+    cov = try
+        multi_effect_variance_component_covariance(
+            y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+        )
+    catch
+        # The covariance refuses at a flat/boundary optimum by design; an
+        # interval is simply unavailable there, which is not an error.
+        return na
+    end
+
+    # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
+    g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
+    se = sqrt(max(dot(g, cov * g), 0.0))
+    (isfinite(se) && se > 0) || return merge(na, (se = se,))
+
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(ratio / (1 - ratio))
+    se_eta = se / (ratio * (1 - ratio))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (estimate = ratio, lower = lower, upper = upper, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            boundary = false)
+end
+
+"""
+    multi_effect_ratio_standard_errors(y, X, effects, sigmas, sigma_e2;
+                                       fd_step = 1e-4)
+
+Delta-method asymptotic standard errors of each variance RATIO
+`ratioᵢ = σᵢ² / (Σⱼ σⱼ² + σ_e²)` for a K-effect REML fit. For an animal block
+this is the standard error of narrow-sense `h²`; for any other block it is the
+standard error of that block's variance-explained proportion, which is NOT a
+heritability.
+
+Uses [`multi_effect_variance_component_covariance`](@ref) and inherits its
+caveats and its refusals.
+"""
+function multi_effect_ratio_standard_errors(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    fd_step::Real = 1e-4,
+)
+    K = length(effects)
+    cov = multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+    )
+    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+    total = sum(theta)
+    ses = Vector{Float64}(undef, K)
+    for i in 1:K
+        # ratio_i = θ_i / Σθ  =>  ∂ratio_i/∂θ_j = (δ_ij·Σθ − θ_i) / (Σθ)²
+        g = [((j == i ? total : 0.0) - theta[i]) / total^2 for j in 1:(K + 1)]
+        ses[i] = sqrt(max(0.0, dot(g, cov * g)))
+    end
+    return ses
+end
+
 # Assemble the SPARSE Henderson mixed-model-equation coefficient matrix `C` and
 # right-hand side for the general K-independent-random-effect model at the given
 # variance components, from the iteration-invariant cross-products. `C` is the

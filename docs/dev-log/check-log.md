@@ -5817,6 +5817,59 @@ Aqua included; re-run after the floor change, 43/43 in `test_selinv_defaults_350
 (it fails on the PR head, see the docs finding above).
 `tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
 tools/preamble_cap.sh` — `CAP OK`.
+## 2026-09-19 — selected-inverse kernel: cap-free clique scatter; D-271 re-measured against it `[JL]`
+
+Handover #360 item 2. S2b found the `6bb10c97` kernel's gain to be fill-dependent (1.10x at
+fill 474 against 6.65x-9.97x at fill <= 214) and inferred that the dense clique block loses
+its advantage as cliques widen. Measured cause: `DEFAULT_SELINV_BLOCK_CAP = 2000`. Anything
+wider kept the per-pair binary search, and on the banked fixture (f0adv q = 20,000,
+`nfounder_frac = 0.005`, fill 471) **86.8% of `Σⱼ|L[:,j]|²` sits in cliques wider than 2,000**
+(max clique 4,072; 2,136 of 20,001 columns). Amdahl with ~8x on the remaining 13% gives
+1.13x — S2b's 1.10x. Profile at other fills: 78.7% wide-clique share at fill 340, 86.7% at
+fill 465.
+
+Fix (`93711c9a`): the recursion walks each clique member's own column once and scatters both
+symmetric contributions (`L[i_q,j]·v` into `s_p`, `L[i_p,j]·v` into `s_q`) into a length-`m`
+accumulator — no search, no `m×m` block, no width cap, `O(maxm)` scratch. Each accumulator
+receives its terms in the same ascending order as the original per-pair recursion, and skipped
+structural zeros are exact no-ops (an accumulator starting at `+0.0` never becomes `-0.0`), so
+the output is BIT-IDENTICAL. `_selinv_zvals(ch; per_pair = true)` keeps the original recursion
+as the reference; `DEFAULT_SELINV_BLOCK_CAP`/`block_cap` removed (internal, unexported).
+
+Measured (Mac Studio M1 Ultra, Julia 1.13.0, one BLAS thread, full MME, the S2b generator and
+seed), per selected-inverse pass:
+
+| fixture | fill | capped block (`main` 63f44039) | cap-free scatter | ratio |
+|---|---|---|---|---|
+| f0adv q=5,000 frac 0.2 | 107.3 | 0.310 s | 0.187 s | 1.66x |
+| f0adv q=5,000 frac 0.005 | 150.7 | 0.581 s | 0.320 s | 1.82x |
+| f0adv q=10,000 frac 0.005 | 262.4 | 8.257 s | 1.978 s | 4.17x |
+| f0adv q=20,000 frac 0.005 | 471.1 | 416.85 s (trace) | 14.89 s (trace) | **28.0x** |
+
+End-to-end `fit_ai_reml`, f0adv q=10,000 fill 262, same process each: **42.75 s → 10.75 s
+(4.0x)**, 5 iterations both, estimates BITWISE identical
+(`sigma_a2 = 3ff044725e2d10a9`, `sigma_e2 = 3ff0568c0fa46868` on both). At q = 20,000 fill 471
+the Z values are bitwise equal and the traces equal exactly.
+
+D-271 input, same machine/fixture (package arm = `SelectedInversion.selinv(F; depermute =
+false)` + `dot` with the permuted `Ainv`, SelectedInversion 0.2.1 in a scratch environment;
+the package `Project.toml` untouched; factorise 0.53 s; package trace 1.19 s):
+`main`'s kernel 416.8 s = 349x for the package; the cap-free scatter 14.9 s = **12.5x**
+(agreement 2.75e-14 relative); a SIMD-on-the-aligned-tail prototype (reassociates one sum,
+so rtol-gated, not bitwise; 1.3e-15 vs the scatter) 5.97 s = **4.8x**, i.e. under D-271's
+10x bar. The prototype is not on any branch and its row was measured while a test suite used
+other cores. The call and the proposed sequence are in the #353 comment; no extension was
+built in this slice.
+
+Honesty edits: the 6.6x-10.0x figure is kept as measured but now carries its fill range at
+every site that quoted it as general — kernel header, `selinv_trace_against` docstring,
+`capability-status.md`, `V1-REML`, `validation_status.jl`. No status flips; no row-count
+change; `public_covered_count` stays 7.
+
+Checks (this worktree, `93711c9a` + these docs): `julia --project=. -e 'using Pkg; Pkg.test()'`
+— **passed** (`Testing HSquared tests passed`, 160 test summaries, no failures, Julia 1.13.0,
+Aqua included). `tools/write_validation_status_page.jl` — 56 rows, no diff.
+`bash tools/preamble_cap.sh` — `CAP OK`. CI pending the push.
 
 ## 2026-09-19 — reliability denominator from 1 + F where Julia builds Ainv from a pedigree `[JL]`
 

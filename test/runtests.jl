@@ -6013,22 +6013,19 @@ end
     end
 end
 
-@testset "_selinv_zvals dense-block path == per-pair fallback path, bitwise" begin
-    # The selected-inverse recursion materialises a dense per-clique block (fast path)
-    # unless a clique is wider than `DEFAULT_SELINV_BLOCK_CAP`, in which case it keeps
-    # the original per-pair binary-search path. Both must produce IDENTICAL values --
-    # the optimization changes only HOW an already-correct entry is fetched, and the
-    # `k` accumulation order is unchanged, so the agreement is expected to be BITWISE,
-    # not merely approximate. Forcing `block_cap = 0` selects the fallback for every
-    # column, so this pins the two paths against each other on a small fixture.
+@testset "_selinv_zvals clique-scatter path == per-pair reference, bitwise" begin
+    # The selected-inverse recursion walks each clique member's column once and scatters
+    # both symmetric contributions into a length-m accumulator (no search, no m×m block,
+    # no clique-width cap). Every accumulator receives its terms in the same ascending
+    # order as the original per-pair binary-search recursion, so the agreement must be
+    # BITWISE, not approximate. `per_pair = true` runs that original recursion.
+    zbits(ch; kw...) = reinterpret(UInt64, HSquared._selinv_zvals(ch; kw...)[1])
     rng = Random.MersenneTwister(20260919)
-    for (n, p) in ((40, 0.12), (150, 0.05))
+    for (n, p) in ((40, 0.12), (150, 0.05), (300, 0.2))
         B = sprandn(rng, n, n, p)
         A = sparse(B * B' + (n * 0.1) * I)
         ch = cholesky(Symmetric(A); check = true)
-        fast, = HSquared._selinv_zvals(ch)
-        slow, = HSquared._selinv_zvals(ch; block_cap = 0)
-        @test reinterpret(UInt64, fast) == reinterpret(UInt64, slow)
+        @test zbits(ch) == zbits(ch; per_pair = true)
     end
 
     # same check on a real pedigree Ainv and on a full Henderson MME coefficient matrix
@@ -6037,15 +6034,36 @@ end
     Ainv = pedigree_inverse(ped)
     q = length(ped.ids)
     ch_a = cholesky(Symmetric(sparse(Ainv)); check = true)
-    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_a)[1]) ==
-          reinterpret(UInt64, HSquared._selinv_zvals(ch_a; block_cap = 0)[1])
+    @test zbits(ch_a) == zbits(ch_a; per_pair = true)
 
     spec = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q), collect(1.0:q)),
                              sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
     lhs, = HSquared._sparse_mme_system(spec, 1.3, 0.9)
     ch_m = cholesky(Symmetric(lhs); check = true)
-    @test reinterpret(UInt64, HSquared._selinv_zvals(ch_m)[1]) ==
-          reinterpret(UInt64, HSquared._selinv_zvals(ch_m; block_cap = 0)[1])
+    @test zbits(ch_m) == zbits(ch_m; per_pair = true)
+
+    # fully random mating from 4 founders: the factor has wide cliques and long columns,
+    # so both the merge and the per-entry-search branches of the scatter run
+    rq = 600
+    rsire = zeros(Int, rq); rdam = zeros(Int, rq)
+    for i in 5:rq
+        rsire[i] = rand(rng, 1:(i - 1))
+        rdam[i] = rand(rng, 1:(i - 1))
+        while rdam[i] == rsire[i]
+            rdam[i] = rand(rng, 1:(i - 1))
+        end
+    end
+    rped = normalize_pedigree(collect(1:rq), rsire, rdam)
+    rAinv = pedigree_inverse(rped)
+    rspec = animal_model_spec(randn(rng, rq), ones(rq, 1), sparse(1.0I, rq, rq), rAinv;
+                              ids = rped.ids, method = :REML)
+    rlhs, = HSquared._sparse_mme_system(rspec, 1.0, 1.0)
+    ch_r = cholesky(Symmetric(rlhs); check = true)
+    widest = maximum(diff(sparse(ch_r.L).colptr)) - 1
+    @test widest > 100
+    @test zbits(ch_r) == zbits(ch_r; per_pair = true)
+    ch_ra = cholesky(Symmetric(sparse(rAinv)); check = true)
+    @test zbits(ch_ra) == zbits(ch_ra; per_pair = true)
 end
 
 @testset "_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale" begin
@@ -10869,6 +10887,7 @@ end
 # max_dense_cells kwarg on the dense-validation fitters (engine half of
 # hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
 include("test_214_217_dense_cells.jl")
+include("test_352_multi_effect_se.jl")
 
 # #334: docs/make.jl must not dirty docs/src/validation-status.md on a
 # no-content-change rebuild (regeneration must be idempotent, no timestamp).

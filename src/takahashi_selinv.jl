@@ -24,16 +24,20 @@
 # is not. As first written, each of those pair terms cost a binary search into
 # another column — branchy and cache-hostile — which profiling found to be
 # ~98.6% of one AI-REML iteration at n=100,000, and 233x-1780x the wall time of
-# `cholesky(Symmetric(C))` on the SAME matrix. `_selinv_zvals` now materialises
-# each column's clique block densely and accumulates over it with unit stride,
-# removing the searches entirely (see its own comment for why that is exact).
-# Measured on this machine, same matrices, bit-identical output:
-#   selected inverse alone   6.6x - 10.0x faster (n=2,000-30,000, pedigree Ainv
-#                            and full Henderson MME, both realistic and
-#                            adversarial mating structures)
-#   end-to-end `fit_ai_reml` 7.32 s -> 2.96 s at n=2,000 (2.5x)
-#                            56.77 s -> 6.87 s at n=8,000 (8.3x)
-#                            (identical iteration counts and estimates)
+# `cholesky(Symmetric(C))` on the SAME matrix. `6bb10c97` replaced the searches with
+# a dense per-clique block, but only for cliques up to 2000 wide (the block is
+# `m²` floats); wider cliques kept the searches, and on high-fill pedigrees those are
+# most of the work (q=20,000, fill 471: 86.8% of `Σⱼ|L[:,j]|²` sits in cliques wider
+# than 2000), so the gain fell from 6.6x-10x at moderate fill to 1.1x at fill 474.
+# `_selinv_zvals` now walks each clique member's own column once and SCATTERS both
+# symmetric contributions into a length-`m` accumulator: no search, no `m×m` block,
+# no width cap, and the same per-entry summation order (see its own comment), so the
+# output stays BIT-IDENTICAL to the original per-pair recursion.
+# Measured on one thread (Mac Studio M1 Ultra), f0adv adversarial pedigrees, full MME,
+# bit-identical output, against the capped dense-block kernel (see the check-log):
+#   q=5,000  fill 107-151   1.7x-1.8x
+#   q=10,000 fill 262       4.2x
+#   q=20,000 fill 471       28x   (416.8 s -> 14.9 s per selected-inverse pass)
 #
 # IMPORTANT CAVEAT (read before using)
 # ------------------------------------
@@ -50,12 +54,6 @@
 #
 #   Z[j, r] = -1/L[j, j] · Σ_{k > j, L[k, j] ≠ 0} L[k, j] · Z[k, r]   (r > j)
 #   Z[j, j] = 1/L[j, j]² - 1/L[j, j] · Σ_{k > j, L[k, j] ≠ 0} L[k, j] · Z[k, j].
-
-# Widest clique for which `_selinv_zvals` materialises a dense block (2000² ≈ 32 MB).
-# Wider cliques keep the per-pair lookup path, so a pathological factor can never turn
-# the optimization into a memory blow-up. Overridable per call so the tests can force
-# the fallback path on a small matrix and pin both paths against each other.
-const DEFAULT_SELINV_BLOCK_CAP = 2000
 
 # Binary search for row `i` in column `j` of a CSC sparse matrix; returns the
 # nzval index if found, -1 otherwise. CSC row indices are sorted increasing.
@@ -83,8 +81,7 @@ end
 # arrays and permutation to map back to the original ordering. Cost is
 # `Θ(Σⱼ|L[:,j]|²)` (see the WHY block above), NOT `O(nnz(L))`; the
 # `L + Lᵀ` pattern entries are exact regardless of that cost.
-function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64};
-                       block_cap::Int = DEFAULT_SELINV_BLOCK_CAP)
+function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool = false)
     L = sparse(ch.L)
     perm = ch.p
     n = size(L, 1)
@@ -93,40 +90,35 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64};
     Lvals = L.nzval
 
     Zvals = zeros(Float64, length(Lvals))
+    if per_pair
+        _selinv_zvals_per_pair!(Zvals, colptr, rowval, Lvals, n)
+        return Zvals, colptr, rowval, perm, n
+    end
 
-    # PERFORMANCE (Karpinski review, 2026-09). The inner sum below needs `Z[k, r]` for
-    # every ORDERED PAIR drawn from column `j`'s own row pattern (its "clique"). Fetching
-    # each pair individually costs a binary search into another column, so a clique of
-    # size `m` pays `O(m² log nnz)` in branchy, cache-hostile lookups — which profiling
-    # found to be ~98.6% of one AI-REML iteration at n=100,000.
-    #
-    # Instead, materialise the clique's `m × m` block of `Z` ONCE per column, then run a
-    # dense, unit-stride accumulation over it. Two facts make this exact and cheap:
-    #   * storage puts each entry at column `min(row, col)`, so `Z[i_p, i_q]` with
-    #     `i_p < i_q` lives in column `i_p` — and the block is symmetric, so filling the
-    #     upper triangle by walking each `i_p`'s own column fills the whole block;
-    #   * by the Cholesky fill-path property, if `i_p` and `i_q` are both in column `j`'s
-    #     pattern then `i_q` IS in column `i_p`'s pattern, so every entry needed is
-    #     genuinely present (nothing is silently treated as structurally absent).
-    # Both `rowval` within a column and the clique list are sorted ascending, so each
-    # row of the block comes from a linear MERGE — no binary search at all — falling back
-    # to per-entry search only when a column is long relative to how much of it is wanted.
-    #
-    # Values and summation order are UNCHANGED (the `k` accumulation still runs in
-    # ascending `k`), so results stay BIT-IDENTICAL to the pre-optimization kernel;
-    # `test/runtests.jl` pins exactly that.
+    # PERFORMANCE. Column `j` needs, for each of its clique rows `i_q` (its row pattern
+    # below the diagonal, `i_1 < … < i_m`), the sum `s_q = Σ_p L[i_p, j] · Z[i_p, i_q]`
+    # over ALL clique members `p`, accumulated in ascending `p`. `Z[i_p, i_q]` with
+    # `p < q` is stored in column `i_p` at row `i_q` (entries live at column
+    # `min(row, col)`), and by the Cholesky fill-path property every clique row after
+    # `i_p` IS in column `i_p`'s pattern. So walk `p = 1…m` once: at step `p`, add the
+    # diagonal term to `s_p`, then merge column `i_p`'s rows with the clique tail
+    # `i_{p+1}…i_m`; each match `v = Z[i_p, i_q]` contributes `L[i_q, j]·v` to `s_p` and
+    # `L[i_p, j]·v` to `s_q`. Every `s_q` therefore receives its terms in exactly
+    # ascending `p` — the order of the original per-pair recursion — so the output is
+    # BIT-IDENTICAL to it (`test/runtests.jl` pins this). Structurally absent entries
+    # (the per-pair path adds `L·0.0`) are skipped: `s + ±0.0 == s` for every `s`
+    # reachable here, because an accumulator that starts at `+0.0` can never become
+    # `-0.0`. Scratch is one length-`maxm` vector; there is no clique-width cap.
     maxm = 0
     @inbounds for c in 1:n
         mc = colptr[c + 1] - colptr[c] - 1
         mc > maxm && (maxm = mc)
     end
-    blockdim = min(maxm, block_cap)
-    zsub = Vector{Float64}(undef, blockdim * blockdim)
+    acc = zeros(Float64, maxm)
 
     @inbounds for j in n:-1:1
         cs = colptr[j]; ce = colptr[j + 1] - 1
-        Ljj = Lvals[cs]
-        invLjj = 1.0 / Ljj
+        invLjj = 1.0 / Lvals[cs]
         m = ce - cs
 
         if m == 0
@@ -134,14 +126,16 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64};
             continue
         end
 
-        if m <= blockdim
-            # --- build the symmetric m×m clique block: zsub[(q-1)*m + p] = Z[i_p, i_q] ---
-            for p in 1:m
-                ip = rowval[cs + p]
-                pcs = colptr[ip]; pce = colptr[ip + 1] - 1
-                zsub[(p - 1) * m + p] = Zvals[pcs]          # Z[i_p, i_p]
-                ntail = m - p
-                ntail == 0 && continue
+        for q in 1:m
+            acc[q] = 0.0
+        end
+        for p in 1:m
+            ip = rowval[cs + p]
+            lp = Lvals[cs + p]
+            pcs = colptr[ip]; pce = colptr[ip + 1] - 1
+            sp = acc[p] + lp * Zvals[pcs]               # p == q: Z[i_p, i_p]
+            ntail = m - p
+            if ntail > 0
                 if (pce - pcs) <= 11 * ntail
                     # linear merge of two ascending row lists
                     a = pcs + 1
@@ -151,74 +145,76 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64};
                         ra = rowval[a]
                         if ra == iq
                             v = Zvals[a]
-                            zsub[(q - 1) * m + p] = v
-                            zsub[(p - 1) * m + q] = v
+                            sp += Lvals[cs + q] * v
+                            acc[q] += lp * v
                             a += 1; q += 1
                         elseif ra < iq
                             a += 1
                         else
-                            zsub[(q - 1) * m + p] = 0.0
-                            zsub[(p - 1) * m + q] = 0.0
                             q += 1
                         end
-                    end
-                    while q <= m
-                        zsub[(q - 1) * m + p] = 0.0
-                        zsub[(p - 1) * m + q] = 0.0
-                        q += 1
                     end
                 else
                     # column i_p is long relative to the tail we want: search per entry
                     for q in (p + 1):m
                         idx = _csc_rowidx(colptr, rowval, ip, rowval[cs + q])
-                        v = idx == -1 ? 0.0 : Zvals[idx]
-                        zsub[(q - 1) * m + p] = v
-                        zsub[(p - 1) * m + q] = v
+                        if idx != -1
+                            v = Zvals[idx]
+                            sp += Lvals[cs + q] * v
+                            acc[q] += lp * v
+                        end
                     end
                 end
             end
-            # --- dense unit-stride accumulation, k ascending (order preserved) ---
-            for rq in 1:m
-                base = (rq - 1) * m
-                s = 0.0
-                for kp in 1:m
-                    s += Lvals[cs + kp] * zsub[base + kp]
-                end
-                Zvals[cs + rq] = -s * invLjj
-            end
-        else
-            # clique wider than the block cap: original per-pair lookup path
-            for off_r in ce:-1:(cs + 1)
-                r = rowval[off_r]
-                s = 0.0
-                for off_k in (cs + 1):ce
-                    k = rowval[off_k]
-                    Lkj = Lvals[off_k]
-                    if k == r
-                        z_kr = Zvals[colptr[r]]
-                    elseif k < r
-                        idx = _csc_rowidx(colptr, rowval, k, r)
-                        z_kr = idx == -1 ? 0.0 : Zvals[idx]
-                    else
-                        idx = _csc_rowidx(colptr, rowval, r, k)
-                        z_kr = idx == -1 ? 0.0 : Zvals[idx]
-                    end
-                    s += Lkj * z_kr
-                end
-                Zvals[off_r] = -s * invLjj
-            end
+            acc[p] = sp
+        end
+        for q in 1:m
+            Zvals[cs + q] = -acc[q] * invLjj
         end
 
         s = 0.0
         for off_k in (cs + 1):ce
-            Lkj = Lvals[off_k]
-            Z_kj = Zvals[off_k]
-            s += Lkj * Z_kj
+            s += Lvals[off_k] * Zvals[off_k]
         end
         Zvals[cs] = invLjj * invLjj - s * invLjj
     end
 
     return Zvals, colptr, rowval, perm, n
+end
+
+# The original per-pair recursion (one binary search per clique pair), kept as the
+# bitwise reference `_selinv_zvals(ch; per_pair = true)` that the tests pin the
+# scatter path against. Not used on any production path.
+function _selinv_zvals_per_pair!(Zvals, colptr, rowval, Lvals, n)
+    @inbounds for j in n:-1:1
+        cs = colptr[j]; ce = colptr[j + 1] - 1
+        invLjj = 1.0 / Lvals[cs]
+        for off_r in ce:-1:(cs + 1)
+            r = rowval[off_r]
+            s = 0.0
+            for off_k in (cs + 1):ce
+                k = rowval[off_k]
+                Lkj = Lvals[off_k]
+                if k == r
+                    z_kr = Zvals[colptr[r]]
+                elseif k < r
+                    idx = _csc_rowidx(colptr, rowval, k, r)
+                    z_kr = idx == -1 ? 0.0 : Zvals[idx]
+                else
+                    idx = _csc_rowidx(colptr, rowval, r, k)
+                    z_kr = idx == -1 ? 0.0 : Zvals[idx]
+                end
+                s += Lkj * z_kr
+            end
+            Zvals[off_r] = -s * invLjj
+        end
+        s = 0.0
+        for off_k in (cs + 1):ce
+            s += Lvals[off_k] * Zvals[off_k]
+        end
+        Zvals[cs] = invLjj * invLjj - s * invLjj
+    end
+    return Zvals
 end
 
 """
@@ -290,11 +286,12 @@ PER AI-REML ITERATION, and profiling (Karpinski review, 2026-09) found it to be
 the DOMINANT per-iteration cost of `fit_ai_reml` at scale — ≈98.6% of one
 iteration's wall time at n=100,000, and 233x-1780x the `cholesky(Symmetric(C))`
 factorization it reuses — rather than the sparse assembly or factorization.
-`_selinv_zvals`'s dense per-clique block (2026-09-19) cut that constant by
-6.6x-10x with bit-identical output, taking end-to-end `fit_ai_reml` from 56.77 s
-to 6.87 s at n=8,000. It remains the largest single term here, so further work
-(a blocked/supernodal selected inverse) belongs in `_selinv_zvals`, not in the
-summation loop below. Adapted from DRM.jl (MIT).
+`_selinv_zvals`'s clique scatter cut that constant with bit-identical output
+(the capped dense-block version of 2026-09-19 took end-to-end `fit_ai_reml` from
+56.77 s to 6.87 s at n=8,000; the cap-free scatter removes the clique-width limit that
+left high-fill pedigrees on the search path). It remains the largest single term here,
+so further work (a blocked/supernodal selected inverse) belongs in `_selinv_zvals`, not
+in the summation loop below. Adapted from DRM.jl (MIT).
 """
 function selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
                               Ainv::SparseMatrixCSC, nfixed::Integer)
