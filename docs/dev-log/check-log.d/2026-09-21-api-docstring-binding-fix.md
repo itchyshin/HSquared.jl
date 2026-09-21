@@ -57,6 +57,27 @@ no docstring and the private one did; it was the only such entry in `api.md`; af
 the binding resolves and all Documenter stages pass. Green CI on the PR is the confirming
 leg and had not run at the time of writing.
 
+### Regression test
+
+`test/test_api_docstrings.jl` (new, wired into `runtests.jl`) asserts the PROPERTY rather
+than the symbol: every `HSquared.*` line in `docs/src/api.md` resolves to a docstring via
+`Docs.meta`, with a `length(entries) > 50` guard so a moved or restructured `api.md` cannot
+make the testset pass while asserting nothing.
+
+Pinned as a property deliberately. Neither instance of this bug was a docs edit — both were
+ordinary refactors that moved a definition out from under its docstring (#362 here, and the
+`_ratio_delta_ci` case #370 caught by hand). The next one will be a different name.
+
+Test of the test, both directions: with `src/likelihood.jl` reverted to `main` it **fails**,
+reporting exactly `HSquared.multi_effect_variance_component_covariance`; with the fix it
+**passes** (3/3).
+
+A Copilot agent independently opened `#374` (DRAFT) for the same bug at 20:48, 47 minutes
+after `#373`. Its fix is the same docstring move; its regression test is a single
+`Docs.hasdoc` assertion on the one symbol, placed inside an unrelated V6-GLLVM
+validation-status testset. The property form above supersedes it. `#374` should be closed as
+a duplicate rather than merged.
+
 ### Incidental, pre-existing — one stale ledger anchor
 
 `tools/check_capability_citations.py` FAILED on `main` before this change:
