@@ -1683,13 +1683,14 @@ rather than returning `NaN` when the information is not finite positive-definite
 (a flat or boundary optimum), or when a component sits so close to zero that the
 finite-difference step would take it non-positive. Experimental; REML only.
 """
-function multi_effect_variance_component_covariance(
+function _multi_effect_variance_component_covariance(
     y::AbstractVector,
     X::AbstractMatrix,
     effects::AbstractVector,
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
+    unavailable::Symbol = :throw,
 )
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
@@ -1705,19 +1706,38 @@ function multi_effect_variance_component_covariance(
     # positive" from inside the difference quotient — an opaque failure that
     # looks like a bug rather than a boundary. Refuse up front instead.
     h = fd_step .* max.(abs.(theta), 1e-3)
-    all(theta .- 2 .* h .> 0) || throw(ArgumentError(
-        "a variance component is too close to zero for a finite-difference " *
-        "information matrix (boundary optimum); standard errors are unavailable",
-    ))
+    if !all(theta .- 2 .* h .> 0)
+        unavailable === :nothing && return nothing
+        throw(ArgumentError(
+            "a variance component is too close to zero for a finite-difference " *
+            "information matrix (boundary optimum); standard errors are unavailable",
+        ))
+    end
 
     # `sparse_multi_reml_loglik` returns the plain tuple (loglik, beta, us).
     loglik(t) = sparse_multi_reml_loglik(y, X, effects, t[1:K], t[K + 1])[1]
     info = _reml_fd_information(loglik, theta, fd_step)
-    (all(isfinite, info) && isposdef(info)) || throw(ArgumentError(
-        "observed information is not finite positive-definite at the estimate " *
-        "(flat/boundary optimum); standard errors are unavailable",
-    ))
+    if !(all(isfinite, info) && isposdef(info))
+        unavailable === :nothing && return nothing
+        throw(ArgumentError(
+            "observed information is not finite positive-definite at the estimate " *
+            "(flat/boundary optimum); standard errors are unavailable",
+        ))
+    end
     return inv(info)
+end
+
+function multi_effect_variance_component_covariance(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector,
+    sigmas::AbstractVector,
+    sigma_e2::Real;
+    fd_step::Real = 1e-4,
+)
+    return _multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :throw,
+    )
 end
 
 """
@@ -1796,20 +1816,10 @@ function multi_effect_sum_ratio_interval(
     # On a rail the logit transform is undefined and the delta SE meaningless.
     (ratio > boundary_tol && ratio < 1 - boundary_tol) || return na
 
-    cov = try
-        multi_effect_variance_component_covariance(
-            y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
-        )
-    catch err
-        if err isa ArgumentError &&
-           (contains(string(err), "standard errors are unavailable") ||
-            contains(string(err), "boundary optimum"))
-            # The covariance refuses at a flat/boundary optimum by design; an
-            # interval is simply unavailable there, which is not an error.
-            return na
-        end
-        rethrow()
-    end
+    cov = _multi_effect_variance_component_covariance(
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :nothing,
+    )
+    cov === nothing && return na
 
     # r = S/T with S = Σ_{i∈idx} θ_i, T = Σθ  =>  ∂r/∂θ_j = (1{j∈idx}·T − S)/T²
     g = [((j in idx) ? total : 0.0) - numer for j in 1:(K + 1)] ./ total^2
