@@ -5817,3 +5817,145 @@ Aqua included; re-run after the floor change, 43/43 in `test_selinv_defaults_350
 (it fails on the PR head, see the docs finding above).
 `tools/write_validation_status_page.jl` — 56 rows, no diff. `bash
 tools/preamble_cap.sh` — `CAP OK`.
+## 2026-09-19 — selected-inverse kernel: cap-free clique scatter; D-271 re-measured against it `[JL]`
+
+Handover #360 item 2. S2b found the `6bb10c97` kernel's gain to be fill-dependent (1.10x at
+fill 474 against 6.65x-9.97x at fill <= 214) and inferred that the dense clique block loses
+its advantage as cliques widen. Measured cause: `DEFAULT_SELINV_BLOCK_CAP = 2000`. Anything
+wider kept the per-pair binary search, and on the banked fixture (f0adv q = 20,000,
+`nfounder_frac = 0.005`, fill 471) **86.8% of `Σⱼ|L[:,j]|²` sits in cliques wider than 2,000**
+(max clique 4,072; 2,136 of 20,001 columns). Amdahl with ~8x on the remaining 13% gives
+1.13x — S2b's 1.10x. Profile at other fills: 78.7% wide-clique share at fill 340, 86.7% at
+fill 465.
+
+Fix (`93711c9a`): the recursion walks each clique member's own column once and scatters both
+symmetric contributions (`L[i_q,j]·v` into `s_p`, `L[i_p,j]·v` into `s_q`) into a length-`m`
+accumulator — no search, no `m×m` block, no width cap, `O(maxm)` scratch. Each accumulator
+receives its terms in the same ascending order as the original per-pair recursion, and skipped
+structural zeros are exact no-ops (an accumulator starting at `+0.0` never becomes `-0.0`), so
+the output is BIT-IDENTICAL. `_selinv_zvals(ch; per_pair = true)` keeps the original recursion
+as the reference; `DEFAULT_SELINV_BLOCK_CAP`/`block_cap` removed (internal, unexported).
+
+Measured (Mac Studio M1 Ultra, Julia 1.13.0, one BLAS thread, full MME, the S2b generator and
+seed), per selected-inverse pass:
+
+| fixture | fill | capped block (`main` 63f44039) | cap-free scatter | ratio |
+|---|---|---|---|---|
+| f0adv q=5,000 frac 0.2 | 107.3 | 0.310 s | 0.187 s | 1.66x |
+| f0adv q=5,000 frac 0.005 | 150.7 | 0.581 s | 0.320 s | 1.82x |
+| f0adv q=10,000 frac 0.005 | 262.4 | 8.257 s | 1.978 s | 4.17x |
+| f0adv q=20,000 frac 0.005 | 471.1 | 416.85 s (trace) | 14.89 s (trace) | **28.0x** |
+
+End-to-end `fit_ai_reml`, f0adv q=10,000 fill 262, same process each: **42.75 s → 10.75 s
+(4.0x)**, 5 iterations both, estimates BITWISE identical
+(`sigma_a2 = 3ff044725e2d10a9`, `sigma_e2 = 3ff0568c0fa46868` on both). At q = 20,000 fill 471
+the Z values are bitwise equal and the traces equal exactly.
+
+D-271 input, same machine/fixture (package arm = `SelectedInversion.selinv(F; depermute =
+false)` + `dot` with the permuted `Ainv`, SelectedInversion 0.2.1 in a scratch environment;
+the package `Project.toml` untouched; factorise 0.53 s; package trace 1.19 s):
+`main`'s kernel 416.8 s = 349x for the package; the cap-free scatter 14.9 s = **12.5x**
+(agreement 2.75e-14 relative); a SIMD-on-the-aligned-tail prototype (reassociates one sum,
+so rtol-gated, not bitwise; 1.3e-15 vs the scatter) 5.97 s = **4.8x**, i.e. under D-271's
+10x bar. The prototype is not on any branch and its row was measured while a test suite used
+other cores. The call and the proposed sequence are in the #353 comment; no extension was
+built in this slice.
+
+Honesty edits: the 6.6x-10.0x figure is kept as measured but now carries its fill range at
+every site that quoted it as general — kernel header, `selinv_trace_against` docstring,
+`capability-status.md`, `V1-REML`, `validation_status.jl`. No status flips; no row-count
+change; `public_covered_count` stays 7.
+
+Checks (this worktree, `93711c9a` + these docs): `julia --project=. -e 'using Pkg; Pkg.test()'`
+— **passed** (`Testing HSquared tests passed`, 160 test summaries, no failures, Julia 1.13.0,
+Aqua included). `tools/write_validation_status_page.jl` — 56 rows, no diff.
+`bash tools/preamble_cap.sh` — `CAP OK`. CI pending the push.
+
+## 2026-09-19 — reliability denominator from 1 + F where Julia builds Ainv from a pedigree `[JL]`
+
+Handover #360 item 3 (my own #350 suggestion, split out as its own change). `reliability`
+needs `diag(A) = diag(inv(Ainv))`. #355 reads it through a selected inverse of `Ainv`
+(`Θ(Σⱼ|L[:,j]|²)` over the factor of `Ainv`). For a pedigree `Ainv` it is `1 + F`, and
+`pedigree_inverse` already runs Meuwissen & Luo for `F` because Henderson's rules need the
+Mendelian sampling variance `d_i = 0.5 − 0.25(F_sire + F_dam)`. So the diagonal is already
+paid for wherever `Ainv` is built from pedigree rows.
+
+Implemented: `_pedigree_inverse_and_inbreeding(ped) -> (Ainv, F)` with `pedigree_inverse`
+delegating to it (`Ainv` byte-identical, pinned); `AnimalModelSpec.relationship_diag`
+(`Union{Nothing,Vector{Float64}}`, 7-arg constructor unchanged); `animal_model_spec` and the
+4-matrix `fit_animal_model` accept it (length/finite/positive checked — consistency with
+`Ainv` stays the caller's contract, stated in the docstring); `reliability` under `:auto`
+reads it, while explicit `:selinv`/`:dense` keep their literal paths as the parity oracles;
+payload-v2 `build_in_julia` pedigree blocks carry `1 .+ F` in `Ainv`'s own normalized row
+order and the `:animal` dispatch forwards it (supplied/identity relmats carry `nothing`).
+
+Measured (Mac Studio M1 Ultra, one thread, Julia 1.13.0), generation-structured pedigree,
+50 generations x 2,000 = **100,000 animals**, parents drawn at random from the previous
+generation (100 sires), fill of `L_Ainv` = 170.8:
+
+- `pedigree_inverse(ped)`: **39.3 s**, essentially all of it the Meuwissen & Luo pass
+  (`inbreeding_coefficients` alone, separate call: 39.9 s) — so `1 + F` is FREE at the
+  point `Ainv` is built.
+- selected-inverse diagonal of the same `Ainv` (`takahashi_diag`): **878.4 s** with the
+  kernel on `main`, **35.7 s** with the cap-free scatter kernel of the same date
+  (`perf/selinv-capfree-scatter`, 24.6x). Both are the honest comparison: after that kernel
+  lands the denominator costs 36 s rather than 15 minutes, and `1 + F` still makes it free —
+  and the kernel is what a SUPPLIED `Ainv` (R-built, genomic, metafounder) still depends on.
+- `max|selinv − (1 + F)| = 6.2e-14` — the two agree, so this is a cost change, not a
+  numerical one.
+
+At validation scale the two paths are indistinguishable in time; the point is the large
+pedigree, where the reliability denominator goes from ~15 minutes to free.
+
+Tests: `test/test_relationship_diag_1pF.jl`, 21 assertions (byte-identical `Ainv`, `F` equal
+to `inbreeding_coefficients`; `:auto` takes the carried diagonal by identity and equals
+`:selinv` and `:dense` reliability to 1e-10 on an inbred 240-animal pedigree; short/zero/NaN
+diagonals refused; payload-v2 path attaches `1 + F` and its payload reliability equals the
+selected-inverse one to 1e-10; a supplied `Ainv` keeps the selected inverse).
+
+Checks (this worktree, stacked on the #355 review branch): `julia --project=. -e 'using Pkg;
+Pkg.test()'` — **passed** (`Testing HSquared tests passed`, 170 test summaries, no failures,
+Julia 1.13.0, Aqua included). `bash tools/preamble_cap.sh` — `CAP OK`. No status flips; no
+capability row moves; `public_covered_count` stays 7. CI pending the push.
+
+## 2026-09-19 — selected-inverse kernel: aligned-tail SIMD path (rtol-gated, on top of the cap-free scatter) `[JL]`
+
+Handover #360 item 4, taken first because it decides D-271 (#353). In the dense trailing
+supernode of a high-fill factor, a clique member's column tail IS the clique tail, so the
+merge degenerates to a unit-stride walk that `@simd` can vectorise. Three cheap tests select
+that path and they are EXACT, not heuristic: the clique tail is a subset of column `i_p`'s
+pattern (Cholesky fill-path property), it has `ntail` elements lying in `[i_{p+1}, i_m]`, and
+column `i_p` holds exactly `ntail` rows in that range when its `ntail`-th row is `i_m` — so
+the two lists coincide.
+
+`@simd` reassociates the `sp` reduction, so unlike the cap-free scatter this path is gated at
+a STATED rtol, not bitwise. `_selinv_zvals(ch; strict_order = true)` keeps the bit-identical
+merge and `per_pair = true` the original recursion; both stay as references.
+
+Measured (Mac Studio M1 Ultra, one thread, Julia 1.13.0, f0adv MME, in-package):
+
+| fixture | fill | strict (bitwise) | SIMD | ratio | max rel diff |
+|---|---|---|---|---|---|
+| q=10,000 frac 0.005 | 262.4 | 1.957 s | 0.946 s | 2.07x | 1.2e-15 |
+| q=20,000 frac 0.005 | 471.1 | 14.825 s | 5.451 s | 2.72x | 1.3e-15 |
+
+Against the capped dense-block kernel on `main`, the two steps together are **416.8 s → 5.45 s
+(76x)** at the D-271 banked point.
+
+**D-271 consequence:** SelectedInversion.jl takes 1.19 s on that same factor, so its lead over
+our kernel is now **4.6x — under the 10x bar**. Per D-271 that means keep ours and close #353
+with the number, once this and #361 are on `main` and the banked point has been re-run on
+Totoro (Shinichi's machine; `bench/selinv_arms.jl --totoro-arm` with `EXPECTED_KERNEL_SHA`
+bumped). The decision is recorded on #353; no extension was built.
+
+Tests: new testset "_selinv_zvals aligned-tail SIMD path" (15 assertions) asserts the
+fill-path property itself on four CHOLMOD factors (8-animal MME and `Ainv`, 400-animal
+random-mating MME and `Ainv`) — supernodal amalgamation pads columns with explicit zeros, so
+the property is pinned rather than assumed — then `strict_order` output bitwise-equal to the
+per-pair reference, the SIMD path within 1e-12 relative of it, a converged `fit_ai_reml` on
+the same fixture (the fixture carries additive signal; a noise-only `y` sits on the REML
+boundary and would test the fixture, not the kernel), and `selinv_trace_against` equal to the
+materialised selected inverse to rtol 1e-10.
+
+Checks: full `Pkg.test()` and `docs/make.jl` — see the commit's own CI; the new testset runs
+15/15 locally. `bash tools/preamble_cap.sh` — `CAP OK`.
