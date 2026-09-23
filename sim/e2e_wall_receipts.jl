@@ -181,17 +181,18 @@ function depth3_pedigree(n_founders, n_mid, n_off; seed::Int = 20260923)
     return normalize_pedigree(ids, sire, dam)
 end
 
-function maternal_case(; nsire = 8, ndam = 16, noff = 56, seed::Int = 20260923)
+function maternal_case(; nsire = 10, ndam = 20, noff = 80, seed::Int = 20260923)
     rng = MersenneTwister(seed)
     ped = halfsib_pedigree(nsire, ndam, noff)
     q = length(ped.ids)
     Ainv = pedigree_inverse(ped)
     # Observe offspring only (records after parents).
-    off = (nsire + ndam + 1):q
+    off = collect((nsire + ndam + 1):q)
     n = length(off)
-    Zd = Matrix{Float64}(I, q, q)[off, :]
+    Zd = zeros(n, q)
     Zm = zeros(n, q)
     for (r, i) in enumerate(off)
+        Zd[r, i] = 1.0
         d = ped.dam[i]
         d > 0 && (Zm[r, d] = 1.0)
     end
@@ -475,18 +476,19 @@ function main()
     end
 
     if do_kinds
-        @printf("  hsq-maternal-q80 ...\n"); flush(stdout)
+        @printf("  hsq-maternal-q110 ...\n"); flush(stdout)
         begin
             y, X, Zd, Zm, Ainv, q, n = maternal_case()
-            fit0 = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; iterations = 80)
-            med, mn = median_wall(() -> fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; iterations = 80))
+            init = (G_dm = [0.8 0.1; 0.1 0.4], sigma_e2 = 0.49)
+            fit0 = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = init)
+            med, mn = median_wall(() -> fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = init))
             push_row!(rows;
-                cell = "hsq-maternal-q80",
+                cell = "hsq-maternal-q110",
                 kind = "direct_maternal",
                 pair = "measured_now",
                 before_s = NaN, after_s = med, speedup = NaN,
                 host = host, totoro = totoro_flag, sha = sha,
-                note = "dense direct–maternal REML; covered experimental; conv=$(fit0.converged) q=$(q) nobs=$(n) min=$(round(mn; digits=4))")
+                note = "dense direct–maternal REML; covered experimental; conv=$(fit0.converged) iters=$(fit0.iterations) q=$(q) nobs=$(n) min=$(round(mn; digits=4))")
         end
 
         @printf("  hsq-genomic-greml-q200 ...\n"); flush(stdout)
@@ -521,31 +523,34 @@ function main()
         begin
             Y, X, Z, Ainv, na, nobs, t = multivariate_case(; q = 48, t = 4, reps = 2,
                 structure = :factor_analytic)
+            Λ0 = reshape([0.8, 0.5, -0.3, 0.4], 4, 1)
+            init = (loadings = Λ0, uniqueness = fill(0.35, 4), R0 = Matrix{Float64}(I, 4, 4))
             fit0 = fit_multivariate_reml(Y, X, Z, Ainv;
-                genetic_structure = :factor_analytic, rank = 1, iterations = 120)
+                genetic_structure = :factor_analytic, rank = 1, initial = init)
             med, mn = median_wall(() -> fit_multivariate_reml(Y, X, Z, Ainv;
-                genetic_structure = :factor_analytic, rank = 1, iterations = 120))
+                genetic_structure = :factor_analytic, rank = 1, initial = init))
             push_row!(rows;
                 cell = "hsq-fa-t4k1-q48",
                 kind = "factor_analytic",
                 pair = "measured_now",
                 before_s = NaN, after_s = med, speedup = NaN,
                 host = host, totoro = totoro_flag, sha = sha,
-                note = "FA t=4 K=1 covered-flip cell; dense multivariate REML; conv=$(fit0.converged) na=$(na) nobs=$(nobs) min=$(round(mn; digits=4))")
+                note = "FA t=4 K=1 covered-flip cell; dense multivariate REML; conv=$(fit0.converged) iters=$(fit0.iterations) na=$(na) nobs=$(nobs) min=$(round(mn; digits=4))")
         end
 
         @printf("  hsq-multivar-us-t2-q80 ...\n"); flush(stdout)
         begin
             Y, X, Z, Ainv, na, nobs, t = multivariate_case(; q = 80, t = 2, reps = 3)
-            fit0 = fit_multivariate_reml(Y, X, Z, Ainv; iterations = 120)
-            med, mn = median_wall(() -> fit_multivariate_reml(Y, X, Z, Ainv; iterations = 120))
+            init = (G0 = [1.0 0.4; 0.4 1.0], R0 = Matrix{Float64}(I, 2, 2))
+            fit0 = fit_multivariate_reml(Y, X, Z, Ainv; initial = init)
+            med, mn = median_wall(() -> fit_multivariate_reml(Y, X, Z, Ainv; initial = init))
             push_row!(rows;
                 cell = "hsq-multivar-us-t2-q80",
                 kind = "multivariate",
                 pair = "measured_now",
                 before_s = NaN, after_s = med, speedup = NaN,
                 host = host, totoro = totoro_flag, sha = sha,
-                note = "unstructured multi-trait REML; covered experimental; conv=$(fit0.converged) t=$(t) na=$(na) nobs=$(nobs) min=$(round(mn; digits=4))")
+                note = "unstructured multi-trait REML; covered experimental; conv=$(fit0.converged) iters=$(fit0.iterations) t=$(t) na=$(na) nobs=$(nobs) min=$(round(mn; digits=4))")
         end
 
         @printf("  hsq-animal-depth3-q500 ...\n"); flush(stdout)
