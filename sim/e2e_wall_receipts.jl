@@ -25,7 +25,7 @@
 # This harness covers board H² cell_ids only (merge resolved add/add vs #378).
 #
 # Diverse kinds (post-#380; `--kinds`):
-#   hsq-maternal-q80              direct_maternal (dense, covered experimental)
+#   hsq-maternal-q110             direct_maternal (dense, covered experimental)
 #   hsq-genomic-greml-q200        genomic GREML / fit_gblup_reml (covered)
 #   hsq-repeatability-sparse-q200 sparse animal+PE (covered experimental)
 #   hsq-fa-t4k1-q48               factor-analytic multivariate (covered experimental)
