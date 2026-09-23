@@ -1,0 +1,14 @@
+# HSquared.jl e2e wall receipts  2026-09-23T12:24:52.951
+# git_sha=fdc43845  julia=1.12.6  host=totoro
+# LBTConfig([ILP64] libopenblas64_.so)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# NOT CI / OPT-IN. No public performance claim. R twin: no parallel wall-receipt harness.
+cell	kind	pair	before_s	after_s	speedup	host	totoro	sha	note
+hsq-maternal-q80	direct_maternal	measured_now		0.039188		totoro	Y	fdc43845	dense direct–maternal REML; covered experimental; conv=false q=80 nobs=56 min=0.0379
+hsq-genomic-greml-q200	genomic_GREML	measured_now		0.056500		totoro	Y	fdc43845	fit_gblup_reml supplied Ginv; covered V2-GREML validation-scale; conv=true n=200 m=400 min=0.0509
+hsq-repeatability-sparse-q200	repeatability	measured_now		0.003343		totoro	Y	fdc43845	sparse animal+PE AI-REML (repeatability route); covered experimental; conv=true na=200 nobs=400 min=0.0033
+hsq-fa-t4k1-q48	factor_analytic	measured_now		0.910419		totoro	Y	fdc43845	FA t=4 K=1 covered-flip cell; dense multivariate REML; conv=false na=48 nobs=96 min=0.8723
+hsq-multivar-us-t2-q80	multivariate	measured_now		1.758453		totoro	Y	fdc43845	unstructured multi-trait REML; covered experimental; conv=false t=2 na=80 nobs=240 min=1.4474
+hsq-animal-depth3-q500	pedigree_depth	measured_now		0.010825		totoro	Y	fdc43845	3-generation window-mated pedigree animal REML; conv=true q=500 nnzA=3182 min=0.0105
+hsq-reliability-selinv-q2000	reliability	measured_now		0.004141		totoro	Y	fdc43845	reliability(:selinv) post-fit (includes PEV+Aii); fit conv=true q=2000 nnzA=9360 min=0.0041
+hsq-halfsib-q5000	animal_REML_scale	measured_now		0.041019		totoro	Y	fdc43845	larger halfsib animal REML q=5000; conv=true iters=6 nnzA=23400 min=0.0354
