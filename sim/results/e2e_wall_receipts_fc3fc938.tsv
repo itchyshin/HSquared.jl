@@ -1,0 +1,22 @@
+# HSquared.jl e2e wall receipts  2026-09-23T05:52:24.191
+# git_sha=fc3fc938  julia=1.10.0  host=w-kw3k3y6229.psych.ualberta.ca
+# LBTConfig([ILP64] libopenblas64_.dylib)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# NOT CI / OPT-IN. No public performance claim. R twin: no parallel wall-receipt harness.
+cell	kind	pair	before_s	after_s	speedup	host	totoro	sha	note
+animal_reml_halfsib_q500	animal_REML	historical_vs_now	0.023000	0.041484	0.554	w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	before=2026-06-20 cpu_fit baseline Mac; after=this run median-of-3 min=0.0404 nnzA=2340
+animal_reml_halfsib_q2000	animal_REML	historical_vs_now	0.084000	0.124541	0.674	w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	before=2026-06-20 cpu_fit baseline Mac; after=this run median-of-3 min=0.1165 nnzA=9360
+animal_reml_halfsib_q8000	animal_REML	historical_vs_now	0.334000	0.414137	0.806	w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	before=2026-06-20 cpu_fit baseline Mac; after=this run median-of-3 min=0.3523 nnzA=37440
+postfit_pev_q500	post_fit_uncertainty	dense_vs_selinv	0.012500	0.000461	27.103	w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	before=dense PEV banked 2026-06-20 0.0125s; after=selinv PEV this-run
+postfit_pev_q500_selinv_vs_hist	post_fit_uncertainty	historical_vs_now	0.000200	0.000461	0.434	w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	selinv PEV: before=2026-06-20 0.0002s; after=this-run (machine/noise; not a win claim)
+multi_effect_K2_q500_sparse_mac	multi_effect	measured_after_only		0.007739		w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	sparse AI-REML Mac live; dense paired walls banked on Totoro phase5
+multi_effect_K3_q1000_sparse_mac	multi_effect	measured_after_only		0.055363		w-kw3k3y6229.psych.ualberta.ca	N	fc3fc938	sparse AI-REML Mac live; dense paired walls banked on Totoro phase5
+animal_reml_halfsib_q20000_large	large_pedigree	measured_now	0.127500	0.127500	1.000	Apple M1 Ultra	N	c8cf8e05	S1 banked: iter_tot×n_iter on benign halfsib; selinv~12% share; SelectedInversion NOT a win (S2 S_c≪1 on benign). Live q=20k fit segfaulted once in this session — banked instrumented proxy used instead.
+animal_reml_f0adv_q5000_fill150_projected	animal_REML	projected_selinv	27.948000	0.293222	95.314	Apple M1 Ultra	N	c8cf8e05×9be11566	before=S1 iter_tot×n_iter (5.5896×5); after=selinv section replaced by SelectedInversion at S_c=284 from S2. NOT a wired e2e fit; src/ unchanged.
+selinv_kernel_mac_f0adv_q20k_fill150	sparse_selinv	kernel_a_vs_c	236.894000	0.833000	284.390	Apple M1 Ultra	N	9be11566	bench/results/selinv_arms_9be11566_t1.tsv; arm a=Takahashi+diag, arm c=SelectedInversion
+selinv_kernel_totoro_f0adv_q20k_fill471	sparse_selinv	kernel_a_vs_c	1211.638000	4.030400	300.620	AMD EPYC 9655	Y	b68bde5a	bench/results/selinv_arms_b68bde5a_totoro_q20000_fill471.tsv
+animal_reml_f0adv_q20k_fill471_projected	large_pedigree	projected_selinv	1211.638000	4.030400	300.620	AMD EPYC 9655	Y	b68bde5a	PROXY: one AI-REML selinv pass (trace+diag), not full multi-iter fit; S1 says selinv≈99% of iter at high fill so whole-fit speedup ≈ S_c
+multi_effect_K3_q1000_totoro	multi_effect	dense_vs_sparse_me	26.927900	0.040900	658.384	totoro	Y	phase5-2026-07-02	sim/phase5_sparse_benchmark_K3.tsv medians; estimator confound disclosed
+multi_effect_K3_q5000_totoro_sparse	multi_effect	measured_after_only		1.832600		totoro	Y	phase5-2026-07-02	K3 sparse only (dense infeasible); phase5_sparse_benchmark_K3.tsv
+large_pedigree_K1_q50000_totoro	large_pedigree	measured_after_only		0.301100		totoro	Y	phase5-2026-07-02	K1=animal sparse AI-REML; phase5_sparse_benchmark_K1.tsv median
+large_pedigree_K1_q20000_totoro	large_pedigree	measured_after_only		0.085900		totoro	Y	phase5-2026-07-02	K1 sparse; phase5_sparse_benchmark_K1.tsv median
