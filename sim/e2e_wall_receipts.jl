@@ -20,9 +20,13 @@
 #   dense_vs_sparse_me — dense NelderMead multi-effect vs sparse AI-REML
 #   measured_now       — absolute wall only (no paired before on same host)
 #
+# Sibling #378 speed12 / projected / phase5 receipts stay banked in
+#   sim/results/e2e_wall_receipts_fc3fc938.tsv  (different cell_ids).
+# This harness covers board H² cell_ids only (merge resolved add/add vs #378).
+#
 # Usage (lane / worktree root):
 #   env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
-#       julia --project=. sim/e2e_wall_receipts.jl [--quick] [--large]
+#       julia --project=. sim/e2e_wall_receipts.jl [--quick] [--large] [--core]
 # ============================================================================
 
 using HSquared

@@ -1682,27 +1682,9 @@ function multi_effect_ratio_interval(
     return (ratios = ratios, level = level, converged = fit.converged)
 end
 
-"""
-    multi_effect_variance_component_covariance(y, X, effects, sigmas, sigma_e2;
-                                               fd_step = 1e-4)
-
-Asymptotic covariance of the estimated `[σ_1², …, σ_K², σ_e²]` for a K-effect
-REML fit: the inverse of the observed information, formed as the central
-finite-difference Hessian of the REML log-likelihood at the estimate — the same
-machinery as [`multi_effect_ratio_interval`](@ref) and
-[`two_effect_ratio_interval`](@ref), and the K-block analogue of
-[`variance_component_covariance`](@ref).
-
-Unlike `multi_effect_ratio_interval`, this differentiates the SPARSE
-[`sparse_multi_reml_loglik`](@ref) rather than the dense `_multi_effect_dense`,
-so it is usable on the same large problems `fit_multi_effect(:auto)` fits; it
-never densifies `Aᵢ⁻¹`.
-
-Large-sample approximation, unreliable where the REML surface is flat. Throws
-rather than returning `NaN` when the information is not finite positive-definite
-(a flat or boundary optimum), or when a component sits so close to zero that the
-finite-difference step would take it non-positive. Experimental; REML only.
-"""
+# INTERNAL. The public `multi_effect_variance_component_covariance` is the thin
+# wrapper below and carries the docstring; this one adds `unavailable`, which lets
+# `multi_effect_uncertainty` ask for the covariance without committing to a throw.
 function _multi_effect_variance_component_covariance(
     y::AbstractVector,
     X::AbstractMatrix,
@@ -1752,6 +1734,27 @@ function _multi_effect_variance_component_covariance(
     return inv(info)
 end
 
+"""
+    multi_effect_variance_component_covariance(y, X, effects, sigmas, sigma_e2;
+                                               fd_step = 1e-4)
+
+Asymptotic covariance of the estimated `[σ_1², …, σ_K², σ_e²]` for a K-effect
+REML fit: the inverse of the observed information, formed as the central
+finite-difference Hessian of the REML log-likelihood at the estimate — the same
+machinery as [`multi_effect_ratio_interval`](@ref) and
+[`two_effect_ratio_interval`](@ref), and the K-block analogue of
+[`variance_component_covariance`](@ref).
+
+Unlike `multi_effect_ratio_interval`, this differentiates the SPARSE
+[`sparse_multi_reml_loglik`](@ref) rather than the dense `_multi_effect_dense`,
+so it is usable on the same large problems `fit_multi_effect(:auto)` fits; it
+never densifies `Aᵢ⁻¹`.
+
+Large-sample approximation, unreliable where the REML surface is flat. Throws
+rather than returning `NaN` when the information is not finite positive-definite
+(a flat or boundary optimum), or when a component sits so close to zero that the
+finite-difference step would take it non-positive. Experimental; REML only.
+"""
 function multi_effect_variance_component_covariance(
     y::AbstractVector,
     X::AbstractMatrix,
