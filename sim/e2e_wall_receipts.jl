@@ -488,7 +488,7 @@ function main()
                 pair = "measured_now",
                 before_s = NaN, after_s = med, speedup = NaN,
                 host = host, totoro = totoro_flag, sha = sha,
-                note = "dense direct–maternal REML; covered experimental; conv=$(fit0.converged) iters=$(fit0.iterations) q=$(q) nobs=$(n) min=$(round(mn; digits=4))")
+                note = "dense direct–maternal REML; covered experimental; conv=$(fit0.converged) q=$(q) nobs=$(n) min=$(round(mn; digits=4))")
         end
 
         @printf("  hsq-genomic-greml-q200 ...\n"); flush(stdout)
