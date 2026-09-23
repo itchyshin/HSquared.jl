@@ -2,20 +2,31 @@
 # ============================================================================
 # NOT CI / OPT-IN measurement only.
 #
-# End-of-arc e2e wall receipts for HSquared.jl speed12 lane.
-# Converts kernel-bench wins (SelectedInversion vs Takahashi) into attested
-# fit / post-fit walls across kinds, and banks SHA-keyed TSV receipts.
+# End-of-arc e2e fit / post-fit wall receipts for HSquared.jl.
+# Fills three-package-speed-board.md H² `needs_run` rows on post-#371 tip,
+# plus ≥1 multi-effect and ≥1 large-pedigree cell so the board gets ≥5
+# attested e2e walls (not kernel-only).
+#
+# Board cell_ids (primary):
+#   hsq-animal-fit-q500 / q2000 / q10000
+#   hsq-pev-reliability-q500
+# Extra e2e (diversity):
+#   hsq-multi-effect-K2-q500
+#   hsq-animal-fit-q20000-large
 #
 # Before/after meaning (column `pair`):
-#   historical_vs_now  — June-2026 cpu_fit baseline vs this-run wall
+#   historical_vs_now  — 2026-06-20 cpu_fit baseline vs this-run wall
 #   dense_vs_selinv    — dense post-fit PEV vs sparse selinv PEV
-#   kernel_a_vs_c      — Takahashi (arm a) vs SelectedInversion (arm c)
 #   dense_vs_sparse_me — dense NelderMead multi-effect vs sparse AI-REML
-#   projected_selinv   — measured e2e fit wall + S1 selinv share × S2 S_c
+#   measured_now       — absolute wall only (no paired before on same host)
 #
-# Usage (lane root):
+# Sibling #378 speed12 / projected / phase5 receipts stay banked in
+#   sim/results/e2e_wall_receipts_fc3fc938.tsv  (different cell_ids).
+# This harness covers board H² cell_ids only (merge resolved add/add vs #378).
+#
+# Usage (lane / worktree root):
 #   env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
-#       julia --project=. sim/e2e_wall_receipts.jl
+#       julia --project=. sim/e2e_wall_receipts.jl [--quick] [--large] [--core]
 # ============================================================================
 
 using HSquared
@@ -25,6 +36,10 @@ using Printf
 using Random
 using Dates
 using Statistics
+
+# Pin BLAS before any dense path — OpenBLAS dgetrf_parallel/exec_blas_async can
+# hang when OPENBLAS_NUM_THREADS=1 is only an env hint and workers still spawn.
+BLAS.set_num_threads(1)
 
 const N_REP = 3
 
@@ -62,35 +77,7 @@ function make_y(q)
     return [5.0 + 0.3 * Float64(i % 7) + 0.1 * sin(i * 0.17) for i in 1:q]
 end
 
-function animal_spec(nsire, ndam, noff)
-    ped = halfsib_pedigree(nsire, ndam, noff)
-    Ainv = pedigree_inverse(ped)
-    q = length(ped.ids)
-    y = make_y(q)
-    X = ones(q, 1)
-    Z = sparse(1.0 * I, q, q)
-    return animal_model_spec(y, X, Z, Ainv; method = :REML), q, nnz(Ainv)
-end
-
-function f0_adversarial_pedigree(q::Int; nfounder_frac::Float64 = 0.005, seed::Int = 20260724)
-    rng = MersenneTwister(seed)
-    nf  = max(4, round(Int, nfounder_frac * q))
-    ids  = ["a$i" for i in 1:q]
-    sire = fill("0", q)
-    dam  = fill("0", q)
-    @inbounds for i in (nf + 1):q
-        p = rand(rng, 1:(i - 1))
-        m = rand(rng, 1:(i - 1))
-        while m == p
-            m = rand(rng, 1:(i - 1))
-        end
-        sire[i] = ids[p]
-        dam[i]  = ids[m]
-    end
-    return normalize_pedigree(ids, sire, dam)
-end
-
-function f0_simulate_y(ped; sigma_a2 = 1.0, sigma_e2 = 1.0, mu = 5.0, seed = 20260724)
+function gene_drop_y(ped; sigma_a2 = 1.0, sigma_e2 = 1.0, mu = 5.0, seed = 20260923)
     rng = MersenneTwister(seed)
     q = length(ped.ids)
     u = zeros(q)
@@ -105,13 +92,16 @@ function f0_simulate_y(ped; sigma_a2 = 1.0, sigma_e2 = 1.0, mu = 5.0, seed = 202
     return mu .+ u .+ sqrt(sigma_e2) .* randn(rng, q)
 end
 
-function f0adv_spec(q; nfounder_frac = 0.005)
-    ped = f0_adversarial_pedigree(q; nfounder_frac = nfounder_frac)
+"""Animal REML spec. Default `y_mode=:genedrop` (recoverable signal, converges).
+`:cpu_fit` is the 2026-06-20 deterministic null-ish y (hits σ_a→0 boundary)."""
+function animal_spec(nsire, ndam, noff; y_mode::Symbol = :genedrop)
+    ped = halfsib_pedigree(nsire, ndam, noff)
     Ainv = pedigree_inverse(ped)
-    y = f0_simulate_y(ped)
+    q = length(ped.ids)
+    y = y_mode === :cpu_fit ? make_y(q) : gene_drop_y(ped)
     X = ones(q, 1)
     Z = sparse(1.0 * I, q, q)
-    return animal_model_spec(y, X, Z, Ainv; method = :REML)
+    return animal_model_spec(y, X, Z, Ainv; method = :REML), q, nnz(Ainv)
 end
 
 function multi_effect_case(q::Int, K::Int; seed::Int = 20260702)
@@ -122,7 +112,6 @@ function multi_effect_case(q::Int, K::Int; seed::Int = 20260702)
     ped = halfsib_pedigree(nsire, ndam, noff)
     na = length(ped.ids)
     Ainv = pedigree_inverse(ped)
-    # gene-drop
     u = zeros(na)
     @inbounds for i in 1:na
         s = ped.sire[i]; d = ped.dam[i]
@@ -159,192 +148,7 @@ function push_row!(rows; cell, kind, pair, before_s, after_s, speedup, host, tot
     ))
 end
 
-function main()
-    sha = git_sha()
-    host = gethostname()
-    out = "sim/results/e2e_wall_receipts_$(sha).tsv"
-    rows = NamedTuple[]
-
-    println("# HSquared.jl e2e wall receipts  $(Dates.now())")
-    println("# git_sha=$sha  julia=$(VERSION)  host=$host")
-    println("# $(BLAS.get_config())")
-    println("# JULIA_NUM_THREADS=$(Threads.nthreads())  OPENBLAS_NUM_THREADS=$(get(ENV, "OPENBLAS_NUM_THREADS", "unset"))")
-    println("# NOT CI / OPT-IN. No public performance claim.")
-
-    # --- live: animal REML halfsib ladder (vs June-2026 banked) -------------
-    hist = Dict(
-        500  => (nsire=20, ndam=40, noff=440, before=0.0230),
-        2000 => (nsire=80, ndam=160, noff=1760, before=0.0840),
-        8000 => (nsire=320, ndam=640, noff=7040, before=0.3340),
-    )
-    for (q_target, cfg) in sort(collect(hist); by = first)
-        @printf("  animal REML halfsib ~q=%d ...\n", q_target); flush(stdout)
-        spec, q, nnzA = animal_spec(cfg.nsire, cfg.ndam, cfg.noff)
-        med, mn = median_wall(() -> fit_ai_reml(spec))
-        push_row!(rows;
-            cell = "animal_reml_halfsib_q$(q)",
-            kind = "animal_REML",
-            pair = "historical_vs_now",
-            before_s = cfg.before,
-            after_s = med,
-            speedup = cfg.before / med,
-            host = host, totoro = "N", sha = sha,
-            note = "before=2026-06-20 cpu_fit baseline Mac; after=this run median-of-$(N_REP) min=$(round(mn; digits=4)) nnzA=$(nnzA)")
-    end
-
-    # --- live: post-fit uncertainty dense vs selinv -------------------------
-    @printf("  post-fit PEV q≈500 (selinv live; dense=banked hist)...\n"); flush(stdout)
-    begin
-        spec, q, _ = animal_spec(20, 40, 440)
-        fit = fit_ai_reml(spec)
-        med_s, _ = median_wall(() -> prediction_error_variance(fit; method = :selinv))
-        # dense PEV banked 2026-06-20 at q≈500 = 0.0125s (avoid re-compiling dense path here)
-        med_d = 0.0125
-        push_row!(rows;
-            cell = "postfit_pev_q$(q)",
-            kind = "post_fit_uncertainty",
-            pair = "dense_vs_selinv",
-            before_s = med_d,
-            after_s = med_s,
-            speedup = med_d / med_s,
-            host = host, totoro = "N", sha = sha,
-            note = "before=dense PEV banked 2026-06-20 0.0125s; after=selinv PEV this-run")
-        push_row!(rows;
-            cell = "postfit_pev_q$(q)_selinv_vs_hist",
-            kind = "post_fit_uncertainty",
-            pair = "historical_vs_now",
-            before_s = 0.0002,  # selinv hist
-            after_s = med_s,
-            speedup = 0.0002 / med_s,
-            host = host, totoro = "N", sha = sha,
-            note = "selinv PEV: before=2026-06-20 0.0002s; after=this-run (machine/noise; not a win claim)")
-    end
-
-    # --- live: multi-effect K=2 small + K=3 modest --------------------------
-    for (q, K) in ((500, 2), (1000, 3))
-        @printf("  multi-effect K=%d q=%d ...\n", K, q); flush(stdout)
-        y, X, effects = multi_effect_case(q, K)
-        med_sp, _ = median_wall(() -> fit_sparse_multi_effect_aireml(y, X, effects; em_warmup = 0))
-        # dense only at q<=500 for wall budget
-        push_row!(rows;
-            cell = "multi_effect_K$(K)_q$(q)_sparse_mac",
-            kind = "multi_effect",
-            pair = "measured_after_only",
-            before_s = NaN,
-            after_s = med_sp,
-            speedup = NaN,
-            host = host, totoro = "N", sha = sha,
-            note = "sparse AI-REML Mac live; dense paired walls banked on Totoro phase5")
-    end
-
-    # --- large benign pedigree: S1 banked (q=20k live segfaulted CHOLMOD once) -
-    @printf("  animal REML halfsib q=20000 (S1 banked)...\n"); flush(stdout)
-    begin
-        # S1: iter_tot median 0.0085s × 15 iters
-        med = 15 * 0.0085
-        push_row!(rows;
-            cell = "animal_reml_halfsib_q20000_large",
-            kind = "large_pedigree",
-            pair = "measured_now",
-            before_s = med,
-            after_s = med,
-            speedup = 1.0,
-            host = "Apple M1 Ultra", totoro = "N", sha = "c8cf8e05",
-            note = "S1 banked: iter_tot×n_iter on benign halfsib; selinv~12% share; SelectedInversion NOT a win (S2 S_c≪1 on benign). Live q=20k fit segfaulted once in this session — banked instrumented proxy used instead.")
-    end
-
-    # --- live: high-fill e2e + projected SelectedInversion win --------------
-    @printf("  animal REML f0adv q=5000 fill~150 (S1×S2 projection)...\n"); flush(stdout)
-    begin
-        # S1 instrumented: iter_tot median 5.5896s × 5 iters ≈ e2e proxy on Mac
-        # (full fit wall ≈ n_iter × iter_total; S1 recorded 5 iterations at this fixture)
-        n_iter = 5
-        iter_tot = 5.5896
-        med = n_iter * iter_tot
-        share = 0.993
-        S_c = 284.39
-        proj = med * (1 - share) + med * share / S_c
-        push_row!(rows;
-            cell = "animal_reml_f0adv_q5000_fill150_projected",
-            kind = "animal_REML",
-            pair = "projected_selinv",
-            before_s = med,
-            after_s = proj,
-            speedup = med / proj,
-            host = "Apple M1 Ultra", totoro = "N", sha = "c8cf8e05×9be11566",
-            note = "before=S1 iter_tot×n_iter (5.5896×5); after=selinv section replaced by SelectedInversion at S_c=284 from S2. NOT a wired e2e fit; src/ unchanged.")
-    end
-
-    # --- banked: sparse selinv kernel (from S2 TSVs) ------------------------
-    push_row!(rows;
-        cell = "selinv_kernel_mac_f0adv_q20k_fill150",
-        kind = "sparse_selinv",
-        pair = "kernel_a_vs_c",
-        before_s = 236.894,
-        after_s = 0.8330,
-        speedup = 284.39,
-        host = "Apple M1 Ultra", totoro = "N", sha = "9be11566",
-        note = "bench/results/selinv_arms_9be11566_t1.tsv; arm a=Takahashi+diag, arm c=SelectedInversion")
-    push_row!(rows;
-        cell = "selinv_kernel_totoro_f0adv_q20k_fill471",
-        kind = "sparse_selinv",
-        pair = "kernel_a_vs_c",
-        before_s = 1211.638,
-        after_s = 4.0304,
-        speedup = 300.62,
-        host = "AMD EPYC 9655", totoro = "Y", sha = "b68bde5a",
-        note = "bench/results/selinv_arms_b68bde5a_totoro_q20000_fill471.tsv")
-    # projected whole-fit at Totoro fill471: nearly all wall is selinv
-    push_row!(rows;
-        cell = "animal_reml_f0adv_q20k_fill471_projected",
-        kind = "large_pedigree",
-        pair = "projected_selinv",
-        before_s = 1211.638,  # one selinv pass ≈ one iter; full fit = iters × this
-        after_s = 4.0304,
-        speedup = 300.62,
-        host = "AMD EPYC 9655", totoro = "Y", sha = "b68bde5a",
-        note = "PROXY: one AI-REML selinv pass (trace+diag), not full multi-iter fit; S1 says selinv≈99% of iter at high fill so whole-fit speedup ≈ S_c")
-
-    # --- banked: Totoro phase5 multi-effect / large scale -------------------
-    # medians from phase5_sparse_benchmark_K3.tsv / K1.tsv (host=totoro)
-    push_row!(rows;
-        cell = "multi_effect_K3_q1000_totoro",
-        kind = "multi_effect",
-        pair = "dense_vs_sparse_me",
-        before_s = 26.9279,
-        after_s = 0.0409,
-        speedup = 26.9279 / 0.0409,
-        host = "totoro", totoro = "Y", sha = "phase5-2026-07-02",
-        note = "sim/phase5_sparse_benchmark_K3.tsv medians; estimator confound disclosed")
-    push_row!(rows;
-        cell = "multi_effect_K3_q5000_totoro_sparse",
-        kind = "multi_effect",
-        pair = "measured_after_only",
-        before_s = NaN,
-        after_s = 1.8326,
-        speedup = NaN,
-        host = "totoro", totoro = "Y", sha = "phase5-2026-07-02",
-        note = "K3 sparse only (dense infeasible); phase5_sparse_benchmark_K3.tsv")
-    push_row!(rows;
-        cell = "large_pedigree_K1_q50000_totoro",
-        kind = "large_pedigree",
-        pair = "measured_after_only",
-        before_s = NaN,
-        after_s = 0.3011,
-        speedup = NaN,
-        host = "totoro", totoro = "Y", sha = "phase5-2026-07-02",
-        note = "K1=animal sparse AI-REML; phase5_sparse_benchmark_K1.tsv median")
-    push_row!(rows;
-        cell = "large_pedigree_K1_q20000_totoro",
-        kind = "large_pedigree",
-        pair = "measured_after_only",
-        before_s = NaN,
-        after_s = 0.0859,
-        speedup = NaN,
-        host = "totoro", totoro = "Y", sha = "phase5-2026-07-02",
-        note = "K1 sparse; phase5_sparse_benchmark_K1.tsv median")
-
-    # write TSV
+function write_tsv(out, rows, sha, host)
     open(out, "w") do io
         println(io, "# HSquared.jl e2e wall receipts  $(Dates.now())")
         println(io, "# git_sha=$sha  julia=$(VERSION)  host=$host")
@@ -360,17 +164,155 @@ function main()
             println(io, "$(r.cell)\t$(r.kind)\t$(r.pair)\t$b\t$a\t$s\t$(r.host)\t$(r.totoro)\t$(r.sha)\t$note")
         end
     end
+end
 
-    println()
-    println("Wrote $out  ($(length(rows)) cells)")
-    println()
-    @printf("%-42s %-22s %10s %10s %8s %s\n", "cell", "kind", "before", "after", "speedup", "Totoro")
+function print_table(rows)
+    @printf("%-36s %-22s %10s %10s %8s %s\n", "cell", "kind", "before", "after", "speedup", "Totoro")
     for r in rows
         b = isnan(r.before_s) ? "—" : @sprintf("%.4f", r.before_s)
         a = isnan(r.after_s) ? "—" : @sprintf("%.4f", r.after_s)
         s = isnan(r.speedup) ? "—" : @sprintf("%.1fx", r.speedup)
-        @printf("%-42s %-22s %10s %10s %8s %s\n", r.cell, r.kind, b, a, s, r.totoro)
+        @printf("%-36s %-22s %10s %10s %8s %s\n", r.cell, r.kind, b, a, s, r.totoro)
     end
 end
 
-main()
+function main()
+    args = Set(String.(ARGS))
+    do_quick = "--quick" in args || isempty(ARGS) || "--core" in args
+    do_large = "--large" in args || isempty(ARGS) || "--core" in args
+    # --quick alone: board needs_run + multi-effect only (no q10k/q20k)
+    if "--quick" in args && !("--large" in args) && !("--core" in args)
+        do_large = false
+    end
+    if "--large" in args && !("--quick" in args) && !("--core" in args)
+        do_quick = false
+    end
+
+    sha = git_sha()
+    host = gethostname()
+    on_totoro = occursin("totoro", lowercase(host))
+    totoro_flag = on_totoro ? "Y" : "N"
+    out = "sim/results/e2e_wall_receipts_$(sha).tsv"
+    mkpath("sim/results")
+    rows = NamedTuple[]
+
+    println("# HSquared.jl e2e wall receipts  $(Dates.now())")
+    println("# git_sha=$sha  julia=$(VERSION)  host=$host")
+    println("# $(BLAS.get_config())")
+    println("# JULIA_NUM_THREADS=$(Threads.nthreads())  OPENBLAS_NUM_THREADS=$(get(ENV, "OPENBLAS_NUM_THREADS", "unset"))")
+    println("# NOT CI / OPT-IN. No public performance claim.")
+    println("# modes: quick=$(do_quick) large=$(do_large)")
+
+    if do_quick
+        # Board animal fit cells: gene-drop y (June cpu_fit y is near-null boundary
+        # and hits iteration_limit — not a fair e2e fit wall). Soft-compare to
+        # June walls only as context in the note, pair = measured_now / soft_hist.
+        ladder = [
+            (nsire=20, ndam=40, noff=440, hist=0.0230, cell="hsq-animal-fit-q500"),
+            (nsire=80, ndam=160, noff=1760, hist=0.0840, cell="hsq-animal-fit-q2000"),
+        ]
+        for cfg in ladder
+            @printf("  %s ...\n", cfg.cell); flush(stdout)
+            spec, q, nnzA = animal_spec(cfg.nsire, cfg.ndam, cfg.noff)
+            fit0 = fit_ai_reml(spec)
+            med, mn = median_wall(() -> fit_ai_reml(spec))
+            push_row!(rows;
+                cell = cfg.cell,
+                kind = "animal_REML",
+                pair = "measured_now",
+                before_s = cfg.hist,
+                after_s = med,
+                speedup = cfg.hist / med,
+                host = host, totoro = totoro_flag, sha = sha,
+                note = "after=gene-drop halfsib post-#371 median-of-$(N_REP) conv=$(fit0.converged) iters=$(fit0.iterations) min=$(round(mn; digits=4)) q=$(q) nnzA=$(nnzA); before=2026-06-20 cpu_fit wall (DIFFERENT y=deterministic near-null — soft context only, not same-DGP)")
+        end
+
+        @printf("  hsq-pev-reliability-q500 ...\n"); flush(stdout)
+        begin
+            spec, q, _ = animal_spec(20, 40, 440)
+            fit = fit_ai_reml(spec)
+            @printf("    fit conv=%s iters=%s\n", fit.converged, fit.iterations); flush(stdout)
+            @printf("    selinv PEV ...\n"); flush(stdout)
+            med_s, _ = median_wall(() -> prediction_error_variance(fit; method = :selinv))
+            # Dense MME inv deadlocks OpenBLAS dgetrf_parallel/exec_blas_async on this
+            # host under OPENBLAS_NUM_THREADS=1. Pair against the banked 2026-06-20
+            # dense wall (same q500 halfsib scale) — matches speed12 TSV honesty.
+            med_d = 0.0125
+            push_row!(rows;
+                cell = "hsq-pev-reliability-q500",
+                kind = "post_fit_uncertainty",
+                pair = "dense_vs_selinv",
+                before_s = med_d,
+                after_s = med_s,
+                speedup = med_d / med_s,
+                host = host, totoro = totoro_flag, sha = sha,
+                note = "before=dense PEV banked 2026-06-20 cpu_fit 0.0125s (live dense skipped: OpenBLAS hang); after=selinv median-of-$(N_REP); gene-drop fit conv=$(fit.converged)")
+        end
+
+        @printf("  hsq-multi-effect-K2-q500 ...\n"); flush(stdout)
+        begin
+            y, X, effects = multi_effect_case(500, 2)
+            med_sp, _ = median_wall(() -> fit_sparse_multi_effect_aireml(y, X, effects; em_warmup = 0))
+            # dense NelderMead: 1 timed rep after warm-up (can be slow)
+            fit_multi_effect_reml(y, X, effects; max_dense_cells = 4_000_000)
+            GC.gc()
+            med_dn = @elapsed fit_multi_effect_reml(y, X, effects; max_dense_cells = 4_000_000)
+            push_row!(rows;
+                cell = "hsq-multi-effect-K2-q500",
+                kind = "multi_effect",
+                pair = "dense_vs_sparse_me",
+                before_s = med_dn,
+                after_s = med_sp,
+                speedup = med_dn / med_sp,
+                host = host, totoro = totoro_flag, sha = sha,
+                note = "before=dense NelderMead (1 timed rep); after=sparse AI-REML median-of-$(N_REP); estimator confound disclosed")
+        end
+    end
+
+    if do_large
+        @printf("  hsq-animal-fit-q10000 ...\n"); flush(stdout)
+        begin
+            spec, q, nnzA = animal_spec(400, 800, 8800)
+            fit0 = fit_ai_reml(spec)
+            med, mn = median_wall(() -> fit_ai_reml(spec))
+            push_row!(rows;
+                cell = "hsq-animal-fit-q10000",
+                kind = "animal_REML",
+                pair = "measured_now",
+                before_s = NaN,
+                after_s = med,
+                speedup = NaN,
+                host = host, totoro = totoro_flag, sha = sha,
+                note = "gene-drop halfsib post-#371; conv=$(fit0.converged) iters=$(fit0.iterations); q=$(q) nnzA=$(nnzA) min=$(round(mn; digits=4)); June q8k hist=0.3340s different DGP")
+        end
+
+        @printf("  hsq-animal-fit-q20000-large ...\n"); flush(stdout)
+        begin
+            nsire = max(2, round(Int, 20000 * 0.05))
+            ndam  = max(4, round(Int, 20000 * 0.10))
+            noff  = 20000 - nsire - ndam
+            spec, q, nnzA = animal_spec(nsire, ndam, noff)
+            fit0 = fit_ai_reml(spec)
+            med, mn = median_wall(() -> fit_ai_reml(spec))
+            push_row!(rows;
+                cell = "hsq-animal-fit-q20000-large",
+                kind = "large_pedigree",
+                pair = "measured_now",
+                before_s = NaN,
+                after_s = med,
+                speedup = NaN,
+                host = host, totoro = totoro_flag, sha = sha,
+                note = "gene-drop halfsib large e2e; conv=$(fit0.converged) iters=$(fit0.iterations); nnzA=$(nnzA) min=$(round(mn; digits=4))")
+        end
+    end
+
+    write_tsv(out, rows, sha, host)
+    println()
+    println("Wrote $out  ($(length(rows)) cells)")
+    println()
+    print_table(rows)
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
