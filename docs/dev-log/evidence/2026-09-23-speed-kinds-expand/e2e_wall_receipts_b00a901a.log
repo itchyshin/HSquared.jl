@@ -1,0 +1,26 @@
+# HSquared.jl e2e wall receipts  2026-09-23T12:43:03.734
+# git_sha=b00a901a  julia=1.12.6  host=totoro
+# LBTConfig([ILP64] libopenblas64_.so)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# NOT CI / OPT-IN. No public performance claim.
+# modes: quick=false large=false kinds=true
+  hsq-maternal-q110 ...
+  hsq-genomic-greml-q200 ...
+  hsq-repeatability-sparse-q200 ...
+  hsq-fa-t2k1-q32 ...
+  hsq-multivar-us-t2-q80 ...
+  hsq-animal-depth3-q500 ...
+  hsq-reliability-selinv-q2000 ...
+  hsq-halfsib-q5000 ...
+
+Wrote sim/results/e2e_wall_receipts_b00a901a.tsv  (8 cells)
+
+cell                                 kind                       before      after  speedup Totoro
+hsq-maternal-q110                    direct_maternal                 —     0.2111        — Y
+hsq-genomic-greml-q200               genomic_GREML                   —     0.0435        — Y
+hsq-repeatability-sparse-q200        repeatability                   —     0.0027        — Y
+hsq-fa-t2k1-q32                      factor_analytic                 —     0.4605        — Y
+hsq-multivar-us-t2-q80               multivariate                    —     3.5260        — Y
+hsq-animal-depth3-q500               pedigree_depth                  —     0.0127        — Y
+hsq-reliability-selinv-q2000         reliability                     —     0.0039        — Y
+hsq-halfsib-q5000                    animal_REML_scale               —     0.0311        — Y

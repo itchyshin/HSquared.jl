@@ -1,37 +1,12 @@
-## 2026-09-23: speed kinds expand (8 new e2e walls) `[JL]`
+# Check-log: 2026-09-23 speed kinds expand
 
-### Goal
+| date | command | outcome |
+|---|---|---|
+| 2026-09-23 | `lane_preflight` / fresh worktree `HSquared.jl-speed-kinds-20260923` from `origin/main` @ `bb245683` (post-#380) | OK |
+| 2026-09-23 | Totoro `taskset -c 0-15` `julia --project=. sim/e2e_wall_receipts.jl --kinds` pin `b00a901a` | Wrote `sim/results/e2e_wall_receipts_b00a901a.tsv` (8 cells); **8/8 conv=true** |
+| 2026-09-23 | Predecessor pin `fdc43845` | 8 cells banked; 3 dense `conv=false` — superseded |
+| 2026-09-23 | SelectedInversion projected cells | not run (fenced; unwired) |
+| 2026-09-23 | ASReml comparator | skipped (unavailable) |
+| 2026-09-23 | Local heavy Julia | none |
 
-Add maternal / genomic GREML / FA / repeatability / multi-trait / pedigree-depth
-/ reliability / larger-halfsib walls after #378–380. Totoro ≤16 cores. Projected
-SelectedInversion stays fenced.
-
-### Commands
-
-```sh
-# worktree cursor/speed-kinds-expand-20260923 @ fdc43845
-# Totoro path: /home/snakagaw/hsq_work/speed-kinds-expand-20260923
-taskset -c 0-15 env JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
-  HSQUARED_GIT_SHA=fdc43845 \
-  /home/snakagaw/.juliaup/bin/julia --project=. sim/e2e_wall_receipts.jl --kinds
-# Wrote sim/results/e2e_wall_receipts_fdc43845.tsv  (8 cells)
-```
-
-Host: `totoro` (EPYC). Julia 1.12.6. BLAS threads 1. Cores capped 0-15.
-
-### Results (median-of-3)
-
-| cell | kind | after_s |
-|---|---|---:|
-| hsq-maternal-q80 | direct_maternal | 0.0392 |
-| hsq-genomic-greml-q200 | genomic_GREML | 0.0565 |
-| hsq-repeatability-sparse-q200 | repeatability | 0.0033 |
-| hsq-fa-t4k1-q48 | factor_analytic | 0.9104 |
-| hsq-multivar-us-t2-q80 | multivariate | 1.7585 |
-| hsq-animal-depth3-q500 | pedigree_depth | 0.0108 |
-| hsq-reliability-selinv-q2000 | reliability | 0.0041 |
-| hsq-halfsib-q5000 | animal_REML_scale | 0.0410 |
-
-### Claim boundary
-
-Not CI. Not a public speed claim. Absolute after only. No projected-selinv cells.
+Julia on Totoro: 1.12.6. Threads: JULIA=1 OPENBLAS=1.
