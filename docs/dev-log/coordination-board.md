@@ -18,6 +18,16 @@
 - Coordinator lane: shared issue ledger, public-claim wording, and
   cross-repo contract checks.
 
+### 2026-09-24: #366 coverage triage banked (no flip)
+
+Lane: `cursor/coverage-366-20260924` · draft PR #388. Totoro N=500 sparse
+K-effect / summed-ratio coverage banked for interior + low_pe + near_pe +
+near_va (cores `taskset -c 0-3`). Claim class
+**directional-conservative-bank**. Near-boundary refusal rates ~0.46.
+`public_covered_count` stays **7**; experimental **0.9.0**; **no covered
+flip**; **no N=2000 / DRAC** from this arc. GOAL completable as banked
+study without flip.
+
 ## Current Rule
 
 This Julia thread edits only `HSquared.jl`. The R/coordinator twin edits

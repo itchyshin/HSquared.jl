@@ -1,0 +1,77 @@
+HOST=totoro START=2026-09-24T10:58:34-06:00
+┌ Warning: The active manifest file has dependencies that were resolved with a different julia version (1.10.0). Unexpected behavior may occur.
+└ @ ~/hsq_work/HSquared-coverage-366/Manifest.toml:0
+┌ Warning: The project dependencies or compat requirements have changed since the manifest was last resolved.
+│ It is recommended to `Pkg.resolve()` or consider `Pkg.update()` if necessary.
+└ @ Pkg.API ~/.julia/juliaup/julia-1.12.6+0.x64.linux.gnu/share/julia/stdlib/v1.12/Pkg/src/API.jl:1322
+Precompiling packages...
+   1395.7 ms  ✓ PrecompileTools
+   2103.7 ms  ✓ FillArrays
+   1160.1 ms  ✓ FillArrays → FillArraysStatisticsExt
+   1656.3 ms  ✓ ArrayInterface → ArrayInterfaceFillArraysExt
+   2073.4 ms  ✓ FillArrays → FillArraysSparseArraysExt
+   2414.3 ms  ✓ ADTypes
+   1178.4 ms  ✓ ADTypes → ADTypesConstructionBaseExt
+   8374.5 ms  ✓ DifferentiationInterface
+   1485.0 ms  ✓ DifferentiationInterface → DifferentiationInterfaceSparseArraysExt
+   2028.0 ms  ✓ DifferentiationInterface → DifferentiationInterfaceFiniteDiffExt
+   4857.5 ms  ✓ DifferentiationInterface → DifferentiationInterfaceForwardDiffExt
+   2101.3 ms  ✓ NLSolversBase
+   5222.9 ms  ✓ LineSearches
+   6001.4 ms  ✓ Optim
+   7816.7 ms  ✓ HSquared
+  15 dependencies successfully precompiled in 40 seconds. 50 already precompiled.
+K-effect coverage #366 mode=smoke host=Totoro cell=interior reps=50 design=15/30/200×2
+seed file=/home/snakagaw/hsq_work/HSquared-coverage-366/sim/../docs/dev-log/recovery-checkpoints/2026-09-24-k-effect-coverage-366-seeds.txt out=docs/dev-log/recovery-checkpoints/2026-09-24-k-effect-coverage-366-smoke-replicates.tsv
+[1/50] seed=20260924001 fit=1 se=1 cover_t=1 (6.4s)
+[2/50] seed=20260924002 fit=1 se=1 cover_t=1 (0.0s)
+[3/50] seed=20260924003 fit=1 se=1 cover_t=1 (0.0s)
+[4/50] seed=20260924004 fit=1 se=1 cover_t=1 (0.0s)
+[5/50] seed=20260924005 fit=1 se=1 cover_t=1 (0.0s)
+[6/50] seed=20260924006 fit=1 se=1 cover_t=1 (0.0s)
+[7/50] seed=20260924007 fit=1 se=1 cover_t=1 (0.0s)
+[8/50] seed=20260924008 fit=1 se=1 cover_t=1 (0.7s)
+[9/50] seed=20260924009 fit=1 se=0 cover_t=NA (0.0s)
+[10/50] seed=20260924010 fit=1 se=1 cover_t=1 (0.0s)
+[11/50] seed=20260924011 fit=1 se=1 cover_t=0 (0.0s)
+[12/50] seed=20260924012 fit=1 se=1 cover_t=1 (0.0s)
+[13/50] seed=20260924013 fit=1 se=1 cover_t=1 (0.0s)
+[14/50] seed=20260924014 fit=1 se=1 cover_t=1 (0.0s)
+[15/50] seed=20260924015 fit=1 se=1 cover_t=1 (0.0s)
+[16/50] seed=20260924016 fit=1 se=1 cover_t=0 (0.0s)
+[17/50] seed=20260924017 fit=1 se=1 cover_t=1 (0.0s)
+[18/50] seed=20260924018 fit=1 se=1 cover_t=1 (0.0s)
+[19/50] seed=20260924019 fit=1 se=1 cover_t=1 (0.0s)
+[20/50] seed=20260924020 fit=1 se=1 cover_t=1 (0.0s)
+[21/50] seed=20260924021 fit=1 se=1 cover_t=1 (0.0s)
+[22/50] seed=20260924022 fit=1 se=1 cover_t=1 (0.0s)
+[23/50] seed=20260924023 fit=1 se=1 cover_t=1 (0.0s)
+[24/50] seed=20260924024 fit=1 se=1 cover_t=1 (0.0s)
+[25/50] seed=20260924025 fit=1 se=1 cover_t=1 (0.0s)
+[26/50] seed=20260924026 fit=1 se=1 cover_t=1 (0.0s)
+[27/50] seed=20260924027 fit=1 se=1 cover_t=1 (0.0s)
+[28/50] seed=20260924028 fit=1 se=1 cover_t=1 (0.0s)
+[29/50] seed=20260924029 fit=1 se=1 cover_t=1 (0.0s)
+[30/50] seed=20260924030 fit=1 se=1 cover_t=1 (0.0s)
+[31/50] seed=20260924031 fit=1 se=1 cover_t=1 (0.0s)
+[32/50] seed=20260924032 fit=1 se=1 cover_t=1 (0.0s)
+[33/50] seed=20260924033 fit=1 se=1 cover_t=1 (0.0s)
+[34/50] seed=20260924034 fit=1 se=1 cover_t=1 (0.0s)
+[35/50] seed=20260924035 fit=1 se=1 cover_t=1 (0.0s)
+[36/50] seed=20260924036 fit=1 se=1 cover_t=1 (0.0s)
+[37/50] seed=20260924037 fit=1 se=1 cover_t=1 (0.0s)
+[38/50] seed=20260924038 fit=1 se=1 cover_t=1 (0.0s)
+[39/50] seed=20260924039 fit=1 se=1 cover_t=1 (0.0s)
+[40/50] seed=20260924040 fit=1 se=1 cover_t=1 (0.0s)
+[41/50] seed=20260924041 fit=1 se=1 cover_t=1 (0.0s)
+[42/50] seed=20260924042 fit=1 se=1 cover_t=1 (0.0s)
+[43/50] seed=20260924043 fit=1 se=1 cover_t=1 (0.0s)
+[44/50] seed=20260924044 fit=1 se=1 cover_t=1 (0.0s)
+[45/50] seed=20260924045 fit=1 se=1 cover_t=1 (0.0s)
+[46/50] seed=20260924046 fit=1 se=1 cover_t=1 (0.0s)
+[47/50] seed=20260924047 fit=1 se=1 cover_t=1 (0.0s)
+[48/50] seed=20260924048 fit=1 se=1 cover_t=1 (0.0s)
+[49/50] seed=20260924049 fit=1 se=1 cover_t=1 (0.0s)
+[50/50] seed=20260924050 fit=1 se=1 cover_t=1 (0.0s)
+Wrote summary docs/dev-log/recovery-checkpoints/2026-09-24-k-effect-coverage-366-smoke-summary.tsv
+END=2026-09-24T10:59:56-06:00
