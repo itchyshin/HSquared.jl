@@ -92,3 +92,19 @@ not make a production-scale fitting claim.
 The durable evidence for each route is the relevant validation and capability
 row in this repository, plus the version-pinned R fixture named in the matrix
 above. No private scratch location is a bridge source of truth.
+
+## Parity-09 inventory pointer (2026-09-24)
+
+Experimental **0.9.0** / public count **7** stay pinned. The R twin owns the
+durable reachability matrix:
+
+- R `docs/design/55-r-julia-engine-julia-parity-09.md` on branch
+  `cursor/r-julia-parity-09-inventory` (R tip `ebe18ff`; this Julia tip
+  `d1eb566b`).
+
+Classes: **REACHABLE** / **HONEST-ERROR** / **SILENT-GAP**. D1 keeps FA/lowrank
+as named R planned errors (V4-FA engine-covered ≠ R-public). D2 keeps
+`fit_matrix_free_reml` engine-only. D3 treats `cbind`+`permanent` as
+honest-error quality only. No covered flip and no new R FA/matfree/MV+PE
+fitter targets from this pointer.
+
