@@ -122,6 +122,10 @@ HSquared.fit_single_step
 HSquared.fit_single_step_reml
 HSquared.repeatability_mme
 HSquared.fit_repeatability_reml
+HSquared.comparable_loglik
+HSquared.reml_full_constant_offset
+HSquared.LOGLIK_CONVENTION_FULL
+HSquared.LOGLIK_CONVENTION_OMIT_2PI
 HSquared.two_effect_mme
 HSquared.fit_two_effect_reml
 HSquared.two_effect_ratio_interval
