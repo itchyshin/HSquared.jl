@@ -1119,9 +1119,81 @@ function repeatability_mme(
     )
 end
 
+# ---------------------------------------------------------------------------
+# REML log-likelihood conventions (#365)
+#
+# Dense multi-effect / two-effect / repeatability objectives omit the Gaussian
+# normalising term −½(n−p)log(2π). Sparse Henderson paths
+# (`sparse_reml_loglik`, `fit_ai_reml`, `sparse_multi_reml_loglik`,
+# `fit_sparse_multi_effect_aireml`) and `gaussian_loglik` include it. Absolute
+# loglik values therefore differ by exactly ½(n−p)log(2π); variance-component
+# optima are unaffected. AIC / LRT across estimators is only valid after both
+# sides are placed on the same convention via [`comparable_loglik`](@ref).
+# ---------------------------------------------------------------------------
+
+"""Package-wide full-constant REML loglik (`−½[(n−p)log(2π) + …]`). See #365."""
+const LOGLIK_CONVENTION_FULL = :reml_full_constant
+
+"""Dense multi-effect / two-effect / repeatability REML loglik (omits `(n−p)log(2π)`). See #365."""
+const LOGLIK_CONVENTION_OMIT_2PI = :reml_omit_2pi
+
+"""
+    reml_full_constant_offset(n, p) -> Float64
+
+Additive term that converts an `:reml_omit_2pi` log-likelihood into the
+`:reml_full_constant` scale: `−½(n−p)log(2π)`. Zero when `n == p` (degenerate
+REML). Exact identity behind HSquared.jl #365.
+"""
+reml_full_constant_offset(n::Integer, p::Integer) = -0.5 * (n - p) * log(2 * pi)
+
+"""
+    loglik_convention_fields(convention, n, p) -> NamedTuple
+
+Self-describing loglik metadata for fit results. `loglik_full_constant_offset`
+is the number to **add** to the returned `loglik` to reach
+[`LOGLIK_CONVENTION_FULL`](@ref) (already `0.0` when `convention` is full).
+`loglik_comparable_across_routes` is `true` only for the full-constant
+convention — dense omit-2π results are explicitly non-comparable to sparse /
+`gaussian_loglik` without conversion.
+"""
+function loglik_convention_fields(convention::Symbol, n::Integer, p::Integer)
+    convention === LOGLIK_CONVENTION_FULL || convention === LOGLIK_CONVENTION_OMIT_2PI ||
+        throw(ArgumentError(
+            "loglik convention must be :reml_full_constant or :reml_omit_2pi, got $(repr(convention))",
+        ))
+    offset = convention === LOGLIK_CONVENTION_OMIT_2PI ?
+        reml_full_constant_offset(n, p) : 0.0
+    return (
+        loglik_convention = convention,
+        loglik_full_constant_offset = offset,
+        loglik_comparable_across_routes = convention === LOGLIK_CONVENTION_FULL,
+    )
+end
+
+"""
+    comparable_loglik(fit) -> Float64
+
+Return `fit.loglik` on the package-wide [`LOGLIK_CONVENTION_FULL`](@ref) scale,
+using `fit.loglik_full_constant_offset` when present. Use this (not raw
+`loglik`) for AIC / BIC / LRT that span dense and sparse multi-effect /
+repeatability routes (#365). Throws if the fit does not carry convention
+metadata.
+"""
+function comparable_loglik(fit)
+    hasproperty(fit, :loglik) ||
+        throw(ArgumentError("comparable_loglik requires a fit with a `loglik` field"))
+    hasproperty(fit, :loglik_full_constant_offset) ||
+        throw(ArgumentError(
+            "comparable_loglik requires `loglik_full_constant_offset` on the fit " *
+            "(HSquared.jl #365 convention metadata); raw `loglik` may omit −½(n−p)log(2π)",
+        ))
+    return Float64(fit.loglik) + Float64(fit.loglik_full_constant_offset)
+end
+
 # Dense REML log-likelihood and BLUPs for a general two-independent-random-effect
 # model: V = sigma1·(Z1 A1 Z1') + sigma2·(Z2 A2 Z2') + sigma_e2·I (validation-scale,
 # forms the n×n marginal covariance). `A1`, `A2` are dense relationship matrices.
+# Absolute value uses [`LOGLIK_CONVENTION_OMIT_2PI`](@ref) (no `(n−p)log(2π)` term).
 function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
     n = length(y)
     V = Symmetric(
@@ -1151,7 +1223,12 @@ maximizing the dense two-effect REML log-likelihood (NelderMead). Covers
 common-environment (`c² = ratio2`) and maternal-environment variance estimation.
 
 Returns a `NamedTuple` with `variance_components`, `ratio1 = sigma1/total`,
-`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`.
+`ratio2 = sigma2/total`, `beta`, the two BLUPs, `loglik`, and `converged`,
+plus #365 convention fields (`loglik_convention = :reml_omit_2pi`,
+`loglik_full_constant_offset`, `loglik_comparable_across_routes = false`).
+Raw `loglik` omits `−½(n−p)log(2π)`; use [`comparable_loglik`](@ref) before
+AIC / LRT against sparse / `gaussian_loglik` routes.
+
 Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
 model-spec mapping are not part of this function. On small data the optimum can
 sit on a boundary (a variance → 0).
@@ -1197,7 +1274,8 @@ function fit_two_effect_reml(
     sigma1, sigma2, sigma_e2 = exp.(Optim.minimizer(result))
     loglik, beta, u1, u2 = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, sigma1, sigma2, sigma_e2)
     total = sigma1 + sigma2 + sigma_e2
-    return (
+    p = size(Xd, 2)
+    return merge((
         variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
         ratio1 = sigma1 / total,
         ratio2 = sigma2 / total,
@@ -1206,7 +1284,7 @@ function fit_two_effect_reml(
         effect2 = (ids = e2ids, values = u2),
         loglik = loglik,
         converged = Optim.converged(result),
-    )
+    ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
 # One variance ratio `theta[keep_num] / total` and its logit-delta CI from the
@@ -1502,7 +1580,12 @@ otherwise all start at 1.
 
 Returns a `NamedTuple` with `variance_components = (sigmas, sigma_e2)`, per-effect
 `ratios`, `beta`, the `K` BLUPs (`effects = [(ids, values), …]`), `loglik`,
-`converged`, and per-component `boundary` flags (`σ_i / total < 1e-6`).
+`converged`, and per-component `boundary` flags (`σ_i / total < 1e-6`), plus
+#365 convention fields (`loglik_convention = :reml_omit_2pi`,
+`loglik_full_constant_offset`, `loglik_comparable_across_routes = false`).
+Raw `loglik` omits `−½(n−p)log(2π)` and is **not** comparable to
+[`fit_sparse_multi_effect_aireml`](@ref) / [`fit_multi_effect`](@ref) without
+[`comparable_loglik`](@ref). Variance components are unaffected.
 
 Reductions: the `K=1` fit recovers the univariate animal-model REML optimum, and
 the `K=2` fit is byte-identical to [`fit_two_effect_reml`](@ref) on identified
@@ -1575,7 +1658,8 @@ function fit_multi_effect_reml(
     total = sum(sigmas) + se2
     eids = ids === nothing ? [collect(1:qs[i]) for i in 1:K] : [collect(ids[i]) for i in 1:K]
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
-    return (
+    p = size(Xd, 2)
+    return merge((
         variance_components = (sigmas = sigmas, sigma_e2 = se2),
         ratios = sigmas ./ total,
         beta = beta,
@@ -1585,7 +1669,7 @@ function fit_multi_effect_reml(
         iterations = Optim.iterations(result),
         f_calls = Optim.f_calls(result),
         boundary = [s / total < 1e-6 for s in sigmas],
-    )
+    ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
 """
@@ -2261,12 +2345,15 @@ determinant identity — the `K`-block generalization of [`sparse_reml_loglik`](
 `effects` is a vector of `(Zᵢ, Ainvᵢ)` pairs (same contract as
 [`multi_effect_mme`](@ref)).
 
-The log-likelihood uses the package-wide full-constant convention
+The log-likelihood uses the package-wide [`LOGLIK_CONVENTION_FULL`](@ref)
 `−0.5·[(n−p)·log(2π) + log|R| + log|G| + log|C| + y'Py]` (identical to
 `sparse_reml_loglik` / `fit_ai_reml`). It therefore equals the dense
-`fit_multi_effect_reml` REML objective (`_multi_effect_dense`, which omits the
-`(n−p)·log(2π)` constant) PLUS `−0.5·(n−p)·log(2π)`; this offset is the only
-difference and is exact. Engine-internal, supplied-variance; it does not estimate.
+`fit_multi_effect_reml` REML objective (`_multi_effect_dense`,
+[`LOGLIK_CONVENTION_OMIT_2PI`](@ref)) PLUS `−0.5·(n−p)·log(2π)`; this offset is
+the only difference and is exact (#365). Fit results that call this path expose
+`loglik_convention = :reml_full_constant` and
+`loglik_full_constant_offset = 0.0`. Engine-internal, supplied-variance; it does
+not estimate.
 """
 function sparse_multi_reml_loglik(
     y::AbstractVector,
@@ -2350,12 +2437,18 @@ good in-bounds start.
 
 CORRECTNESS: on the SAME data at small scale, the optimum reduces EXACTLY to the
 dense [`fit_multi_effect_reml`](@ref) optimum (variance components and REML
-log-likelihood) for `K = 2` and `K = 3`, and the `K = 1` path reduces to
-[`fit_ai_reml`](@ref) (`test/runtests.jl`). Returns a `NamedTuple` with
-`variance_components = (sigmas, sigma_e2)`, per-effect `ratios`, `beta`, the `K`
-BLUPs (`effects = [(ids, values), …]`), `loglik` (full-constant convention,
-identical to `fit_ai_reml`), `converged`, `iterations`, per-component `boundary`
-flags (`σᵢ/total < 1e-6`), and `estimator = :sparse_multi_effect_aireml`.
+log-likelihood **on the full-constant scale**) for `K = 2` and `K = 3`, and the
+`K = 1` path reduces to [`fit_ai_reml`](@ref) (`test/runtests.jl`). Returns a
+`NamedTuple` with `variance_components = (sigmas, sigma_e2)`, per-effect `ratios`,
+`beta`, the `K` BLUPs (`effects = [(ids, values), …]`), `loglik`
+([`LOGLIK_CONVENTION_FULL`](@ref), identical to `fit_ai_reml`),
+`loglik_convention = :reml_full_constant`, `loglik_full_constant_offset = 0.0`,
+`loglik_comparable_across_routes = true`, `converged`, `iterations`,
+per-component `boundary` flags (`σᵢ/total < 1e-6`), and
+`estimator = :sparse_multi_effect_aireml`. Raw dense
+[`fit_multi_effect_reml`](@ref) / [`fit_repeatability_reml`](@ref) `loglik`
+uses [`LOGLIK_CONVENTION_OMIT_2PI`](@ref) — convert with
+[`comparable_loglik`](@ref) before AIC / LRT across routes (#365).
 
 EXPERIMENTAL, REML-only, Gaussian, INDEPENDENT effects only (no correlated /
 direct–maternal 2×2 `G`). The sparse machinery EXISTS and is verified to reduce to
@@ -2539,7 +2632,7 @@ function fit_sparse_multi_effect_aireml(
     total = sum(sigmas) + sigma_e2
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
     status = converged ? "converged" : "not_converged"
-    return (
+    return merge((
         variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
         ratios = sigmas ./ total,
         beta = beta,
@@ -2550,7 +2643,7 @@ function fit_sparse_multi_effect_aireml(
         boundary = [s / total < 1e-6 for s in sigmas],
         status = status,
         estimator = :sparse_multi_effect_aireml,
-    )
+    ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, nfixed))
 end
 
 # Dense REML log-likelihood + BLUPs for the direct–maternal model: one trait, one
@@ -2838,7 +2931,14 @@ dense two-random-effect REML log-likelihood over the log-variances (NelderMead).
 
 Returns a `NamedTuple` with `variance_components`, the repeatability
 `t = (sigma_a2 + sigma_pe2) / total`, the heritability `h² = sigma_a2 / total`,
-`beta`, the `a` / `pe` BLUPs at the estimate, `loglik`, and `converged`.
+`beta`, the `a` / `pe` BLUPs at the estimate, `loglik`, and `converged`, plus
+#365 convention fields (`loglik_convention = :reml_omit_2pi`,
+`loglik_full_constant_offset = −½(n−p)log(2π)`,
+`loglik_comparable_across_routes = false`). Raw `loglik` is **not** comparable
+to the sparse repeatability route (`fit_multi_effect` /
+`fit_sparse_multi_effect_aireml` under `scale_method = "auto"`) without
+[`comparable_loglik`](@ref) — AIC / LRT across those routes is silently wrong
+by exactly that offset.
 
 Experimental and validation-scale: it forms the dense `n×n` marginal covariance,
 so it is for small problems, not production. REML-only. Uncertainty intervals for
@@ -2887,7 +2987,8 @@ function fit_repeatability_reml(
     loglik, beta, ahat, pehat =
         _repeatability_dense(yv, Xd, Zd, A, sigma_a2, sigma_pe2, sigma_e2)
     total = sigma_a2 + sigma_pe2 + sigma_e2
-    return (
+    p = size(Xd, 2)
+    return merge((
         variance_components = (sigma_a2 = sigma_a2, sigma_pe2 = sigma_pe2, sigma_e2 = sigma_e2),
         repeatability = (sigma_a2 + sigma_pe2) / total,
         heritability = sigma_a2 / total,
@@ -2896,7 +2997,7 @@ function fit_repeatability_reml(
         permanent_effects = (ids = encoded_ids, values = pehat),
         loglik = loglik,
         converged = Optim.converged(result),
-    )
+    ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
 """

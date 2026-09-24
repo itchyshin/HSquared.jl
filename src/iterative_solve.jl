@@ -688,7 +688,7 @@ function fit_multi_effect_mc_reml(
                                                       slq_probes = slq_probes, slq_steps = slq_steps,
                                                       seed = seed, pcg_tol = pcg_tol, pcg_maxiter = pcg_maxiter)
     end
-    return (
+    return merge((
         variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
         ratios = sigmas ./ total,
         beta = beta_final,
@@ -700,7 +700,7 @@ function fit_multi_effect_mc_reml(
         converged = converged,
         iterations = iters,
         estimator = :matrix_free_mc_em_reml,
-    )
+    ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, p))
 end
 
 # Stochastic Lanczos quadrature (SLQ) for one Rademacher probe: k Lanczos steps on `applyC`
