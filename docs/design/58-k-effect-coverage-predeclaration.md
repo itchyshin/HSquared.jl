@@ -35,9 +35,9 @@ coverage arm).
 
 | Label | Estimand | Interval |
 | --- | --- | --- |
-| VC-a | `σ²a` | Wald: `hat ± z_{1-α/2} · SE` from `multi_effect_variance_component_standard_errors` |
-| VC-pe | `σ²pe` | same |
-| VC-e | `σ²e` | same |
+| VC-a | `σ²a` (sigma_a2) | Wald: `hat ± z_{1-α/2} · SE` from `multi_effect_variance_component_standard_errors` |
+| VC-pe | `σ²pe` (sigma_pe2) | same |
+| VC-e | `σ²e` (sigma_e2) | same |
 | h2 | `σ²a / (σ²a+σ²pe+σ²e)` | logit delta via `multi_effect_sum_ratio_interval(...; which = 1:1)` |
 | t | `(σ²a+σ²pe)/(σ²a+σ²pe+σ²e)` | logit delta via `multi_effect_sum_ratio_interval(...; which = 1:2)` |
 
