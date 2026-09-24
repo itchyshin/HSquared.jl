@@ -34,6 +34,24 @@ const CELLS = Dict(
     "near_va" => (Va = 0.01, Vpe = 0.3, Ve = 0.69),
 )
 
+# Aliases expand before the per-cell loop. Comma-separated cells also accepted.
+const CELL_ALIASES = Dict(
+    "near_boundary" => ["near_pe", "near_va"],
+    "main_rest" => ["low_pe", "near_pe", "near_va"],
+    "main" => ["interior", "low_pe", "near_pe", "near_va"],
+)
+
+function _resolve_cells(spec::AbstractString)
+    s = strip(spec)
+    haskey(CELL_ALIASES, s) && return copy(CELL_ALIASES[s])
+    cells = String.(split(s, ','; keepempty = false))
+    isempty(cells) && error("empty --cell=")
+    for c in cells
+        haskey(CELLS, c) || error("unknown cell=$c; known=$(keys(CELLS)); aliases=$(keys(CELL_ALIASES))")
+    end
+    return cells
+end
+
 const DETAIL_COLS = [
     "cell", "seed", "host", "route", "nsire", "ndam", "noffspring", "records",
     "n_animals", "n_obs",
@@ -337,45 +355,50 @@ function main(args)
     seed_file = _extract(args, "seeds-file", SEED_FILE)
     resume = _extract(args, "resume", "true") in ("true", "1", "")
 
-    haskey(CELLS, cell) || error("unknown cell=$cell; known=$(keys(CELLS))")
-    mode == "smoke" && cell != "interior" &&
-        @warn "smoke predeclaration uses interior only; running cell=$cell anyway"
+    cells = _resolve_cells(cell)
+    mode == "smoke" && cells != ["interior"] &&
+        @warn "smoke predeclaration uses interior only; running cells=$(join(cells, ',')) anyway"
 
     seeds = _load_seeds(seed_file, reps)
-    done = Set{Int}()
-    if resume && isfile(out) && filesize(out) > 0
-        open(out) do io
-            cols = split(readline(io), '\t')
-            si = findfirst(==("seed"), cols)
-            ci = findfirst(==("cell"), cols)
-            (si === nothing || ci === nothing) && error("detail TSV missing seed/cell columns: $out")
-            for line in eachline(io)
-                parts = split(line, '\t')
-                length(parts) < max(si, ci) && continue
-                parts[ci] == cell || continue
-                push!(done, parse(Int, parts[si]))
-            end
-        end
-    else
+    if !(resume && isfile(out) && filesize(out) > 0)
         _write_header!(out)
     end
 
-    @printf("K-effect coverage #366 mode=%s host=%s cell=%s reps=%d design=%d/%d/%d×%d\n",
-            mode, host, cell, reps, nsire, ndam, noffspring, records)
+    @printf("K-effect coverage #366 mode=%s host=%s cells=%s reps=%d design=%d/%d/%d×%d\n",
+            mode, host, join(cells, ","), reps, nsire, ndam, noffspring, records)
     @printf("seed file=%s out=%s\n", seed_file, out)
 
-    for (i, seed) in enumerate(seeds)
-        if seed in done
-            @printf("[%d/%d] seed=%d SKIP (resume)\n", i, reps, seed)
-            continue
+    for cell_name in cells
+        done = Set{Int}()
+        if resume && isfile(out) && filesize(out) > 0
+            open(out) do io
+                cols = split(readline(io), '\t')
+                si = findfirst(==("seed"), cols)
+                ci = findfirst(==("cell"), cols)
+                (si === nothing || ci === nothing) && error("detail TSV missing seed/cell columns: $out")
+                for line in eachline(io)
+                    parts = split(line, '\t')
+                    length(parts) < max(si, ci) && continue
+                    parts[ci] == cell_name || continue
+                    push!(done, parse(Int, parts[si]))
+                end
+            end
         end
-        t0 = time()
-        row = _one_replicate(seed, cell, host; nsire, ndam, noffspring, records, mu)
-        _append!(out, row)
-        @printf("[%d/%d] seed=%d fit=%s se=%s cover_t=%s (%.1fs)\n",
-                i, reps, seed, row[findfirst(==("fit_ok"), DETAIL_COLS)],
-                row[findfirst(==("se_ok"), DETAIL_COLS)],
-                row[findfirst(==("cover_t"), DETAIL_COLS)], time() - t0)
+
+        @printf("--- cell=%s (%d seeds done / %d)\n", cell_name, length(done), reps)
+        for (i, seed) in enumerate(seeds)
+            if seed in done
+                @printf("[%s %d/%d] seed=%d SKIP (resume)\n", cell_name, i, reps, seed)
+                continue
+            end
+            t0 = time()
+            row = _one_replicate(seed, cell_name, host; nsire, ndam, noffspring, records, mu)
+            _append!(out, row)
+            @printf("[%s %d/%d] seed=%d fit=%s se=%s cover_t=%s (%.1fs)\n",
+                    cell_name, i, reps, seed, row[findfirst(==("fit_ok"), DETAIL_COLS)],
+                    row[findfirst(==("se_ok"), DETAIL_COLS)],
+                    row[findfirst(==("cover_t"), DETAIL_COLS)], time() - t0)
+        end
     end
 
     _summarize(out, summary, host)

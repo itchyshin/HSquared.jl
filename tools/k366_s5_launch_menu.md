@@ -1,11 +1,10 @@
-# #366 S5 launch menu — awaiting owner
+# #366 S5 launch menu — triage complete (near-boundary banked)
 
-**Status:** PAUSED. Smoke banked; draft PR #388 open. Do **not** launch until
-owner answers **Totoro or DRAC?** and **N=500 or 2000** on
-[issue #366](https://github.com/itchyshin/HSquared.jl/issues/366).
+**Status:** Totoro N=500 interior + main_rest banked on PR #388. Do **not**
+launch N=2000 or DRAC unless owner re-authorizes. Stay 0.9.0 / count 7; no flip.
 
-**Cell:** sparse interior only `(Va,Vpe,Ve)=(0.3,0.2,0.5)` · resume-friendly ·
-`OPENBLAS_NUM_THREADS=1` · `JULIA_NUM_THREADS=1`.
+**Cells:** sparse — interior `(0.3,0.2,0.5)` banked; `main_rest` =
+`low_pe,near_pe,near_va` banked via `sim/k366_totoro_n500_nearbound.sh`.
 
 **Safety:** every script exits unless `K366_S5_GO=1` is set in the environment.
 
