@@ -4,6 +4,14 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
+  # Direct pushes to main/master must run the test suite (HSquared.jl #367).
+  # This repo often lands commits straight on main; without `push`, only
+  # Documenter fires and a green docs badge is easy to misread as "CI passed".
+  # Full 4-leg matrix on push is intentional (~7 min): DoD wants per-commit
+  # evidence. Cost is runner latency on a public repo, not dollars. Do not
+  # "trim" the push matrix to save minutes without a measured table.
+  push:
+    branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:
@@ -12,6 +20,13 @@ on:
         description: 'Also run the live-draw plotting check (installs CairoMakie + AlgebraOfGraphics)'
         type: boolean
         default: false
+
+# Never cancel a run on main/master: a superseded main run reports no status
+# at all ("green by absence"). Only a later push to the same PR ref makes an
+# in-flight run genuinely redundant. Pattern from GLLVM.jl / ci-diagnose §5.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
