@@ -35,12 +35,13 @@ makedocs(;
             "Pedigrees and Ainv" => "pedigree-ainv.md",
         ],
         "Choose a model" => [
-            "Model spec grammar" => "model-spec-grammar.md",
             "Standard QG models" => "standard-qg-models.md",
-            "Genomic models" => "genomic-models.md",
             "Multivariate models" => "multivariate-models.md",
+            "Genomic models" => "genomic-models.md",
+            "Model spec grammar" => "model-spec-grammar.md",
         ],
         "Fit" => [
+            "Tutorial fit (quick start)" => "quickstart.md",
             "Fitting at scale" => "fitting-at-scale.md",
         ],
         "Diagnose" => [
