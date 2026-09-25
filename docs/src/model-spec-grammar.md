@@ -8,7 +8,9 @@ the validated engine payloads and numeric computations. Apart from the
 explicitly named v0.1 bridge contract below, R-style spellings on this page are
 comparison notation for Julia-local reserved markers. Check
 [hsquared's formula status](https://itchyshin.github.io/hsquared/reference/formula_status.html)
-for what the R parser currently accepts.
+for what the R parser currently accepts, and the narrative
+[Formula grammar](https://itchyshin.github.io/hsquared/articles/formula-grammar.html)
+article for reserved vs fitted terms.
 
 ## Parsed Today
 

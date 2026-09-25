@@ -23,6 +23,12 @@ those covariances. These are **engine APIs**. The R twin's `cbind()` formula
 is a separate public surface with its own status row — do not read this page
 as “not wired to R”.
 
+**Twin R articles:**
+[Multivariate models](https://itchyshin.github.io/hsquared/articles/multivariate.html)
+(`cbind()` workflow) and
+[Reading G matrices](https://itchyshin.github.io/hsquared/articles/g-matrix-interpretation.html)
+(G₀ / r_g interpretation).
+
 ## The balanced multi-trait animal model
 
 For `t` traits, `n` records, and `q` related animals:

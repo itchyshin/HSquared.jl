@@ -8,9 +8,9 @@
     [`validation_status()`](validation-status.md) rather than a screenshot.
 
 ```@raw html
-<figure class="hs-figure">
+<figure class="hs-figure-wide">
 <img src="./assets/animal-model-path.svg" alt="Flowchart of the engine-side univariate animal model: pedigree and phenotype become a validated spec, AI-REML returns variance components, heritability, and breeding values. Genomic and multivariate paths are not shown.">
-<figcaption>v0.1 univariate Gaussian REML on the engine. Genomic, QTL, and multivariate paths are not this arrow.</figcaption>
+<figcaption>Univariate Gaussian REML (engine utilities). Genomic, QTL, and multivariate routes are separate pages — not this arrow.</figcaption>
 </figure>
 ```
 
@@ -94,9 +94,9 @@ Z_from_slots == Z
 ```
 
 ```@raw html
-<figure class="hs-figure">
+<figure class="hs-figure-wide">
 <img src="./assets/twin-bridge.svg" alt="Two-column diagram of the R to Julia twin bridge. Formula language stays in R; y, X, Z CSC, pedigree indices, and target metadata cross the bridge; solvers stay in Julia; result_payload returns variance components, heritability, and breeding values. Default engine equals fit for v0.1; other targets are opt-in experimental.">
-<figcaption>What crosses the bridge vs what stays lane-local. Default <code>engine = "fit"</code> is the v0.1 path; opt-in targets need <code>engine = "julia"</code> and an explicit <code>target</code>. Not a production claim for every model.</figcaption>
+<figcaption>Bridge payload (center) vs lane-local syntax and solvers. Default <code>engine = "fit"</code> is v0.1 only; other models need explicit <code>target</code>. Twin R tour: <a href="https://itchyshin.github.io/hsquared/articles/fitting-models.html">Fitting models</a>.</figcaption>
 </figure>
 ```
 

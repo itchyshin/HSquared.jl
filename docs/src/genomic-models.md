@@ -29,6 +29,10 @@ basis. `single_step()` remains a separate experimental surface.
 The dense paths here are validation-scale only — they do not gain the sparse
 selected-inversion advantage.
 
+**Twin R article:**
+[Genomic prediction](https://itchyshin.github.io/hsquared/articles/genomic-prediction.html)
+(`genomic()`, SNP-BLUP, single-step syntax and reporting fences).
+
 ## Genomic relationship matrix `G` and its inverse
 
 `genomic_relationship_matrix` builds the VanRaden (2008) `G` from a 0/1/2 (or

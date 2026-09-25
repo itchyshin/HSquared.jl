@@ -71,9 +71,30 @@ the R-facing page that reports the same result, and an R-side input
 requirement (e.g. a required default or a validated range) must be reachable
 from the engine function that consumes it.
 
-The matching R-side half of this rule is owed in the R twin's
-`vignettes/articles/twin-boundary.Rmd` (hsquared, R docs slice); until it
-lands, this rule is stated on the Julia side only.
+The matching R-side half lives in
+[hsquared: Twin boundary](https://itchyshin.github.io/hsquared/articles/twin-boundary.html).
+Readers on either site should follow the link when a claim spans the bridge.
+
+## Documentation map (applied journey)
+
+Both sites follow the same five-step reader journey (Get started → Choose → Fit →
+Diagnose → Report). pkgdown owns formula examples; Documenter owns engine utilities
+and live `validation_status()` tables.
+
+| Step | hsquared (pkgdown) | HSquared.jl (Documenter) |
+| --- | --- | --- |
+| Get started | [Getting started](https://itchyshin.github.io/hsquared/articles/hsquared.html) | [Quick start](quickstart.md) |
+| Choose a model | [Fitting models](https://itchyshin.github.io/hsquared/articles/fitting-models.html), [Formula grammar](https://itchyshin.github.io/hsquared/articles/formula-grammar.html), [Multivariate](https://itchyshin.github.io/hsquared/articles/multivariate.html), [Genomic prediction](https://itchyshin.github.io/hsquared/articles/genomic-prediction.html) | [Standard QG models](standard-qg-models.md), [Model spec grammar](model-spec-grammar.md), [Multivariate models](multivariate-models.md), [Genomic models](genomic-models.md) |
+| Fit | (same fitting-models article; default `hsquared()`) | [Quick start](quickstart.md#Fit-Variance-Components-Experimentally), [Fitting at scale](fitting-at-scale.md) |
+| Diagnose | [Visualizing models](https://itchyshin.github.io/hsquared/articles/visualizing-models.html), [`validation_status()`](https://itchyshin.github.io/hsquared/reference/validation_status.html) | [Validation status](validation-status.md) |
+| Report | [Can I fit and report this?](https://itchyshin.github.io/hsquared/articles/current-limits.html), [Twin boundary](https://itchyshin.github.io/hsquared/articles/twin-boundary.html) | [Twin boundary](twin-boundary.md), [Progression and evidence](progression-evidence.md) |
+
+Intentional asymmetry: R articles include comparator vignettes, Gryphon, QTL/GWAS
+status, inheritance systems, and GPU roadmap slices with no Julia mirror page yet.
+Julia [Developer](roadmap.md) routes hold backend roadmap detail R users rarely need
+on first read. Engine API lookup:
+[Reference (stable API)](https://itchyshin.github.io/HSquared.jl/stable/api.html)
+(`/dev/reference/` redirects there after deploy).
 
 ## Reporting route-scoped results
 

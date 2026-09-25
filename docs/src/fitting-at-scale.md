@@ -3,6 +3,11 @@
 ```@raw html
 ```
 
+For the tiny pedigree → spec → variance-component tutorial (validation scale, not
+production sparse fitting), use
+[Tutorial fit (quick start)](quickstart.md#Fit-Variance-Components-Experimentally)
+first. This page is for multi-effect engine choice after you know your route.
+
 `HSquared.jl` has **two** engines for the `K`-independent-random-effect mixed model, and
 [`fit_multi_effect`](@ref) chooses between them by feasibility. This page explains the choice,
 the accuracy-vs-feasibility trade, and how to control it.
