@@ -19,7 +19,7 @@ write_validation_status_table!()
 # doctests and cross-refs fail the build (ultra-plan A18 / G8).
 makedocs(;
     sitename = "HSquared.jl",
-    authors = "Shinichi Nakagawa",
+    authors = "Shinichi Nakagawa, Yefeng Yang, and Szymon Drobniak",
     modules = [HSquared],
     warnonly = [:missing_docs],
     format = MarkdownVitepress(
