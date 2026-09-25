@@ -20,7 +20,7 @@
 
 ### 2026-09-24: #366 coverage triage banked (no flip)
 
-Lane: `cursor/coverage-366-20260924` · draft PR #388. Totoro N=500 sparse
+Lane: `cursor/coverage-366-20260924` · PR #388 MERGED (`f0e42e32`). Totoro N=500 sparse
 K-effect / summed-ratio coverage banked for interior + low_pe + near_pe +
 near_va (cores `taskset -c 0-3`). Claim class
 **directional-conservative-bank**. Near-boundary refusal rates ~0.46.
