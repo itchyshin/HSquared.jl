@@ -441,6 +441,13 @@ other calls remain placeholders.
 The R package may describe planned syntax, but executable examples should not
 claim fitting support until this Julia engine implements and validates it.
 
+## Authors
+
+Shinichi Nakagawa ([ORCID 0000-0002-7765-5182](https://orcid.org/0000-0002-7765-5182),
+itchyshin@gmail.com), Yefeng Yang
+([ORCID 0000-0002-8610-4016](https://orcid.org/0000-0002-8610-4016)), Szymon Drobniak
+([ORCID 0000-0001-8101-6247](https://orcid.org/0000-0001-8101-6247)).
+
 ## Development
 
 Run the Julia tests with:
