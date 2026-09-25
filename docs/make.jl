@@ -35,12 +35,13 @@ makedocs(;
             "Pedigrees and Ainv" => "pedigree-ainv.md",
         ],
         "Choose a model" => [
-            "Model spec grammar" => "model-spec-grammar.md",
             "Standard QG models" => "standard-qg-models.md",
-            "Genomic models" => "genomic-models.md",
             "Multivariate models" => "multivariate-models.md",
+            "Genomic models" => "genomic-models.md",
+            "Model spec grammar" => "model-spec-grammar.md",
         ],
         "Fit" => [
+            "Tutorial fit (quick start)" => "quickstart.md",
             "Fitting at scale" => "fitting-at-scale.md",
         ],
         "Diagnose" => [
@@ -61,6 +62,29 @@ makedocs(;
         "Reference" => "api.md",
     ],
 )
+
+# Legacy Documenter `/dev/reference/` bookmarks → current API page on stable.
+ref_redirect = joinpath(@__DIR__, "build", "dev", "reference", "index.html")
+mkpath(dirname(ref_redirect))
+open(ref_redirect, "w") do io
+    write(
+        io,
+        """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=../../stable/api.html">
+          <link rel="canonical" href="https://itchyshin.github.io/HSquared.jl/stable/api.html">
+          <title>Redirect to API reference</title>
+        </head>
+        <body>
+          <p>Moved to <a href="../../stable/api.html">API reference</a>.</p>
+        </body>
+        </html>
+        """,
+    )
+end
 
 DocumenterVitepress.deploydocs(;
     repo = "github.com/itchyshin/HSquared.jl.git",

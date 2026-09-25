@@ -6,20 +6,36 @@
   --hs-navy: #0072b2;
 }
 
-.hs-figure {
+/* Tufte-ish: figure carries the ink; caption is quiet metadata below a hairline. */
+.hs-figure,
+.hs-figure-wide {
   margin: 1.25rem 0 1.6rem;
 }
 
-.hs-figure img {
+.hs-figure {
+  max-width: 40rem;
+}
+
+.hs-figure-wide {
+  max-width: 100%;
+}
+
+.hs-figure img,
+.hs-figure-wide img {
   width: 100%;
   height: auto;
   background: #ffffff;
+  display: block;
 }
 
-.hs-figure figcaption {
-  margin-top: 0.45rem;
-  font-size: 0.9rem;
-  color: #475569;
+.hs-figure figcaption,
+.hs-figure-wide figcaption {
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #64748b;
 }
 
 .hs-banner {

@@ -20,6 +20,10 @@ The R formula terms `permanent()`, `common_env()`, and `maternal_genetic()` are
 **not** planned-not-implemented: they fit through opt-in engine targets. Do not
 read the engine API names below as “the R parser still errors”.
 
+**Twin R article:** matching `hsquared()` calls and extractors are in
+[Fitting quantitative-genetic models](https://itchyshin.github.io/hsquared/articles/fitting-models.html)
+(repeatability, common environment, maternal, direct–maternal sections).
+
 ## Repeatability / permanent environment
 
 `repeatability_mme` solves, at supplied variance components, the model with an
@@ -104,3 +108,7 @@ Still planned / not claimed here:
 - production sparse reliability;
 - interval coverage calibration;
 - unusual inheritance.
+
+Before reporting an opt-in estimate from R, read
+[Can I fit and report this?](https://itchyshin.github.io/hsquared/articles/current-limits.html)
+and the live engine table on [Validation status](validation-status.md).
