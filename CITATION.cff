@@ -13,6 +13,12 @@ authors:
     given-names: Shinichi
     orcid: "https://orcid.org/0000-0002-7765-5182"
     email: itchyshin@gmail.com
+  - family-names: Yang
+    given-names: Yefeng
+    orcid: "https://orcid.org/0000-0002-8610-4016"
+  - family-names: Drobniak
+    given-names: Szymon
+    orcid: "https://orcid.org/0000-0001-8101-6247"
 license: MIT
 repository-code: "https://github.com/itchyshin/HSquared.jl"
 url: "https://itchyshin.github.io/HSquared.jl/"

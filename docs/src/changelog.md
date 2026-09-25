@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Authorship: added co-authors Yefeng Yang (ORCID 0000-0002-8610-4016) and
+  Szymon Drobniak (ORCID 0000-0001-8101-6247) in `Project.toml`, `CITATION.cff`,
+  and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
+  version or capability change.
+
 None of the entries below change any capability status, row count, or
 package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
 (`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
