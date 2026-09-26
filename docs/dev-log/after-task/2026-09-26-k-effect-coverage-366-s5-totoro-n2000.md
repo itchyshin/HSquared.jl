@@ -14,15 +14,17 @@ Issue: #366
 - Wall after instantiate: interior 22 s; main_rest 62 s
 - Combined TSV, replicates, logs, and a receipt under
   `docs/dev-log/recovery-checkpoints/2026-09-26-k-effect-coverage-366-s5-totoro-n2000*`
-- DRAC Narval jobs 4003782 / 4003783 submitted on a dedicated checkout
-  (`~/projects/def-snakagaw/HSquared.jl-coverage-366-n2000`); still
-  PENDING Priority at bank. Leave them queued.
+- DRAC Narval jobs 4003782 / 4003783 completed the same evening on
+  `~/projects/def-snakagaw/HSquared.jl-coverage-366-n2000` (interior
+  41 s, main_rest 1:49). Receipts
+  `2026-09-26-k-effect-coverage-366-s5-drac-n2000*`
 
 ## Coverage (claim class directional-conservative-bank)
 
 Interior n_eval=1931, refuse 0.0345: Va 0.903, Vpe 0.968, Ve 0.940,
 h2 0.998, t 0.954. Near_pe refuse 0.446; near_va refuse 0.464;
 near_va h2 0.762 when formed. Direction matches the N=500 precursor.
+DRAC interior Va 0.915; near_va h2 0.774. Same soft spots.
 
 ## Fences held
 

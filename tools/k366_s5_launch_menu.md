@@ -1,9 +1,9 @@
 # #366 S5 launch menu — N=2000 authorized (2026-09-25 overnight)
 
-**Status:** Totoro N=2000 interior + main_rest **banked** 2026-09-25 evening
-(artifacts `2026-09-26-k-effect-coverage-366-s5-totoro-n2000*`). DRAC Narval
-jobs 4003782 / 4003783 submitted, still queued at bank. Stay 0.9.0 / count 7;
-no flip. Claim class stays **directional-conservative-bank**.
+**Status:** Totoro and DRAC N=2000 interior + main_rest **banked**
+2026-09-25 evening (`…-totoro-n2000*` and `…-drac-n2000*`). Narval
+4003782/4003783 COMPLETED. Stay 0.9.0 / count 7; no flip. Claim class
+stays **directional-conservative-bank**.
 
 **Cells:** sparse — interior `(0.3,0.2,0.5)`; `main_rest` =
 `low_pe,near_pe,near_va`. N=2000 filenames use `2026-09-26-…-n2000-…`.

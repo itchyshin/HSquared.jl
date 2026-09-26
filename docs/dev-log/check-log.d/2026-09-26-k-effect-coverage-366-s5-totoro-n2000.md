@@ -22,13 +22,13 @@ bash sim/k366_totoro_n2000.sh
 bash sim/k366_totoro_n2000_nearbound.sh
 # START 18:13:37 → END 18:14:39 MDT; 6001 replicate lines
 
-# DRAC Narval (submitted; still PENDING Priority at bank)
+# DRAC Narval (both COMPLETED same evening)
 K366_S5_GO=1 K366_REPO_ROOT=$HOME/projects/def-snakagaw/HSquared.jl-coverage-366-n2000 \
   sbatch --export=ALL,K366_S5_GO=1,K366_REPO_ROOT sim/drac/k366_coverage_n2000.sbatch
-# job 4003782
+# job 4003782 COMPLETED 41 s
 K366_S5_GO=1 K366_REPO_ROOT=$HOME/projects/def-snakagaw/HSquared.jl-coverage-366-n2000 \
   sbatch --export=ALL,K366_S5_GO=1,K366_REPO_ROOT sim/drac/k366_coverage_n2000_nearbound.sbatch
-# job 4003783
+# job 4003783 COMPLETED 1:49
 
 # local rsync of Totoro artifacts (quote the remote glob)
 rsync -az 'totoro:~/hsq_work/HSquared-coverage-366-n2000/docs/dev-log/recovery-checkpoints/2026-09-26-k-effect-coverage-366-s5-totoro-n2000*' \
@@ -43,5 +43,6 @@ rsync -az 'totoro:~/hsq_work/HSquared-coverage-366-n2000/docs/dev-log/recovery-c
 
 ## Claim boundary
 
-Host of record is Totoro. DRAC is submitted provenance, not yet a completed
-bank. Status stays experimental 0.9.0. No nominal calibration claim.
+Hosts of record: Totoro (first complete) and Narval (owner provenance).
+Both N=2000 banks are on disk. Status stays experimental 0.9.0. No
+nominal calibration claim.

@@ -27,8 +27,9 @@ near_pe + near_va. Claim class **directional-conservative-bank**.
 Interior Va 0.903 (n_eval=1931, refuse 0.0345). Near-boundary refuse
 near_pe 0.446 / near_va 0.464. `public_covered_count` stays **7**;
 experimental **0.9.0**; **no covered flip**. DRAC Narval 4003782/4003783
-submitted, still PENDING Priority at bank; do not cancel. Host of record
-is Totoro.
+COMPLETED the same evening (interior 41 s, main_rest 1:49). Totoro and
+DRAC both banked; direction agrees. Hosts of record: Totoro (first
+complete) and Narval (owner provenance).
 
 ### 2026-09-24: #366 coverage triage banked (no flip)
 
