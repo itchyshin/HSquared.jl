@@ -4,6 +4,7 @@
 
 using HSquared
 using LinearAlgebra
+using Random
 using Test
 
 @testset "Multivariate repeatability REML (hsquared #237)" begin
@@ -110,4 +111,71 @@ using Test
     out = result_payload_v2(fit_v2, parsed)
     @test out.target == "multivariate_repeatability_reml"
     @test out.component_names == ["animal", "permanent", "residual"]
+end
+
+# Known-truth G0 and P0 recovery (hsquared #237). One pinned half-sib seed;
+# the multi-seed |bias|<=2*MCSE screen lives in
+# sim/phase4_multivariate_repeatability_recovery.jl (GATE_PASS/FAIL is data).
+function _hs237_halfsib(nsire, ndam, noffspring)
+    sire_ids = ["s$i" for i in 1:nsire]
+    dam_ids = ["d$i" for i in 1:ndam]
+    off_ids = ["o$i" for i in 1:noffspring]
+    ids = vcat(sire_ids, dam_ids, off_ids)
+    sire = vcat(
+        fill("0", nsire + ndam),
+        [sire_ids[((i - 1) % nsire) + 1] for i in 1:noffspring],
+    )
+    dam = vcat(
+        fill("0", nsire + ndam),
+        [dam_ids[((i - 1) % ndam) + 1] for i in 1:noffspring],
+    )
+    return normalize_pedigree(ids, sire, dam)
+end
+
+function _hs237_simulate(seed)
+    G0 = [1.00 0.30; 0.30 0.80]
+    P0 = [0.50 0.10; 0.10 0.40]
+    R0 = [0.80 0.15; 0.15 0.70]
+    rng = Random.MersenneTwister(seed)
+    ped = _hs237_halfsib(8, 16, 48)
+    Ainv = pedigree_inverse(ped)
+    A = Matrix(inv(Symmetric(Matrix(Ainv))))
+    q = length(ped.ids)
+    U = cholesky(Symmetric(A)).L * randn(rng, q, 2) * transpose(cholesky(Symmetric(G0)).L)
+    PE = randn(rng, q, 2) * transpose(cholesky(Symmetric(P0)).L)
+    records = 4
+    n = q * records
+    X = ones(n, 1)
+    Z = zeros(n, q)
+    Y = zeros(n, 2)
+    row = 1
+    for animal in 1:q, _rep in 1:records
+        Z[row, animal] = 1.0
+        Y[row, :] .= 2.0 .+ U[animal, :] .+ PE[animal, :] .+
+                     (randn(rng, 1, 2) * transpose(cholesky(Symmetric(R0)).L))[1, :]
+        row += 1
+    end
+    return Y, X, Z, Ainv, G0, P0, R0
+end
+
+@testset "Multivariate repeatability known-truth recovery (hsquared #237)" begin
+    Y, X, Z, Ainv, G0, P0, R0 = _hs237_simulate(20260926)
+    pe = fit_multivariate_repeatability_reml(
+        Y, X, Z, Ainv;
+        initial = (G0 = G0, P0 = P0, R0 = R0),
+    )
+    @test pe.estimator === :multivariate_repeatability_reml
+    @test pe.converged
+    ttrue = [(G0[k, k] + P0[k, k]) / (G0[k, k] + P0[k, k] + R0[k, k]) for k in 1:2]
+    @test pe.repeatability[1] ≈ ttrue[1] atol = 0.12
+    @test pe.genetic_covariance[1, 1] ≈ G0[1, 1] atol = 0.25
+    @test pe.permanent_covariance[1, 1] ≈ P0[1, 1] atol = 0.25
+    @test pe.residual_covariance[1, 1] ≈ R0[1, 1] rtol = 0.15
+    println("G0_P0_RECOVERY_PINNED")
+
+    absorbed = fit_multivariate_reml(Y, X, Z, Ainv)
+    @test absorbed.genetic_covariance[1, 1] > pe.genetic_covariance[1, 1]
+    @test abs(pe.genetic_covariance[1, 1] - G0[1, 1]) <
+          abs(absorbed.genetic_covariance[1, 1] - G0[1, 1])
+    println("PE_AWARE_NOT_ABSORBED")
 end
