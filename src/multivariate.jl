@@ -53,10 +53,18 @@ end
     variance_components(result::NamedTuple)
 
 Return the genetic and residual covariance matrices from a multivariate
-`HSquared` result as `(genetic_covariance, residual_covariance)`.
+`HSquared` result as `(genetic_covariance, residual_covariance)`. When the
+result is a multi-trait repeatability fit, also return `permanent_covariance`.
 """
 function variance_components(result::NamedTuple)
     r = _require_multivariate_result(result)
+    if hasproperty(r, :permanent_covariance)
+        return (
+            genetic_covariance = copy(r.genetic_covariance),
+            permanent_covariance = copy(r.permanent_covariance),
+            residual_covariance = copy(r.residual_covariance),
+        )
+    end
     return (
         genetic_covariance = copy(r.genetic_covariance),
         residual_covariance = copy(r.residual_covariance),
@@ -950,6 +958,246 @@ function fit_multivariate_reml(
         converged = Optim.converged(result),
         iterations = Optim.iterations(result),
         traits = tlabels,
+    )
+end
+
+# ---------------------------------------------------------------------------
+# Multivariate repeatability (animal + permanent environment) — hsquared #237
+# ---------------------------------------------------------------------------
+# Multi-trait analogue of `fit_repeatability_reml`:
+#   Y = XB + Z u_a + Z u_pe + E
+#   vec(U_aᵀ) ~ N(0, A ⊗ G0),   vec(U_peᵀ) ~ N(0, I ⊗ P0)
+# so the marginal covariance is
+#   V = Z_full·(A ⊗ G0)·Z_full' + Z_full·(I ⊗ P0)·Z_full' + R.
+# A ≠ I separates G0 from P0; repeated records separate P0 from R0.
+# Without PE, animal-only REML absorbs V_PE into G0 (the #237 defect).
+
+function _mv_pe_build_Vchol(Zfull, A, indiv, N, G0, P0, R0)
+    q = size(A, 1)
+    Vg = Zfull * kron(A, G0) * transpose(Zfull)
+    Vp = Zfull * kron(Matrix{Float64}(I, q, q), Matrix(P0)) * transpose(Zfull)
+    R = zeros(N, N)
+    for (rng, Si) in indiv
+        R[rng, rng] = R0[Si, Si]
+    end
+    return cholesky(Symmetric(Vg .+ Vp .+ R))
+end
+
+function _mv_pe_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, P0, R0)
+    Vf = _mv_pe_build_Vchol(Zfull, A, indiv, N, G0, P0, R0)
+    ViX = Vf \ Xfull
+    XtViX = cholesky(Symmetric(transpose(Xfull) * ViX))
+    beta = XtViX \ (transpose(Xfull) * (Vf \ yvec))
+    r = yvec .- Xfull * beta
+    nfix = size(Xfull, 2)
+    return -0.5 * ((N - nfix) * log(2π) + logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
+end
+
+function _mv_pe_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0, P0, R0, t, p, q)
+    Vf = _mv_pe_build_Vchol(Zfull, A, indiv, N, G0, P0, R0)
+    ViX = Vf \ Xfull
+    XtViX = cholesky(Symmetric(transpose(Xfull) * ViX))
+    betavec = XtViX \ (transpose(Xfull) * (Vf \ yvec))
+    r = yvec .- Xfull * betavec
+    Vir = Vf \ r
+    ZtVir = transpose(Zfull) * Vir
+    uavec = kron(A, G0) * ZtVir
+    upevec = kron(Matrix{Float64}(I, q, q), Matrix(P0)) * ZtVir
+    return (
+        permutedims(reshape(betavec, t, p)),
+        permutedims(reshape(uavec, t, q)),
+        permutedims(reshape(upevec, t, q)),
+    )
+end
+
+"""
+    fit_multivariate_repeatability_reml(Y, X, Z, Ainv; initial = nothing,
+                                        iterations = 2000, ids = nothing,
+                                        traits = nothing)
+
+Dense REML for the **multi-trait repeatability** (animal + permanent
+environment) model — the engine half of hsquared #237.
+
+    Y = X B + Z u_a + Z u_pe + E
+    vec(U_aᵀ) ~ N(0, A ⊗ G0),   vec(U_peᵀ) ~ N(0, I ⊗ P0)
+
+`G0`, `P0`, and `R0` are unstructured `t×t` covariances (honest for `t = 2`).
+Per-trait heritability uses the PE denominator
+`h²_k = G0[k,k] / (G0[k,k] + P0[k,k] + R0[k,k])`; repeatability is
+`t_k = (G0[k,k] + P0[k,k]) / (G0[k,k] + P0[k,k] + R0[k,k])`.
+
+Reductions: `t = 1` recovers [`fit_repeatability_reml`](@ref) variance
+components; `P0 = 0` recovers the [`fit_multivariate_reml`](@ref) log-likelihood.
+Experimental, dense/validation-scale, REML-only. No covered flip.
+
+The R twin still fences `cbind()` + `permanent()` until it lifts the spec
+gate. Call this fitter directly, or through payload-v2 dispatch
+`:multivariate_repeatability` (`Y` + pedigree + iid PE blocks).
+"""
+function fit_multivariate_repeatability_reml(
+    Y::AbstractMatrix,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 2_000,
+    ids = nothing,
+    traits = nothing,
+)
+    n = size(Y, 1)
+    t = size(Y, 2)
+    t >= 1 || throw(ArgumentError("Y must have at least one trait column"))
+    size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    q = size(Ainv, 1)
+    size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+    size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
+
+    p = size(X, 2)
+    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
+    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+    ncov = t * (t + 1) ÷ 2
+
+    function negloglik(params)
+        G0 = _chol_params_to_cov(@view(params[1:ncov]), t)
+        P0 = _chol_params_to_cov(@view(params[(ncov + 1):(2 * ncov)]), t)
+        R0 = _chol_params_to_cov(@view(params[(2 * ncov + 1):end]), t)
+        try
+            return -_mv_pe_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, P0, R0)
+        catch err
+            (err isa PosDefException || err isa ArgumentError) && return Inf
+            rethrow()
+        end
+    end
+
+    Ym = Matrix(Y)
+    phen = ones(t)
+    for k in 1:t
+        vals = [Float64(Ym[i, k]) for i in 1:n if _is_present(Ym[i, k])]
+        if length(vals) >= 2
+            mu = sum(vals) / length(vals)
+            v = sum(abs2, vals .- mu) / (length(vals) - 1)
+            v > 0 && (phen[k] = v)
+        end
+    end
+
+    if initial === nothing
+        G0_start = Matrix(Diagonal((1 / 3) .* phen))
+        P0_start = Matrix(Diagonal((1 / 3) .* phen))
+        R0_start = Matrix(Diagonal((1 / 3) .* phen))
+    else
+        G0_start = hasproperty(initial, :G0) ? Matrix(Float64.(Matrix(initial.G0))) :
+            Matrix(Diagonal((1 / 3) .* phen))
+        P0_start = hasproperty(initial, :P0) ? Matrix(Float64.(Matrix(initial.P0))) :
+            Matrix(Diagonal((1 / 3) .* phen))
+        R0_start = hasproperty(initial, :R0) ? Matrix(Float64.(Matrix(initial.R0))) :
+            Matrix(Diagonal((1 / 3) .* phen))
+    end
+    _check_covariance(G0_start, "initial.G0", t)
+    _check_covariance(P0_start, "initial.P0", t)
+    _check_covariance(R0_start, "initial.R0", t)
+    params0 = vcat(
+        _cov_to_chol_params(G0_start, t),
+        _cov_to_chol_params(P0_start, t),
+        _cov_to_chol_params(R0_start, t),
+    )
+
+    result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+    phat = Optim.minimizer(result)
+    G0hat = Matrix(Symmetric(_chol_params_to_cov(phat[1:ncov], t)))
+    P0hat = Matrix(Symmetric(_chol_params_to_cov(phat[(ncov + 1):(2 * ncov)], t)))
+    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[(2 * ncov + 1):end], t)))
+
+    beta, ebv, pe = _mv_pe_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, P0hat, R0hat, t, p, q)
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+    tlabels = traits === nothing ? collect(1:t) : collect(traits)
+    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
+    denom = [G0hat[k, k] + P0hat[k, k] + R0hat[k, k] for k in 1:t]
+    hsq = [G0hat[k, k] / denom[k] for k in 1:t]
+    rpt = [(G0hat[k, k] + P0hat[k, k]) / denom[k] for k in 1:t]
+
+    return (
+        genetic_covariance = G0hat,
+        permanent_covariance = P0hat,
+        residual_covariance = R0hat,
+        genetic_correlation = genetic_correlation(G0hat),
+        permanent_correlation = genetic_correlation(P0hat),
+        residual_correlation = genetic_correlation(R0hat),
+        heritability = hsq,
+        repeatability = rpt,
+        beta = beta,
+        breeding_values = (ids = aids, traits = tlabels, values = ebv),
+        permanent_effects = (ids = aids, traits = tlabels, values = pe),
+        genetic_structure = :unstructured,
+        genetic_rank = nothing,
+        genetic_loadings = nothing,
+        genetic_uniqueness = nothing,
+        loglik = -Optim.minimum(result),
+        converged = Optim.converged(result),
+        iterations = Optim.iterations(result),
+        traits = tlabels,
+        estimator = :multivariate_repeatability_reml,
+        n_traits = t,
+        n_animals = q,
+        component_names = ["animal", "permanent", "residual"],
+        component_dimensions = (animal = (q, t), permanent = (q, t), residual = (n, t)),
+    )
+end
+
+"""
+    multivariate_repeatability_result_payload(result)
+
+Bridge-ready payload for [`fit_multivariate_repeatability_reml`](@ref).
+Exposes the three covariance blocks R needs (`G0`, `P0`, `R0`), component
+names/dimensions, PE-aware per-trait `heritability` and `repeatability`,
+breeding values, and permanent-environment BLUPs.
+
+`target = "multivariate_repeatability_reml"`. Experimental; no covered flip.
+"""
+function multivariate_repeatability_result_payload(result)
+    getproperty(result, :estimator) === :multivariate_repeatability_reml ||
+        throw(ArgumentError(
+            "multivariate_repeatability_result_payload expects a multivariate " *
+            "repeatability REML result (estimator = :multivariate_repeatability_reml)"))
+    G0 = Matrix(result.genetic_covariance)
+    P0 = Matrix(result.permanent_covariance)
+    R0 = Matrix(result.residual_covariance)
+    t = size(G0, 1)
+    ncov = t * (t + 1) ÷ 2
+    bv = result.breeding_values
+    pe = result.permanent_effects
+    return (
+        engine = "HSquared.jl",
+        target = "multivariate_repeatability_reml",
+        genetic_structure = "unstructured",
+        n_traits = t,
+        n_animals = result.n_animals,
+        traits = collect(result.traits),
+        component_names = collect(result.component_names),
+        component_dimensions = result.component_dimensions,
+        genetic_covariance = G0,
+        permanent_covariance = P0,
+        residual_covariance = R0,
+        genetic_variances = diag(G0),
+        permanent_variances = diag(P0),
+        residual_variances = diag(R0),
+        genetic_correlation = Matrix(result.genetic_correlation),
+        permanent_correlation = Matrix(result.permanent_correlation),
+        residual_correlation = Matrix(result.residual_correlation),
+        heritability = copy(collect(result.heritability)),
+        repeatability = copy(collect(result.repeatability)),
+        fixed_effects = Matrix(result.beta),
+        breeding_values = (ids = bv.ids, traits = bv.traits, values = Matrix(bv.values)),
+        permanent_effects = (ids = pe.ids, traits = pe.traits, values = Matrix(pe.values)),
+        loglik = result.loglik,
+        n_genetic_params = ncov,
+        n_permanent_params = ncov,
+        n_residual_params = ncov,
+        converged = result.converged,
+        estimator = "multivariate_repeatability_reml",
+        status = "experimental",
     )
 end
 
