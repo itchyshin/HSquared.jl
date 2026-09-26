@@ -19,7 +19,8 @@ to hand to the dispatched estimator, plus the dispatch tag and per-block metadat
 
 Fields:
 - `dispatch`       — Symbol: `:animal`, `:two_effect`, `:multi_effect`, `:direct_maternal`,
-                     `:multivariate`, or `:coefcov` (frozen slot, not yet wired).
+                     `:multivariate`, `:multivariate_repeatability` (Y + pedigree + iid PE),
+                     or `:coefcov` (frozen slot, not yet wired).
 - `y` / `Y`        — response vector (univariate) or matrix (multivariate).
 - `X`              — fixed-effects design matrix.
 - `blocks`         — Vector of per-block NamedTuples with resolved engine matrices
@@ -166,7 +167,8 @@ end
 #   two independent blocks → :two_effect
 #   K ≥ 3 independent blocks → :multi_effect
 #   one correlated block (+ optional independent) → :direct_maternal
-#   multivariate Y (one pedigree) → :multivariate (caller must pass is_mv=true)
+#   multivariate Y (one pedigree) → :multivariate
+#   multivariate Y (pedigree + iid PE) → :multivariate_repeatability
 #   one coefcov block → :coefcov (frozen slot, parser validates but doesn't run)
 function _resolve_dispatch(blocks, is_multivariate::Bool)
     types = [b.type for b in blocks]
@@ -217,9 +219,15 @@ function _resolve_dispatch(blocks, is_multivariate::Bool)
 
     # Independent blocks only.
     if is_multivariate
-        K == 1 || throw(ArgumentError(
-            "multivariate dispatch requires exactly one random-effect block"))
-        return :multivariate
+        if K == 1
+            return :multivariate
+        end
+        if K == 2 && count(==("pedigree"), types) == 1 && count(==("iid"), types) == 1
+            return :multivariate_repeatability
+        end
+        throw(ArgumentError(
+            "multivariate dispatch accepts one pedigree block, or pedigree + iid " *
+            "permanent environment; got K=$K types=$(types)"))
     end
 
     if K == 1
@@ -520,6 +528,17 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
             "multivariate dispatch via payload-v2 requires caller-supplied G0 and R0 " *
             "(use fit_multivariate_reml directly)"))
 
+    elseif dispatch == :multivariate_repeatability
+        # hsquared #237: multivariate Y + pedigree + iid PE.
+        # Direct fitter; R still fences cbind()+permanent() until it lifts the spec.
+        ped = blocks[findfirst(b -> b.type == "pedigree", blocks)]
+        return fit_multivariate_repeatability_reml(
+            Matrix{Float64}(parsed.Y),
+            X,
+            Matrix{Float64}(ped.Z),
+            Matrix{Float64}(ped.relmat_inverse);
+            ids = ped.ids)
+
     elseif dispatch == :coefcov
         # §6 frozen slot: coefcov estimator not yet wired at the payload layer.
         throw(Phase0NotImplementedError(
@@ -648,6 +667,10 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             loglik = fit.loglik,
             converged = fit.converged,
         )
+    end
+
+    if dispatch == :multivariate_repeatability
+        return multivariate_repeatability_result_payload(fit)
     end
 
     throw(ArgumentError("result_payload_v2: unrecognised dispatch symbol: $dispatch"))

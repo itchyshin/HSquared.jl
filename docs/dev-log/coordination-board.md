@@ -18,6 +18,17 @@
 - Coordinator lane: shared issue ledger, public-claim wording, and
   cross-repo contract checks.
 
+### 2026-09-26: #237 Julia MV+PE fitter (experimental, no flip)
+
+Lane: `cursor/237-mv-permanent-jl` @
+`~/local-scratch/lanes/HSquared.jl-237-mv-permanent`. Engine
+`fit_multivariate_repeatability_reml` +
+`multivariate_repeatability_result_payload`. payload-v2 dispatch
+`:multivariate_repeatability` for Y + pedigree + iid. Focused tests 37/37.
+Experimental; version **0.9.0**; `public_covered_count` **7**; no covered
+flip; REGISTERED=no. R still fences `cbind()` + `permanent()`. Do not merge
+from this slice. Live bridge check still owed to the R sibling / Codex.
+
 ### 2026-09-26: #366 Totoro N=2000 banked (no flip)
 
 Lane: `cursor/366-n2000-drac-20260926` @

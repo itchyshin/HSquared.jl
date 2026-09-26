@@ -10962,6 +10962,7 @@ end
 # hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
 include("test_214_217_dense_cells.jl")
 include("test_352_multi_effect_se.jl")
+include("test_multivariate_repeatability.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
 include("test_api_docstrings.jl")

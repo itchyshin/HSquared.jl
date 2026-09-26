@@ -221,6 +221,27 @@ A passing or revised calibration protocol, covariance standard errors,
 external-comparator parity, and R-facing multivariate / covariance-structure
 syntax are still missing.
 
+## Multivariate repeatability (animal + permanent environment)
+
+`fit_multivariate_repeatability_reml` is the experimental dense REML path
+for repeated-measures multivariate data with additive genetics **and** an
+iid permanent-environment term (hsquared #237):
+
+```math
+V = Z_{\mathrm{full}}(A \otimes G_0)Z_{\mathrm{full}}^\top
+  + Z_{\mathrm{full}}(I \otimes P_0)Z_{\mathrm{full}}^\top
+  + R.
+```
+
+`A \neq I` separates `G_0` from `P_0`; repeated records separate `P_0`
+from `R_0`. Animal-only multivariate REML absorbs `V_{PE}` into `G_0`.
+Per-trait heritability uses the PE denominator
+`h^2_k = G_{0,kk}/(G_{0,kk}+P_{0,kk}+R_{0,kk})`. This is engine-internal
+and **experimental**. No covered flip. The R twin still fences
+`cbind()` + `permanent()` until it lifts the spec gate. The bridge
+payload is `multivariate_repeatability_result_payload`
+(`target = "multivariate_repeatability_reml"`, `status = "experimental"`).
+
 ## Validation boundary
 
 Covered now (self-consistent, comparator-free):

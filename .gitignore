@@ -54,3 +54,6 @@
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# unlazy session ledgers (working files, never tracked)
+/.unlazy/
