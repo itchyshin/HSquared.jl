@@ -18,6 +18,19 @@
 - Coordinator lane: shared issue ledger, public-claim wording, and
   cross-repo contract checks.
 
+### 2026-09-26: #366 Totoro N=2000 banked (no flip)
+
+Lane: `cursor/366-n2000-drac-20260926` @
+`~/local-scratch/lanes/HSquared.jl-coverage-366-n2000`. Totoro N=2000
+sparse K-effect / summed-ratio coverage banked for interior + low_pe +
+near_pe + near_va. Claim class **directional-conservative-bank**.
+Interior Va 0.903 (n_eval=1931, refuse 0.0345). Near-boundary refuse
+near_pe 0.446 / near_va 0.464. `public_covered_count` stays **7**;
+experimental **0.9.0**; **no covered flip**. DRAC Narval 4003782/4003783
+COMPLETED the same evening (interior 41 s, main_rest 1:49). Totoro and
+DRAC both banked; direction agrees. Hosts of record: Totoro (first
+complete) and Narval (owner provenance).
+
 ### 2026-09-24: #366 coverage triage banked (no flip)
 
 Lane: `cursor/coverage-366-20260924` · PR #388 MERGED (`f0e42e32`). Totoro N=500 sparse
@@ -26,7 +39,8 @@ near_va (cores `taskset -c 0-3`). Claim class
 **directional-conservative-bank**. Near-boundary refusal rates ~0.46.
 `public_covered_count` stays **7**; experimental **0.9.0**; **no covered
 flip**; **no N=2000 / DRAC** from this arc. GOAL completable as banked
-study without flip.
+study without flip. Superseded as the live N=2000 bank by the 2026-09-26
+note above; N=500 remains the precursor.
 
 ## Current Rule
 
