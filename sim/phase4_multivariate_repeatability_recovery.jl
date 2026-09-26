@@ -17,8 +17,10 @@ per-trait repeatability t_k must satisfy |bias| <= 2 * MCSE. A passing screen
 does not flip covered status. Version stays 0.9.0. public_covered_count stays 7.
 
 Default cell (half-sib, 8 sires / 16 dams / 48 offspring, 4 records) is the
-local 8-seed screen. Process exit is 0 iff the computation finished; GATE_PASS
-/ GATE_FAIL is data, not the exit code.
+local 8-seed screen. Live `randn` streams differ across Julia 1.10 vs 1.13, so
+this screen is Julia-version-specific; the in-suite pin is
+`test/fixtures/hs237_mv_pe_recovery/Y.csv`. Process exit is 0 iff the
+computation finished; GATE_PASS / GATE_FAIL is data, not the exit code.
 
     julia --project=. sim/phase4_multivariate_repeatability_recovery.jl
     julia --project=. sim/phase4_multivariate_repeatability_recovery.jl --seeds=20260926,20260927
