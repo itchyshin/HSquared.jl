@@ -1,21 +1,25 @@
-# #366 S5 launch menu — triage complete (near-boundary banked)
+# #366 S5 launch menu — N=2000 authorized (2026-09-25 overnight)
 
-**Status:** Totoro N=500 interior + main_rest banked on PR #388. Do **not**
-launch N=2000 or DRAC unless owner re-authorizes. Stay 0.9.0 / count 7; no flip.
+**Status:** Totoro N=2000 interior + main_rest **banked** 2026-09-25 evening
+(artifacts `2026-09-26-k-effect-coverage-366-s5-totoro-n2000*`). DRAC Narval
+jobs 4003782 / 4003783 submitted, still queued at bank. Stay 0.9.0 / count 7;
+no flip. Claim class stays **directional-conservative-bank**.
 
-**Cells:** sparse — interior `(0.3,0.2,0.5)` banked; `main_rest` =
-`low_pe,near_pe,near_va` banked via `sim/k366_totoro_n500_nearbound.sh`.
+**Cells:** sparse — interior `(0.3,0.2,0.5)`; `main_rest` =
+`low_pe,near_pe,near_va`. N=2000 filenames use `2026-09-26-…-n2000-…`.
 
 **Safety:** every script exits unless `K366_S5_GO=1` is set in the environment.
 
-## Four ready-to-fire combos
+## Ready-to-fire combos
 
 | Combo | Script | One-liner (after owner yes) |
 | --- | --- | --- |
 | Totoro N=500 | `sim/k366_totoro_n500.sh` | `K366_S5_GO=1 bash sim/k366_totoro_n500.sh` |
-| Totoro N=2000 | `sim/k366_totoro_n2000.sh` | `K366_S5_GO=1 bash sim/k366_totoro_n2000.sh` |
+| Totoro N=2000 interior | `sim/k366_totoro_n2000.sh` | `K366_S5_GO=1 bash sim/k366_totoro_n2000.sh` |
+| Totoro N=2000 main_rest | `sim/k366_totoro_n2000_nearbound.sh` | `K366_S5_GO=1 bash sim/k366_totoro_n2000_nearbound.sh` |
 | DRAC N=500 | `sim/drac/k366_coverage_n500.sbatch` | `K366_S5_GO=1 sbatch --export=ALL,K366_S5_GO=1 sim/drac/k366_coverage_n500.sbatch` |
-| DRAC N=2000 | `sim/drac/k366_coverage_n2000.sbatch` | `K366_S5_GO=1 sbatch --export=ALL,K366_S5_GO=1 sim/drac/k366_coverage_n2000.sbatch` |
+| DRAC N=2000 interior | `sim/drac/k366_coverage_n2000.sbatch` | `K366_S5_GO=1 K366_REPO_ROOT=$HOME/projects/def-snakagaw/HSquared.jl-coverage-366-n2000 sbatch --export=ALL,K366_S5_GO=1,K366_REPO_ROOT sim/drac/k366_coverage_n2000.sbatch` |
+| DRAC N=2000 main_rest | `sim/drac/k366_coverage_n2000_nearbound.sbatch` | same env + `sbatch …/k366_coverage_n2000_nearbound.sbatch` |
 
 Harness CLI (all four call this):
 
@@ -50,5 +54,5 @@ replicated multi-seed / provenance. This S5 cell is **one cell × N serial
 fits** — Totoro is enough on wall-clock; DRAC is for queue provenance if the
 owner prefers it.
 
-**Fences:** no covered flip · no version bump · `public_covered_count` stays 7 ·
-do not merge #388 from this prep.
+**Fences:** no covered flip · no version bump · `public_covered_count` stays 7.
+#388/#394 already merged (N=500). This menu is the N=2000 bank.
