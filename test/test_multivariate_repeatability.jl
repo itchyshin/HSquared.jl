@@ -168,8 +168,13 @@ end
     @test pe.converged
     ttrue = [(G0[k, k] + P0[k, k]) / (G0[k, k] + P0[k, k] + R0[k, k]) for k in 1:2]
     @test pe.repeatability[1] ≈ ttrue[1] atol = 0.12
-    @test pe.genetic_covariance[1, 1] ≈ G0[1, 1] atol = 0.25
-    @test pe.permanent_covariance[1, 1] ≈ P0[1, 1] atol = 0.25
+    # One seed cannot pin the Va/Vpe split (Julia 1 CI: G11=0.58, P11=1.06;
+    # macOS: G11=1.09, P11=0.40). The identified sum is the in-suite gate;
+    # unique G0/P0 elements are the 8-seed |bias|<=2*MCSE screen.
+    @test pe.genetic_covariance[1, 1] > 0
+    @test pe.permanent_covariance[1, 1] > 0
+    @test pe.genetic_covariance[1, 1] + pe.permanent_covariance[1, 1] ≈
+          G0[1, 1] + P0[1, 1] atol = 0.25
     @test pe.residual_covariance[1, 1] ≈ R0[1, 1] rtol = 0.15
     println("G0_P0_RECOVERY_PINNED")
 
