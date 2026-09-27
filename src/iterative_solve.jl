@@ -844,7 +844,16 @@ function matrix_free_reml_loglik(
     sol, _, relres = _pcg_solve(applyC, copy(rhs); tol = Float64(pcg_tol),
                                 maxiter = Int(pcg_maxiter), applyMinv = r -> invd .* r)
     _require_pcg_convergence(relres, pcg_tol)
-    quad = inv_se2 * dot(yv, yv) - dot(rhs, sol)
+    # Evaluate the minimized joint quadratic from fitted residuals and random
+    # effects to avoid subtracting two large, nearly equal intercept terms.
+    residual = yv - Xs * sol[1:p]
+    quad = 0.0
+    for i in 1:K
+        ui = sol[(offs[i] + 1):(offs[i] + qs[i])]
+        residual .-= Zs[i] * ui
+        quad += dot(ui, Ainvs[i] * ui) / ss[i]
+    end
+    quad += inv_se2 * dot(residual, residual)
 
     # log|C| by SLQ (matrix-free).
     rng = MersenneTwister(seed)

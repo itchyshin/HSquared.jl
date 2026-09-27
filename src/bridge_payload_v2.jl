@@ -244,6 +244,8 @@ function _resolve_dispatch(blocks, is_multivariate::Bool)
     end
 
     if K == 1
+        blocks[1].type == "pedigree" || throw(ArgumentError(
+            "single-block animal dispatch requires a pedigree block; got '$(blocks[1].type)'"))
         return :animal
     elseif K == 2
         return :two_effect
@@ -414,16 +416,33 @@ function _lift_legacy_payload(payload)
     e2_name = e2_name !== nothing ? string(e2_name) : "effect2"
     e2_type = (e2_rel !== nothing && string(e2_rel) == "pedigree") ? "pedigree" : "iid"
 
-    if e2_type == "pedigree"
-        # maternal_genetic shares the same Ainv (julia-bridge.R:896-900).
-        Ainv2 = Ainv
-    else
-        q2 = size(Z2, 2)
-        Ainv2 = _build_iid_relmat_inverse(q2)
-    end
     ids2_raw = _field(payload, "ids2", :ids2)
-    block2_ids = ids2_raw === nothing ? collect(1:size(Z2, 2)) : collect(ids2_raw)
-    block2 = (name=e2_name, type=e2_type, Z=Z2, relmat_inverse=Ainv2, ids=block2_ids)
+    block2_ids = ids2_raw === nothing ?
+        (e2_type == "pedigree" ? copy(block_ids) : collect(1:size(Z2, 2))) : collect(ids2_raw)
+    if e2_type == "pedigree"
+        # maternal_genetic shares the first block's relationship, expressed in
+        # the column order declared by ids2 (julia-bridge.R:896-900).
+        length(block2_ids) == length(block_ids) &&
+            length(unique(block_ids)) == length(block_ids) &&
+            length(unique(block2_ids)) == length(block2_ids) || throw(ArgumentError(
+                "legacy pedigree effect ids2 must be a permutation of first-block ids"))
+        position = Dict{Any,Int}(id => i for (i, id) in enumerate(block_ids))
+        all(id -> haskey(position, id), block2_ids) || throw(ArgumentError(
+            "legacy pedigree effect ids2 must be a permutation of first-block ids"))
+        order = [position[id] for id in block2_ids]
+        if all(i -> order[i] == i, eachindex(order))
+            Ainv2 = Ainv
+            relationship_diag2 = relationship_diag
+        else
+            Ainv2 = Ainv[order, order]
+            relationship_diag2 = relationship_diag === nothing ? nothing : relationship_diag[order]
+        end
+        block2 = (name=e2_name, type=e2_type, Z=Z2, relmat_inverse=Ainv2,
+                  ids=block2_ids, relationship_diag=relationship_diag2)
+    else
+        Ainv2 = _build_iid_relmat_inverse(size(Z2, 2))
+        block2 = (name=e2_name, type=e2_type, Z=Z2, relmat_inverse=Ainv2, ids=block2_ids)
+    end
 
     return [block1, block2]
 end

@@ -281,6 +281,24 @@ function _check_finite_matrix(M, name)
     return Mf
 end
 
+# Validate the original matrix before a Symmetric wrapper can discard a triangle.
+# The scale-relative tolerance permits ordinary floating-point assembly noise;
+# accepted inputs are averaged once so quadratic forms and factorizations agree.
+function _check_positive_definite_matrix(M::AbstractMatrix, name::AbstractString, n::Integer)
+    size(M) == (n, n) || throw(ArgumentError("$name must be $n×$n"))
+    n > 0 || throw(ArgumentError("$name must have positive dimension"))
+    Mf = _check_finite_matrix(M, name)
+    scale = maximum(abs, Mf)
+    all(abs(Mf[i, j] - Mf[j, i]) <= 1e-10 * scale for j in 1:n for i in 1:j) ||
+        throw(ArgumentError("$name must be symmetric (relative tolerance 1e-10)"))
+    Ms = 0.5 .* Mf .+ 0.5 .* transpose(Mf)
+    isposdef(Symmetric(Ms)) || throw(ArgumentError("$name must be positive definite"))
+    return Ms
+end
+
+_check_relationship_precision(Ainv::AbstractMatrix, q::Integer) =
+    _check_positive_definite_matrix(Ainv, "Ainv", q)
+
 function _check_covariance(M, name, t)
     size(M, 1) == t && size(M, 2) == t ||
         throw(ArgumentError("$name must be $t×$t (one row/column per trait)"))
@@ -529,7 +547,7 @@ function multivariate_mme(
         present[i, k] = _is_present(Ym[i, k])
     end
     any(present) || throw(ArgumentError("Y has no observed (non-missing) entries"))
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
+    Ai = _check_relationship_precision(Ainv, q)
     _mv_validate_inputs(present, Ym, X, Z, tlabels)
     Yfull = zeros(Float64, n, t)
     @inbounds for i in 1:n, k in 1:t
@@ -541,7 +559,7 @@ function multivariate_mme(
     Xfull = kron(sparse(Float64.(Matrix(X))), It)
     Zfull = kron(sparse(Float64.(Matrix(Z))), It)
     yvec = vec(permutedims(Yfull))
-    Ginv_block = kron(sparse(Float64.(Matrix(Ainv))), sparse(inv(G0s)))
+    Ginv_block = kron(sparse(Ai), sparse(inv(G0s)))
 
     if all(present)
         # balanced: a single Kronecker residual precision I_n ⊗ R0⁻¹.
@@ -787,7 +805,7 @@ end
 # supplied covariances (rebuilds the observed structures). Used in validation.
 function _multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
     n = size(Y, 1); t = size(Y, 2); q = size(Ainv, 1); p = size(X, 2)
-    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
     return _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N,
                                 Matrix(Float64.(Matrix(G0))), Matrix(Float64.(Matrix(R0))))
@@ -891,8 +909,7 @@ function fit_multivariate_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
 
     p = size(X, 2)
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
-    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
 
     grank = _validate_genetic_structure(genetic_structure, rank, t)
@@ -1071,8 +1088,7 @@ function fit_multivariate_repeatability_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
 
     p = size(X, 2)
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
-    A = inv(Symmetric(Matrix(Float64.(Matrix(Ainv)))))
+    A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
     ncov = t * (t + 1) ÷ 2
 

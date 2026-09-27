@@ -4,7 +4,7 @@
 Review input and public bridge paths against baseline `faed40182cdbba2bf69f3e8dff0c5054be2dd214`, with attention to pedigree ordering and honest route errors.
 
 ## 2. Implemented
-The coordinator repaired W3-01 by aligning payload pedigree covariance and diagonal metadata to supplied incidence-column IDs, including the legacy alias. It separately narrowed the unwired-route error wording and added a regression for W3-02. The packet's whole-wave verdict remains **HOLD** pending integration and review of remaining spans.
+The coordinator repaired W3-01 by aligning payload pedigree covariance and diagonal metadata to supplied incidence-column IDs, including the legacy alias. It separately narrowed the unwired-route error wording and added a regression for W3-02. Hopper's follow-up repaired missing legacy maternal labels (W3-03) and lone-iid animal dispatch (W3-04), while the R bridge gained an explicit multivariate ID-order guard. The packet's whole-wave verdict remains **HOLD** pending integration and review of remaining spans.
 
 ## 3a. Decisions and Rejected Alternatives
 Preserve caller incidence order by permuting the normalized pedigree relationship objects, with an already-sorted fast path. Do not imply all model fitting is absent when only a requested payload route is unwired. The review did not broaden into unrelated data diagnostics or fitter internals.
@@ -19,7 +19,7 @@ The dedicated unsorted-pedigree regression progressed from 2 pass/1 fail, throug
 The regression checks the covariance in observation space against an independently permuted pedigree oracle, includes inbred self-relationship, preserves sorted input, and rejects missing/duplicate IDs. The route-error regression checks scoped wording and supported direct-fitter guidance.
 
 ## 7a. Issue Ledger
-W3-01's targeted repair needs independent integration. W3-02's separate regression was added by coordinator but is not certified by the packet's focused command. R unsorted-pedigree live regression, especially for FA, remains a strengthening opportunity. Other source spans remain uninspected.
+W3-01's targeted repair needs final candidate integration. W3-02's separate regression was added by coordinator but is not certified by the packet's focused command. Post-packet no-fit tests passed 29/29 for pedigree ordering, maternal labels, reordered `ids2`, and lone-iid refusal; unsorted R/Julia pedigree ID parity passed without a fit. The v2 result-shape mismatch (W3-05) remains open. Other source spans remain uninspected.
 
 ## 8. Consistency Audit
 Scoped checks found pedigree normalization and inverse use the same parent-first order; R source sorts IDs before constructing `Z`; FA/GLLVM call direct fitters rather than the payload-v2 multivariate dispatch. These are source arguments, not proof of all R-Julia parity cases. `HSData` and `AnimalModelSpec` were confirmed not to hide the new bridge route.

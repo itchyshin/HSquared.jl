@@ -193,7 +193,13 @@ function sparse_reml_loglik(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Rea
     logdetR = n * log(Float64(sigma_e2))
     logdetG = q * log(Float64(sigma_a2)) - logdet(Ainv_factor)
     logdetC = logdet(lhs_factor)
-    quad = y_precision_y - dot(rhs, solution)
+    # The MME difference y'R⁻¹y - rhs'C⁻¹rhs loses the residual signal when
+    # a large fixed intercept makes both terms nearly equal.
+    beta = solution[1:p]
+    u = solution[(p + 1):end]
+    residual = Float64.(spec.y) - spec.X * beta - spec.Z * u
+    quad = dot(residual, residual) / Float64(sigma_e2) +
+           dot(u, Ainv * u) / Float64(sigma_a2)
     loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
 
     return GaussianLikelihoodResult(
@@ -747,7 +753,8 @@ function _genomic_profile_reml(context, ratio::Real)
         return nothing
     end
     rhs = transpose(context.X) * hi_y
-    quad = dot(context.y, hi_y) - dot(rhs, fixed_factor \ rhs)
+    residual = context.y - context.X * (fixed_factor \ rhs)
+    quad = dot(residual, weights .* residual)
     df = context.n - context.p
     isfinite(quad) && quad > 0 && df > 0 || return nothing
     t_hat = quad / df
@@ -2329,7 +2336,14 @@ function _multi_reml_loglik!(ws::_MultiREMLWorkspace, sigmas::AbstractVector,
         logdetG += ws.qs[i] * log(ss[i]) - ws.logdet_ainv[i]
     end
     logdetC = logdet(factor)
-    quad = inv(se2) * ws.yty - dot(rhs, solution)      # y'Py
+    residual = copy(ws.yv)
+    residual .-= ws.Xs * beta
+    quad = 0.0
+    for i in 1:K
+        residual .-= ws.Zs[i] * us[i]
+        quad += dot(us[i], ws.Ainvs[i] * us[i]) / ss[i]
+    end
+    quad += dot(residual, residual) / se2
     loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
     return loglik, beta, us
 end

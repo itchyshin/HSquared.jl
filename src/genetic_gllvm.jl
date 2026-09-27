@@ -196,6 +196,7 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     Xd = Matrix{Float64}(X)
     q, T = size(Yd)
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Y,1)"))
+    Ai = _check_relationship_precision(Ai, q)
     size(Λ, 1) == T || throw(ArgumentError("loadings must have T = size(Y,2) rows"))
     size(Xd, 1) == q || throw(ArgumentError("X must have q = size(Y,1) rows"))
 
@@ -460,6 +461,7 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                 iterations::Integer = 1000,
                                 tol::Real = 1e-10, maxiter::Integer = 200)
     q, T = size(Y)
+    Ainv = _check_relationship_precision(Ainv, q)
     K = Int(rank)
     K >= 1 || throw(ArgumentError("rank must be ≥ 1"))
     structure in (:lowrank, :factor_analytic) ||

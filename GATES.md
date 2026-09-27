@@ -23,20 +23,20 @@ Scope: Deliver bounded opt-in FA and genetic GLLVM fits through hsquared, then r
   EVIDENCE: R `tests/testthat/test-gllvm-optin.R` and `vignettes/articles/genetic-gllvm.Rmd`; 49 same-input direct-Julia parity checks, 38 ordering/ID checks, final opt-in rerun, R package check Status: OK. This remains partial without an external same-objective comparator.
 
 - [ ] E1: Every tracked core src file and public bridge contract has a pinned-span review disposition; findings are fixed or explicitly carried.
-  EVIDENCE: four packets under `docs/dev-log/source-review/2026-09-27-wave*.md` inventory all 24 tracked `src/` files, with the CUDA stub reviewed statically only. Wave 1 and 3 have unreviewed spans, waves 1–4 remain HOLD, and independent panel signoff is open. Carried findings are explicit in the packets.
+  EVIDENCE: four packets under `docs/dev-log/source-review/2026-09-27-wave*.md` inventory all 24 tracked `src/` files, with the CUDA stub reviewed statically only. W1-06, W2-03, and W3-03/04 received scoped repairs and regressions; W2-03 has independent Astra signoff. Wave 1 and 3 still have unreviewed spans, waves 1–4 remain HOLD, and whole-wave panel signoff is open. Carried findings are explicit in the packets.
 
 - [x] V1: Julia package suite passes on the final candidate.
   CHECK: julia --project=. -e 'using Pkg; Pkg.test(); println("HSQ_JULIA_TESTS_OK")'
   EXPECT: HSQ_JULIA_TESTS_OK
-  EVIDENCE: `/private/tmp/hsq-fa-gllvm-pkg-test-20260927-final4.log` ends `Testing HSquared tests passed`, exit 0. The writable source copy's `src/` and `test/` contents checksum-match the candidate; only timestamps differ. No checkout source was altered for the test.
+  EVIDENCE: `/private/tmp/hsq-fa-gllvm-pkg-test-20260927-w203-w3.log` ends `Testing HSquared tests passed` and `HSQ_JULIA_TESTS_OK`, exit 0 after W1-06, W2-03, and W3 repairs. The writable source copy's `src/` and `test/` contents checksum-match the candidate; no checkout source was altered for the test.
 
 - [x] V2: Julia documentation builds on the final candidate.
   CHECK: julia --project=docs docs/make.jl && echo HSQ_JULIA_DOCS_OK
   EXPECT: HSQ_JULIA_DOCS_OK
-  EVIDENCE: `/private/tmp/hsq-fa-gllvm-docs-20260927-final2.log` exited 0 from a writable identical source copy with a temporary local Git repository for Documenter metadata. The managed checkout itself could not regenerate the status page under the sandbox.
+  EVIDENCE: `/private/tmp/hsq-fa-gllvm-docs-20260927-w203-w3.log` exited 0 from the writable content-matched source copy with a temporary local Git repository for Documenter metadata. The managed checkout itself cannot regenerate the status page under the sandbox.
 
 - [ ] V3: R package check, bridge parity, current CI, capability/debt rows, check logs, after-task reports, and Rose audit pass for the final candidate.
-  EVIDENCE: R package check Status: OK (`/private/tmp/hsquared-fa-gllvm-rcmdcheck-20260927-postrose.log`); pkgdown check clean; 50 FA and 49 GLLVM live parity checks plus final opt-in rerun; both twins' capability/debt rows and reports updated; Rose audit clean with limitations (`docs/dev-log/source-review/2026-09-27-rose-claims.md`). CI and final cross-repo panel signoff are pending.
+  EVIDENCE: R package check Status: OK after the ID guard (`/private/tmp/hsquared-fa-gllvm-rcmdcheck-20260927-idguard.log`); pkgdown check clean; 50 FA and 49 GLLVM same-input parity checks, updated live FA test file, and no-fit unsorted pedigree parity passed; both twins' capability/debt rows and reports updated; Rose audit clean with limitations (`docs/dev-log/source-review/2026-09-27-rose-claims.md`). CI is queued and final cross-repo panel signoff is pending.
 
 - [x] V4: The candidate stops before CRAN submission, Julia registry submission, and public release tag.
   EVIDENCE: Candidate branches retain version 0.9.0 and contain no new public release tag or submission. The user's existing 0.9.0 CRAN submission remains in its separate review lane.

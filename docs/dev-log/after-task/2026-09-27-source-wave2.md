@@ -4,7 +4,7 @@
 Review multivariate, genetic GLLVM, non-Gaussian, and random-regression sources against baseline `faed40182cdbba2bf69f3e8dff0c5054be2dd214`, preserving unresolved model and inference risks.
 
 ## 2. Implemented
-Scoped follow-up repaired beta-binomial observed curvature for final Laplace determinants, explicit constant-endpoint flat-effect refusals, and honest labels distinguishing ELBO, exact Gaussian REML, and variational-Laplace objectives. Coordinator wired observed-curvature and endpoint guards into GLLVM. The four-file review remains **HOLD**; most findings remain carried.
+Scoped follow-up repaired beta-binomial observed curvature for final Laplace determinants, explicit constant-endpoint flat-effect refusals, and honest labels distinguishing ELBO, exact Gaussian REML, and variational-Laplace objectives. Coordinator wired observed-curvature and endpoint guards into GLLVM. A further W2-03 repair validates relationship precision and RR covariance across the reviewed entries. The four-file review remains **HOLD**; other findings remain carried.
 
 ## 3a. Decisions and Rejected Alternatives
 Fisher information remains for scoring; observed curvature is used for the final determinant and non-positive-definite curvature is refused. Retained the historical numeric `elbo` field for compatibility while identifying the actual objective. General non-intercept separation and covariance fixed-point convergence were not represented as solved.
@@ -19,7 +19,7 @@ Packet reports test-first 17 pass/20 fail/0 errors, then 37/37 for the initial s
 Observed curvature is compared with central differences of the score and the final determinant with an independent finite-difference joint log-density Hessian. Endpoint cases include Poisson/Bernoulli/binomial constant responses with an intercept and valid no-fixed-effect cases. Gaussian reduction and objective labels have dedicated assertions.
 
 ## 7a. Issue Ledger
-Carried findings include covariance/precision validation breadth (W2-03), repeatability inference model-class refusal (W2-04), scale-relative PSD checks (W2-06), extractor/heritability contracts (W2-07), inference prerequisites (W2-08), and GLLVM family/input validation (W2-09). W2-02 remains open for non-intercept separation and other family cases; W2-05 covariance-loop convergence remains open. Full panel signoff is open.
+W2-03 now has bounded independent signoff: 71/71 persistent assertions and Astra's 19/19 extra probes. Carried findings include repeatability inference model-class refusal (W2-04), extractor/heritability contracts (W2-07), inference prerequisites (W2-08), and GLLVM family/input validation (W2-09). The scale-relative PSD check (W2-06) has a separate coordinator repair. W2-02 remains open for non-intercept separation and other family cases; W2-05 covariance-loop convergence remains open. Full panel signoff is open.
 
 ## 8. Consistency Audit
 All four assigned Julia source files were reviewed in full at the recorded candidate hashes. FA identifiability, GLLVM trait-mode reconstruction, Gaussian covariance ordering, and RR coefficient ordering were checked within stated spans. This does not certify the open findings or establish inference calibration or capability promotion.

@@ -326,17 +326,16 @@ function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::Abstra
     size(K_g, 1) == k && size(K_g, 2) == k ||
         throw(ArgumentError("K_g must be $k×$k (k = number of basis columns in Phi)"))
     sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
-    Ksym = Symmetric(Matrix{Float64}(K_g))
-    isposdef(Ksym) || throw(ArgumentError("K_g must be positive definite"))
+    Ksym = Symmetric(_check_positive_definite_matrix(K_g, "K_g", k))
     yv = Float64.(y)
     Xm = Matrix{Float64}(X)
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
     all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
+    Ai = _check_relationship_precision(Ainv, q)
 
     W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
-    Ginv = kron(sparse(Float64.(Matrix(Ainv))), sparse(inv(Ksym)))   # q·k × q·k precision
+    Ginv = kron(sparse(Ai), sparse(inv(Ksym)))   # q·k × q·k precision
     p = size(Xm, 2)
     # MME scaled by sigma_e2 (residual precision I/sigma_e2):
     #   [X'X  X'W;  W'X  W'W + sigma_e2·(Ainv⊗K_g⁻¹)] [β; a] = [X'y; W'y]
@@ -459,19 +458,17 @@ function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::A
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
     all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
+    Ai = _check_relationship_precision(Ainv, q)
 
     W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
-    A = inv(Symmetric(Matrix{Float64}(Matrix(Ainv))))
+    A = inv(Symmetric(Ai))
 
     mu = sum(yv) / n
     vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
     vp > 0 || (vp = 1.0)
 
     if initial !== nothing && hasproperty(initial, :K_g)
-        K_g_start = Matrix(Float64.(Matrix(initial.K_g)))
-        size(K_g_start) == (k, k) || throw(ArgumentError("initial.K_g must be $k×$k"))
-        isposdef(Symmetric(K_g_start)) || throw(ArgumentError("initial.K_g must be positive definite"))
+        K_g_start = _check_positive_definite_matrix(initial.K_g, "initial.K_g", k)
     else
         K_g_start = Matrix(Diagonal(fill(0.5 * vp, k)))
     end

@@ -629,6 +629,7 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    Ai = _check_relationship_precision(Ai, q)
     _check_counts(family, yv)
     _check_flat_effect_integral(family, yv, Xd)
 
@@ -779,6 +780,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    Ai = _check_relationship_precision(Ai, q)
     _check_counts(family, yv)
     _check_flat_effect_integral(family, yv, Xd)
     P0 = Ai ./ sigma_a2
@@ -1173,6 +1175,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     # then store the canonical symbol. Value-preserving for :laplace/:variational.
     mm = _marginal_method(marginal)
     marginal = _marginal_method_symbol(mm)
+    Ainv = _check_relationship_precision(Ainv, size(Z, 2))
     margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
     val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)

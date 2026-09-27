@@ -5979,3 +5979,30 @@ Integration follow-up: the writable source copy passed a full `Pkg.test()` befor
 `docs/make.jl` initially hit a checkout write restriction when regenerating `docs/src/validation-status.md`. In a writable identical source copy, Documenter then found a newly unresolved link to the unexported `variational_marginal_loglik`; changing that docstring to plain code text cleared the error. The local docs build exited **0** (`/private/tmp/hsq-fa-gllvm-docs-20260927-final2.log`). The copy used a temporary local Git repository so Documenter could resolve its remote metadata; it was not pushed or tagged. Wave-4's planned-term text regression passed **8/8** and its packet remains HOLD for whole-wave signoff. Rose's repo-visible claim audit is clean with limitations for the bounded FA/GLLVM R routes, with the public covered count at seven.
 
 One independent fitted same-model FA comparison is now recorded in `docs/dev-log/scout/2026-09-27-fa-same-model-reference.md`: base-R BFGS and Julia Nelder-Mead agree in G within 7.25e-6, R within 1.58e-5, and in cross-evaluated REML objectives and EBVs on a 12-animal T=4 K=1 fixture. Two uniqueness estimates are near the floor; interior identification, routine-start recovery, external-package parity, and interval calibration remain open. No Totoro run was attempted because it is down. All fits and checks here were estimated under three hours and run locally; no DRAC job or GPU work was needed.
+
+Post-review integration on 2026-09-27: W1-06 response-shift cancellation was
+measured with a fixed-variance intercept ladder. At +1e8, sparse REML moved
+by about 6.69 log-likelihood units while the dense oracle stayed invariant.
+The test was red in 8/16 new assertions across single-effect, multi-effect,
+matrix-free, and genomic-profile paths; the residual-form correction passed
+40/40 wave-1 assertions. W2-03 precision validation now passes 71/71
+persistent assertions; Astra independently passed 19/19 sparse, scale, and
+invalid-prior probes and signed off this bounded repair. W3 legacy maternal
+labels, explicit `ids2` permutation, and lone-iid dispatch passed 29/29
+no-fit assertions. The R twin's unsorted-pedigree no-fit live bridge probe
+and updated live FA test file passed; its post-guard package check is
+Status: OK. These repairs do not close the four HOLD source-review waves.
+
+The current source candidate passed a full `Pkg.test()` in the writable,
+content-matched copy (`/private/tmp/hsq-fa-gllvm-pkg-test-20260927-w203-w3.log`,
+exit 0, `HSQ_JULIA_TESTS_OK`). A checksum-based `rsync -ainc` found no
+content differences between candidate and copy under `src/` or `test/`.
+The local docs build also exited 0
+(`/private/tmp/hsq-fa-gllvm-docs-20260927-w203-w3.log`); default
+DocumenterVitepress asset warnings remain informational for this build.
+Both twin preamble-cap checks passed. The first local suite/docs attempts
+were blocked before tests by the sandbox denying Julia's normal package
+cache pidfile; approved local-cache reruns passed. GitHub Actions checks
+for draft PRs Julia #401 and R #259 were still queued at last poll, so
+current CI remains unverified. No DRAC run was needed for these short local
+checks; no GPU or release action occurred.

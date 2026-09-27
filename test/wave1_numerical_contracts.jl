@@ -62,4 +62,32 @@ using HSquared
         @test apy_genomic_relationship_inverse(symmetric, [1, 2]; ridge = 0.1) ≈
             genomic_relationship_inverse(symmetric; ridge = 0.1)
     end
+    @testset "REML quadratics survive a large fitted intercept" begin
+        n = 8
+        y0 = [1.0, 3.0, 2.0, 5.0, 1.5, 4.0, 2.5, 6.0]
+        X = ones(n, 1)
+        Z = sparse(1.0I, n, n)
+        Q = spdiagm(0 => collect(1.0:n), 1 => fill(0.1, n - 1),
+                    -1 => fill(0.1, n - 1))
+        effects = [(Z, Q)]
+        reference = gaussian_loglik(
+            animal_model_spec(y0, X, Z, Q; ids = string.(1:n), method = :REML),
+            1.2, 0.8; method = :REML).loglik
+        baseline_mc = matrix_free_reml_loglik(y0, X, effects, [1.2], 0.8;
+            pcg_tol = 1e-12, slq_probes = 2, slq_steps = 8, seed = 11)[1]
+        for shift in (0.0, 1e4, 1e6, 1e8)
+            y = y0 .+ shift
+            spec = animal_model_spec(y, X, Z, Q; ids = string.(1:n), method = :REML)
+            @test sparse_reml_loglik(spec, 1.2, 0.8).loglik ≈ reference atol = 1e-5
+            @test sparse_multi_reml_loglik(y, X, effects, [1.2], 0.8)[1] ≈
+                  reference atol = 1e-5
+            @test matrix_free_reml_loglik(y, X, effects, [1.2], 0.8;
+                pcg_tol = 1e-12, slq_probes = 2, slq_steps = 8, seed = 11)[1] ≈
+                  baseline_mc atol = 1e-5
+            context = (eigenvalues = ones(n), y = y, X = X, n = n, p = 1)
+            baseline_context = (eigenvalues = ones(n), y = y0, X = X, n = n, p = 1)
+            @test HSquared._genomic_profile_reml(context, 0.5).loglik ≈
+                  HSquared._genomic_profile_reml(baseline_context, 0.5).loglik atol = 1e-5
+        end
+    end
 end
