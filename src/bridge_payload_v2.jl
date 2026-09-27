@@ -68,7 +68,7 @@ end
 # inbreeding coefficients `pedigree_inverse` already computes, in `Ainv`'s own
 # (normalized) row order. `reliability` reads its denominator from them instead of a
 # selected inverse of `Ainv`.
-function _build_ainv_and_diag_from_block_pedigree(ped)
+function _build_ainv_and_diag_from_block_pedigree(ped; ids = nothing)
     # Accept both Dict (JuliaCall) and NamedTuple forms.
     ids_raw  = _field(ped, "id",   :id)
     sire_raw = _field(ped, "sire", :sire)
@@ -78,6 +78,20 @@ function _build_ainv_and_diag_from_block_pedigree(ped)
     dam_raw  === nothing && throw(ArgumentError("pedigree block missing field 'dam'"))
     pedigree = normalize_pedigree(collect(ids_raw), collect(sire_raw), collect(dam_raw))
     Ainv, F = _pedigree_inverse_and_inbreeding(pedigree)
+    if ids !== nothing
+        length(ids) == length(pedigree) || throw(ArgumentError(
+            "pedigree block ids length must match pedigree rows"))
+        length(unique(ids)) == length(ids) || throw(ArgumentError(
+            "pedigree block ids must be unique"))
+        position = Dict{Any,Int}(id => i for (i, id) in enumerate(pedigree.ids))
+        all(id -> haskey(position, id), ids) || throw(ArgumentError(
+            "pedigree block ids must match pedigree IDs"))
+        order = [position[id] for id in ids]
+        if !all(i -> order[i] == i, eachindex(order))
+            Ainv = Ainv[order, order]
+            F = F[order]
+        end
+    end
     return Ainv, 1 .+ F
 end
 
@@ -94,7 +108,7 @@ _resolve_relmat_inverse(block, Z) = first(_resolve_relmat(block, Z))
 
 # `(relmat_inverse, relationship_diag)`: the diagonal of `inv(relmat_inverse)` is
 # known for free only when Julia builds a pedigree `Ainv` itself; otherwise `nothing`.
-function _resolve_relmat(block, Z)
+function _resolve_relmat(block, Z; ids = nothing)
     status = _field(block, "relmat_status", :relmat_status)
     status = status === nothing ? "build_in_julia" : string(status)
 
@@ -105,7 +119,7 @@ function _resolve_relmat(block, Z)
         ped = _field(block, "pedigree", :pedigree)
         ped === nothing && throw(ArgumentError(
             "block with relmat_status='build_in_julia' must supply a 'pedigree' field"))
-        return _build_ainv_and_diag_from_block_pedigree(ped)
+        return _build_ainv_and_diag_from_block_pedigree(ped; ids = ids)
     elseif status == "supplied"
         ri = _field(block, "relmat_inverse", :relmat_inverse)
         ri === nothing && throw(ArgumentError(
@@ -134,13 +148,12 @@ function _parse_one_block(block)
     status_raw = _field(block, "relmat_status", :relmat_status)
     status_raw === nothing && throw(ArgumentError(
         "payload-v2 block '$name' is missing required field 'relmat_status'"))
-    relmat_inverse, relationship_diag = _resolve_relmat(block, Z)
-
     # §2: ids field for this block (level ids vector)
     ids_raw = _field(block, "ids", :ids)
     ids_raw === nothing && throw(ArgumentError(
         "payload-v2 block '$name' is missing required field 'ids'"))
     block_ids = collect(ids_raw)
+    relmat_inverse, relationship_diag = _resolve_relmat(block, Z; ids = block_ids)
 
     if btype == "correlated"
         # §2 correlated block: Z → Zd, partner_incidence → Zm.
@@ -362,6 +375,9 @@ function _lift_legacy_payload(payload)
     end
 
     ids_raw = _field(payload, "ids", :ids)
+    if ids_raw === nothing && ped !== nothing
+        ids_raw = _field(ped, "id", :id)
+    end
     block_ids = ids_raw === nothing ? collect(1:size(Z, 2)) : collect(ids_raw)
 
     # Build first block
@@ -370,7 +386,7 @@ function _lift_legacy_payload(payload)
     if string(ainv_status) == "build_in_julia"
         ped === nothing && throw(ArgumentError(
             "legacy payload with ainv_status='build_in_julia' must supply 'pedigree'"))
-        Ainv, relationship_diag = _build_ainv_and_diag_from_block_pedigree(ped)
+        Ainv, relationship_diag = _build_ainv_and_diag_from_block_pedigree(ped; ids = block_ids)
     elseif string(ainv_status) == "supplied"
         Ainv_raw = _field(payload, "Ainv", :Ainv)
         Ainv_raw === nothing && throw(ArgumentError(

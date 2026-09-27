@@ -79,6 +79,9 @@ include("test_aqua.jl")
 
 @testset "HSquared Phase 0 scaffold" begin
     control = HSControl()
+    placeholder_message = sprint(showerror, Phase0NotImplementedError("unwired target"))
+    @test occursin("not implemented on this route", placeholder_message)
+    @test !occursin("Model fitting is planned but not implemented", placeholder_message)
 
     @test control.backend isa AutoBackend
     @test control.accelerator == :auto
@@ -208,8 +211,8 @@ include("test_aqua.jl")
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
     @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
     gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
-    @test occursin("Laplace marginal likelihood", gllvm_row.evidence)
-    @test occursin("not REML", gllvm_row.claim_boundary)
+    @test occursin("fixed-and-genetic-effect integrated Laplace", gllvm_row.evidence)
+    @test occursin("not ordinary non-Gaussian ML or REML", gllvm_row.claim_boundary)
     @test occursin("Gaussian reduction", gllvm_row.claim_boundary)
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
@@ -350,7 +353,8 @@ include("test_aqua.jl")
     @test !occursin("default-routed and covered", grammar_page)
     @test !occursin("R-public default route", bridge_page)
     gllvm_source_normalized = replace(gllvm_source, "\r\n" => "\n")
-    @test occursin("fitted\nmarginal-likelihood optimum", gllvm_source_normalized)
+    @test occursin("fixed-and-genetic-effect integrated objective", gllvm_source_normalized)
+    @test occursin("not ordinary non-Gaussian ML", gllvm_source_normalized)
     @test !occursin("structured non-Gaussian REML recovery", gllvm_source)
     @test !occursin("at the REML optimum", gllvm_source)
 
@@ -367,7 +371,7 @@ include("test_aqua.jl")
     @test occursin("not R-public", capability_page)
     @test occursin("V4-FA", debt_page)
     @test occursin("V2-SSHINV", debt_page)
-    @test occursin("R FA planned", debt_page)
+    @test occursin("bounded R FA expert-control route is experimental/partial", debt_page)
     @test occursin("R `single_step()` stays opt-in partial", debt_page)
     @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", capability_page)
     @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", debt_page)
@@ -465,7 +469,7 @@ include("test_aqua.jl")
     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
     # SEs stay honestly absent (rotation-nonidentified loadings)
     @test occursin("covariance_structure_lrt", fa_row.evidence)
-    @test occursin("rotation-nonidentified", fa_row.evidence)
+    @test occursin("rotation-nonidentified", fa_row.missing)
     @test !occursin("covariance SEs or LRTs", fa_row.missing)
     @test occursin("standard errors for the rotation-nonidentified structured loadings", fa_row.missing)
     # #42 scoped: the diagonal/unstructured bridge payload row
@@ -604,9 +608,9 @@ include("test_aqua.jl")
         end
 
         @test err isa ArgumentError
-        @test occursin("`$(name)()` is planned, not implemented.", sprint(showerror, err))
-        @test occursin("no standard quantitative-genetic extension", sprint(showerror, err))
-        @test occursin("genomic prediction", sprint(showerror, err))
+        @test occursin("`$(name)()` is a reserved formula term", sprint(showerror, err))
+        @test occursin("formula-term route is not implemented", sprint(showerror, err))
+        @test !occursin("no genomic prediction", sprint(showerror, err))
     end
 
     @test_throws Phase0NotImplementedError hsquared(nothing)
@@ -8455,6 +8459,71 @@ end
     @test any(q -> "gryphon_bwt_reml" in q["arc_ids"], review["questions"])
 end
 
+@testset "FA t=4 K=1 local rank, uniqueness, and variance units" begin
+    # Differential of vech(λλ' + diag(ψ)) with respect to (λ, ψ).
+    function fa_jacobian(λ)
+        J = zeros(10, 8)
+        row = 0
+        for i in 1:4, j in i:4
+            row += 1
+            J[row, i] += λ[j]
+            J[row, j] += λ[i]
+            if i == j
+                J[row, 4 + i] = 1.0
+            end
+        end
+        return J
+    end
+
+    λ = [0.9, 0.55, -0.35, 0.4]
+    ψ = [0.35, 0.45, 0.55, 0.5]
+    G = factor_analytic_covariance(reshape(λ, 4, 1), ψ)
+    @test ledermann_slack(4, 1) == 4
+    @test rank(fa_jacobian(λ)) == 8
+    @test factor_analytic_covariance(reshape(-λ, 4, 1), ψ) ≈ G
+    # Three nonzero off-diagonal products recover each loading square,
+    # hence ψ_i = G_ii - λ_i², up to the single global loading sign.
+    pairs = ((2, 3), (1, 3), (1, 2), (1, 2))
+    ψ_recovered = [G[i, i] - G[i, j] * G[i, k] / G[j, k]
+                   for (i, (j, k)) in enumerate(pairs)]
+    @test ψ_recovered ≈ ψ
+
+    # Positive Ledermann slack alone does not identify ψ: with only two
+    # nonzero loadings, their product is fixed while their squares can move.
+    λ_sparse = [1.0, 1.0, 0.0, 0.0]
+    ψ_sparse = ones(4)
+    c = 1.1
+    λ_alternative = [c, inv(c), 0.0, 0.0]
+    ψ_alternative = [2 - c^2, 2 - inv(c)^2, 1.0, 1.0]
+    @test minimum(ψ_alternative) > FA_UNIQUENESS_FLOOR
+    @test rank(fa_jacobian(λ_sparse)) == 7
+    @test ψ_alternative != ψ_sparse
+    @test factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse) ≈
+          factor_analytic_covariance(reshape(λ_alternative, 4, 1), ψ_alternative)
+    # The LRT still computes a nominal tail for this singular FA point; its
+    # note must not certify regularity from the rotation-adjusted df alone.
+    G_sparse = factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse)
+    fa_null = (genetic_covariance = G_sparse, genetic_structure = :factor_analytic,
+               genetic_rank = 1, loglik = -100.0)
+    unrestricted = (genetic_covariance = G_sparse, genetic_structure = :unstructured,
+                    genetic_rank = nothing, loglik = -95.0)
+    lrt = covariance_structure_lrt(fa_null, unrestricted)
+    @test lrt.df == 2
+    @test lrt.reference == :chisq
+    @test occursin("nominal", lrt.note)
+    @test !occursin("exact", lrt.note)
+
+    # ψ is a variance: multiplying trait values by c multiplies λ by c and
+    # ψ by c². The frozen 1e-4 fitter floor stays absolute, so its admissible
+    # start region changes near the floor even though the covariance scales.
+    near_floor = fill(2 * FA_UNIQUENESS_FLOOR, 4)
+    scale = 0.5
+    @test factor_analytic_covariance(reshape(scale .* λ, 4, 1), scale^2 .* near_floor) ≈
+          scale^2 .* factor_analytic_covariance(reshape(λ, 4, 1), near_floor)
+    @test all(isfinite, HSquared._fa_uniqueness_to_unconstrained(near_floor))
+    @test_throws ArgumentError HSquared._fa_uniqueness_to_unconstrained(scale^2 .* near_floor)
+end
+
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
     Λ = reshape([1.0, -2.0], 2, 1)
@@ -9149,7 +9218,7 @@ end
     @test cib.level == 0.95
     @test cib.lower_clamped && cib.upper_clamped         # degenerate: both endpoints are bounds
 
-    # marginal = :variational is REJECTED (the ELBO is a lower bound, not a χ²₁ LRT).
+    # The variational objective does not supply a calibrated χ²₁ likelihood-ratio test.
     @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
                                     family = :binomial, n_trials = m, marginal = :variational)
 
@@ -10315,7 +10384,7 @@ end
     @test gr2.converged
     @test gr2.loglik ≥ gl(Yp2, Ainv, Λ0, HSquared.PoissonResponse(); X = X).loglik - 1e-6
     @test size(gr2.genetic_covariance) == (2, 2)
-    @test size(gr2.breeding_values) == (q, 1)
+    @test size(gr2.breeding_values) == size(Yp2)
     @test haskey(gr2.latent_structure, :communality)
 
     # --- Gaussian self-consistency: the marginal at the optimum equals the multivariate
@@ -10404,7 +10473,7 @@ end
     @test fit_mix.converged
     @test isfinite(fit_mix.loglik)
     @test size(fit_mix.genetic_covariance) == (2, 2)
-    @test size(fit_mix.breeding_values) == (q, 1)
+    @test size(fit_mix.breeding_values) == size(Ymix)
 
     # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
     Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
@@ -10420,10 +10489,10 @@ end
     @test G isa Matrix{Float64}
     @test size(G) == (2, 2)
     @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
-    #   breeding_values: q × K matrix
+    #   breeding_values: q × T trait genetic conditional modes
     bv = HSquared.breeding_values(fit_scalar)
     @test bv isa Matrix{Float64}
-    @test size(bv) == (q, 1)
+    @test size(bv) == size(Yp2)
     #   latent_structure: NamedTuple with communality field
     ls = HSquared.latent_structure(fit_scalar)
     @test haskey(ls, :communality)
@@ -10979,3 +11048,13 @@ include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
 # 1 + F: the reliability denominator from the inbreeding coefficients pedigree_inverse
 # already computes, carried on the spec (Szymek Drobniak, #350 follow-up).
 include(joinpath(@__DIR__, "test_relationship_diag_1pF.jl"))
+
+include(joinpath(@__DIR__, "genetic_gllvm_trait_effects.jl"))
+
+include(joinpath(@__DIR__, "fa_independent_dense_reml.jl"))
+include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
+include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
+include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
+include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
+include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))
+include(joinpath(@__DIR__, "wave4_planned_term_wording.jl"))

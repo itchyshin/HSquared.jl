@@ -29,15 +29,16 @@ NamedTuple:
 - `g_max` — leading genetic principal axis of `Σ_g`;
 - `rank` / `n_latent_factors` — the latent-factor count `K = size(Λ, 2)`.
 
-DESCRIPTIVE, supplied-covariance only: `Λ`/`Ψ` are NOT estimated, there is no
-marginal / likelihood / fit, no R model-spec or bridge payload, and only
+DESCRIPTIVE, supplied-covariance only: `Λ`/`Ψ` are NOT estimated by this
+descriptor function, which computes no marginal / likelihood / fit or bridge
+payload. Only
 rotation-INVARIANT functionals of `Σ_g` are returned — never the raw loadings `Λ`
 (which are rotation-nonidentified). For any orthogonal `Q`, `Λ → ΛQ` leaves every
 returned quantity invariant (the `genetic_pca` eigenvectors up to sign). Guards
 (dimension / positivity / rank) are delegated to [`lowrank_covariance`](@ref) and
 [`factor_analytic_covariance`](@ref). The first foundation step of the genetic
-GLLVM (#50); the supplied-covariance latent marginal and REML estimation are later
-slices.
+GLLVM (#50); the supplied-covariance latent objective and estimation were added
+in later slices below.
 """
 function genetic_gllvm_descriptors(loadings::AbstractMatrix; uniqueness = nothing)
     Σ_g = uniqueness === nothing ?
@@ -146,11 +147,13 @@ end
 """
     gllvm_laplace_marginal_loglik(Y, Ainv, loadings, family; X = ones(size(Y,1), 1), tol = 1e-10, maxiter = 100)
 
-Laplace-approximate marginal log-likelihood of the **K-factor genetic GLLVM** with
+Laplace-approximate fixed-and-genetic-effect integrated objective of the
+**K-factor genetic GLLVM** with
 SUPPLIED `T×K` loadings `Λ`. The latent field `vec(g) ~ N(0, I_K ⊗ A)` (`A⁻¹ = Ainv`)
 enters `η[i,t] = (Xβ)[i,t] + Σ_k Λ[t,k] g[i,k]` and `y[i,t] | η[i,t] ~ family`
 (a `ResponseFamily` or a length-`T` `Vector` of `ResponseFamily`s — one per trait column
-of `Y`); `β` is integrated under a flat prior. `Y` is the `q×T` response matrix
+of `Y`); `β` is integrated under a flat measure, not optimized as in ordinary
+non-Gaussian ML. `Y` is the `q×T` response matrix
 (balanced, fully observed); `X` is the `q×p` individual-level fixed-effect design
 (per-trait coefficients; default per-trait intercept). Returns
 `(loglik, beta (p×T), g (q×K), converged, gradient_norm, iterations)`.
@@ -163,6 +166,11 @@ uniformly to all traits; a uniform `Vector` of `T` identical families gives nume
 IDENTICAL results to the scalar path (the per-record dispatch is the same). The vector
 length must equal `T = size(Y, 2)`; a mismatch throws `ArgumentError`. Per-trait
 `_check_counts` is run per column against its own family before the Newton loop.
+`X` must have full column rank under the flat fixed-effect measure. An all-zero
+Poisson trait with an intercept is rejected because its integrated objective is
+improper. Nonzero-count Poisson traits with an intercept start at the log trait
+mean; this improves the bounded high-count case but is not a general solver
+guarantee.
 
 Generalizes [`laplace_marginal_loglik`](@ref) (the `K = 1` single-factor case, to
 which it reduces EXACTLY, the Laplace approximation being invariant under the affine
@@ -173,8 +181,9 @@ positive definite (`P = I_K ⊗ Ainv` is full-rank regardless), so `K < T` /
 ([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The convergence
 flag lags the mode by one Newton step (as in the single-factor kernel), so an exact
 Gaussian solve needs `maxiter ≥ 2`. EXPERIMENTAL, dense / validation-scale, SUPPLIED
-loadings (NOT estimated — slice 3 REML), balanced/fully-observed `Y` only; INTERNAL
-(not exported, mirroring the single-factor kernel), no R model-spec.
+loadings (NOT estimated by this kernel), balanced/fully-observed `Y` only; INTERNAL
+(not exported, mirroring the single-factor kernel). The bounded R Poisson route
+uses the fitted kernel below, not this supplied-loading function.
 """
 function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                        loadings::AbstractMatrix,
@@ -210,6 +219,14 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
 
     K = size(Λ, 2)
     p = size(Xd, 2)
+    rank(Xd) == p || throw(ArgumentError(
+        "X must have full column rank for a proper flat-measure fixed-effect integral"))
+    intercept_direction = p == 0 ? Float64[] : Xd \ ones(q)
+    has_intercept = norm(Xd * intercept_direction .- 1.0) <= 1e-8 * sqrt(q)
+    for t in 1:T
+        fam_t = fam_of_t === nothing ? family : fam_of_t[t]
+        _check_flat_effect_integral(fam_t, @view(Yd[:, t]), Xd)
+    end
 
     # records r = (i,t): β trait-major (trait t → cols (t-1)p+1:t·p), g factor-major
     # (factor k → cols (k-1)q+1:k·q); W scatters Λ[t,:] into animal i's K factor slots.
@@ -236,6 +253,7 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     # Convenience closures: dispatch to per-record family (scalar or per-trait).
     _score(r, y, η) = fam_of_r === nothing ? _fam_score(family, y, η) : _fam_score(fam_of_r[r], y, η)
     _weight(r, y, η) = fam_of_r === nothing ? _fam_weight(family, y, η) : _fam_weight(fam_of_r[r], y, η)
+    _observed_weight(r, y, η) = fam_of_r === nothing ? _fam_observed_weight(family, y, η) : _fam_observed_weight(fam_of_r[r], y, η)
     _loglik_r(r, y, η) = fam_of_r === nothing ? _fam_loglik(family, y, η) : _fam_loglik(fam_of_r[r], y, η)
 
     # latent prior precision P = I_K ⊗ Ainv (block diagonal, K blocks of Ainv)
@@ -247,6 +265,15 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
 
     pβ = p * T
     β = zeros(pβ)
+    if has_intercept
+        for t in 1:T
+            fam_t = fam_of_t === nothing ? family : fam_of_t[t]
+            if fam_t isa PoissonResponse
+                mean_count = sum(@view Yd[:, t]) / q
+                β[((t - 1) * p + 1):(t * p)] .= log(mean_count) .* intercept_direction
+            end
+        end
+    end
     g = zeros(q * K)
     gnorm = Inf
     iters = 0
@@ -273,7 +300,7 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     end
 
     η = Xrec * β .+ W * g
-    w = [_weight(i, yv[i], η[i]) for i in 1:n]
+    w = [_observed_weight(i, yv[i], η[i]) for i in 1:n]
     WX = w .* Xrec
     WW = w .* W
     H = [transpose(Xrec)*WX  transpose(Xrec)*WW
@@ -305,14 +332,15 @@ the same nine fields as the former bare `NamedTuple` return and exposes typed
 extractor methods:
 
 - `genetic_covariance(fit)` — the rotation-invariant `G_lat` matrix
-- `breeding_values(fit)`    — `q × K` common-factor EBV scores
+- `breeding_values(fit)`    — `q × T` trait genetic conditional modes on the link scale
 - `latent_structure(fit)`   — the `genetic_gllvm_descriptors` NamedTuple
-- `loglik(fit)`             — the Laplace marginal log-likelihood at the optimum
+- `loglik(fit)`             — the fitted fixed-and-genetic-effect integrated Laplace objective
 
 All other fields (`uniqueness`, `beta`, `n_latent_factors`, `converged`,
 `iterations`) are accessible via `fit.fieldname`. INTERNAL (not exported).
 EXPERIMENTAL — dense/validation-scale, supplied Gaussian/non-Gaussian families,
-balanced/fully-observed `Y`, no R model-spec or bridge payload.
+balanced/fully-observed `Y`. The R twin exposes only a bounded Poisson-log
+three-trait, two-factor pedigree route through expert controls.
 """
 struct GeneticGLLVMFit
     loglik::Float64
@@ -341,8 +369,10 @@ genetic_covariance(fit::GeneticGLLVMFit) = fit.genetic_covariance
 """
     breeding_values(fit::GeneticGLLVMFit)
 
-Return the `q × K` matrix of common-factor breeding-value scores (the Newton
-mode of `vec(g)`, reshaped) from a `GeneticGLLVMFit` (internal struct).
+Return the `q × T` trait genetic conditional modes on the link scale from a
+`GeneticGLLVMFit` (internal struct). These combine common factors and, for
+factor-analytic fits, trait-specific genetic modes. They are invariant to an
+orthogonal rotation of the common factors; they are not posterior means.
 """
 breeding_values(fit::GeneticGLLVMFit) = fit.breeding_values
 
@@ -358,29 +388,49 @@ latent_structure(fit::GeneticGLLVMFit) = fit.latent_structure
 """
     loglik(fit::GeneticGLLVMFit)
 
-Return the Laplace-approximate marginal log-likelihood at the fitted
-marginal-likelihood optimum
-from a `GeneticGLLVMFit` (internal struct).
+Return the Laplace approximation to the objective that integrates both fixed
+effects (under flat measure) and genetic modes from a `GeneticGLLVMFit`.
+Only its Gaussian reduction is REML; this is not ordinary non-Gaussian ML.
 """
 loglik(fit::GeneticGLLVMFit) = fit.loglik
+
+function _gllvm_trait_effects(modes::AbstractMatrix, loadings::AbstractMatrix,
+                              uniqueness::Union{Nothing,AbstractVector})
+    _, nmodes = size(modes)
+    T, K = size(loadings)
+    expected_modes = uniqueness === nothing ? K : K + T
+    nmodes == expected_modes || throw(DimensionMismatch(
+        "latent mode matrix has $nmodes columns; expected $expected_modes for $K factors and $T traits"))
+    F = @view modes[:, 1:K]
+    U = Matrix(F * transpose(loadings))
+    if uniqueness !== nothing
+        length(uniqueness) == T || throw(DimensionMismatch(
+            "uniqueness has length $(length(uniqueness)); expected $T"))
+        D = @view modes[:, (K + 1):(K + T)]
+        U .+= D * Diagonal(sqrt.(uniqueness))
+    end
+    return U
+end
 
 """
     fit_gllvm_laplace_reml(Y, Ainv, family; rank, structure = :lowrank, X = ones(size(Y,1), 1),
                            initial = nothing, initial_uniqueness = nothing, ...)
 
-Genetic-GLLVM Laplace-marginal fitting (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
-maximizing the K-factor Laplace marginal [`gllvm_laplace_marginal_loglik`](@ref) over
+Genetic-GLLVM integrated-Laplace fitting (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
+maximizing the K-factor fixed-and-genetic-effect integrated objective [`gllvm_laplace_marginal_loglik`](@ref) over
 the loadings (NelderMead). The among-trait genetic covariance is `G_lat = ΛΛ'`
 (`structure = :lowrank`) or `G_lat = ΛΛ' + diag(Ψ)` (`structure = :factor_analytic`,
 adding a per-trait specific genetic variance `Ψ > 0` — fitted on the `log` scale). The
 FA structure is fitted by augmenting the loadings to `[Λ | diag(√Ψ)]` (so
 `G_lat = ΛΛ' + diag(Ψ)`) and reusing the marginal unchanged. The marginal depends on
 the loadings only through `G_lat`, so it is ROTATION-INVARIANT; the returned
-`genetic_covariance` / `latent_structure` / `uniqueness` are the rotation-invariant
-functionals (the raw `Λ̂` is an arbitrary point on the rotation manifold, NOT reported
-as identified). Returns a `GeneticGLLVMFit` (internal struct) with fields `loglik`,
+`genetic_covariance` / `latent_structure` / `uniqueness` are unchanged by a
+rotation of the common factors. Rotation invariance does not by itself identify
+the FA decomposition or `Ψ`; the raw `Λ̂` is an arbitrary point on the rotation
+manifold and is not reported as an identified biological axis. Returns a
+`GeneticGLLVMFit` (internal struct) with fields `loglik`,
 `genetic_covariance`, `latent_structure`, `uniqueness`, `beta (p×T)`,
-`breeding_values (q×K common-factor scores)`, `n_latent_factors`, `converged`,
+`breeding_values (q×T trait conditional modes)`, `n_latent_factors`, `converged`,
 `iterations`; typed extractor methods `genetic_covariance(fit)`,
 `breeding_values(fit)`, `latent_structure(fit)`, and `loglik(fit)` are
 defined on `GeneticGLLVMFit`.
@@ -397,8 +447,10 @@ For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not es
 the non-Gaussian families have no residual. The `K = 1, T = 1` Poisson `:lowrank` case
 reduces to the single-factor [`fit_laplace_reml`](@ref) (`σ²a = λ̂²`). EXPERIMENTAL,
 dense/validation-scale, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a
-known-truth recovery claim (structured non-Gaussian Laplace-marginal recovery is a separate opt-in
-study, and the multivariate FA recovery has not passed); no R model-spec or bridge payload.
+general recovery or calibration claim (the opt-in study covers particular complete-data
+cells, and the multivariate Gaussian FA gate covers one T=4,K=1 cell). The R
+twin's bounded Poisson bridge does not extend this Julia fitter to other public
+families, ranks, missing records, or response-scale summaries.
 """
 function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                 family::Union{ResponseFamily, AbstractVector}; rank::Integer,
@@ -456,7 +508,7 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         descr,
         ψhat,
         mhat.beta,
-        mhat.g[:, 1:K],   # the K common-factor scores
+        _gllvm_trait_effects(mhat.g, Λhat, ψhat),
         K,
         Optim.converged(res) && mhat.converged,
         Optim.iterations(res),

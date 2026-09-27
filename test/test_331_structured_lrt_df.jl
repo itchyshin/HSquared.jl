@@ -15,9 +15,12 @@
 # `_mv_nparams`, not the issue's genetic-only shorthand.
 #
 # F1 (Rose BLOCK on #339, resolution 1, Ada/Noether-decided): a factor-analytic
-# null (`G = ΛΛ' + Ψ`, `Ψ > 0`) is a regular lower-dimensional submanifold of
-# the unstructured parameter space, not a variance-at-zero boundary, so the
-# classical χ²_df reference (df = identified-parameter difference) applies and
+# null (`G = ΛΛ' + Ψ`, `Ψ > 0`) is not a variance-at-zero PSD boundary, so the
+# implementation reports the plain χ²_df tail. This tail is a regular
+# asymptotic reference only at a locally identifiable interior point under
+# the usual likelihood conditions; rotation-adjusted parameter counting and
+# positive Ψ alone do not establish those conditions. The nominal df
+# difference applies to the generic covariance parameterization, and
 # the Self & Liang (1987) / Stram & Lee (1994) 50:50 chi-bar mixture must NOT
 # be entered for structured nulls. A low-rank null (`G = ΛΛ'`, rank r < t)
 # lies on the boundary of the PSD cone, where the true reference is a chi-bar
@@ -83,9 +86,9 @@ using Distributions: Chisq, ccdf
         lrt = covariance_structure_lrt(fa, full)   # (constrained, full) — fa nests inside unstructured
         @test lrt.df == 1                        # was: npf == npc == 30 => ArgumentError (df = 0)
 
-        # F1 resolution 1: a factor-analytic null is a regular submanifold, not
-        # a variance-at-zero boundary — `boundary` must be false and the
-        # reference distribution the plain χ²_df, not a chi-bar mixture.
+        # F1 resolution 1: the FA null is not a variance-at-zero PSD
+        # boundary, so `boundary` is false and the reported tail is plain
+        # χ²_df. This field is not a certificate of local identification.
         @test lrt.boundary == false
         @test lrt.reference == :chisq
         @test 0.0 <= lrt.pvalue <= 1.0

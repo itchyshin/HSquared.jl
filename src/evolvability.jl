@@ -35,16 +35,33 @@ _evolvability_G(result) = getproperty(result, :genetic_covariance)
 function _check_symmetric_psd_G(G::AbstractMatrix)
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
+    n > 0 || throw(ArgumentError("G must be nonempty"))
     Gf = Matrix{Float64}(G)
     all(isfinite, Gf) || throw(ArgumentError("G must contain only finite values"))
-    gscale = max(1.0, maximum(abs, Gf))
-    isapprox(Gf, transpose(Gf); atol = 1e-10 * gscale) ||
+    gscale = maximum(abs, Gf)
+    isapprox(Gf, transpose(Gf); atol = 1e-12 * gscale, rtol = 1e-12) ||
         throw(ArgumentError("G must be symmetric"))
     S = Symmetric(Gf)
     ev = eigvals(S)
-    escale = max(1.0, maximum(abs, ev))
-    minimum(ev) >= -1e-8 * escale ||
+    minimum(ev) >= -1e-12 * gscale ||
         throw(ArgumentError("G must be positive semidefinite"))
+    d = diag(Gf)
+    all(x -> x >= -1e-12 * gscale, d) ||
+        throw(ArgumentError("G diagonal must be nonnegative within roundoff"))
+    for i in findall(<=(0), d)
+        all(j == i || iszero(Gf[i, j]) for j in 1:n) ||
+            throw(ArgumentError("a nonpositive-variance trait must have zero covariance"))
+    end
+    positive = findall(>(0), d)
+    if !isempty(positive)
+        sd = sqrt.(d[positive])
+        R = Matrix{Float64}(Gf[positive, positive])
+        @inbounds for j in eachindex(sd), i in eachindex(sd)
+            R[i, j] = R[i, j] / sd[i] / sd[j]
+        end
+        all(isfinite, R) && eigmin(Symmetric(R)) >= -1e-12 ||
+            throw(ArgumentError("G must be positive semidefinite after trait scaling"))
+    end
     return S
 end
 
@@ -179,7 +196,7 @@ function genetic_pca(G)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     E = eigen(S)
     order = sortperm(E.values; rev = true)
-    values = E.values[order]
+    values = max.(E.values[order], 0.0)
     vectors = Matrix{Float64}(E.vectors[:, order])
     for j in axes(vectors, 2)
         _sign_canonicalize!(view(vectors, :, j))

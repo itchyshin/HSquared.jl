@@ -143,6 +143,7 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01, bac
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
     ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    issymmetric(G) || throw(ArgumentError("G must be symmetric"))
     regularized = Symmetric(Matrix{Float64}(G) + ridge * I)
     isposdef(regularized) ||
         throw(ArgumentError("regularized G is not positive definite; increase ridge"))
@@ -356,6 +357,7 @@ function apy_genomic_relationship_inverse(G::AbstractMatrix, core::AbstractVecto
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
     ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    issymmetric(G) || throw(ArgumentError("G must be symmetric"))
     core = sort(unique(Int.(core)))
     (isempty(core) || core[1] < 1 || core[end] > n) &&
         throw(ArgumentError("core must be a non-empty set of row indices in 1:$n"))
@@ -888,6 +890,7 @@ function _mixed_marker_scan_cache(
         throw(ArgumentError("Z columns must match Ainv dimensions"))
     all(isfinite, Ainvmat) || throw(ArgumentError("Ainv must contain only finite values"))
 
+    issymmetric(Ainvmat) || throw(ArgumentError("Ainv must be symmetric"))
     Ainv_sym = Symmetric(Ainvmat)
     isposdef(Ainv_sym) ||
         throw(ArgumentError("Ainv must be positive definite"))
@@ -2348,8 +2351,16 @@ function _standard_normal_cdf_approx(z::Real)
 end
 
 function _standard_normal_two_sided_pvalue(z::Real)
-    cdf = _standard_normal_cdf_approx(z)
-    return clamp(2 * min(cdf, 1 - cdf), 0.0, 1.0)
+    x = Float64(z)
+    isfinite(x) || throw(ArgumentError("z must be finite"))
+    # Preserve the established central approximation used by cross-language
+    # fixtures, taking the small tail directly to keep sign symmetry. At |z| ≥ 8
+    # its relative tail error matters, so use Z² ~ χ²₁ and the existing accurate
+    # upper-gamma tail instead of subtracting a CDF from one.
+    abs(x) < 8 && return clamp(2 * _standard_normal_cdf_approx(-abs(x)), 0.0, 1.0)
+    squared = x * x
+    isinf(squared) && return 0.0   # finite |z| this large has an underflowed tail
+    return clamp(_chisq_sf(squared, 1.0), 0.0, 1.0)
 end
 
 function _checked_p_values(p_values)

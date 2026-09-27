@@ -43,6 +43,15 @@ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, appl
     return x, iters, relres
 end
 
+# A fit, likelihood, or information matrix may consume a PCG solution only after
+# its true residual meets the requested tolerance. Public standalone solvers keep
+# returning their convergence diagnostics, so callers can inspect a failed solve.
+function _require_pcg_convergence(relative_residual::Real, tol::Real)
+    (isfinite(relative_residual) && isfinite(tol) && 0 < tol && relative_residual <= tol) ||
+        throw(ArgumentError("PCG did not reach the requested tolerance: relative residual = $(relative_residual), tolerance = $(tol); increase pcg_maxiter/maxiter or improve conditioning"))
+    return nothing
+end
+
 # Incomplete Cholesky IC(0): the lower factor `L` with the SAME sparsity pattern as
 # `tril(A)` such that `L·Lᵀ ≈ A`, computed by right-looking Cholesky that DROPS any fill
 # outside that pattern. Returns `L` (lower-triangular `SparseMatrixCSC`), or `nothing` on a
@@ -527,8 +536,9 @@ function mc_reml_block_traces(
         for k in 1:nprobe
             fill!(zhat, 0.0)
             @views zhat[(p + 1):ntot] .= rand(rng, (-1.0, 1.0), nrand)   # Rademacher over all random effects
-            x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
-                                 maxiter = Int(maxiter), applyMinv = applyMinv)
+            x, _, relres = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
+                                      maxiter = Int(maxiter), applyMinv = applyMinv)
+            _require_pcg_convergence(relres, tol)
             for b in 1:K
                 rng_b = (offs[b] + 1):(offs[b] + qs[b])
                 zb = @view zhat[rng_b]
@@ -548,8 +558,9 @@ function mc_reml_block_traces(
                 z = rand(rng, (-1.0, 1.0), qs[b])                 # Rademacher ±1
                 fill!(zhat, 0.0)
                 @views zhat[rng_b] .= z
-                x, _, _ = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
-                                     maxiter = Int(maxiter), applyMinv = applyMinv)
+                x, _, relres = _pcg_solve(applyC, copy(zhat); tol = Float64(tol),
+                                          maxiter = Int(maxiter), applyMinv = applyMinv)
+                _require_pcg_convergence(relres, tol)
                 xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
                 samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
             end
@@ -646,6 +657,7 @@ function fit_multi_effect_mc_reml(
         iters = it
         sol = solve_multi_effect_pcg(yv, Xs, effects, sigmas, sigma_e2;
                                      tol = pcg_tol, maxiter = pcg_maxiter, matrix_free = true, ids = ids)
+        _require_pcg_convergence(sol.relative_residual, pcg_tol)
         us = [e.values for e in sol.effects]
         last_effects = sol.effects
         e = yv .- Xs * sol.beta
@@ -675,6 +687,7 @@ function fit_multi_effect_mc_reml(
         # one final solve at the converged variances for clean BLUPs
         s = solve_multi_effect_pcg(yv, Xs, effects, sigmas, sigma_e2;
                                    tol = pcg_tol, maxiter = pcg_maxiter, matrix_free = true, ids = ids)
+        _require_pcg_convergence(s.relative_residual, pcg_tol)
         s.beta, s.effects
     else
         zeros(p), [(ids = collect(1:qs[i]), values = zeros(qs[i])) for i in 1:K]
@@ -828,8 +841,9 @@ function matrix_free_reml_loglik(
     end
     d = _multi_mme_diag(Xs, Zs, Ainvs, inv_se2, inv_sig, p, offs, qs, ntot)
     invd = 1.0 ./ d
-    sol, _, _ = _pcg_solve(applyC, copy(rhs); tol = Float64(pcg_tol),
-                           maxiter = Int(pcg_maxiter), applyMinv = r -> invd .* r)
+    sol, _, relres = _pcg_solve(applyC, copy(rhs); tol = Float64(pcg_tol),
+                                maxiter = Int(pcg_maxiter), applyMinv = r -> invd .* r)
+    _require_pcg_convergence(relres, pcg_tol)
     quad = inv_se2 * dot(yv, yv) - dot(rhs, sol)
 
     # log|C| by SLQ (matrix-free).
@@ -907,8 +921,9 @@ function matrix_free_reml_information(
         for i in 1:K
             rr[(offs[i] + 1):(offs[i] + qs[i])] .= inv_se2 .* (Zts[i] * w)
         end
-        xw, _, _ = _pcg_solve(applyC, rr; tol = Float64(pcg_tol), maxiter = Int(pcg_maxiter),
-                              applyMinv = applyMinv)
+        xw, _, relres = _pcg_solve(applyC, rr; tol = Float64(pcg_tol), maxiter = Int(pcg_maxiter),
+                                   applyMinv = applyMinv)
+        _require_pcg_convergence(relres, pcg_tol)
         xw
     end
     sol = solve_rhs(yv)

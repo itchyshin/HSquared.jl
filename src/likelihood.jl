@@ -4145,6 +4145,13 @@ function _relationship_diag(spec::AnimalModelSpec, method::Symbol = :auto)
     return _relationship_diag(spec.Ainv, method)
 end
 
+function _bootstrap_usable_refit(fit)
+    fit.converged || return false
+    sa = fit.variance_components.sigma_a2
+    se = fit.variance_components.sigma_e2
+    return isfinite(sa) && isfinite(se) && sa > 0 && se > 0
+end
+
 """
     bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
         n_boot = 1000, estimator = :sparse_reml,
@@ -4217,8 +4224,8 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
             spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML,
                                        relationship_diag = spec.relationship_diag)
             fb = refit(spec_b)
+            _bootstrap_usable_refit(fb) || continue
             sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
-            (isfinite(sab) && isfinite(seb) && sab > 0 && seb > 0) || continue
             push!(sa, sab); push!(se, seb); push!(hh, sab / (sab + seb))
         catch
             # PosDefException / non-converged refit → dropped, surfaced via n_converged

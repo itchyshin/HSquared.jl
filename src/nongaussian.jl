@@ -406,8 +406,9 @@ end
 # derivative ℓ_ηη = ℓ_pp·(p′)² + ℓ_p·p(1−p)(1−2p) has a sign-indefinite second term),
 # so the OBSERVED information can be NEGATIVE and would break the
 # `cholesky(Symmetric(H))` PD assumption in `laplace_marginal_loglik`'s IRLS Newton
-# loop. The expected information is ≥ 0 by construction (Fisher scoring — the standard
-# non-canonical-link Laplace choice), keeping H PD. (Contrast: the logit Binomial
+# loop. The expected information is ≥ 0 by construction (Fisher scoring), keeping the
+# working system PD. The FINAL Laplace determinant uses observed curvature
+# through `_fam_observed_weight` below, not this scoring matrix. (Contrast: the logit Binomial
 # weight IS the observed information, because the canonical/log-concave logit link
 # makes observed == expected.) Computed as Σ_{k=0}^n score(k,η)²·P(k|η,ρ) over the
 # exact beta-binomial pmf — needs only ψ (no trigamma) and is strictly positive (the
@@ -427,6 +428,20 @@ function _fam_weight(f::BetaBinomialResponse, y, η)
         info += sc * sc * exp(logpk)
     end
     return info
+end
+
+# The iteration may use Fisher scoring, but a Laplace determinant requires
+# OBSERVED curvature at the mode. For a beta-binomial, writing c=(1-rho)/rho,
+# p=logistic(eta), D=digamma(a+y)-digamma(a)-digamma(b+n-y)+digamma(b),
+# the score is c*p*(1-p)*D. Differentiating once more gives the two terms below.
+_fam_observed_weight(f::ResponseFamily, y, η) = _fam_weight(f, y, η)
+function _fam_observed_weight(f::BetaBinomialResponse, y, η)
+    p, c, a, b = _betabin_params(f, η)
+    n = f.n_trials
+    cp = c * p * (1.0 - p)
+    D = _digamma(a + y) - _digamma(a) - _digamma(b + n - y) + _digamma(b)
+    E = _trigamma(a + y) - _trigamma(a) + _trigamma(b + n - y) - _trigamma(b)
+    return -(cp * (1.0 - 2p) * D + cp^2 * E)
 end
 
 # Bernoulli probit (threshold / liability). s = 2y−1, P(y|η) = Φ(sη), so
@@ -562,6 +577,33 @@ function _check_counts(::GammaResponse, yv)
     return nothing
 end
 
+# Necessary proper-integral checks for a flat fixed-effect measure. An
+# intercept is any vector in col(X) equal to one, including a rescaled column.
+# This bounded guard does not diagnose general separation along other columns.
+function _check_flat_effect_integral(family::ResponseFamily, y, X)
+    p = size(X, 2)
+    p == 0 && return nothing
+    rank(X) == p || throw(ArgumentError(
+        "X must have full column rank for a proper flat-measure fixed-effect integral"))
+    n = length(y)
+    has_intercept = norm(X * (X \ ones(n)) .- 1.0) <= 1e-8 * sqrt(n)
+    has_intercept || return nothing
+    improper = if family isa PoissonResponse
+        all(iszero, y)
+    elseif family isa BernoulliResponse
+        all(iszero, y) || all(==(1), y)
+    elseif family isa BinomialResponse
+        all(iszero, y) || all(==(family.n_trials), y)
+    elseif family isa BinomialVectorResponse
+        all(iszero, y) || all(y .== family.n_trials)
+    else
+        false
+    end
+    improper && throw(ArgumentError(
+        "constant endpoint responses with an intercept have an improper flat-measure fixed-effect integral"))
+    return nothing
+end
+
 """
     laplace_marginal_loglik(y, X, Z, Ainv, sigma_a2, family; tol = 1e-10, maxiter = 100)
 
@@ -588,6 +630,7 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
     _check_counts(family, yv)
+    _check_flat_effect_integral(family, yv, Xd)
 
     beta = zeros(p)
     u = zeros(q)
@@ -616,7 +659,7 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
     end
 
     η = Xd * beta .+ Zd * u
-    w = [_fam_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+    w = [_fam_observed_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
     WX = w .* Xd
     WZ = w .* Zd
     H = [transpose(Xd)*WX transpose(Xd)*WZ
@@ -695,24 +738,28 @@ end
     variational_marginal_loglik(y, X, Z, Ainv, sigma_a2, family;
                                 covariance = :full, tol = 1e-10, maxiter = 100)
 
-Gaussian-variational (VA / ELBO) marginal for the non-Gaussian animal model — a
-sibling of [`laplace_marginal_loglik`](@ref) that maximises the evidence lower
-bound over a Gaussian variational posterior `q(u) = N(m, S)` for the correlated
-random effect `u ~ N(0, A·σ²a)`, with `β` integrated under a flat prior.
+Gaussian variational approximation for the non-Gaussian animal model. With no
+fixed-effect columns (`size(X,2) == 0`), this maximises an evidence lower bound
+(ELBO) over `q(u) = N(m,S)` for `u ~ N(0,A*sigma_a2)`. With fixed effects, it
+optimises the conditional variational objective and adds a local Laplace
+correction for integration over beta under a flat measure. That hybrid value
+is **not guaranteed to be a lower bound** on the integrated log likelihood.
 
-`covariance = :full` (the validated foundation) profiles `S` to the closed-form
-`S* = (Zᵀ W̃ Z + Ainv/σ²a)⁻¹` — the FULL joint covariance, which preserves the
-pedigree relatedness (a diagonal / mean-field `S` would discard it and would not
-be REML-exact). Returns
-`(elbo, beta, m, S, converged, gradient_norm, iterations, covariance)`.
+`covariance = :full` uses `S = (Z' Wtilde Z + Ainv/sigma_a2)^(-1)`;
+`:diagonal` restricts S to a diagonal matrix. The returned `elbo` field keeps
+its historical name for compatibility. Read `objective` and `is_lower_bound`:
+- `:elbo`, true: no fixed effects;
+- `:gaussian_reml`, true: Gaussian family with full covariance (exact REML);
+- `:variational_laplace`, false: the other fixed-effect cases.
 
-`elbo` is a LOWER BOUND on `log p(y)`, and is tight — equal to
-[`laplace_marginal_loglik`](@ref) and to `sparse_reml_loglik` — for the Gaussian
-family (the optimal full-covariance `q` is the exact Gaussian posterior, so the
-KL vanishes). EXPERIMENTAL, dense, validation-scale; not exported, not wired into
-fitting, no R model-spec. Architecture follows the MIT DRM.jl `:LA`/`:VA` idea;
-the correlated-prior kernel is reimplemented here. Meaningful only when
-`converged == true`.
+Returns `(elbo, beta, m, S, converged, gradient_norm, iterations, covariance,
+objective, is_lower_bound)`. A true lower-bound flag describes the mathematical
+objective; numerical quadrature and convergence tolerances still apply.
+Experimental, dense, validation-scale; meaningful only when `converged == true`.
+For the full-covariance Gaussian family it equals [`laplace_marginal_loglik`](@ref)
+and `sparse_reml_loglik`. This Gaussian reduction does not establish a bound for
+non-Gaussian beta integration. Architecture follows the MIT DRM.jl VA dispatch
+idea; the correlated-prior kernel is reimplemented here.
 """
 function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                                      Ainv::AbstractMatrix, sigma_a2::Real,
@@ -733,6 +780,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     size(Zd, 1) == n || throw(ArgumentError("Z must have one row per record"))
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
     _check_counts(family, yv)
+    _check_flat_effect_integral(family, yv, Xd)
     P0 = Ai ./ sigma_a2
 
     beta = zeros(p)
@@ -784,8 +832,11 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
         beta_term = 0.5 * p * log(2π) - 0.5 * logdet(cholesky(schur))
     end
     elbo = converged ? (Ell - kl + beta_term) : NaN
+    objective = p == 0 ? :elbo :
+                (family isa GaussianResponse && covariance === :full ? :gaussian_reml : :variational_laplace)
     return (elbo = elbo, beta = beta, m = m, S = S, converged = converged,
-            gradient_norm = gnorm, iterations = iters, covariance = covariance)
+            gradient_norm = gnorm, iterations = iters, covariance = covariance,
+            objective = objective, is_lower_bound = objective !== :variational_laplace)
 end
 
 """
@@ -1015,8 +1066,10 @@ end
                      restart_check = false)
 
 Estimate the variance component(s) of the non-Gaussian animal model by maximising
-the marginal log-likelihood (`marginal = :laplace`) or the ELBO
-(`marginal = :variational`) over the variance components. `family = :gaussian`
+the integrated Laplace objective (`marginal = :laplace`) or the Gaussian
+variational objective (`marginal = :variational`) over the variance components.
+With fixed effects, non-Gaussian VA adds a Laplace beta correction and is not
+guaranteed to be a lower bound; see `variational_marginal_loglik`. `family = :gaussian`
 estimates `(sigma_a2, sigma_e2)` (NelderMead); `family = :poisson`,
 `family = :bernoulli`, and `family = :binomial` (which requires the `n_trials`
 keyword — a common scalar denominator OR a per-record integer vector of length
@@ -1320,8 +1373,8 @@ scalar common denominator or a per-record integer vector, the same contract as
 profiling and is future work.
 
 This is a profile-LIKELIHOOD-ratio interval, so `marginal = :laplace` is required:
-the variational `:VA` objective is the ELBO (a lower bound), not the marginal
-log-likelihood, so `2·(ELBÔ − ELBO(σ²a))` is not χ²₁-calibrated — `:variational`
+the variational `:VA` objective (including its Laplace beta correction when fixed
+effects are present) is not the marginal log-likelihood, so its differences are not χ²₁-calibrated — `:variational`
 throws rather than return an uncalibrated quantity dressed as a CI.
 
 EXPERIMENTAL, asymptotic, single-component only — preliminary coverage
@@ -1346,7 +1399,7 @@ function laplace_reml_interval(y::AbstractVector, X::AbstractMatrix, Z::Abstract
         throw(ArgumentError("family = :binomial requires the n_trials keyword"))
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     _marginal_method(marginal) isa Laplace ||
-        throw(ArgumentError("laplace_reml_interval is a profile-LIKELIHOOD-ratio interval and requires marginal = :laplace; the variational ELBO is a lower bound, not a χ²₁-calibrated LRT statistic"))
+        throw(ArgumentError("laplace_reml_interval is a profile-LIKELIHOOD-ratio interval and requires marginal = :laplace; the variational objective is not a χ²₁-calibrated LRT statistic"))
     if family === :binomial && n_trials isa AbstractVector
         length(n_trials) == length(y) ||
             throw(ArgumentError("a per-record n_trials vector must have length(n_trials) == length(y)"))

@@ -141,10 +141,9 @@ end
 
 Return the planned model-term names reserved by `HSquared.jl`.
 
-These names mirror the R twin's inert formula markers. They are vocabulary
-reservations only; no standard quantitative-genetic extension, parental effect,
-inheritance kernel, genomic prediction, marker scan, single-step, QTL/eQTL, or
-marker-effect estimation is implemented yet.
+These names mirror the R twin's inert formula markers. They reserve formula
+vocabulary only; calling a term does not fit a model. Some corresponding direct
+Julia utilities are available through separate entry points.
 """
 planned_model_terms() = PLANNED_MODEL_TERMS
 
@@ -164,12 +163,20 @@ custom-kernel term names.
 planned_quantgen_terms() = PLANNED_QUANTGEN_TERMS
 
 function _planned_model_term_error(name::Symbol)
+    direct = if name === :genomic
+        " For direct genomic fitting, see `fit_gblup()` or `fit_gblup_reml()`."
+    elseif name === :single_step
+        " For direct single-step fitting, see `fit_single_step()` or `fit_single_step_reml()`."
+    elseif name === :markers
+        " For direct marker-effect fitting, see `fit_snp_blup()` or `fit_snp_blup_reml()`."
+    elseif name === :marker_scan
+        " For a direct marker scan, see `single_marker_scan()` or `mixed_model_marker_scan()`."
+    else
+        ""
+    end
     throw(
         ArgumentError(
-            "`$(name)()` is planned, not implemented. " *
-            "This reserves HSquared.jl vocabulary for later model specifications; " *
-            "no standard quantitative-genetic extension, parental effect, inheritance kernel, " *
-            "genomic prediction, marker scan, single-step, QTL/eQTL, or marker-effect estimation is available yet.",
+            "`$(name)()` is a reserved formula term; this formula-term route is not implemented." * direct,
         ),
     )
 end

@@ -176,13 +176,13 @@ high-level genomic fitting remains unimplemented.
   extractors (`variance_components`, `fixed_effects`, `heritability`, and
   `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
   without changing `result_payload()` or the R bridge. Phase 4B now has
-engine-internal utilities; V4-FA coverage does not activate R `cov = fa(K)` syntax or change the R twin's planned FA status.
-  structured genetic
-  covariance builders and REML constraints for diagonal, low-rank, and
+  structured genetic covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
-  own opt-in seeded recovery harness. No R-facing multivariate model-spec, no
-  external comparator parity, no full loading rotation/interpretation
-  convention, and no production sparse multivariate fitting.
+  own opt-in seeded recovery harness. V4-FA engine coverage does not activate
+  R `cov = fa(K)` syntax. The R twin separately exposes one bounded,
+  experimental four-trait rank-one FA expert-control route; it remains partial.
+  External comparator parity, a full loading rotation/interpretation
+  convention, and production sparse multivariate fitting remain open.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; earlier R heads `8235289` and `d7e8914` enriched tiny
