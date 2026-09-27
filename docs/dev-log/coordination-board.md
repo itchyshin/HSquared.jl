@@ -13,6 +13,11 @@
 
 ## Active Lane Split
 
+- Current paired continuation: [0.9/0.10 planning handover](handover/2026-09-07-codex-0910-handover.md).
+  Website and release-record work below is historical: R #200 / Julia #320 merged.
+  The next lane first reconciles milestone scope; broad bot testing is deferred.
+  Existing unrelated lanes and their deferred work remain preserved below.
+
 - Julia lane: this repository, `HSquared.jl`.
 - R lane: sibling repository, `hsquared`.
 - Coordinator lane: shared issue ledger, public-claim wording, and

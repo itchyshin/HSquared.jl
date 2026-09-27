@@ -765,3 +765,32 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   benchmarks); RR slice 4 (eigen-function / PE term / R `rr()` spec); the metafounder
   R-bridge + single-step H^Γ (gated on #61 Q1–Q4); scout cadence #56; Phase 7/8
   hardware-gated.
+# Archived at the 2026-09-07 0.9/0.10 handover
+
+- **As of 2026-09-07 (Path FULL 0.9 finish — R-lane Layer B honesty PRs #191/#192 MERGED;
+  Julia lane owes FA/SS honesty + bridge fences + a merge-when-green pass on #313; owner
+  STOPPED the Cursor continuous run).** `public_covered_count` **stays 7** on both twins;
+  version **0.8.0** on both twins; **0.9.0 NOT authorized**; after 0.9 → **0.10.x**, not
+  **1.0**. This is a **twin-repo** campaign — the R sibling `hsquared` carries the full
+  narrative and the ordered critical-path chain; this repo's job is narrower: land the Julia
+  FA/SS status-honesty draft (scratch commit `2b1ad22`, not yet a PR), the Julia
+  bridge-production-fences draft (`d47aa3f`, not yet a PR), and merge-when-green **Julia #313**
+  (Gate-6 Rose evidence mirror, OPEN/CLEAN/CI-green at handover time), then run fresh
+  `Pkg.test()` / `docs/make.jl` / `preamble_cap.sh` and record them in `check-log.md` (tail
+  currently ends 2026-08-04 — no entry yet for this arc). **G10 held** `V1-MATFREE-REML` this
+  session (owner: "the evidence packet is not sufficient for an experimental→covered flip");
+  S5's frozen pre-declaration (`33ab68f6`) stays frozen, not run. **STANDING DRIFT FOUND AND
+  NOT SILENTLY FIXED:** this snapshot block had been stale on `main` since `e6bf8a17`
+  (2026-07-12) — nearly two months — because all the intervening Julia-engine narrative
+  (Szymek's arc, the matrix-free fitter, the 2026-08-04 G10/S5 saga, and the September #294-#313
+  stack) happened on `main` via ordinary PRs that never touched this block; the "2026-08-04"
+  narrative some agents may recall lives only on the abandoned branch
+  `codex/2026-07-13-v07-performance-localization` (tip `853bcc12`), which was **never merged to
+  `main`** and still sits uncommitted/unpushed-diverged in the Dropbox checkout as of this
+  handover. Do not treat that branch's AGENTS.md content as authoritative for `main`. **Do
+  not** authorize 0.9.0, bump `Project.toml`, tag, or flip any row from this lane — that chain
+  is owner-gated and lives in the R twin's handover. Julia `#267` (pre-existing, CI FAILURE)
+  and `#265` (chore) are off this campaign's critical path.
+  START HERE: `docs/dev-log/handover/2026-09-07-codex-handover.md` (this repo's pointer doc;
+  it sends you to `hsquared/docs/dev-log/handover/2026-09-07-codex-handover.md` — the sibling
+  repo, same Dropbox parent — for the full Path FULL narrative and Landing State ledger).
