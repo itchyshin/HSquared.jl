@@ -6006,3 +6006,18 @@ cache pidfile; approved local-cache reruns passed. GitHub Actions checks
 for draft PRs Julia #401 and R #259 were still queued at last poll, so
 current CI remains unverified. No DRAC run was needed for these short local
 checks; no GPU or release action occurred.
+
+## 2026-09-27 source-review follow-up
+
+The content-matched writable Julia copy passed the final exact `Pkg.test()`
+with `HSQ_JULIA_TESTS_OK` (`/private/tmp/hsq-fa-gllvm-pkg-test-20260927-final-exact.log`).
+The frozen genomic fixture remained unchanged. Julia docs built with
+`HSQ_JULIA_DOCS_OK` (`/private/tmp/hsq-fa-gllvm-docs-20260927-final-exact.log`).
+W1-07/08 focused checks include 75 stationarity, 82 structural-support, and
+406 neighboring assertions. W1-09 near-boundary score cancellation remains
+open. The R twin's final live three-block/direct-maternal bridge tests passed
+without failures or skips (`/private/tmp/hsquared-fa-gllvm-final-live-bridge-escalated.log`).
+The paired R check returned zero errors, warnings, or notes after Rose's final
+prose correction (`/private/tmp/hsquared-fa-gllvm-rcmdcheck-20260927-final-rose.log`).
+Totoro was down. These short capped local
+checks needed no DRAC or GPU work. All four source-review waves remain HOLD.

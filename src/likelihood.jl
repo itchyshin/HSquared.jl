@@ -480,7 +480,10 @@ function _fit_ai_reml_diagnostics(
         ai_score_a = score_a
         ai_score_e = score_e
         ai_score_norm = hypot(score_a, score_e)
-        if ai_score_norm < tol
+        # Retain the relative-update precision as well as checking the score:
+        # a per-df score alone can stop earlier on larger samples.
+        if last_relative_change < tol &&
+           _ai_reml_stationary(ai_score_norm, max(sigma_a2, sigma_e2), nobs - nfixed, tol)
             converged = true
             termination_reason = "score_tolerance"
             break
@@ -525,18 +528,12 @@ function _fit_ai_reml_diagnostics(
             termination_reason = "step_halving_exhausted"
             break
         end
-        # Scale-invariant convergence. The absolute REML score scales with n, so the
-        # `hypot(score) < tol` check above becomes unreachable at large q (measured:
-        # q=300k ran to the 100-iter cap with σ̂² already at truth). Also stop on the
-        # RELATIVE change in the variance components, which is scale-free.
+        # A small step can reflect damping or regularization, not stationarity.
+        # Record its size, then evaluate the score at the new point on the next
+        # iteration. Only that evaluated point can be returned as converged.
         rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
         last_relative_change = rel_change
         sigma_a2, sigma_e2 = a_new, e_new
-        if rel_change < tol
-            converged = true
-            termination_reason = "relative_change_tolerance"
-            break
-        end
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
@@ -914,17 +911,32 @@ function _reml_project(factor, X, Z, w, sigma_e2, nfixed)
     return (w .- X * solution[1:nfixed] .- Z * solution[(nfixed + 1):end]) ./ sigma_e2
 end
 
+# The raw variance score changes with response units and grows with sample size.
+# Use a common variance scale per residual degree of freedom. A common scale,
+# unlike componentwise log-variance scores, does not hide a nonzero boundary
+# score merely because that component approaches zero. This certifies interior
+# stationarity only; it does not introduce a closed-boundary/KKT fit path.
+function _ai_reml_stationary(score_norm::Real, variance_scale::Real, df::Integer, tol::Real)
+    return isfinite(score_norm) && isfinite(variance_scale) && df > 0 &&
+           score_norm * (variance_scale / df) < tol
+end
+
 # AI/Newton step for the 2x2 average-information matrix (symmetric PSD); ridge
 # slightly if it is near-singular so the solve stays stable near a boundary.
 function _ai_newton_step(information, score)
-    detinfo = information[1, 1] * information[2, 2] - information[1, 2]^2
-    scale = abs(information[1, 1]) * abs(information[2, 2]) + 1.0
+    # Normalize before testing conditioning or adding a ridge: an absolute
+    # information floor makes the step depend on the units of the response.
+    information_scale = maximum(abs, information)
+    isfinite(information_scale) && information_scale > 0 || return fill(NaN, length(score))
+    normalized = information ./ information_scale
+    detinfo = normalized[1, 1] * normalized[2, 2] - normalized[1, 2]^2
+    scale = abs(normalized[1, 1]) * abs(normalized[2, 2]) + 1.0
     matrix = if detinfo <= 1e-12 * scale
-        Symmetric(information + 1e-8 * (tr(information) / 2 + 1) * Matrix{Float64}(I, 2, 2))
+        Symmetric(normalized + 1e-8 * (tr(normalized) / 2 + 1) * Matrix{Float64}(I, 2, 2))
     else
-        Symmetric(information)
+        Symmetric(normalized)
     end
-    return matrix \ score
+    return matrix \ (score ./ information_scale)
 end
 
 """
@@ -2270,18 +2282,21 @@ function _multi_reml_workspace(y::AbstractVector, X::AbstractMatrix,
         acc += qs[i]
     end
 
-    # The assembly pattern is taken FROM `_sparse_multi_lhs_rhs` itself, at σ = 1,
-    # rather than rebuilt independently — so the in-place path can only ever write
-    # into the structure the original code produced. Scaling by a positive σ never
-    # changes that structure, which is what makes one pattern serve every σ.
+    # Build the union of STORED supports, independently of numerical values.
+    # Unit-variance assembly can drop stored zeros or cancel Z'Z against Ainv;
+    # those positions must remain available when the variances change.
     Xty = Vector(Xt * yv); Zty = Vector(Zft * yv)
-    ones_k = ones(Float64, length(qs))
-    lhs0, rhs0 = _sparse_multi_lhs_rhs(XtX, XtZ, ZtX, ZtZ, Xty, Zty, Ainvs, ones_k, 1.0)
     base = [XtX XtZ; ZtX ZtZ]
     gblk = blockdiag(Ainvs...)
     nrand = size(gblk, 1)
     ginv_full = [spzeros(nfixed, nfixed)  spzeros(nfixed, nrand)
                  spzeros(nrand, nfixed)   gblk]
+    base_pattern = copy(base)
+    ginv_pattern = copy(ginv_full)
+    fill!(nonzeros(base_pattern), 1.0)
+    fill!(nonzeros(ginv_pattern), 1.0)
+    lhs0 = base_pattern + ginv_pattern
+    rhs0 = vcat(Xty, Zty)
     ginv_block = Vector{Int}(undef, nnz(gblk))
     pos = 0
     for i in eachindex(Ainvs)
@@ -2291,7 +2306,7 @@ function _multi_reml_workspace(y::AbstractVector, X::AbstractMatrix,
         end
     end
 
-    return _MultiREMLWorkspace(
+    ws = _MultiREMLWorkspace(
         yv, Xs, Zs, Zf, Ainvs, qs, offsets,
         XtX, XtZ, ZtX, ZtZ, Xty, Zty,
         [logdet(cholesky(Symmetric(A); check = true)) for A in Ainvs],
@@ -2300,6 +2315,8 @@ function _multi_reml_workspace(y::AbstractVector, X::AbstractMatrix,
         copy(nonzeros(base)), _nz_index_map(lhs0, base),
         copy(nonzeros(ginv_full)), _nz_index_map(lhs0, ginv_full), ginv_block,
     )
+    _assemble_lhs_rhs!(ws, ones(Float64, length(qs)), 1.0)
+    return ws
 end
 
 # σ-dependent half of `sparse_multi_reml_loglik`. Reuses `ws.factor`'s symbolic
@@ -2395,13 +2412,19 @@ function _ai_newton_step_nd(information::AbstractMatrix, score::AbstractVector)
     m = size(information, 1)
     A = Matrix{Float64}(information)
     A = (A .+ transpose(A)) ./ 2                       # symmetrize roundoff
+    information_scale = maximum(abs, A)
+    isfinite(information_scale) && information_scale > 0 || return fill(NaN, length(score))
     fac = cholesky(Symmetric(A); check = false)
     if issuccess(fac)
         step = fac \ score
         all(isfinite, step) && return step
     end
+    # Preserve the established unregularized solve above; normalize only when
+    # adding a ridge, whose magnitude must follow the information's units.
+    A ./= information_scale
+    scaled_score = score ./ information_scale
     ridge = 1e-8 * (tr(A) / m + 1)
-    return Symmetric(A .+ ridge .* Matrix{Float64}(I, m, m)) \ score
+    return Symmetric(A .+ ridge .* Matrix{Float64}(I, m, m)) \ scaled_score
 end
 
 """
@@ -2421,11 +2444,11 @@ production-shaped estimator behind the dense oracle [`fit_multi_effect_reml`](@r
 incidence, `Ainvᵢ` the `qᵢ×qᵢ` supplied relationship PRECISION — pass a sparse
 identity for a plain i.i.d. `(1|group)` effect), the same contract as
 [`multi_effect_mme`](@ref). `initial`, if supplied, is a length-`K+1` vector of
-positive starting variances `[σ₁,…,σ_K,σ_e2]` (default all `1`), or `:auto` for a
+positive starting variances `[σ₁²,…,σ_K²,σ_e²]` (default all `1`), or `:auto` for a
 data-scaled start — half the response variance to the residual, the other half
-split evenly across the `K` effects. `:auto` reaches the SAME optimum from a
-different place; whether it gets there in fewer iterations depends on the data,
-not on the option. It pays off when the response is far from unit scale
+split evenly across the `K` effects. `:auto` uses the same objective from a
+different starting point; convergence and the endpoint must be checked for
+each fit. It pays off when the response is far from unit scale
 (measured 10 → 8 iterations, 0.67 s → 0.52 s, on an 11,856-record animal +
 permanent-environment fit with `var(y) = 3.0`) and costs iterations when it is
 not (12 against 10 on a unit-variance simulated fixture, `test/`). It is opt-in
@@ -2442,34 +2465,36 @@ from the BLUP solution and the **Takahashi selected inverse**
 (`selinv_block_traces`, the `tr(Aᵢ⁻¹C^{uᵢuᵢ})` terms — no dense inverse is
 formed), assembles the `(K+1)×(K+1)` average-information matrix from working-variate
 re-solves that reuse the same Cholesky factor, and takes an AI/Newton step with
-step-halving to keep every component positive. Convergence uses the SCALE-INVARIANT
-relative-variance rule (the "F3" stopping rule shared with `fit_ai_reml`): the
-absolute REML score scales with `n`, so at large `q` the fit also stops on the
-relative change in the variance components. An optional EM-REML warm-start
+step-halving to keep every component positive. An interior fit reports
+convergence only when both the previous relative variance update and the
+evaluated-point score, scaled by the largest variance and residual degrees of
+freedom, are below tolerance. This is not a boundary KKT check. An optional
+EM-REML warm-start
 (`em_warmup`, default `0` = byte-identical to the pure AI path) hands the AI step a
 good in-bounds start.
 
-CORRECTNESS: on the SAME data at small scale, the optimum reduces EXACTLY to the
-dense [`fit_multi_effect_reml`](@ref) optimum (variance components and REML
-log-likelihood **on the full-constant scale**) for `K = 2` and `K = 3`, and the
-`K = 1` path reduces to [`fit_ai_reml`](@ref) (`test/runtests.jl`). Returns a
+REDUCTIONS: selected converged small-data `K = 2` and `K = 3` fixtures agree
+with dense [`fit_multi_effect_reml`](@ref) after aligning the REML likelihood
+constant; the `K = 1` test reduces to [`fit_ai_reml`](@ref) (`test/runtests.jl`).
+These checks do not establish accuracy near a variance boundary. Returns a
 `NamedTuple` with `variance_components = (sigmas, sigma_e2)`, per-effect `ratios`,
 `beta`, the `K` BLUPs (`effects = [(ids, values), …]`), `loglik`
 (`LOGLIK_CONVENTION_FULL`, identical to `fit_ai_reml`),
 `loglik_convention = :reml_full_constant`, `loglik_full_constant_offset = 0.0`,
 `loglik_comparable_across_routes = true`, `converged`, `iterations`,
-per-component `boundary` flags (`σᵢ/total < 1e-6`), and
+per-component `boundary` flags (`σᵢ²/total < 1e-6`), and
 `estimator = :sparse_multi_effect_aireml`. Raw dense
 [`fit_multi_effect_reml`](@ref) / [`fit_repeatability_reml`](@ref) `loglik`
 uses `LOGLIK_CONVENTION_OMIT_2PI` — convert with
 `comparable_loglik` before AIC / LRT across routes (#365).
 
 EXPERIMENTAL, REML-only, Gaussian, INDEPENDENT effects only (no correlated /
-direct–maternal 2×2 `G`). The sparse machinery EXISTS and is verified to reduce to
-the dense optimum, but its scale/performance is NOT yet benchmarked (measure-first;
+direct–maternal 2×2 `G`). The sparse machinery has selected dense reduction
+checks, but its scale/performance is NOT yet benchmarked (measure-first;
 `sim/phase5_sparse_aireml_benchmark.jl` is the opt-in scaffold) and it is NOT the
-public default fit path. On uninformative/non-identified data a component can ride
-to the `σ²→0` boundary; the fit reports `converged = false` and never returns NaN.
+public default fit path. On uninformative/non-identified data a component can
+approach the `σ²→0` boundary; numerical score accuracy there is unresolved.
+Inspect `converged` before using a returned estimate.
 """
 function fit_sparse_multi_effect_aireml(
     y::AbstractVector,
@@ -2578,6 +2603,7 @@ function fit_sparse_multi_effect_aireml(
 
     converged = false
     iters = 0
+    last_relative_change = Inf
     for it in 1:iterations
         iters = it
         lhs, rhs = _assemble_lhs_rhs!(ws, sigmas, sigma_e2)
@@ -2599,7 +2625,8 @@ function fit_sparse_multi_effect_aireml(
         dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
         score[K + 1] = -0.5 / sigma_e2^2 * (sigma_e2 * dfe - dot(e, e))
 
-        if norm(score) < tol
+        if last_relative_change < tol &&
+           _ai_reml_stationary(norm(score), max(maximum(sigmas), sigma_e2), n - nfixed, tol)
             converged = true
             break
         end
@@ -2629,14 +2656,12 @@ function fit_sparse_multi_effect_aireml(
             halvings += 1
         end
         (all(>(0.0), newsig) && newe > 0) || break
-        # Scale-invariant (F3) convergence on the relative variance-component change.
-        rel_change = max(maximum(abs.(newsig .- sigmas) ./ sigmas), abs(newe - sigma_e2) / sigma_e2)
+        # Positivity damping or an information ridge can make a step tiny far
+        # from an optimum. Certify the updated point with the next score check.
+        last_relative_change = max(maximum(abs.(newsig .- sigmas) ./ sigmas),
+                                   abs(newe - sigma_e2) / sigma_e2)
         sigmas = newsig
         sigma_e2 = newe
-        if rel_change < tol
-            converged = true
-            break
-        end
     end
 
     # Same value as `sparse_multi_reml_loglik(yv, Xs, effects, sigmas, sigma_e2)`

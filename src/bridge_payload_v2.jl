@@ -492,6 +492,10 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
     X        = parsed.X
     method   = parsed.method
 
+    if dispatch in (:two_effect, :multi_effect, :direct_maternal) && method !== :REML
+        throw(ArgumentError("payload-v2 $dispatch dispatch is REML-only; got method=$method"))
+    end
+
     if dispatch == :animal
         # §6 row 1: single pedigree block → fit_animal_model.
         b = blocks[1]
@@ -604,10 +608,51 @@ For multi-block fits the result carries:
 - `variance_components.blocks` — ordered list of per-block variance records.
 - `variance_components.residual` — scalar σ²e (always present, §5).
 - `random_effects` — ordered list of `(name, ids, values)` records.
-- `loglik`, `converged` — always present.
+- `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
 
 CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
 """
+function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance::Integer;
+                                        direct_maternal::Bool = false)
+    parsed.method === :REML || throw(ArgumentError(
+        "payload-v2 $(parsed.dispatch) result is REML-only; got method=$(parsed.method)"))
+    parsed.y === nothing && throw(ArgumentError(
+        "payload-v2 $(parsed.dispatch) result requires a univariate response"))
+    n = length(parsed.y)
+    p = size(parsed.X, 2)
+    convention_fields = if direct_maternal
+        # _direct_maternal_dense omits the (n-p)log(2π) term, like the other
+        # dense multi-effect objectives; its fit tuple has no convention fields.
+        loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p)
+    else
+        required = (:loglik_convention, :loglik_full_constant_offset,
+                    :loglik_comparable_across_routes)
+        all(k -> hasproperty(fit, k), required) || throw(ArgumentError(
+            "payload-v2 $(parsed.dispatch) result is missing loglik convention metadata"))
+        (loglik_convention = fit.loglik_convention,
+         loglik_full_constant_offset = fit.loglik_full_constant_offset,
+         loglik_comparable_across_routes = fit.loglik_comparable_across_routes)
+    end
+    stochastic = (hasproperty(fit, :dispatch) && fit.dispatch === :matrix_free) ||
+                 (hasproperty(fit, :estimator) && fit.estimator === :matrix_free_mc_em_reml)
+    if stochastic && !hasproperty(fit, :loglik_mcse)
+        throw(ArgumentError("payload-v2 stochastic result is missing loglik_mcse"))
+    end
+    diagnostics = (
+        method = :REML,
+        optimizer_status = fit.converged ? "converged" : "not_converged",
+        loglik_convention = convention_fields.loglik_convention,
+        loglik_full_constant_offset = convention_fields.loglik_full_constant_offset,
+        loglik_comparable_across_routes =
+            convention_fields.loglik_comparable_across_routes && !stochastic,
+        loglik_stochastic = stochastic,
+    )
+    if stochastic
+        diagnostics = merge(diagnostics, (loglik_mcse = fit.loglik_mcse,))
+    end
+    return (df = p + n_variance, nobs = n, diagnostics = diagnostics)
+end
+
 function result_payload_v2(fit, parsed::ParsedPayloadV2)
     dispatch = parsed.dispatch
     blocks = parsed.blocks
@@ -648,12 +693,12 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             (name=b1.name, ids=fit.effect1.ids, values=fit.effect1.values),
             (name=b2.name, ids=fit.effect2.ids, values=fit.effect2.values),
         ]
-        return (
+        return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
             loglik = fit.loglik,
             converged = fit.converged,
-        )
+        ), _v2_structured_result_metadata(fit, parsed, 3))
     end
 
     if dispatch == :multi_effect
@@ -667,13 +712,13 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             (name=blocks[i].name, ids=fit.effects[i].ids, values=fit.effects[i].values)
             for i in eachindex(blocks)
         ]
-        return (
+        return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
             loglik = fit.loglik,
             converged = fit.converged,
             boundary = fit.boundary,
-        )
+        ), _v2_structured_result_metadata(fit, parsed, length(blocks) + 1))
     end
 
     if dispatch == :direct_maternal
@@ -696,12 +741,12 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             (name=b.name,     ids=fit.direct_effects.ids,   values=fit.direct_effects.values),
             (name=partner_name, ids=fit.maternal_effects.ids, values=fit.maternal_effects.values),
         ]
-        return (
+        return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
             loglik = fit.loglik,
             converged = fit.converged,
-        )
+        ), _v2_structured_result_metadata(fit, parsed, 4; direct_maternal = true))
     end
 
     if dispatch == :multivariate_repeatability

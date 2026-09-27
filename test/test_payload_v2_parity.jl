@@ -320,7 +320,10 @@ end
     @test res_v2_b.variance_components.blocks[1].variance ≈ vc_direct_b.sigma1
     @test res_v2_b.variance_components.blocks[2].variance ≈ vc_direct_b.sigma2
     @test res_v2_b.variance_components.residual ≈ vc_direct_b.sigma_e2
-    @test _nt_keys(res_v2_b) == Set([:variance_components, :random_effects, :loglik, :converged])
+    @test _nt_keys(res_v2_b) == Set([
+        :variance_components, :random_effects, :loglik, :df, :nobs,
+        :diagnostics, :converged,
+    ])
     @test _nt_keys(res_v2_b.variance_components) == Set([:residual, :blocks])
     @test all(_nt_keys(block) == Set([:name, :type, :variance])
               for block in res_v2_b.variance_components.blocks)
@@ -338,6 +341,8 @@ end
     # field-name test above already proves the dispatch was :two_effect.
     @test parsed_b.dispatch == :two_effect  # re-assert for clarity
 end
+
+include(joinpath(@__DIR__, "wave3_payload_result_shape.jl"))
 
 # ---------------------------------------------------------------------------
 # Fixture (c): animal + permanent()  → :two_effect

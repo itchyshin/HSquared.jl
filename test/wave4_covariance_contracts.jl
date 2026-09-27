@@ -39,4 +39,16 @@ end
     Ainv = Matrix{Float64}(I, 2, 2)
     @test_throws ArgumentError multivariate_covariance_standard_errors(repeatability, Y, X, Z, Ainv)
     @test_throws ArgumentError genetic_correlation_interval(repeatability, Y, X, Z, Ainv)
+
+    # A PE covariance contributes parameters absent from the animal-only LRT count.
+    animal_full = (genetic_structure = :unstructured,
+                   genetic_rank = nothing,
+                   genetic_covariance = Matrix{Float64}(I, 2, 2),
+                   loglik = -9.0, converged = true)
+    pe_null = merge(repeatability, (genetic_structure = :diagonal,
+                                    genetic_rank = nothing, loglik = -10.0))
+    @test_throws ArgumentError covariance_structure_lrt(pe_null, animal_full)
+    animal_null = merge(animal_full, (genetic_structure = :diagonal, loglik = -10.0))
+    pe_full = merge(repeatability, (genetic_rank = nothing, loglik = -9.0))
+    @test_throws ArgumentError covariance_structure_lrt(animal_null, pe_full)
 end

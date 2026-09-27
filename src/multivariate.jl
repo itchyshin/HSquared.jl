@@ -1638,8 +1638,13 @@ full χ²₁ tail, exactly twice the previously reported value. The statistic
 and `df` are unchanged; only the reference distribution is.
 
 Experimental, asymptotic, dense/validation-scale.
+Repeatability fits include a permanent-environment covariance. This
+animal-only parameter count does not cover them, so either input is rejected.
 """
 function covariance_structure_lrt(constrained, full)
+    (hasproperty(constrained, :permanent_covariance) ||
+     hasproperty(full, :permanent_covariance)) &&
+        throw(ArgumentError("covariance_structure_lrt does not support repeatability fits: the permanent-environment covariance needs a separate parameter count and reference distribution"))
     npc = _mv_nparams(constrained)
     npf = _mv_nparams(full)
     df = npf - npc
