@@ -6021,3 +6021,22 @@ The paired R check returned zero errors, warnings, or notes after Rose's final
 prose correction (`/private/tmp/hsquared-fa-gllvm-rcmdcheck-20260927-final-rose.log`).
 Totoro was down. These short capped local
 checks needed no DRAC or GPU work. All four source-review waves remain HOLD.
+
+W1-09 follow-up: the original 136-record K3 point produced legacy sparse
+score `+876.4064063576101`, corrected streamed score
+`-9.377161031090765`, and independent dense score
+`-9.377161031090708` (`/private/tmp/hsq-w109-exact-k3-green-20260927.log`).
+The multi-effect score ladder failed 18/18 before correction. The repaired
+boundary suite passed 157 assertions and the prior 207 neighboring checks
+passed; Noether signed off the bounded score equations. A combined
+512-column fallback budget returns `boundary_score_unresolved` with
+`converged=false` above that budget. The first integrated package run found
+one stale capitalization-sensitive FA status assertion; after correcting
+the test, the content-matched Julia suite passed with `HSQ_JULIA_TESTS_OK`
+(`/private/tmp/hsq-fa-gllvm-pkg-test-20260927-w109-final-green.log`).
+Documentation built after the FA status-row correction
+(`/private/tmp/hsq-fa-gllvm-docs-20260927-w109-final.log`). The paired R
+three-block/direct-maternal live bridge tests passed against this exact
+Julia source (`/private/tmp/hsquared-fa-gllvm-w109-live-bridge-final.log`).
+Exact-zero/KKT fitting and wider fallback timing remain open; all four
+source-review waves stay HOLD. Totoro was down; no DRAC or GPU run occurred.

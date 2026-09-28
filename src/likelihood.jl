@@ -398,6 +398,8 @@ end
 # public `fit_ai_reml` wrapper above returns only `.fit`, preserving its result
 # type and every fitted value while the study can consume counters recorded at
 # the point where the corresponding event actually occurs.
+const _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS = 512
+
 function _fit_ai_reml_diagnostics(
     spec::AnimalModelSpec;
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
@@ -473,10 +475,28 @@ function _fit_ai_reml_diagnostics(
         trace_AC = selinv_trace_against(factor, Ainv, nfixed)
         uAu = dot(u, Ainv * u)
 
-        score_a = -0.5 / sigma_a2^2 * (nrandom * sigma_a2 - trace_AC - uAu)
-        score_e =
-            -0.5 / sigma_e2^2 *
-            (sigma_e2 * (nobs - nfixed - nrandom + trace_AC / sigma_a2) - dot(e, e))
+        # The selected-inverse trace approaches q*a as a → 0. Subtracting
+        # these O(a) terms then dividing by a² amplifies roundoff as eps/a.
+        # Detect cancellation relatively, so the switch respects response units
+        # and rescaling the relationship matrix. Keep interior arithmetic intact.
+        if abs(nrandom * sigma_a2 - trace_AC) <=
+           cbrt(eps(Float64)) * max(nrandom * sigma_a2, abs(trace_AC))
+            # The stable fallback is exact but requires q additional MME
+            # solves. Bound that work; never certify a large boundary fit
+            # using a cancellation-dominated score or launch unbounded work.
+            if nrandom > _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS
+                ai_score_a = ai_score_e = ai_score_norm = NaN
+                termination_reason = "boundary_score_unresolved"
+                break
+            end
+            score_a, score_e = _ai_reml_boundary_scores(
+                factor, X, Z, Ainv, e, sigma_a2, sigma_e2)
+        else
+            score_a = -0.5 / sigma_a2^2 * (nrandom * sigma_a2 - trace_AC - uAu)
+            score_e =
+                -0.5 / sigma_e2^2 *
+                (sigma_e2 * (nobs - nfixed - nrandom + trace_AC / sigma_a2) - dot(e, e))
+        end
         ai_score_a = score_a
         ai_score_e = score_e
         ai_score_norm = hypot(score_a, score_e)
@@ -537,7 +557,8 @@ function _fit_ai_reml_diagnostics(
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
-    status = converged ? "converged" : "not_converged"
+    status = termination_reason == "boundary_score_unresolved" ? termination_reason :
+             (converged ? "converged" : "not_converged")
     fit = AnimalModelFit(
         spec,
         likelihood,
@@ -909,6 +930,42 @@ function _reml_project(factor, X, Z, w, sigma_e2, nfixed)
     solution =
         factor \ vcat(transpose(X) * w ./ sigma_e2, transpose(Z) * w ./ sigma_e2)
     return (w .- X * solution[1:nfixed] .- Z * solution[(nfixed + 1):end]) ./ sigma_e2
+end
+
+# Stable additive-boundary score: K = Z*Q⁻¹*Z', Py = residual/e,
+# s_a = (g'Q⁻¹g - tr(PK))/2, g = Z'Py. Stream the q columns of
+# tr(Q⁻¹Z'PZ); only vectors and sparse factors are retained, never dense A,
+# K, or P. This costs q MME solves and q+1 precision solves, so it is used
+# only when the usual selected-inverse trace subtraction loses precision.
+function _ai_reml_boundary_scores(factor, X, Z, Q, residual, a, e)
+    n = size(Z, 1)
+    p = size(X, 2)
+    py = residual ./ e
+    quadratic_a, trace_PK = _reml_streamed_component(factor, X, Z, Z, Q, py, e)
+    # tr(PV) = n-p and V = a*K + e*I. Near a=0 this identity
+    # computes tr(P) without the q - tr(Q*Cuu)/a cancellation.
+    trace_P = ((n - p) - a * trace_PK) / e
+    return 0.5 * (quadratic_a - trace_PK), 0.5 * (dot(py, py) - trace_P)
+end
+
+# Z is this component's incidence; Zfull contains EVERY random effect in
+# the factor. In multi-effect fits projecting through Z alone is incorrect.
+function _reml_streamed_component(factor, X, Zfull, Z, Q, py, e)
+    q = size(Z, 2)
+    p = size(X, 2)
+    Qfactor = cholesky(Symmetric(Q); check = true)
+    g = transpose(Z) * py
+    quadratic_a = dot(g, Qfactor \ g)
+    basis = zeros(q)
+    trace_PK = 0.0
+    for j in 1:q
+        basis[j] = 1.0
+        column = Z * (Qfactor \ basis)
+        projected = _reml_project(factor, X, Zfull, column, e, p)
+        trace_PK += dot(Z[:, j], projected)
+        basis[j] = 0.0
+    end
+    return quadratic_a, trace_PK
 end
 
 # The raw variance score changes with response units and grows with sample size.
@@ -2604,6 +2661,7 @@ function fit_sparse_multi_effect_aireml(
     converged = false
     iters = 0
     last_relative_change = Inf
+    boundary_score_unresolved = false
     for it in 1:iterations
         iters = it
         lhs, rhs = _assemble_lhs_rhs!(ws, sigmas, sigma_e2)
@@ -2614,16 +2672,13 @@ function fit_sparse_multi_effect_aireml(
         traces = selinv_block_traces(factor, Ainvs, offsets)
 
         us = [solution[(offsets[i] + 1):(offsets[i] + qs[i])] for i in 1:K]
-        uAu = [dot(us[i], Ainvs[i] * us[i]) for i in 1:K]
-
         # REML scores: K component scores then the residual score (same identities
         # as fit_ai_reml, generalized to K blocks + a joint effective residual df).
-        score = Vector{Float64}(undef, K + 1)
-        for i in 1:K
-            score[i] = -0.5 / sigmas[i]^2 * (qs[i] * sigmas[i] - traces[i] - uAu[i])
+        score = _multi_reml_scores(ws, factor, sigmas, sigma_e2, e, traces, us)
+        if score === nothing
+            boundary_score_unresolved = true
+            break
         end
-        dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
-        score[K + 1] = -0.5 / sigma_e2^2 * (sigma_e2 * dfe - dot(e, e))
 
         if last_relative_change < tol &&
            _ai_reml_stationary(norm(score), max(maximum(sigmas), sigma_e2), n - nfixed, tol)
@@ -2670,7 +2725,8 @@ function fit_sparse_multi_effect_aireml(
     loglik, beta, us = _multi_reml_loglik!(ws, sigmas, sigma_e2)
     total = sum(sigmas) + sigma_e2
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
-    status = converged ? "converged" : "not_converged"
+    status = boundary_score_unresolved ? "boundary_score_unresolved" :
+             (converged ? "converged" : "not_converged")
     return merge((
         variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
         ratios = sigmas ./ total,
@@ -2683,6 +2739,42 @@ function fit_sparse_multi_effect_aireml(
         status = status,
         estimator = :sparse_multi_effect_aireml,
     ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, nfixed))
+end
+
+function _multi_reml_scores(ws, factor, sigmas, sigma_e2, e, traces, us)
+    K = length(sigmas)
+    cancellation = [abs(ws.qs[i] * sigmas[i] - traces[i]) <=
+                    cbrt(eps(Float64)) * max(ws.qs[i] * sigmas[i], abs(traces[i]))
+                    for i in 1:K]
+    # Bound the combined work across triggered components. Other components
+    # retain their ordinary selected-inverse calculation, irrespective of q.
+    sum(ws.qs[i] for i in 1:K if cancellation[i]; init = 0) >
+        _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS && return nothing
+    score = Vector{Float64}(undef, K + 1)
+    py = e ./ sigma_e2
+    covariance_trace = 0.0
+    for i in 1:K
+        if cancellation[i]
+            quadratic, trace_PK = _reml_streamed_component(
+                factor, ws.Xs, ws.Zf, ws.Zs[i], ws.Ainvs[i], py, sigma_e2)
+            score[i] = 0.5 * (quadratic - trace_PK)
+            covariance_trace += sigmas[i] * trace_PK
+        else
+            uAu = dot(us[i], ws.Ainvs[i] * us[i])
+            score[i] = -0.5 / sigmas[i]^2 * (ws.qs[i] * sigmas[i] - traces[i] - uAu)
+            covariance_trace += ws.qs[i] - traces[i] / sigmas[i]
+        end
+    end
+    if any(cancellation)
+        # tr(PV)=n-p with V=sum_i sigma_i*K_i + sigma_e2*I.
+        trace_P = (ws.n - ws.nfixed - covariance_trace) / sigma_e2
+        score[K + 1] = 0.5 * (dot(py, py) - trace_P)
+    else
+        # Preserve the historical interior arithmetic (and frozen fixtures).
+        dfe = ws.n - ws.nfixed - sum(ws.qs) + sum(traces[i] / sigmas[i] for i in 1:K)
+        score[K + 1] = -0.5 / sigma_e2^2 * (sigma_e2 * dfe - dot(e, e))
+    end
+    return score
 end
 
 # Dense REML log-likelihood + BLUPs for the direct–maternal model: one trait, one
