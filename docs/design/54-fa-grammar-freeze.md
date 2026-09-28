@@ -44,11 +44,12 @@ covariance and unstructured residual covariance:
 ```julia
 fit_multivariate_reml(
     Y, X, Z, Ainv;
-    method = :REML,                    # implied; ML is not implemented
     genetic_structure = :factor_analytic,
     rank = 1,                          # K
 )
 ```
+
+`fit_multivariate_reml` is intrinsically REML-only; it has no `method` keyword.
 
 Reconstruction used by the fitter and by the pass objects:
 
@@ -134,7 +135,7 @@ frozen; the implementation date is not.
 | Rank | `rank` | positive integer; required iff structure is `factor_analytic` or `lowrank` |
 | Reconstruction | `G0 = ΛΛ' + Ψ` | `Ψ` diagonal uniqueness; S3 floor `ψ = 1e-4 + exp(θ)` |
 | Residual | unstructured `R0` | no residual-structure argument on the S4 path |
-| Method | REML | `REML = TRUE` / `method = :REML`; ML not implemented |
+| Method | REML | `fit_multivariate_reml` is intrinsically REML-only and accepts no method argument; ML is not implemented |
 | Primary | `animal(1 \| id, pedigree = ped)` | pedigree `Ainv`; genomic / single-step FA not in S4 |
 
 R expert-control shape (names frozen; **bridge still rejects**):
@@ -165,13 +166,19 @@ Do **not** name the FA form `rr()` — that is random regression.
 
 Rotation-invariant only (design-29). This freeze does not add extractors.
 
-| Frozen as identified | Not identified / not a covered claim |
+| Rotation-invariant candidate quantities (identification not certified) | Not identified / not a covered claim |
 | --- | --- |
 | `genetic_covariance` / `G_matrix()` (`G0`) | raw `genetic_loadings` / `loadings()` as axes |
 | `residual_covariance` / `R_matrix()` | SEs on any `Λ[i,k]` |
-| `genetic_uniqueness` (`ψ`) | factor-interpretation claims |
-| `genetic_structure`, `genetic_rank` (`K`) | default-path `cov = fa` fitting |
+| fitted `genetic_uniqueness` (`ψ`); interpretation requires local identification, which the fit does not assess | factor-interpretation claims |
+| `genetic_structure`, requested factor count `genetic_rank` (`K`) | default-path `cov = fa` fitting |
 | `loglik`, `converged` | interval calibration |
+
+Rotation invariance of `Ψ` does not establish that `Ψ` is identified. The
+`t=2, K=1` fit is saturated, and even the frozen `t=4, K=1` cell needs
+pointwise local-identification and fitted-information evidence before an
+individual `Ψ` estimate is interpreted. See
+`docs/design/fa-t4k1-identifiability-and-units.md`.
 
 Per-trait `h²` and `r_g` on an FA `G` are **derived**. They are not in the
 S4 pass definition and are not frozen as a covered FA claim here.

@@ -1,5 +1,10 @@
 # Validation Debt Register
 
+> **FA payload interpretation amendment (2026-09-27):** the experimental
+> structured payload reports fitted `Ψ` but does not assess local identification;
+> do not interpret a returned value as identified from convergence or Ledermann
+> slack. This leaves validation debt open and makes no promotion.
+
 > **v0.7 genomic activation debt update (2026-07-13):** optimizer boundary
 > classification is now localized and independently verified, but the sealed
 > candidate failed its preregistered runtime gate in one of five cells (5.99x

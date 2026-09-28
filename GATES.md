@@ -8,7 +8,7 @@ Scope: Deliver bounded opt-in FA and genetic GLLVM fits through hsquared, then r
   EVIDENCE: `docs/design/fa-t4k1-identifiability-and-units.md`; `test/fa_independent_dense_reml.jl` 7/7; Julia and R capability/debt rows; `docs/dev-log/scout/2026-09-27-fa-same-model-reference.md` records one near-boundary independently fitted check and its limits.
 
 - [ ] A2: FA engine review records source spans, findings, numerical checks, and agent-panel verdict.
-  EVIDENCE: `docs/dev-log/source-review/2026-09-27-wave2.md` records full `multivariate.jl` spans and findings; scoped numerical repairs and 24/24 G-guard tests pass. The wave and independent panel signoff remain HOLD.
+  EVIDENCE: `docs/dev-log/source-review/2026-09-27-wave2.md` records full `multivariate.jl` spans and findings; scoped numerical repairs and 24/24 G-guard tests pass. FA closeout review corrected the payload's uniqueness-identification status, rank/trait/unit definitions, repeated-eigenvalue caveat, stale REML keyword, and saturated T2 example. Scoped Sol and Rose reviews found no remaining must-fix in touched files after correcting Rose's table wording comment. Full Pkg.test and docs build pass in a writable copy; this does not close the whole source wave, fitted-information/routine-start evidence, or R bridge status propagation. Wave and whole-wave panel signoff remain HOLD.
 
 - [x] B1: Four-trait Gaussian K=1 pedigree FA is usable through a documented opt-in R route with invariant G, uniqueness limits, correlation, and diagnostics; unsupported routes fail clearly.
   EVIDENCE: R `tests/testthat/test-fa-optin.R` and `vignettes/articles/multivariate.Rmd`; 50 live same-input parity checks plus final focused opt-in rerun; R package check Status: OK. This is a partial expert route; default-iteration convergence, broad recovery, and inference are open.
@@ -42,3 +42,7 @@ Scope: Deliver bounded opt-in FA and genetic GLLVM fits through hsquared, then r
   EVIDENCE: Candidate branches retain version 0.9.0 and contain no new public release tag or submission. The user's existing 0.9.0 CRAN submission remains in its separate review lane.
 
 At each arc boundary, record exact commits, met/unmet/abandoned counts, compute estimates, test results, and next arc. A gate stays open if evidence is incomplete. A run estimated above three hours requires a pre-run result and Shinichi's approval.
+
+## 2026-09-27 FA closeout update
+
+The review addendum records current FA spans, file hashes, tests, and scoped Sol/Rose verdicts. The payload and interpretation-language corrections do not resolve the outstanding exact-candidate comparator, routine-start/local-information evidence, R bridge status propagation, or other unreviewed source spans. E1 stays open; this update is not whole-wave signoff. Full local package tests and the docs build passed in a writable content-matched copy; Julia CI for the closeout change remains unobserved until its push completes.

@@ -8480,6 +8480,9 @@ end
     @test ledermann_slack(4, 1) == 4
     @test rank(fa_jacobian(λ)) == 8
     @test factor_analytic_covariance(reshape(-λ, 4, 1), ψ) ≈ G
+    trait_order = [3, 1, 4, 2]
+    @test factor_analytic_covariance(reshape(λ[trait_order], 4, 1), ψ[trait_order]) ≈
+          G[trait_order, trait_order]
     # Three nonzero off-diagonal products recover each loading square,
     # hence ψ_i = G_ii - λ_i², up to the single global loading sign.
     pairs = ((2, 3), (1, 3), (1, 2), (1, 2))
@@ -8662,6 +8665,10 @@ end
         @test sp.genetic_structure == sname
         @test sp.genetic_rank == 1
         @test sp.rotation_invariant && sp.loadings_excluded
+        @test sp.traits == collect(sfit.traits)
+        @test sp.genetic_uniqueness == sfit.genetic_uniqueness
+        @test sp.genetic_uniqueness_identification ==
+              (sname == "factor_analytic" ? :not_assessed_by_fit : nothing)
         @test !(:genetic_loadings in keys(sp))              # hard contract: no raw loadings
         @test sp.genetic_covariance ≈ Matrix(sfit.genetic_covariance) atol = 1e-10
         @test sp.genetic_variances ≈ diag(sfit.genetic_covariance)

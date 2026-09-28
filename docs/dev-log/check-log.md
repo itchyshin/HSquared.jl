@@ -6074,3 +6074,20 @@ full `Pkg.test()` rerun in `/private/tmp/hsquared-w105-final-copy` passed on
 the updated candidate (Julia 1.10.0, four Julia threads, one BLAS thread),
 ending `Testing HSquared tests passed`; `diff -qr` confirmed `src/` and `test/`
 matched the candidate. PR #401 still needs post-change Julia 1.13 CI.
+
+## 2026-09-27 FA interpretation closeout
+
+The FA payload/doc interpretation repair passed the full Julia 1.10.0
+`Pkg.test()` suite in `/private/tmp/hsq-fa-closeout-20260927-copy` with four
+Julia threads and one BLAS thread (`Testing HSquared tests passed`). The copy's
+`src/` and `test/` trees matched the managed candidate by `diff -qr`. This run
+includes the payload identification-status assertions and a trait-permutation
+covariance check. The managed checkout test attempt was blocked by sandbox
+writes from existing comparator-harness tests; the exact tree passed in the
+writable copy. Documentation build succeeded in that copy after attaching the
+worktree `.git` pointer; it emitted existing warnings about 46 docstrings not
+listed in the manual, deployment autodetection, and VitePress chunk size.
+
+The fit suite duration was under three hours. I did not state an upfront time
+estimate before launching it; record this as a process miss and state estimates
+before subsequent fit/simulation work. No simulation campaign or GPU work ran.

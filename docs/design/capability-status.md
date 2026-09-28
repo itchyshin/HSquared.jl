@@ -1,5 +1,12 @@
 # Capability Status
 
+> **FA interpretation amendment (2026-09-27):** structured Julia payloads may
+> return fitted FA `Ψ`, but identify it only as a rotation-invariant candidate
+> component; fit convergence and positive Ledermann slack do not assess its
+> local identification. `genetic_rank` is the requested factor count. Individual
+> genetic principal axes are unstable at repeated eigenvalues. This note changes
+> no capability status or R-public claim; see `docs/design/54-fa-grammar-freeze.md`.
+
 > **Current-state amendment (2026-09-11):** this ledger accompanies an
 > experimental **0.9.0 release** with R-public `public_covered_count` **7**.
 > Earlier in-row references to experimental 0.8.0 are historical provenance,

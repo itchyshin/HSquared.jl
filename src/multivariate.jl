@@ -228,9 +228,17 @@ rotation-INVARIANT summaries of the estimated genetic covariance `G` (the FA
 rotation convention, `docs/dev-log/decisions/2026-06-19-fa-rotation-convention.md`):
 the reconstructed `G`, per-trait genetic variances / correlations, the genetic
 eigenstructure ([`genetic_pca`](@ref): descending eigenvalues + sign-canonicalized
-principal axes), `mean_evolvability`, and — for `:factor_analytic` — the separate
+principal axes; when eigenvalues are repeated, interpret the eigenspace rather
+than individual axes), `mean_evolvability`, and — for `:factor_analytic` — the separate
 specific variances `Ψ` (`genetic_uniqueness`, a rotation-invariant fitted component;
-its identifiability requires more than a rotation convention). Fixed effects, breeding
+rotation invariance does not establish that the decomposition identifies `Ψ`). The
+payload reports `genetic_uniqueness_identification = :not_assessed_by_fit`; callers
+must not infer identification from convergence or positive Ledermann slack. The
+`genetic_rank` field is the requested factor count `K`, not an estimated rank of `G`
+or automatic rank selection. Trait labels and all trait-indexed fields follow the
+input `Y` column order. `heritability` is `Gᵢᵢ/(Gᵢᵢ + Rᵢᵢ)` on the relationship
+matrix reference scale, and `mean_evolvability` is coordinate- and unit-dependent.
+Fixed effects, breeding
 values, per-trait heritabilities, the REML `loglik`, and `converged` are
 rotation-invariant and carried through. It deliberately OMITS `genetic_loadings`;
 `rotation_invariant = true` and `loadings_excluded = true` make that self-describing.
@@ -265,6 +273,7 @@ function structured_genetic_payload(result)
         genetic_principal_axes = pca.vectors,
         mean_evolvability = mean_evolvability(G0),
         genetic_uniqueness = isnothing(ψ) ? nothing : copy(collect(ψ)),
+        genetic_uniqueness_identification = isnothing(ψ) ? nothing : :not_assessed_by_fit,
         heritability = copy(collect(r.heritability)),
         fixed_effects = Matrix(r.beta),
         breeding_values = (ids = bv.ids, traits = bv.traits, values = Matrix(bv.values)),
@@ -375,8 +384,9 @@ const FA_UNIQUENESS_FLOOR = 1e-4
 """
     ledermann_slack(t, K)
 
-Ledermann degrees of freedom for a `t`-trait rank-`K` factor-analytic
-covariance: `(t − K)² − (t + K)`. Strictly positive slack is required
+Ledermann slack for a `t`-trait rank-`K` factor-analytic
+covariance: `(t − K)² − (t + K)`. This is twice the generic covariance
+codimension, not the nominal degrees of freedom for a model comparison. Strictly positive slack is required
 before a cell can be a covered-flip candidate; it is a dimension-count
 screen, not proof of local or global identification. Slack `≤ 0` is
 Ledermann-saturated (S1 `t=3 K=1` is the disclosure cell).
