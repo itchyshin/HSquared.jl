@@ -406,6 +406,7 @@ function _fit_ai_reml_diagnostics(
     iterations::Integer = 100,
     tol::Real = 1e-8,
     em_warmup::Integer = 0,
+    trace_evaluator = selinv_trace_against,
 )
     spec.method == :REML ||
         throw(ArgumentError("fit_ai_reml requires spec.method == :REML"))
@@ -428,6 +429,8 @@ function _fit_ai_reml_diagnostics(
     ai_score_a = NaN
     ai_score_e = NaN
     ai_score_norm = NaN
+    last_newton_step = (NaN, NaN)
+    boundary_score_fallbacks = 0
     termination_reason = "iteration_limit"
 
     # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
@@ -450,7 +453,7 @@ function _fit_ai_reml_diagnostics(
         solution = factor \ rhs
         u = solution[(nfixed + 1):end]
         e = y .- X * solution[1:nfixed] .- Z * u
-        trace_AC = selinv_trace_against(factor, Ainv, nfixed)
+        trace_AC = trace_evaluator(factor, Ainv, nfixed)
         uAu = dot(u, Ainv * u)
         a_em = (uAu + trace_AC) / nrandom
         e_em = dot(e, e) / (nobs - nfixed - nrandom + trace_AC / sigma_a2)
@@ -472,7 +475,7 @@ function _fit_ai_reml_diagnostics(
         beta = solution[1:nfixed]
         u = solution[(nfixed + 1):end]
         e = y .- X * beta .- Z * u
-        trace_AC = selinv_trace_against(factor, Ainv, nfixed)
+        trace_AC = trace_evaluator(factor, Ainv, nfixed)
         uAu = dot(u, Ainv * u)
 
         # The selected-inverse trace approaches q*a as a → 0. Subtracting
@@ -489,6 +492,7 @@ function _fit_ai_reml_diagnostics(
                 termination_reason = "boundary_score_unresolved"
                 break
             end
+            boundary_score_fallbacks += 1
             score_a, score_e = _ai_reml_boundary_scores(
                 factor, X, Z, Ainv, e, sigma_a2, sigma_e2)
         else
@@ -515,6 +519,7 @@ function _fit_ai_reml_diagnostics(
         Pwe = _reml_project(factor, X, Z, we, sigma_e2, nfixed)
         information = 0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)]
         step = _ai_newton_step(information, [score_a, score_e])
+        last_newton_step = (step[1], step[2])
 
         # Defense-in-depth for a genuinely NON-FINITE Newton step (NaN/Inf) from a degenerate
         # AI information matrix: stop at the current finite, positive variance components with
@@ -582,6 +587,8 @@ function _fit_ai_reml_diagnostics(
             ai_score_a = ai_score_a,
             ai_score_e = ai_score_e,
             ai_score_norm = ai_score_norm,
+            last_newton_step = last_newton_step,
+            boundary_score_fallbacks = boundary_score_fallbacks,
         ),
     )
 end

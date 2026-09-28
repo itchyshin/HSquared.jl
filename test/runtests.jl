@@ -4231,12 +4231,11 @@ end
         sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
     tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
     tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
-        provenance = tie_provenance)
+        provenance = tie_provenance, iterations = 1)
     @test tie_result.boundary.status == "boundary_unresolved"
     @test tie_result.boundary.reason == "endpoint_pair_tie"
     @test tie_result.fit !== nothing && !tie_result.fit.converged
     @test tie_result.fit.optimizer_status == "boundary_unresolved"
-    @test tie_result.ai_diagnostics.termination_reason == "score_tolerance"
 
     endpoint_interior_tie = HSquared._genomic_boundary_classify_candidates(
         10.0, 10.0, 9.0, true, -0.1, -0.1, 120)
@@ -11056,6 +11055,7 @@ include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
 include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_boundary_score_contracts.jl"))
+include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
 include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
 include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
 include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))

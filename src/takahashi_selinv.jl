@@ -322,7 +322,15 @@ in the summation loop below. Adapted from DRM.jl (MIT).
 """
 function selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
                               Ainv::SparseMatrixCSC, nfixed::Integer)
-    Zvals, colptr, rowval, perm, n = _selinv_zvals(ch)
+    return _selinv_trace_against(ch, Ainv, nfixed, false)
+end
+
+# Private strict-order seam for numerical parity tests. The public trace keeps
+# its default SIMD route and its existing positional signature.
+function _selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
+                               Ainv::SparseMatrixCSC, nfixed::Integer,
+                               strict_order::Bool)
+    Zvals, colptr, rowval, perm, n = _selinv_zvals(ch; strict_order = strict_order)
     iperm = invperm(perm)            # original index -> permuted index
     rows = rowvals(Ainv)
     vals = nonzeros(Ainv)

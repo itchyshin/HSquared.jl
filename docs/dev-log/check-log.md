@@ -6040,3 +6040,37 @@ three-block/direct-maternal live bridge tests passed against this exact
 Julia source (`/private/tmp/hsquared-fa-gllvm-w109-live-bridge-final.log`).
 Exact-zero/KKT fitting and wider fallback timing remain open; all four
 source-review waves stay HOLD. Totoro was down; no DRAC or GPU run occurred.
+
+## 2026-09-27 W1-05 strict-order / SIMD fit parity
+
+The focused parity regression passed **40/40 assertions** on the final source
+with `JULIA_NUM_THREADS=4`, `OPENBLAS_NUM_THREADS=1`, and
+`--compiled-modules=no` (about 20 seconds wall time). It covers two shared
+interior score/step points, paired converged fit estimates and likelihood, a
+same-MME PEV diagonal comparison, and rejection of a deliberately 1% biased
+trace. `git diff --check` passed.
+
+The full `Pkg.test()` completed with exit 0 and reported `Testing HSquared
+tests passed` in the writable, content-matched copy `/private/tmp/hsquared-w105-final-copy` (about 5 minutes, four Julia threads, one BLAS thread). `diff -qr` confirmed identical `src/` and `test/` trees to the candidate. A later managed-checkout attempt failed at the existing comparator-harness testset under the sandbox; its captured tail did not retain the underlying I/O message. The focused Node wrapper ran directly from the package root with exit 0 and reported 40/40 plus `W105_FIT_PARITY_PASS`; the Unlazy shell-captured attempt returned exit 2 with `Test: Summary:: unexpected operator`. Keep both outcomes visible. Read-only CI checks were subsequently retrieved:
+Julia #401 is still at pre-W1-05 head `54907ea8`; Julia 1 Ubuntu fails the
+pre-existing `v0.7 genomic closed-boundary resolution` reason assertion
+(`iteration_limit` returned where `score_tolerance` is expected; 71/72
+assertions), while Julia 1 Windows, both Julia 1.10 jobs, docs, and deploy
+pass. R #259's Julia 1, Julia 1.10, docs, and deploy checks pass. W1-05 is
+committed locally but not pushed, so its CI is not yet observed.
+No docs build was needed because no public docs changed.
+`bash tools/preamble_cap.sh` passed at 11,024/14,000 bytes with one snapshot
+entry. `graft build` parsed all 189 files but could not create `graft/.graph`
+under the managed worktree (`EPERM`). The R after-task structural check passed;
+integrated ledger re-verification remains blocked by open/unreadable programme
+ledger evidence, so no clean ledger-wide result is claimed.
+
+CI portability follow-up: independent Gauss and Curie reviews found that the
+remaining failure is an exact AI stop-label assertion on an unidentifiable
+`Z = Q = I` ridge, rather than a boundary-classification failure. The fixture
+now uses `iterations = 1` and retains its four semantic assertions. The focused
+four-assertion Julia 1.10 probe passed (`CI_BOUNDARY_TIE_SEMANTICS_PASS`). A
+full `Pkg.test()` rerun in `/private/tmp/hsquared-w105-final-copy` passed on
+the updated candidate (Julia 1.10.0, four Julia threads, one BLAS thread),
+ending `Testing HSquared tests passed`; `diff -qr` confirmed `src/` and `test/`
+matched the candidate. PR #401 still needs post-change Julia 1.13 CI.
