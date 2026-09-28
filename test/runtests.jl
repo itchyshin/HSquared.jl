@@ -1424,6 +1424,19 @@ end
     @test_throws ArgumentError normalize_pedigree(["a"], ["a"], ["0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["b", "a"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
+    # A maximally deep, reverse-listed chain exercises the recursion depth in
+    # topological sorting. The existing large-pedigree fixture is broad but shallow.
+    chain_n = 12_000
+    chain_ids = collect(chain_n:-1:1)
+    chain_sire = [id == 1 ? 0 : id - 1 for id in chain_ids]
+    deep_chain = normalize_pedigree(chain_ids, chain_sire, zeros(Int, chain_n))
+    @test deep_chain.ids == collect(1:chain_n)
+    @test deep_chain.original_order == collect(chain_n:-1:1)
+    @test all(parent == 0 || parent < child for (child, parent) in pairs(deep_chain.sire))
+    deep_chain_Ainv = pedigree_inverse(deep_chain)
+    @test size(deep_chain_Ainv) == (chain_n, chain_n)
+    @test all(isfinite, nonzeros(deep_chain_Ainv))
+
     # F1: inbreeding now uses Meuwissen-Luo (O(n)); max_relationship_cache no longer
     # bounds it (it previously threw). The kwarg is ignored and the result is unchanged.
     @test inbreeding_coefficients(ped; max_relationship_cache = 2) ≈
