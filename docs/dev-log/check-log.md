@@ -6091,3 +6091,7 @@ listed in the manual, deployment autodetection, and VitePress chunk size.
 The fit suite duration was under three hours. I did not state an upfront time
 estimate before launching it; record this as a process miss and state estimates
 before subsequent fit/simulation work. No simulation campaign or GPU work ran.
+
+## 2026-09-27 FA ordinary-start exploratory diagnostic
+
+Estimated under five minutes before execution; three fits completed in about 12 seconds after Julia startup on the 24-record T=4/K=1 fixture. Using the exact committed FA source from `08a5a38e`, the default, dispersed, and clamped-restart Nelder-Mead fits each reported convergence but all landed at or extremely near the 1e-4 uniqueness floor. Log likelihoods: -143.8904176, -143.3407481, and -143.3407476. Default versus dispersed relative covariance differences: G 0.4043, R 0.1546. Default relative errors against generating G/R: 1.345/1.374. The default start is materially worse on this one fixture; this is not multi-seed recovery evidence. Fisher and Astra reviews are recorded in the after-task addendum. The frozen S2 preregistration uses strict `< 1e-4` classification; future diagnostics should preregister a numerical boundary tolerance and record `ψ - floor`. No source or capability-status change followed from this probe.
