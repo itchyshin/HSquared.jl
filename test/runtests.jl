@@ -2121,6 +2121,16 @@ end
     @test [row.value for row in data_status(genotype_status_data).genotype_status] ==
           ["2", "2", "2", "2", "0", "0", "1", "table"]
 
+    custom_id_marker_status = data_status(
+        HSData(
+            (id = ["a", "b"], y = [1.0, 2.0]);
+            genotypes = (sample = ["a", "b"], m1 = [0, 1]),
+            genotype_id = :sample,
+        ),
+    ).marker_status
+    @test [row.value for row in custom_id_marker_status] ==
+          ["0", "1", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
+
     duplicate_genotypes = Dict(
         :id => ["a", "b"],
         :m1 => [0, 1],

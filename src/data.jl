@@ -987,17 +987,17 @@ end
 function _data_genotype_marker_count(data::HSData)
     data.genotypes === nothing && return 0
     data.genotype_marker_spec === nothing || return length(data.genotype_marker_spec.marker_ids)
-    return _fallback_genotype_marker_count(data.genotypes)
+    return _fallback_genotype_marker_count(data.genotypes, data.genotype_id)
 end
 
-function _fallback_genotype_marker_count(genotypes::AbstractMatrix)
+function _fallback_genotype_marker_count(genotypes::AbstractMatrix, genotype_id)
     return size(genotypes, 2)
 end
 
-function _fallback_genotype_marker_count(genotypes)
+function _fallback_genotype_marker_count(genotypes, genotype_id)
     names = _column_names(genotypes)
     names === nothing && return 0
-    return count(name -> string(name) != "id", names)
+    return count(name -> !_same_column_name(name, genotype_id), names)
 end
 
 function _data_marker_alignment(marker_spec, genotype_marker_spec, genotype_marker_count::Int)
