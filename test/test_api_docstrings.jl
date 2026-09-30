@@ -35,3 +35,13 @@
     @test isempty(undocumented)
     isempty(undocumented) || @info "api.md entries without a docstring" undocumented
 end
+
+@testset "fit_animal_model help describes implemented methods" begin
+    help = string(@doc HSquared.fit_animal_model)
+    @test occursin("AnimalModelSpec", help)
+    @test occursin("y, X, Z, Ainv", help)
+    @test all(target -> occursin(target, help),
+              (":variance_components", ":sparse_reml", ":ai_reml", ":henderson_mme"))
+    @test occursin(":ai_reml", help)
+    @test !occursin("intentionally not implemented in Phase 0", help)
+end

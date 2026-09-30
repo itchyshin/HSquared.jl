@@ -1,0 +1,11 @@
+{
+  "green-attempt-1.log": "34ed07780e69b2a51233059fb8a549a430788dc24ad99877259225bd1da0343e",
+  "green-final.log": "5698c77c5cf2977f08c46b18a8830444c99d0feb5b137e18cb666a5ac9e0ac5d",
+  "h2-descriptor-fix.patch": "e255f85afdb3b68e77d7a5e303c7f46109340464aad52fcbb9e0315c682780c8",
+  "independent-astra-review.md": "454dff1be6748000b4422edff7669de05e262ed1dfb53f822bf2d07ebe7178f3",
+  "receipt.md": "45cfe6a5282f6d0950039320b8191ec899bb194be659dca92300eabee4de67a1",
+  "red-original-gaussian-fence.log": "eb6bee3a47d35c2f617d6760654c42a1254a0c996cac5529e0d98c4756a6cdd4",
+  "red.log": "6ce1b5a7582e726615814bba8230ffc4e96576887d5372d995babddd098c2c27",
+  "sha256-inventory.json": "22b524dcff895cd3617166d339edabf8c1f1d73647cde4e700f3bcc1e12a381e",
+  "test/nongaussian_h2_descriptor_regression.jl": "6ef180997073e24708df93f1fbdd400413d140875d0aa85806649be3fe9e9986"
+}

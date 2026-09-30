@@ -1,0 +1,68 @@
+{
+  "changed_functions": [
+    "_validated_sparse_relationship_spec",
+    "sparse_reml_loglik",
+    "fit_sparse_reml",
+    "_fit_ai_reml_diagnostics"
+  ],
+  "unchanged_extracted_functions": 125,
+  "other_whole_bodies_identical": true,
+  "three_computational_bodies_equal_after_call_name_replacement": true,
+  "changed_spans": [
+    {
+      "operation": "replace",
+      "baseline": [
+        291,
+        291
+      ],
+      "prepared": [
+        291,
+        291
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        297,
+        296
+      ],
+      "prepared": [
+        297,
+        298
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        298,
+        298
+      ],
+      "prepared": [
+        300,
+        301
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        452,
+        452
+      ],
+      "prepared": [
+        455,
+        455
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        582,
+        582
+      ],
+      "prepared": [
+        585,
+        585
+      ]
+    }
+  ]
+}

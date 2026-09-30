@@ -1,0 +1,58 @@
+{
+  "live_root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "base_head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "likelihood_sha256": "90cc76897c2b977f4bebc456d1e6c8d8f2647a7bb7ec6e8c9135884da0f17e30",
+  "source_tree": "2ec4bdfe2d1ecc36a6cf73bbc834c9016fef2ffd960bae2d799038cc24c3685c",
+  "patch_sha256": "b36a17ff71f3ab88e15b8ad1b55cb7df4ea37e13ba94e3fd4e3de3354db92b46",
+  "changed_files": {
+    "src/likelihood.jl": {
+      "original_sha256": "90cc76897c2b977f4bebc456d1e6c8d8f2647a7bb7ec6e8c9135884da0f17e30",
+      "prepared_sha256": "4662affd4eadb5651ac6870f860f2e506b13298a23ce85e5bf443d08bcab07f6"
+    },
+    "test/likelihood_uncertainty_contract_regression.jl": {
+      "original_sha256": null,
+      "prepared_sha256": "4f8d491599ce975171cf54cecb78d6e2c90de7d355d60a4b8cf340865640faf9"
+    },
+    "test/runtests.jl": {
+      "original_sha256": "4da75986ff69040a2c8353e743fd98c336c66848c8ccb8c4cc5ac6472fdbaa23",
+      "prepared_sha256": "a577a86765a267001d2e8d806c0ddcea37dc87812e3ec16770c6daee6b897f32"
+    }
+  },
+  "tests": {
+    "red_log_sha256": "9b2f1c66aaab5ca8303c867d53c846f6fdbb07501933c03fbf43ed4d76707ee2",
+    "red_exit": 1,
+    "red_pass": 87,
+    "red_fail": 105,
+    "red_errors": 0,
+    "green_log_sha256": "fbab3b53a12898125385a3adcec31a804af20967af556fbdadec454799f26e5b",
+    "green_exit": 0,
+    "green_pass": 192,
+    "green_fail": 0
+  },
+  "source_edit_reverse_proof": true,
+  "source_tail_original_2367_to_end_unchanged": true,
+  "other_source_files_unchanged": true,
+  "live_likelihood_and_runner_unchanged": true,
+  "apply_checks": [
+    {
+      "root": "/private/tmp/hsq-likelihood-uncertainty-fix-20260930/original",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "replay_hashes_equal": true,
+  "graft_estimated_tokens_saved": 425801,
+  "live_source_tree_at_close": "2ec4bdfe2d1ecc36a6cf73bbc834c9016fef2ffd960bae2d799038cc24c3685c",
+  "syntax_log_sha256": "c538683f66b378bc04fcd0f7fff4b2085ceb2dd71cbd934df2a50b2f7a94d3ee",
+  "syntax_exit": 0,
+  "receipt.md_sha256": "cfeabd625b85702e03fa4db0547356e41a5259c19912ef35796971e629d5045d",
+  "math-contract.md_sha256": "995dc01d2866c90334a90855c97e184158c225920a8aca318cc8d0a0c5d33abe",
+  "slop-check.log_sha256": "ddaf854ce845539d1ea5a8e32a91fddfe00ab634fb87b96a78185490893d1561"
+}

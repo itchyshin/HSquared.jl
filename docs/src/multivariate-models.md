@@ -174,8 +174,13 @@ fad = fit_multivariate_reml(
 The loadings and uniqueness above expose the fitted decomposition for engine
 diagnostics; they do not make the decomposition identified. `genetic_rank` is
 the requested factor count, traits follow the input `Y` column order, and
-`mean_evolvability` depends on the trait coordinates and units. The per-trait
-heritability uses `Gᵢᵢ/(Gᵢᵢ + Rᵢᵢ)` on the relationship matrix reference scale.
+`mean_evolvability` depends on the trait coordinates and units. Directional
+metrics and genetic PCA axes are also coordinate- and unit-dependent: they use
+Euclidean unit directions or eigenvectors in the supplied trait scale. The
+rotation invariance here means invariance to orthogonal latent-factor rotations
+that preserve G; it does not imply invariance to rescaling traits. Choose and
+report a scientifically meaningful common scale before comparing directions
+across traits. The per-trait heritability uses `Gᵢᵢ/(Gᵢᵢ + Rᵢᵢ)` on the relationship matrix reference scale.
 
 The structured metadata accessors copy existing Julia result fields. They do not
 change `result_payload()` or the R bridge contract.

@@ -1,0 +1,21 @@
+{
+  "validation-status": {
+    "path": "rendered-julia-validation-status.html",
+    "sha256": "57f4886fd37a2be6c6abde7602542bd7592a0de342eedcf1660f021913ec6748",
+    "terms_present": {
+      "V4-FA": true,
+      "not conventional": true,
+      "experimental": true
+    }
+  },
+  "multivariate-models": {
+    "path": "rendered-julia-multivariate-models.html",
+    "sha256": "c1c7c0ebdd22147dfd52198ca3f0cc87310b6216f4c73f0f949b08cb8afe9b01",
+    "terms_present": {
+      "factor": true,
+      "rank": true,
+      "uniqueness": true
+    }
+  },
+  "scope": "FA/status pages only; link-scale conditional-mode claims are reviewed in the R genetic-GLLVM article and source contract panel, not asserted as text in the FA page"
+}

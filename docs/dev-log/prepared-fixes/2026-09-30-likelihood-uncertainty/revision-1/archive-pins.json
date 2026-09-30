@@ -1,0 +1,19 @@
+{
+  "control-discovery.log": "1aebcd1a30b94fde93da0a57b03b3fb689db172ab9da488fd8ae67c6a4402490",
+  "edit-log.json": "f936c390e1d155d2892c41fd369027c5c5c2bd09645ed15f31b36ad89a18dd56",
+  "green.log": "fbab3b53a12898125385a3adcec31a804af20967af556fbdadec454799f26e5b",
+  "independent-noether-review.md": "ea0ab86ce40163d36f562ae8b5be4aff320dc7e64a687a05959b583569ba8a55",
+  "inventory.json": "e4ae634015c687fa242f8d1a18f39d1a657283cd86b7f63b56b016001bfbab4e",
+  "likelihood-uncertainty-fix.patch": "b36a17ff71f3ab88e15b8ad1b55cb7df4ea37e13ba94e3fd4e3de3354db92b46",
+  "math-contract.md": "995dc01d2866c90334a90855c97e184158c225920a8aca318cc8d0a0c5d33abe",
+  "prepared/src/likelihood.jl": "4662affd4eadb5651ac6870f860f2e506b13298a23ce85e5bf443d08bcab07f6",
+  "prepared/test/likelihood_uncertainty_contract_regression.jl": "4f8d491599ce975171cf54cecb78d6e2c90de7d355d60a4b8cf340865640faf9",
+  "prepared/test/runtests.jl": "a577a86765a267001d2e8d806c0ddcea37dc87812e3ec16770c6daee6b897f32",
+  "receipt.md": "cfeabd625b85702e03fa4db0547356e41a5259c19912ef35796971e629d5045d",
+  "red-confirmed.log": "9b2f1c66aaab5ca8303c867d53c846f6fdbb07501933c03fbf43ed4d76707ee2",
+  "red.log": "ca740e1274a10078df2984072299ee31e91cf673487a3cb827aa579c5a20df82",
+  "runner-registration.jl": "a88d7a265ce886e63bd15a740d72746c4bb33ae6ebf8d4be1572de08875063c8",
+  "slop-check.log": "ddaf854ce845539d1ea5a8e32a91fddfe00ab634fb87b96a78185490893d1561",
+  "snapshot.json": "a57982301240bec6dca33bd89a6302ce3f7bc84f55d20bedf4fd4f8c941a4011",
+  "syntax.log": "c538683f66b378bc04fcd0f7fff4b2085ceb2dd71cbd934df2a50b2f7a94d3ee"
+}

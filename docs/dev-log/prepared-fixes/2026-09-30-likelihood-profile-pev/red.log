@@ -1,0 +1,720 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 =#
+            bad
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 =#
+            if x == 0.5
+                -1.0
+            else
+                bad
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 =#
+            if x == 0.5
+                -1.0
+            else
+                if x == 1.0
+                    1.0
+                else
+                    bad
+                end
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14
+  Expression: HSquared._profile_root(f, bad, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15
+  Expression: HSquared._profile_root(f, 1.0, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 =#
+            bad
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 =#
+            if x == 0.5
+                -1.0
+            else
+                bad
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 =#
+            if x == 0.5
+                -1.0
+            else
+                if x == 1.0
+                    1.0
+                else
+                    bad
+                end
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14
+  Expression: HSquared._profile_root(f, bad, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15
+  Expression: HSquared._profile_root(f, 1.0, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 =#
+            bad
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 =#
+            if x == 0.5
+                -1.0
+            else
+                bad
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 =#
+            if x == 0.5
+                -1.0
+            else
+                if x == 1.0
+                    1.0
+                else
+                    bad
+                end
+            end
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14
+  Expression: HSquared._profile_root(f, bad, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15
+  Expression: HSquared._profile_root(f, 1.0, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:17
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:17 =#
+            x + 1
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:18
+  Expression: HSquared._profile_root((x->begin
+            #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:18 =#
+            x - 0.5
+        end), 1.0, 0.5)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+profile finite bracket: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:20
+  Expression: ≈(HSquared._profile_root((x->begin
+                #= /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:20 =#
+                x / 1.0e308 - 1.2
+            end), 1.6e308, 1.0e308), 1.2e308, rtol = 1.0e-8)
+   Evaluated: Inf ≈ 1.2e308 (rtol=1.0e-8)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:20 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:34
+  Expression: heritability(fit) ≈ truth
+   Evaluated: 0.0 ≈ 0.6
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:34 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:36
+  Expression: heritability(mme) ≈ truth
+   Evaluated: 0.0 ≈ 0.6
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:36 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39
+  Expression: heritability(mkfit(a, e))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39
+  Expression: heritability(mkfit(a, e))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39
+  Expression: heritability(mkfit(a, e))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Gaussian h2 arithmetic: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39
+  Expression: heritability(mkfit(a, e))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:30 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:46
+  Expression: rr.values ≈ [0.6, 0.6, 0.7]
+   Evaluated: [0.9, 0.6, -0.19999999999999996] ≈ [0.6, 0.6, 0.7]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:46 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49
+  Expression: reliability(fit; pev = (ids = ids, values = vals))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49
+  Expression: reliability(fit; pev = (ids = ids, values = vals))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49
+  Expression: reliability(fit; pev = (ids = ids, values = vals))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49
+  Expression: reliability(fit; pev = (ids = ids, values = vals))
+    Expected: ArgumentError
+      Thrown: DimensionMismatch
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:49 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52
+  Expression: reliability(fit; pev = (ids = badids, values = [0.1, 0.2, 0.3]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52
+  Expression: reliability(fit; pev = (ids = badids, values = [0.1, 0.2, 0.3]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52
+  Expression: reliability(fit; pev = (ids = badids, values = [0.1, 0.2, 0.3]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:55
+  Expression: ERROR: LoadError: Some tests did not pass: 28 passed, 38 failed, 1 errored, 0 broken.
+in expression starting at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:3
+reliability(mkfit(a, 1.0); pev = (ids = ids, values = zeros(3)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:55 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:64
+  Expression: ≈(got.values, fill(truth, 3), atol = 2 * eps())
+   Evaluated: [1.0, 1.0, 1.0] ≈ [0.5, 0.5, 0.5] (atol=4.440892098500626e-16)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:64 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+reused PEV alignment and domain: Error During Test at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:42
+  Got exception outside of a @test
+  ArgumentError: animal-level additive variances must be positive
+  Stacktrace:
+    [1] reliability(fit::AnimalModelFit{AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Bool, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}}; method::Symbol, pev::@NamedTuple{ids::Vector{String}, values::Vector{Float64}})
+      @ HSquared /private/tmp/hsq-likelihood-profile-pev-fix-20260930/package/src/likelihood.jl:3723
+    [2] macro expansion
+      @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:62 [inlined]
+    [3] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+    [4] macro expansion
+      @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:43 [inlined]
+    [5] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+    [6] top-level scope
+      @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+    [7] include(fname::String)
+      @ Base.MainInclude ./client.jl:489
+    [8] top-level scope
+      @ none:1
+    [9] eval
+      @ Core ./boot.jl:385 [inlined]
+   [10] exec_options(opts::Base.JLOptions)
+      @ Base ./client.jl:291
+   [11] _start()
+      @ Base ./client.jl:552
+bootstrap converted acceptance: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:78
+  Expression: !(HSquared._bootstrap_usable_refit(refit(a, 1.0)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:78 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:72 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+bootstrap converted acceptance: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:79
+  Expression: !(HSquared._bootstrap_usable_refit(refit(1.0, a)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:79 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:72 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+bootstrap converted acceptance: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:78
+  Expression: !(HSquared._bootstrap_usable_refit(refit(a, 1.0)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:78 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:72 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+bootstrap converted acceptance: Test Failed at /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:79
+  Expression: !(HSquared._bootstrap_usable_refit(refit(1.0, a)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:79 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:72 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-profile-pev-fix-20260930/test/likelihood_profile_pev_contracts.jl:4
+Test Summary:                               | Pass  Fail  Error  Total  Time
+likelihood profile PEV and scalar contracts |   28    38      1     67  2.1s
+  profile finite bracket                    |    4    18            22  0.6s
+  Gaussian h2 arithmetic                    |    8     6            14  0.0s
+  reused PEV alignment and domain           |    5    10      1     16  1.3s
+  bootstrap converted acceptance            |   11     4            15  0.0s

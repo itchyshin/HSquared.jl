@@ -842,16 +842,14 @@ function _raw_parent_columns(pedigree, n::Int)
 
     sire_name = _pick_optional_column(names, (:sire, :father))
     dam_name = _pick_optional_column(names, (:dam, :mother))
-    if sire_name === nothing || dam_name === nothing
-        if length(names) >= 3
-            sire_name = names[2]
-            dam_name = names[3]
-        else
-            return fill(nothing, n), fill(nothing, n)
-        end
+    if sire_name === nothing && dam_name === nothing
+        length(names) >= 3 || return fill(nothing, n), fill(nothing, n)
+        sire_name, dam_name = names[2], names[3]
     end
 
-    return Any[_column(pedigree, sire_name, "pedigree")...], Any[_column(pedigree, dam_name, "pedigree")...]
+    sire = sire_name === nothing ? fill(nothing, n) : Any[_column(pedigree, sire_name, "pedigree")...]
+    dam = dam_name === nothing ? fill(nothing, n) : Any[_column(pedigree, dam_name, "pedigree")...]
+    return sire, dam
 end
 
 function _pick_optional_column(names, aliases::Tuple)
@@ -895,8 +893,10 @@ function _data_marker_status(data::HSData)
     marker_count = marker_spec === nothing ? 0 : length(marker_spec.marker_ids)
     aligned_count = data.genotype_marker_spec === nothing ? 0 : length(data.genotype_marker_spec.marker_ids)
     chromosome_count = marker_spec === nothing ? nothing : length(unique(marker_spec.chromosome))
-    position_min = marker_spec === nothing ? nothing : minimum(marker_spec.position)
-    position_max = marker_spec === nothing ? nothing : maximum(marker_spec.position)
+    position_min = marker_spec === nothing || isempty(marker_spec.position) ?
+        nothing : minimum(marker_spec.position)
+    position_max = marker_spec === nothing || isempty(marker_spec.position) ?
+        nothing : maximum(marker_spec.position)
     alignment = _data_marker_alignment(marker_spec, data.genotype_marker_spec, genotype_marker_count)
 
     return [
@@ -1074,7 +1074,9 @@ function _genotype_missing_value_count(source, genotype_id)
     total = 0
     for name in names
         _same_column_name(name, genotype_id) && continue
-        total += count(_is_missing_value, _column(source, name, "genotypes"))
+        # Diagnostics count physical dictionary columns even when names collide.
+        column = source isa AbstractDict ? source[name] : _column(source, name, "genotypes")
+        total += count(_is_missing_value, column)
     end
     return total
 end
@@ -1214,14 +1216,32 @@ function _row_count(source)
 end
 
 function _row_count(source::NamedTuple)
-    names = propertynames(source)
-    isempty(names) && return 0
-    first_column = getproperty(source, names[1])
-    try
-        return length(first_column)
-    catch
-        return nothing
+    columns = values(source)
+    isempty(columns) && return 0
+    counts = Int[]
+    for column in columns
+        applicable(length, column) ||
+            throw(ArgumentError("each column in named-tuple data must have a length"))
+        count = length(column)
+        push!(counts, count)
     end
+    all(==(first(counts)), counts) ||
+        throw(ArgumentError("columns in named-tuple data must have the same number of rows"))
+    return first(counts)
+end
+
+function _row_count(source::AbstractDict)
+    isempty(source) && return 0
+    counts = Int[]
+    for column in values(source)
+        applicable(length, column) ||
+            throw(ArgumentError("each column in dictionary data must have a length"))
+        count = length(column)
+        push!(counts, count)
+    end
+    all(==(first(counts)), counts) ||
+        throw(ArgumentError("columns in dictionary data must have the same number of rows"))
+    return first(counts)
 end
 
 function _is_missing_id(id)

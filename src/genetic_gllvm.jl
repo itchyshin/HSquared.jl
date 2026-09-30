@@ -31,10 +31,14 @@ NamedTuple:
 
 DESCRIPTIVE, supplied-covariance only: `Λ`/`Ψ` are NOT estimated by this
 descriptor function, which computes no marginal / likelihood / fit or bridge
-payload. Only
-rotation-INVARIANT functionals of `Σ_g` are returned — never the raw loadings `Λ`
-(which are rotation-nonidentified). For any orthogonal `Q`, `Λ → ΛQ` leaves every
-returned quantity invariant (the `genetic_pca` eigenvectors up to sign). Guards
+payload. The genetic covariance, variances, correlations, and PCA eigenvalues
+are functionals of `Σ_g`; communality additionally depends on the supplied
+decomposition through `Ψ`. At fixed `Ψ`, an orthogonal rotation `Λ → ΛQ` leaves
+communality unchanged, but decompositions with the same `Σ_g` and different
+`Ψ` need not have the same communality. Raw loadings `Λ` are never returned
+(they are rotation-nonidentified). The `genetic_pca` eigenvectors are defined
+only up to sign, and a repeated eigenvalue identifies its eigenspace rather
+than a unique axis. Guards
 (dimension / positivity / rank) are delegated to [`lowrank_covariance`](@ref) and
 [`factor_analytic_covariance`](@ref). The first foundation step of the genetic
 GLLVM (#50); the supplied-covariance latent objective and estimation were added
@@ -64,11 +68,16 @@ end
 Rotation-invariant genetic-GLLVM latent-structure descriptors for an ESTIMATED
 factor-analytic or low-rank multivariate REML fit (`fit_multivariate_reml(...;
 genetic_structure = :factor_analytic | :lowrank, rank = K)`). Reads the fit's
-IDENTIFIED, rotation-invariant genetic covariance `G = result.genetic_covariance`
+estimated, rotation-invariant genetic covariance `G = result.genetic_covariance`
 and uniqueness `Ψ` ([`genetic_uniqueness`](@ref); `nothing` ⇒ low-rank, `Ψ = 0`) —
 NEVER the rotation-nonidentified loadings — and returns the same NamedTuple as the
 supplied-loadings method, with `communality = 1 − Ψ / diag(G)` (the per-trait
 fraction of genetic variance from the common latent factors; `= 1` for low-rank).
+For FA, this communality is conditional on the fitted `G`/`Ψ` decomposition;
+equal `G` matrices can yield different communalities. Synthetic results must carry
+consistent factor-count/loading dimensions and finite nonnegative uniqueness with
+`Ψ <= diag(G)`. Loading values are checked when supplied, but descriptors are
+computed from `G` and `Ψ`, preserving the rotation-free output contract.
 Rejects the rotation-free `:diagonal` / `:unstructured` structures, which have no
 latent-factor interpretation.
 """
@@ -77,13 +86,40 @@ function genetic_gllvm_descriptors(result::NamedTuple)
     meta.structure in (:lowrank, :factor_analytic) || throw(ArgumentError(
         "genetic_gllvm_descriptors(result) needs a :lowrank or :factor_analytic fit; got :$(meta.structure)"))
     G = Matrix{Float64}(result.genetic_covariance)
-    gv = diag(G)
-    ψ = genetic_uniqueness(result)
-    communality = ψ === nothing ? ones(length(gv)) : (gv .- ψ) ./ gv
+    correlation = genetic_correlation(G)  # validate covariance before descriptor arithmetic
+    T = size(G, 1)
     K = meta.rank
+    (K isa Integer && !(K isa Bool) && 1 <= K <= T) || throw(ArgumentError(
+        "structured result rank must be an integer between 1 and the number of traits"))
+    L = result.genetic_loadings
+    if L !== nothing
+        L isa AbstractMatrix || throw(ArgumentError("structured result loadings must be a matrix"))
+        size(L) == (T, K) || throw(ArgumentError("structured result loadings must be T×K"))
+        _check_finite_matrix(L, "structured result loadings")
+    end
+    rawψ = result.genetic_uniqueness
+    ψ = if rawψ === nothing
+        meta.structure == :lowrank || throw(ArgumentError(
+            "factor-analytic result must contain uniqueness"))
+        nothing
+    else
+        rawψ isa Union{AbstractVector, Tuple} || throw(ArgumentError(
+            "structured result uniqueness must be a vector"))
+        v = Float64.(collect(rawψ))
+        length(v) == T || throw(ArgumentError("structured result uniqueness length must equal T"))
+        all(isfinite, v) && all(>=(0), v) || throw(ArgumentError(
+            "structured result uniqueness must be finite and nonnegative"))
+        meta.structure == :lowrank && !all(iszero, v) && throw(ArgumentError(
+            "lowrank result uniqueness must be nothing or zero"))
+        v
+    end
+    gv = diag(G)
+    ψ === nothing || all(ψ .<= gv) || throw(ArgumentError(
+        "structured result uniqueness must not exceed genetic variances"))
+    communality = ψ === nothing ? ones(T) : (gv .- ψ) ./ gv
     return (genetic_covariance = G,
             genetic_variances = gv,
-            genetic_correlation = genetic_correlation(G),
+            genetic_correlation = correlation,
             communality = communality,
             genetic_pca = genetic_pca(G),
             g_max = g_max(G),
@@ -96,8 +132,9 @@ end
 
 Supplied-covariance **Gaussian** genetic-GLLVM latent solve (#50 slice 2). With a
 Gaussian response, the genetic-GLLVM latent layer `η[i,t] = Σ_k Λ[t,k] g[i,k]`,
-`g[·,k] ~ N(0, A)` makes the among-trait genetic covariance `G_lat = ΛΛ' (+ diag Ψ)`
-and the trait-level breeding values `u[i,·] = Λ g[i,·]` satisfy
+`g[·,k] ~ N(0, A)` and, when supplied, trait-specific effects
+`d[·,t] ~ N(0, Ψ[t,t] A)` make the trait-level effect `U = FΛ′ + D` and the
+among-trait genetic covariance `G_lat = ΛΛ' (+ diag Ψ)` satisfy
 `Cov(vec(U)) = G_lat ⊗ A` — i.e. the Gaussian genetic GLLVM is EXACTLY the
 multivariate animal model at `G0 = G_lat`. This convenience builds `G_lat` from the
 SUPPLIED `traits × K` loadings `Λ` (+ optional positive uniqueness `Ψ`) and solves
@@ -134,6 +171,49 @@ function genetic_gllvm_gaussian_mme(Y, X, Z, Ainv, loadings, R0;
 end
 
 # ── Non-Gaussian K-factor latent Laplace marginal (#50 slice 2, non-Gaussian) ──────
+
+# Varying trial counts are supported by the standalone scalar animal-model path.
+# Genetic GLLVM currently dispatches one scalar response family per trait.
+function _check_gllvm_record_family(family)
+    families = family isa AbstractVector ? family : (family,)
+    any(f -> f isa BinomialVectorResponse, families) && throw(ArgumentError(
+        "per-record binomial trials are not supported by genetic GLLVM; use standalone laplace_marginal_loglik or fit_laplace_reml for varying trials"))
+    return nothing
+end
+
+"""A converged GLLVM mode has non-positive observed joint Laplace curvature."""
+abstract type GLLVMParameterEvaluationError <: Exception end
+
+struct GLLVMInvalidLaplaceCurvatureError <: GLLVMParameterEvaluationError
+    message::String
+end
+struct GLLVMInvalidParameterEvaluationError <: GLLVMParameterEvaluationError
+    message::String
+end
+Base.showerror(io::IO, err::GLLVMInvalidLaplaceCurvatureError) = print(io, err.message)
+Base.showerror(io::IO, err::GLLVMInvalidParameterEvaluationError) = print(io, err.message)
+
+# Validate caller inputs before mode calculations or outer optimizer evaluations.
+function _check_gllvm_mode_inputs(Y, X, family, tol::Real, maxiter::Integer)
+    isfinite(tol) && tol > 0 || throw(ArgumentError("tol must be finite and positive"))
+    maxiter >= 0 || throw(ArgumentError("maxiter must be nonnegative"))
+    Yd = _check_finite_matrix(Y, "Y")
+    Xd = _check_finite_matrix(X, "X")
+    if family isa AbstractVector
+        length(family) == size(Yd, 2) || throw(ArgumentError(
+            "families vector length must equal T = size(Y,2) = $(size(Yd, 2))"))
+        all(f -> f isa ResponseFamily, family) || throw(ArgumentError(
+            "families vector must contain ResponseFamily objects"))
+    end
+    families = family isa AbstractVector ? family : (family,)
+    for f in families
+        if f isa GaussianResponse
+            isfinite(f.sigma_e2) && f.sigma_e2 > 0 || throw(ArgumentError(
+                "GaussianResponse sigma_e2 must be finite and positive"))
+        end
+    end
+    return Yd, Xd
+end
 #
 # Generalizes the single-factor `laplace_marginal_loglik` (nongaussian.jl) to a
 # K-FACTOR genetic latent field: vec(g) ~ N(0, I_K ⊗ A) (each factor g[·,k] ~ N(0,A)
@@ -155,8 +235,19 @@ enters `η[i,t] = (Xβ)[i,t] + Σ_k Λ[t,k] g[i,k]` and `y[i,t] | η[i,t] ~ fami
 of `Y`); `β` is integrated under a flat measure, not optimized as in ordinary
 non-Gaussian ML. `Y` is the `q×T` response matrix
 (balanced, fully observed); `X` is the `q×p` individual-level fixed-effect design
-(per-trait coefficients; default per-trait intercept). Returns
-`(loglik, beta (p×T), g (q×K), converged, gradient_norm, iterations)`.
+(per-trait coefficients; default per-trait intercept). Returns a named tuple with
+`loglik`, `beta (p×T)`, `g (q×K)`, `converged`, `gradient_norm`, `iterations`,
+`stop_reason` (`:converged`, `:maxiter`, or `:line_search_failed`), and total
+`backtracks` across the inner mode iterations. The gradient norm and convergence
+flag describe the returned mode.
+
+A finite mode that misses `tol` returns `loglik = NaN` with its stop reason and
+gradient diagnostics, without evaluating observed Laplace curvature. A
+nonfinite parameter-point calculation or non-positive observed curvature raises
+an internal typed numerical error. The outer fitter treats only these typed
+trial-point errors as invalid optimizer evaluations; input-contract errors
+propagate. It rejects a final optimizer point without a finite, converged inner
+mode.
 
 **Per-trait families:** pass a `Vector` of `T` `ResponseFamily` objects to apply a
 different family to each trait column of `Y` — e.g.
@@ -178,26 +269,30 @@ latent reparameterization). For a `GaussianResponse` it is EXACT and equals the
 multivariate REML marginal at `G0 = ΛΛ'`, `R0 = σ²e·I`. `G_lat = ΛΛ'` need NOT be
 positive definite (`P = I_K ⊗ Ainv` is full-rank regardless), so `K < T` /
 `K > T` / a singular `ΛΛ'` are all handled — unlike the Gaussian-MME path
-([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The convergence
-flag lags the mode by one Newton step (as in the single-factor kernel), so an exact
-Gaussian solve needs `maxiter ≥ 2`. EXPERIMENTAL, dense / validation-scale, SUPPLIED
+([`genetic_gllvm_gaussian_mme`](@ref)), which requires a PD `G_lat`. The solver
+reports the score norm at its returned mode and uses objective backtracking for
+scoring steps; convergence establishes stationarity, not global optimality or
+general recovery. EXPERIMENTAL, dense / validation-scale, SUPPLIED
 loadings (NOT estimated by this kernel), balanced/fully-observed `Y` only; INTERNAL
 (not exported, mirroring the single-factor kernel). The bounded R Poisson route
 uses the fitted kernel below, not this supplied-loading function.
+Per-record varying-trial `BinomialVectorResponse` is rejected; use the standalone
+scalar animal-model path for varying trials.
 """
 function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                        loadings::AbstractMatrix,
                                        family::Union{ResponseFamily, AbstractVector};
                                        X::AbstractMatrix = ones(size(Y, 1), 1),
                                        tol::Real = 1e-10, maxiter::Integer = 100)
-    Yd = Matrix{Float64}(Y)
+    _check_gllvm_record_family(family)
+    Yd, Xd = _check_gllvm_mode_inputs(Y, X, family, tol, maxiter)
     Ai = Matrix{Float64}(Ainv)
     Λ = Matrix{Float64}(loadings)
-    Xd = Matrix{Float64}(X)
     q, T = size(Yd)
     size(Ai, 1) == q == size(Ai, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Y,1)"))
     Ai = _check_relationship_precision(Ai, q)
     size(Λ, 1) == T || throw(ArgumentError("loadings must have T = size(Y,2) rows"))
+    all(isfinite, Λ) || throw(ArgumentError("loadings must be finite"))
     size(Xd, 1) == q || throw(ArgumentError("X must have q = size(Y,1) rows"))
 
     # Build per-record family lookup: scalar family → same family for every record;
@@ -279,42 +374,121 @@ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
     gnorm = Inf
     iters = 0
     converged = false
+    stop_reason = :maxiter
+    backtracks = 0
     local H
     for it in 1:maxiter
         iters = it
         η = Xrec * β .+ W * g
         s = [_score(i, yv[i], η[i]) for i in 1:n]
         w = [_weight(i, yv[i], η[i]) for i in 1:n]
+        all(isfinite, η) && all(isfinite, s) && all(isfinite, w) ||
+            throw(GLLVMInvalidParameterEvaluationError(
+                "genetic GLLVM scoring quantities became non-finite at this parameter point"))
         grad = vcat(transpose(Xrec) * s, transpose(W) * s .- P * g)
         gnorm = norm(grad)
+        all(isfinite, grad) && isfinite(gnorm) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM scoring gradient became non-finite at this parameter point"))
+        if gnorm < tol
+            converged = true
+            stop_reason = :converged
+            break
+        end
         WX = w .* Xrec
         WW = w .* W
         H = [transpose(Xrec)*WX  transpose(Xrec)*WW
              transpose(W)*WX     (transpose(W)*WW .+ P)]
-        step = Symmetric(H) \ grad
-        β .+= step[1:pβ]
-        g .+= step[(pβ + 1):end]
-        if gnorm < tol
-            converged = true
+        all(isfinite, H) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM working Hessian became non-finite at this parameter point"))
+        step = try
+            Symmetric(H) \ grad
+        catch err
+            (err isa PosDefException || err isa SingularException) || rethrow()
+            throw(GLLVMInvalidParameterEvaluationError(
+                "genetic GLLVM working Hessian is singular or not positive definite at this parameter point"))
+        end
+        all(isfinite, step) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM scoring step became non-finite at this parameter point"))
+
+        # Fisher/Newton scoring is not guaranteed to improve the observed
+        # joint mode objective for every supported response family. Backtrack
+        # until the candidate is finite and non-decreasing.
+        current_objective = sum(_loglik_r(i, yv[i], η[i]) for i in 1:n) - 0.5 * dot(g, P * g)
+        isfinite(current_objective) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM conditional objective became non-finite at this parameter point"))
+        objective_roundoff = 10 * eps(Float64) * max(1.0, abs(current_objective))
+        α = 1.0
+        accepted = false
+        for _ in 1:40
+            β_try = β .+ α .* step[1:pβ]
+            g_try = g .+ α .* step[(pβ + 1):end]
+            if β_try == β && g_try == g
+                break
+            end
+            η_try = Xrec * β_try .+ W * g_try
+            objective_try = sum(_loglik_r(i, yv[i], η_try[i]) for i in 1:n) -
+                            0.5 * dot(g_try, P * g_try)
+            if isfinite(objective_try) && objective_try >= current_objective - objective_roundoff
+                β .= β_try
+                g .= g_try
+                accepted = true
+                break
+            end
+            α *= 0.5
+            backtracks += 1
+        end
+        if !accepted
+            stop_reason = :line_search_failed
             break
         end
     end
 
     η = Xrec * β .+ W * g
+    s = [_score(i, yv[i], η[i]) for i in 1:n]
+    final_grad = vcat(transpose(Xrec) * s, transpose(W) * s .- P * g)
+    gnorm = norm(final_grad)
+    converged = isfinite(gnorm) && gnorm < tol
+    converged && (stop_reason = :converged)
+    all(isfinite, η) && all(isfinite, final_grad) && isfinite(gnorm) ||
+        throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM mode or score became non-finite at this parameter point"))
+    if !converged
+        return (loglik = NaN,
+                beta = reshape(β, p, T),
+                g = reshape(g, q, K),
+                converged = false, gradient_norm = gnorm, iterations = iters,
+                stop_reason = stop_reason, backtracks = backtracks)
+    end
     w = [_observed_weight(i, yv[i], η[i]) for i in 1:n]
+    all(isfinite, w) || throw(GLLVMInvalidParameterEvaluationError(
+        "genetic GLLVM observed weights became non-finite at this parameter point"))
     WX = w .* Xrec
     WW = w .* W
     H = [transpose(Xrec)*WX  transpose(Xrec)*WW
          transpose(W)*WX     (transpose(W)*WW .+ P)]
+    all(isfinite, H) || throw(GLLVMInvalidParameterEvaluationError(
+        "genetic GLLVM observed Hessian became non-finite at this parameter point"))
     cond = sum(_loglik_r(i, yv[i], η[i]) for i in 1:n)
     quad_g = dot(g, P * g)
+    isfinite(cond) && isfinite(quad_g) || throw(GLLVMInvalidParameterEvaluationError(
+        "genetic GLLVM Laplace objective terms became non-finite at this parameter point"))
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
-    logdet_H = logdet(cholesky(Symmetric(H)))
+    Hfactor = try
+        cholesky(Symmetric(H))
+    catch err
+        err isa PosDefException || rethrow()
+        throw(GLLVMInvalidLaplaceCurvatureError(
+            "converged genetic GLLVM mode has non-positive observed Laplace curvature"))
+    end
+    logdet_H = logdet(Hfactor)
     loglik = cond - 0.5 * quad_g + 0.5 * K * logdet_Ainv + 0.5 * pβ * log(2π) - 0.5 * logdet_H
+    isfinite(loglik) || throw(GLLVMInvalidParameterEvaluationError(
+        "genetic GLLVM Laplace objective became non-finite at this parameter point"))
     return (loglik = converged ? loglik : NaN,
             beta = reshape(β, p, T),     # p×T (trait-major β reshapes to columns = traits)
             g = reshape(g, q, K),        # q×K
-            converged = converged, gradient_norm = gnorm, iterations = iters)
+            converged = converged, gradient_norm = gnorm, iterations = iters,
+            stop_reason = stop_reason, backtracks = backtracks)
 end
 
 # ── GeneticGLLVMFit fitted-object wrapper (#50 consumability) ─────────────────
@@ -329,16 +503,19 @@ end
     GeneticGLLVMFit
 
 Internal fitted-object wrapper for [`fit_gllvm_laplace_reml`](@ref). Stores
-the same nine fields as the former bare `NamedTuple` return and exposes typed
-extractor methods:
+the fitted trait covariance and effects, outer optimizer status, and final inner
+mode diagnostics, and exposes typed extractor methods:
 
 - `genetic_covariance(fit)` — the rotation-invariant `G_lat` matrix
 - `breeding_values(fit)`    — `q × T` trait genetic conditional modes on the link scale
 - `latent_structure(fit)`   — the `genetic_gllvm_descriptors` NamedTuple
 - `loglik(fit)`             — the fitted fixed-and-genetic-effect integrated Laplace objective
 
-All other fields (`uniqueness`, `beta`, `n_latent_factors`, `converged`,
-`iterations`) are accessible via `fit.fieldname`. INTERNAL (not exported).
+`converged` is true only when both the outer loading optimizer and final inner
+mode converge. `iterations` remains the outer optimizer iteration count.
+`optimizer_converged`, `mode_converged`, `mode_gradient_norm`,
+`mode_iterations`, `mode_stop_reason`, and `mode_backtracks` expose the two
+levels separately. INTERNAL (not exported).
 EXPERIMENTAL — dense/validation-scale, supplied Gaussian/non-Gaussian families,
 balanced/fully-observed `Y`. The R twin exposes only a bounded Poisson-log
 three-trait, two-factor pedigree route through expert controls.
@@ -350,9 +527,34 @@ struct GeneticGLLVMFit
     uniqueness::Union{Vector{Float64}, Nothing}
     beta::Matrix{Float64}
     breeding_values::Matrix{Float64}
+    trait_names::Union{Vector{String}, Nothing}
     n_latent_factors::Int
     converged::Bool
     iterations::Int
+    optimizer_converged::Bool
+    mode_converged::Bool
+    mode_gradient_norm::Float64
+    mode_iterations::Int
+    mode_stop_reason::Symbol
+    mode_backtracks::Int
+end
+
+function _validate_gllvm_trait_names(trait_names, n_traits::Integer)
+    trait_names === nothing && return nothing
+    raw_names = collect(trait_names)
+    all(name -> name isa AbstractString, raw_names) ||
+        throw(ArgumentError("trait_names must contain strings"))
+    names = String.(raw_names)
+    length(names) == n_traits ||
+        throw(ArgumentError("trait_names must have length $n_traits"))
+    is_blank(name) = isempty(name) || all(
+        c -> isspace(c) || c == '\u2028' || c == '\u2029', name,
+    )
+    all(name -> !is_blank(name), names) ||
+        throw(ArgumentError("trait_names must be nonempty"))
+    length(unique(names)) == n_traits ||
+        throw(ArgumentError("trait_names must be unique"))
+    return names
 end
 
 # Typed extractor methods — dispatch on GeneticGLLVMFit, distinct from the
@@ -415,7 +617,8 @@ end
 
 """
     fit_gllvm_laplace_reml(Y, Ainv, family; rank, structure = :lowrank, X = ones(size(Y,1), 1),
-                           initial = nothing, initial_uniqueness = nothing, ...)
+                           initial = nothing, initial_uniqueness = nothing,
+                           trait_names = nothing, ...)
 
 Genetic-GLLVM integrated-Laplace fitting (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
 maximizing the K-factor fixed-and-genetic-effect integrated objective [`gllvm_laplace_marginal_loglik`](@ref) over
@@ -431,7 +634,8 @@ the FA decomposition or `Ψ`; the raw `Λ̂` is an arbitrary point on the rotati
 manifold and is not reported as an identified biological axis. Returns a
 `GeneticGLLVMFit` (internal struct) with fields `loglik`,
 `genetic_covariance`, `latent_structure`, `uniqueness`, `beta (p×T)`,
-`breeding_values (q×T trait conditional modes)`, `n_latent_factors`, `converged`,
+`breeding_values (q×T trait conditional modes)`, optional `trait_names` in the
+input-column order, `n_latent_factors`, `converged`,
 `iterations`; typed extractor methods `genetic_covariance(fit)`,
 `breeding_values(fit)`, `latent_structure(fit)`, and `loglik(fit)` are
 defined on `GeneticGLLVMFit`.
@@ -452,15 +656,21 @@ general recovery or calibration claim (the opt-in study covers particular comple
 cells, and the multivariate Gaussian FA gate covers one T=4,K=1 cell). The R
 twin's bounded Poisson bridge does not extend this Julia fitter to other public
 families, ranks, missing records, or response-scale summaries.
+Per-record varying-trial `BinomialVectorResponse` is rejected before optimization;
+use the standalone scalar animal-model path for varying trials.
 """
 function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
                                 family::Union{ResponseFamily, AbstractVector}; rank::Integer,
                                 structure::Symbol = :lowrank,
                                 X::AbstractMatrix = ones(size(Y, 1), 1),
                                 initial = nothing, initial_uniqueness = nothing,
+                                trait_names = nothing,
                                 iterations::Integer = 1000,
                                 tol::Real = 1e-10, maxiter::Integer = 200)
+    _check_gllvm_record_family(family)
+    Y, X = _check_gllvm_mode_inputs(Y, X, family, tol, maxiter)
     q, T = size(Y)
+    trait_names = _validate_gllvm_trait_names(trait_names, T)
     Ainv = _check_relationship_precision(Ainv, q)
     K = Int(rank)
     K >= 1 || throw(ArgumentError("rank must be ≥ 1"))
@@ -476,22 +686,35 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         Matrix{Float64}(initial)
     end
     size(Λ0) == (T, K) || throw(ArgumentError("initial loadings must be T×K = $((T, K))"))
+    all(isfinite, Λ0) || throw(ArgumentError("initial loadings must be finite"))
     nλ = T * K
 
     # Build the (possibly Ψ-augmented) loadings from the optimizer parameters.
-    augment(params) = structure == :factor_analytic ?
-        hcat(reshape(@view(params[1:nλ]), T, K), Matrix(Diagonal(sqrt.(exp.(@view(params[(nλ + 1):(nλ + T)])))))) :
-        reshape(params, T, K)
+    function augment(params)
+        all(isfinite, params) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM optimizer parameters became non-finite"))
+        Λ = structure == :factor_analytic ?
+            hcat(reshape(@view(params[1:nλ]), T, K), Matrix(Diagonal(sqrt.(exp.(@view(params[(nλ + 1):(nλ + T)])))))) :
+            reshape(params, T, K)
+        all(isfinite, Λ) || throw(GLLVMInvalidParameterEvaluationError(
+            "genetic GLLVM trial loadings became non-finite"))
+        return Λ
+    end
     function negloglik(params)
-        m = gllvm_laplace_marginal_loglik(Y, Ainv, augment(params), family;
+        m = try
+            gllvm_laplace_marginal_loglik(Y, Ainv, augment(params), family;
                                           X = X, tol = tol, maxiter = maxiter)
+        catch err
+            err isa GLLVMParameterEvaluationError || rethrow()
+            return Inf
+        end
         return (m.converged && isfinite(m.loglik)) ? -m.loglik : Inf
     end
 
     params0 = if structure == :factor_analytic
         ψ0 = initial_uniqueness === nothing ? fill(0.1, T) : Float64.(collect(initial_uniqueness))
-        (length(ψ0) == T && all(>(0), ψ0)) ||
-            throw(ArgumentError("initial_uniqueness must be a positive length-$T vector"))
+        (length(ψ0) == T && all(isfinite, ψ0) && all(>(0), ψ0)) ||
+            throw(ArgumentError("initial_uniqueness must be a finite positive length-$T vector"))
         vcat(vec(Λ0), log.(ψ0))
     else
         vec(Λ0)
@@ -501,6 +724,8 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
     Λhat = reshape(phat[1:nλ], T, K)
     ψhat = structure == :factor_analytic ? exp.(phat[(nλ + 1):(nλ + T)]) : nothing
     mhat = gllvm_laplace_marginal_loglik(Y, Ainv, augment(phat), family; X = X, tol = tol, maxiter = maxiter)
+    mhat.converged && isfinite(mhat.loglik) || throw(GLLVMInvalidParameterEvaluationError(
+        "genetic GLLVM optimizer did not return a finite converged inner mode"))
     Glat = ψhat === nothing ? Λhat * transpose(Λhat) : Λhat * transpose(Λhat) + Diagonal(ψhat)
     descr = ψhat === nothing ? genetic_gllvm_descriptors(Λhat) :
         genetic_gllvm_descriptors(Λhat; uniqueness = ψhat)
@@ -511,8 +736,15 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         ψhat,
         mhat.beta,
         _gllvm_trait_effects(mhat.g, Λhat, ψhat),
+        trait_names,
         K,
         Optim.converged(res) && mhat.converged,
         Optim.iterations(res),
+        Optim.converged(res),
+        mhat.converged,
+        mhat.gradient_norm,
+        mhat.iterations,
+        mhat.stop_reason,
+        mhat.backtracks,
     )
 end

@@ -1,0 +1,18 @@
+{
+  "status": "PASS bounded deterministic composition",
+  "component_sources": {
+    "input": "d098830fc70ee02f781b1b0838f3ea497b38688bdca6244af9d3d4fd21ab3c0c",
+    "uncertainty": "342b029fa482cbb9101f2f924badca31ebdec7b8f8838facb96bb0317d013f7c",
+    "profile": "0a0ed083e23f7e2131133ba238d65d1edcff45c7b516673f9e16148f14bd8019"
+  },
+  "mutation_groups": 112,
+  "inventory_exact_after_sort": true,
+  "nonoverlapping": true,
+  "simultaneous_replay_exact": true,
+  "source_sha256": "5219cf48be1933a01afe4bb5ba40278d4610b455b5fd7d85a078ce2947c10e57",
+  "log_sha256": "31a09365daff67f67c477029a36e490ac1f30c5b78847bcdbb96a5c794c6a220",
+  "patch_sha256": "ef090df9a6bc700ffbd2d5c5fab98ff7a7673bb0f735ffa530dfdf9bcc9904fa",
+  "parent_test_count": 514,
+  "reviewer_reran_numerics": false,
+  "note": "Initial direct inventory list equality failed because author inventory is component grouped; coordinate sorting resolves order only, no content difference."
+}

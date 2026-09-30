@@ -3,10 +3,13 @@ using LinearAlgebra
 using SparseArrays
 using Test
 using TOML
+using Statistics  # means used by post-fit contract fixtures
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 using JSON3   # P0.5 payload-v2 cross-lane parity testset
 
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
+include("test_selinv_trace_contracts.jl")
+include("test_pedigree_inbred_known_parent.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -165,17 +168,23 @@ include("test_aqua.jl")
 
     grammar = formula_status()
     @test grammar isa FormulaStatus
+    # Julia exposes an engine-local diagnostic, not the broader R formula
+    # inventory. Equal columns do not imply equal rows or parser behavior.
     @test length(grammar) == 20
     @test [row.term for row in grammar][1] == "animal(1 | id, pedigree = ped)"
     @test grammar[end].term == "animal(trait | id, pedigree = ped, cov = fa(K = 2))"
-    @test [row.syntax_status for row in grammar][1] == "parsed"
-    @test [row.fitting_status for row in grammar][1] == "experimental tiny bridge only"
-    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status != "parsed")
+    @test [row.syntax_status for row in grammar][1] == "engine bridge"
+    @test [row.fitting_status for row in grammar][1] == "experimental Julia engine route only"
+    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status in ("reserved", "planned"))
     @test "permanent(1 | id)" in [row.term for row in grammar]
     @test "precision(1 | id, Q = Q)" in [row.term for row in grammar]
     @test "genomic(1 | id, Ginv = Ginv)" in [row.term for row in grammar]
     @test any(row.syntax_status == "planned" for row in grammar)
-    @test Set(row.syntax_status for row in grammar) == Set(["parsed", "reserved", "planned"])
+    @test Set(row.syntax_status for row in grammar) == Set(["engine bridge", "reserved", "planned"])
+    @test occursin("R owns and parses", grammar[1].current_behavior)
+    @test occursin("R cov = fa() formula syntax remains reserved", grammar[end].current_behavior)
+    @test occursin("expert-control route", grammar[end].current_behavior)
+    @test !any(occursin("GLLVM", row.term) for row in grammar)
 
     validation = validation_status()
     @test validation isa ValidationStatus
@@ -247,9 +256,14 @@ include("test_aqua.jl")
     )
     @test all(
         occursin(
-            "not REML or AI-REML",
+            "not conventional profiled-fixed-effect Laplace-ML, REML, or AI-REML",
             only(row for row in validation if row.id == id).claim_boundary,
         ) for id in legacy_v6_ids
+    )
+    @test all(
+        occursin("exact REML applies to its Gaussian reduction", only(row for row in validation if row.id == id).claim_boundary) &&
+        occursin("joint observed-curvature Hessian", only(row for row in validation if row.id == id).claim_boundary)
+        for id in legacy_v6_ids
     )
     # H2: beta-binomial overdispersed-logit family row.
     betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
@@ -555,7 +569,13 @@ include("test_aqua.jl")
     @test occursin("coverage calibration", threshold_row.missing)
     @test occursin("STANDING DEBT", threshold_row.missing)        # covered does not retire owed work
     @test occursin("SCOPED", threshold_row.claim_boundary)        # scoped covered claim
-    @test occursin("FITTING = 1", threshold_row.claim_boundary)   # public default unchanged
+    @test occursin("per-dataset add-one permutation rule", threshold_row.claim_boundary)
+    @test occursin("FIXED-EFFECT/intercept-only single-marker scan", threshold_row.claim_boundary)
+    @test occursin("type-I-CONTROL", threshold_row.claim_boundary)
+    @test occursin("broader-LD/covariate-adjusted calibration", threshold_row.claim_boundary)
+    @test occursin("NOT the public default", threshold_row.claim_boundary)
+    @test occursin("R-public covered count stays 7", threshold_row.claim_boundary)
+    @test !occursin("FITTING = 1", threshold_row.claim_boundary)
     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
     @test isfile(marker_recovery_script)
     marker_recovery_source = read(marker_recovery_script, String)
@@ -1177,9 +1197,9 @@ end
     yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
     yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
     ym = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli)
     cis = (
-        HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson),
-        HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli),
         HSquared.laplace_reml_interval(ym, X, Z, Ainv; family = :binomial, n_trials = 10),
         HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli_probit),
     )
@@ -1437,13 +1457,13 @@ end
     @test size(deep_chain_Ainv) == (chain_n, chain_n)
     @test all(isfinite, nonzeros(deep_chain_Ainv))
 
-    # F1: inbreeding now uses Meuwissen-Luo (O(n)); max_relationship_cache no longer
-    # bounds it (it previously threw). The kwarg is ignored and the result is unchanged.
+    # F1: inbreeding uses the Meuwissen-Luo ancestry traversal without forming a
+    # dense relationship matrix; max_relationship_cache does not bound this route.
     @test inbreeding_coefficients(ped; max_relationship_cache = 2) ≈
           [HSquared._numerator_relationship(ped)[i, i] - 1.0 for i in 1:length(ped)]
 end
 
-@testset "F1 Meuwissen-Luo inbreeding (O(n), no dense cap)" begin
+@testset "F1 Meuwissen-Luo inbreeding avoids dense relationship storage" begin
     oracleF(p) = (A = HSquared._numerator_relationship(p); [A[i, i] - 1.0 for i in 1:length(p)])
     # deterministic well-mixed mating (multiplicative hash) so two parents share
     # ancestry -> GENUINE bounded inbreeding (no RNG; q=2000 -> ~1870/2000 inbred,
@@ -1693,12 +1713,9 @@ end
           mendelian_sampling_variances(normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]))
 end
 
-@testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
-    # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
-    # relationship matrix increasingly ill-conditioned. This pins the documented
-    # V1-DENSE-COND caveat: `pedigree_inverse` is a DIRECT Henderson construction,
-    # so it stays exact regardless of conditioning — the caveat is about the
-    # downstream dense-`inv(Ainv)` estimators, not the sparse Ainv itself.
+@testset "Phase 1 finite deep-inbreeding case (V1-DENSE-COND)" begin
+    # This seven-animal selfing chain checks one finite conditioning level. It
+    # does not establish accuracy for all conditioning levels or sparse paths.
     ids = ["g0", "g1", "g2", "g3", "g4", "g5", "g6"]
     sire = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
     dam = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
@@ -1713,7 +1730,7 @@ end
     Ainv = Matrix(pedigree_inverse(ped))
     # conditioning genuinely grows with inbreeding (documents the caveat)
     @test cond(A) > 1.0e3
-    # the DIRECT Henderson inverse is exact despite the conditioning
+    # The direct construction agrees with the dense oracle at this finite case.
     @test maximum(abs.(Ainv * A - I)) < 1e-9
     @test maximum(abs.(Ainv .- inv(A))) < 1e-6
 
@@ -2150,7 +2167,7 @@ end
         "m1" => [2, 3],
     )
     @test [row.value for row in data_status(HSData((id = ["a", "b"], y = [1.0, 2.0]); genotypes = duplicate_genotypes)).genotype_status] ==
-          ["not_available", "2", "2", "2", "0", "1", "0", "table"]
+          ["2", "2", "2", "2", "0", "1", "0", "table"]
 
     matrix_expression_status = data_status(
         HSData(
@@ -4281,6 +4298,8 @@ end
     @test big_result.boundary.reason == "dense_limit"
 end
 
+include("wave4_genomic_boundary_near_endpoint.jl")
+
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
@@ -5592,6 +5611,61 @@ end
     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
           single_marker_scan(fit, markers; marker_ids = mids)
+
+    # Fitted convenience routes fail closed before delegating when convergence
+    # was not reported, even though their six-argument fixture constructor is valid.
+    unresolved = AnimalModelFit(spec, lik, (sigma_a2 = 1.2, sigma_e2 = 0.8), false, "supplied", 0)
+    for scan in (mixed_model_marker_scan, single_marker_scan)
+        err = try
+            scan(unresolved, markers)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        @test occursin("fit must have converged", sprint(showerror, err))
+    end
+
+    # At sigma_a2 = 0 the mixed GLS covariance is sigma_e2*I. Compare its
+    # coefficients and Wald errors to an independent residualized OLS calculation.
+    sigma_e2_zero_additive = 0.8
+    W = markers .- mean(markers; dims = 1)
+    XtX = transpose(X) * X
+    y_resid = y - X * (XtX \ (transpose(X) * y))
+    oracle_effects = Float64[]
+    oracle_ses = Float64[]
+    oracle_denominators = Float64[]
+    for j in axes(W, 2)
+        w = W[:, j]
+        w_resid = w - X * (XtX \ (transpose(X) * w))
+        d = dot(w_resid, w_resid)
+        push!(oracle_denominators, d)
+        push!(oracle_effects, dot(w_resid, y_resid) / d)
+        push!(oracle_ses, sqrt(sigma_e2_zero_additive / d))
+    end
+    zero_mixed = mixed_model_marker_scan(y, X, Z, Ainv, markers, 0.0, sigma_e2_zero_additive)
+    zero_loco = loco_mixed_model_marker_scan(
+        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+        fill("chr1", size(markers, 2)), markers, 0.0, sigma_e2_zero_additive,
+    )
+    for scan in (zero_mixed, zero_loco)
+        @test scan.effects ≈ oracle_effects rtol = 1e-12 atol = 1e-12
+        @test scan.standard_errors ≈ oracle_ses rtol = 1e-12 atol = 1e-12
+        @test scan.z_scores ≈ oracle_effects ./ oracle_ses rtol = 1e-12 atol = 1e-12
+        @test scan.denominators .* sigma_e2_zero_additive ≈ oracle_denominators rtol = 1e-12 atol = 1e-12
+    end
+    @test zero_mixed.variance_components == (sigma_a2 = 0.0, sigma_e2 = sigma_e2_zero_additive)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, -eps(), 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, NaN, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, Inf, 1.0)
+    negative_tiny = -BigFloat(10)^(-1000)
+    @test negative_tiny < 0
+    @test iszero(Float64(negative_tiny)) && signbit(Float64(negative_tiny))
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, negative_tiny, 1.0)
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+        fill("chr1", size(markers, 2)), markers, negative_tiny, 1.0,
+    )
 end
 
 @testset "Phase 5 marker-scan parity fixture (#45)" begin
@@ -8529,9 +8603,9 @@ end
     # note must not certify regularity from the rotation-adjusted df alone.
     G_sparse = factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse)
     fa_null = (genetic_covariance = G_sparse, genetic_structure = :factor_analytic,
-               genetic_rank = 1, loglik = -100.0)
+               genetic_rank = 1, loglik = -100.0, converged = true)
     unrestricted = (genetic_covariance = G_sparse, genetic_structure = :unstructured,
-                    genetic_rank = nothing, loglik = -95.0)
+                    genetic_rank = nothing, loglik = -95.0, converged = true)
     lrt = covariance_structure_lrt(fa_null, unrestricted)
     @test lrt.df == 2
     @test lrt.reference == :chisq
@@ -8884,11 +8958,16 @@ end
     @test fg.converged
     @test fg.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
 
-    # Poisson fit + the exported profile interval
-    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
-    fp = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    # Poisson fit + the exported profile interval. Repeated records give this
+    # fixture an interior variance estimate, so the point-fit boundary guard
+    # does not prevent endpoint checks.
+    groups = repeat(1:8, inner = 8)
+    Zp = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+    Xp = ones(length(yp), 1)
+    fp = fit_laplace_reml(yp, Xp, Zp, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
     @test fp.family === :poisson && fp.converged
-    ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    ci = laplace_reml_interval(yp, Xp, Zp, Ainv; family = :poisson, level = 0.95)
     @test ci.lower < ci.sigma_a2 < ci.upper
     @test ci.level == 0.95
 
@@ -9154,17 +9233,17 @@ end
 
 @testset "Phase 6 Poisson variance-component profile interval" begin
     # Profile LRT interval for the Poisson animal-model sigma_a2, by inverting
-    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. For this 8-animal count fixture the estimate
-    # is near zero with a flat lower profile (the lower endpoint clamps), while
-    # the upper endpoint is an interior LRT root.
+    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. Repeated records provide within-animal
+    # information, so this fixture supports interior endpoint checks.
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,
         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
         ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
     Ainv = pedigree_inverse(ped)
-    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
-    X = ones(8, 1)
-    Z = sparse(1.0I, 8, 8)
+    groups = repeat(1:8, inner = 8)
+    Z = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+    X = ones(length(yp), 1)
 
     fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
     sa2hat = fp.variance_components.sigma_a2
@@ -9239,13 +9318,12 @@ end
     @test 0 < civ.lower < civ.sigma_a2 < civ.upper
     @test civ.lower_clamped && !civ.upper_clamped        # lower clamps, upper interior
 
-    # Bernoulli is supported but binary data is uninformative — the profile is flat so
-    # BOTH endpoints clamp (the `*_clamped` flags make the degeneracy machine-readable,
-    # not a silent finite CI). The converged flag does NOT catch this; the clamps do.
+    # This binary fixture puts the point fit at the search boundary. The interval
+    # API refuses it rather than returning finite-looking endpoints for an
+    # uninformative profile.
     yb01 = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
-    cib = HSquared.laplace_reml_interval(yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
-    @test cib.level == 0.95
-    @test cib.lower_clamped && cib.upper_clamped         # degenerate: both endpoints are bounds
+    @test_throws ArgumentError HSquared.laplace_reml_interval(
+        yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
 
     # The variational objective does not supply a calibrated χ²₁ likelihood-ratio test.
     @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
@@ -10931,9 +11009,12 @@ end
         @test hasproperty(vb[1], :direct_variance)
         @test hasproperty(vb[1], :partner_variance)
         @test hasproperty(vb[1], :covariance)
-        @test length(res.random_effects) == 2   # direct + partner
-        @test res.random_effects[1].name == "animal"
-        @test res.random_effects[2].name == "maternal"
+        @test length(res.random_effects) == 1
+        @test res.random_effects[1].name == "maternal"
+        @test res.random_effects[1].ids == fit_v2.direct_effects.ids
+        @test res.random_effects[1].direct ≈ fit_v2.direct_effects.values
+        @test res.random_effects[1].partner ≈ fit_v2.maternal_effects.values
+        @test !hasproperty(res.random_effects[1], :values)
     end
 
     # -----------------------------------------------------------------------
@@ -11021,8 +11102,45 @@ end
                      "partner_incidence" => Zm2),
             ],
         ))
+
+        # A single coefcov block parses, but its fit route is not wired. Keep
+        # the error accurate for this one-block case as well as multi-blocks.
+        coefcov_payload = Dict(
+            "payload_version" => 2,
+            "y" => y_obs,
+            "X" => X_int,
+            "random_effects" => [Dict(
+                "name" => "slope",
+                "type" => "coefcov",
+                "Z" => Z_animal,
+                "relmat_status" => "identity",
+                "ids" => ped_ids,
+                "basis" => "raw",
+                "order" => 2,
+                "Phi" => hcat(ones(length(y_obs)), collect(1.0:length(y_obs))),
+                "covariate" => "time",
+                "cov_structure" => "unstructured",
+            )],
+        )
+        parsed_coefcov = parse_payload_v2(coefcov_payload)
+        @test parsed_coefcov.dispatch == :coefcov
+        coefcov_error = try
+            fit_payload_v2(coefcov_payload)
+            nothing
+        catch err
+            err
+        end
+        @test coefcov_error isa Phase0NotImplementedError
+        coefcov_message = sprint(showerror, coefcov_error)
+        @test occursin("no coefcov payload fitting route is currently wired", coefcov_message)
+        @test !occursin("multi-block", coefcov_message)
+        coefcov_doc = string(@doc fit_payload_v2)
+        @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
     end
 end
+
+# Frozen coefficient-covariance payload field validation; no fitting route.
+include(joinpath(@__DIR__, "test_coefcov_fields.jl"))
 
 # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
 include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
@@ -11061,6 +11179,9 @@ end
 include("test_214_217_dense_cells.jl")
 include("test_352_multi_effect_se.jl")
 include("test_multivariate_repeatability.jl")
+include("test_multivariate_fa_multistart.jl")
+include("test_fa_weak_direction.jl")
+include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
 include("test_api_docstrings.jl")
@@ -11092,3 +11213,87 @@ include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
 include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
 include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))
 include(joinpath(@__DIR__, "wave4_planned_term_wording.jl"))
+include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
+include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
+include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
+include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
+include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
+
+# Exact-current E1 repairs: keep standalone test scopes independent.
+module E1GLLVMInputGuards
+    include(joinpath(@__DIR__, "gllvm_input_guard_regression.jl"))
+end
+
+module E1GLLVMDescriptorRecord
+    include(joinpath(@__DIR__, "gllvm_descriptor_record_regression.jl"))
+end
+
+module E1RRDescriptors
+    include(joinpath(@__DIR__, "rr_descriptor_scale_regression.jl"))
+end
+
+module E1DataDictMissingCount
+    include(joinpath(@__DIR__, "data_dict_missing_count_regression.jl"))
+end
+
+module E1FlatIntegralEndpoints
+    include(joinpath(@__DIR__, "flat_integral_endpoint_regression.jl"))
+end
+
+module E1NonGaussianFiniteIngress
+    include(joinpath(@__DIR__, "nongaussian_finite_ingress_regression.jl"))
+end
+
+
+module E1NonGaussianH2Descriptors
+    include(joinpath(@__DIR__, "nongaussian_h2_descriptor_regression.jl"))
+end
+
+module E1GenomicContracts
+    include(joinpath(@__DIR__, "test_genomic_summary_contracts.jl"))
+    include(joinpath(@__DIR__, "test_genomic_doc_bindings.jl"))
+    include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
+end
+
+module E1MultivariateContracts
+    include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
+end
+
+module E1LikelihoodInput
+    include(joinpath(@__DIR__, "likelihood_input_guard_regression.jl"))
+end
+
+module E1LikelihoodUncertainty
+    include(joinpath(@__DIR__, "likelihood_uncertainty_contract_regression.jl"))
+end
+
+module E1LikelihoodProfilePEV
+    include(joinpath(@__DIR__, "likelihood_profile_pev_contracts.jl"))
+    include(joinpath(@__DIR__, "likelihood_profile_pev_analytic_controls.jl"))
+end
+
+module E1IterativeFinite
+    include(joinpath(@__DIR__, "iterative_finite_contracts.jl"))
+    include(joinpath(@__DIR__, "iterative_summary_controls.jl"))
+end
+
+module E1PedigreeResidual
+    include(joinpath(@__DIR__, "pedigree_residual_contracts.jl"))
+end
+
+module E1SelinvTraceFinite
+    using HSquared
+    include(joinpath(@__DIR__, "selinv_trace_finite_regression.jl"))
+end
+
+module E1EvolvabilityFinite
+    using HSquared
+    include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
+end
+
+# Preserve original specification identity while computing validated buffers.
+include("likelihood_original_spec_regression.jl")
+
+# Preserve original specification identity while computing validated buffers.
+include("likelihood_helper_identity_regression.jl")

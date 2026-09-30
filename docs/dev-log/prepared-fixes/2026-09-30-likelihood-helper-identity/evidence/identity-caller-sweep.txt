@@ -1,0 +1,51 @@
+test/likelihood_original_spec_regression.jl:14:            @test result.spec===spec
+test/likelihood_original_spec_regression.jl:16:            @test result.spec.relationship_diag===spec.relationship_diag
+test/likelihood_original_spec_regression.jl:20:        @test fit_variance_components(ml;iterations=1).spec===ml
+test/likelihood_original_spec_regression.jl:21:        @test fit_animal_model(ml;iterations=1).spec===ml
+test/likelihood_original_spec_regression.jl:23:        @test fit_animal_model(reml;target=:sparse_reml,iterations=1).spec===reml
+test/likelihood_original_spec_regression.jl:24:        @test fit_animal_model(reml;target=:ai_reml,iterations=1).spec===reml
+test/likelihood_original_spec_regression.jl:25:        @test fit_animal_model(reml;target=:henderson_mme,variance_components=(sigma_a2=.8,sigma_e2=1.2)).spec===reml
+test/likelihood_original_spec_regression.jl:35:            @test result.spec.relationship_diag===nothing
+test/runtests.jl:2359:    @test spec.y === y
+test/runtests.jl:2360:    @test spec.X === X
+test/runtests.jl:2361:    @test spec.Z === Z
+test/runtests.jl:2362:    @test spec.Ainv === Ainv
+test/runtests.jl:2436:    @test fit.spec === spec
+test/runtests.jl:2451:    @test sparse_fit.spec === reml_spec
+test/runtests.jl:2826:    @test mme.spec === spec
+test/runtests.jl:4038:    @test internal.fit.spec === public_fit.spec
+test/runtests.jl:8685:    @test low.genetic_uniqueness === nothing   # pure low-rank G = ΛΛ' has NO specific variance
+test/test_relationship_diag_1pF.jl:78:    @test HSquared._relationship_diag(fit.spec, :auto) === fit.spec.relationship_diag
+test/test_relationship_diag_1pF.jl:89:    @test spec0.relationship_diag === nothing
+test/test_sparse_aireml_input_contracts.jl:52:    canonicalized, _ = HSquared._validated_sparse_relationship_spec(stale_diag_spec)
+test/test_sparse_aireml_input_contracts.jl:59:    @test first(HSquared._validated_sparse_relationship_spec(exact_spec)) === exact_spec
+src/likelihood.jl:55:function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
+src/likelihood.jl:70:function _likelihood_result_spec(original::AnimalModelSpec, validated::AnimalModelSpec)
+src/likelihood.jl:208:    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)
+src/likelihood.jl:291:    spec, Ainv_factor = _validated_sparse_relationship_spec(spec)
+src/likelihood.jl:297:function _validated_sparse_relationship_spec(spec::AnimalModelSpec)
+src/likelihood.jl:298:    return _likelihood_validated_spec(spec)
+src/likelihood.jl:375:    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)
+src/likelihood.jl:376:    result_spec = _likelihood_result_spec(original_spec, spec)
+src/likelihood.jl:452:    spec, Ainv_factor = _validated_sparse_relationship_spec(spec)
+src/likelihood.jl:453:    result_spec = _likelihood_result_spec(original_spec, spec)
+src/likelihood.jl:582:    spec, _ = _validated_sparse_relationship_spec(spec)
+src/likelihood.jl:583:    result_spec = _likelihood_result_spec(original_spec, spec)
+src/likelihood.jl:1276:    spec, _ = _likelihood_validated_spec(spec; supplied = true)
+src/likelihood.jl:1277:    result_spec = _likelihood_result_spec(original_spec, spec)
+src/genomic.jl:573:    iterations === nothing && return fit_animal_model(spec; target = target, initial = initial)
+src/data.jl:405:        annotation_spec === nothing ? nothing : annotation_spec.key,
+src/data.jl:408:        environment_spec === nothing ? nothing : environment_spec.key,
+src/data.jl:891:    marker_spec === nothing && genotype_marker_count == 0 && return nothing
+src/data.jl:893:    marker_count = marker_spec === nothing ? 0 : length(marker_spec.marker_ids)
+src/data.jl:894:    aligned_count = data.genotype_marker_spec === nothing ? 0 : length(data.genotype_marker_spec.marker_ids)
+src/data.jl:895:    chromosome_count = marker_spec === nothing ? nothing : length(unique(marker_spec.chromosome))
+src/data.jl:896:    position_min = marker_spec === nothing || isempty(marker_spec.position) ?
+src/data.jl:898:    position_max = marker_spec === nothing || isempty(marker_spec.position) ?
+src/data.jl:918:    if data.annotation_spec === nothing
+src/data.jl:955:    if data.environment_spec === nothing
+src/data.jl:989:    data.genotype_marker_spec === nothing || return length(data.genotype_marker_spec.marker_ids)
+src/data.jl:1004:    genotype_marker_spec === nothing || return "checked"
+src/data.jl:1005:    marker_spec === nothing && genotype_marker_count > 0 && return "not_checked_no_marker_map"
+src/data.jl:1006:    marker_spec === nothing || return "not_checked_no_genotypes"
+src/multivariate.jl:1097:    start_specs = if genetic_structure == :factor_analytic && initial === nothing

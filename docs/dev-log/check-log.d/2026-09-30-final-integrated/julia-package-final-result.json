@@ -1,0 +1,16 @@
+{
+  "start_utc": "2026-09-30T22:36:32.927498+00:00",
+  "elapsed_seconds": 417.16156650008634,
+  "exit_status": 0,
+  "over_estimate": false,
+  "estimate_seconds": 720,
+  "command": [
+    "/Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/bin/julia",
+    "--startup-file=no",
+    "--project=.",
+    "-e",
+    "using Pkg; Pkg.test(;julia_args=[\"--threads=1\"])"
+  ],
+  "julia_threads": 1,
+  "blas_threads": 1
+}

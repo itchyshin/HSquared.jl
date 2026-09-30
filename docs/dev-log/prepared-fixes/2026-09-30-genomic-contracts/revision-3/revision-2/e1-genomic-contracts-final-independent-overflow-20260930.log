@@ -1,0 +1,59 @@
+ERROR: Some tests did not pass: 2 passed, 4 failed, 0 errored, 0 broken.
+(p = 0.25, e = 2.1894858665067565e154, weight = 0.375, fast = 1.7976931348623155e308, reference = Inf)
+(summary = (marker_ids = ["m"], effects = [2.1894858665067565e154], abs_effects = [2.1894858665067565e154], allele_frequencies = [0.25], allele_variances = [0.375], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, scan_indices = [1], sort_by = :marker_variance, decreasing = true, top_n = 1, target = :direct_marker_scan), table = (marker_ids = ["m"], scan_indices = [1], effects = [2.1894858665067565e154], abs_effects = [2.1894858665067565e154], standard_errors = [1.0], z_scores = [1.0], chisq = [1.0], p_values = [0.5], bonferroni_p_values = [0.5], bh_q_values = [0.5], lod_scores = [1.0], denominators = [1.0], allele_frequencies = [0.25], allele_variances = [0.375], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, target = :direct_marker_scan))
+Exact overflow rejection despite finite fast candidate: Test Failed at none:1
+  Expression: a isa ArgumentError
+   Evaluated: (marker_ids = ["m"], effects = [2.1894858665067565e154], abs_effects = [2.1894858665067565e154], allele_frequencies = [0.25], allele_variances = [0.375], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, scan_indices = [1], sort_by = :marker_variance, decreasing = true, top_n = 1, target = :direct_marker_scan) isa ArgumentError
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ none:1 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ none:1
+Exact overflow rejection despite finite fast candidate: Test Failed at none:1
+  Expression: b isa ArgumentError
+   Evaluated: (marker_ids = ["m"], scan_indices = [1], effects = [2.1894858665067565e154], abs_effects = [2.1894858665067565e154], standard_errors = [1.0], z_scores = [1.0], chisq = [1.0], p_values = [0.5], bonferroni_p_values = [0.5], bh_q_values = [0.5], lod_scores = [1.0], denominators = [1.0], allele_frequencies = [0.25], allele_variances = [0.375], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, target = :direct_marker_scan) isa ArgumentError
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ none:1 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ none:1
+(p = 0.08, e = 3.4946515178772264e154, weight = 0.1472, fast = 1.7976931348623155e308, reference = Inf)
+(summary = (marker_ids = ["m"], effects = [3.4946515178772264e154], abs_effects = [3.4946515178772264e154], allele_frequencies = [0.08], allele_variances = [0.1472], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, scan_indices = [1], sort_by = :marker_variance, decreasing = true, top_n = 1, target = :direct_marker_scan), table = (marker_ids = ["m"], scan_indices = [1], effects = [3.4946515178772264e154], abs_effects = [3.4946515178772264e154], standard_errors = [1.0], z_scores = [1.0], chisq = [1.0], p_values = [0.5], bonferroni_p_values = [0.5], bh_q_values = [0.5], lod_scores = [1.0], denominators = [1.0], allele_frequencies = [0.08], allele_variances = [0.1472], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, target = :direct_marker_scan))
+Exact overflow rejection despite finite fast candidate: Test Failed at none:1
+  Expression: a isa ArgumentError
+   Evaluated: (marker_ids = ["m"], effects = [3.4946515178772264e154], abs_effects = [3.4946515178772264e154], allele_frequencies = [0.08], allele_variances = [0.1472], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, scan_indices = [1], sort_by = :marker_variance, decreasing = true, top_n = 1, target = :direct_marker_scan) isa ArgumentError
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ none:1 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ none:1
+Exact overflow rejection despite finite fast candidate: Test Failed at none:1
+  Expression: b isa ArgumentError
+   Evaluated: (marker_ids = ["m"], scan_indices = [1], effects = [3.4946515178772264e154], abs_effects = [3.4946515178772264e154], standard_errors = [1.0], z_scores = [1.0], chisq = [1.0], p_values = [0.5], bonferroni_p_values = [0.5], bh_q_values = [0.5], lod_scores = [1.0], denominators = [1.0], allele_frequencies = [0.08], allele_variances = [0.1472], marker_variances = [1.7976931348623155e308], proportion_variance_explained = nothing, total_variance = nothing, target = :direct_marker_scan) isa ArgumentError
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ none:1 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ none:1
+Test Summary:                                          | Pass  Fail  Total  Time
+Exact overflow rejection despite finite fast candidate |    2     4      6  1.6s

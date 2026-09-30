@@ -1,18 +1,48 @@
 const DEFAULT_UNKNOWN_PARENT_VALUES = (missing, nothing, "", "0", 0)
 
 """
-    Pedigree(ids, sire, dam, original_order)
+    Pedigree(ids, sire, dam, original_order; missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+             allow_selfing = false)
 
 Normalized pedigree with parent references encoded as row indices.
 
 `sire` and `dam` use `0` for unknown parents. Rows are topologically sorted so
-known parents always occur before their offspring.
+known parents always occur before their offspring. Direct construction checks
+unique IDs, matching vector lengths, earlier-row parent indices, and that
+`original_order` is a permutation of the input rows. IDs cannot use values in
+`missing_values`, which defaults to `missing`, `nothing`, `""`, `"0"`, and `0`.
+Pass the same `missing_values` used to normalize custom parent markers. Same-parent
+sire/dam indices are rejected unless `allow_selfing = true`, matching
+[`normalize_pedigree`](@ref). Prefer that function for raw parent labels.
 """
 struct Pedigree{T}
     ids::Vector{T}
     sire::Vector{Int}
     dam::Vector{Int}
     original_order::Vector{Int}
+
+    function Pedigree(ids::Vector{T}, sire::Vector{Int}, dam::Vector{Int},
+                      original_order::Vector{Int};
+                      missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                      allow_selfing::Bool = false) where {T}
+        n = length(ids)
+        length(sire) == n && length(dam) == n && length(original_order) == n ||
+            throw(ArgumentError("pedigree ids, parent indices, and original_order must have equal lengths"))
+        for id in ids
+            _is_unknown_parent(id, missing_values) &&
+                throw(ArgumentError("id values cannot be unknown-parent markers: $(_repr(id))"))
+        end
+        length(unique(ids)) == n || throw(ArgumentError("pedigree ids must be unique"))
+        for i in 1:n
+            0 <= sire[i] < i || throw(ArgumentError("sire indices must be 0 or refer to an earlier pedigree row"))
+            0 <= dam[i] < i || throw(ArgumentError("dam indices must be 0 or refer to an earlier pedigree row"))
+            sire[i] != 0 && sire[i] == dam[i] && !allow_selfing &&
+                throw(ArgumentError("sire and dam cannot be the same known parent for $(_repr(ids[i])); pass allow_selfing = true to model self-fertilization"))
+        end
+        all(i -> 1 <= i <= n, original_order) && length(unique(original_order)) == n ||
+            throw(ArgumentError("original_order must be a permutation of 1:length(ids)"))
+        return new{T}(ids, sire, dam, original_order)
+    end
 end
 
 Base.length(pedigree::Pedigree) = length(pedigree.ids)
@@ -88,7 +118,8 @@ function normalize_pedigree(ids, sire, dam; missing_values = DEFAULT_UNKNOWN_PAR
         sorted_dam[sorted] = dam_index[original] == 0 ? 0 : sorted_position[dam_index[original]]
     end
 
-    return Pedigree(sorted_ids, sorted_sire, sorted_dam, order)
+    return Pedigree(sorted_ids, sorted_sire, sorted_dam, order;
+                    missing_values = missing_values, allow_selfing = allow_selfing)
 end
 
 """
@@ -99,9 +130,9 @@ Build the dense numerator (additive) relationship matrix `A` for a normalized
 pedigree by the tabular recursion, or the submatrix `A[rows, rows]`.
 
 Internal validation-only helper: dense and bounded by `max_relationship_cache`,
-not production-scale. It is the single source of the relationship recursion,
-shared by [`inbreeding_coefficients`](@ref) (which takes its diagonal) and by
-single-step `A₂₂` construction.
+not production-scale. It is used as a dense oracle when validating
+[`inbreeding_coefficients`](@ref), and it supplies the relationship recursion
+for single-step `A₂₂` construction.
 """
 function _numerator_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
     n = length(pedigree)
@@ -148,9 +179,8 @@ lower-triangular). `d_i` is the variance of an individual's breeding value
 parent, and `0.5 − 0.25·(F_sire + F_dam)` with both known. Returned in
 `pedigree.ids` (topologically sorted) order; `det(A) = ∏_i d_i`.
 
-These are the reciprocals (`1/d_i`) that scale the Henderson `pedigree_inverse`
-contributions, and the within-family variances used in gene-dropping and
-within-family accuracy.
+The reciprocals (`1/d_i`) scale the Henderson `pedigree_inverse` contributions.
+The variances are also used in gene-dropping and within-family accuracy.
 """
 function mendelian_sampling_variances(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
     F = inbreeding_coefficients(pedigree; max_relationship_cache = max_relationship_cache)
@@ -181,7 +211,7 @@ additive_relationship(pedigree::Pedigree; max_relationship_cache::Integer = 10_0
 additive_relationship(ids, sire, dam; kwargs...) =
     additive_relationship(normalize_pedigree(ids, sire, dam); kwargs...)
 
-# --- Meuwissen & Luo (1992) O(n·ancestors) inbreeding ---------------------------
+# --- Meuwissen & Luo (1992) ancestry-heap inbreeding ----------------------------
 # Minimal binary max-heap over ancestor row indices (no external dependency) so the
 # ancestor traversal visits indices in strictly descending order.
 
@@ -224,10 +254,11 @@ Inbreeding coefficient `F_i` for every animal by the Meuwissen & Luo (1992)
 method. Accumulate the `T`-row of `A = T·D·Tᵀ` for animal `i` over its ancestors
 (processed youngest-first via a max-heap): `A_ii = Σ_j L_ij² d_j`, so
 `F_i = A_ii − 1`, where `d_j = 0.5 − 0.25(F_sire(j) + F_dam(j))` is the Mendelian
-sampling variance (unknown-parent sentinel `F_0 = −1`). Runs in ~O(n·ancestors)
-and never forms the dense `A`; the dense `_numerator_relationship`
-diagonal is the validation oracle. Requires a topologically sorted pedigree
-(parents before offspring), as produced by [`normalize_pedigree`](@ref).
+sampling variance (unknown-parent sentinel `F_0 = −1`). Work depends on the
+ancestry visited and heap operations; this method never forms the dense `A`.
+The dense `_numerator_relationship` diagonal is the validation oracle. Requires
+a topologically sorted pedigree (parents before offspring), as produced by
+[`normalize_pedigree`](@ref).
 """
 function _meuwissen_luo_inbreeding(pedigree::Pedigree)
     n = length(pedigree)
@@ -275,11 +306,11 @@ end
 Return the inbreeding coefficient for each row of a normalized pedigree.
 
 Inbreeding is computed by the Meuwissen & Luo (1992) method
-(`_meuwissen_luo_inbreeding`) in ~O(n·ancestors) without forming the dense
-relationship matrix, so it scales to large pedigrees. `max_relationship_cache` is
-accepted for signature compatibility but no longer bounds this path (it still
+(`_meuwissen_luo_inbreeding`) without forming the dense relationship matrix.
+Runtime depends on the ancestry visited and heap operations. `max_relationship_cache`
+is accepted for signature compatibility but does not bound this path; it still
 governs the dense `_numerator_relationship` used by `additive_relationship`
-and single-step A₂₂, and as the inbreeding validation oracle).
+and single-step A₂₂, and as the inbreeding validation oracle.
 """
 function inbreeding_coefficients(pedigree::Pedigree; max_relationship_cache::Integer = 10_000)
     return _meuwissen_luo_inbreeding(pedigree)
@@ -391,7 +422,7 @@ function cytoplasmic_relationship(pedigree::Pedigree)
     n = length(labels)
     C = zeros(Float64, n, n)
     for i in 1:n, j in 1:n
-        C[i, j] = labels[i] == labels[j] ? 1.0 : 0.0
+        C[i, j] = isequal(labels[i], labels[j]) ? 1.0 : 0.0
     end
     return C
 end
@@ -414,7 +445,9 @@ followed transitively). Returned in `pedigree.ids` order, aligned with
 Experimental Phase 3 non-standard-inheritance primitive. Because clonemates are
 identical rows, `C` is rank-deficient — it is a relationship matrix to use
 directly, not to invert. Record the genets sexually in `pedigree`; record ramets
-with unknown parents and mark them through `clone_of`.
+with unknown parents and mark them through `clone_of`. Ramets must be terminal:
+a row marked in `clone_of` is rejected if it occurs as a sire or dam in the
+sexual pedigree. Breeding through ramets requires a separate inheritance recursion.
 """
 function clonal_relationship(pedigree::Pedigree, clone_of)
     n = length(pedigree)
@@ -441,6 +474,11 @@ function clonal_relationship(pedigree::Pedigree, clone_of)
         end
         rep[i] = j
     end
+    for parents in (pedigree.sire, pedigree.dam), parent in parents
+        if parent != 0 && genet[parent] != 0
+            throw(ArgumentError("clonal ramet $(_repr(pedigree.ids[parent])) cannot be used as a sexual parent; clonal_relationship supports terminal ramets only"))
+        end
+    end
     A = _numerator_relationship(pedigree)
     C = Matrix{Float64}(undef, n, n)
     for i in 1:n, j in 1:n
@@ -463,8 +501,9 @@ order, aligned with [`pedigree_inverse`](@ref).
 Experimental Phase 3 primitive, validation-scale and dense — `D` is the
 relationship for a dominance random effect. The off-diagonal formula is general;
 the unit diagonal and the absence of dominance-inbreeding corrections hold for
-non-inbred parents (the standard textbook case). Full sibs have `D = 1/4`, half
-sibs and parent–offspring `D = 0`.
+non-inbred parents (the standard textbook case). With unrelated, non-inbred
+parents, full sibs have `D = 1/4`; half sibs and parent–offspring have `D = 0`
+under the corresponding unrelated-founder pedigree conditions.
 """
 function dominance_relationship(pedigree::Pedigree)
     n = length(pedigree)
@@ -503,8 +542,9 @@ additive `A` and dominance `D` relationship matrices (Henderson 1985):
 
 These give the orthogonal additive×additive, additive×dominance, and
 dominance×dominance epistatic relationship matrices used for epistatic variance
-components. Full sibs have additive×additive `= 1/4`. Returned in `pedigree.ids`
-order. Experimental Phase 3 primitive, validation-scale and dense; inherits the
+components. Full sibs from unrelated, non-inbred parents have
+additive×additive `= 1/4`. Returned in `pedigree.ids` order. Experimental Phase 3
+primitive, validation-scale and dense; inherits the
 [`dominance_relationship`](@ref) non-inbred-parent assumption. No public
 model-spec.
 """
@@ -538,7 +578,7 @@ epistatic_relationship(ids, sire, dam; kwargs...) =
 # Resolve the metafounder assignment into combined parent-index arrays over the augmented
 # index `[metafounders 1..m; animals m+1..m+n]`. `group_of` is aligned to `pedigree.ids`
 # (like `clone_of`): entry `i` is the metafounder-group label for animal `i`'s unknown
-# parent slot(s); animals with both parents known carry an unknown-parent marker. Distinct
+# parent slot(s); entries for animals with both parents known are ignored. Distinct
 # labels resolve to columns `1..m` in stable first-appearance order. Every real animal's
 # unknown parent is remapped to its metafounder column, so no literal `0` survives for an
 # animal (a leftover unknown without a group label is a hard error, not a silent fallback).
@@ -608,6 +648,9 @@ function _metafounder_combined_A(m::Int, Gamma::AbstractMatrix, sire_c::Vector{I
     @inbounds for k in (m + 1):N
         s = sire_c[k]
         d = dam_c[k]
+        mendelian_variance = 1.0 - 0.25 * (A[s, s] + A[d, d])
+        (isfinite(mendelian_variance) && mendelian_variance > 0) ||
+            throw(ArgumentError("non-positive Mendelian sampling variance at animal row $(k - m)"))
         for j in 1:(k - 1)
             val = 0.5 * (A[s, j] + A[d, j])
             A[k, j] = val
@@ -627,9 +670,14 @@ Dense metafounder-augmented additive relationship matrix `A^Γ` (animal × anima
 covariance `Γ` and a metafounder assignment `group_of`. `group_of` is aligned to
 `pedigree.ids` like [`clonal_relationship`](@ref)'s `clone_of`: entry `i` is the
 metafounder-group label of animal `i`'s unknown parent slot(s) (both unknown parents of
-an animal share one group this slice); animals with both parents known carry an
-unknown-parent marker. Distinct labels resolve to `Γ`'s rows `1..m` in stable
-first-appearance order.
+an animal share one group this slice); entries for animals with both parents known are
+ignored. Distinct labels resolve to `Γ`'s rows `1..m` in stable first-appearance
+order in the normalized `pedigree.ids`.
+
+In the raw-array overload, `group_of` is supplied in the same original row
+order as `ids`; the method carries it through the pedigree's topological sort.
+Supply `Γ` in the group order after this sort, which can differ from the first
+group appearance in the caller's original rows; `Γ` is not itself reordered.
 
 `A^Γ` is the existing tabular recursion with the leading `Γ` block seeded: a metafounder's
 self-relationship is `Γ[i,i]` (so its inbreeding `F = Γ[i,i] − 1`, which is NEGATIVE for
@@ -639,8 +687,10 @@ the result equals [`additive_relationship`](@ref) exactly.
 
 `Γ` is SUPPLIED, NOT estimated. EXPERIMENTAL, validation-scale and dense (bounded by
 `max_relationship_cache`); no external (BLUPF90) comparator, no R-facing metafounder
-model-spec, no single-step `H^Γ`. Scale convention: `Γ[m,m]` is on the relationship scale
-(`Γ[m,m] = 0` ⇒ classical founder), not an allele-frequency parameterization.
+model-spec or bridge payload, and no covered claim. The separate single-step `H^Γ`
+utilities and supplied-variance wrappers are also experimental. Scale convention:
+`Γ[m,m]` is on the relationship scale (`Γ[m,m] = 0` ⇒ classical founder), not an
+allele-frequency parameterization.
 """
 function metafounder_relationship(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
                                   max_relationship_cache::Integer = 10_000)
@@ -653,8 +703,27 @@ function metafounder_relationship(pedigree::Pedigree, group_of, Gamma::AbstractM
     return A[(m + 1):(m + n), (m + 1):(m + n)]
 end
 
-metafounder_relationship(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
-    metafounder_relationship(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+function _normalize_metafounder_pedigree(ids, sire, dam, group_of;
+                                         missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                                         allow_selfing::Bool = false)
+    ids_vec = collect(ids)
+    groups = collect(group_of)
+    length(groups) == length(ids_vec) ||
+        throw(ArgumentError("group_of must have one entry per pedigree individual"))
+    pedigree = normalize_pedigree(ids_vec, sire, dam;
+                                  missing_values = missing_values,
+                                  allow_selfing = allow_selfing)
+    return pedigree, groups[pedigree.original_order]
+end
+
+function metafounder_relationship(ids, sire, dam, group_of, Gamma::AbstractMatrix;
+                                  missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                                  allow_selfing::Bool = false, kwargs...)
+    pedigree, groups = _normalize_metafounder_pedigree(
+        ids, sire, dam, group_of; missing_values = missing_values,
+        allow_selfing = allow_selfing)
+    return metafounder_relationship(pedigree, groups, Gamma; kwargs...)
+end
 
 """
     metafounder_relationship_inverse(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
@@ -665,6 +734,8 @@ DESCRIPTIVE dense inverse of the ANIMAL block of `A^Γ`, i.e. `inv(A^Γ_animals)
 combined `[metafounders; animals]` precision (conflating the two corrupts either the MME
 or the descriptive inverse). At `Γ = 0` it equals `Matrix(pedigree_inverse(pedigree))`.
 Validation-scale and dense; `Γ` supplied, not estimated.
+For the raw-array overload, `group_of` follows the original `ids` order and is
+reordered with the pedigree.
 """
 function metafounder_relationship_inverse(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
                                           max_relationship_cache::Integer = 10_000)
@@ -672,8 +743,14 @@ function metafounder_relationship_inverse(pedigree::Pedigree, group_of, Gamma::A
     return inv(Symmetric(A))
 end
 
-metafounder_relationship_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
-    metafounder_relationship_inverse(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+function metafounder_relationship_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix;
+                                          missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                                          allow_selfing::Bool = false, kwargs...)
+    pedigree, groups = _normalize_metafounder_pedigree(
+        ids, sire, dam, group_of; missing_values = missing_values,
+        allow_selfing = allow_selfing)
+    return metafounder_relationship_inverse(pedigree, groups, Gamma; kwargs...)
+end
 
 """
     metafounder_inbreeding(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
@@ -681,7 +758,13 @@ metafounder_relationship_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix
 
 Metafounder-aware inbreeding coefficient `F_i = A^Γ[i,i] − 1` for each animal (in
 `pedigree.ids` order). Under metafounders an animal can have `F < 0` (heterozygote excess)
-when its metafounder self-relationship `Γ < 1`. `Γ` supplied, not estimated.
+when its parents' additive relationship is negative: `F_i = A^Γ[sire,dam]/2`
+in the augmented pedigree. The negative value `Γ[g,g] - 1` for `Γ[g,g] < 1`
+belongs to the leading metafounder, rather than automatically to its animals.
+For example, founders assigned to one group with `Γ[g,g] = 0.4` have animal
+`F = 0.2`, while the metafounder has `F = -0.6`. `Γ` supplied, not estimated.
+The raw-array overload takes `group_of` in the original `ids` order and returns
+coefficients in normalized `pedigree.ids` order.
 """
 function metafounder_inbreeding(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
                                 max_relationship_cache::Integer = 10_000)
@@ -689,8 +772,14 @@ function metafounder_inbreeding(pedigree::Pedigree, group_of, Gamma::AbstractMat
     return [A[i, i] - 1.0 for i in 1:length(pedigree)]
 end
 
-metafounder_inbreeding(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
-    metafounder_inbreeding(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+function metafounder_inbreeding(ids, sire, dam, group_of, Gamma::AbstractMatrix;
+                                missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                                allow_selfing::Bool = false, kwargs...)
+    pedigree, groups = _normalize_metafounder_pedigree(
+        ids, sire, dam, group_of; missing_values = missing_values,
+        allow_selfing = allow_selfing)
+    return metafounder_inbreeding(pedigree, groups, Gamma; kwargs...)
+end
 
 """
     metafounder_inverse(pedigree, group_of, Gamma; max_relationship_cache = 10_000)
@@ -704,13 +793,21 @@ metafounder column. The Mendelian sampling variance `d_k = ½ − ¼(F_s + F_d)`
 combined inbreeding (metafounder `F = Γ − 1`), so `d_k` may EXCEED ½ (heterozygote excess)
 — this is correct and not clamped.
 
-Requires `Γ` symmetric POSITIVE DEFINITE (it inverts `Γ`). The leading `m` rows/columns
-are the metafounder solutions; the animal block of this combined inverse is **not**
+Requires `Γ` symmetric POSITIVE DEFINITE (it inverts `Γ`). The numerical check
+uses `s = max(1, maximum(abs, Γ))`: symmetry tolerance `1e-10*s`, and smallest
+eigenvalue strictly greater than `1e-12*s` for this combined inverse. Thus even a
+well-conditioned `Γ` can be refused at a very small absolute scale. The descriptive
+relationship path instead permits eigenvalues down to `-1e-10*s` as roundoff.
+The leading `m` rows/columns are the metafounder solutions; the animal block of
+this combined inverse is **not**
 `inv(A^Γ_animals)` (see [`metafounder_relationship_inverse`](@ref)). `A_combined · this ≈
 I` is the round-trip correctness anchor. Returned as a `SparseMatrixCSC{Float64,Int}`,
 mirroring [`pedigree_inverse`](@ref). EXPERIMENTAL, validation-scale (still forms the dense
 `A^Γ` to get `d_k`, bounded by `max_relationship_cache`); not wired into `henderson_mme`
-this slice (the extra metafounder levels need the R bridge contract). `Γ` supplied.
+this slice (the extra metafounder levels need the R bridge contract). The separate
+animal-only [`metafounder_animal_model`](@ref) uses the descriptive animal-block inverse;
+it does not solve the combined metafounder-effect system. For the raw-array overload,
+`group_of` follows the original `ids` order and is reordered with the pedigree. `Γ` supplied.
 """
 function metafounder_inverse(pedigree::Pedigree, group_of, Gamma::AbstractMatrix;
                              max_relationship_cache::Integer = 10_000)
@@ -747,8 +844,14 @@ function metafounder_inverse(pedigree::Pedigree, group_of, Gamma::AbstractMatrix
     return sparse(rows, cols, vals, N, N)
 end
 
-metafounder_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix; kwargs...) =
-    metafounder_inverse(normalize_pedigree(ids, sire, dam), group_of, Gamma; kwargs...)
+function metafounder_inverse(ids, sire, dam, group_of, Gamma::AbstractMatrix;
+                              missing_values = DEFAULT_UNKNOWN_PARENT_VALUES,
+                              allow_selfing::Bool = false, kwargs...)
+    pedigree, groups = _normalize_metafounder_pedigree(
+        ids, sire, dam, group_of; missing_values = missing_values,
+        allow_selfing = allow_selfing)
+    return metafounder_inverse(pedigree, groups, Gamma; kwargs...)
+end
 
 function _parent_index(parent, id_to_index::Dict{Any,Int}, missing_values, role::Symbol, child_id)
     _is_unknown_parent(parent, missing_values) && return 0

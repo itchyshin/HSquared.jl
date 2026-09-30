@@ -4,8 +4,9 @@ using Printf
 using Random
 
 """
-Opt-in known-truth recovery harness for the genetic-GLLVM REML estimator
-(`fit_gllvm_laplace_reml`).
+Opt-in oracle-start exploratory recovery script for the genetic-GLLVM integrated-Laplace
+estimator (`fit_gllvm_laplace_reml`). Every fit starts at the true loadings; this is not
+evidence of recovery from ordinary starts.
 
 Deliberately OUTSIDE `test/` so the committed suite stays RNG-free. It simulates a
 half-sib pedigree, draws `K` independent genetic latent factors `g[·,k] ~ N(0, A)`,
@@ -13,15 +14,15 @@ forms `η[i,t] = μ + Σ_k Λ[t,k] g[i,k]`, samples responses from the chosen fa
 the genetic-GLLVM REML, and measures recovery of the ROTATION-INVARIANT among-trait
 genetic covariance `G_lat = ΛΛ'` (the loadings themselves are rotation-nonidentified).
 
-Four predeclared scenarios:
-- **A — Poisson rank-1 (`K=1`)**, `q=240`: a single common genetic factor.
-- **B — Poisson rank-2 (`K=2`)**, `q=120`: a genuine two-factor structure with NON-degenerate
+Four exploratory scenarios (each fit starts at `copy(Λtrue)`):
+- A: Poisson rank-1 (`K=1`), `q=240`, a single common genetic factor.
+- B: Poisson rank-2 (`K=2`), `q=120`, a two-factor structure with non-degenerate
   among-trait genetic correlations.
-- **C — Bernoulli rank-1 (`K=1`)**, `q=240` (binary logit): single common genetic factor
-  on the latent logit scale. EXPECTED to show downward bias in `G_lat` recovery — the
-  known Laplace-for-binary information effect — and is reported honestly, not gated.
-- **D — Binomial(20) rank-1 (`K=1`)**, `q=240`: 20 binary trials per record; more
-  information than Bernoulli ⇒ less downward bias.
+- C: Bernoulli rank-1 (`K=1`), `q=240` (binary logit), a single common genetic factor
+  on the latent logit scale; reported descriptively, not gated. The unsigned error
+  metric does not estimate bias direction.
+- D: Binomial(20) rank-1 (`K=1`), `q=240`, 20 binary trials per record, compared
+  descriptively with Bernoulli, without a causal interpretation.
 
 Structured non-Gaussian (Laplace) REML recovery is HARD and is NOT claimed to pass a
 tight gate; this records the honest empirical recovery, mirroring the other
@@ -49,10 +50,10 @@ end
 
 _logistic(x) = 1.0 / (1.0 + exp(-x))
 
-# Bernoulli(logistic(η)) draw — returns 0.0 or 1.0
+# Bernoulli(logistic(η)) draw. Returns 0.0 or 1.0.
 _rand_bernoulli(rng, η) = rand(rng) < _logistic(η) ? 1.0 : 0.0
 
-# Binomial(n_trials, logistic(η)) draw — returns Float64 success count
+# Binomial(n_trials, logistic(η)) draw. Returns a Float64 success count.
 function _rand_binomial(rng, η, n_trials)
     p = _logistic(η)
     s = 0.0
@@ -94,7 +95,7 @@ function _mean_offdiag_cor_error(Ghat, Gtrue)
 end
 
 # ---------------------------------------------------------------------------
-# Generic runner — accepts a response-sampler closure f(rng, η[i,t]) → y
+# Generic runner. Accepts a response sampler f(rng, η[i,t]) → y.
 # ---------------------------------------------------------------------------
 
 function _run_generic(Λtrue, μ, seed, nsire, ndam, noffspring, family,
@@ -161,7 +162,7 @@ function _scenario(name, family_label, Λtrue, μ, seeds, nsire, ndam, noffsprin
 end
 
 function main()
-    println("Genetic-GLLVM REML known-truth recovery (Poisson + Bernoulli + Binomial)")
+    println("Genetic-GLLVM integrated-Laplace oracle-start study (Poisson + Bernoulli + Binomial)")
 
     # ------------------------------------------------------------------
     # Scenarios A and B: Poisson (existing, unchanged)
@@ -183,13 +184,12 @@ function main()
 
     # ------------------------------------------------------------------
     # Scenario C: Bernoulli rank-1
-    # μ=0.0 gives marginal prevalence ~0.5 — non-degenerate binary data.
-    # Λ=[0.9,0.6,0.4] on the logit scale.  EXPECTED downward bias in
-    # G_lat recovery (single-trial information effect) — REPORTED-NOT-GATED.
+    # μ=0.0 gives marginal prevalence near 0.5, so the binary data are non-degenerate.
+    # Λ=[0.9,0.6,0.4] on the logit scale. Descriptive only because the
+    # unsigned covariance error does not estimate bias direction.
     # ------------------------------------------------------------------
     println("\n--- NOTE: Scenario C (Bernoulli) uses logit link. ---")
-    println("    The Laplace-for-binary information effect causes KNOWN DOWNWARD BIAS")
-    println("    in G_lat recovery. Results are REPORTED-NOT-GATED.")
+    println("    Results are REPORTED-NOT-GATED; no bias direction or EBV rank is estimated.")
     _scenario("C (Bernoulli rank-1)", "Bernoulli logit",
               reshape([0.9, 0.6, 0.4], 3, 1), 0.0,
               [20260620, 20260621, 20260622, 20260623, 20260624],
@@ -200,11 +200,11 @@ function main()
 
     # ------------------------------------------------------------------
     # Scenario D: Binomial(20) rank-1
-    # Same DGP as C but with m=20 trials per record.  More information
-    # ⇒ substantially less downward bias; gated at the same REL_GATE=0.45.
+    # Same DGP as C but with m=20 trials per record; compared descriptively,
+    # with no causal interpretation of differences in unsigned errors.
     # ------------------------------------------------------------------
     println("\n--- NOTE: Scenario D (Binomial m=20) uses logit link. ---")
-    println("    More trials ⇒ more information ⇒ less bias than Bernoulli.")
+    println("    Compare the oracle-start covariance errors descriptively only.")
     n_trials = 20
     _scenario("D (Binomial-20 rank-1)", "Binomial(20) logit",
               reshape([0.9, 0.6, 0.4], 3, 1), 0.0,
@@ -215,9 +215,9 @@ function main()
 
     println()
     println("NOTE: structured non-Gaussian REML recovery is HARD; this is an HONEST opt-in")
-    println("record, not a tight-gate claim. Rank-1 ⇒ ±1 correlations by construction (recovery")
+    println("record. Rank-1 gives ±1 correlations by construction (recovery")
     println("on G_lat); rank-2 has non-degenerate ρ so it also reports correlation recovery.")
-    println("Bernoulli scenario C is REPORTED-NOT-GATED due to known Laplace-for-binary bias.")
+    println("Bernoulli scenario C is REPORTED-NOT-GATED; five-seed relative error is unsigned and no cause is established.")
 end
 
 main()

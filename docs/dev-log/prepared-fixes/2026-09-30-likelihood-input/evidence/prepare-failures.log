@@ -1,0 +1,3 @@
+Attempt 1: AssertionError for missing return marker "return loglik, Vector{Float64}(beta), Vector{Float64}(u1), Vector{Float64}(u2)". Script stopped before writing source. Saved as prepare_patch.failed-001.py.
+Attempt 2: AssertionError for missing return marker "return loglik, beta, u1, u2". Script stopped before writing source. Saved as prepare_patch.failed-002.py.
+Correct marker: "return loglik, Vector{Float64}(beta), u1, u2". Third script run wrote the prepared patch; later bounded edits are represented in likelihood_input.patch and saved source snapshots.

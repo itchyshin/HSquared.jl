@@ -1,5 +1,6 @@
 using Test
 using LinearAlgebra
+using SparseArrays
 using HSquared
 
 @testset "Wave 2 relationship precision contracts" begin
@@ -48,10 +49,29 @@ using HSquared
     nonsymmetric_K = [1.0 0.0; 9.0 1.0]
     Phi2 = hcat(ones(4), [-1.0, -0.3, 0.3, 1.0])
     @test_throws ArgumentError H.random_regression_mme(y, X, Phi2, Z, Z, nonsymmetric_K, 2.0)
+    @test_throws ArgumentError H.random_regression_mme(y, X, Phi, Z, Z, G0, 2.0; ids = ["one"])
     @test_throws ArgumentError H.fit_random_regression_reml(y, X, Phi2, Z, Z;
         initial = (K_g = nonsymmetric_K, sigma_e2 = 2.0))
     @test_throws ArgumentError H.fit_random_regression_reml(y, X, Phi2, Z, Z;
         initial = (K_g = [1.0 2.0; 2.0 1.0], sigma_e2 = 2.0))
+    @test_throws ArgumentError H.fit_random_regression_reml(y, X, Phi, Z, Z; ids = ["one"])
+
+    for bad in (NaN, Inf, -Inf)
+        Zbad = copy(Z)
+        Zbad[1, 1] = bad
+        for Zinvalid in (Zbad, sparse(Zbad))
+            @test_throws ArgumentError H.random_regression_mme(y, X, Phi, Zinvalid, Z, G0, 2.0)
+            @test_throws ArgumentError H.fit_random_regression_reml(y, X, Phi, Zinvalid, Z;
+                iterations = 1)
+        end
+    end
+    for bad in (NaN, Inf, -Inf, 0.0, -1.0)
+        @test_throws ArgumentError H.random_regression_mme(y, X, Phi, Z, Z, G0, bad)
+        @test_throws ArgumentError H.fit_random_regression_reml(y, X, Phi, Z, Z;
+            initial = (sigma_e2 = bad,), iterations = 1)
+        @test_throws ArgumentError H.rr_heritability(G0, bad, [0.0, 0.2, 0.4, 0.6])
+        @test_throws ArgumentError H.rr_heritability(G0, fill(bad, 4), [0.0, 0.2, 0.4, 0.6])
+    end
 
     # A tolerated asymmetry must be used consistently in quadratic and logdet terms.
     Ai = Matrix{Float64}(I, 4, 4)

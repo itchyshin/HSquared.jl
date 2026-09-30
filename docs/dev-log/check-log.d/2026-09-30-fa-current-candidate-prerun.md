@@ -1,0 +1,5 @@
+# 2026-09-30 FA ordinary-start current-candidate pre-run
+
+One fresh development seed was fit on the current candidate after confirming the prior Totoro pre-run used a different `src/` tree hash. Seed `20261407` used the frozen T4/K1 complete Gaussian cell, 5,000-iteration cap, ordinary initialization, and unchanged recovery criteria. It was retained as a non-recovery because both starts reached the cap. Fit time was 162.803 seconds on the local Mac with 4 Julia threads and 1 BLAS thread. Exact source, driver, and output hashes plus the raw TSV are in `docs/dev-log/recovery-checkpoints/2026-09-30-fa-ordinary-start-current-candidate-prerun.md` and its paired TSV.
+
+The 200-seed serial primary run is estimated conservatively at about 18 hours from the current pre-run with a twofold allowance. It remains held for Shinichi's explicit approval. The pre-run is not a recovery-rate estimate and does not change the acceptance rules or FA status. No GPU, package, capability, or release status changed.

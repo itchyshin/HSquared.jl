@@ -1,0 +1,139 @@
+diff --git a/src/random_regression.jl b/src/random_regression.jl
+--- a/src/random_regression.jl
++++ b/src/random_regression.jl
+@@ -69,12 +69,32 @@
+ 
+ Affinely map a raw covariate vector `a` (e.g. age/time) onto `t ∈ [-1, 1]` by
+ `t = 2(a - lower)/(upper - lower) - 1` (so `lower → -1`, `upper → +1`, midpoint
+-`→ 0`). Returns a `Vector{Float64}`. Throws if `lower == upper`.
++`→ 0`). Returns a `Vector{Float64}`. Bounds and covariates must be finite;
++bounds must be distinct after conversion to Float64. Throws if the standardized
++values cannot be represented as finite Float64 values.
+ """
+ function standardize_covariate(a::AbstractVector; lower::Real = minimum(a), upper::Real = maximum(a))
+     all(isfinite, a) || throw(ArgumentError("covariate must contain only finite values"))
+-    upper > lower || throw(ArgumentError("upper ($upper) must exceed lower ($lower)"))
+-    return Float64.(2 .* (a .- lower) ./ (upper - lower) .- 1)
++    isfinite(lower) && isfinite(upper) || throw(ArgumentError("covariate bounds must be finite"))
++    av = Float64.(a)
++    lo, hi = Float64(lower), Float64(upper)
++    all(isfinite, av) && isfinite(lo) && isfinite(hi) || throw(ArgumentError(
++        "covariate and bounds must be representable as finite Float64 values"))
++    hi > lo || throw(ArgumentError("upper ($upper) must exceed lower ($lower) in Float64"))
++    width = hi - lo
++    values = if isfinite(width)
++        map(av) do x
++            offset = x - lo
++            # Split an overflowing offset for an extrapolated finite covariate.
++            fraction = isfinite(offset) ? offset / width : x / width - lo / width
++            2 * fraction - 1
++        end
++    else
++        # Halving endpoints makes their difference representable without changing the map.
++        2 .* ((av ./ 2 .- lo / 2) ./ (hi / 2 - lo / 2)) .- 1
++    end
++    all(isfinite, values) || throw(ArgumentError("standardized covariate must be finite"))
++    return values
+ end
+ 
+ # m×k design Φ whose row i is φ(ts[i]); ts already standardized to [-1, 1].
+@@ -145,7 +165,8 @@
+ coefficient genetic covariance `K_g` and supplied residual variance `residual` —
+ either a finite positive scalar (homoscedastic) or a length-`m` finite positive vector
+ (heteroscedastic across the covariate). `K_g` and `σ²_e` are SUPPLIED, not estimated.
+-Returns `(covariate = ts, values)`.
++Returns `(covariate = ts, values)`. The genetic variance trajectory must be
++representable as finite Float64 values; an overflowing trajectory is rejected.
+ 
+ The supplied `residual` is treated as the TOTAL non-additive-genetic phenotypic
+ variance at each covariate point. In the canonical repeated-records random-regression
+@@ -161,7 +182,12 @@
+         throw(ArgumentError("residual must be a scalar or a length-$(m) vector"))
+     all(isfinite, σe2) && all(>(0), σe2) ||
+         throw(ArgumentError("residual variance(s) must be finite and positive"))
+-    return (covariate = vg.covariate, values = vg.values ./ (vg.values .+ σe2))
++    all(isfinite, vg.values) || throw(ArgumentError("genetic variance trajectory must be finite"))
++    # Normalize each pair before summing so a finite variance ratio cannot overflow.
++    scale = max.(vg.values, σe2)
++    genetic_scaled = vg.values ./ scale
++    values = genetic_scaled ./ (genetic_scaled .+ σe2 ./ scale)
++    return (covariate = vg.covariate, values = values)
+ end
+ 
+ """
+@@ -197,8 +223,13 @@
+     k = length(pca.values)
+     Φ = _rr_design(ts, k)
+     Ψ = Φ * pca.vectors
+-    total = sum(pca.values)
+-    prop = total > 0 ? pca.values ./ total : zeros(k)
++    scale = maximum(pca.values)
++    prop = if scale > 0
++        scaled_values = pca.values ./ scale
++        scaled_values ./ sum(scaled_values)
++    else
++        zeros(k)
++    end
+     return (covariate = collect(Float64, ts),
+             eigenvalues = pca.values,
+             eigen_coefficients = pca.vectors,
+diff --git a/test/rr_descriptor_scale_regression.jl b/test/rr_descriptor_scale_regression.jl
+new file mode 100644
+--- /dev/null
++++ b/test/rr_descriptor_scale_regression.jl
+@@ -0,0 +1,55 @@
++using Test, LinearAlgebra, HSquared
++
++@testset "RR descriptor finite scaling" begin
++    @testset "standardization endpoints and caller bounds" begin
++        for (lower, upper) in ((-Inf, Inf), (0.0, Inf), (-Inf, 1.0), (NaN, 1.0), (0.0, NaN))
++            @test_throws ArgumentError standardize_covariate([0.0, 1.0]; lower=lower, upper=upper)
++        end
++        for a in ([0.0, Inf], [NaN, 1.0], [0.0, -Inf])
++            @test_throws ArgumentError standardize_covariate(a; lower=0.0, upper=1.0)
++        end
++        for a in ([0.0, 0.5e308, 1e308], [-1e308, 0.0, 1e308], [-floatmax(Float64), 0.0, floatmax(Float64)])
++            result = standardize_covariate(a)
++            @test all(isfinite, result)
++            @test result ≈ [-1.0, 0.0, 1.0]
++        end
++        @test standardize_covariate([1e308]; lower=-1e308, upper=-9e307) ≈ [39.0]
++        @test standardize_covariate([10.0, 20.0, 30.0]) ≈ [-1.0, 0.0, 1.0]
++        @test standardize_covariate([2.0, 6.0]; lower=0.0, upper=8.0) ≈ [-0.5, 0.5]
++        @test_throws ArgumentError standardize_covariate([5.0, 5.0])
++        @test_throws ArgumentError standardize_covariate([0.0, floatmax(Float64)]; lower=0.0, upper=1.0)
++    end
++
++    @testset "heritability uses the normalized Legendre variance" begin
++        ts = [0.0, 0.5]
++        K = reshape([1.6], 1, 1)
++        Kbig = reshape([1.6e308], 1, 1)
++        # phi0 = sqrt(1/2), so genetic variance is 0.8e308 and h2 is 0.4.
++        @test legendre_basis(0.0, 1)[1]^2 ≈ 0.5
++        @test rr_genetic_variance(Kbig, [0.0]).values[1] / 1e308 ≈ 0.8
++        @test rr_heritability(Kbig, 1.2e308, ts).values ≈ [0.4, 0.4]
++        @test rr_heritability(Kbig, [1.2e308, 0.8e308], ts).values ≈ [0.4, 0.5]
++        @test rr_heritability(Kbig, 1.2e308, ts).values ≈ rr_heritability(K, 1.2, ts).values
++        @test rr_heritability(K, 1.2, ts).values ≈ [0.4, 0.4]
++        @test rr_heritability(zeros(1, 1), 1.2, ts).values == [0.0, 0.0]
++        @test rr_genetic_variance_plot_data(Kbig, ts; residual=1.2e308).heritability ≈ [0.4, 0.4]
++        # The underlying genetic variance exceeds Float64; reject a ratio to infinity.
++        @test_throws ArgumentError rr_heritability(Matrix(Diagonal([1e308, 1e308])), 1e308, [1.0])
++    end
++
++    @testset "eigenvalue shares preserve finite scale invariance" begin
++        ts = [-1.0, 0.0, 1.0]
++        for (eigenvalues, expected) in (([1e308, 1e308], [0.5, 0.5]), ([1.2e308, 0.8e308], [0.6, 0.4]))
++            K = Matrix(Diagonal(eigenvalues))
++            out = rr_eigenfunctions(K, ts)
++            @test out.variance_explained ≈ expected
++            @test sum(out.variance_explained) ≈ 1.0
++            @test all(isfinite, out.variance_explained)
++            @test out.variance_explained ≈ rr_eigenfunctions(K / 1e308, ts).variance_explained
++            @test rr_eigenfunctions_plot_data(K, ts).variance_explained ≈ expected
++        end
++        @test rr_eigenfunctions(zeros(2, 2), ts).variance_explained == [0.0, 0.0]
++        @test rr_eigenfunctions(Matrix(Diagonal([2.0, 0.0])), ts).variance_explained == [1.0, 0.0]
++        @test rr_eigenfunctions(Matrix(Diagonal([0.6, 0.4])), ts).variance_explained ≈ [0.6, 0.4]
++    end
++end

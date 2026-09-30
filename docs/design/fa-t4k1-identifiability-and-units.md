@@ -20,6 +20,50 @@ data also needs a design that separates genetic and residual covariance. The
 calculation below assumes `G` is given and asks whether its FA decomposition
 is unique locally.
 
+## Separating fitted genetic and residual covariance
+
+The FA Jacobian result above concerns the map `(λ, ψ) ↦ G`; it does not show
+that a fitted likelihood can distinguish `G` from `R₀`. In the Gaussian model,
+the record covariance is `V = H ⊗ G + I ⊗ R₀`, where `H = ZAZ′`. Let `C_r` be
+a full-rank record-level error-contrast basis satisfying `C_r′X = 0`, where
+`X` is the record-level fixed design. For trait intercepts, `X = 1_n` and the
+response contrast basis is `C_f = C_r ⊗ I_t`, consistent with
+`X_f = X ⊗ I_t` and the individual-major, trait-fast ordering. The symmetric
+whitened relationship matrix on the record contrasts is
+
+```text
+B = (C_r′C_r)⁻¹ᐟ² C_r′ H C_r (C_r′C_r)⁻¹ᐟ².
+```
+
+After whitening the record metric, the covariance separates into blocks
+`b_j G + R₀` in an eigenbasis of `B`. With an interior unstructured `R₀`,
+these components are locally separable when `B` has at least two distinct eigenvalues. If `B` is a scalar
+multiple of identity, only that single combination of `G` and `R₀` is observed
+on the error contrasts. Therefore the fixed-effects projection, record
+replication, and relationship structure matter, even when the FA covariance
+map itself has full local rank.
+
+The regression test computes expected Gaussian REML information
+`I_ab = ½ tr(P V_a P V_b)` for the 8 FA and 10 unstructured residual
+coordinates, using the 12-animal pedigree fixture with two complete records
+per animal and trait intercepts. The information is full rank at this
+interior generating point under a declared `10⁻⁸` relative eigenvalue
+threshold, after scaling each parameter direction by its corresponding trait
+standard deviation or variance. This fixed scaling gives the same diagnostic
+under simple changes of trait measurement units. The threshold is a numerical
+rank criterion. A paired one-record, unrelated-animal design has
+`H = I`; after intercept projection its `B` is identity, and the same
+information has numerical rank 10 rather than 18 because changes to `G` can be
+absorbed by `R₀`. This deterministic check characterizes the two specified
+generating covariance designs. The helper is also evaluated at the covariance
+returned by the default-plus-balanced optimizer on this fixture. At that
+plug-in fit, standardized expected information remains numerical rank 18/18
+while the fit diagnostic reports uniqueness near the absolute floor. This is
+expected information evaluated at a fitted covariance, not the observed
+likelihood Hessian or a calibration result. Neither calculation establishes
+population recovery, interval calibration, or general results for other
+designs. Near-floor status still limits regular inference.
+
 ## Jacobian and rank
 
 For `t=4`, `K=1`, let `λ = (λ₁,…,λ₄)′` and `ψ_i > 0`. The ten distinct entries

@@ -17,3 +17,5 @@ Armed: 2026-09-01 post-G0. Bind approval before running checks.
 | **G11 Records** | check-log with exact commands; after-task; capability-status + validation-debt rows; coordination board; Rose audit; `tools/preamble_cap.sh` green | All Definition-of-Done items present |
 
 Verifier (when re-verifying): `node ~/.codex/skills/unlazy/scripts/gate-check.mjs` from Julia worktree with `--approve` after reading every CHECK.
+
+Historical scope: this0.5 table is not the active0.10/0.11 checkbox ledger. Its registry/CRAN/version actions do not authorize or extend the current bounded FA/GLLVM programme.

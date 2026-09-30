@@ -179,3 +179,52 @@ using SparseArrays
         @test fit_default.variance_components.sigma_e2 == fit_ref.variance_components.sigma_e2
     end
 end
+
+@testset "genomic utilities reject malformed input before calculation" begin
+    markers = [0.0 1.0; 1.0 0.0; 1.0 1.0]
+    @test_throws ArgumentError genomic_relationship_matrix(markers; weights = [Inf, 1.0])
+    @test_throws ArgumentError genomic_relationship_matrix(markers; weights = [floatmax(Float64), 1.0])
+
+    Q1 = Matrix{Float64}(I, 2, 2)
+    Q2 = 2.0 .* Q1
+    colliding_loco = Dict{Any,Any}(1 => Q1, "1" => Q2)
+    @test_throws ArgumentError HSquared._relationship_precision_lookup(colliding_loco)
+
+    y = [1.0, 2.0, 4.0]
+    X = ones(3, 1)
+    M = reshape([0.0, 1.0, 2.0], 3, 1)
+    @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = Inf)
+    @test_throws ArgumentError single_marker_scan(y, X, M; sigma_e2 = big"1e1000")
+
+    @test_throws ArgumentError genome_wide_threshold_from_null([NaN, 1.0])
+    @test_throws ArgumentError genome_wide_threshold_from_null([Inf, 1.0])
+
+    A = Matrix{Float64}(I, 2, 2)
+    Ainv = copy(A)
+    asymmetric_G = [1.0 0.2; 0.9 1.0]
+    @test_throws ArgumentError single_step_inverse(Ainv, A, asymmetric_G, [1, 2])
+    tiny_asymmetric_G = [1e-12 2e-13; 4e-13 1e-12]
+    @test_throws ArgumentError single_step_inverse(Ainv, A, tiny_asymmetric_G, [1, 2])
+    huge_asymmetric_G = [1e12 2e11; 2e11 + 2e3 1e12]
+    @test_throws ArgumentError single_step_inverse(Ainv, A, huge_asymmetric_G, [1, 2])
+    mixed_scale_asymmetric_G = [1e12 0.0 0.0; 0.0 2.0 0.25; 0.0 0.5 2.0]
+    @test_throws ArgumentError single_step_inverse(Matrix{Float64}(I, 3, 3),
+        Matrix{Float64}(I, 3, 3), mixed_scale_asymmetric_G, [1, 2, 3])
+    tiny_symmetric_G = [1e-12 2e-13; 2e-13 1e-12]
+    @test all(isfinite, single_step_inverse(Ainv, A, tiny_symmetric_G, [1, 2]))
+    huge_symmetric_G = [1e308 0.0; 0.0 1e308]
+    canonical_huge_G = HSquared._single_step_symmetric_finite_matrix(huge_symmetric_G, "G")
+    @test all(isfinite, canonical_huge_G)
+    @test canonical_huge_G == huge_symmetric_G
+    @test_throws ArgumentError single_step_inverse([1.0 0.2; 0.9 1.0], A, A, [1, 2])
+    @test_throws ArgumentError single_step_inverse(Ainv, [1.0 0.2; 0.9 1.0], A, [1, 2])
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; tau = -1.0)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; tau = Inf)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; omega = -1.0)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, [Inf 0.0; 0.0 1.0], [1, 2])
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; blend_weight = 1.1)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; ridge = -0.1)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 2]; omega = 100.0)
+    @test_throws ArgumentError single_step_inverse(Ainv, A, A, [1, 1])
+    @test single_step_inverse(Ainv, A, A, [1, 2]) ≈ Ainv
+end

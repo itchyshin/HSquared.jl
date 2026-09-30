@@ -1,0 +1,8 @@
+Test Summary:                                 | Pass  Total  Time
+Independent multivariate numerical challenges |   48     48  7.2s
+Test Summary:                                     | Pass  Total  Time
+multivariate start selection respects convergence |    4      4  0.1s
+Test Summary:                                                | Pass  Total  Time
+FA optimizer maps overflow proposals to an invalid objective |   12     12  0.2s
+Test Summary:                                          | Pass  Total  Time
+multivariate REML rejects rank-deficient fixed effects |    2      2  0.1s

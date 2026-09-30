@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/z3437171/.juliaup/bin/julia",
+    "--compiled-modules=no",
+    "--startup-file=no",
+    "--project=package",
+    "-e",
+    "using LinearAlgebra; println(\"Julia=\",VERSION,\" JuliaThreads=\",Threads.nthreads(),\" BLASThreads=\",BLAS.get_num_threads()); include(\"/private/tmp/e1-iterative-finite-independent-probes-20260930/test/iterative_finite_contracts.jl\");include(\"/private/tmp/e1-iterative-finite-independent-probes-20260930/test/iterative_summary_controls.jl\");include(\"/private/tmp/e1-iterative-finite-independent-probes-20260930/test/wave1_numerical_contracts.jl\");include(\"/private/tmp/e1-iterative-finite-independent-probes-20260930/test/test_matfree_reml_inci_pins.jl\");include(\"/private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl\");"
+  ],
+  "timeout_seconds": 110,
+  "elapsed_seconds": 39.60837887483649,
+  "exitcode": 1,
+  "Julia_threads": 1,
+  "BLAS_threads": 1
+}

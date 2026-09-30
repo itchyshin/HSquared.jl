@@ -27,6 +27,16 @@ It does **not** implement R parsing of `cov =`, does **not** activate the R
 bridge for `"factor_analytic"`, and does **not** promote `V4-FA` or the R
 capability row.
 
+### Current implementation reconciliation (2026-09-29)
+
+The preceding sentences describe the state when this freeze was written. The
+R twin now has a bounded, opt-in `engine_control` route for Gaussian pedigree
+FA with four traits, one factor, complete responses, trait intercepts, and
+estimated unstructured residual covariance. That route remains partial and
+experimental, with its gates recorded in the twin acceptance ledger. The
+ordinary formula parser and `cov = fa(K = ...)` route remain unimplemented;
+this reconciliation does not change the parser contract or capability status.
+
 The **covered numeric claim**, if a later packet ever flips, is scoped to the
 S4 cell: **`t = 4`, `K = 1`**, Ledermann slack `> 0`, uniqueness floor
 `min(ψ̂) ≥ 1e-4`, rotation-invariant `G` / `R` / `ψ`. The grammar may
@@ -86,11 +96,11 @@ cell guard (`require_fa_covered_flip_cell` refuses slack ≤ 0 as a
 *promotion* cell; diagnostic fits on saturated cells may still run). Clause
 (8) matches the engine: structured `G0` only; `R0` stays unstructured.
 
-**R today:** `hs_validate_genetic_structure_control()` **rejects**
-`"factor_analytic"` and `rank` (`R/julia-bridge.R`). This freeze **does not**
-authorise removing that reject. A later S8 bridge slice may implement the
-opt-in route under this predicate. Until then the only live FA path is the
-Julia engine API.
+**R today:** `hs_validate_genetic_structure_control()` accepts the bounded
+expert-control route for Gaussian pedigree FA with four traits and one factor
+(`R/julia-bridge.R`; see `GATES.md` B1). This opt-in route does not open the
+ordinary formula parser. `animal(..., cov = fa(...))`, broader ranks, and other
+response/design cells remain unsupported.
 
 ### A.3 Formula auto-route — names frozen, implementation draft
 
@@ -138,7 +148,7 @@ frozen; the implementation date is not.
 | Method | REML | `fit_multivariate_reml` is intrinsically REML-only and accepts no method argument; ML is not implemented |
 | Primary | `animal(1 \| id, pedigree = ped)` | pedigree `Ainv`; genomic / single-step FA not in S4 |
 
-R expert-control shape (names frozen; **bridge still rejects**):
+R expert-control shape (names frozen; bounded K=1 route implemented):
 
 ```r
 engine_control = list(
@@ -201,7 +211,8 @@ S4 pass definition and are not frozen as a covered FA claim here.
 
 - R parser for `cov =`.
 - Default-path auto-route from `cov = fa(...)`.
-- R bridge activation of `"factor_analytic"` / `rank` (currently errors).
+- Formula-parser or default-route activation of `"factor_analytic"` / `rank`;
+  the bounded expert-control route is implemented as described above.
 - Long-format `animal(trait | id, cov = …)`.
 - Residual FA / residual `cov =`.
 - `lowrank` as a covered sibling (design-36 §3.4: if fa resists and
@@ -216,13 +227,17 @@ S4 pass definition and are not frozen as a covered FA claim here.
 
 ## D. What this freeze does NOT cover
 
-- **It is not the implementation.** Removing the R `factor_analytic` reject
-  and parsing `cov = fa(K)` are later slices under this contract.
-- **It does not promote anything.** `V4-FA` stays **partial**. R FA stays
-  **planned** until a twin pointer says otherwise. `public_covered_count`
-  stays **7**. Experimental version stays **0.7.0**.
+- **It is not the implementation.** At the original freeze date, removing
+  the R `factor_analytic` reject and parsing `cov = fa(K)` were later slices.
+  The bounded expert-control route is now implemented; formula parsing remains
+  planned.
+- **It does not promote anything.** The bounded R expert-control route remains
+  **partial and experimental**; formula-based R FA remains **planned**.
+  `public_covered_count` stays **7**. Release and version decisions are tracked
+  in the current twin ledgers, not by this historical freeze.
 - **It does not replace design-38.** Unstructured 2-trait `cbind()` remains
-  the 0.6 freeze. FA is an additive expert-control / planned-`cov` layer.
+  the 0.6 freeze. FA is an additive expert-control layer; formula `cov` stays
+  planned.
 - **It does not sign Darwin, WOMBAT, or no-anchor.** Those are other Rose
   §3 items.
 - **It does not authorise loadings as biological axes.**

@@ -1,0 +1,247 @@
+[
+  {
+    "name": "valid complete julia",
+    "accepted": true,
+    "exit_status": 0,
+    "stdout": "HSQ_FINAL_JULIA_PASS",
+    "stderr_last": ""
+  },
+  {
+    "name": "valid complete docs",
+    "accepted": true,
+    "exit_status": 0,
+    "stdout": "HSQ_FINAL_DOCS_PASS",
+    "stderr_last": ""
+  },
+  {
+    "name": "valid complete R",
+    "accepted": true,
+    "exit_status": 0,
+    "stdout": "HSQ_FINAL_R_BRIDGE_DOCS_PASS",
+    "stderr_last": ""
+  },
+  {
+    "name": "changed src/a.jl",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: src/a.jl"
+  },
+  {
+    "name": "changed test/fixtures/a.jl",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: test/fixtures/a.jl"
+  },
+  {
+    "name": "changed docs/src/a.md",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: docs/src/a.md"
+  },
+  {
+    "name": "changed julia-package-final-result.json",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: julia-package-final-result.json"
+  },
+  {
+    "name": "changed julia-package-final.log",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: julia-package-final.log"
+  },
+  {
+    "name": "changed julia-validation-status.html",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: julia-validation-status.html"
+  },
+  {
+    "name": "changed R-genetic-gllvm.html",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: R-genetic-gllvm.html"
+  },
+  {
+    "name": "added source",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete src code inventory"
+  },
+  {
+    "name": "added test",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete test code inventory"
+  },
+  {
+    "name": "zero source/test freeze",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete src code inventory"
+  },
+  {
+    "name": "omitted pin julia-package-final-result.json",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Result is not pinned: julia-package-final-result.json"
+  },
+  {
+    "name": "omitted pin julia-package-final.log",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Package log is not pinned"
+  },
+  {
+    "name": "omitted pin source-test-freeze-final.json",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Source freeze is not pinned"
+  },
+  {
+    "name": "omitted pin julia-validation-status.html",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Rendered page is not pinned"
+  },
+  {
+    "name": "omitted pin R-genetic-gllvm.html",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Rendered page is not pinned"
+  },
+  {
+    "name": "omitted pin docs-Manifest.toml",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Docs build/environment is not pinned"
+  },
+  {
+    "name": "Boolean exit",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Unsuccessful result: julia-package-final-result.json"
+  },
+  {
+    "name": "missing estimate",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Missing or exceeded estimate: julia-package-final-result.json"
+  },
+  {
+    "name": "infinite elapsed",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Invalid elapsed time: julia-package-final-result.json"
+  },
+  {
+    "name": "malformed timestamp",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Invalid isoformat string: 'bad'"
+  },
+  {
+    "name": "predates freeze",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Package result predates its source freeze"
+  },
+  {
+    "name": "empty terms",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Empty rendered caveat terms"
+  },
+  {
+    "name": "missing required R page",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete rendered surface inventory"
+  },
+  {
+    "name": "optimized mode source rejection",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: src/a.jl"
+  },
+  {
+    "name": "omitted changed docs rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete documentation inventory"
+  },
+  {
+    "name": "changed current docs environment rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: File differs from checked bytes: docs/Manifest.toml"
+  },
+  {
+    "name": "wrong bridge project/command rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Bridge project differs"
+  },
+  {
+    "name": "wrong package command rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Package command differs"
+  },
+  {
+    "name": "wrong bridge command only rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Bridge command differs"
+  },
+  {
+    "name": "wrong bridge threads rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Bridge thread evidence differs"
+  },
+  {
+    "name": "added documentation rejected",
+    "accepted": false,
+    "exit_status": 1,
+    "stdout": "",
+    "stderr_last": "ValueError: Incomplete documentation inventory"
+  },
+  {
+    "name": "complete Julia under optimization",
+    "accepted": true,
+    "exit_status": 0,
+    "stdout": "HSQ_FINAL_JULIA_PASS",
+    "stderr_last": ""
+  }
+]

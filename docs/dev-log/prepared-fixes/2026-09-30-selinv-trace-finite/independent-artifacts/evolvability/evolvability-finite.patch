@@ -1,0 +1,45 @@
+--- a/src/evolvability.jl
++++ b/src/evolvability.jl
+@@ -116,7 +116,9 @@
+ function evolvability(G, beta)
+     S = _check_symmetric_psd_G(_evolvability_G(G))
+     b = _normalize_beta(beta, size(S, 1))
+-    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
++    value = dot(b, S * b)
++    isfinite(value) || throw(ArgumentError("genetic variance is outside finite Float64 range"))
++    return max(0.0, value)   # clamp admissible roundoff
+ end
+ 
+ """
+@@ -149,7 +151,9 @@
+ function respondability(G, beta)
+     S = _check_symmetric_psd_G(_evolvability_G(G))
+     b = _normalize_beta(beta, size(S, 1))
+-    return norm(S * b)
++    value = norm(S * b)
++    isfinite(value) || throw(ArgumentError("respondability is outside finite Float64 range"))
++    return value
+ end
+ 
+ """
+@@ -177,7 +181,8 @@
+ Additive genetic variance of the linear index `βᵀ a`, `βᵀ G β`. With
+ `normalize = true` (default) `β` is scaled to unit length first, so this returns
+ [`evolvability`](@ref); with `normalize = false` it uses `β` as given (the raw
+-genetic variance of the index for an arbitrary contrast). PSD-safe.
++genetic variance of the index for an arbitrary contrast). PSD-safe. Derived
++variances outside finite Float64 range throw `ArgumentError`.
+ """
+ function variance_along_gradient(G, beta; normalize::Bool = true)
+     S = _check_symmetric_psd_G(_evolvability_G(G))
+@@ -190,7 +195,9 @@
+         b = Vector{Float64}(beta)
+         all(isfinite, b) || throw(ArgumentError("beta must contain only finite values"))
+     end
+-    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
++    value = dot(b, S * b)
++    isfinite(value) || throw(ArgumentError("genetic variance is outside finite Float64 range"))
++    return max(0.0, value)   # clamp admissible roundoff
+ end
+ 
+ # Deterministic sign canonicalization: make the largest-magnitude entry of each

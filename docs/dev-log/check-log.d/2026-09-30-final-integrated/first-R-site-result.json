@@ -1,0 +1,13 @@
+{
+  "start_utc": "2026-09-30T21:45:48.639019+00:00",
+  "elapsed_seconds": 8.825074000051245,
+  "exit_status": 1,
+  "over_estimate": false,
+  "estimate_seconds": 180,
+  "command": [
+    "/usr/local/bin/Rscript",
+    "-e",
+    "pkgload::load_all(\"/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared\", quiet=TRUE); pkgdown::build_site(pkg=\"/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared\", examples=FALSE, new_process=FALSE, preview=FALSE, install=FALSE, devel=TRUE)"
+  ],
+  "examples_executed": false
+}

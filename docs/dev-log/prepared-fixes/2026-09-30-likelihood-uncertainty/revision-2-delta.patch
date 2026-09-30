@@ -1,0 +1,77 @@
+--- a/src/likelihood.jl
++++ b/src/likelihood.jl
+@@ -1576,6 +1576,14 @@
+     return step
+ end
+ 
++function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)
++    step = _validate_uncertainty_fd_step(fd_step)
++    h = step .* max.(abs.(theta), 1e-3)
++    all(x -> isfinite(x) && x > 0, h) ||
++        throw(ArgumentError("fd_step must produce finite positive component steps"))
++    return h
++end
++
+ function _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)
+     length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+     all(s -> s isa Real && isfinite(s) && s > 0, sigmas) ||
+@@ -1675,9 +1683,7 @@
+     d = length(theta)
+     d >= 1 || throw(ArgumentError("variance vector must be nonempty"))
+     theta = _uncertainty_variance_vector(theta[1:end-1], theta[end], d - 1)
+-    h = fd_step .* max.(abs.(theta), 1e-3)
+-    all(x -> isfinite(x) && x > 0, h) ||
+-        throw(ArgumentError("fd_step must produce finite positive component steps"))
++    h = _uncertainty_component_steps(theta, fd_step)
+     H = zeros(d, d)
+     for i in 1:d, j in i:d
+         ei = zeros(d); ei[i] = h[i]
+@@ -2110,9 +2116,7 @@
+     # there, and `sparse_multi_reml_loglik` would throw "all sigmas must be
+     # positive" from inside the difference quotient — an opaque failure that
+     # looks like a bug rather than a boundary. Refuse up front instead.
+-    h = fd_step .* max.(abs.(theta), 1e-3)
+-    all(x -> isfinite(x) && x > 0, h) ||
+-        throw(ArgumentError("fd_step must produce finite positive component steps"))
++    h = _uncertainty_component_steps(theta, fd_step)
+     if !all(theta .- 2 .* h .> 0)
+         unavailable === :nothing && return nothing
+         throw(ArgumentError(
+@@ -2281,6 +2285,7 @@
+     idx = _validate_uncertainty_selection(which, K)
+     fd_step = _validate_uncertainty_fd_step(fd_step)
+     theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
++    _uncertainty_component_steps(theta, fd_step)
+     total = sum(theta)
+     numer = sum(theta[i] for i in idx)
+     ratio = numer / total
+--- a/test/likelihood_uncertainty_contract_regression.jl
++++ b/test/likelihood_uncertainty_contract_regression.jl
+@@ -91,3 +91,27 @@
+         @test H.multi_effect_sum_ratio_interval(y,X,effects,[1.0,1.0],1.0;boundary_tol=.9).boundary
+     end
+ end
++
++@testset "Derived component step precedes rail returns" begin
++ effects=[(ones(1,1),ones(1,1)),(ones(1,1),ones(1,1))]
++ y=[1.0];X=ones(1,1)
++ for (theta,step) in (([2.0,2.0,1.0],floatmax(Float64)),(fill(1e-4,3),nextfloat(0.0)))
++  for tol in (.9,1e-6)
++   call=()->H.multi_effect_sum_ratio_interval(y,X,effects,theta[1:2],theta[3];fd_step=step,boundary_tol=tol)
++   @test_throws ArgumentError call()
++   @test occursin("fd_step",message(call))
++  end
++  call=()->H._multi_effect_variance_component_covariance(y,X,effects,theta[1:2],theta[3];fd_step=step,unavailable=:nothing)
++  @test_throws ArgumentError call()
++  @test occursin("fd_step",message(call))
++  call=()->H.multi_effect_uncertainty(y,X,effects,theta[1:2],theta[3];fd_step=step,boundary_tol=.9)
++  @test_throws ArgumentError call()
++  @test occursin("fd_step",message(call))
++  count=Ref(0);f=t->(count[]+=1;-sum(abs2,t)/2)
++  @test_throws ArgumentError H._reml_fd_information(f,theta,step)
++  @test count[] == 0
++ end
++ # A finite positive component step preserves both ordinary and near-zero rails.
++ @test H.multi_effect_sum_ratio_interval(y,X,effects,[2.0,2.0],1.0;boundary_tol=.9).boundary
++ @test H.multi_effect_sum_ratio_interval(y,X,effects,[1e-12,1.0],1.0;which=[1],boundary_tol=.9).boundary
++end

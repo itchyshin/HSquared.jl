@@ -21,7 +21,9 @@ Run the dense supplied-variance mixed-model (relatedness-corrected GLS) marker s
 of [`mixed_model_marker_scan`](@ref) on a fitted animal model, using the fit's
 `y`/`X`/`Z`, its relationship precision `Ainv`, and its fitted variance components
 `(σ²a, σ²e)`. Equivalent to calling the explicit-argument method with those values
-pulled off `fit.spec` and `fit.variance_components`.
+pulled off `fit.spec` and `fit.variance_components`. The fit must have
+converged. Marker rows must be in the same observation order as `fit.spec.y`;
+this method has no observation-ID alignment information.
 
 EXPERIMENTAL, dense/validation-scale. The Wald p-values are NOT genome-wide
 calibrated (see #48); this does not activate the R `marker_scan()` formula path or
@@ -29,6 +31,7 @@ change any bridge payload.
 """
 function mixed_model_marker_scan(fit::AnimalModelFit, markers::AbstractMatrix;
                                  allele_frequencies = nothing, marker_ids = nothing)
+    fit.converged || throw(ArgumentError("fit must have converged before marker scanning"))
     return mixed_model_marker_scan(
         fit.spec.y, fit.spec.X, fit.spec.Z, fit.spec.Ainv, markers,
         fit.variance_components.sigma_a2, fit.variance_components.sigma_e2;
@@ -50,6 +53,7 @@ EXPERIMENTAL, dense/validation-scale; p-values NOT genome-wide calibrated (#48).
 """
 function single_marker_scan(fit::AnimalModelFit, markers::AbstractMatrix;
                             allele_frequencies = nothing, marker_ids = nothing)
+    fit.converged || throw(ArgumentError("fit must have converged before marker scanning"))
     return single_marker_scan(
         fit.spec.y, fit.spec.X, markers;
         allele_frequencies = allele_frequencies,

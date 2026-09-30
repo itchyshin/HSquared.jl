@@ -80,7 +80,7 @@ single-GPU dev-friendly). PAICE clusters (Killarney/Vulcan/tamia) need an `aip-`
 
 ## v0.8 — HPC / production-sparse
 
-**Current state (`partial`):** Wave-F **F1** (Meuwissen–Luo O(n) inbreeding, `_meuwissen_luo_inbreeding`
+**Current state (`partial`):** Wave-F **F1** (Meuwissen–Luo ancestry-heap inbreeding, `_meuwissen_luo_inbreeding`
 — Ainv build feasible to q=300k) + **F3** (scale-invariant AI-REML convergence: q=300k 35.6s→2.3s).
 PCG MME solver (`solve_animal_model_pcg` + `preconditioner=:ichol`). Takahashi selected-inverse
 PEV/reliability. `fit_sparse_multi_effect_aireml` (Phase 5). **Phase 5 benchmark finding

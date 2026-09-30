@@ -1,0 +1,31 @@
+{
+  "timestamp_utc": "2026-09-30T21:15:50.658842+00:00",
+  "head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "source_tree_sha256": "fd134f11a89d1be8b8fdcc3a4fd76773c0497f640162ac9665fd1bc985b72392",
+  "likelihood_sha256": "5219cf48be1933a01afe4bb5ba40278d4610b455b5fd7d85a078ce2947c10e57",
+  "iterative_sha256": "91317fe23ab913767b3f4ed44f74b69b9d5e0f5a5ce46fa09ed442047f361769",
+  "runner_sha256": "8ab5e1d428fc269a9c99151083752135ea3985d6974851550e448ef95a092dff",
+  "protected_hashes": {
+    "src/multivariate.jl": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
+    "src/genomic.jl": "a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17",
+    "src/pedigree.jl": "522741349ecfca48afc29d06f04bf4f6a0206fbc84648606e1ebf9f5444267d4",
+    "src/evolvability.jl": "fd49987ee69c1f9b6e3335bdb6e4f8c73b6f0cdab3da4b7263cf4e87b6577ff3",
+    "src/takahashi_selinv.jl": "38a07e2e34da2f4a295e52e25b1f1d067a0b7e1b2893bdef8c73f1f78c704782",
+    "sim/fa_ordinary_start_recovery_20260928.jl": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "test/test_fa_weak_direction.jl": "158ae089596b4c2bcf9e1fd889e0777771776d11c417359a9aba350fe6b82b5c",
+    "test/test_payload_v2_parity.jl": "8f281fb60bbc9bf0ccf46559f5152ef32b68148eff1c0457fa01c9abb0dccc73"
+  },
+  "composed_assertions": 637,
+  "composed_exit_status": 0,
+  "new_tests": [
+    "likelihood_input_guard_regression.jl",
+    "likelihood_uncertainty_contract_regression.jl",
+    "likelihood_profile_pev_contracts.jl",
+    "likelihood_profile_pev_analytic_controls.jl",
+    "iterative_finite_contracts.jl",
+    "iterative_summary_controls.jl"
+  ],
+  "status": "Exact independently approved likelihood/iterative patches applied; whole programme acceptance pending."
+}

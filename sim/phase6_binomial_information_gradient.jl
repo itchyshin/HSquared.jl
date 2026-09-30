@@ -19,15 +19,15 @@ live in `sim/phase6_bernoulli_recovery.jl` (m = 1) and
 `sim/phase6_binomial_recovery.jl` (common m = 20 and per-record n ∈ 1:30).
 
 ADEMP:
-- Aim: σ̂²a rel-bias falls monotonically with trials/record; binary (m = 1) is
-  the downward-biased, information-limited endpoint, large m recovers tightly.
+- Aim: describe the five-seed estimates across trial-count settings; this small
+  contrast does not establish a monotone trend or causal information effect.
 - Data: half-sib pedigree (15 sires, 30 dams, 300 offspring; q = 345),
   `u ~ N(0, A·σ²a)` on the logit scale, σ²a = 1.0, μ = 0.0; per rung m,
   `yₐ ~ Binomial(m, logistic(μ + uₐ))`; the per-record rung draws nₐ ~ U{1..30}
   (the general cbind(successes, failures) GLMM via `BinomialVectorResponse`).
 - Estimand: σ²a (latent/logit scale) and EBV recovery cor(û, u).
 - Method: `fit_laplace_reml(...; family = :binomial, n_trials = m)`.
-- Performance: per-rung mean σ̂²a, mean rel-bias, and mean cor(û, u) over 5 seeds.
+- Performance: per-rung mean σ̂²a, mean relative error, and mean cor(û, u) over 5 seeds.
 
 Run from the repository root:
 
@@ -125,9 +125,9 @@ function main()
             _mean([r.nt_mean for r in prs]))
     lo = rungs[1]
     hi = rungs[end]
-    @printf("\nGradient: mean rel-bias(σ̂²a) %.3f at m=1 (Bernoulli) -> %.3f at m=%d; cor %.3f -> %.3f.\n",
+    @printf("\nGradient: mean relative error(σ̂²a) %.3f at m=1 (Bernoulli) -> %.3f at m=%d; cor %.3f -> %.3f.\n",
             lo.mrel, hi.mrel, hi.m, lo.mcor, hi.mcor)
-    println("Descriptive characterization of the information effect (not a CI gate).")
+    println("Descriptive five-seed contrast (not a CI gate or causal information test).")
 end
 
 main()

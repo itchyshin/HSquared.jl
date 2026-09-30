@@ -1,0 +1,1 @@
+Initial original-Henderson extraction omitted its _solve_mme_for_test prerequisite. First green run passed all newly repaired controls and preceding original testsets, then errored in the copied fixture before later assertions. Added the exact original prerequisite function; original testset body and proposal source remained unchanged. Failed extraction and log retained.

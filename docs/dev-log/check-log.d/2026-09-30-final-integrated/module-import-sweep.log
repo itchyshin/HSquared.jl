@@ -1,0 +1,46 @@
+Test Summary:                 | Pass  Total  Time
+GLLVM input guard regressions |   48     48  0.6s
+Test Summary:                      | Pass  Total  Time
+GLLVM descriptor and record guards |   50     50  2.7s
+Test Summary:                | Pass  Total  Time
+RR descriptor finite scaling |   41     41  0.0s
+Test Summary:                          | Pass  Total  Time
+Dictionary physical marker missingness |   29     29  1.0s
+Test Summary:                          | Pass  Total  Time
+flat integral omitted family endpoints |   35     35  1.2s
+Test Summary:               | Pass  Total  Time
+non-Gaussian finite ingress |  141    141  0.8s
+Test Summary:          | Pass  Total  Time
+H2 descriptor contract |  170    170  1.1s
+Test Summary:                             | Pass  Total  Time
+G2-G6 genomic input and summary contracts |   76     76  1.5s
+Test Summary:                                 | Pass  Total  Time
+public genomic documentation remains attached |    4      4  0.0s
+Test Summary:                                        | Pass  Total  Time
+finite median extremes and label metadata neighbours |    8      8  0.3s
+Test Summary:                                             | Pass  Total  Time
+representable weighted contributions near Float64 maximum |   12     12  0.2s
+Test Summary:                                                | Pass  Total  Time
+finite fast candidates cannot conceal true weighted overflow |   12     12  0.0s
+Test Summary:                  | Pass  Total  Time
+Multivariate bounded contracts |  107    107  5.2s
+Test Summary:                          | Pass  Total  Time
+likelihood input and result boundaries |  202    202  5.5s
+Test Summary:                    | Pass  Total  Time
+Likelihood uncertainty contracts |  192    192  2.7s
+Test Summary:                                | Pass  Total  Time
+Derived component step precedes rail returns |   22     22  0.3s
+Test Summary:                               | Pass  Total  Time
+likelihood profile PEV and scalar contracts |   71     71  0.3s
+Test Summary:                          | Pass  Total  Time
+independent supplied-variance controls |   23     23  0.5s
+Test Summary:                         | Pass  Total  Time
+iterative finite arithmetic contracts |  105    105  3.1s
+Test Summary:                      | Pass  Total  Time
+independent probe summary controls |   18     18  0.0s
+Test Summary:                                  | Pass  Total  Time
+Pedigree clonal and lineage residual contracts |   30     30  1.1s
+Test Summary:                           | Pass  Total  Time
+Selected-inverse trace finite contracts |   29     29  0.0s
+Test Summary:                        | Pass  Total  Time
+Evolvability finite output contracts |    7      7  0.1s

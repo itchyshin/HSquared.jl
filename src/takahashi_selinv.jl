@@ -100,9 +100,22 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool 
     rowval = L.rowval
     Lvals = L.nzval
 
+    all(isfinite, Lvals) ||
+        throw(ArgumentError("selected inverse requires a finite Cholesky factor"))
+    @inbounds for j in 1:size(L, 2)
+        first_entry = colptr[j]
+        first_entry < colptr[j + 1] ||
+            throw(ArgumentError("selected inverse requires a complete Cholesky factor"))
+        diagonal = Lvals[first_entry]
+        isfinite(diagonal) && diagonal > 0.0 ||
+            throw(ArgumentError("selected inverse requires positive finite Cholesky diagonals"))
+    end
+
     Zvals = zeros(Float64, length(Lvals))
     if per_pair
         _selinv_zvals_per_pair!(Zvals, colptr, rowval, Lvals, n)
+        all(isfinite, Zvals) || throw(ArgumentError(
+            "selected inverse values are not finite for this Cholesky factor"))
         return Zvals, colptr, rowval, perm, n
     end
 
@@ -206,6 +219,8 @@ function _selinv_zvals(ch::SparseArrays.CHOLMOD.Factor{Float64}; per_pair::Bool 
         Zvals[cs] = invLjj * invLjj - s * invLjj
     end
 
+    all(isfinite, Zvals) || throw(ArgumentError(
+        "selected inverse values are not finite for this Cholesky factor"))
     return Zvals, colptr, rowval, perm, n
 end
 
@@ -295,6 +310,19 @@ function takahashi_diag(ch::SparseArrays.CHOLMOD.Factor{Float64})
     return d
 end
 
+# Trace weights and results must be representable in the Float64 engine.
+function _selinv_trace_values(Ainv::SparseMatrixCSC)
+    vals = nonzeros(Ainv)
+    all(v -> v isa Real && isfinite(v), vals) || throw(ArgumentError(
+        "selected inverse trace weights must be finite real values"))
+    converted = Float64.(vals)
+    all(isfinite, converted) || throw(ArgumentError(
+        "selected inverse trace weights must be finite Float64 values"))
+    all(k -> iszero(vals[k]) || !iszero(converted[k]), eachindex(vals)) || throw(ArgumentError(
+        "selected inverse trace nonzero weights must not underflow Float64"))
+    return converted
+end
+
 """
     selinv_trace_against(ch, Ainv, nfixed) -> Float64
 
@@ -303,7 +331,11 @@ nonzeros of the random-effect precision `Ainv`, using the Takahashi selected
 inverse of the MME coefficient matrix `C` (factor `ch`) WITHOUT materialising the
 full selected-inverse sparse matrix. `Ainv`'s sparsity pattern is a subset of the
 random block of `C`, hence of the `L + Lᵀ` pattern, so every entry looked up is
-in-pattern (exact). Numerically identical (up to summation order) to
+in-pattern (exact); the helper checks dimensions and this support condition and
+throws `ArgumentError` when either fails. Weights must be finite real values
+representable as Float64; trace accumulation outside finite Float64 range also
+throws `ArgumentError`. Nonzero weights that convert to zero are refused.
+Numerically identical (up to summation order) to
 `sum(Ainv .* takahashi_selinv(ch)[(nfixed+1):end, (nfixed+1):end])`, and without
 the `O(nnz)` output allocation of materialising that matrix — but this function's
 own cost is dominated by `_selinv_zvals`'s `Θ(Σⱼ|L[:,j]|²)` recursion (NOT
@@ -330,26 +362,37 @@ end
 function _selinv_trace_against(ch::SparseArrays.CHOLMOD.Factor{Float64},
                                Ainv::SparseMatrixCSC, nfixed::Integer,
                                strict_order::Bool)
-    Zvals, colptr, rowval, perm, n = _selinv_zvals(ch; strict_order = strict_order)
+    n = size(ch, 1)
+    0 <= nfixed <= n && size(Ainv, 1) == n - nfixed && size(Ainv, 2) == size(Ainv, 1) ||
+        throw(ArgumentError("Ainv must be square and match the random block after nfixed columns"))
+    vals = _selinv_trace_values(Ainv)
+    Zvals, colptr, rowval, perm, _ = _selinv_zvals(ch; strict_order = strict_order)
+    offset = Int(nfixed)
     iperm = invperm(perm)            # original index -> permuted index
     rows = rowvals(Ainv)
-    vals = nonzeros(Ainv)
     trace = 0.0
     @inbounds for jcol in 1:size(Ainv, 2)
-        vp = iperm[nfixed + jcol]
+        vp = iperm[offset + jcol]
         for k in nzrange(Ainv, jcol)
-            up = iperm[nfixed + rows[k]]
+            up = iperm[offset + rows[k]]
             if up == vp
                 z = Zvals[colptr[up]]
             else
                 lo = up < vp ? up : vp
                 hi = up < vp ? vp : up
                 idx = _csc_rowidx(colptr, rowval, lo, hi)
-                z = idx == -1 ? 0.0 : Zvals[idx]
+                if idx == -1
+                    iszero(vals[k]) || throw(ArgumentError(
+                        "Ainv nonzero pattern must be contained in the selected inverse pattern"))
+                    z = 0.0
+                else
+                    z = Zvals[idx]
+                end
             end
             trace += vals[k] * z
         end
     end
+    isfinite(trace) || throw(ArgumentError("selected inverse trace is outside finite Float64 range"))
     return trace
 end
 
@@ -369,38 +412,63 @@ Computes the Takahashi selected inverse ONCE (cost `Θ(Σⱼ|L[:,j]|²)`, NOT
 blocks, so the whole score-trace sweep pays that dominant cost once rather than
 `K` times. Each `Ainvs[b]` pattern is a subset of `C`'s block-`b`
 diagonal block, hence of the `L + Lᵀ` pattern, so every entry looked up is
-in-pattern (exact). This is the `[tr(A₁⁻¹ C^{u₁u₁}), …, tr(A_K⁻¹ C^{u_Ku_K})]`
+in-pattern (exact); dimensions, offsets, and this support condition are checked
+and invalid inputs throw `ArgumentError`. Weights must be finite real values
+representable as Float64; nonzero weights that convert to zero and nonfinite
+accumulated traces throw `ArgumentError`.
+This is the `[tr(A₁⁻¹ C^{u₁u₁}), …, tr(A_K⁻¹ C^{u_Ku_K})]`
 vector used by [`fit_sparse_multi_effect_aireml`](@ref).
 """
 function selinv_block_traces(ch::SparseArrays.CHOLMOD.Factor{Float64},
                              Ainvs::AbstractVector, offsets::AbstractVector)
     length(Ainvs) == length(offsets) ||
         throw(ArgumentError("Ainvs and offsets must have the same length"))
+    n = size(ch, 1)
+    K = length(Ainvs)
+    checked_offsets = Vector{Int}(undef, K)
+    @inbounds for b in 1:K
+        Ainv = Ainvs[b]
+        Ainv isa SparseMatrixCSC || throw(ArgumentError(
+            "each Ainv must be a SparseMatrixCSC"))
+        off = offsets[b]
+        off isa Integer && 0 <= off <= n && size(Ainv, 1) == size(Ainv, 2) &&
+            size(Ainv, 1) <= n - off ||
+            throw(ArgumentError("each Ainv must be square and its integer offset must fit the factor"))
+        _selinv_trace_values(Ainv)
+        checked_offsets[b] = Int(off)
+    end
+
     Zvals, colptr, rowval, perm, _ = _selinv_zvals(ch)
     iperm = invperm(perm)            # original index -> permuted index
-    K = length(Ainvs)
     traces = zeros(Float64, K)
     @inbounds for b in 1:K
         Ainv = Ainvs[b]
-        off = offsets[b]
+        offset = checked_offsets[b]
         rows = rowvals(Ainv)
-        vals = nonzeros(Ainv)
+        vals = _selinv_trace_values(Ainv)
         t = 0.0
         for jcol in 1:size(Ainv, 2)
-            vp = iperm[off + jcol]
+            vp = iperm[offset + jcol]
             for k in nzrange(Ainv, jcol)
-                up = iperm[off + rows[k]]
+                up = iperm[offset + rows[k]]
                 if up == vp
                     z = Zvals[colptr[up]]
                 else
                     lo = up < vp ? up : vp
                     hi = up < vp ? vp : up
                     idx = _csc_rowidx(colptr, rowval, lo, hi)
-                    z = idx == -1 ? 0.0 : Zvals[idx]
+                    if idx == -1
+                        iszero(vals[k]) || throw(ArgumentError(
+                            "Ainv nonzero pattern must be contained in the selected inverse pattern"))
+                        z = 0.0
+                    else
+                        z = Zvals[idx]
+                    end
                 end
                 t += vals[k] * z
             end
         end
+        isfinite(t) || throw(ArgumentError("selected inverse block trace is outside finite Float64 range"))
         traces[b] = t
     end
     return traces

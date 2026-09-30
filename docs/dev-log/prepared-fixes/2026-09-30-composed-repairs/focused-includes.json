@@ -1,0 +1,42 @@
+[
+  [
+    "E1GLLVMInputGuards",
+    "gllvm_input_guard_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1GLLVMDescriptorRecord",
+    "gllvm_descriptor_record_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1CoefcovFields",
+    "test_coefcov_fields.jl",
+    "already registered by approved coefcov patch"
+  ],
+  [
+    "E1RRDescriptors",
+    "rr_descriptor_scale_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1DataDictMissingCount",
+    "data_dict_missing_count_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1FlatIntegralEndpoints",
+    "flat_integral_endpoint_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1NonGaussianFiniteIngress",
+    "nongaussian_finite_ingress_regression.jl",
+    "new module include"
+  ],
+  [
+    "E1NonGaussianH2Descriptors",
+    "nongaussian_h2_descriptor_regression.jl",
+    "new module include"
+  ]
+]

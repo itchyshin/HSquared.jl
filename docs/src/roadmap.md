@@ -20,8 +20,8 @@ Implemented:
 - control/backend markers for the shared planned `auto`, `cpu`, `threads`,
   `cuda`, `amdgpu`, `metal`, and `oneapi` vocabulary;
 - `backend_info()` status diagnostics for the planned backend vocabulary;
-- `formula_status()` grammar diagnostics for parsed, reserved, and planned
-  syntax rows;
+- Julia-local `formula_status()` engine-term diagnostics for engine-bridge,
+  reserved, and planned rows; R owns its broader formula grammar and status table;
 - `validation_status()` diagnostics for covered, external, partial, and
   planned validation rows;
 - planned model-term vocabulary reservations aligned to the R genomic/QTL and

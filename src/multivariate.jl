@@ -284,6 +284,38 @@ function structured_genetic_payload(result)
     )
 end
 
+function _mv_labels(labels, n::Integer, name::AbstractString)
+    values = labels === nothing ? collect(1:n) : collect(labels)
+    length(values) == n || throw(ArgumentError("$name length must match its model dimension"))
+    any(v -> ismissing(v) || isnothing(v), values) && throw(ArgumentError("$name must not contain missing labels"))
+    normalized = strip.(string.(values))
+    all(!isempty, normalized) || throw(ArgumentError("$name must not contain empty labels"))
+    length(unique(normalized)) == n || throw(ArgumentError("$name must be unique after string normalization"))
+    return values
+end
+
+function _mv_fd_step(h::Real)
+    isfinite(h) && h > 0 || throw(ArgumentError("finite-difference step must be finite and positive"))
+    hf = Float64(h)
+    isfinite(hf) && hf > 0 && isfinite(hf * hf) && hf * hf > 0 ||
+        throw(ArgumentError("finite-difference step and its square must be representable as finite positive Float64 values"))
+    return hf
+end
+
+function _mv_fd_points(x, h)
+    xf = Float64.(collect(x))
+    all(isfinite, xf) || throw(ArgumentError("finite-difference coordinates must be finite Float64 values"))
+    all(v -> isfinite(v + h) && isfinite(v - h) && v + h != v && v - h != v, xf) ||
+        throw(ArgumentError("finite-difference perturbations must be finite and distinct from their coordinates"))
+    return xf
+end
+
+function _mv_require_converged(fit)
+    hasproperty(fit, :converged) && fit.converged === true ||
+        throw(ArgumentError("multivariate uncertainty requires a fit with converged = true"))
+    return nothing
+end
+
 function _check_finite_matrix(M, name)
     Mf = Float64.(Matrix(M))
     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))
@@ -347,6 +379,7 @@ function lowrank_covariance(loadings::AbstractMatrix)
     size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
     size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
     C = L * transpose(L)
+    all(isfinite, C) || throw(ArgumentError("reconstructed low-rank covariance must be finite"))
     all(>(0), diag(C)) || throw(ArgumentError("each trait must have positive low-rank genetic variance"))
     return C
 end
@@ -368,7 +401,9 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
         throw(ArgumentError("uniqueness length must match the number of loading rows"))
     all(isfinite, ψ) || throw(ArgumentError("uniqueness must not contain Inf or NaN"))
     all(>(0), ψ) || throw(ArgumentError("uniqueness values must be positive"))
-    return L * transpose(L) + Diagonal(ψ)
+    C = L * transpose(L) + Diagonal(ψ)
+    all(isfinite, C) || throw(ArgumentError("reconstructed factor-analytic covariance must be finite"))
+    return C
 end
 
 # Heywood interior bound for fitted FA uniqueness (0.8 S3).
@@ -384,12 +419,15 @@ const FA_UNIQUENESS_FLOOR = 1e-4
 """
     ledermann_slack(t, K)
 
-Ledermann slack for a `t`-trait rank-`K` factor-analytic
-covariance: `(t − K)² − (t + K)`. This is twice the generic covariance
-codimension, not the nominal degrees of freedom for a model comparison. Strictly positive slack is required
-before a cell can be a covered-flip candidate; it is a dimension-count
-screen, not proof of local or global identification. Slack `≤ 0` is
-Ledermann-saturated (S1 `t=3 K=1` is the disclosure cell).
+Ledermann slack for a `t`-trait rank-`K` factor-analytic covariance:
+`(t − K)² − (t + K)`. The nominal parameter count after removing factor
+rotations is `m = tK + t − K(K−1)/2`; slack is twice the difference between
+the ambient covariance dimension and `m`. Half the slack is an actual
+covariance codimension only where the covariance map has this nominal rank.
+Strictly positive slack is required before a cell can be a covered-flip
+candidate; this dimension-count screen does not prove local or global
+identification. Slack `≤ 0` is Ledermann-saturated (S1 `t=3 K=1` is the
+disclosure cell).
 """
 function ledermann_slack(t::Integer, K::Integer)
     t >= 1 || throw(ArgumentError("t (trait count) must be ≥ 1"))
@@ -512,8 +550,8 @@ This is the Phase-4 (multivariate Gaussian) supplied-variance engine slice: an
 MME solve that does **not** estimate `G0` / `R0` (covariance-matrix estimation is
 a separate REML slice), the multi-trait analogue of [`henderson_mme`](@ref). It
 assumes a fixed-effect / incidence design shared across traits; per-trait designs
-are not covered. Experimental, dense/validation-scale, engine-internal — there is
-no R-facing multivariate model-spec yet.
+are not covered. Experimental, dense/validation-scale, supplied-covariance Julia
+helper. R's multivariate fitting routes are documented separately.
 
 Returns a `NamedTuple`:
 
@@ -542,12 +580,10 @@ function multivariate_mme(
     q = size(Ainv, 1)
     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    aids = _mv_labels(ids, q, "ids")
+    tlabels = _mv_labels(traits, t, "traits")
     G0s = _check_covariance(G0, "G0", t)
     R0s = _check_covariance(R0, "R0", t)
-    aids = ids === nothing ? collect(1:q) : collect(ids)
-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
 
     p = size(X, 2)
     # observed-record mask (handles unbalanced / missing-trait records).
@@ -590,6 +626,8 @@ function multivariate_mme(
         Rinv = blockdiag(blocks...)
     end
 
+    (size(Xfull, 2) == 0 || LinearAlgebra.rank(Matrix(Xfull)) == size(Xfull, 2)) ||
+        throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
     Xt = transpose(Xfull)
     Zt = transpose(Zfull)
     XtRi = Xt * Rinv
@@ -630,6 +668,15 @@ function _chol_params_to_cov(v, t)
         idx += 1
     end
     return L * transpose(L)
+end
+
+# Map an optimizer's Cholesky parameters only when finite precision still
+# yields a finite positive-definite covariance. Exponent underflow can turn a
+# nominally positive factor diagonal into zero and a singular covariance.
+function _try_chol_params_to_cov(v, t)
+    covariance = _chol_params_to_cov(v, t)
+    all(isfinite, covariance) || return nothing
+    return isposdef(Symmetric(covariance)) ? covariance : nothing
 end
 
 function _cov_to_chol_params(M::AbstractMatrix, t)
@@ -711,6 +758,15 @@ function _structured_genetic_params0(G0_start, genetic_structure::Symbol, rank::
     return vcat(vec(L), _fa_uniqueness_to_unconstrained(ψ))
 end
 
+function _select_multivariate_fit_attempt(attempts)
+    valid = findall(a -> a.valid && isfinite(a.objective), attempts)
+    isempty(valid) && throw(ArgumentError(
+        "no multivariate REML optimizer start returned a finite objective and covariance estimate"))
+    converged = filter(i -> attempts[i].converged, valid)
+    candidates = isempty(converged) ? valid : converged
+    return candidates[argmin([attempts[i].objective for i in candidates])]
+end
+
 # Validate the observed data. `present` is the n×t observed mask. Throws a clear
 # ArgumentError on a non-finite observed phenotype (e.g. Inf — only missing/NaN
 # mark an unobserved trait), a non-finite entry of `X`/`Z`, or a trait with no
@@ -787,7 +843,8 @@ end
 
 # Full REML log-likelihood at supplied `G0`, `R0`, INCLUDING the `(N − p')·log(2π)`
 # constant (`p' = ncol(Xfull)`), so it is on the same scale as `gaussian_loglik`
-# and `sparse_reml_loglik` and is safe to compare across the package (LRT/AIC).
+# and `sparse_reml_loglik` and agrees with other full-constant Gaussian objectives on matched models.
+# REML comparisons still require compatible data and fixed-effect spaces.
 function _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
     Vf = _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
     ViX = Vf \ Xfull
@@ -796,6 +853,42 @@ function _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
     r = yvec .- Xfull * beta
     nfix = size(Xfull, 2)
     return -0.5 * ((N - nfix) * log(2π) + logdet(Vf) + logdet(XtViX) + dot(r, Vf \ r))
+end
+
+# Genetic correlations are returned for every trait, so a candidate with a zero
+# marginal genetic variance is not a valid reported fit. Pure low-rank G may be
+# singular, while the other structures require positive-definite G.
+function _mv_genetic_covariance_admissible(G0, genetic_structure::Symbol)
+    all(isfinite, G0) && all(>(0), diag(G0)) || return false
+    return genetic_structure === :lowrank || isposdef(Symmetric(G0))
+end
+
+# Return Inf for optimizer trial points whose covariance transform or marginal
+# factorization is invalid. Input contracts are validated before optimization.
+function _mv_reml_objective(params, yvec, Xfull, Zfull, A, indiv, N, t,
+                            genetic_structure, grank, ngen)
+    expected = ngen + t * (t + 1) ÷ 2
+    length(params) == expected ||
+        throw(DimensionMismatch("REML objective expected $expected covariance parameters, got $(length(params))"))
+    local G0, R0
+    try
+        G0, _, _ = _structured_genetic_params_to_cov(
+            @view(params[1:ngen]), t, genetic_structure, grank)
+        R0 = _chol_params_to_cov(@view(params[(ngen + 1):end]), t)
+        _mv_genetic_covariance_admissible(G0, genetic_structure) || return Inf
+        all(isfinite, R0) || return Inf
+        isposdef(Symmetric(R0)) || return Inf
+    catch err
+        (err isa PosDefException || err isa ArgumentError) && return Inf
+        rethrow()
+    end
+    try
+        objective = -_mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
+        return isfinite(objective) ? objective : Inf
+    catch err
+        err isa PosDefException && return Inf
+        rethrow()
+    end
 end
 
 # GLS fixed effects and BLUP breeding values at supplied `G0`, `R0`. Uses the
@@ -856,7 +949,18 @@ The additive genetic covariance can be constrained with `genetic_structure`:
 
 For structured fits, `initial` may supply `G0`, `R0`, `loadings`
 (`traits × rank`), and `uniqueness` for `:factor_analytic`; omitted fields use
-deterministic phenotypic-scale defaults.
+deterministic phenotypic-scale defaults. When `genetic_structure = :factor_analytic`
+and `initial` is omitted, the fitter runs both its standard and a deterministic
+balanced phenotypic-scale initialization. Away from the uniqueness floor, the
+second start preserves the initial genetic diagonal, halves its off-diagonal
+covariances, and retains the initial residual covariance; floor clamping can
+also change the genetic diagonal. This is a decomposition sensitivity check,
+not broad multistart protection. It returns the highest-likelihood
+converged fit when one exists; if neither converges, it returns the best finite
+fit with `converged = false`. `fa_start_diagnostics` records both outcomes,
+whether their fitted covariances disagree, and whether uniqueness is within 1%
+of the absolute floor. Supplying `initial` requests a single user-controlled
+start.
 
 Returned `genetic_loadings` use a deterministic sign convention: for each factor
 column, the largest-absolute loading is non-negative. This removes arbitrary
@@ -868,8 +972,9 @@ Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
 validated by deterministic self-consistency checks (the `t = 1` reduction
 recovers the univariate REML estimate; the multivariate REML log-likelihood is on
 the same full-constant scale as the univariate one; the optimum beats a coarse
-grid). Known-truth covariance recovery for `t ≥ 2` is exercised only by one-off
-simulations (the test suite is RNG-free); same-estimand external-comparator
+grid). Seeded fixtures and separately documented recovery campaigns concern
+specific trait/rank/design cells. They establish no broad recovery or inference
+calibration. For the unstructured multi-trait comparison, same-estimand external
 parity is discharged on ONE deterministic fixture (point-estimate) by `sommer`
 4.4.5 and `blupf90+` 2.60, with no ASReml or JWAS leg — treat multi-trait
 variance estimates as experimental. There is no published textbook anchor for
@@ -890,8 +995,13 @@ Returns a `NamedTuple`:
     `genetic_uniqueness` — structure metadata (`nothing` where not applicable);
   - `loglik` — the full REML log-likelihood at the estimate, including the
     `(N − p')·log(2π)` constant, so it is on the same scale as
-    [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref) (safe for LRT/AIC);
-  - `converged`, `iterations`, `traits`.
+    [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref); comparisons still
+    require matched data and compatible fixed-effect spaces;
+  - `converged`, `iterations`, `traits`;
+  - `fa_start_diagnostics` — for FA fits, per-start objective, termination,
+    iteration count, objective range, covariance disagreement, whether a
+    better nonconverged start exists, and distance to the uniqueness floor;
+    `nothing` for other genetic structures.
 
 Non-finite or empty-trait inputs are rejected up front (see
 [`multivariate_mme`](@ref)), so the optimizer never returns plausible-looking
@@ -917,10 +1027,16 @@ function fit_multivariate_reml(
     q = size(Ainv, 1)
     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    aids = _mv_labels(ids, q, "ids")
+    tlabels = _mv_labels(traits, t, "traits")
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+    iterations > 0 || throw(ArgumentError("iterations must be positive"))
+    N > size(Xfull, 2) || throw(ArgumentError("REML requires positive residual degrees of freedom"))
+    (size(Xfull, 2) == 0 || LinearAlgebra.rank(Xfull) == size(Xfull, 2)) ||
+        throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
 
     grank = _validate_genetic_structure(genetic_structure, rank, t)
     ngen = if genetic_structure == :unstructured
@@ -934,14 +1050,9 @@ function fit_multivariate_reml(
     end
 
     function negloglik(params)
-        G0, _, _ = _structured_genetic_params_to_cov(@view(params[1:ngen]), t, genetic_structure, grank)
-        R0 = _chol_params_to_cov(@view(params[ngen + 1:end]), t)
-        try
-            return -_mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
-        catch err
-            (err isa PosDefException || err isa ArgumentError) && return Inf
-            rethrow()
-        end
+        return _mv_reml_objective(
+            params, yvec, Xfull, Zfull, A, indiv, N, t,
+            genetic_structure, grank, ngen)
     end
 
     Ym = Matrix(Y)
@@ -967,23 +1078,97 @@ function fit_multivariate_reml(
             (initial !== nothing && hasproperty(initial, :G0))
         _check_covariance(G0_start, "initial.G0", t)
     end
-    params0 = vcat(
-        _structured_genetic_params0(G0_start, genetic_structure, grank, t, initial),
-        _cov_to_chol_params(R0_start, t),
-    )
+    function params_for_start(start_initial)
+        Gstart = start_initial !== nothing && hasproperty(start_initial, :G0) ?
+            Matrix(Float64.(Matrix(start_initial.G0))) : Matrix(Diagonal(0.5 .* phen))
+        Rstart = start_initial !== nothing && hasproperty(start_initial, :R0) ?
+            Matrix(Float64.(Matrix(start_initial.R0))) : Matrix(Diagonal(0.5 .* phen))
+        _check_covariance(Rstart, "initial.R0", t)
+        if genetic_structure in (:unstructured, :diagonal) ||
+                (start_initial !== nothing && hasproperty(start_initial, :G0))
+            _check_covariance(Gstart, "initial.G0", t)
+        end
+        return vcat(
+            _structured_genetic_params0(Gstart, genetic_structure, grank, t, start_initial),
+            _cov_to_chol_params(Rstart, t),
+        )
+    end
 
-    result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
-    phat = Optim.minimizer(result)
-    G0raw, Lhat, ψhat = _structured_genetic_params_to_cov(phat[1:ngen], t, genetic_structure, grank)
-    G0hat = Matrix(Symmetric(G0raw))
-    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[ngen + 1:end], t)))
+    start_specs = if genetic_structure == :factor_analytic && initial === nothing
+        L0 = zeros(t, grank)
+        d0 = sqrt.(max.(diag(G0_start), eps(Float64)))
+        for k in 1:t
+            L0[k, ((k - 1) % grank) + 1] = d0[k]
+        end
+        balanced = (
+            loadings = sqrt(0.5) .* L0,
+            uniqueness = max.(0.5 .* phen, 2 * FA_UNIQUENESS_FLOOR),
+            R0 = R0_start,
+        )
+        ((name = :default, initial = nothing), (name = :balanced, initial = balanced))
+    else
+        name = initial === nothing ? :default : :user
+        ((name = name, initial = initial),)
+    end
+
+    attempts = map(start_specs) do spec
+        params0 = params_for_start(spec.initial)
+        result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+        phat = Optim.minimizer(result)
+        G0raw, L, ψ = _structured_genetic_params_to_cov(@view(phat[1:ngen]), t,
+                                                        genetic_structure, grank)
+        G0 = Matrix(Symmetric(G0raw))
+        R0 = Matrix(Symmetric(_chol_params_to_cov(@view(phat[ngen + 1:end]), t)))
+        objective = Optim.minimum(result)
+        valid = isfinite(objective) &&
+                _mv_genetic_covariance_admissible(G0, genetic_structure) && all(isfinite, R0) &&
+                isposdef(Symmetric(R0)) &&
+                (L === nothing || all(isfinite, L)) &&
+                (ψ === nothing || all(isfinite, ψ))
+        (; name = spec.name, result, phat, G0, R0, L, ψ,
+           objective, valid, converged = Optim.converged(result),
+           iterations = Optim.iterations(result))
+    end
+    valid_attempts = filter(a -> a.valid, attempts)
+    selected_index = _select_multivariate_fit_attempt(attempts)
+    selected = attempts[selected_index]
+    G0hat, R0hat, Lhat, ψhat = selected.G0, selected.R0, selected.L, selected.ψ
+
+    fa_start_diagnostics = if genetic_structure == :factor_analytic
+        floor_distance = minimum(ψhat .- FA_UNIQUENESS_FLOOR)
+        start_rows = map(attempts) do a
+            psi_finite = a.ψ !== nothing && all(isfinite, a.ψ)
+            (; name = a.name, loglik = isfinite(a.objective) ? -a.objective : nothing,
+               valid = a.valid, converged = a.converged, iterations = a.iterations,
+               minimum_uniqueness = psi_finite ? minimum(a.ψ) : nothing,
+               uniqueness_floor_distance = psi_finite ?
+                   minimum(a.ψ .- FA_UNIQUENESS_FLOOR) : nothing)
+        end
+        rel_g = length(valid_attempts) > 1 ?
+            norm(valid_attempts[1].G0 - valid_attempts[2].G0) /
+                max(norm(valid_attempts[1].G0), norm(valid_attempts[2].G0), eps()) : nothing
+        rel_r = length(valid_attempts) > 1 ?
+            norm(valid_attempts[1].R0 - valid_attempts[2].R0) /
+                max(norm(valid_attempts[1].R0), norm(valid_attempts[2].R0), eps()) : nothing
+        objective_range = length(valid_attempts) > 1 ?
+            maximum(a.objective for a in valid_attempts) -
+            minimum(a.objective for a in valid_attempts) : nothing
+        (; strategy = length(attempts) > 1 ? :default_and_balanced : :user_initial,
+           starts_attempted = length(attempts), selected_start = selected.name,
+           objective_range,
+           g_relative_disagreement = rel_g, r_relative_disagreement = rel_r,
+           better_nonconverged_start = any(a -> !a.converged &&
+                                                a.valid && isfinite(a.objective) &&
+                                                a.objective < selected.objective, attempts),
+           minimum_uniqueness = minimum(ψhat), uniqueness_floor_distance = floor_distance,
+           near_uniqueness_floor = floor_distance <= 0.01 * FA_UNIQUENESS_FLOOR,
+           starts = start_rows)
+    else
+        nothing
+    end
 
     # EBVs via the GLS form (robust to a singular G0 at a boundary optimum).
     beta, ebv = _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, R0hat, t, p, q)
-    aids = ids === nothing ? collect(1:q) : collect(ids)
-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
     hsq = [G0hat[k, k] / (G0hat[k, k] + R0hat[k, k]) for k in 1:t]
 
     return (
@@ -998,9 +1183,10 @@ function fit_multivariate_reml(
         genetic_rank = genetic_structure in (:lowrank, :factor_analytic) ? grank : nothing,
         genetic_loadings = Lhat,
         genetic_uniqueness = ψhat,
-        loglik = -Optim.minimum(result),
-        converged = Optim.converged(result),
-        iterations = Optim.iterations(result),
+        loglik = -selected.objective,
+        converged = selected.converged,
+        iterations = selected.iterations,
+        fa_start_diagnostics = fa_start_diagnostics,
         traits = tlabels,
     )
 end
@@ -1074,9 +1260,10 @@ Reductions: `t = 1` recovers [`fit_repeatability_reml`](@ref) variance
 components; `P0 = 0` recovers the [`fit_multivariate_reml`](@ref) log-likelihood.
 Experimental, dense/validation-scale, REML-only. No covered flip.
 
-The R twin still fences `cbind()` + `permanent()` until it lifts the spec
-gate. Call this fitter directly, or through payload-v2 dispatch
-`:multivariate_repeatability` (`Y` + pedigree + iid PE blocks).
+The R twin has a dedicated experimental matrix route for `cbind()` plus
+`permanent()`. The generic scalar reader does not transport matrix effects.
+Direct Julia calls and payload-v2 dispatch `:multivariate_repeatability`
+use `Y` plus pedigree and iid permanent-environment blocks.
 """
 function fit_multivariate_repeatability_reml(
     Y::AbstractMatrix,
@@ -1096,18 +1283,26 @@ function fit_multivariate_repeatability_reml(
     q = size(Ainv, 1)
     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
+    aids = _mv_labels(ids, q, "ids")
+    tlabels = _mv_labels(traits, t, "traits")
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+    iterations > 0 || throw(ArgumentError("iterations must be positive"))
+    N > size(Xfull, 2) || throw(ArgumentError("REML requires positive residual degrees of freedom"))
+    (size(Xfull, 2) == 0 || LinearAlgebra.rank(Xfull) == size(Xfull, 2)) ||
+        throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
     ncov = t * (t + 1) ÷ 2
 
     function negloglik(params)
-        G0 = _chol_params_to_cov(@view(params[1:ncov]), t)
-        P0 = _chol_params_to_cov(@view(params[(ncov + 1):(2 * ncov)]), t)
-        R0 = _chol_params_to_cov(@view(params[(2 * ncov + 1):end]), t)
+        G0 = _try_chol_params_to_cov(@view(params[1:ncov]), t)
+        P0 = _try_chol_params_to_cov(@view(params[(ncov + 1):(2 * ncov)]), t)
+        R0 = _try_chol_params_to_cov(@view(params[(2 * ncov + 1):end]), t)
+        (G0 === nothing || P0 === nothing || R0 === nothing) && return Inf
         try
-            return -_mv_pe_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, P0, R0)
+            objective = -_mv_pe_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, P0, R0)
+            return isfinite(objective) ? objective : Inf
         catch err
             (err isa PosDefException || err isa ArgumentError) && return Inf
             rethrow()
@@ -1148,15 +1343,17 @@ function fit_multivariate_repeatability_reml(
 
     result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
     phat = Optim.minimizer(result)
-    G0hat = Matrix(Symmetric(_chol_params_to_cov(phat[1:ncov], t)))
-    P0hat = Matrix(Symmetric(_chol_params_to_cov(phat[(ncov + 1):(2 * ncov)], t)))
-    R0hat = Matrix(Symmetric(_chol_params_to_cov(phat[(2 * ncov + 1):end], t)))
+    isfinite(Optim.minimum(result)) || throw(ArgumentError("repeatability optimizer did not find a finite objective"))
+    G0raw = _try_chol_params_to_cov(phat[1:ncov], t)
+    P0raw = _try_chol_params_to_cov(phat[(ncov + 1):(2 * ncov)], t)
+    R0raw = _try_chol_params_to_cov(phat[(2 * ncov + 1):end], t)
+    (G0raw === nothing || P0raw === nothing || R0raw === nothing) &&
+        throw(ArgumentError("multivariate repeatability optimizer did not return finite positive-definite covariances"))
+    G0hat = Matrix(Symmetric(G0raw))
+    P0hat = Matrix(Symmetric(P0raw))
+    R0hat = Matrix(Symmetric(R0raw))
 
     beta, ebv, pe = _mv_pe_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, P0hat, R0hat, t, p, q)
-    aids = ids === nothing ? collect(1:q) : collect(ids)
-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
     denom = [G0hat[k, k] + P0hat[k, k] + R0hat[k, k] for k in 1:t]
     hsq = [G0hat[k, k] / denom[k] for k in 1:t]
     rpt = [(G0hat[k, k] + P0hat[k, k]) / denom[k] for k in 1:t]
@@ -1311,8 +1508,10 @@ end
 
 # Upper-tail (survival) of the chi-square distribution: P(χ²_k > x).
 function _chisq_sf(x::Real, k::Real)
-    k > 0 || throw(ArgumentError("degrees of freedom must be positive"))
+    isfinite(k) && k > 0 || throw(ArgumentError("degrees of freedom must be finite and positive"))
+    isnan(x) && throw(ArgumentError("chi-square statistic must not be NaN"))
     x <= 0 && return 1.0
+    x == Inf && return 0.0
     a = k / 2
     z = x / 2
     return z < a + 1 ? 1.0 - _reg_gamma_p_series(a, z) : _reg_gamma_q_cf(a, z)
@@ -1329,10 +1528,17 @@ full parameter space under the null:
 - `boundary_df = 0` (interior null): plain `χ²_df` tail, valid under regular
   local identification and ordinary likelihood asymptotics.
 - `boundary_df = 1` (one parameter on its boundary, e.g. a variance fixed at 0):
-  the 50:50 chi-bar-squared mixture `½·χ²_df + ½·χ²_{df−1}` (Self & Liang 1987;
-  Stram & Lee 1994) — anti-conservative relative to the naive `χ²_df`.
-- `boundary_df ≥ 2`: no closed-form chi-bar weights, so the naive `χ²_df` p-value
-  is returned and flagged conservative (`mixture = :chisq_conservative`).
+  under the regular single variance-component boundary conditions, the
+  50:50 chi-bar-squared mixture `½·χ²_df + ½·χ²_{df−1}` (Self & Liang 1987;
+  Stram & Lee 1994). The naive `χ²_df` tail is larger than this mixture tail.
+  A boundary count alone does not establish these regularity conditions.
+- `boundary_df ≥ 2`: weights are not computed. The naive `χ²_df` tail is
+  returned with the legacy token `mixture = :chisq_conservative`. This token
+  does not certify the reference law or conservativity for arbitrary models;
+  those require an appropriate regular cone limit and its component degrees.
+
+Log-likelihoods must be finite before and after Float64 conversion. A positive
+overflow of the likelihood-difference statistic has the chi-square tail limit zero.
 
 Returns `(statistic, df, boundary_df, pvalue, boundary, mixture, note)`. Asymptotic
 theory only — the single-boundary mixture is textbook, not recovery-calibrated.
@@ -1343,7 +1549,12 @@ function nested_lrt(loglik_constrained::Real, loglik_full::Real; df::Integer,
         throw(ArgumentError("`full` must have more parameters than `constrained` (df = $df)"))
     0 <= boundary_df <= df ||
         throw(ArgumentError("boundary_df must be in 0:df (got boundary_df = $boundary_df, df = $df)"))
-    statistic = 2 * (Float64(loglik_full) - Float64(loglik_constrained))
+    isfinite(loglik_constrained) && isfinite(loglik_full) ||
+        throw(ArgumentError("log-likelihoods must be finite"))
+    lc = Float64(loglik_constrained)
+    lf = Float64(loglik_full)
+    isfinite(lc) && isfinite(lf) || throw(ArgumentError("log-likelihoods must be finite after Float64 conversion"))
+    statistic = 2 * (lf - lc)
     s = max(statistic, 0.0)
     # χ² tail with the df = 0 edge as a point mass at 0 (tail 0 for s>0, 1 for s==0)
     chisq_tail(x, k) = k == 0 ? (x > 0 ? 0.0 : 1.0) : _chisq_sf(x, k)
@@ -1364,7 +1575,7 @@ function nested_lrt(loglik_constrained::Real, loglik_full::Real; df::Integer,
     elseif boundary_df == 1
         "$label: one boundary parameter; 50:50 chi-bar-squared mixture (Self & Liang 1987; Stram & Lee 1994)"
     else
-        "$label: $boundary_df-parameter boundary null has no closed-form chi-bar weights; reported χ²_$df p-value is conservative"
+        "$label: boundary weights are not computed; reported χ²_$df is a naive tail (legacy :chisq_conservative token), with validity conditional on the model boundary law"
     end
     return (statistic = statistic, df = df, boundary_df = boundary_df, pvalue = pvalue,
             boundary = boundary_df > 0, mixture = mixture, note = note)
@@ -1372,6 +1583,8 @@ end
 
 # Central finite-difference Hessian of a scalar function.
 function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
+    h = _mv_fd_step(h)
+    x = _mv_fd_points(x, h)
     n = length(x)
     H = zeros(n, n)
     f0 = f(x)
@@ -1393,6 +1606,8 @@ end
 
 # Central finite-difference Jacobian of a vector-valued function.
 function _fd_jacobian(g, x::AbstractVector; h::Real = 1e-4)
+    h = _mv_fd_step(h)
+    x = _mv_fd_points(x, h)
     n = length(x)
     g0 = g(x)
     m = length(g0)
@@ -1438,6 +1653,7 @@ Returns a `NamedTuple` of `t×t` SE matrices `genetic_covariance`,
 (correlation-SE diagonals are `0`), the length-`t` `heritability` SE vector, and
 the raw `information` matrix.
 
+Requires `converged = true` and a finite positive representable difference step.
 Experimental, asymptotic, dense/validation-scale, REML-only. SEs are
 finite-difference approximations and are wide/unreliable at small `n`; not
 coverage-calibrated. Throws if the observed information is not finite
@@ -1449,6 +1665,8 @@ rotation-invariant covariance quantities would need a separate identified
 parameterization and validation.
 """
 function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Real = 1e-4)
+    _mv_require_converged(fit)
+    fd_step = _mv_fd_step(fd_step)
     hasproperty(fit, :permanent_covariance) &&
         throw(ArgumentError("covariance standard errors for repeatability fits require a permanent-environment-aware information matrix"))
     getproperty(fit, :genetic_structure) == :unstructured ||
@@ -1535,6 +1753,8 @@ surface landing as partial-quality. An opt-in coverage harness is future work.
 function genetic_correlation_interval(fit, Y, X, Z, Ainv; level::Real = 0.95,
                                       method::Symbol = :delta, pairs = nothing,
                                       fd_step::Real = 1e-4)
+    _mv_require_converged(fit)
+    fd_step = _mv_fd_step(fd_step)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     getproperty(fit, :genetic_structure) == :unstructured || throw(ArgumentError(
         "genetic_correlation_interval requires an :unstructured fit: structured-fit covariance intervals need a separately validated SE path"))
@@ -1545,6 +1765,7 @@ function genetic_correlation_interval(fit, Y, X, Z, Ainv; level::Real = 0.95,
     se = try
         multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step = fd_step)
     catch err
+        err isa ArgumentError || rethrow()
         throw(ArgumentError("genetic_correlation_interval(:delta) needs the delta-method SEs, which are unavailable here ($(err isa ArgumentError ? err.msg : sprint(showerror, err))) — e.g. a flat/boundary optimum with r_g → ±1; no interval is reported (no fabricated whisker)"))
     end
     seRG = se.genetic_correlation
@@ -1589,7 +1810,7 @@ function _mv_nparams(fit)
         t * rr - rr * (rr - 1) ÷ 2  # nominal full-rank dimension after quotienting O(r)
     elseif s == :factor_analytic
         rr = Int(r)
-        t * rr + t - rr * (rr - 1) ÷ 2  # nominal generic dimension; singular strata may have less
+        t * rr + t - rr * (rr - 1) ÷ 2  # nominal parameter count after quotienting O(r); singular strata may have less
     else
         throw(ArgumentError("unknown genetic_structure $s"))
     end
@@ -1604,7 +1825,11 @@ against the `full` (less-constrained) fit, both from
 [`fit_multivariate_reml`](@ref) on the **same data**. Returns a `NamedTuple`
 with the LRT `statistic` `= 2(ℓ_full − ℓ_constrained)`, the parameter-count
 difference `df`, the `pvalue`, a `reference` symbol naming which reference
-distribution produced it, a `boundary` flag, and a `note`. `df` is the
+distribution produced it, a `boundary` flag, and a `note`. Both fits must
+report convergence, finite log-likelihoods, and equal trait dimensions. Only
+`:diagonal`, `:lowrank`, or `:factor_analytic` nested in `:unstructured` are
+accepted. The caller remains responsible for confirming that both fits use
+the same data, fixed-effect design, and relationship matrix. `df` is the
 **nominal generic dimension difference**: for `:lowrank`/`:factor_analytic`,
 `_mv_nparams` removes the `r(r-1)/2` rotational indeterminacy of `Λ`
 (`Λ` and `ΛQ` give the same `G`). This count alone does not establish local
@@ -1632,13 +1857,12 @@ neither structured null here is one:
 
 - **PSD-boundary** nulls (`:lowrank` nested in `:unstructured`,
   `reference = :chisq_naive_boundary`, `boundary = true`): a low-rank null
-  `G = ΛΛ'` (rank `r < t`) genuinely lies on the boundary of the PSD cone —
-  the null set `{ΛΛ' : rank(Λ) = r}` is a non-convex algebraic variety, not
-  the convex cone the standard chi-bar weight results assume. The true
-  reference distribution is a χ² mixture over that boundary whose weights
-  this function does not compute, so the reported p-value is the **naive**
-  χ²`df` tail and its direction relative to the true mixture is **not
-  knowable** here — never call it conservative.
+  `G = ΛΛ'` (rank `r < t`) lies on the boundary of the PSD cone. The regular
+  χ² reference is not justified by this helper; the relevant nonstandard
+  boundary limit and its weights are not derived or computed here. The
+  reported p-value is the **naive** χ²`df` tail, and its direction relative
+  to the relevant limit law is **not knowable** here — never call it
+  conservative.
 
 Changed in #331: because `boundary_df = 0` is now always requested, a
 structured comparison whose `df` is 1 no longer receives the 50:50 chi-bar
@@ -1655,6 +1879,19 @@ function covariance_structure_lrt(constrained, full)
     (hasproperty(constrained, :permanent_covariance) ||
      hasproperty(full, :permanent_covariance)) &&
         throw(ArgumentError("covariance_structure_lrt does not support repeatability fits: the permanent-environment covariance needs a separate parameter count and reference distribution"))
+    for (label, fit) in (("constrained", constrained), ("full", full))
+        hasproperty(fit, :converged) && getproperty(fit, :converged) === true ||
+            throw(ArgumentError("`$label` fit must report converged = true"))
+        hasproperty(fit, :loglik) && isfinite(getproperty(fit, :loglik)) ||
+            throw(ArgumentError("`$label` fit must have a finite loglik"))
+        hasproperty(fit, :genetic_covariance) ||
+            throw(ArgumentError("`$label` fit must contain genetic_covariance"))
+        G = getproperty(fit, :genetic_covariance)
+        size(G, 1) == size(G, 2) && size(G, 1) > 0 && all(isfinite, G) ||
+            throw(ArgumentError("`$label` genetic_covariance must be finite, square, and nonempty"))
+    end
+    size(constrained.genetic_covariance) == size(full.genetic_covariance) ||
+        throw(ArgumentError("`constrained` and `full` fits must have the same trait dimension"))
     npc = _mv_nparams(constrained)
     npf = _mv_nparams(full)
     df = npf - npc
@@ -1662,12 +1899,14 @@ function covariance_structure_lrt(constrained, full)
         throw(ArgumentError("`full` must have more covariance parameters than `constrained` (df = $df); call as covariance_structure_lrt(constrained, full)"))
     sc = getproperty(constrained, :genetic_structure)
     sf = getproperty(full, :genetic_structure)
+    sf == :unstructured && sc in (:diagonal, :lowrank, :factor_analytic) ||
+        throw(ArgumentError("covariance_structure_lrt supports only :diagonal, :lowrank, or :factor_analytic nested in :unstructured"))
     # The plain χ²_df tail is conditional for FA: quotienting rotations does
     # not verify local rank or distance from the uniqueness floor. `boundary`
     # below flags PSD-rank boundaries only; false is not a regularity proof.
-    # :lowrank genuinely sits on the PSD-cone boundary, where the true
-    # reference is an uncomputed chi-bar mixture, so only the naive χ²_df tail
-    # is reported (direction vs. that mixture left explicitly unknown).
+    # :lowrank sits on the PSD-cone boundary. The relevant nonstandard limit
+    # is not derived here, so the helper reports only the naive χ²_df tail and
+    # leaves its direction relative to that limit law unknown.
     regular = sf == :unstructured && (sc == :diagonal || sc == :factor_analytic)
     # Always request the plain, unmixed χ²_df tail from `nested_lrt`
     # (`boundary_df = 0`): conditional for an FA interior point, and the (flagged)
@@ -1687,7 +1926,7 @@ function covariance_structure_lrt(constrained, full)
     elseif regular
         "interior diagonal null nested in $(sf): χ²_$df is the regular asymptotic reference, subject to usual likelihood conditions"
     else
-        "rank/PSD-boundary null ($(sc) nested in $(sf)): df is a nominal generic dimension difference (rotational indeterminacy removed); the reported χ²_$df p-value is the naive tail, not the true chi-bar mixture over the PSD boundary, and its direction relative to that mixture is not knowable here — the mixture weights are not computed"
+        "rank/PSD-boundary null ($(sc) nested in $(sf)): df is a nominal generic dimension difference (rotational indeterminacy removed); the reported χ²_$df p-value is the naive tail, not a derived boundary reference, and its direction relative to the relevant limit law is not known"
     end
     return (statistic = stat, df = df, pvalue = res.pvalue, boundary = boundary,
             reference = reference, note = note)

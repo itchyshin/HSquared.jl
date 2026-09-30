@@ -57,34 +57,32 @@ const FORMULA_STATUS_PHASES = (
 )
 
 const FORMULA_STATUS_SYNTAX = (
-    "parsed",
+    "engine bridge",
     fill("reserved", 17)...,
     fill("planned", 2)...,
 )
 
 const FORMULA_STATUS_FITTING = (
-    "experimental tiny bridge only",
+    "experimental Julia engine route only",
     fill("not available", 19)...,
 )
 
 const FORMULA_STATUS_BEHAVIOR = (
-    "Validated by the R parser; default hsquared() stops before general fitting.",
+    "R owns and parses this formula syntax. This row describes only the experimental Julia engine route; it does not summarize R's default fitting status.",
     fill(
-        "Exported as an inert marker; hsquared() errors as planned, not implemented.",
+        "Julia does not parse formula terms; this exported marker throws on this route. Separate Julia engine APIs and R formula routes have their own status.",
         17,
     )...,
-    fill(
-        "Roadmap syntax; the v0.1 animal() parser rejects trait and cov arguments.",
-        2,
-    )...,
+    "Roadmap syntax for the Julia formula-term route; this diagnostic does not enable trait or covariance syntax.",
+    "R cov = fa() formula syntax remains reserved. The bounded Gaussian T4/K1 fit is a separate expert-control route; see validation_status() and the FA capability record.",
 )
 
 """
     FormulaStatusRow
 
-Typed grammar-status row returned by [`formula_status`](@ref).
+Typed engine-term status row returned by [`formula_status`](@ref).
 
-Rows mirror the R twin's `formula_status()` columns: `term`, `category`,
+Rows use the same columns as the R twin's `formula_status()`: `term`, `category`,
 `phase`, `syntax_status`, `fitting_status`, and `current_behavior`.
 """
 struct FormulaStatusRow
@@ -114,12 +112,18 @@ Base.iterate(status::FormulaStatus, state...) = iterate(status.rows, state...)
 """
     formula_status()
 
-Return a diagnostic table of the shared `hsquared` / `HSquared.jl` grammar
-status.
+Return a Julia-local diagnostic table for the engine-facing model-term
+vocabulary. The R package owns public formula parsing and its `formula_status()`
+table has a broader inventory; this table is not a mirror of R grammar status.
 
-This mirrors the R twin's `formula_status()` rows. It is a status diagnostic
-only: it does not parse formulas, construct model specs, or enable fitting for
-reserved or planned terms.
+Julia does not parse formulas. `syntax_status` and `fitting_status` describe
+only the selected Julia marker or engine route represented by each row, not
+the R formula parser or its full status inventory. `engine bridge` marks the
+experimental low-level animal payload route; `reserved` and `planned` mark
+Julia placeholder or roadmap rows. Bounded FA and genetic GLLVM expert-control
+fits are separate routes and are not activated by `cov = fa()` or by a formula
+term. Consult `validation_status()` and the capability records for those fit
+boundaries.
 """
 function formula_status()
     rows = [

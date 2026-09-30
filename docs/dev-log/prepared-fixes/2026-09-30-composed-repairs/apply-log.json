@@ -1,0 +1,92 @@
+[
+  {
+    "name": "gllvm-input-guards",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-input-guards--gllvm-input-guards.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "gllvm-descriptor-record",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-descriptor-record--gllvm-descriptor-record.patch",
+    "check_exit": 1,
+    "check_output": "error: patch failed: src/genetic_gllvm.jl:215\nerror: src/genetic_gllvm.jl: patch does not apply\n",
+    "resolved": "three-way merge with two entrypoint conflicts resolved to record-family guard followed by mode-input guard; other hunks auto-merged; new regression preserved"
+  },
+  {
+    "name": "coefcov-fields",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/coefcov-fields--coefcov-field-validation.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "rr-descriptors",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/rr-descriptors--rr-descriptor-fixes.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "validation-status",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-status--validation-status-wording.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "validation-ledger-sync",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--docs.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "validation-ledger-sync",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--nongaussian-docstring.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "data-dict-missing-count",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/data-dict-missing-count--data-dict-missing-count.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "flat-integral-endpoints",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/flat-integral-endpoints--flat-integral-endpoints.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "postfit-marker-contract",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/postfit-marker-contract--contract-fix.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "nongaussian-finite-ingress",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/nongaussian-finite-ingress--nongaussian-finite-ingress.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "mv-repeatability-labels-schema",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/mv-repeatability-labels--schema-wording.patch",
+    "check_exit": 0,
+    "check_output": "",
+    "apply_exit": 0
+  },
+  {
+    "name": "nongaussian-h2-descriptors",
+    "patch": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/nongaussian-h2--h2-descriptor-fix.patch",
+    "check_exit": 0,
+    "apply_exit": 0
+  }
+]

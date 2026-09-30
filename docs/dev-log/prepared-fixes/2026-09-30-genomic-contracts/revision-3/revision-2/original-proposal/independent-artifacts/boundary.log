@@ -1,0 +1,52 @@
+ERROR: LoadError: Some tests did not pass: 2 passed, 4 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:2
+Representable public marker contribution boundary: Test Failed at /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:10
+  Expression: a isa Float64 && (isfinite(a) && isapprox(a, ref; rtol = 8 * eps(Float64)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:10 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:3
+Representable public marker contribution boundary: Test Failed at /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:11
+  Expression: b isa Float64 && (isfinite(b) && isapprox(b, ref; rtol = 8 * eps(Float64)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:11 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:3
+Representable public marker contribution boundary: Test Failed at /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:10
+  Expression: a isa Float64 && (isfinite(a) && isapprox(a, ref; rtol = 8 * eps(Float64)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:10 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:3
+Representable public marker contribution boundary: Test Failed at /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:11
+  Expression: b isa Float64 && (isfinite(b) && isapprox(b, ref; rtol = 8 * eps(Float64)))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:11 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/e1-genomic-contracts-independent-20260930/boundary.jl:3
+Test Summary:                                     | Pass  Fail  Total  Time
+Representable public marker contribution boundary |    2     4      6  0.5s

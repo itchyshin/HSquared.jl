@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/z3437171/.juliaup/bin/julia",
+    "--compiled-modules=no",
+    "--startup-file=no",
+    "--project=package",
+    "-e",
+    "using LinearAlgebra; println(\"Julia=\",VERSION,\" JuliaThreads=\",Threads.nthreads(),\" BLASThreads=\",BLAS.get_num_threads());include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/test_sparse_aireml_input_contracts.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/likelihood_helper_identity_regression.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/likelihood_original_spec_regression.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/likelihood_input_guard_regression.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/original_1_identity.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/original_2_identity.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/original_3_identity.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/original_4_identity.jl\");include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/likelihood_uncertainty_contract_regression.jl\");"
+  ],
+  "elapsed_seconds": 31.560519916936755,
+  "exitcode": 1,
+  "threads": 1,
+  "timeout": 110
+}

@@ -1,0 +1,35 @@
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | fa-optin                                                       
+⠧ |          8 | fa-optin                                                       
+⠹ |         33 | fa-optin                                                       
+⠼ |         55 | fa-optin                                                       
+⠏ |         60 | fa-optin                                                       
+⠴ |         66 | fa-optin                                                       
+⠇ |         69 | fa-optin                                                       
+⠏ |         70 | fa-optin                                                       
+⠏ |         80 | fa-optin                                                       
+⠴ |         86 | fa-optin                                                       
+⠋ |        111 | fa-optin                                                       
+✔ |        116 | fa-optin [21.8s]
+
+⠏ |          0 | gllvm-optin                                                    
+⠼ |         15 | gllvm-optin                                                    
+⠙ |         32 | gllvm-optin                                                    
+⠏ |         60 | gllvm-optin                                                    
+⠋ |         61 | gllvm-optin                                                    
+⠇ |         69 | gllvm-optin                                                    
+⠙ |         82 | gllvm-optin                                                    
+⠦ |         97 | gllvm-optin                                                    
+✔ |         97 | gllvm-optin [3.4s]
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 25.3 s
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 213 ]
+Julia exit.
+  Activating project at `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`

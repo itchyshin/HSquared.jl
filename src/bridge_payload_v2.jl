@@ -1,6 +1,6 @@
 # bridge_payload_v2.jl — P0.3 Julia-side payload-v2 parser + dispatcher
 #
-# Contract: §6 of docs/design/21-payload-v2-multiblock-schema.md (FREEZE-READY).
+# Contract: §6 of docs/design/21-payload-v2-multiblock-schema.md (ratification pending).
 # This file is CONTRACT-ONLY: it reuses existing estimators, adds no new
 # numerics, and makes no covered-status change (contract-only; this file does not
 # move `public_covered_count`).  This file does not change the
@@ -25,7 +25,8 @@ Fields:
 - `X`              — fixed-effects design matrix.
 - `blocks`         — Vector of per-block NamedTuples with resolved engine matrices
                      `(name, type, Z, relmat_inverse, ids)`.  For `correlated` blocks:
-                     also `partner_incidence` and `partner_name`.
+                     also `partner_incidence` and `partner_name`. For `coefcov`: also `basis`,
+                     `order`, `Phi`, `covariate`, `covariate_bounds`, and `cov_structure`.
 - `method`         — Symbol `:REML` or `:ML`.
 - `is_multivariate`— Bool.
 """
@@ -130,11 +131,73 @@ function _resolve_relmat(block, Z; ids = nothing)
     end
 end
 
+function _validate_resolved_block(name, Z, relmat_inverse, ids)
+    relmat_inverse isa AbstractMatrix || throw(ArgumentError(
+        "block '$name': relmat_inverse must be a matrix"))
+    size(relmat_inverse, 1) == size(relmat_inverse, 2) || throw(ArgumentError(
+        "block '$name': relmat_inverse must be square; got size $(size(relmat_inverse))"))
+    size(Z, 2) == size(relmat_inverse, 1) || throw(ArgumentError(
+        "block '$name': Z columns ($(size(Z, 2))) do not match " *
+        "relmat_inverse dimension ($(size(relmat_inverse, 1)))"))
+    length(ids) == size(Z, 2) || throw(ArgumentError(
+        "block '$name': ids has length $(length(ids)) but Z has $(size(Z, 2)) columns"))
+    length(unique(ids)) == length(ids) || throw(ArgumentError(
+        "block '$name': ids must be unique"))
+    return nothing
+end
+
+# Validate and retain the coefficient-covariance frozen slot. This does not
+# wire a fitting route. Raw slopes need no standardization bounds; Legendre
+# blocks require them so covariate-indexed results can be reconstructed later.
+function _parse_coefcov_fields(block, name, Z)
+    basis = _field(block, "basis", :basis)
+    basis isa AbstractString && basis in ("raw", "legendre") || throw(ArgumentError(
+        "coefcov block '$name': basis must be 'raw' or 'legendre'"))
+    order_raw = _field(block, "order", :order)
+    order_raw isa Integer && !(order_raw isa Bool) && order_raw >= 1 || throw(ArgumentError(
+        "coefcov block '$name': order must be a positive integer (number of basis columns)"))
+    Phi_raw = _field(block, "Phi", :Phi)
+    Phi_raw isa AbstractMatrix && !issparse(Phi_raw) || throw(ArgumentError(
+        "coefcov block '$name': Phi must be a dense real matrix"))
+    size(Phi_raw) == (size(Z, 1), order_raw) || throw(ArgumentError(
+        "coefcov block '$name': Phi must have $(size(Z, 1)) rows and $order_raw columns"))
+    all(x -> x isa Real && !(x isa Bool) && isfinite(x), Phi_raw) || throw(ArgumentError(
+        "coefcov block '$name': Phi must contain finite real values"))
+    Phi = Matrix{Float64}(Phi_raw)
+    all(isfinite, Phi) || throw(ArgumentError(
+        "coefcov block '$name': Phi values must remain finite as Float64"))
+    covariate = _field(block, "covariate", :covariate)
+    covariate isa AbstractString && !isempty(strip(covariate)) || throw(ArgumentError(
+        "coefcov block '$name': covariate must be a nonempty string"))
+    bounds_raw = _field(block, "covariate_bounds", :covariate_bounds)
+    bounds = if bounds_raw === nothing
+        basis == "raw" || throw(ArgumentError(
+            "coefcov block '$name': Legendre basis requires covariate_bounds"))
+        nothing
+    else
+        bounds_raw isa AbstractVector && length(bounds_raw) == 2 &&
+            all(x -> x isa Real && !(x isa Bool) && isfinite(x), bounds_raw) || throw(ArgumentError(
+                "coefcov block '$name': covariate_bounds must contain two finite real values"))
+        values = Float64.(bounds_raw)
+        all(isfinite, values) && values[1] < values[2] || throw(ArgumentError(
+            "coefcov block '$name': covariate_bounds must be finite with lower < upper"))
+        values
+    end
+    cov_structure = _field(block, "cov_structure", :cov_structure)
+    cov_structure isa AbstractString && cov_structure in ("unstructured", "diagonal") || throw(ArgumentError(
+        "coefcov block '$name': cov_structure must be 'unstructured' or 'diagonal'"))
+    return (basis=String(basis), order=Int(order_raw), Phi=Phi,
+            covariate=String(covariate), covariate_bounds=bounds,
+            cov_structure=String(cov_structure))
+end
+
 # Parse a single block dict/namedtuple into a resolved NamedTuple.
 function _parse_one_block(block)
     name_raw = _field(block, "name", :name)
     name_raw === nothing && throw(ArgumentError("payload-v2 block is missing required field 'name'"))
-    name = string(name_raw)
+    name_raw isa AbstractString || throw(ArgumentError("payload-v2 block 'name' must be a string"))
+    isempty(strip(name_raw)) && throw(ArgumentError("payload-v2 block 'name' must not be empty"))
+    name = String(name_raw)
     type_raw = _field(block, "type", :type)
     type_raw === nothing && throw(ArgumentError("payload-v2 block '$name' is missing required field 'type'"))
     btype = string(type_raw)
@@ -153,17 +216,43 @@ function _parse_one_block(block)
     ids_raw === nothing && throw(ArgumentError(
         "payload-v2 block '$name' is missing required field 'ids'"))
     block_ids = collect(ids_raw)
-    relmat_inverse, relationship_diag = _resolve_relmat(block, Z; ids = block_ids)
 
-    if btype == "correlated"
+    # Keep the declared relationship type consistent with how the precision
+    # matrix will be constructed. Otherwise an identity matrix can be fitted
+    # and returned under an animal/pedigree label.
+    if btype == "iid" && string(status_raw) != "identity"
+        throw(ArgumentError(
+            "payload-v2 block '$name' has type='iid' but relmat_status='$(status_raw)'; " *
+            "iid blocks require relmat_status='identity'"))
+    elseif btype == "pedigree" && string(status_raw) == "identity"
+        throw(ArgumentError(
+            "payload-v2 block '$name' has type='pedigree' but relmat_status='identity'"))
+    elseif btype == "correlated" && !(string(status_raw) in ("build_in_julia", "supplied"))
+        throw(ArgumentError(
+            "payload-v2 block '$name' has type='correlated' but relmat_status='$(status_raw)'; " *
+            "correlated blocks require relmat_status='build_in_julia' or 'supplied'"))
+    end
+    relmat_inverse, relationship_diag = _resolve_relmat(block, Z; ids = block_ids)
+    _validate_resolved_block(name, Z, relmat_inverse, block_ids)
+
+    if btype == "coefcov"
+        fields = _parse_coefcov_fields(block, name, Z)
+        return merge((name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse,
+                      ids=block_ids, relationship_diag=relationship_diag), fields)
+    elseif btype == "correlated"
         # §2 correlated block: Z → Zd, partner_incidence → Zm.
         Zm_raw = _field(block, "partner_incidence", :partner_incidence)
         Zm_raw === nothing && throw(ArgumentError(
             "correlated block '$name' is missing 'partner_incidence'"))
         Zm = Zm_raw isa AbstractMatrix ? Zm_raw : Matrix{Float64}(Zm_raw)
         partner_name = _field(block, "partner_name", :partner_name)
+        partner_name = partner_name === nothing ? "maternal" : string(partner_name)
+        isempty(strip(partner_name)) && throw(ArgumentError(
+            "correlated block '$name' partner_name must be non-empty"))
+        partner_name == name && throw(ArgumentError(
+            "correlated block '$name' partner_name must differ from the direct block name"))
         return (name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse,
-                ids=block_ids, Zm=Zm, partner_name=string(partner_name))
+                ids=block_ids, Zm=Zm, partner_name=partner_name)
     else
         return (name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse, ids=block_ids,
                 relationship_diag=relationship_diag)
@@ -210,12 +299,11 @@ function _resolve_dispatch(blocks, is_multivariate::Bool)
     end
 
     # Correlated block present → direct-maternal estimator (§6 row 4).
-    # The independent blocks (if any) are silently carried; in the current
-    # implementation only the single-correlated-only form is fully wired,
-    # matching fit_direct_maternal_reml's signature (y, X, Zd, Zm, Ainv).
-    # A mixed correlated+independent combination is flagged as unsupported
-    # so the parser fails clearly rather than silently dropping blocks.
+    # Only the correlated-only form is wired: the estimator accepts
+    # (y, X, Zd, Zm, Ainv), so mixed correlated+independent blocks are rejected.
     if n_correlated == 1
+        is_multivariate && throw(ArgumentError(
+            "payload-v2 does not support correlated random-effect blocks with multivariate 'Y'"))
         if n_independent > 0
             throw(ArgumentError(
                 "cannot dispatch: combining a 'correlated' block with independent blocks " *
@@ -281,18 +369,30 @@ no new estimator is added here.
 function parse_payload_v2(payload)
     # --- Resolve payload_version ---
     pv_raw = _field(payload, "payload_version", :payload_version)
-    payload_version = pv_raw === nothing ? 1 : Int(pv_raw)
+    payload_version = if pv_raw === nothing
+        1
+    elseif pv_raw isa Integer && !(pv_raw isa Bool) && pv_raw in (1, 2)
+        Int(pv_raw)
+    else
+        throw(ArgumentError(
+            "unsupported payload_version $(repr(pv_raw)); expected integer 1 or 2"))
+    end
 
     # --- Response ---
     Y_raw = _field(payload, "Y", :Y)
     y_raw = _field(payload, "y", :y)
+    Y_raw !== nothing && y_raw !== nothing && throw(ArgumentError(
+        "payload must supply exactly one response field: 'y' or 'Y'"))
     is_multivariate = Y_raw !== nothing
     if is_multivariate
         Y = Y_raw isa AbstractMatrix ? Y_raw : Matrix{Float64}(Y_raw)
+        size(Y, 1) > 0 && size(Y, 2) > 0 || throw(ArgumentError(
+            "multivariate response 'Y' must have at least one observation and one trait"))
         y = nothing
     else
         y_raw === nothing && throw(ArgumentError("payload must supply 'y' (univariate) or 'Y' (multivariate)"))
         y = y_raw isa AbstractVector ? y_raw : vec(Float64.(y_raw))
+        !isempty(y) || throw(ArgumentError("univariate response 'y' must have at least one observation"))
         Y = nothing
     end
 
@@ -308,7 +408,11 @@ function parse_payload_v2(payload)
     # --- Build random_effects block list ---
     re_raw = _field(payload, "random_effects", :random_effects)
 
-    if payload_version <= 1 || re_raw === nothing
+    if payload_version == 1
+        re_raw === nothing || throw(ArgumentError(
+            "payload_version=1 uses the legacy flat shape and cannot include 'random_effects'"))
+        blocks = _lift_legacy_payload(payload)
+    elseif re_raw === nothing
         # §4 back-compat alias: lift the flat v0.1 / two-effect shape.
         blocks = _lift_legacy_payload(payload)
     else
@@ -326,9 +430,18 @@ function parse_payload_v2(payload)
             "duplicate block name '$(b.name)' in random_effects; block names must be unique"))
         push!(names_seen, b.name)
     end
+    for b in blocks
+        if b.type == "correlated" && b.partner_name in names_seen
+            throw(ArgumentError(
+                "correlated block '$(b.name)' partner_name '$(b.partner_name)' " *
+                "collides with a random_effects block name"))
+        end
+    end
 
     # --- Dimension check: Z rows must equal number of observations ---
     n = is_multivariate ? size(Y, 1) : length(y)
+    size(X, 1) == n || throw(ArgumentError(
+        "X has $(size(X, 1)) rows but response has $n observations"))
     for b in blocks
         size(b.Z, 1) == n || throw(ArgumentError(
             "block '$(b.name)': Z has $(size(b.Z, 1)) rows but response has $n observations"))
@@ -345,6 +458,18 @@ function parse_payload_v2(payload)
     end
 
     dispatch = _resolve_dispatch(blocks, is_multivariate)
+
+    if dispatch == :multivariate_repeatability
+        # The current estimator uses one incidence for both animal and
+        # permanent effects. Do not silently substitute the pedigree block
+        # when the payload supplies a different PE design or ID ordering.
+        ped = blocks[findfirst(b -> b.type == "pedigree", blocks)]
+        pe = blocks[findfirst(b -> b.type == "iid", blocks)]
+        ped.ids == pe.ids || throw(ArgumentError(
+            "multivariate repeatability requires identical pedigree and iid IDs in the same order"))
+        ped.Z == pe.Z || throw(ArgumentError(
+            "multivariate repeatability requires identical pedigree and iid incidence matrices"))
+    end
 
     return ParsedPayloadV2(dispatch, y, Y, X, blocks, method_sym, is_multivariate)
 end
@@ -375,6 +500,9 @@ function _lift_legacy_payload(payload)
         # fallback: if no ainv_status and no pedigree, treat as identity
         ainv_status = ped !== nothing ? "build_in_julia" : "identity"
     end
+    string(ainv_status) == "identity" && throw(ArgumentError(
+        "legacy animal payload uses identity precision but is labelled as a pedigree model; " *
+        "identity precision cannot be labelled as an animal model"))
 
     ids_raw = _field(payload, "ids", :ids)
     if ids_raw === nothing && ped !== nothing
@@ -395,8 +523,11 @@ function _lift_legacy_payload(payload)
             "legacy payload with ainv_status='supplied' must supply 'Ainv'"))
         Ainv = Ainv_raw isa AbstractMatrix ? Ainv_raw : Matrix{Float64}(Ainv_raw)
     else
-        Ainv = _build_iid_relmat_inverse(q)
+        throw(ArgumentError(
+            "unknown legacy ainv_status '$(ainv_status)'; expected 'build_in_julia' or 'supplied'"))
     end
+
+    _validate_resolved_block("animal", Z, Ainv, block_ids)
 
     block1 = (name="animal", type="pedigree", Z=Z, relmat_inverse=Ainv, ids=block_ids,
               relationship_diag=relationship_diag)
@@ -414,7 +545,14 @@ function _lift_legacy_payload(payload)
     e2_rel = effect2 !== nothing ? _field(effect2, "relationship", :relationship) : nothing
     e2_name = effect2 !== nothing ? _field(effect2, "group", :group) : nothing
     e2_name = e2_name !== nothing ? string(e2_name) : "effect2"
-    e2_type = (e2_rel !== nothing && string(e2_rel) == "pedigree") ? "pedigree" : "iid"
+    e2_type = if e2_rel === nothing || string(e2_rel) == "identity"
+        "iid"
+    elseif string(e2_rel) == "pedigree"
+        "pedigree"
+    else
+        throw(ArgumentError(
+            "unknown legacy effect2 relationship '$(e2_rel)'; expected 'identity' or 'pedigree'"))
+    end
 
     ids2_raw = _field(payload, "ids2", :ids2)
     block2_ids = ids2_raw === nothing ?
@@ -443,6 +581,8 @@ function _lift_legacy_payload(payload)
         Ainv2 = _build_iid_relmat_inverse(size(Z2, 2))
         block2 = (name=e2_name, type=e2_type, Z=Z2, relmat_inverse=Ainv2, ids=block2_ids)
     end
+
+    _validate_resolved_block(e2_name, Z2, Ainv2, block2_ids)
 
     return [block1, block2]
 end
@@ -476,8 +616,8 @@ other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still 
 silently ignored, matching the pre-existing byte-identical default path.
 
 The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
-`Phase0NotImplementedError` for it (§6: "no multi-block coefcov estimator is
-wired yet").
+`Phase0NotImplementedError` for it (§6: "no coefcov payload fitting route is
+currently wired").
 """
 function fit_payload_v2(payload; scale_method::Symbol = :dense,
                         initial = nothing, iterations::Union{Nothing,Integer} = nothing)
@@ -492,7 +632,8 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
     X        = parsed.X
     method   = parsed.method
 
-    if dispatch in (:two_effect, :multi_effect, :direct_maternal) && method !== :REML
+    if dispatch in (:two_effect, :multi_effect, :direct_maternal,
+                    :multivariate_repeatability) && method !== :REML
         throw(ArgumentError("payload-v2 $dispatch dispatch is REML-only; got method=$method"))
     end
 
@@ -569,7 +710,8 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
 
     elseif dispatch == :multivariate_repeatability
         # hsquared #237: multivariate Y + pedigree + iid PE.
-        # Direct fitter; R still fences cbind()+permanent() until it lifts the spec.
+        # R's current bridge uses a dedicated fitter caller; this generic payload
+        # dispatcher is wired independently and preserves the same bounded route.
         ped = blocks[findfirst(b -> b.type == "pedigree", blocks)]
         return fit_multivariate_repeatability_reml(
             Matrix{Float64}(parsed.Y),
@@ -582,7 +724,7 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         # §6 frozen slot: coefcov estimator not yet wired at the payload layer.
         throw(Phase0NotImplementedError(
             "coefcov block dispatch is a frozen slot in payload-v2 (§6); " *
-            "the multi-block random-regression estimator is not yet wired"))
+            "no coefcov payload fitting route is currently wired"))
 
     else
         throw(ArgumentError("unrecognised dispatch symbol: $dispatch"))
@@ -600,15 +742,20 @@ Build the block-structured result payload (§5) from an estimator fit and the
 `ParsedPayloadV2` produced by `parse_payload_v2`.
 
 **Single-pedigree-block fast path (§5):** when `dispatch == :animal`, the
-result contains the legacy flat fields (`variance_components.sigma_a2`,
-`random_effects.animal`, scalar `heritability`, etc.) byte-identically to
-the current v0.1 `result_payload(fit::AnimalModelFit)`.
+fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
+to preserve the complete flat v0.1 fields and current R extractors. Partial
+raw tuples are rejected rather than exposed as incomplete legacy results.
 
 For multi-block fits the result carries:
 - `variance_components.blocks` — ordered list of per-block variance records.
-- `variance_components.residual` — scalar σ²e (always present, §5).
+- `variance_components.residual` — scalar σ²e for univariate fits; the
+  experimental multivariate-repeatability route carries a trait covariance matrix.
 - `random_effects` — ordered list of `(name, ids, values)` records.
 - `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
+
+The experimental multivariate-repeatability extension labels its matrix columns
+with top-level `traits`. It is Julia-only until the R normalizer and parity tests
+support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
 
 CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
 """
@@ -662,23 +809,9 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
         # result_payload (AnimalModelFit).  Returns the full legacy shape byte-
         # identically, so hs_normalize_julia_result() and all R S3 extractors
         # return identical output.
-        fit isa AnimalModelFit && return result_payload(fit)
-
-        # If fit is a raw NamedTuple from fit_animal_model (non-AnimalModelFit),
-        # synthesize the legacy flat fields from what the estimator returned.
-        vc = fit.variance_components
-        sigma_a2 = vc.sigma_a2
-        sigma_e2 = vc.sigma_e2
-        h2 = sigma_a2 / (sigma_a2 + sigma_e2)
-        b = blocks[1]
-        return (
-            variance_components = vc,
-            heritability = h2,
-            random_effects = (animal = (ids = b.ids, values = fit.effects isa NamedTuple ?
-                                         fit.effects.values : fit.effects),),
-            loglik = fit.loglik,
-            converged = fit.converged,
-        )
+        fit isa AnimalModelFit || throw(ArgumentError(
+            "single-pedigree result_payload_v2 requires an AnimalModelFit to preserve the complete legacy result contract"))
+        return result_payload(fit)
     end
 
     if dispatch == :two_effect
@@ -728,7 +861,7 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
         partner_name = hasproperty(b, :partner_name) ? b.partner_name : "maternal"
         variance_blocks = [
             (
-                name       = b.name,
+                name       = partner_name,
                 type       = "correlated",
                 G          = vc.G_dm,
                 direct_variance  = vc.sigma_ad,
@@ -737,10 +870,14 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
                 correlation = fit.genetic_correlation,
             ),
         ]
-        re_blocks = [
-            (name=b.name,     ids=fit.direct_effects.ids,   values=fit.direct_effects.values),
-            (name=partner_name, ids=fit.maternal_effects.ids, values=fit.maternal_effects.values),
-        ]
+        fit.direct_effects.ids == fit.maternal_effects.ids || throw(ArgumentError(
+            "result_payload_v2: correlated direct and partner effects must share the block ID order"))
+        re_blocks = [(
+            name=partner_name,
+            ids=fit.direct_effects.ids,
+            direct=fit.direct_effects.values,
+            partner=fit.maternal_effects.values,
+        )]
         return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
@@ -750,7 +887,43 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
     end
 
     if dispatch == :multivariate_repeatability
-        return multivariate_repeatability_result_payload(fit)
+        parsed.method === :REML || throw(ArgumentError(
+            "payload-v2 multivariate_repeatability result is REML-only; got method=$(parsed.method)"))
+        ped = blocks[findfirst(b -> b.type == "pedigree", blocks)]
+        pe = blocks[findfirst(b -> b.type == "iid", blocks)]
+        t = size(parsed.Y, 2)
+        nobs = count(_is_present, parsed.Y)
+        nfixed = size(parsed.X, 2) * t
+        n_covariance = t * (t + 1) ÷ 2
+        convention = loglik_convention_fields(LOGLIK_CONVENTION_FULL, nobs, nfixed)
+        diagnostics = merge((
+            method = :REML,
+            optimizer_status = fit.converged ? "converged" : "not_converged",
+            loglik_stochastic = false,
+        ), convention)
+        block_result = (
+            variance_components = (
+                residual = Matrix(fit.residual_covariance),
+                blocks = [
+                    (name = ped.name, type = ped.type, variance = Matrix(fit.genetic_covariance)),
+                    (name = pe.name, type = pe.type, variance = Matrix(fit.permanent_covariance)),
+                ],
+            ),
+            random_effects = [
+                (name = ped.name, ids = fit.breeding_values.ids,
+                 values = Matrix(fit.breeding_values.values)),
+                (name = pe.name, ids = fit.permanent_effects.ids,
+                 values = Matrix(fit.permanent_effects.values)),
+            ],
+            df = nfixed + 3 * n_covariance,
+            nobs = nobs,
+            diagnostics = diagnostics,
+        )
+        return merge(
+            multivariate_repeatability_result_payload(fit),
+            block_result,
+            (component_names = [ped.name, pe.name, "residual"],),
+        )
     end
 
     throw(ArgumentError("result_payload_v2: unrecognised dispatch symbol: $dispatch"))

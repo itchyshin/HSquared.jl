@@ -56,7 +56,7 @@ claim).
 
 - **B1** Production (non-experimental) sparse REML path (V1-REML production row). [JL]
 - **B2** Large/real-pedigree conditioning + deep-inbreeding stress (V1-DENSE-COND). [JL]
-- **B3** Meuwissen–Luo O(n) inbreeding in the production Ainv path. [JL]
+- **B3** Meuwissen–Luo inbreeding traversal in the production Ainv path; document ancestry and heap costs without claiming a general runtime bound. [JL]
 - **B4** Fill-reducing ordering (AMD/METIS) for the sparse MME factorization. [JL]
 - **B5** AI-REML convergence hardening (step control, restarts, PD guards). [JL]
 - **B6** SQUAREM / augmented AI-REML accelerators (R#24/#25, JL#58). [JL]

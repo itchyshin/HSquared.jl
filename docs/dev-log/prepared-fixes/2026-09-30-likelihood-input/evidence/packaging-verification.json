@@ -1,0 +1,868 @@
+{
+  "patch_applies_and_matches_tested_bytes": true,
+  "protected_baseline_ranges": [
+    [
+      667,
+      1161
+    ],
+    [
+      1437,
+      1440
+    ],
+    [
+      1561,
+      1645
+    ],
+    [
+      1686,
+      1720
+    ],
+    [
+      1993,
+      2357
+    ],
+    [
+      3169,
+      3268
+    ],
+    [
+      3386,
+      3427
+    ],
+    [
+      3446,
+      4183
+    ],
+    [
+      4350,
+      4613
+    ]
+  ],
+  "changed_spans": [
+    {
+      "operation": "insert",
+      "baseline": [
+        2,
+        2
+      ],
+      "prepared": [
+        2,
+        80
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        113,
+        116
+      ],
+      "prepared": [
+        192,
+        193
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        121,
+        121
+      ],
+      "prepared": [
+        198,
+        198
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        128,
+        137
+      ],
+      "prepared": [
+        206,
+        208
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        147,
+        148
+      ],
+      "prepared": [
+        218,
+        219
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        160,
+        160
+      ],
+      "prepared": [
+        231,
+        231
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        179,
+        179
+      ],
+      "prepared": [
+        251,
+        251
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        200,
+        201
+      ],
+      "prepared": [
+        273,
+        274
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        215,
+        225
+      ],
+      "prepared": [
+        288,
+        288
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        260,
+        260
+      ],
+      "prepared": [
+        323,
+        323
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        295,
+        298
+      ],
+      "prepared": [
+        359,
+        359
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        303,
+        303
+      ],
+      "prepared": [
+        364,
+        364
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        305,
+        311
+      ],
+      "prepared": [
+        367,
+        377
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        320,
+        320
+      ],
+      "prepared": [
+        386,
+        389
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        352,
+        352
+      ],
+      "prepared": [
+        421,
+        425
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        372,
+        372
+      ],
+      "prepared": [
+        446,
+        446
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        375,
+        375
+      ],
+      "prepared": [
+        449,
+        449
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        382,
+        382
+      ],
+      "prepared": [
+        456,
+        456
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        383,
+        383
+      ],
+      "prepared": [
+        458,
+        458
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        395,
+        395
+      ],
+      "prepared": [
+        470,
+        475
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        623,
+        624
+      ],
+      "prepared": [
+        703,
+        705
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1175,
+        1178
+      ],
+      "prepared": [
+        1256,
+        1258
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1183,
+        1183
+      ],
+      "prepared": [
+        1263,
+        1263
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1259,
+        1261
+      ],
+      "prepared": [
+        1340,
+        1342
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1277,
+        1282
+      ],
+      "prepared": [
+        1358,
+        1362
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1294,
+        1294
+      ],
+      "prepared": [
+        1374,
+        1375
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1295,
+        1295
+      ],
+      "prepared": [
+        1377,
+        1377
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1449,
+        1449
+      ],
+      "prepared": [
+        1532,
+        1532
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1458,
+        1458
+      ],
+      "prepared": [
+        1542,
+        1542
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1493,
+        1494
+      ],
+      "prepared": [
+        1578,
+        1579
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1510,
+        1515
+      ],
+      "prepared": [
+        1595,
+        1604
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1523,
+        1523
+      ],
+      "prepared": [
+        1612,
+        1612
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1527,
+        1527
+      ],
+      "prepared": [
+        1616,
+        1616
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1757,
+        1758
+      ],
+      "prepared": [
+        1846,
+        1847
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1770,
+        1771
+      ],
+      "prepared": [
+        1859,
+        1861
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1783,
+        1784
+      ],
+      "prepared": [
+        1873,
+        1874
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1796,
+        1796
+      ],
+      "prepared": [
+        1886,
+        1887
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1797,
+        1797
+      ],
+      "prepared": [
+        1889,
+        1889
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1826,
+        1826
+      ],
+      "prepared": [
+        1919,
+        1919
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1834,
+        1834
+      ],
+      "prepared": [
+        1928,
+        1928
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1880,
+        1880
+      ],
+      "prepared": [
+        1975,
+        1975
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1894,
+        1895
+      ],
+      "prepared": [
+        1990,
+        1992
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1898,
+        1898
+      ],
+      "prepared": [
+        1995,
+        1995
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1904,
+        1904
+      ],
+      "prepared": [
+        2002,
+        2002
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1906,
+        1907
+      ],
+      "prepared": [
+        2004,
+        2005
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1916,
+        1916
+      ],
+      "prepared": [
+        2014,
+        2014
+      ]
+    },
+    {
+      "operation": "delete",
+      "baseline": [
+        1929,
+        1929
+      ],
+      "prepared": [
+        2027,
+        2026
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        2476,
+        2476
+      ],
+      "prepared": [
+        2573,
+        2574
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        2508,
+        2512
+      ],
+      "prepared": [
+        2607,
+        2607
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        2596,
+        2599
+      ],
+      "prepared": [
+        2691,
+        2692
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        2603,
+        2603
+      ],
+      "prepared": [
+        2696,
+        2697
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        2629,
+        2629
+      ],
+      "prepared": [
+        2724,
+        2724
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        2665,
+        2666
+      ],
+      "prepared": [
+        2761,
+        2762
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        2799,
+        2799
+      ],
+      "prepared": [
+        2895,
+        2895
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        3006,
+        3006
+      ],
+      "prepared": [
+        3103,
+        3103
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        3014,
+        3014
+      ],
+      "prepared": [
+        3112,
+        3112
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        3062,
+        3062
+      ],
+      "prepared": [
+        3161,
+        3163
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3073,
+        3077
+      ],
+      "prepared": [
+        3175,
+        3182
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3084,
+        3084
+      ],
+      "prepared": [
+        3189,
+        3190
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3089,
+        3090
+      ],
+      "prepared": [
+        3195,
+        3195
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        3095,
+        3095
+      ],
+      "prepared": [
+        3200,
+        3201
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3104,
+        3104
+      ],
+      "prepared": [
+        3211,
+        3211
+      ]
+    },
+    {
+      "operation": "delete",
+      "baseline": [
+        3118,
+        3119
+      ],
+      "prepared": [
+        3225,
+        3224
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3319,
+        3320
+      ],
+      "prepared": [
+        3424,
+        3425
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3332,
+        3335
+      ],
+      "prepared": [
+        3437,
+        3442
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3343,
+        3343
+      ],
+      "prepared": [
+        3450,
+        3450
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        3347,
+        3347
+      ],
+      "prepared": [
+        3454,
+        3454
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4190,
+        4190
+      ],
+      "prepared": [
+        4297,
+        4297
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4196,
+        4196
+      ],
+      "prepared": [
+        4303,
+        4303
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4202,
+        4202
+      ],
+      "prepared": [
+        4309,
+        4309
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4234,
+        4234
+      ],
+      "prepared": [
+        4341,
+        4341
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4240,
+        4240
+      ],
+      "prepared": [
+        4347,
+        4347
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        4246,
+        4246
+      ],
+      "prepared": [
+        4353,
+        4353
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        4278,
+        4278
+      ],
+      "prepared": [
+        4385,
+        4386
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        4340,
+        4340
+      ],
+      "prepared": [
+        4449,
+        4450
+      ]
+    }
+  ]
+}

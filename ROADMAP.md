@@ -375,8 +375,10 @@ matrices (`epistatic_relationship`, additive×additive / additive×dominance /
 dominance×dominance). The dense additive relationship `A` is also now a public
 accessor (`additive_relationship`). Sire models, the remaining non-standard
 inheritance systems (haplodiploid, polyploid), dominance-inbreeding corrections,
-unknown-parent groups, and random regression remain open, as does any public
-model-spec.
+unknown-parent groups, and broader random-regression routes remain open. The
+Julia k=2 dense REML cell and R k=2 opt-in `rr()` surface have separate covered
+status; a general R model-spec and routes beyond that bounded surface remain
+open. These do not make broader random-regression covered.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

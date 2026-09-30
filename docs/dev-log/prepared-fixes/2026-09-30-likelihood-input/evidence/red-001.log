@@ -1,0 +1,1545 @@
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+malformed model inputs reject before fitting: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:34 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:26 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42
+  Expression: gaussian_loglik(spec, s, 1.0)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43
+  Expression: gaussian_loglik(spec, 1.0, s)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44
+  Expression: henderson_mme(spec, s, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45
+  Expression: two_effect_mme(y, X, Z, Q, Z, Z, s, 1.0, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46
+  Expression: multi_effect_mme(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47
+  Expression: sparse_multi_reml_loglik(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42
+  Expression: gaussian_loglik(spec, s, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43
+  Expression: gaussian_loglik(spec, 1.0, s)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44
+  Expression: henderson_mme(spec, s, 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45
+  Expression: two_effect_mme(y, X, Z, Q, Z, Z, s, 1.0, 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46
+  Expression: multi_effect_mme(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47
+  Expression: sparse_multi_reml_loglik(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42
+  Expression: gaussian_loglik(spec, s, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43
+  Expression: gaussian_loglik(spec, 1.0, s)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44
+  Expression: henderson_mme(spec, s, 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45
+  Expression: two_effect_mme(y, X, Z, Q, Z, Z, s, 1.0, 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46
+  Expression: multi_effect_mme(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+      Thrown: SingularException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47
+  Expression: sparse_multi_reml_loglik(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42
+  Expression: gaussian_loglik(spec, s, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43
+  Expression: gaussian_loglik(spec, 1.0, s)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44
+  Expression: henderson_mme(spec, s, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ERROR: LoadError: Some tests did not pass: 96 passed, 96 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:24
+~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45
+  Expression: two_effect_mme(y, X, Z, Q, Z, Z, s, 1.0, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:45 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46
+  Expression: multi_effect_mme(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:46 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+supplied finite positive representable variance domain: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47
+  Expression: sparse_multi_reml_loglik(y, X, [(Z, Q)], [s], 1.0)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:47 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:41 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:52
+  Expression: fit_variance_components(spec; initial = (s, 1.0), iterations = 1)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:53
+  Expression: fit_two_effect_reml(y, X, Z, Q, Z, Z; initial = (sigma1 = s, sigma2 = 1.0, sigma_e2 = 1.0), iterations = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:53 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:54
+  Expression: fit_multi_effect_reml(y, X, [(Z, Q)]; initial = [s, 1.0], iterations = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:54 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:55
+  Expression: fit_repeatability_reml(y, X, Z, Q; initial = (sigma_a2 = s, sigma_pe2 = 1.0, sigma_e2 = 1.0), iterations = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:55 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:52
+  Expression: fit_variance_components(spec; initial = (s, 1.0), iterations = 1)
+    Expected: ArgumentError
+      Thrown: PosDefException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+      Thrown: BoundsError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:51 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+finite model can exceed arithmetic range: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:77
+  Expression: gaussian_loglik(extreme, 1.0, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+finite model can exceed arithmetic range: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:78
+  Expression: sparse_reml_loglik(extreme, 1.0, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:78 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+finite model can exceed arithmetic range: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:79
+  Expression: sparse_multi_reml_loglik([1.0e308, -1.0e308, 0.0], X, [(Z, Q)], [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:79 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+Test Summary:                                            | Pass  Fail  Total   Time
+likelihood input and result boundaries                   |   96    96    192  13.8s
+  malformed model inputs reject before fitting           |   46    52     98  10.9s
+  supplied finite positive representable variance domain |   18    24     42   1.5s
+  starts controls and IDs                                |   16    17     33   1.1s
+  finite model can exceed arithmetic range               |          3      3   0.0s
+  valid calculations and p0 remain supported             |   16           16   0.2s

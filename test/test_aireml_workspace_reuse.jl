@@ -113,4 +113,45 @@
         y, X, effs; initial = [1.0, 1.0])
     @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
         y, X, effs; initial = [1.0, -1.0, 1.0])
+
+    # (viii) Invalid controls, unrepresentable starts, and nonfinite converted
+    # model inputs must fail before the sparse AI iterations.
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; iterations = 0)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; iterations = -1)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; tol = 0.0)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; tol = Inf)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; tol = NaN)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; em_warmup = -1)
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; initial = [Inf, 1.0, 1.0])
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, effs; initial = [BigFloat("1e10000"), 1.0, 1.0])
+    bad_y = copy(y); bad_y[1] = Inf
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(bad_y, X, effs)
+    bad_X = copy(X); bad_X[1, 1] = NaN
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(y, bad_X, effs)
+    bad_Z = copy(Z); bad_Z[1, 1] = Inf
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, [(sparse(bad_Z), Ainv), (Z, Ipe)])
+    bad_Ainv = copy(Ainv); bad_Ainv[1, 1] = Inf
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, [(Z, sparse(bad_Ainv)), (Z, Ipe)])
+    asymmetric_Ainv = copy(sparse(Ainv)); asymmetric_Ainv[1, 2] += 1e-4
+    @test_throws ArgumentError HSquared.fit_sparse_multi_effect_aireml(
+        y, X, [(Z, asymmetric_Ainv), (Z, Ipe)])
+
+    # Roundoff-scale asymmetry is averaged before any factorization, MME, or
+    # quadratic calculation, so each stage uses one canonical precision.
+    roundoff_Ainv = copy(sparse(Ainv))
+    roundoff_Ainv[1, 2] += 4eps(Ainv[1, 2])
+    roundoff_ws = HSquared._multi_reml_workspace(
+        y, X, [(Z, roundoff_Ainv), (Z, Ipe)])
+    expected_Ainv = sparse(0.5 .* roundoff_Ainv .+ 0.5 .* transpose(roundoff_Ainv))
+    @test roundoff_ws.Ainvs[1] == expected_Ainv
 end

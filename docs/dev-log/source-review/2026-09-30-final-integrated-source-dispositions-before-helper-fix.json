@@ -1,0 +1,230 @@
+{
+  "timestamp_utc": "2026-09-30T21:57:19.219560+00:00",
+  "head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "source_tree_sha256": "2ae2c98f8bc7e664a6e07571a08775359d79698689470bc19feb97657d420869",
+  "runner_sha256": "e6fde2e72a4b539c9ae3b16f8f06c8b64433798eb3af5d059f538594bdd59927",
+  "tracked_src_files": 24,
+  "files": [
+    {
+      "file": "src/HSquared.jl",
+      "current_lines": 258,
+      "current_sha256": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/backends.jl",
+      "current_lines": 167,
+      "current_sha256": "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/bridge_payload_v2.jl",
+      "current_lines": 930,
+      "current_sha256": "9d389444008a25ddfb3ba140836bab5a3d2c8ebfb94052424d8d1ac6c0c5a3e9",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-bridge-payload-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/control.jl",
+      "current_lines": 107,
+      "current_sha256": "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/data.jl",
+      "current_lines": 1253,
+      "current_sha256": "5ac87d115a0b8c41822f38cfb54cbdffc3f298578bbf1ddb9aec0edc6c823012",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-data-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/errors.jl",
+      "current_lines": 22,
+      "current_sha256": "6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/evolvability.jl",
+      "current_lines": 321,
+      "current_sha256": "4dc5b5e0b1f51abaa97bdee77b3205129470ca5107628390cf3ef1578452306f",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-evolvability-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-evolvability-finite",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/genetic_gllvm.jl",
+      "current_lines": 750,
+      "current_sha256": "8392d7964f72d18278db130d5afd5ada30778233581bfe4090031b3fac3b4f71",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-gllvm-residual-contract-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/genomic.jl",
+      "current_lines": 3011,
+      "current_sha256": "a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-genomic-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-genomic-contracts/revision-3",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/gpu_ext.jl",
+      "current_lines": 90,
+      "current_sha256": "b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "staticonly,noGPU"
+    },
+    {
+      "file": "src/iterative_solve.jl",
+      "current_lines": 1467,
+      "current_sha256": "91317fe23ab913767b3f4ed44f74b69b9d5e0f5a5ce46fa09ed442047f361769",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-iterative-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-iterative-finite",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/likelihood.jl",
+      "current_lines": 4845,
+      "current_sha256": "1a6fa73396566ba66a785960b8df4db7201f98b0d8c9f2953b9676e68d917f9d",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-likelihood-first-wave-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-composition",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU",
+      "identity_delta": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-original-spec"
+    },
+    {
+      "file": "src/model_spec.jl",
+      "current_lines": 104,
+      "current_sha256": "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/multivariate.jl",
+      "current_lines": 1933,
+      "current_sha256": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-multivariate-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-multivariate-contracts",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/nongaussian.jl",
+      "current_lines": 1918,
+      "current_sha256": "3a43d7f1ebbc2c6b05bfe20306a2e48cfd24c9bb1bcbacf999200e800a4a6bd6",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-nongaussian-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/pedigree.jl",
+      "current_lines": 907,
+      "current_sha256": "6f4661f1e64dd0c079595be5b754813ba66ea998fc301bdcbd5422c5cdf72f86",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-pedigree-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-pedigree-residual",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/placeholders.jl",
+      "current_lines": 26,
+      "current_sha256": "e95f47efb13018fa8fc2fb7cbf6b08d4c4a1add8ca3b9c95b43ead259bf9955b",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-placeholder-exact-review.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/planned_terms.jl",
+      "current_lines": 359,
+      "current_sha256": "a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/plotting_ext.jl",
+      "current_lines": 61,
+      "current_sha256": "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/postfit.jl",
+      "current_lines": 62,
+      "current_sha256": "28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/random_regression.jl",
+      "current_lines": 564,
+      "current_sha256": "91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-random-regression-exact-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/sparse_bridge.jl",
+      "current_lines": 87,
+      "current_sha256": "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
+      "reviewed_delta_packet": null,
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/takahashi_selinv.jl",
+      "current_lines": 475,
+      "current_sha256": "3ac12ece1d095852f0937d63c97a03333665560a2c4876c138b4c547fec4e0ed",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-selinv-complete-current-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-selinv-trace-finite",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    },
+    {
+      "file": "src/validation_status.jl",
+      "current_lines": 598,
+      "current_sha256": "1d1d444bea3a5dc7a2dfccf5549b4d3082acfe3bf48761fe203a9d5f993c5316",
+      "baseline_disposition": "docs/dev-log/source-review/2026-09-30-validation-status-exact-review.md",
+      "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
+    }
+  ],
+  "status": "Integrated candidate frozen for package/bridge/docschecks and finalpanel; acceptance pending.",
+  "previous_source_tree_sha256": "b39f362dbd9471d93db0a15d8ecebce661f179965fdec0ac2a9323e930a5740b",
+  "previous_runner_sha256": "034c515cb6a8e630f1d53c487d324ba614b8bf2e6c8a0385d765235fbcbef319",
+  "runner_change": "Explicit Statistics import for newly registered post-fit marker fixture; original assertions retained"
+}

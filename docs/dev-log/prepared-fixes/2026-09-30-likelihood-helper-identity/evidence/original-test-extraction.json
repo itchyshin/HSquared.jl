@@ -1,0 +1,10 @@
+{
+  "testset_names": [
+    "Phase 1 animal model spec validation",
+    "Phase 1 dense variance component fitting",
+    "Phase 1 Henderson MME supplied-variance validation fixture",
+    "fit_ai_reml internal optimizer-localization diagnostics"
+  ],
+  "original_bodies_preserved": true,
+  "entire_test_sparse_aireml_input_contracts_preserved": true
+}

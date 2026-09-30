@@ -1,0 +1,229 @@
+ERROR: LoadError: Some tests did not pass: 51 passed, 13 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:3
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14
+  Expression: result.spec === spec
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25]) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25])
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16
+  Expression: result.spec.relationship_diag === spec.relationship_diag
+   Evaluated: [1.0, 0.5, 0.25] === [1.0, 0.5, 0.25]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14
+  Expression: result.spec === spec
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25]) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25])
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16
+  Expression: result.spec.relationship_diag === spec.relationship_diag
+   Evaluated: [1.0, 0.5, 0.25] === [1.0, 0.5, 0.25]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14
+  Expression: result.spec === spec
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25]) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25])
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16
+  Expression: result.spec.relationship_diag === spec.relationship_diag
+   Evaluated: [1.0, 0.5, 0.25] === [1.0, 0.5, 0.25]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14
+  Expression: result.spec === spec
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25]) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{String}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), ["a", "b", "c"], GaussianFamily(), :REML, [1.0, 0.5, 0.25])
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16
+  Expression: result.spec.relationship_diag === spec.relationship_diag
+   Evaluated: [1.0, 0.5, 0.25] === [1.0, 0.5, 0.25]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:16 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:20
+  Expression: (fit_variance_components(ml; iterations = 1)).spec === ml
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :ML, nothing) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :ML, nothing)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:20 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:21
+  Expression: (fit_animal_model(ml; iterations = 1)).spec === ml
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :ML, nothing) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :ML, nothing)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:23
+  Expression: (fit_animal_model(reml; target = :sparse_reml, iterations = 1)).spec === reml
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:23 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:24
+  Expression: (fit_animal_model(reml; target = :ai_reml, iterations = 1)).spec === reml
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:24 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+same numerical model preserves original identity and inputs: Test Failed at /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:25
+  Expression: (fit_animal_model(reml; target = :henderson_mme, variance_components = (sigma_a2 = 0.8, sigma_e2 = 1.2))).spec === reml
+   Evaluated: AnimalModelSpec{Vector{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], sparse([1, 2, 3], [1, 1, 1], [1.0, 1.0, 1.0], 3, 1), sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing) === AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}([1.0, 2.5, 4.0], [1.0; 1.0; 1.0;;], sparse([1, 2, 3], [1, 2, 3], [1.0, 1.0, 1.0], 3, 3), sparse([1, 2, 3], [1, 2, 3], [1.0, 2.0, 4.0], 3, 3), [1, 2, 3], GaussianFamily(), :REML, nothing)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:25 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:10 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl:4
+Test Summary:                                                 | Pass  Fail  Total  Time
+likelihood result specification identity                      |   51    13     64  8.4s
+  same numerical model preserves original identity and inputs |    8    13     21  8.0s
+  canonical and method changes retain computational model     |   31           31  0.2s
+  guards remain before fitting                                |   12           12  0.0s

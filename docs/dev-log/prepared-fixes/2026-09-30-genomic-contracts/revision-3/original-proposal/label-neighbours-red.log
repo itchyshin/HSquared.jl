@@ -1,0 +1,136 @@
+ERROR: LoadError: Some tests did not pass: 68 passed, 8 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:3
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+Test Summary:                                               | Pass  Fail  Total  Time
+G2-G6 genomic input and summary contracts                   |   68     8     76  2.5s
+  labels keep literal missing distinct from absent values   |   29     8     37  1.8s
+  weighted representable variance and even median           |   17           17  0.2s
+  probability endpoints and original Real exceedance counts |   16           16  0.0s
+  unchanged supplied-frequency and single-step semantics    |    6            6  0.5s

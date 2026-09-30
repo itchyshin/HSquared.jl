@@ -1,0 +1,106 @@
+ERROR: LoadError: Some tests did not pass: 4 passed, 8 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:33
+Test Summary:                                             | Pass  Total  Time
+representable weighted contributions near Float64 maximum |   12     12  0.6s
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:43
+  Expression: marker_variance_explained(table_scan)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:44
+  Expression: marker_scan_table(table_scan)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:51
+  Expression: (marker_variance_explained(below_scan)).marker_variances[1] == below_reference
+   Evaluated: 1.7976931348623151e308 == 1.7976931348623155e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:51 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:52
+  Expression: (marker_scan_table(below_scan)).marker_variances[1] == below_reference
+   Evaluated: 1.7976931348623151e308 == 1.7976931348623155e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:52 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:43
+  Expression: marker_variance_explained(table_scan)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:43 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:44
+  Expression: marker_scan_table(table_scan)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:51
+  Expression: (marker_variance_explained(below_scan)).marker_variances[1] == below_reference
+   Evaluated: 1.7976931348623151e308 == 1.7976931348623153e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:51 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+finite fast candidates cannot conceal true weighted overflow: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:52
+  Expression: (marker_scan_table(below_scan)).marker_variances[1] == below_reference
+   Evaluated: 1.7976931348623151e308 == 1.7976931348623153e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:52 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:34
+Test Summary:                                                | Pass  Fail  Total  Time
+finite fast candidates cannot conceal true weighted overflow |    4     8     12  0.6s

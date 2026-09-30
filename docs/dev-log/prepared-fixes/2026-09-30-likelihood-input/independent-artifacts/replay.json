@@ -1,0 +1,202 @@
+{
+  "manifest_all_pass": 48,
+  "receipt_sha": "f3e8d612a73c650349f9678a296b26d53014e25d808ce71c2cfc0967e2552ed0",
+  "manifest_sha": "c5d89949b7a456e49a47a3afa9c12b04f9bde8155f75a99de000c3ae02575bdc",
+  "replay_source_sha": "d098830fc70ee02f781b1b0838f3ea497b38688bdca6244af9d3d4fd21ab3c0c",
+  "replay_test_sha": "84e555a68c4c6b4a360583c9fd5400ecb9af98adbc0e40e5baf9dd68f72659a9",
+  "patch_sha": "bf52fa761fb392dd754ca3f316235676bf6fe8d860214a43a1e320c7c0f901a3",
+  "checks": [
+    {
+      "file": "Manifest.toml",
+      "ok": true
+    },
+    {
+      "file": "Project.toml",
+      "ok": true
+    },
+    {
+      "file": "evidence/compatibility-red-003.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/green-001.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/green-002.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/green-final-003.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/green-final-004.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/likelihood.baseline.jl",
+      "ok": true
+    },
+    {
+      "file": "evidence/likelihood.compatibility-failed-001.jl",
+      "ok": true
+    },
+    {
+      "file": "evidence/likelihood.green-002.jl",
+      "ok": true
+    },
+    {
+      "file": "evidence/likelihood.metadata-red-004.jl",
+      "ok": true
+    },
+    {
+      "file": "evidence/metadata-red-004.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/packaging-verification.json",
+      "ok": true
+    },
+    {
+      "file": "evidence/prepare-failures.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/prepare_patch.failed-001.py",
+      "ok": true
+    },
+    {
+      "file": "evidence/prepare_patch.failed-002.py",
+      "ok": true
+    },
+    {
+      "file": "evidence/prepare_patch.py",
+      "ok": true
+    },
+    {
+      "file": "evidence/red-001.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/red-002.log",
+      "ok": true
+    },
+    {
+      "file": "evidence/regression.green-001.jl",
+      "ok": true
+    },
+    {
+      "file": "evidence/regression.green-final-003.jl",
+      "ok": true
+    },
+    {
+      "file": "likelihood_input.patch",
+      "ok": true
+    },
+    {
+      "file": "runner-append.txt",
+      "ok": true
+    },
+    {
+      "file": "src/HSquared.jl",
+      "ok": true
+    },
+    {
+      "file": "src/backends.jl",
+      "ok": true
+    },
+    {
+      "file": "src/bridge_payload_v2.jl",
+      "ok": true
+    },
+    {
+      "file": "src/control.jl",
+      "ok": true
+    },
+    {
+      "file": "src/data.jl",
+      "ok": true
+    },
+    {
+      "file": "src/errors.jl",
+      "ok": true
+    },
+    {
+      "file": "src/evolvability.jl",
+      "ok": true
+    },
+    {
+      "file": "src/genetic_gllvm.jl",
+      "ok": true
+    },
+    {
+      "file": "src/genomic.jl",
+      "ok": true
+    },
+    {
+      "file": "src/gpu_ext.jl",
+      "ok": true
+    },
+    {
+      "file": "src/iterative_solve.jl",
+      "ok": true
+    },
+    {
+      "file": "src/likelihood.jl",
+      "ok": true
+    },
+    {
+      "file": "src/model_spec.jl",
+      "ok": true
+    },
+    {
+      "file": "src/multivariate.jl",
+      "ok": true
+    },
+    {
+      "file": "src/nongaussian.jl",
+      "ok": true
+    },
+    {
+      "file": "src/pedigree.jl",
+      "ok": true
+    },
+    {
+      "file": "src/placeholders.jl",
+      "ok": true
+    },
+    {
+      "file": "src/planned_terms.jl",
+      "ok": true
+    },
+    {
+      "file": "src/plotting_ext.jl",
+      "ok": true
+    },
+    {
+      "file": "src/postfit.jl",
+      "ok": true
+    },
+    {
+      "file": "src/random_regression.jl",
+      "ok": true
+    },
+    {
+      "file": "src/sparse_bridge.jl",
+      "ok": true
+    },
+    {
+      "file": "src/takahashi_selinv.jl",
+      "ok": true
+    },
+    {
+      "file": "src/validation_status.jl",
+      "ok": true
+    },
+    {
+      "file": "test/likelihood_input_guard_regression.jl",
+      "ok": true
+    }
+  ]
+}
