@@ -1,0 +1,2 @@
+Command: OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 JULIA_DEPOT_PATH=/private/tmp/hsq-goal-julia-depot:/Users/z3437171/.julia julia --project=. --startup-file=no --compiled-modules=no check_marker_contract.jl
+Baseline result: failed as expected at check_marker_contract.jl:11: Expression: e isa ArgumentError && occursin("fit must have converged", sprint(showerror, e)). This confirms the unpatched fitted convenience wrapper does not enforce the new convergence contract. Julia loaded HSquared and the script; no optimizer or fit was run.

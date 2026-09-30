@@ -1,0 +1,3 @@
+Estimated runtime before launch: under 1 minute, 1 Julia thread, 1 BLAS thread, existing toolchain, no fit/optimizer.
+Command: OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 JULIA_DEPOT_PATH=/private/tmp/hsq-goal-julia-depot:/Users/z3437171/.julia julia --project=. --startup-file=no --compiled-modules=no check_marker_contract.jl
+Prepared source result: Test Summary: negative additive variance underflow rejection | 3 pass / 3 total; then marker contract checks passed. The script covers both fitted nonconvergence guards; independent zero-additive QR/OLS oracle for mixed and LOCO outputs; negative/NaN/Inf rejection on both routes; and a true negative BigFloat that converts to Float64 -0.0, rejected by both routes.

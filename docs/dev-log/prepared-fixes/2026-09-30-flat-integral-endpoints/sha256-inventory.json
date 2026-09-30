@@ -1,0 +1,27 @@
+{
+  "base_root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "isolated_root": "/private/tmp/hsq-flat-integral-endpoints-fix-20260930",
+  "base_src_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "isolated_src_tree_sha256": "340c3724679c13e5203976cb481d92a79d75ba2091f433f95afa23884463d2ee",
+  "changed_source_files": [
+    "src/nongaussian.jl"
+  ],
+  "base_files": {
+    "src/nongaussian.jl": "24a31752319a1c51dbded522d8e20d066227d208e71be970cb94891beb87da00",
+    "src/genetic_gllvm.jl": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad"
+  },
+  "isolated_files": {
+    "src/nongaussian.jl": "c609b2a58de819ad8a96b74525895a92cd5f2b9517c080a5ec678ae348d87e9f",
+    "src/genetic_gllvm.jl": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "test/flat_integral_endpoint_regression.jl": "0897e4b8cdc7c9579886d006ce8465a985969390888c528b268997caa0cb110b",
+    "flat-integral-endpoints.patch": "377949339080913493db2a6c48916b4eae7aae9c15f5c54c5d859c1f139c1e9e",
+    "red.log": "1ecd033cf0d693a0e18a33da9d51f02275ef88c170aa8e4f28de7d7020718458",
+    "green.log": "d62b3a751e60f261133bb26d55f866767d0897ca2e899a8c7fd95ad52cc388f9",
+    "receipt.md": "f83f502108975a22d3638d4777a349bdd9ad149b4d198e2e648fd9be16ea3290"
+  },
+  "tree_algorithm": "SHA256 of sorted src-relative path UTF8, NUL, file bytes, NUL"
+}
