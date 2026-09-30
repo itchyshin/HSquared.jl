@@ -93,9 +93,9 @@ Next scope: No additional source read is required to close a coverage gap in thi
 
 ### `src/genomic.jl`
 
-Reviewed: Exact-current 09-30 construction component explicitly 15–457; postfit scan component 898–995 (the receipt also identifies wider core by symbols); wrapper alignment component covers raw metafounder single-step. Historical 09-29 scan 639–1157 and single-step validation used earlier hash.
+Reviewed: Complete current 1–2934 disposition is retained in `docs/dev-log/source-review/2026-09-30-genomic-complete-current-review.md` at `76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f`. Sixteen disjoint spans account for every line, with 558 reused and 2376 fresh inspection or current reattestation lines, zero gaps and overlaps. The earlier construction receipt's mid-LOCO stop is closed by the new complete review. Coverage PASS; whole-file approval HOLD.
 
-Next scope: Fresh current functions remap construction to centered_markers27,GRM94,inverse157,activation324,APY376,LOCO452. Receipt span 15–457 stops inside current LOCO definition: obtain closing-end extension/attestation. Review fitter wrappers 522–677; scan public dispatch/projection/payload/lookup 678–1113 except exact component; marker plotting/summaries/effects 1114–2373; p-tail/adjustments 2374–2460 reattest prior repaired spans; single-step/metafounder 2461–2738 reattest validation/wrapper changes then review residual fit wrappers; thresholds/permutation 2739–2934. Preserve dense storage/inversion and scan calibration limits.
+Next scope: Dispose G1–G6 without rereading all 2934 lines: integrate the independently accepted 41-assertion marker variance/convergence proposal; reject missing LOCO and summary labels before string conversion; stabilize representable variance and median calculations; define probability conversion semantics; fence general-covariate permutation exactness; qualify sample-centering and single-step reductions. Dense resource, allocation and calibration debts remain explicit. No broad performance or inference claim follows from static coverage.
 
 ### `src/gpu_ext.jl`
 
@@ -251,3 +251,9 @@ The following appendix records every matching hash occurrence in source-review/c
 ## Closeout
 
 Read-only scratch draft, pending parent integration and final frozen-candidate panel decision. Existing dirty work was preserved. The parent freeze matches the live approved FA source pin, and no source hash moved during the reconciliation check. Recheck the manifest immediately before integration to preserve that observation. No repo-visible approval, capability promotion, covered-count change, commit, push, external contact, or GPU completion claim is made.
+
+## Support attestation and completed primary, 2026-09-30
+
+`2026-09-30-support-source-reattestation.md` and its JSON independently verify ten support-file pins against historical signed baseline components. Seven full files are byte-identical. GPU source remains static-only, with no device execution or completion claim. Postfit requires integration of its reviewed marker guard; support coverage alone is not full panel signoff.
+
+The primary FA campaign is complete, with all 200 rows preserved in `docs/dev-log/recovery-checkpoints/fa-primary-complete-20260930/`. It reports 110 recovered, 20 G errors, 11 R errors and 59 nonconverged. Source tree d3c2de... and driver216144... remain frozen evidence pins. New prepared finite-ingress and R-label repairs have independent 141/141 and 67/67 checks. Their isolated artifacts are not live-source approval. Source freeze ended after the final artifacts and exit witness were preserved; composed repair checks are separate.

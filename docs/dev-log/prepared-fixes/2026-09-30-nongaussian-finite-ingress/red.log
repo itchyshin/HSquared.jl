@@ -1,0 +1,440 @@
+ERROR: LoadError: Some tests did not pass: 114 passed, 27 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:3
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+strict positive family fields before and after conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7
+  Expression: constructor(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+ordered thresholds retain ordering and finite conversion: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20
+  Expression: H.OrderedProbitResponse(bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:17 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+finite response checks retain each family domain: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42
+  Expression: H._check_counts(family, [y[1], bad])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:29 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+kernel ingress rejects before mode work: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:76
+  Expression: H.laplace_marginal_loglik([1.0, Inf], X, Ai, Ai, 1.0, family)
+    Expected: ArgumentError
+      Thrown: FiniteIngressGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:76 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:73 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+kernel ingress rejects before mode work: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:77
+  Expression: H.gllvm_laplace_marginal_loglik(reshape([1.0, Inf], 2, 1), Ai, ones(1, 1), family; X = X)
+    Expected: ArgumentError
+      Thrown: FiniteIngressGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:73 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+kernel ingress rejects before mode work: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:76
+  Expression: H.laplace_marginal_loglik([1.0, Inf], X, Ai, Ai, 1.0, family)
+    Expected: ArgumentError
+      Thrown: FiniteIngressGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:76 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:73 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+kernel ingress rejects before mode work: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:77
+  Expression: H.gllvm_laplace_marginal_loglik(reshape([1.0, Inf], 2, 1), Ai, ones(1, 1), family; X = X)
+    Expected: ArgumentError
+      Thrown: FiniteIngressGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:73 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+kernel ingress rejects before mode work: Test Failed at /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:79
+  Expression: H.variational_marginal_loglik([1.0, Inf], X, Ai, Ai, 1.0, H.GaussianResponse(1.0))
+    Expected: ArgumentError
+      Thrown: FiniteIngressGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:79 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:73 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-finite-ingress-fix-20260930/test/nongaussian_finite_ingress_regression.jl:4
+Test Summary:                                               | Pass  Fail  Total  Time
+non-Gaussian finite ingress                                 |  114    27    141  3.4s
+  strict positive family fields before and after conversion |   42     9     51  0.6s
+  ordered thresholds retain ordering and finite conversion  |   12     7     19  0.1s
+  finite response checks retain each family domain          |   58     6     64  0.1s
+  kernel ingress rejects before mode work                   |    1     5      6  2.6s
