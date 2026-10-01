@@ -1,0 +1,56 @@
+{
+  "whitespace": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "preamble": {
+    "command": [
+      "bash",
+      "tools/preamble_cap.sh"
+    ],
+    "exit_code": 0,
+    "stdout": "PREAMBLE CAP -- AGENTS.md is @imported by CLAUDE.md, so this is paid every session.\n  size            :   9343 B  (~2335 tok)   cap 14000 B\n  snapshot entries:      1               cap 1\n\nCAP OK -- preamble within budget.\n",
+    "stderr": ""
+  },
+  "structure": {
+    "command": [
+      "Rscript",
+      "/Users/z3437171/shinichi-brain/tools/check-after-task.R",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "after-task structure check passed\nError: Acceptance ledger has UNMET gates -- the report is well-formed but the work is not finished:\n  ./GATES.md\nFinish the slice, or mark the gate ABANDONED with its handoff note, then re-run.\nDetail: node \"/Users/z3437171/shinichi-brain/skills/unlazy/scripts/gate-check.mjs\" --status\nExecution halted\n"
+  },
+  "closeout": {
+    "command": [
+      "python3",
+      "/Users/z3437171/shinichi-brain/tools/closeout.py",
+      "check",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md"
+    ],
+    "exit_code": 1,
+    "stdout": "FAIL close-out compiler\n- gate failed: Rscript /Users/z3437171/Dropbox/Github Local/Shinichi/tools/check-after-task.R: Execution halted\n",
+    "stderr": ""
+  },
+  "prose": {
+    "command": [
+      "python3",
+      "/Users/z3437171/shinichi-brain/tools/slop_check.py",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/source-review/2026-10-01-v3-live-refresh-independent.md",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-design-plan-20261001.md",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-v3-live-refresh/gllvm-contract-refresh.md",
+      "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-v3-live-refresh/protected-r-lane-refresh.md"
+    ],
+    "exit_code": 0,
+    "stdout": " \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md: 0 hits / 1059 words = 0.0 per 1000 (em dashes 0/1000)\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/source-review/2026-10-01-v3-live-refresh-independent.md: 5 hits / 995 words = 5.0 per 1000 (em dashes 0/1000)\n        2 \u00d7 faux reveal\n            L3: ; reviewed working branch is . This is a new judgment on the retained\n            L9: report that does not yet exist. This is a branch-documentation defect,\n        2 \u00d7 bold-label opener\n            L7: **V3 PASS at the bounded 2026-10-01 landing scope.** The initial missing-evidence HOLD is \n            L9: **Current refresh branch: HOLD for final navigation/report completion.** Its live snapshot\n        1 \u00d7 X-not-Y contrast\n            L9: a branch-documentation defect, not a reversal of V3's evidence sta\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-design-plan-20261001.md: 1 hits / 1748 words = 0.6 per 1000 (em dashes 0/1000)\n        1 \u00d7 X-not-Y contrast\n            L22: y is a question for this model, not an inherited default. Its site-c\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-v3-live-refresh/gllvm-contract-refresh.md: 1 hits / 756 words = 1.3 per 1000 (em dashes 0/1000)\n        1 \u00d7 X-not-Y contrast\n            L18: an implementation consequence, not a published selector policy. No\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-v3-live-refresh/protected-r-lane-refresh.md: 2 hits / 908 words = 2.2 per 1000 (em dashes 0/1000)\n        2 \u00d7 bold-label opener\n            L12: - **Recovery worktree:** , branch , , same as ; clean. The branch's checkpoint says its wo\n            L13: - **Implementation branch worktree:** , branch , local , clean, and 20 commits behind its \nFINDINGS: 0\n",
+    "stderr": ""
+  }
+}

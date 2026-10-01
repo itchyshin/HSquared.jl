@@ -2,7 +2,7 @@
 
 Updated after independently accepted hosted-platform fixes. Prior inventories are preserved verbatim in the adjacent before-hosted-platform-fixes files.
 
-All 24 tracked core source files have baseline review dispositions and independently accepted deltas. Fresh local package and documentation checks pass; current-head hosted CI and landing remain pending.
+All 24 tracked core source files have baseline review dispositions and independently accepted deltas. Local receipts are retained. Live GitHub refresh on 2026-10-01 confirms hosted CI and documentation deployment passed at implementation merge `829e86ce` and closure merge `570f49ba`. Current source and tests match candidate `365f173f`; see `docs/dev-log/check-log.d/2026-10-01-v3-live-refresh/`.
 
 Source aggregate: `59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e`.
 Runner: `27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3`.

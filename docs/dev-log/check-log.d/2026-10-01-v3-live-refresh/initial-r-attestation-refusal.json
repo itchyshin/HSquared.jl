@@ -1,0 +1,7 @@
+{
+  "scope": "R",
+  "outcome": "REFUSED",
+  "reason": "Old temporary R checkout missing R/animal.R",
+  "requested_r_root": "/private/tmp/hsquared-fa-gllvm-20260927",
+  "disposition": "Exact landed e82f5c95 materialized in separate temporary directory; all R source pins and retained evidence then pass. No original manifest or oracle changed."
+}

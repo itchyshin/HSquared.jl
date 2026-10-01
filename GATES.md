@@ -80,13 +80,13 @@ Scope: Deliver bounded opt-in FA and genetic GLLVM fits through hsquared, then r
 - [x] V1: Julia package suite passes on the current integrated candidate.
   CHECK: python3 tools/check_final_programme_evidence.py julia
   EXPECT: HSQ_FINAL_JULIA_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=b60e7089475a/36 entries; output=HSQ_FINAL_JULIA_PASS
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=052de112f0da/35 entries; output=HSQ_FINAL_JULIA_PASS
   Final recheck after iterative-solver input-contract repair also exited 0 with `Testing HSquared tests passed`; final source/test hashes and the command environment are recorded in `docs/dev-log/check-log.d/2026-09-29-iterative-solve-precision-controls.md`. Rechecked again 2026-09-30 on the current integrated dirty tree at HEAD `a7ca8ed557b23ec23c8486365e97a7bac4b71c16`; exit 0, `Testing HSquared tests passed`. Exact non-Gaussian source/test/runner hashes and focused VA tests are in `docs/dev-log/check-log.d/2026-09-30-va-schur-recheck.md`.
 
 - [x] V2: Current Julia documentation source builds locally from the integrated candidate.
   CHECK: python3 tools/check_final_programme_evidence.py docs
   EXPECT: HSQ_FINAL_DOCS_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=b60e7089475a/36 entries; output=HSQ_FINAL_DOCS_PASS
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=052de112f0da/35 entries; output=HSQ_FINAL_DOCS_PASS
 
 - [x] V3: Final R package/bridge checks, current source-bound evidence, capability/debt records, reports and Rose audit pass; exact-current hosted CI and ordinary landing are verified for both twins.
   EVIDENCE: Julia and R exact merge commits, post-merge checks, source-bound evidence, and final report are recorded in `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`. Limits and residual findings remain explicit.
@@ -195,3 +195,10 @@ Fresh complete Julia 1.13.1 Pkg.test passed in 466.95 seconds; live R bridge pas
 
 
 2026-10-01 V3 closeout: supersedes the pending status recorded in earlier dated entries. Julia PR #401 landed at `829e86ce67b61118eae8aa7e1fdda1d3899c6f9f`; exact merge-commit CI passed on Julia 1.10 and latest Julia on Ubuntu and Windows, and its Documenter build/deploy passed. R PR #259 landed at `e82f5c95e514028a7126fdd667c4ac7a840c9e6b`; exact merge-commit R CMD check and pkgdown passed. The three installed exact-source evidence modes passed on the Julia candidate before landing, and source/test bytes match the merged Julia tree. V3 is closed for these bounded FA/GLLVM routes and reviewed source/bridge scope. Public covered count remains seven; both routes remain experimental with their recorded validation debt. Automatic rank, wider calibration/inference, unusual inheritance, GPU execution, and release actions remain outside this closeout. No new submission or tag was made.
+
+
+## V3 live refresh and next design plan, 2026-10-01
+
+Live GitHub receipts confirm PR #402 merged at `570f49ba`, with passing current-head and post-merge Julia CI and documentation. R PR #259 remains merged at `e82f5c95`, with passing R CMD check and pkgdown. Source and tests match candidate `365f173f`; all three read-only evidence modes pass. The final independent audit is `docs/dev-log/source-review/2026-10-01-v3-live-refresh-independent.md`. This supplements the already-landed bounded V3 closure. Routes remain experimental and public count seven.
+
+The proposed next arc is `docs/design/auto-fa-rank-design-plan-20261001.md`. It is design-only and requires owner approval before execution. Protected GLLVM/gllvmTMB lanes, the frozen FA campaign, GPU and release boundaries are unchanged. Full receipt and local branch state: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.

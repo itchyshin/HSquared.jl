@@ -1,0 +1,19 @@
+{
+  "source_sha256": "59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e",
+  "runner_sha256": "27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3",
+  "src_test_project_diff_from_365f173f": 0,
+  "protected_worktrees": [
+    {
+      "path": "/Users/z3437171/Dropbox/Github Local/HSquared.jl",
+      "head": "35442c7f8758c5b275ca49dca6adf0ef66e6ff95",
+      "status": "?? .claude/agents/shannon.md\n?? comparator/sommer_aireml/\n?? comparator/sommer_eigen/\n?? docs/dev-log/inbox/\n?? sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl\n",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+      "head": "365f173fa192856f9c29ac1743344c0ae7d8edd1",
+      "status": " M .claude/settings.json\n M .cursor/hooks.json\n",
+      "tracked_diff_sha256": "3228c39bbf621026e9a6c2a7f89a06dcc6fb87c7013988010bc809a587a26ebf"
+    }
+  ]
+}

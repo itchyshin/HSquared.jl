@@ -1,0 +1,61 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:41.175588+00:00",
+  "command": [
+    "gh",
+    "run",
+    "list",
+    "--repo",
+    "itchyshin/HSquared.jl",
+    "--branch",
+    "main",
+    "--limit",
+    "5",
+    "--json",
+    "databaseId,headSha,status,conclusion,workflowName,url"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"conclusion\":\"success\",\"databaseId\":36859311408,\"headSha\":\"570f49bab59cb337b06d32331bc4a14012164f3b\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36859311408\",\"workflowName\":\"CI\"},{\"conclusion\":\"success\",\"databaseId\":36859311323,\"headSha\":\"570f49bab59cb337b06d32331bc4a14012164f3b\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36859311323\",\"workflowName\":\"Documenter\"},{\"conclusion\":\"success\",\"databaseId\":36814495496,\"headSha\":\"829e86ce67b61118eae8aa7e1fdda1d3899c6f9f\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36814495496\",\"workflowName\":\"CI\"},{\"conclusion\":\"success\",\"databaseId\":36814495443,\"headSha\":\"829e86ce67b61118eae8aa7e1fdda1d3899c6f9f\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36814495443\",\"workflowName\":\"Documenter\"},{\"conclusion\":\"success\",\"databaseId\":36264823850,\"headSha\":\"faed40182cdbba2bf69f3e8dff0c5054be2dd214\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36264823850\",\"workflowName\":\"Documenter\"}]\n",
+  "stderr": "",
+  "data": [
+    {
+      "conclusion": "success",
+      "databaseId": 36859311408,
+      "headSha": "570f49bab59cb337b06d32331bc4a14012164f3b",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/HSquared.jl/actions/runs/36859311408",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36859311323,
+      "headSha": "570f49bab59cb337b06d32331bc4a14012164f3b",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/HSquared.jl/actions/runs/36859311323",
+      "workflowName": "Documenter"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36814495496,
+      "headSha": "829e86ce67b61118eae8aa7e1fdda1d3899c6f9f",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/HSquared.jl/actions/runs/36814495496",
+      "workflowName": "CI"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36814495443,
+      "headSha": "829e86ce67b61118eae8aa7e1fdda1d3899c6f9f",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/HSquared.jl/actions/runs/36814495443",
+      "workflowName": "Documenter"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36264823850,
+      "headSha": "faed40182cdbba2bf69f3e8dff0c5054be2dd214",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/HSquared.jl/actions/runs/36264823850",
+      "workflowName": "Documenter"
+    }
+  ]
+}

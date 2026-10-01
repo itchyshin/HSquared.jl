@@ -1,0 +1,14 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:44.332944+00:00",
+  "command": [
+    "gh",
+    "api",
+    "repos/itchyshin/gllvmTMB/commits/main",
+    "--jq",
+    ".sha"
+  ],
+  "exit_code": 0,
+  "stdout": "0cf373d55ab3a691013b375881466b35616cc17b\n",
+  "stderr": "",
+  "sha": "0cf373d55ab3a691013b375881466b35616cc17b"
+}

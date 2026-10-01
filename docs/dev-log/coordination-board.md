@@ -1752,3 +1752,10 @@ The Julia 1.13 Linux and Windows jobs shared one test-oracle mismatch. The revis
 ## 2026-10-01 bounded twin programme final landing
 
 Julia PR #401 merged at `829e86ce67b61118eae8aa7e1fdda1d3899c6f9f`. Post-merge CI run `36814495496` passed all four Linux/Windows by Julia 1.10/latest jobs; Documenter run `36814495443` passed build and deploy at the same SHA. R PR #259 merged at `e82f5c95e514028a7126fdd667c4ac7a840c9e6b`; post-merge R CMD check `36792219254` and pkgdown `36792696953` passed. Julia, docs, and R bridge installed evidence modes pass against the retained exact-source inputs; source aggregate `59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e` and runner `27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3` match the merged tree. V3 is closed for the bounded programme. No capability promotion occurred: public covered count stays seven and FA/GLLVM remain experimental with explicit debt. No GPU work, new submission, registry action, or tag. Full scope and residual limits: `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`.
+
+
+## V3 live refresh and next design plan, 2026-10-01
+
+Live GitHub receipts confirm PR #402 merged at `570f49ba`, with passing current-head and post-merge Julia CI and documentation. R PR #259 remains merged at `e82f5c95`, with passing R CMD check and pkgdown. Source and tests match candidate `365f173f`; all three read-only evidence modes pass. The final independent audit is `docs/dev-log/source-review/2026-10-01-v3-live-refresh-independent.md`. This supplements the already-landed bounded V3 closure. Routes remain experimental and public count seven.
+
+The proposed next arc is `docs/design/auto-fa-rank-design-plan-20261001.md`. It is design-only and requires owner approval before execution. Protected GLLVM/gllvmTMB lanes, the frozen FA campaign, GPU and release boundaries are unchanged. Full receipt and local branch state: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.
