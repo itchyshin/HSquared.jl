@@ -41,3 +41,8 @@ The likelihood delta resolves cancellation in endpoint-adjacent likelihood compa
 Signed independent reviews and complete author/replay archives are in docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/. Original hosted failures, R landing and post-merge checks are in docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. Both numerical regression modules remain isolated. Two documentation readers use the supported Docs.doc API with REPL loaded, preserving their original assertions. Four empirical FA fit-outcome assertions are separately replaced by independently reviewed diagnostic/status oracles; all numerical source bytes remain unchanged.
 
 The approved experimental outcome, covered count seven, fixed-rank scope, calibration/scaling debt and GPU/release exclusions are unchanged. The completed FA campaign is never restarted.
+
+
+## 2026-10-01 landing update
+
+The pending status above is historical and is superseded here. Julia PR #401 landed at `829e86ce67b61118eae8aa7e1fdda1d3899c6f9f`; exact merge-commit Linux and Windows jobs passed on Julia 1.10 and latest Julia, and Documenter build/deploy passed. The source aggregate and test runner hashes above match that merge tree. R PR #259 landed at `e82f5c95e514028a7126fdd667c4ac7a840c9e6b`; exact merge-commit R CMD check and pkgdown passed. These receipts close the bounded source/bridge landing gate, while all findings listed below and broader calibration, inference, and scaling limits remain carried.
