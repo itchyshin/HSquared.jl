@@ -68,6 +68,23 @@ using Test
     Z = sparse(1.0I, n, n)
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
 
+    # The exact REML objective can reuse the fixed relationship precision
+    # factorization across variance-component evaluations.
+    Ainv_sparse = sparse(Float64.(spec.Ainv))
+    logdet_Ainv = logdet(cholesky(Symmetric(Ainv_sparse); check = true))
+    cached_likelihood = HSquared._sparse_reml_loglik(
+        spec, 0.7, 0.6, Ainv_sparse, logdet_Ainv,
+    )
+    direct_likelihood = sparse_reml_loglik(spec, 0.7, 0.6)
+    @test cached_likelihood.loglik ≈ direct_likelihood.loglik rtol = 1e-12
+    @test cached_likelihood.beta ≈ direct_likelihood.beta rtol = 1e-12
+    sparse_fit = fit_sparse_reml(spec; iterations = 4)
+    @test sparse_fit.likelihood.loglik ≈ sparse_reml_loglik(
+        spec,
+        sparse_fit.variance_components.sigma_a2,
+        sparse_fit.variance_components.sigma_e2,
+    ).loglik rtol = 1e-12
+
     mf = fit_matrix_free_reml(spec; nprobe = 32, seed = 20260728)
 
     # (a) result-shape / tag identity — the path exists and self-labels.
@@ -106,10 +123,21 @@ using Test
     @test length(breeding_values(mf).values) == n
     @test length(fixed_effects(mf)) == 1
 
-    # (e) compute_loglik = false skips the one factorization and reports NaN honestly
+    # (e) compute_loglik = false skips exact-likelihood factorization and reports NaN honestly;
+    #     the fitter still factors Ainv once to validate positive definiteness.
     mfn = fit_matrix_free_reml(spec; nprobe = 8, seed = 1, compute_loglik = false)
     @test isnan(mfn.likelihood.loglik)
     @test mfn.target === :matrix_free_reml
+    direct_mfn = fit_multi_effect_mc_reml(
+        spec.y,
+        spec.X,
+        [(spec.Z, spec.Ainv)];
+        nprobe = 8,
+        seed = 1,
+        ids = [collect(spec.ids)],
+    )
+    @test all(isfinite, fixed_effects(mfn))
+    @test fixed_effects(mfn) ≈ direct_mfn.beta rtol = 1e-12
 
     # (f) supplied `initial` is accepted in animal-model (sigma_a2, sigma_e2) naming
     mfi = fit_matrix_free_reml(

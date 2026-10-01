@@ -1,0 +1,22 @@
+   Resolving package versions...
+    Updating `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Project.toml`
+  [a0667dea] ~ HSquared v0.9.0 `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source` ⇒ v0.9.0 `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/..`
+    Updating `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Manifest.toml`
+  [a0667dea] ~ HSquared v0.9.0 `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source` ⇒ v0.9.0 `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/..`
+ERROR: LoadError: ArgumentError: Unable to automatically determine remote for main repo.
+> `repo` is not set, and makedocs is not in a Git repository.
+Configure `repo` and/or `remotes` appropriately, or set `remotes = nothing` to disable remote source
+links altogether (e.g. if not working in a Git repository).
+  repo: nothing
+Stacktrace:
+ [1] interpret_repo_and_remotes(; root::String, repo::String, remotes::Dict{Any, Any})
+   @ Documenter ~/.julia/packages/Documenter/13nbQ/src/documents.jl:711
+ [2] interpret_repo_and_remotes
+   @ ~/.julia/packages/Documenter/13nbQ/src/documents.jl:548 [inlined]
+ [3] Documenter.Document(; root::String, source::String, build::String, workdir::Symbol, format::MarkdownVitepress, clean::Bool, doctest::Bool, linkcheck::Bool, linkcheck_ignore::Vector{Any}, linkcheck_timeout::Int64, linkcheck_useragent::String, checkdocs::Symbol, checkdocs_ignored_modules::Vector{Module}, doctestfilters::Vector{Regex}, warnonly::Vector{Symbol}, modules::Vector{Module}, pages::Vector{Pair{String, Any}}, pagesonly::Bool, expandfirst::Vector{String}, plugins::Vector{Documenter.Plugin}, repo::String, remotes::Dict{Any, Any}, sitename::String, authors::String, version::String, highlightsig::Bool, draft::Bool, meta::Dict{Symbol, Any}, treat_markdown_warnings_as_error::Bool, others::@Kwargs{})
+   @ Documenter ~/.julia/packages/Documenter/13nbQ/src/documents.jl:474
+ [4] #makedocs#94
+   @ Documenter ~/.julia/packages/Documenter/13nbQ/src/makedocs.jl:275 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/make.jl:20
+in expression starting at /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/make.jl:20

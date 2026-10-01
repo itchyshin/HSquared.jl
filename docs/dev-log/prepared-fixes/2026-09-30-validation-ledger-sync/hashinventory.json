@@ -1,0 +1,60 @@
+{
+  "docs/design/capability-status.md": {
+    "original_sha256": "daf32aaaa16834a148d2240336990ef835befe8a6df298be6007ce91288b3e01",
+    "result_sha256": "10037f7361da6b71579e6eed2a0a940da2286772d9dd5288ebe5c427fd399bf3",
+    "original_lines": 170,
+    "result_lines": 170,
+    "row_signature_sha256": "fe85c7fba64d68817baae218d7b47fe422cd6eff35cb175c8fb753579a7d3630",
+    "table_row_count": 98,
+    "changed_lines": [
+      87,
+      88,
+      102,
+      122,
+      123,
+      131,
+      151,
+      152
+    ]
+  },
+  "docs/design/validation-debt-register.md": {
+    "original_sha256": "df409aab18c1de885acdabcbc84eacebac6956bc3bb2ef0ce936da1f5a41f46e",
+    "result_sha256": "6c72e93e45c3746d0b8e573d71eb2e9e15983b151c4a38aa6132f24e22cfb662",
+    "original_lines": 127,
+    "result_lines": 127,
+    "row_signature_sha256": "216324468ad9dd3f5f87a8dc973af677da9f29585529c455b18be8f140093e75",
+    "table_row_count": 85,
+    "changed_lines": [
+      70,
+      85,
+      86,
+      94,
+      107,
+      108,
+      113,
+      114
+    ]
+  },
+  "docs/design/legacy-laplace-objective-clarification.md": {
+    "original_sha256": null,
+    "result_sha256": "ad94ca5c1018f0174e1d14960bedc7d0662745fbc44ae20bad1cf3a85ed0a89a",
+    "original_lines": 0,
+    "result_lines": 47
+  },
+  "src/nongaussian.jl": {
+    "original_sha256": "24a31752319a1c51dbded522d8e20d066227d208e71be970cb94891beb87da00",
+    "result_sha256": "a46ef8662b42d0acdff6b76ba949c556780d55ff54d52c3ae716684992333731",
+    "original_lines": 1803,
+    "result_lines": 1816,
+    "changed_original_span": [
+      643,
+      648
+    ]
+  },
+  "docs.patch": {
+    "sha256": "5462382c48f55702cf04ac974370b94ec24dfc52544aca20a5afb68d5f0b0ba7"
+  },
+  "nongaussian-docstring.patch": {
+    "sha256": "4b702a972ea1f79c929614791b4849190d224c94783a857ea7e73b4f5a6d35a1"
+  }
+}

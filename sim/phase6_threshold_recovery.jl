@@ -14,14 +14,12 @@ fixes the liability residual variance at 1), and a binary observation
 `yᵢ = 1[μ + uₐ + eᵢ > 0]`. The estimator profiles the single `σ²a` (Brent) over the
 probit Laplace marginal.
 
-GATING follows the established `V6-BERNOULLI` precedent for binary (information-poor)
-families: the HARD GATE is on the RELIABLE signal — `converged` AND a NON-COLLAPSED
-interior `σ̂²a` (> `SIGMA_FLOOR`) AND latent correlation `cor(û,u) ≥ COR_FLOOR`. The
-`σ²a` MAGNITUDE (`rel(σ̂²a) ≤ REL_REPORT`) is REPORTED-NOT-GATED: binary single-
-threshold data carries little variance information, so the `σ²a` point estimate
-carries the documented Laplace-for-binary DOWNWARD bias (an ordinal ≥3-category
-design would be more informative). The gate/floors are PREDECLARED below BEFORE
-running, honoring the no-post-hoc-relaxation rule.
+The HARD GATE is `converged`, a NON-COLLAPSED interior `σ̂²a` (> `SIGMA_FLOOR`),
+and latent correlation `cor(û,u) ≥ COR_FLOOR`. The `σ²a` MAGNITUDE
+(`rel(σ̂²a) ≤ REL_REPORT`) is REPORTED-NOT-GATED. Its five-seed mean was below
+truth; the study does not establish population bias, its cause, or whether an
+ordinal design would reduce the error. The gate and floors are PREDECLARED below
+BEFORE running, honoring the no-post-hoc-relaxation rule.
 
 Run from the repository root (thread-capped):
 

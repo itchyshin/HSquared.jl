@@ -1,0 +1,14 @@
+{
+  "independent-review.md": "3445f061853804eb017ce6bee44d438f9aed6ce553e379786f90349d60f34c2d",
+  "inventory.json": "ce74a3dbb565ffdcbeea50b035b4a98e322af6ae8777cf7b50376e3524f3115b",
+  "isolated-testthat.R": "f623d894279009d0a0645ac5377f27337ae534941250e514c0a410cdc87df9e9",
+  "original-regression.log": "f699215bfd514ee00b1f499df24e0946f6816c286fefd42e8567472386ec09bd",
+  "package-regression.log": "4fc8fd947d86adc75bb4093bd6a51a0afb3a314e5de832da82cebeabafb684bc",
+  "packaging-note.md": "1ec55c87f1b137ca1639e3cf4633d87b276745a73ceb0656853d68b052ff6821",
+  "prepared/tests/testthat/test-multivariate-repeatability-labels.R": "5d38ab814c20be94a700b65a56cb2b039f801b0adb66c2b92ab50f9006c4a079",
+  "prepared-regression.log": "8a0a93919baf9a26f0fdbdfe6ecfb93ddad899b1c845ccdcc9e908e41fccb622",
+  "r-labels.patch": "f213d8c7301bea9f3397e6f013c8cfad345f747acf7cb53aae124b5eee74ede9",
+  "receipt.md": "b3f8afcee807fccf0c9278177e3c13865fd96cc32639b5363e323bff6b602b2f",
+  "regression.R": "34ce058fd99d7a8d9816d4d02969a99d197ebac2ff5ad9c92c62a1bcc73ccc5e",
+  "schema-wording.patch": "bb03a9d1ef664b61b28d70fd7f3658e730d1eb5a5411f42128cbf7cf1a733175"
+}

@@ -1,0 +1,196 @@
+┌ Warning: The project dependencies or compat requirements have changed since the manifest was last resolved.
+│ It is recommended to `Pkg.resolve()` or consider `Pkg.update()` if necessary.
+└ @ Pkg.API ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/API.jl:1800
+     Testing HSquared
+      Status `/private/var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/jl_Kt88aO/Project.toml`
+  [4c88cf16] Aqua v0.8.18
+  [8bb1440f] DelimitedFiles v1.9.1
+  [31c24e10] Distributions v0.25.131
+  [a0667dea] HSquared v0.9.0 `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`
+  [0f8b85d8] JSON3 v1.14.3
+⌅ [429524aa] Optim v1.13.3
+  [ade2ca70] Dates
+  [37e2e46d] LinearAlgebra
+  [de0858da] Printf
+  [9a3f8284] Random
+  [ea8e919c] SHA v0.7.0
+  [6462fe0b] Sockets
+  [2f01184e] SparseArrays v1.10.0
+  [10745b16] Statistics v1.10.0
+  [fa267f1f] TOML v1.0.3
+  [8dfed614] Test
+      Status `/private/var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/jl_Kt88aO/Manifest.toml`
+  [47edcb42] ADTypes v1.24.0
+  [7d9f7c33] Accessors v0.1.45
+  [79e6a3ab] Adapt v4.7.1
+  [66dad0bd] AliasTables v1.1.3
+  [4c88cf16] Aqua v0.8.18
+  [4fba245c] ArrayInterface v7.30.2
+  [38540f10] CommonSolve v0.2.14
+  [bbf7d656] CommonSubexpressions v0.3.1
+  [34da2185] Compat v4.18.1
+  [a33af91c] CompositionsBase v0.1.2
+  [187b0558] ConstructionBase v1.6.0
+  [9a962f9c] DataAPI v1.16.0
+  [864edb3b] DataStructures v0.19.6
+  [8bb1440f] DelimitedFiles v1.9.1
+  [163ba53b] DiffResults v1.1.0
+  [b552c78f] DiffRules v1.16.0
+  [a0c0ee7d] DifferentiationInterface v0.7.21
+  [31c24e10] Distributions v0.25.131
+  [ffbed154] DocStringExtensions v0.9.5
+  [4e289a0a] EnumX v1.0.7
+  [1a297f60] FillArrays v1.17.1
+  [6a86dc24] FiniteDiff v2.33.0
+  [f6369f11] ForwardDiff v1.4.6
+  [a0844989] Gamma v1.2.0
+  [a0667dea] HSquared v0.9.0 `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`
+  [34004b35] HypergeometricFunctions v0.3.30
+  [3587e190] InverseFunctions v0.1.17
+  [92d709cd] IrrationalConstants v0.2.6
+  [692b3bcd] JLLWrappers v1.8.0
+  [0f8b85d8] JSON3 v1.14.3
+⌃ [d3d80556] LineSearches v7.5.1
+  [2ab3a3ac] LogExpFunctions v1.0.2
+  [1914dd2f] MacroTools v0.5.16
+  [e1d29d7a] Missings v1.2.0
+⌅ [d41bc354] NLSolversBase v7.10.0
+  [77ba4419] NaNMath v1.1.4
+⌅ [429524aa] Optim v1.13.3
+  [bac558e1] OrderedCollections v2.0.1
+  [90014a1f] PDMats v0.11.41
+⌅ [69de0a69] Parsers v2.8.8
+  [85a6dd25] PositiveFactorizations v0.2.4
+⌅ [aea7be01] PrecompileTools v1.2.1
+  [21216c6a] Preferences v1.6.0
+  [43287f4e] PtrArrays v1.4.0
+  [1fd47b50] QuadGK v2.11.3
+  [189a3867] Reexport v1.2.2
+  [79098fc4] Rmath v0.9.0
+  [f2b01f46] Roots v3.0.8
+  [efcf1570] Setfield v1.1.2
+  [a2af1166] SortingAlgorithms v1.2.3
+  [276daf66] SpecialFunctions v2.9.0
+  [1e83bf80] StaticArraysCore v1.4.4
+  [82ae8749] StatsAPI v1.8.0
+  [2913bbd2] StatsBase v0.34.13
+  [4c63d2b9] StatsFuns v2.2.1
+  [856f2bd8] StructTypes v1.11.0
+  [efe28fd5] OpenSpecFun_jll v0.5.6+0
+  [f50d1b31] Rmath_jll v0.5.2+0
+  [0dad84c5] ArgTools v1.1.1
+  [56f22d72] Artifacts
+  [2a0f44e3] Base64
+  [ade2ca70] Dates
+  [8ba89e20] Distributed
+  [f43a241f] Downloads v1.6.0
+  [7b1f6079] FileWatching
+  [9fa8497b] Future
+  [b77e0a4c] InteractiveUtils
+  [b27032c2] LibCURL v0.6.4
+  [76f85450] LibGit2
+  [8f399da3] Libdl
+  [37e2e46d] LinearAlgebra
+  [56ddb016] Logging
+  [d6f4376e] Markdown
+  [a63ad114] Mmap
+  [ca575930] NetworkOptions v1.2.0
+  [44cfe95a] Pkg v1.10.0
+  [de0858da] Printf
+  [3fa0cd96] REPL
+  [9a3f8284] Random
+  [ea8e919c] SHA v0.7.0
+  [9e88b42a] Serialization
+  [6462fe0b] Sockets
+  [2f01184e] SparseArrays v1.10.0
+  [10745b16] Statistics v1.10.0
+  [4607b0f0] SuiteSparse
+  [fa267f1f] TOML v1.0.3
+  [a4e569a6] Tar v1.10.0
+  [8dfed614] Test
+  [cf7118a7] UUIDs
+  [4ec0a83e] Unicode
+  [e66e0078] CompilerSupportLibraries_jll v1.0.5+1
+  [deac9b47] LibCURL_jll v8.4.0+0
+  [e37daf67] LibGit2_jll v1.6.4+0
+  [29816b5a] LibSSH2_jll v1.11.0+1
+  [c8ffd9c3] MbedTLS_jll v2.28.2+1
+  [14a3606d] MozillaCACerts_jll v2023.1.10
+  [4536629a] OpenBLAS_jll v0.3.23+2
+  [05823500] OpenLibm_jll v0.8.1+2
+  [bea87d4a] SuiteSparse_jll v7.2.1+1
+  [83775a58] Zlib_jll v1.2.13+1
+  [8e850b90] libblastrampoline_jll v5.8.0+1
+  [8e850ede] nghttp2_jll v1.52.0+1
+  [3f19e933] p7zip_jll v17.4.0+2
+        Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading.
+     Testing Running tests...
+ERROR: LoadError: Some tests did not pass: 436 passed, 3 failed, 0 errored, 0 broken.
+in expression starting at /Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:82
+Test Summary:                                           | Pass  Total  Time
+Selected inverse trace validates support and dimensions |   28     28  0.1s
+Test Summary:                                     | Pass  Total  Time
+Selected inverse rejects a failed Cholesky factor |    2      2  0.2s
+Test Summary:                                     | Pass  Total  Time
+Selected inverse rejects nonfinite inverse values |    3      3  0.0s
+Test Summary:                                            | Pass  Total  Time
+one known inbred parent and one unrelated missing parent |   18     18  0.5s
+Test Summary:                                            | Pass  Total  Time
+Float64 selfing boundary rejects zero Mendelian variance |    2      2  0.0s
+Test Summary:             | Pass  Total  Time
+Aqua.jl quality assurance |   10     10  7.8s
+HSquared Phase 0 scaffold: Test Failed at /Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:203
+  Expression: all((occursin(_status_page_cell(row.claim_boundary), status_page) for row = validation))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:203 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:83
+HSquared Phase 0 scaffold: Test Failed at /Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:256
+  Expression: all((occursin("not REML or AI-REML", (only((row for row = validation if row.id == id))).claim_boundary) for id = legacy_v6_ids))
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:256 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:83
+HSquared Phase 0 scaffold: Test Failed at /Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:566
+  Expression: occursin("FITTING = 1", threshold_row.claim_boundary)
+   Evaluated: occursin("FITTING = 1", "COVERED is SCOPED to the EXACT per-dataset add-one permutation rule for a FIXED-EFFECT/intercept-only single-marker scan (`genome_wide_marker_scan` / R `gwas(genome_wide = TRUE)`), type-I-CONTROL only, on the tested LD architecture + designs; established by the doc-16 substitutable gate (validation #203/#204 + production REBUILD #207 type-I gates PASSED, PLINK max(T) comparator #205 executed, R activation hsquared #113 live-verified, Rose PROMOTE). NOT covered / fenced out: the relatedness-corrected mixed-model/LOCO genome-wide null, power/coverage, broader-LD/covariate-adjusted calibration, the `(1-alpha)` quantile rule (anti-conservative, #202) and the fixed-null-reuse simulation shortcut (mildly anti-conservative), and the map-annotated formula-level scan API. NOT the public default (the current R-public covered count stays 7); the permutation driver + calibration/comparator evidence are opt-in/outside CI.")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:566 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ ~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/test/runtests.jl:83
+Test Summary:             | Pass  Fail  Total  Time
+HSquared Phase 0 scaffold |  436     3    439  6.7s
+ERROR: Package HSquared errored during testing
+Stacktrace:
+ [1] pkgerror(msg::String)
+   @ Pkg.Types ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/Types.jl:70
+ [2] test(ctx::Pkg.Types.Context, pkgs::Vector{Pkg.Types.PackageSpec}; coverage::Bool, julia_args::Cmd, test_args::Cmd, test_fn::Nothing, force_latest_compatible_version::Bool, allow_earlier_backwards_compatible_versions::Bool, allow_reresolve::Bool)
+   @ Pkg.Operations ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:2018
+ [3] test
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:1899 [inlined]
+ [4] test(ctx::Pkg.Types.Context, pkgs::Vector{Pkg.Types.PackageSpec}; coverage::Bool, test_fn::Nothing, julia_args::Vector{String}, test_args::Cmd, force_latest_compatible_version::Bool, allow_earlier_backwards_compatible_versions::Bool, allow_reresolve::Bool, kwargs::@Kwargs{io::IOStream})
+   @ Pkg.API ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/API.jl:444
+ [5] test(pkgs::Vector{Pkg.Types.PackageSpec}; io::IOStream, kwargs::@Kwargs{julia_args::Vector{String}})
+   @ Pkg.API ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/API.jl:159
+ [6] test(; name::Nothing, uuid::Nothing, version::Nothing, url::Nothing, rev::Nothing, path::Nothing, mode::Pkg.Types.PackageMode, subdir::Nothing, kwargs::@Kwargs{julia_args::Vector{String}})
+   @ Pkg.API ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/API.jl:174
+ [7] top-level scope
+   @ none:1

@@ -1,4 +1,62 @@
+Current status (2026-10-01T01:30:53.684964+00:00): fresh Julia 1.13.1 package, required R bridge and documentation checks pass; all three exact-source evidence modes pass. Root ledger is 10/11 and all child ledgers pass. V3 remains open for final independent receipt, current-head hosted acceptance and ordinary Julia landing. R PR #259 is merged with Linux and Windows main CI passing. Numerical source aggregate 59d4a803 is unchanged by the independently reviewed test corrections. Historical states below retain their original scope and timestamps.
+
 # Coordination Board
+
+## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
+
+The approved200-seed Totoro FA primary is COMPLETE and immutable:110 recovered,20 G-error classifications,11 R-error classifications and59 nonconverged, with all200 attempts retained. The recovery rate is55%, MCSE3.52percentage points, Wilson95%48.1%–61.7%; no aggregate pass cutoff was declared. No restart, GPU or new campaign.
+
+All24 tracked src files have complete pinned dispositions and independently approved deltas. Current source2ae2c98f8bc7e664a6e07571a08775359d79698689470bc19feb97657d420869 includes the330-check original-fit identity correction. Subsequent full suite passes those original fit assertions and the61-check GLLVM fixture, then exposes one remaining helper identity assertion in test_sparse_aireml_input_contracts.jl59 after400.38seconds. The author and Astra are completing a sweep of all related original contracts before rerun. Original tests remain intact. A missing marker-fixture Statistics import was corrected and its prior error retained. V1 remains open; A2/E1/V3 remain open pending final integrated acceptance.
+
+The exact-source FA/GLLVM live R-Julia check passes213/213, zero failures/warnings/skips,28.31seconds with require_bridge=true. Current R source archive854f021a24e247ebf3dbc9e6e78b8257b9d69760cd6c7a3e44353ec0e1e8f3ff passes R CMD check StatusOK in86.26seconds. Full local R pkgdown builds in110.59seconds with example execution disabled; local Julia Documenter builds from exact source in47.76seconds. Source-to-copy and rendered caveat checks pass. These are local candidate results, without a deployment or release claim.
+
+Astra independently accepts the bounded numerical evidence with explicit debts; Sol6.1High accepts bounded FA/GLLVM/paired-maternal contracts and allBP01–04 repairs; LunaMedium accepts current source/rendered claims with package acceptance still pending. The planned second Luna was unavailable, and an actual Sol fallback is recorded. Native goal stays active. Historical PR401CI is green at a7ca8ed5 and contains unchanged W1-05 tests, closing its historical recording gap. That head does not prove current dirty-candidate CI. Existing PRs are Julia401 and R259, both attached to this chat; both repositories are public. No new submission, registry action, release tag, GPU, capability status or covered-count change.
+
+The Graft graph is rebuilt for live src/test/ext/tools/sim/comparator paths,216files; archived repair snapshots are excluded from query ranking. Two pre-existing local platform configurations in .claude/settings.json and .cursor/hooks.json are protected and will be excluded from source landing. Exact freezes, raw failures, successful checks and reviews are retained in the final-integrated evidence folder and final-panel directory.
+
+### 2026-09-30: current-candidate FA ordinary-start pre-run
+
+Fresh non-primary seed `20261407` was run against the current `src/` tree after finding the prior Totoro pre-run hash was stale. Both ordinary and balanced starts reached the 5,000-iteration cap; the driver retained the attempt as nonconverged in 162.8 seconds. Exact hashes and the raw row are in `docs/dev-log/recovery-checkpoints/2026-09-30-fa-ordinary-start-current-candidate-prerun.md`. A conservative 18-hour estimate for the 200-seed serial primary run is recorded. It has not started and awaits Shinichi's explicit approval. No FA status, GPU, or release change.
+
+### 2026-09-30: pedigree inverse regression closure
+
+Henderson's GPT-6.1 Sol High exact-byte follow-up found no defect in sparse inverse assembly or Mendelian sampling formulas. The missing inbred-known-parent/unknown-mate cases are now pinned for sire and dam positions, with a descendant and Float64 boundary fixture. Focused tests pass 20/20 and the full `Pkg.test()` run passed. Rose's scoped audit passed after correcting runtime, status, and terminal-ramet claims. One `O(q)` benchmark comment in `sim/phase5_sparse_aireml_benchmark.jl:88` remains because preflight found divergent work on the stale Claude handover ref. The experimental clone-as-parent defect remains open and outside the FA/GLLVM cells. No capability or covered count changed. E1, A2, and V3 remain open. Receipts: `docs/dev-log/source-review/2026-09-30-pedigree-review.md` and `docs/dev-log/after-task/2026-09-30-pedigree-source-review.md`.
+
+### 2026-09-30: matrix-free REML wording follow-up
+
+The exact-current solver reviewer signed off corrected fixed-point, convergence, trace-MCSE, and likelihood-field wording. Focused numerical/pedigree tests passed 249 assertions, the full Julia package suite passed, and the temporary content-matched docs build rendered successfully. A Graft search found older matrix-free claims in `src/validation_status.jl`; preflight reports 34 divergent refs for that file, so status edits are deferred for ownership/evidence reconciliation. This closes only the docstring findings. E1, A2, and V3 remain open; no capability count, GPU, or release state changed. See `docs/dev-log/source-review/2026-09-30-iterative-solver-doc-followup.md`.
+
+### 2026-09-30: FA exact-current component review
+
+Kirkpatrick/Astra reviewed the exact current T4/K1 FA engine and three focused test files. No new fit-correctness defect blocks the bounded cell; component PASS, A2 HOLD. Expected information remains a plug-in diagnostic, and the observed near-floor ordinary-start fit does not establish recovery. A stale RNG-free docstring was carried because preflight found six refs with work on `src/multivariate.jl`; source-line ownership must be reconciled before editing. Current live R FA/GLLVM tests pass 213/213 against this Julia candidate. Receipts: `docs/dev-log/source-review/2026-09-30-fa-exact-current-component-review.md` and sibling `hsquared/docs/dev-log/after-task/2026-09-30-live-fa-gllvm-bridge-recheck.md`.
+
+<!-- slop-ok: historical coordination records retain their original wording; the current audit note is written plainly. -->
+
+### 2026-09-30: variational fixed-effect Schur correction recheck
+
+The current Julia candidate passes full `Pkg.test()` after the shared-effect mean-Hessian Schur repair. Astra/Noether passed scoped exact-hash mathematical review; the test detects the prior invalid curvature path but does not assert its exact corrected value. This closes one numerical finding only. A2, E1, and V3 remain open. No source implementation, capability status, covered count, GPU, release, registry, or tag action changed. Receipt: `docs/dev-log/after-task/2026-09-30-va-schur-recheck.md`.
+
+### 2026-09-29: selected-inverse and payload parser review repairs
+
+Gauss and Boole found and repaired selected-inverse and parser/schema contract gaps. The latest focused trace tests pass 27/27, including dense checks under nonidentity permutation; the final Julia 1.10 package suite also passed with exit 0. Both component reviewers signed off on exact-current hashes. Whole-wave E1 remains open alongside A2 and V3. No capability or covered count changed. Details: `docs/dev-log/source-review/2026-09-29-e1-selinv-bridge-repair.md`.
+
+### 2026-09-29: iterative-solver precision and control contracts
+
+The exact-current numerical review found and repaired an assembled animal-PCG `Ainv` validation bypass, non-finite and unrepresentable variance/tolerance inputs, an MC-EM update overflow boundary, and missing early REML shape guards. The focused wave-1 regression passes 126/126; final Julia 1.10 `Pkg.test()` passes. Gauss signed off on the exact final source/test hashes. Rose confirmed the regenerated FA row now states that Ledermann slack is only a generic dimension check and fitted uniqueness information is not assessed. No status count or capability changed. A2, E1, and V3 remain open; no GPU, release, registry, merge, or tag action. Receipts: `docs/dev-log/source-review/2026-09-29-iterative-solve-precision-controls.md`, `docs/dev-log/after-task/2026-09-29-iterative-solve-precision-controls.md`, and `docs/dev-log/check-log.d/2026-09-29-iterative-solve-precision-controls.md`.
+
+### 2026-09-29 — Evolvability numerical stability closeout
+
+Codex review lane hardened finite-scale arithmetic and inverse-metric conditioning for the descriptive G-matrix utilities. Focused tests passed 18/18 and the full Julia 1.10 package suite passed. A separate exact-current T4/K1 FA development replay also passed with ordinary and balanced starts converged; this is a single-seed diagnostic, not a recovery-rate estimate. `V4-EVOLVE` remains partial and the 200-seed FA primary remains held for approval. No capability or release status changed. Receipts: `docs/dev-log/after-task/2026-09-29-evolvability-stability.md`, `docs/dev-log/after-task/2026-09-29-fa-driver-fix.md`, and `docs/dev-log/check-log.d/2026-09-29-fa-exact-current-replay.md`. The wider A2/E1/V3 and source-review gates remain open.
+
+### 2026-09-29: Julia exact-current source coverage audit
+
+Codex recorded the independent Wave 1–4 coverage audit at
+`docs/dev-log/source-review/2026-09-29-exact-current-coverage-audit.md` and a
+full current-candidate `Pkg.test()` pass. All 22 tracked Julia source files now
+have an inventoried SHA-256, but the independent audit found stale pins and
+unreviewed spans. E1 remains on HOLD, as do A2 and V3. Do not infer source
+review completion from the green test suite. The 200-seed FA recovery study
+remains held for approval at its recorded 8.1-hour estimate.
 
 ## Compute (for opt-in sims / calibration campaigns)
 
@@ -1433,3 +1491,259 @@ JOINT contract task per AGENTS.md rule 2.
   artifact is frozen at `a1bd525e`. Neither PR #322 nor PR #202 was updated.
 - Both candidates remain local and unmerged. Gate B is not authorized by this
   record: no release, tag, registry, CRAN submission, merge, or promotion.
+
+## 2026-09-28 — sparse REML review follow-up
+
+- Codex owns the local sparse precision factor-reuse slice on
+  `codex/hsquared-fa-gllvm-20260927`, limited to
+  `src/iterative_solve.jl`, `src/likelihood.jl`,
+  `test/test_matfree_reml_inci_pins.jl`, and its Wave 1/check/after-task notes.
+- The bounded repair and full local `Pkg.test()` are recorded in
+  `docs/dev-log/after-task/2026-09-28-sparse-reml-factor-cache.md`.
+- The FA evidence lane retains `GATES.md` and its listed paths. The broad Julia
+  source-review waves remain open; this slice does not authorize a merge,
+  release, registry submission, CRAN submission, or public tag.
+
+## 2026-09-28 — FA diagnostics and Wave 3 review continuation
+
+- Codex owns the FA Julia multi-start change in `src/multivariate.jl` and its
+  focused test. A non-FA `L === nothing` validity regression was fixed; focused
+  multivariate and FA tests passed 74 assertions. The FA test remains outside
+  `test/runtests.jl` while that entrypoint is owned by the Wave 2 review lane.
+- Codex owns the Wave 3 empty-marker diagnostics fix in `src/data.jl` and
+  `test/test_data_empty_marker_status.jl`. Red reproduced the empty minimum;
+  green passed 2/2. Standard test-runner integration remains pending the same
+  `test/runtests.jl` lease.
+- The hsquared R candidate has a red FA start-diagnostics parity contract in
+  `tests/testthat/test-fa-optin.R`. The bridge and normalizer remain owned by
+  the Wave 2 review lane; the live JuliaCall check was blocked by the sandbox's
+  Julia cache write restriction. Do not treat R parity as passed.
+- Henderson's bounded pedigree review found no animal-model blocker in the
+  assigned spans and reported the empty-map diagnostic issue, now fixed.
+  Gauss's read-only `nongaussian.jl` review identified unresolved convergence,
+  separation, profile-interval, ID-validation, and objective-label findings;
+  those require separate disposition. E1 remains HOLD.
+- The FA evidence lane retains `GATES.md`; A2, E1, and V3 remain open. No GPU
+  execution, release submission, registry submission, merge, or public tag is
+  authorized by these local slices.
+
+## 2026-09-29 — FA cap diagnostic update
+
+- The six-seed 5,000-cap development set and three same-data 10,000-cap
+  diagnostics are recorded in the FA preregistration and GATES.md. No
+  optimizer default or frozen primary method changed.
+- The 200-seed 5,000-cap primary run is still held. The updated estimate is
+  about 8.5 hours with a 2x margin plus startup, so it requires Shinichi's
+  explicit approval under the compute rule.
+- Correction to the 2026-09-28 note: test/test_multivariate_fa_multistart.jl
+  is now included from test/runtests.jl. The R bridge status and start
+  diagnostics were subsequently verified in the 113/113 focused FA bridge
+  suite and fresh package checks recorded in GATES.md; the older red-contract
+  note is historical, not current status.
+- A2, E1, and V3 remain open. Ordinary-start recovery remains unestablished.
+  No GPU execution, release submission, registry submission, merge, or public
+  tag is authorized by this update.
+
+
+## 2026-09-29 — exact-source Gaussian FA comparator
+
+- Reran the independent base-R BFGS and Julia Nelder-Mead fits on the same
+  four-trait, rank-one Gaussian pedigree fixture. The Julia source SHA-256
+  `68f1ec986764e06417381008405f492a3bd8da9d8399bbf8511f4467f31ecc55` was
+  unchanged before and after the fit. Both fits converged from truth-informed
+  starts; maximum absolute differences were 7.25e-6 for G and 1.58e-5 for R.
+- Exact-source comparator provenance is now recorded for this one fixture.
+  This does not establish ordinary-start recovery or population reliability;
+  FA, A2, E1, and V3 validation gates remain open. No source/API/test changes,
+  GPU execution, merge, release submission, registry submission, or tag.
+
+### 2026-09-29 — Wave 4 selected genomic input contracts
+
+- Numerical review reproduced five CPU-side malformed-input defects in genomic utilities. TDD and implementation now cover converted finite weights and scales, canonical LOCO key uniqueness, finite positive direct-scan residual variance after Float64 conversion, finite supplied-null values, and single-step matrix/knob/result validity.
+- Independent post-fix review confirmed these findings repaired, the valid `G = A[g,g]` reduction and reversed genotype ordering preserved, and no new defect found. Focused tests pass 19/19. Final full `Pkg.test()` passed and the Julia docs build passed from the synchronized writable copy; full receipts are in `check-log.md`.
+- Carried: sparse provenance/dense allocation costs, APY/LOCO scale, metafounder raw-input order, scan conditioning and calibration, and unchanged GPU guards. This does not close full Wave 4 or E1 and does not promote a genomic capability. No GPU, release submission, registry submission, merge, or tag.
+
+### 2026-09-29 — Wave 3 pedigree input contracts
+
+- Closed two bounded source findings: raw parent diagnostics now preserve one-sided `father`/`mother` aliases, and the exported `Pedigree` constructor validates normalized index structure while permitting supported selfing.
+- Curie and Henderson supplied independent read-only contracts; Rose reviewed the public wording and prompted a selfing qualification that is now documented. Focused tests, full Julia package tests, and the local docs build passed.
+- Wave 3 remains HOLD for remaining source spans and panel signoff. A2, E1, and V3 remain open. No R bridge, fitted capability, GPU, or release action is implied.
+
+### 2026-09-29 — bounded Wave 2 covariance-LRT guards
+
+- Codex closed only the `covariance_structure_lrt` input-prerequisite subfinding. The helper now requires converged fits with finite likelihoods and valid, dimension-matched genetic covariance matrices, and permits only the supported nested structure pairs.
+- The tested T5/K2 FA examples did not converge and are refused by the helper. Synthetic positive-definite fit-shaped records test parameter counting and nominal-tail arithmetic only; the low-rank boundary limit is not derived here. No fitted FA LRT or inference readiness is established.
+- Julia `Pkg.test()` passed, including 34/34 structured-LRT assertions. The content-matched local docs build passed with the warnings recorded in `check-log.md`.
+- A2, E1, and V3 remain open. The 200-seed recovery run remains held at an estimated 8.5 hours pending explicit approval. No GPU, release submission, registry submission, merge, or tag.
+- Shinichi reports Totoro is back online. This resolves the compute-availability issue, but does not itself start or approve the 200-seed run.
+
+### 2026-09-29 — GLLVM inner Hessian failure guard
+
+- Julia candidate `codex/hsquared-fa-gllvm-20260927` now returns structured finite-score nonconvergence before observed-Hessian factorization; it types nonfinite parameter evaluations and invalid observed curvature; only those candidate-local errors become `Inf` in the outer optimizer.
+- A final fitted candidate must have a converged mode and finite objective. Tests preserve malformed relationship-matrix errors.
+- Focused `test/genetic_gllvm_trait_effects.jl` passes 61/61 assertions. Gauss approved the narrow final diff. Exact run and limits: `docs/dev-log/check-log.d/2026-09-29-gllvm-inner-hessian-failure.md`.
+- E1 and the full GLLVM/source-review gates remain open. No R bridge files were edited. No campaign was run; Totoro availability changes routing for a separately approved campaign only.
+
+### 2026-09-29 — FA ordinary-start driver repair
+
+- The FA recovery driver now retains failures from DGP/truth setup, writes nullable start diagnostics as `NA`, records uniqueness-floor and start-disagreement diagnostics, and labels source-tree and driver hashes separately. `Sockets` is declared as a test-only dependency for loading the driver in the package suite.
+- The focused driver tests passed 16/16 and full Julia `Pkg.test()` passed. Totoro's Julia 1.10.12 development seed 20261406 recovered in 49.61 seconds with both starts converged. The exact row and provenance reconciliation are in the dated amendment and check-log shard.
+- The estimated 200-seed primary run is now about 8.1 hours plus startup with the 2x margin. It has not started and remains held for explicit Shinichi approval. No capability promotion, GPU execution, release submission, registry submission, merge, or tag.
+
+### 2026-09-29 — Wave 2 random-regression input contracts
+
+- The RR portions of W2-03/W2-07 now reject wrong-length IDs, nonfinite dense
+  or sparse incidence matrices, and nonfinite/nonpositive residual variances
+  before fitting. Focused checks passed 105/105 and the full Julia package test
+  run printed its success marker.
+- Gauss and Astra reviewed the final source/test spans; Rose aligned adjacent
+  source and roadmap wording with the covered k=2 Julia/R cells. Capability
+  rows and covered count did not change.
+- The full Wave 2 and E1 source-review gates remain open. A2 and V3 also remain
+  open. No simulation or GPU work, release submission, registry submission,
+  merge, or tag was performed.
+
+### 2026-09-29 — Wave 4 genomic boundary classifier follow-up
+
+- The exact profiled REML endpoint score replaces the fixed-step score in the
+  current experimental candidate, and endpoint-adjacent refined likelihoods
+  remain in the endpoint comparison. The three-observation regression now
+  returns unresolved instead of falsely calling a strict interior optimum a
+  lower endpoint.
+- Missing/non-string provenance and named numerical factorization failures
+  now fail closed. `ArgumentError` and other programming/input errors still
+  propagate.
+- The frozen design 46 remains unchanged. Design 59 records the changed
+  candidate and states that the historical July holdout does not validate it.
+  The capability-status wording now names the frozen July candidate.
+- Focused tests pass 19/19; full `Pkg.test()` passes. No capability row or
+  covered count changed. This is one bounded E1 repair; remaining spans,
+  whole-wave review, and E1/A2/V3 signoff remain open. No campaign, GPU,
+  release, registry, merge, or tag action occurred.
+- The evidence promotion gate passed and the after-task structure check passed.
+  The repository closeout stopped at five active, unmet programme ledgers; this
+  bounded slice did not abandon or close those unrelated acceptance gates.
+- Full receipts: `docs/dev-log/source-review/2026-09-29-wave2-random-regression-followup.md` and `docs/dev-log/check-log.d/2026-09-29-wave2-random-regression.md`.
+
+### 2026-09-29: Wave 4 single-step symmetry tolerance
+
+- Fixed the reviewed scale-dependent symmetry check in the single-step genomic constructor. Tolerance is now relative to the largest entry, and accepted pairs use overflow-safe midpoint arithmetic.
+- TDD reproduced the tiny asymmetric-input acceptance and the later `1e308` averaging overflow. Focused assertions pass 24/24; the full Julia suite passes.
+- Independent Gauss review passed the final helper and test hashes. E1/Wave 4, A2, and V3 remain open. No capability row or covered count changed; no GPU or release action.
+- Receipt: `docs/dev-log/source-review/2026-09-29-wave4-genomic-symmetry.md`.
+
+### 2026-09-29: Wave 4 genomic symmetry and overflow follow-up
+
+- Corrected the public constructor docstring attachment; added APY finite-conversion and regularization checks; changed single-step symmetry validation to pairwise relative checks; rejected nonfinite weighted genomic outputs.
+- Final focused counts: API docs 3/3, single-step 25/25, Wave 1 contracts 126/126, constructor checks 16/16, APY checks 8/8, and partial-core/Schur-cutoff 5/5. Full `Pkg.test()` and docs build exited 0; final weighted-overflow and partial-core assertions passed in focused reruns.
+- Gauss and Karpinski approved the implementation component after exact-source review. This does not sign off Wave 4 or E1; A2 and V3 also remain open. No capability count, release, or GPU state changed.
+- Receipt: `docs/dev-log/source-review/2026-09-29-wave4-genomic-symmetry-overflow-followup.md`.
+
+### 2026-09-29: one-sided raw pedigree parent aliases
+
+- Positional parent inference now runs only when neither recognized parent
+  alias is supplied, so unrelated metadata cannot be interpreted as a parent.
+- TDD reproduced four failures; focused empty-map and alias checks passed 2/2
+  and 13/13. Full Julia 1.10 `Pkg.test()` passed. The bridge reviewer passed
+  the exact final hashes.
+- This closes only a Julia input-diagnostic finding. A2, E1, and V3 remain
+  open; no capability row or covered count changed. No simulation, GPU, release
+  submission, registry submission, merge, or tag.
+- Receipts: `docs/dev-log/source-review/2026-09-29-data-parent-alias.md` and
+  `docs/dev-log/check-log.d/2026-09-29-data-parent-alias.md`.
+
+### 2026-09-29: FA residual covariance underflow boundary
+
+- Added a positive-definiteness check to the multivariate REML objective and
+  selected-attempt validity. The regression first reproduced finite objective
+  `2.717389505828925` for a singular residual covariance caused by exponent
+  underflow.
+- The focused FA multistart file passes 49/49 and final-candidate Julia 1.10
+  `Pkg.test()` exits 0. Gauss passed the exact code/test hashes; Rose confirmed
+  that capability status and public claims do not change.
+- Only the invalid residual trial-point case in `fit_multivariate_reml` is
+  closed. The helper is shared by other fitters, which this check does not
+  cover. A2, E1, and V3 remain open. No simulation, GPU, release, registry,
+  merge, or tag action.
+- Receipt: `docs/dev-log/source-review/2026-09-29-fa-residual-boundary.md`.
+
+### 2026-09-29: optimizer covariance boundaries follow-up
+
+- Expanded the residual-only repair after exact-hash review found sibling log-variance paths and genetic covariance underflow could still fail late or produce invalid correlation outputs.
+- Covered residual and genetic covariance admissibility plus finite-positive log-variance checks across the named multivariate, repeatability, direct-maternal, random-regression, two-effect, and K-effect dense routes.
+- Focused tests pass 89/89; final Julia 1.10 `Pkg.test()` exits 0. Gauss, Karpinski, and Noether pass exact-hash review. Rose's refreshed evidence and public-claim audit is clean with limitations.
+- The older residual-only receipt remains a historical snapshot. The exact current candidate and hashes are in `docs/dev-log/after-task/2026-09-29-optimizer-covariance-boundaries.md`.
+- A2, E1, V3, and whole-wave source review remain open; no capability or covered-count change, simulation, GPU run, release, registry submission, merge, or tag.
+
+### 2026-09-29: exact-current Gaussian FA review
+
+- Re-reviewed the exact dirty-tree FA source `src/multivariate.jl` SHA-256 `fc41aefefb61b2cc915d4f802b0017dc4daea5daa795a9d3421854e9c4958670`. Kirkpatrick's covariance/interpretation review and Noether's mathematical review are conditional passes; Rose's claim audit is clean with limitations.
+- The focused FA tests pass 91 assertions. Independent R/Julia same-model REML fits agree within `7.2491e-6` for G and `1.5804e-5` for R, but both reach a solution with two uniqueness values within `5.1e-6` of the absolute floor.
+- The new fitted trait-order regression passed 62/62 assertions in its test file and received Kirkpatrick and Noether review on the exact hash. This closes the one-fixture mapping check only; A2 remains open for fitted-likelihood information, routine-start recovery, broader trait-order coverage, the held multi-seed study, remaining spans, and whole-wave signoff. E1 and V3 remain open; no capability row, covered count, or release status changed.
+- Receipt: `docs/dev-log/source-review/2026-09-29-fa-exact-current-review.md`.
+
+### 2026-09-29: sparse REML input controls
+
+- Direct sparse precision validation and sparse/AI/matrix-free optimizer control checks are implemented with focused regressions. Full Julia `Pkg.test()` passes; Gauss and Noether passed exact-hash review.
+- This internal validation repair does not change capability status or covered count. A2, E1, and V3 remain open.
+- Receipt: `docs/dev-log/after-task/2026-09-29-sparse-reml-input-controls.md`.
+
+
+### 2026-09-29 exact-current capability-status audit
+
+- Rose passed the current FA/GLLVM status and claim-boundary wording with limitations on exact source hashes. FA remains bounded to its reviewed T4/K1 engine cell; GLLVM's ordinary-start replay remains one Poisson T3/K2 cell. Auto-rank is unvalidated and not claimed.
+- Direct contract tests passed 15/15 and malformed-genomics input tests passed 24/24 using Julia with compiled modules disabled. No capability row or covered count changed.
+- A2, E1, and V3 remain open. Receipt: `docs/dev-log/source-review/2026-09-29-validation-status-review.md`.
+
+### 2026-09-29 dense Gaussian relationship precision guard
+
+- Restored invalid-method rejection and added finite/symmetry checks before dense relationship precision factorization. The red regressions reproduced both the fitter-method and asymmetric-input defects; focused tests and full Julia 1.10 `Pkg.test()` pass.
+- Gauss and Noether passed the exact source/test hashes. This is an internal dense Gaussian input-contract repair only; A2, E1, and V3 remain open. No capability row, covered count, release status, or GPU status changed.
+- Receipt: `docs/dev-log/source-review/2026-09-29-dense-relationship-precision.md`.
+### 2026-09-30 - Julia iterative-solver E1 repair
+
+- Codex closed three bounded findings in `src/iterative_solve.jl`: rank-deficient fixed effects could pass iterative REML routes, the zero-response likelihood could bypass a nonpositive PCG iteration budget, and the log-likelihood documentation understated finite-Lanczos and PCG error.
+- Final focused Wave 1 contracts pass 152/152. Full Julia 1.10 `Pkg.test()` passes; local `docs/make.jl` renders. Exact source/test hashes and detailed limits are recorded in `docs/dev-log/source-review/2026-09-30-iterative-solver-e1-repair.md`.
+- Gauss/Astra reviewed and approved the exact hashes. Noether, Karpinski, and Rose exact-hash follow-up reviews are pending. No R files were changed. E1, A2, and V3 remain open; no capability row, covered count, release, GPU, submission, merge, or tag state changed.
+
+## Final helper application, 2026-09-30T22:28:41.206580+00:00
+
+Applied exact independently accepted helper identity delta. Source tree11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773, likelihoodd77e6565e574ce428371fb86f8322d12edc977ead5f05093d24c4204ef85e935 and runner02a30cdeedf0dfd201020ef616060872100942d54a6ab3e04695ba449373b70b are frozen. All original reference assertions are intact;670 author/original plus24 independent assertions pass694/694. Full package rerun is in progress with a12-minute owned timeout and one Julia/BLAS thread. Final live bridge passes213/213 with zero failures/warnings/skips in27.64seconds. Exact-source cached local Julia documentation builds in49.34seconds. R archive and site source bytes remain unchanged from their passing checks. Current conditional panel scope accepts bounded FA/GLLVM once the final package check passes; queued generic-v2 production is separate debt. Programme gates remain open pending fresh package evidence and final ledger/landing. No GPU, new submission, registry action, tag or campaign restart.
+
+## Module registration follow-up, 2026-09-30T22:43:05.617759+00:00
+
+The full suite completed425.30seconds with20 failures and9 errors in the new selected-inverse fixture, all caused by HSquared missing in its isolated module. The neighboring evolvability module had the same setup omission. Added two module-local imports only; original tests and numerical source remain unchanged. Replayed all16 appended modules together:1432 assertions across23 testsets pass. A fresh full package run is in progress with the12-minute owned timeout. Final bridge/docs source remains identical. The capability citation checker found one stale direct-maternal runner line; after the exact pointer correction all87 citations pass. A2/E1/V1/V3 remain pending final acceptance; no GPU/submission/tag/restart.
+
+## Final local checks and landing preparation, 2026-09-30T22:56:58.704678+00:00
+
+Full Julia suite passes417.16seconds at source11f6319f/runner58cea5f; all213 current live R-Julia checks pass without failures/warnings/skips; R archive854f has Status:OK, and both documentation sites build locally. The installed independently challenged evidence checker passes three scopes against retained hashes. A2/E1 bounded review judgments are accepted; V1/V2 reverified. All child ledgers are met, with nine actual read-only checks replayed and only top V3 still open for consolidated report and hosted landing evidence. Report: docs/dev-log/after-task/2026-09-30-bounded-twin-programme-local-acceptance.md. Protected platform configs are excluded. Completed FA primary stays immutable and experimental. No GPU, submission or tag.
+
+Updated UTC: 2026-10-01T00:17:00.918366+00:00
+
+## Hosted-check follow-up and refreshed local acceptance
+
+The owner explicitly approved both public pushes. Julia 73ace301 and R 5efe0ec reached their existing PRs. R PR259 merged after both platform checks passed, at e82f5c95e514028a7126fdd667c4ac7a840c9e6b; its exact post-merge Linux and Windows checks also passed. Julia docs passed, but four package jobs failed. Three returned an unresolved lower boundary; latest Linux stopped a matrix-free fit because the true PCG residual exceeded the requested tolerance. The canonical merge gate refused that candidate.
+
+Astra authored an isolated likelihood comparison repair. Independently rounded absolute likelihoods can give a tiny mathematical decrease a positive sign. The repair recomputes cancellation-sized comparisons at higher precision on the same eigen context, preserving the strict positive-gain rule and scientific thresholds. Independent review passed 166 assertions, including original fixtures and fixed-design, scale/order, finite-input and specification-identity controls.
+
+A separate Sol author repaired recursive PCG stopping. The solver now checks its true residual before stopping and restarts from it within the original iteration budget. Requested tolerance and downstream failure behavior are unchanged. Independent replay passed 309 test executions across three runtimes, with repeated controls disclosed. The exact baseline mechanism was reproduced on Julia1.13.1; the unchanged original nine-assertion CI fit passes there. An Intel full-fixture attempt timed out after120 seconds and is retained as an incomplete attempt.
+
+Both exact reviewed deltas are integrated and their frozen tests are registered in isolated modules. The original runner bytes remain an exact prefix. Current source aggregate is59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e; runner095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97. The fresh full Julia package suite passed in438.46 seconds, live required R-Julia bridge in28.03 seconds with213/213 and no failures/warnings/skips, and current source-matched docs in51.54 seconds. All87 capability citations and the preamble cap pass. The unchanged installed evidence checker passes all three scopes after current result/input/HTML pins are refreshed.
+
+Original successful receipts are retained with pre-hosted-repair names. Original red hosted logs, signed reviews, complete byte-verified author/independent packet archives and R landing evidence are retained under docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/ and docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. The previous source inventory is preserved verbatim before the current two-delta inventory. Archive filenames preserve their author labels; timing receipts establish actual chronology.
+
+The repaired Julia candidate has renewed local acceptance. Its new hosted checks and landing remain pending, so V3 stays open. This paragraph supersedes earlier present-tense push, local-check and source-review gaps at the stated scope. The measured experimental limitations, all200 FA attempts, public covered count seven, automatic-rank/inheritance/scaling/calibration debt, and GPU/release exclusions are unchanged. No campaign was rerun, original assertion weakened, release submitted or tag created.
+
+
+## Latest-runtime test portability and fresh local acceptance
+
+Commit ec9414c3 passed both full Julia 1.10 hosted jobs. Latest Linux and Windows failed the documentation phrase assertion. The supported Docs.doc API needs the REPL standard library loaded on the tested latest runtime. Independent review accepted both readers and the required REPL test extra, target and compatibility entry; runtime dependencies, version and Manifest are unchanged. The focused v1 review did not exercise the Pkg.test sandbox. The actual full sandbox exposed the missing test dependency at 84.49 seconds; the v2 review then passed actual Pkg.test sandboxes on both runtimes. That failed run is preserved.
+
+The next full suite failed three FA fixture outcome assumptions at 311.67 seconds. Measured original seeds give different response/normal-draw bytes between Julia 1.10.0 and1.13.1, while Ainv/G/R agree. Sol replaced four empirical expectations with checks of the defined diagnostic/status quantities against ordinary single-start fits and controlled selection cases. Astra approved the exact patch after 83 independent replay assertions. Both author focused runs pass 68 assertions; the original red and terminated 120-second whole-file probe are retained. All remaining original assertions and the complete unit/order block are preserved. No numerical source, optimizer tolerance, frozen campaign, covered count or release state changed.
+
+Fresh complete Julia 1.13.1 Pkg.test passed in 466.95 seconds; live R bridge passed in 22.73 seconds; current Julia documentation passed in 44.26 seconds. Each run used one Julia/BLAS thread and stayed within its stated cap. Complete current source/test and documentation input inventories, logs, results and rendered caveat pages are pinned. Source-bound evidence modes must pass on these refreshed bytes. Exact-current hosted checks and landing remain pending, so V3 stays open.
+
+
+## 2026-10-01 FA objective-range oracle repair
+
+The Julia 1.13 Linux and Windows jobs shared one test-oracle mismatch. The revised assertion uses the exact reported balanced start. Independent review passed. Fresh Julia 1.13.1 package, Julia docs, live R-Julia bridge, and all three installed exact-source evidence modes pass. The numerical source and capability claims are unchanged. Rose audit, public push, exact-current hosted checks, and merge remain pending. V3 stays open. Report: `docs/dev-log/after-task/2026-10-01-fa-objective-range-oracle.md`.

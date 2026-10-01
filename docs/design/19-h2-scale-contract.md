@@ -65,6 +65,10 @@ and Nakagawa, Johnson & Schielzeth (2017, *J. R. Soc. Interface*).
 **Model.** Linear predictor `η = μ + a + f`, with breeding value `a ~ N(0, A·σ²a)`
 (`V_A = σ²a`), fixed-effect contribution `f` (variance `V_fixed`), and a family/link that
 maps `η` to the conditional mean `E[y|η] = g⁻¹(η)`.
+The descriptor assumes zero covariance between `a` and the population fixed-effect
+contribution `f`, with a Gaussian approximation for their sum. `V_A` is the caller's
+reference genetic variance. `predictor_variance` supplies `V_fixed`, not total predictor
+variance; total predictor variance is `V_A + V_fixed`.
 
 ### 2.1 Latent (link) scale
 The scale of `η` itself. Total latent variance adds the link's *implied latent residual*
@@ -74,13 +78,17 @@ The scale of `η` itself. Total latent variance adds the link's *implied latent 
 h²_latent = V_A / (V_A + V_link + V_fixed)
 ```
 
+The Gaussian identity descriptor uses variance conditional on fixed effects:
+`V_A/(V_A+σ²e)`. It requires `predictor_variance = 0`; nonzero values are rejected
+rather than silently ignored. The Gaussian total is `V_A+σ²e`.
+
 `V_link` is a property of the family and link, not of the data: `π²/3` for logit (variance of
 the standard logistic), `1` for probit (the classic Gaussian-liability scale), `π²/6` for
 complementary-log-log (the Gumbel/extreme-value variance; an owed family), and `σ²e` for the
 Gaussian identity link. The **log link is family-dependent**: **`0` for Poisson** — no latent
 residual, so its latent h² is **degenerate (`NaN`)** (`nongaussian_heritability`), the
 exact reason the uniform payload refuses a single h² — but **`ψ₁(ν)` (trigamma of the shape) for
-Gamma**, a genuine multiplicative log-scale residual (`Var[log Y] = ψ₁(ν)`), so the **Gamma
+Gamma**, a genuine multiplicative log-scale residual (`Var(log Y | η) = ψ₁(ν)`), so the **Gamma
 latent h² is NON-degenerate** (§3.1). (Link variances verified against Nakagawa & Schielzeth 2017
 via the NotebookLM source set: logit π²/3, probit 1, cloglog π²/6; the Gamma `ψ₁(ν)` verified
 numerically — §3.1.)
@@ -115,8 +123,9 @@ with the expectations taken over the **linear-predictor distribution `η ~ N(μ,
 > variance, the engine's `var_dist`), and `1/[p(1−p)]` (NS delta latent term, **not used** by
 > the engine). Verified against de Villemereuil 2016 + NS 2017 via the NotebookLM source set.
 
-`Ψ² V_A ≤ Var(E[y|η])`, so `h²_observation ∈ (0,1)` — verified numerically in the suite, not
-assumed. **Estimand per family:** PROPORTION for Bernoulli/Binomial, COUNT for Poisson. For
+`Ψ² V_A ≤ Var(E[y|η])`, so the theoretical population projection satisfies
+`h²_observation ∈ [0,1]` when observation variance is finite and positive, including
+zero at `V_A = 0`. Finite quadrature approximates these population moments. **Estimand per family:** PROPORTION for Bernoulli/Binomial, COUNT for Poisson. For
 the Gaussian identity link both scales coincide.
 
 > **Non-monotonicity warning.** `h²_observation` is **not** monotone in `σ²a` for some
@@ -140,8 +149,10 @@ estimand for the `:bernoulli_probit` family and the owed ordinal/categorical fam
 The observed-0/1 scale connects to it by the Dempster–Lerner transform
 `h²_obs = h²_liab · z² / [p(1−p)]` (`z` = standard-normal ordinate at the threshold,
 `p` = incidence) — useful as a closed-form cross-check. Because `z²/[p(1−p)] < 1` for all
-incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **always smaller
-than the liability heritability** — the classic Dempster–Lerner ordering (verified
+incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **no greater
+than the liability heritability**, with equality at zero genetic variance and strict
+inequality at positive genetic variance in the exact finite-moment model. This is
+the classic Dempster–Lerner ordering; finite quadrature approximates it (verified
 empirically: e.g. `V_A = 1`, `μ = 0` → liability 0.500 vs observed 0.318).
 
 ---
@@ -153,14 +164,14 @@ empirically: e.g. `V_A = 1`, `μ = 0` → liability 0.500 vs observed 0.318).
 
 | Family | Link | `V_link` | Latent h² | Observation/data scale | Liability scale | Estimand | h²-surface status |
 |---|---|---|---|---|---|---|---|
-| Gaussian | identity | `σ²e` | `V_A/(V_A+σ²e)` | = latent (coincide) | n/a | trait value | **covered** (v0.1) |
+| Gaussian | identity | `σ²e` | `V_A/(V_A+σ²e)` | = latent (coincide); requires `V_fixed=0` | n/a | trait value, conditional on fixed effects | **covered** (v0.1) |
 | Poisson | log | `0` | **NaN** (degenerate) | log-normal–Poisson closed form: `V_A,obs=λ²V_A`, denom `λ²(e^{V_pred}−1)+λ` | n/a | count | partial |
 | Bernoulli | logit | `π²/3` | `V_A/(V_A+π²/3+V_fixed)` | GH quadrature, `Ψ=E[p(1−p)]`, `var_dist=Ψ` | (logit liability) | proportion | partial — `information_limited` |
 | Binomial | logit | `π²/3` | same | GH quadrature, `var_dist=Ψ/n_trials` | (logit liability) | proportion | partial |
 | **Bernoulli-probit** | probit | `1` | = liability h² | Dempster–Lerner `z²/[p(1−p)]` | **`V_A/(V_A+1+V_fixed)`** | binary→liability | **owed** (follow-up) |
 | **Beta-binomial** | logit + Beta | `π²/3` + overdispersion | needs derivation | needs derivation | (logit) | proportion | **owed** |
 | **Neg-binomial (NB2)** | log | `0` + overdispersion | needs derivation (NS 2017 NB term) | NS 2017 log-normal form | n/a | count | **owed** |
-| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var[log Y]; NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
+| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var(log Y | η); NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
 | **Ordinal / categorical** | cumulative probit/logit | `1` (probit) / `π²/3` (logit) | per-threshold liability | category probabilities | **liability (primary)** | ordinal→liability | **owed** (T1, top) |
 
 **Rules for the owed rows (so future slices don't drift):**
@@ -180,18 +191,20 @@ empirically: e.g. `V_A = 1`, `μ = 0` → liability 0.500 vs observed 0.318).
 
 The Gamma-log latent residual was tentatively "multiplicative (CV-based)" in the table above; this
 resolves it to the **exact** value. On the log link the latent residual is `log Y − log μ =
-log(Y/μ)`, whose variance for `Y ~ Gamma(shape ν, mean μ)` is a standard, mean-independent fact:
+log(Y/μ)`, whose conditional variance for `Y | η ~ Gamma(shape ν, mean μ)`
+with `η` held fixed is a standard, mean-independent fact:
 
 ```
-V_link,Gamma = Var[log Y] = ψ₁(ν)      (trigamma of the shape)
+V_link,Gamma = Var(log Y | η) = ψ₁(ν)      (trigamma of the shape)
 ```
 
 so the Gamma **latent-scale** heritability is `h²_latent = V_A / (V_A + ψ₁(ν) + V_fixed)` —
 **non-degenerate**, unlike the Poisson log link (`V_link = 0`), because the Gamma carries a genuine
 multiplicative dispersion. Special case `ν = 1` (exponential): `ψ₁(1) = π²/6 ≈ 1.6449`.
 
-**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape): the empirical
-`Var[log Y]` matches `ψ₁(ν)` to 3–4 significant figures across `ν ∈ {0.5, 1, 2, 5}` (e.g. ν=0.5 →
+**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape,
+with `η` held fixed): the empirical
+`Var(log Y | η)` matches `ψ₁(ν)` to 3–4 significant figures across `ν ∈ {0.5, 1, 2, 5}` (e.g. ν=0.5 →
 `4.938` vs `ψ₁ = 4.9348`; ν=2 → `0.645` vs `0.6449`), while the **`ln(1+1/ν)` lognormal/CV
 approximation is materially wrong** for small `ν` (ν=0.5 → `1.099`, off by ~4.5×). So the exact
 `ψ₁(ν)` is the correct `V_link`; the CV/lognormal form is only a large-`ν` asymptotic approximation
@@ -217,19 +230,26 @@ subject of de Villemereuil et al. (2018, *J. Evol. Biol.*) on whether/how to inc
 - With **>1 fixed effect** the intercept is ambiguous, so `mu` (link-scale population mean)
   is **required** and `predictor_variance` should be supplied
   (`nongaussian_heritability`).
-- Convention: `V_fixed` enters **both** the latent denominator and the observation-scale
+- Except for the conditional Gaussian descriptor, `V_fixed` enters **both** the latent denominator and the observation-scale
   integration variance (it is genuine predictor spread), **unlike** `V_link` which enters
   only the latent denominator. This is the asymmetry that makes the contract non-obvious.
+- Genetic and fixed-effect variances must be finite and nonnegative; the mean and
+  derived predictor variance must be finite. Zero genetic variance has zero
+  observation-scale additive projection.
+- A constant binomial trial vector uses the common scalar denominator. Genuinely
+  varying trials retain a visible unsupported observation-scale result (`NaN`);
+  no trial average or population weighting is inferred.
 
 ---
 
 ## 5. Honesty fences (what blocks "covered")
 
-- **Laplace bias.** The latent `σ²a` from the Laplace/penalized-IRLS fit is downward-biased
-  for binary and low-count data (the information effect); the observation- and liability-scale
-  h² inherit that bias. Single-trial Bernoulli sets `information_limited = true` with a caveat;
-  never present it as clean (`nongaussian_heritability`). glmmTMB shares the same Laplace
-  bias, so glmmTMB *agreement ≠ unbiasedness*.
+- **Variance uncertainty.** The five-seed Bernoulli and threshold recovery results report
+  variance estimates below their generating values, but do not establish population bias or
+  its cause. Observation- and liability-scale h² inherit uncertainty in the latent `σ²a`.
+  Single-trial Bernoulli sets `information_limited = true`; this is a design flag, not an
+  estimate of bias direction (`nongaussian_heritability`). Comparator agreement alone does
+  not establish unbiasedness.
 - **No same-estimand comparator yet.** The h² transform is exact in its closed-form limbs and
   checked against an independent Gauss–Hermite quadrature oracle in `test/runtests.jl`, but it
   has **no external QGglmm/MCMCglmm same-estimand comparator**. Per doc-16 (G11) and doc-04,

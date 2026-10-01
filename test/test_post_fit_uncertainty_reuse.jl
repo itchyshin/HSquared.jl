@@ -168,3 +168,31 @@
         y, X, effs, [1e-12, s[2]], se2)
     @test multi_effect_sum_ratio_interval(y, X, effs, [1e-12, s[2]], se2).boundary
 end
+
+@testset "boundary_tol must be finite and nonnegative" begin
+    bad_tolerance_message(f) = try
+        f()
+        ""
+    catch err
+        sprint(showerror, err)
+    end
+
+    for tol in (-0.1, NaN, Inf)
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            HSquared._ratio_delta_ci(zeros(2, 2), [1.0, 1.0], 1, 0.95, tol)))
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            two_effect_ratio_interval(Float64[], ones(1, 1), ones(1, 1), ones(1, 1),
+                                      ones(1, 1), ones(1, 1); boundary_tol = tol)))
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            multi_effect_ratio_interval(Float64[], ones(1, 1), []; boundary_tol = tol)))
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            multi_effect_sum_ratio_interval(Float64[], ones(1, 1), [], Float64[], 1.0;
+                                            boundary_tol = tol)))
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            multi_effect_uncertainty(Float64[], ones(1, 1), [], Float64[], 1.0;
+                                     boundary_tol = tol)))
+        @test occursin("boundary_tol", bad_tolerance_message(() ->
+            matrix_free_ratio_intervals(Float64[], ones(1, 1), [], Float64[], 1.0;
+                                        boundary_tol = tol)))
+    end
+end

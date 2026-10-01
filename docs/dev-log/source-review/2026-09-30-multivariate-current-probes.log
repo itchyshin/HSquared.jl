@@ -1,0 +1,8 @@
+lowrank overflow: [Inf Inf; Inf Inf]
+FA overflow: [Inf Inf; Inf Inf]
+invalid h zero: [NaN NaN; NaN NaN]
+invalid h negative: [-0.999999993922529 0.0; 0.0 -0.999999993922529]
+infinite likelihood: (statistic = Inf, df = 1, boundary_df = 0, pvalue = NaN, boundary = false, mixture = :chisq, note = "LRT: interior null; χ²_1 asymptotics apply")
+finite overflow statistic: (statistic = Inf, df = 1, boundary_df = 0, pvalue = NaN, boundary = false, mixture = :chisq, note = "LRT: interior null; χ²_1 asymptotics apply")
+chi tail infinite: NaN
+label duplicate MME: (ids = ["a", "a"], traits = ["t", "t"], values = [-0.42857142857142866 -0.14285714285714318; 0.42857142857142855 0.14285714285714277])

@@ -1,0 +1,343 @@
+--- a/src/iterative_solve.jl
++++ b/src/iterative_solve.jl
+@@ -9,22 +9,32 @@
+ # callable `r ↦ M⁻¹·r` (the preconditioner solve): `identity` for plain CG, `r ↦ Minv .* r`
+ # for Jacobi, or the IC(0) back/forward triangular solve for `:ichol`. `x0 = 0`, so the
+ # initial residual is `b`. Returns `(x, iterations, relative_residual)`.
++# Unsupported arithmetic range throws; a finite unconverged iterate is still returned.
+ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, applyMinv)
++    _require_finite_matrix_free_result("PCG right-hand side", b)
+     x = zeros(length(b))
+     r = copy(b)
+     bnorm = norm(b)
++    _require_finite_matrix_free_result("PCG right-hand-side norm", bnorm)
+     bnorm == 0 && return x, 0, 0.0
+     z = applyMinv(r)
++    _require_finite_matrix_free_result("PCG preconditioned residual", z)
+     p = copy(z)
+     rz = dot(r, z)
++    isfinite(rz) && rz > 0 ||
++        throw(ArgumentError("PCG residual inner product is outside the supported positive Float64 range"))
+     iters = 0
+     relres = norm(r) / bnorm
+     for k in 1:maxiter
+         Cp = applyC(p)
++        _require_finite_matrix_free_result("PCG operator product", Cp)
+         pCp = dot(p, Cp)
++        _require_finite_matrix_free_result("PCG curvature", pCp)
+         pCp > 0 ||
+             throw(ArgumentError("PCG hit non-positive curvature (pᵀCp = $(pCp)); the system is not positive definite"))
+         alpha = rz / pCp
++        isfinite(alpha) && alpha > 0 ||
++            throw(ArgumentError("PCG step is outside the supported positive Float64 range"))
+         @. x += alpha * p
+         @. r -= alpha * Cp
+         iters = k
+@@ -32,7 +42,10 @@
+         relres <= tol && break
+         z = applyMinv(r)
+         rz_new = dot(r, z)
++        isfinite(rz_new) && rz_new > 0 ||
++            throw(ArgumentError("PCG residual inner product is outside the supported positive Float64 range"))
+         beta = rz_new / rz
++        _require_finite_matrix_free_result("PCG direction update", beta)
+         @. p = z + beta * p
+         rz = rz_new
+     end
+@@ -40,7 +53,40 @@
+     # recursively-accumulated `r` — so `relative_residual`/`converged` are exactly
+     # ‖b − Cx‖/‖b‖ regardless of any recursive-residual drift on ill-conditioned input.
+     relres = norm(b - applyC(x)) / bnorm
++    _require_finite_matrix_free_result("PCG solution", x)
++    _require_finite_matrix_free_result("PCG relative residual", relres)
+     return x, iters, relres
++end
++
++# Validate the supplied data independently of structural zeros in later products.
++function _matrix_free_float64_data(name::AbstractString, values::AbstractArray)
++    all(isfinite, values) || throw(ArgumentError("$name must contain only finite values"))
++    converted = Float64.(values)
++    all(isfinite, converted) ||
++        throw(ArgumentError("$name must contain only finite values after Float64 conversion"))
++    return converted
++end
++
++function _require_finite_matrix_free_result(name::AbstractString, values)
++    all(isfinite, values) ||
++        throw(ArgumentError("$name exceeded the supported Float64 arithmetic range; no finite result is reported"))
++    return nothing
++end
++
++# Scale finite probe samples before their mean and sample-MCSE arithmetic.
++function _matrix_free_probe_summary(samples::AbstractVector{<:Real})
++    n = length(samples)
++    n > 0 || throw(ArgumentError("at least one probe sample is required"))
++    _require_finite_matrix_free_result("probe samples", samples)
++    scale = maximum(abs, samples)
++    scale == 0 && return (0.0, n > 1 ? 0.0 : NaN)
++    scaled = samples ./ scale
++    mean_scaled = sum(scaled) / n
++    m = scale * mean_scaled
++    mcse = n > 1 ? scale * sqrt(sum(abs2, scaled .- mean_scaled) / (n - 1) / n) : NaN
++    _require_finite_matrix_free_result("probe mean", m)
++    n > 1 && _require_finite_matrix_free_result("probe Monte-Carlo standard error", mcse)
++    return m, mcse
+ end
+ 
+ # A fit, likelihood, or information matrix may consume a PCG solution only after
+@@ -193,25 +239,28 @@
+     (preconditioner === :ichol && matrix_free) &&
+         throw(ArgumentError(":ichol preconditioner requires matrix_free = false (it factorizes the assembled C)"))
+     nfixed = size(spec.X, 2)
+-    _require_full_fixed_effect_rank(sparse(Float64.(spec.X)))
++    y_input = _matrix_free_float64_data("y", spec.y)
++    X_input = _matrix_free_float64_data("X", spec.X)
++    Z_input = _matrix_free_float64_data("Z", spec.Z)
++    _require_full_fixed_effect_rank(sparse(X_input))
+ 
+     if matrix_free
+         inv_se2 = inv(sigma_e2)
+         inv_sa2 = inv(sigma_a2)
+-        X = sparse(Float64.(spec.X))
+-        Z = sparse(Float64.(spec.Z))
++        X = sparse(X_input)
++        Z = sparse(Z_input)
+         Ainv = sparse(Float64.(spec.Ainv))
+         Ainv, _ = _validate_matrix_free_precision(Ainv, 1)
+         Xt = transpose(X)
+         Zt = transpose(Z)
+-        y = Float64.(spec.y)
++        y = y_input
+         rhs = vcat(inv_se2 .* (Xt * y), inv_se2 .* (Zt * y))
+         d = _mme_diag(X, Z, Ainv, inv_se2, inv_sa2)
+         applyC = v -> _mme_matvec(X, Xt, Z, Zt, Ainv, inv_se2, inv_sa2, nfixed, v)
+     else
+         Ainv = sparse(Float64.(spec.Ainv))
+         Ainv, _ = _validate_matrix_free_precision(Ainv, 1)
+-        validated_spec = AnimalModelSpec(spec.y, spec.X, spec.Z, Ainv, spec.ids,
++        validated_spec = AnimalModelSpec(y_input, X_input, Z_input, Ainv, spec.ids,
+                                          spec.family, spec.method, spec.relationship_diag)
+         lhs, rhs, _ = _sparse_mme_system(validated_spec, sigma_a2, sigma_e2)
+         d = Vector{Float64}(diag(lhs))
+@@ -420,8 +469,8 @@
+         throw(ArgumentError(":ichol preconditioner requires matrix_free = false (it factorizes the assembled C)"))
+ 
+     n = length(y)
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
++    yv = _matrix_free_float64_data("y", y)
++    Xs = sparse(_matrix_free_float64_data("X", X))
+     size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+     p = size(Xs, 2)
+     _require_full_fixed_effect_rank(Xs)
+@@ -435,7 +484,7 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(Zs, sparse(Float64.(Zi)))
++        push!(Zs, sparse(_matrix_free_float64_data("Z[$i]", Zi)))
+         push!(Ainvs, sparse(Float64.(Ainvi)))
+         if validate_precision
+             Ainvs[end], _ = _validate_matrix_free_precision(Ainvs[end], i)
+@@ -545,6 +594,8 @@
+ 
+ Returns `(traces, mcse)` — each a length-`K` vector: the trace estimate and its Monte-Carlo
+ standard error (probe SD / √nprobe; the honest noise band, `∝ 1/√nprobe`).
++With one probe, `mcse` is undefined (`NaN`). Probe summaries are scaled to avoid
++intermediate overflow; unsupported nonfinite arithmetic throws an `ArgumentError`.
+ 
+ `shared_probes` (default `false`): with `false`, each block gets its own `nprobe` probes
+ (`nprobe·K` solves). With `true`, one full-random probe over the whole random block yields all
+@@ -598,7 +649,7 @@
+     nprobe >= 1 || throw(ArgumentError("nprobe must be >= 1"))
+     maxiter >= 1 || throw(ArgumentError("maxiter must be >= 1"))
+ 
+-    Xs = sparse(Float64.(X))
++    Xs = sparse(_matrix_free_float64_data("X", X))
+     n = size(Xs, 1)
+     p = size(Xs, 2)
+     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+@@ -612,7 +663,7 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(Zs, sparse(Float64.(Zi)))
++        push!(Zs, sparse(_matrix_free_float64_data("Z[$i]", Zi)))
+         push!(Ainvs, sparse(Float64.(Ainvi)))
+         if validate_precision
+             Ainvs[end], _ = _validate_matrix_free_precision(Ainvs[end], i)
+@@ -641,8 +692,6 @@
+     rng = MersenneTwister(seed)
+     traces = zeros(Float64, K)
+     mcse = zeros(Float64, K)
+-    meanmcse(samples) = (m = sum(samples) / length(samples);
+-        (m, length(samples) > 1 ? sqrt(sum(abs2, samples .- m) / (length(samples) - 1) / length(samples)) : NaN))
+ 
+     if shared_probes
+         # SHARED probes (V8.2): one FULL-random Rademacher probe over the whole random block per
+@@ -664,7 +713,7 @@
+             end
+         end
+         for b in 1:K
+-            traces[b], mcse[b] = meanmcse(samples[b])
++            traces[b], mcse[b] = _matrix_free_probe_summary(samples[b])
+         end
+     else
+         # PER-BLOCK probes: nprobe probes embedded in block b -> nprobe·K solves.
+@@ -682,7 +731,7 @@
+                 xb = @view x[rng_b]                               # C⁻¹[u_b,u_b]·z
+                 samples[k] = dot(z, Ainvs[b] * xb)                # zᵀ Aᵦ⁻¹ C⁻¹[u_b,u_b] z
+             end
+-            traces[b], mcse[b] = meanmcse(samples)
++            traces[b], mcse[b] = _matrix_free_probe_summary(samples)
+         end
+     end
+     return traces, mcse
+@@ -745,8 +794,8 @@
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     n = length(y)
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
++    yv = _matrix_free_float64_data("y", y)
++    Xs = sparse(_matrix_free_float64_data("X", X))
+     size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+     p = size(Xs, 2)
+     Zs = SparseMatrixCSC{Float64,Int}[]
+@@ -756,7 +805,7 @@
+         Zi, Ainvi = pair
+         size(Zi, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
+         qi = size(Ainvi, 1)
+-        push!(Zs, sparse(Float64.(Zi)))
++        push!(Zs, sparse(_matrix_free_float64_data("Z[$i]", Zi)))
+         push!(Ainvs, sparse(Float64.(Ainvi)))
+         push!(qs, qi)
+     end
+@@ -826,7 +875,12 @@
+         shared_probes = shared_probes, validate_precision = false)
+     trace_evaluation_variance_components = (sigmas = copy(sigmas), sigma_e2 = sigma_e2)
+ 
+-    total = sum(sigmas) + sigma_e2
++    # Ratios can be finite even when the sum of finite variances overflows.
++    scale = max(maximum(sigmas), sigma_e2)
++    scaled_sigmas = sigmas ./ scale
++    scaled_total = sum(scaled_sigmas) + sigma_e2 / scale
++    ratios = scaled_sigmas ./ scaled_total
++    _require_finite_matrix_free_result("variance ratios", ratios)
+     beta_final, effects_final = if @isdefined(last_effects)
+         # one final solve at the converged variances for clean BLUPs
+         s = _solve_multi_effect_pcg(yv, Xs, validated_effects, sigmas, sigma_e2;
+@@ -849,12 +903,12 @@
+     end
+     return merge((
+         variance_components = (sigmas = sigmas, sigma_e2 = sigma_e2),
+-        ratios = sigmas ./ total,
++        ratios = ratios,
+         beta = beta_final,
+         effects = effects_final,
+         loglik = loglik,
+         loglik_mcse = loglik_mcse,
+-        boundary = [s / total < 1e-6 for s in sigmas],
++        boundary = [r < 1e-6 for r in ratios],
+         trace_mcse = trace_mcse,
+         trace_evaluation_variance_components = trace_evaluation_variance_components,
+         converged = converged,
+@@ -950,8 +1004,9 @@
+ likelihood-ratio inference.
+ 
+ EXPERIMENTAL. The loglik is approximate and stochastic. At validation scale the exact
+-`sparse_multi_reml_loglik` is preferred. Requires a positive-definite `C` (returns `NaN` loglik
+-otherwise).
++`sparse_multi_reml_loglik` is preferred. Requires a positive-definite `C`; failed
++SLQ or nonfinite arithmetic throws an `ArgumentError` instead of reporting a
++numeric likelihood. With one probe, the probe MCSE remains undefined (`NaN`).
+ """
+ function matrix_free_reml_loglik(
+     y::AbstractVector,
+@@ -997,8 +1052,8 @@
+     pcg_maxiter >= 1 || throw(ArgumentError("pcg_maxiter must be >= 1"))
+ 
+     n = length(y)
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
++    yv = _matrix_free_float64_data("y", y)
++    Xs = sparse(_matrix_free_float64_data("X", X))
+     size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+     p = size(Xs, 2)
+     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+@@ -1014,7 +1069,7 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(Zs, sparse(Float64.(Zi)))
++        push!(Zs, sparse(_matrix_free_float64_data("Z[$i]", Zi)))
+         push!(Ainvs, sparse(Float64.(Ainvi)))
+         if precision_logdetAinv === nothing
+             Ainvs[end], factor = _validate_matrix_free_precision(Ainvs[end], i)
+@@ -1059,6 +1114,7 @@
+         quad += dot(ui, Ainvs[i] * ui) / ss[i]
+     end
+     quad += inv_se2 * dot(residual, residual)
++    _require_finite_matrix_free_result("REML quadratic", quad)
+ 
+     # log|C| by SLQ (matrix-free).
+     rng = MersenneTwister(seed)
+@@ -1066,15 +1122,14 @@
+     for _ in 1:slq_probes
+         z = rand(rng, (-1.0, 1.0), ntot)                      # Rademacher, ‖z‖²=ntot
+         c = _lanczos_logquad(applyC, z, Int(slq_steps))
+-        isnan(c) && return (NaN, NaN)
++        isfinite(c) || throw(ArgumentError("SLQ could not produce a finite log determinant; check conditioning and arithmetic range"))
+         push!(contribs, ntot * c)
+     end
+-    logdetC = sum(contribs) / slq_probes
+-    logdetC_mcse = slq_probes > 1 ?
+-        sqrt(sum(abs2, contribs .- logdetC) / (slq_probes - 1) / slq_probes) : NaN
++    logdetC, logdetC_mcse = _matrix_free_probe_summary(contribs)
+ 
+     loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+     loglik_mcse = 0.5 * logdetC_mcse
++    _require_finite_matrix_free_result("REML log likelihood", loglik)
+     return (loglik, loglik_mcse)
+ end
+ 
+@@ -1090,6 +1145,8 @@
+ (`fit_sparse_multi_effect_aireml`'s `information`) to the PCG tolerance.
+ 
+ Returns the `Symmetric` `(K+1)×(K+1)` AI matrix.
++Nonfinite final information caused by unsupported arithmetic range throws an
++`ArgumentError`; finite information is not a conditioning or calibration guarantee.
+ """
+ function matrix_free_reml_information(
+     y::AbstractVector,
+@@ -1110,8 +1167,8 @@
+     pcg_tol = _finite_positive_float64("pcg_tol", pcg_tol)
+     pcg_maxiter >= 1 || throw(ArgumentError("pcg_maxiter must be >= 1"))
+     n = length(y)
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
++    yv = _matrix_free_float64_data("y", y)
++    Xs = sparse(_matrix_free_float64_data("X", X))
+     size(Xs, 1) == n || throw(ArgumentError("X must have one row per record"))
+     p = size(Xs, 2)
+     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+@@ -1125,7 +1182,7 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(Zs, sparse(Float64.(Zi)))
++        push!(Zs, sparse(_matrix_free_float64_data("Z[$i]", Zi)))
+         push!(Ainvs, sparse(Float64.(Ainvi)))
+         push!(qs, qi)
+     end
+@@ -1173,7 +1230,9 @@
+         for i in 1:K; pw .-= Zs[i] * xw[(offs[i] + 1):(offs[i] + qs[i])]; end
+         PW[:, j] = pw ./ se2
+     end
+-    return Symmetric(0.5 .* (transpose(W) * PW))
++    information = 0.5 .* (transpose(W) * PW)
++    _require_finite_matrix_free_result("REML average information", information)
++    return Symmetric(information)
+ end
+ 
+ """

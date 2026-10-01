@@ -1,8 +1,8 @@
-# 21 · Bridge payload v2 — multi-block random-effect schema (FREEZE-READY)
+# 21 · Bridge payload v2 — multi-block random-effect schema
 
-**Status: FREEZE-READY (Phase 0 / P0.1 + P0.2). Reconciled against the actual
-bridge — awaiting the ratification handshake commit.** This is the Julia lane's
-frozen extension of the R→Julia bridge contract to carry an ordered list of
+**Status: implemented contract proposal; ratification is pending.** It has been
+reconciled against the bridge and awaits the ratification handshake commit. It
+specifies the Julia lane's proposed extension of the R→Julia bridge contract to carry an ordered list of
 random-effect blocks (independent effects, coefficient-covariance / random-slope
 blocks, and a correlated 2×2 direct–maternal block). It is the single upfront
 handshake (sync **S0**) the generality-gap programme depends on — see the
@@ -84,8 +84,13 @@ The single structural change:
 
 ```
 payload_version = 2L
-random_effects  = list(block_1, block_2, ...)   # ordered; block order is stable and result-labelling-significant
+random_effects  = list(block_1, block_2, ...)   # ordered; scalar results preserve block order; MV repeatability uses pedigree, IID, residual
 ```
+
+Supply exactly one nonempty response: `y` must be a nonempty vector, or `Y` a
+matrix with at least one row and one trait. `X` must have one row per response
+observation. The Julia parser rejects both response fields together, empty
+responses, and an `X` row mismatch before dispatch.
 
 Each `block_i` is a plain named `list` (an R list → a Julia `Dict`/`NamedTuple`;
 "boring payload only", `12-bridge-compatibility.md` §Discipline). Fields not
@@ -93,7 +98,7 @@ applicable to a block `type` are `NULL`/absent.
 
 | Field | Type (R → Julia) | Applies to | Meaning |
 | --- | --- | --- | --- |
-| `name` | string | all | term name for result labelling (e.g. `"animal"`, `"litter"`, `"maternal"`). Replaces the draft's `label`; `name` matches the `effect2$group`/`type` vocabulary already in the bridge. |
+| `name` | nonempty string | all | term name for result labelling (e.g. `"animal"`, `"litter"`, `"maternal"`). Empty or whitespace-only names are invalid. Replaces the draft's `label`; `name` matches the `effect2$group`/`type` vocabulary already in the bridge. |
 | `type` | string | all | `"pedigree"` \| `"iid"` \| `"coefcov"` \| `"correlated"` (see §3). |
 | `Z` | `dgCMatrix` (CSC) | all | `n × q_i` record→level incidence (base incidence for `coefcov`; the DIRECT incidence for `correlated`). Marshalled by `hs_julia_assign_sparse_csc()`. |
 | `relmat_inverse` | `dgCMatrix` \| `NULL` | all | supplied precision, or `NULL` when Julia builds it. Mirrors the current always-`NULL`-for-pedigree convention. |
@@ -108,6 +113,20 @@ applicable to a block `type` are `NULL`/absent.
 | `cov_structure` | string \| `NULL` | `coefcov` | `"unstructured"` \| `"diagonal"`. |
 | `partner_incidence` | `dgCMatrix` \| `NULL` | `correlated` | the SECOND incidence `Z_m` (dam) sharing this block's relationship; the engine's `Zm`. |
 | `partner_name` | string \| `NULL` | `correlated` | label for the partner sub-effect (e.g. `"maternal"`), so the result can label direct vs maternal. |
+
+For a `coefcov` block, the parser requires `basis`, `order`, `Phi`,
+`covariate`, and `cov_structure`. `basis` is `"raw"` or `"legendre"`;
+`order` is a positive integer counting basis columns, and Boolean values are
+invalid. `Phi` must be a dense real matrix with one row per observation and
+`order` columns, finite before and after conversion to `Float64`. Sparse
+matrices and their transpose, adjoint, and view wrappers are rejected before
+conversion; dense transpose, adjoint, and view inputs are accepted. `covariate`
+is a nonempty string, and `cov_structure` is `"unstructured"` or `"diagonal"`.
+Legendre blocks require two finite standardization bounds with lower < upper.
+Raw blocks may omit the bounds; supplied bounds use the same validation.
+The resolved block preserves all six fields. These checks validate the frozen
+payload slot; `fit_payload_v2` continues to raise `Phase0NotImplementedError`
+for this block type.
 
 **Notes (each tied to the engine argument it feeds).**
 - `type = "iid"` ⇒ `relmat_status = "identity"`; Julia uses `I` (never
@@ -128,42 +147,48 @@ applicable to a block `type` are `NULL`/absent.
 - `type = "correlated"` (direct–maternal) ⇒ feeds
   `fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; …)` (`likelihood.jl:1072`):
   `Z` → `Zd`, `partner_incidence` → `Zm`, one relationship `A = relmat_inverse⁻¹`,
-  a 2×2 `G_dm`; precision `kron(G_dm, A)` on `[a_d; a_m]`. Frozen here so the slot
-  is stable; the estimator exists (`likelihood.jl:1136` returns `G_dm`,
-  `genetic_correlation`, `direct_effects`, `maternal_effects`).
+  a 2×2 covariance `G_dm`; covariance `kron(G_dm, A)` on `[a_d; a_m]`,
+  with precision `kron(inv(G_dm), Ainv)` when both matrices are nonsingular.
+  The explicit experimental R `target = "direct_maternal"` adapter uses this
+  block and reads its paired direct/partner result. The estimator returns
+  `G_dm`, `genetic_correlation`, `direct_effects`, and `maternal_effects`.
 
 ## 3. Grammar-term → block mapping
 
 This table is the R-lane emitter contract. **Only the rows whose R term is
-actually parsed today are live**; the rest are frozen slots (flagged). See §9 for
-the drift note: the R parser does NOT accept a bare `(1|g)` / `(x|g)` / `(x||g)`;
-its only second-effect vocabulary is `permanent()` / `common_env()` /
-`maternal_genetic()` with an `animal()` primary (`model-spec.R:238-244`,
-`:2117-2135`).
+actually parsed today are live**; the rest are frozen slots (flagged). The
+current R candidate accepts named second effects and opt-in bare `(1|g)`
+independent iid intercepts with an `animal()` primary. Bare `(x|g)` / `(x||g)`
+slopes remain rejected (`R/model-spec.R:131-166,275-301`). The correlated
+maternal model requires the explicit experimental `target = "direct_maternal"`;
+the default `maternal_genetic()` route remains independent.
 
 | R term (as parsed) | parsed today? | `type` | `Z` | `relmat_status` | partner / basis |
 | --- | --- | --- | --- | --- | --- |
 | `animal(1 \| id, pedigree=ped)` | yes | `pedigree` | id incidence | `build_in_julia` | — |
 | `permanent(1 \| id)` | yes | `iid` | shares animal incidence | `identity` | — (repeatability = animal + permanent) |
 | `common_env(1 \| group)` | yes | `iid` | group incidence | `identity` | — |
-| `maternal_genetic(1 \| dam)` | yes | `pedigree` | dam-as-animal incidence | `build_in_julia` (shares the animal `Ainv`) | — (two INDEPENDENT pedigree effects via `fit_two_effect_reml`) |
+| `maternal_genetic(1 \| dam)` with the default two-effect target | yes | `pedigree` | dam-as-animal incidence | `build_in_julia` (shares the animal `Ainv`) | independent pedigree effects via `fit_two_effect_reml` |
 | `genomic(1 \| id, Ginv=Ginv)` | yes (opt-in) | `pedigree`-like w/ supplied | id incidence | `supplied` | — (uses the separate relinv builder) |
 | `animal(rr(t, k) \| id, pedigree=ped)` | yes (opt-in) | `coefcov` | id incidence | `build_in_julia` | `basis="legendre"`, `Phi`, `order=k` |
-| `maternal_genetic(...)` as CORRELATED direct–maternal 2×2 `G` | **NO — frozen slot** | `correlated` | animal incidence | `build_in_julia` | `partner_incidence` = dam, 2×2 `G` |
+| `maternal_genetic(...)` with explicit `target = "direct_maternal"` | yes (experimental opt-in adapter) | `correlated` | animal incidence | `build_in_julia` | `partner_incidence` = dam, 2×2 `G` |
+| `(1 \| g)` with an `animal()` primary | yes (opt-in independent iid blocks) | `iid` | group incidence | `identity` | independent intercept block |
 | `(x \| g)` raw random slope | **NO — frozen slot** | `coefcov` | base incidence | `identity` | `basis="raw"`, `Phi=[1,x]`, `K` 2×2 |
 
 Fixed-effect richness (`a:b`, `a*b`, `poly()`, `I()`) is **not** a payload change
 — R's `model.matrix` expands it into `X` columns; the engine is formula-blind
 (unchanged from v0.1: `model-spec.R:200` builds `X` via `model.matrix`).
 
-**Important reconciliation:** today `maternal_genetic()` is dispatched as the
-*independent* second effect of `fit_two_effect_reml` (two pedigree effects, no
-`σ_dm` covariance; `julia-bridge.R:896-900` sets `Ainv2 = Ainv`, `bridge_target`
-`fit_two_effect_reml`, `model-spec.R:243`). The `correlated` block (a true 2×2
-`G_dm` via `fit_direct_maternal_reml`) is a DIFFERENT model and a DIFFERENT
-estimator. v2 freezes both so the R lane can later choose which one
-`maternal_genetic()` maps to (or add a `cov=` argument to distinguish), without a
-second contract change. Do not conflate them.
+**Maternal target distinction:** the default `maternal_genetic()` target uses
+`fit_two_effect_reml` with two independent pedigree effects. Explicit
+`target = "direct_maternal"` selects the experimental correlated model and
+estimates `σ_dm`. Its dedicated R adapter assembles one correlated block from
+the emitted animal/maternal blocks and reads a single paired direct/partner
+record (`R/julia-bridge.R:1928-2103,2280-2388`). The exact 2026-09-30 twin
+[maternal live receipt](../dev-log/source-review/2026-09-30-exact-twin-maternal-live-recheck.md)
+records 90 assertions passing for six animals and eight records. This evidence
+supports that cell; generic v2 ratification and broader
+production parity remain unproved. Neither target changes `public_covered_count`.
 
 ## 4. Back-compat alias (mandatory)
 
@@ -218,6 +243,22 @@ prediction_error_variance / reliability = (ids, values)             # pedigree b
 loglik, df, nobs, converged, diagnostics                            # unchanged top-level scalars
 ```
 
+### Experimental multivariate-repeatability extension (Julia only)
+
+`multivariate_repeatability_reml` uses a deliberately narrow extension while
+the R normalizer remains fenced from this route. Its `variance_components.residual`
+and each pedigree/IID block's `variance` are `t × t` trait covariance matrices;
+each corresponding `random_effects[i].values` is `q × t`, with columns in the
+order of the top-level `traits` field. `component_names` follows the parsed
+pedigree block name, IID block name, then `residual`. The route also retains the
+named covariance, correlation, heritability, repeatability, and effect fields
+from `multivariate_repeatability_result_payload`.
+
+This exception does not change the scalar shape for existing univariate v2
+routes and is not an R-facing contract. Do not pass this result to the R
+normalizer until its matrix fields and trait ordering have matching R
+normalization and parity tests in both twins.
+
 Field-name reconciliation with the live estimators (so the parser can populate
 `blocks` directly from the estimator's `NamedTuple`):
 
@@ -261,17 +302,21 @@ Dispatch rule (by the multiset of block `type`s):
 | one `pedigree` block, nothing else (or v0.1 alias) | `fit_animal_model` / `fit_ai_reml` | `(y, X, Z, Ainv; ids, method)` — v0.1 |
 | two independent blocks (`pedigree`/`iid` × 2) | `fit_two_effect_reml` | `(y, X, Z1, Ainv1, Z2, Ainv2; initial, ids1, ids2)` `likelihood.jl:757` |
 | `K ≥ 2` independent blocks | `fit_multi_effect_reml` | `(y, X, effects; initial, ids)`, `effects = [(Z_i, Ainv_i), …]` `likelihood.jl:952` |
-| one `correlated` block (+ optional independent) | `fit_direct_maternal_reml` | `(y, X, Zd, Zm, Ainv; initial, ids)` `likelihood.jl:1072` (v1: correlated-only) |
-| multivariate `Y` (one pedigree block) | `fit_multivariate_reml` | `(Y, X, Z, Ainv; …)` `multivariate.jl:778` |
-| one `coefcov` block | `fit_random_regression_reml` | existing RR path (`bridge_target` `model-spec.R:234`) |
+| one `correlated` block only | `fit_direct_maternal_reml` | `(y, X, Zd, Zm, Ainv; initial, ids)` `likelihood.jl:1072`; mixed correlated and independent blocks are rejected |
+| multivariate `Y` (one pedigree block) | dispatch is parsed, fit is not wired | `fit_multivariate_reml` requires caller-supplied `G0` and `R0`; payload dispatch raises `Phase0NotImplementedError` (`multivariate.jl:778`) |
+| multivariate `Y` (one pedigree + one iid permanent-environment block) | `fit_multivariate_repeatability_reml` | dedicated Julia fitter is wired through `:multivariate_repeatability`; the R bridge uses a dedicated caller rather than the generic v2 caller |
+| one `coefcov` block | frozen parser slot; fit is not wired | payload dispatch raises `Phase0NotImplementedError`; no `fit_random_regression_reml` payload route is active |
 
-New Julia code to add for P0.3 (narrow, contract-only):
-- **`src/bridge_payload_v2.jl`** (new file): `parse_payload_v2(payload)` →
-  `(effects, dispatch, ids, meta)`; builds each block's relationship (`I` for
+Implemented Julia parser and dispatch behavior (P0.3, narrow, contract-only):
+- **`src/bridge_payload_v2.jl`**: `parse_payload_v2(payload)` →
+  `ParsedPayloadV2(dispatch, y, Y, X, blocks, method, is_multivariate)`; builds each block's relationship (`I` for
   `identity`, `pedigree_inverse(normalize_pedigree(...))` for `build_in_julia`,
-  the supplied matrix for `supplied`); resolves the dispatch row above;
-  `result_payload_v2(fit, dispatch)` → the §5 block-structured result with the
-  §5 fast-path collapse.
+  the supplied matrix for `supplied`); resolves a dispatch symbol, including
+  explicit errors for unsupported block combinations. `result_payload_v2(fit,
+  parsed)` accepts that parsed object and returns the §5 block-structured result
+  with the §5 fast-path collapse. The single-pedigree `:multivariate` dispatch
+  and `:coefcov` deliberately fail at fit time because their payload routes are
+  not wired; the pedigree-plus-iid `:multivariate_repeatability` route is wired.
 - Export `parse_payload_v2` / `result_payload_v2` from `src/HSquared.jl`
   (add to the existing export block).
 - The `fit_multi_effect_reml` path needs the `effects`-vector build from the block
@@ -282,20 +327,16 @@ No estimator, objective, or covariance kernel is added. The parser MUST reject a
 block combination it cannot dispatch (e.g. two `correlated` blocks) with a clear
 `ArgumentError`, never silently drop a block.
 
-## 7. Emitter contract (P0.4, R side — implemented in the companion S0 branch)
+## 7. Emitter contract (P0.4, R side)
 
-Recorded here as the exact contract the R lane implements. The emitter lands in
-the companion S0 branch `feat/2026-07-01-payload-v2-emitter` (this file is the
-HSquared.jl-side edit, not itself the R change). `hs_build_bridge_payload()` (`bridge-payload.R:1`)
-gains a `random_effects` assembler that lifts the current `Z` + `Z2`/`effect2`
-construction into blocks and sets `payload_version = 2L`. The per-target callers
-in `julia-bridge.R` (`hs_fit_julia_two_effect_payload()` etc.) either (a) keep
-using their bespoke Julia commands during the transition (the alias in §4 lets
-the parser accept the old shape), or (b) migrate to a single
-`hs_fit_julia_payload_v2()` that assigns `random_effects` and calls
-`HSquared.parse_payload_v2` + the dispatched estimator + `result_payload_v2`.
-Option (b) is the eventual target; the alias means it need not be simultaneous
-with P0.3.
+The sibling `hsquared` candidate currently has an emitter in
+`R/bridge-payload.R` that sets `payload_version = 2L` and assembles ordered
+`random_effects` blocks. `R/julia-bridge.R` contains v2 caller code as well as
+target-specific bridge paths. This records implementation presence only; it
+does not assert that every R fit uses one generic v2 caller, that the two lanes
+have ratified every field, or that all parsed Julia dispatches are fitted
+capabilities. The v0.1 alias in §4 remains the compatibility route during
+migration.
 
 ## 8. Freeze checklist (RATIFICATION)
 
@@ -317,32 +358,29 @@ commit + handshake (not this session).
 - [ ] `(x|g)` `K` reporting (raw covariance vs lme4 Std.Dev/Corr) is deferred to
   the Phase 3 `P3.0` convention lock and only REFERENCED here — not frozen in
   this doc, since no `coefcov` estimator consumes it yet.
-- [ ] The `maternal_genetic()` → independent-vs-correlated ambiguity (§3) is noted
-  as an R-lane decision, not blocked by this contract.
+- [ ] Both lanes distinguish the default independent `maternal_genetic()` target
+  from the explicit experimental `direct_maternal` adapter and its paired result.
 
 ## 9. Drift found — draft schema vs the live bridge (each reconciled above)
 
 Flagged during the P0.1/P0.2 reconciliation; every item is now consistent in the
 text above.
 
-1. **Bare `(1|g)` / `(x|g)` / `(x||g)` are NOT parsed by the R lane.** The old
-   draft's §3 grammar table listed `(1|g)`, `(x|g)`, `(x||g)`, `rr(t,k)` as if
-   they were live R terms. The R parser accepts a second random effect ONLY via
-   `permanent()` / `common_env()` / `maternal_genetic()` with an `animal()`
-   primary (`model-spec.R:238-244`, `:2117-2135`, `formula-status.R:57-61`); a
-   bare `(1|g)` is not a term. Reconciled: §3 now marks `(x|g)` as a **frozen
-   slot** (NOT parsed today), and uses the real term names for the live rows.
+1. **Bare intercept and slope terms have different scopes.** The current R
+   candidate accepts opt-in bare `(1|g)` independent iid intercept blocks with
+   an `animal()` primary (`R/model-spec.R:131-166,275-301`). Bare `(x|g)` and
+   `(x||g)` slopes remain rejected. This corrects the older no-bare-intercept
+   statement without extending the fitted grammar or its validation status.
 2. **`label` vs `name`.** The draft used `label`; the bridge's `effect2` uses
    `type`/`group` and the result normalizers key on component names like
    `"animal"`/`"common_env"`. Reconciled: the block field is `name` (§2), aligned
    with the existing result vocabulary.
-3. **`maternal_genetic()` is currently INDEPENDENT, not correlated.** The draft's
-   grammar row mapped `maternal_genetic` straight to `correlated`. In the live
-   bridge it dispatches to `fit_two_effect_reml` as a second *independent*
-   pedigree effect (`julia-bridge.R:896-900`, `model-spec.R:243`) — there is no
-   `σ_dm` today. Reconciled: §3 lists BOTH the live independent row and the frozen
-   `correlated` slot, and §2/§3 warn not to conflate them (they are different
-   estimators: `fit_two_effect_reml` vs `fit_direct_maternal_reml`).
+3. **Maternal covariance requires an explicit target.** The default
+   `maternal_genetic()` target remains independent. The dedicated experimental
+   `target = "direct_maternal"` adapter uses `fit_direct_maternal_reml` and its
+   correlated block, including `σ_dm` and paired effects. The exact current
+   twin maternal receipts validate the named six-animal/eight-record cell;
+   generic v2 production parity remains unproved.
 4. **Estimators take positional matrix args, not a `blocks` list.** The draft
    implied the engine consumes the block list directly. It does not:
    `fit_two_effect_reml(y,X,Z1,Ainv1,Z2,Ainv2)`,
@@ -364,11 +402,13 @@ text above.
 
 ## 10. What this doc does NOT do
 
-- No estimator, no R formula activation, no covered claim (contract-only; this
-  slice does not move `public_covered_count`). The `coefcov` multi-block and `correlated`-via-`maternal_genetic()`
-  paths are FROZEN SLOTS, not wired estimators.
-- The R emitter (§7) is implemented in the companion S0 branch
-  `feat/2026-07-01-payload-v2-emitter`; this HSquared.jl file is not itself the R edit.
+- This schema adds no estimator, and ratification alone makes no covered claim
+  or change to `public_covered_count`. Generic `coefcov` fitting remains unwired.
+  The explicit experimental correlated-maternal adapter has its named live
+  parity evidence; this does not ratify all v2 routes. The matrix-valued generic
+  MV repeatability result remains fenced from scalar R normalizers (§5).
+- The R emitter (§7) is present in the sibling `hsquared` candidate at the
+  reviewed 2026-09-29 state; this HSquared.jl file is not itself the R edit.
 - Supersedes nothing; extends `03-engine-contract.md`. The
   `12-bridge-compatibility.md` matrix gains a `payload_version` column when this is
   RATIFIED.

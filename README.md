@@ -74,8 +74,9 @@ Implemented now:
   `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and
   `HSquared.precision()`; these names error honestly and do not construct
   model specs yet;
-- `formula_status()` grammar diagnostics that mirror the R twin's parsed,
-  reserved, and planned formula-status table;
+- `formula_status()` Julia-local engine-term diagnostics. The R package owns
+  public formula parsing and has a broader status table; bounded FA and
+  genetic GLLVM expert-control fits are documented as separate routes;
 - `validation_status()` diagnostics for the validation evidence ladder,
   including covered, external, partial, and planned rows;
 - pedigree validation, ID recoding, unknown-parent handling, and topological

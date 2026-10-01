@@ -1,0 +1,4 @@
+MH01_ORIGINAL_NONZERO_OFFPATTERN_REFUSED, PREPARED_ACCEPTS_ZERO
+MH02_CONVERTED_WEIGHT_UNDERFLOW original=1.0e-200 prepared=0.0
+Test Summary:                         | Pass  Total  Time
+Independent selected trace challenges |   21     21  0.4s

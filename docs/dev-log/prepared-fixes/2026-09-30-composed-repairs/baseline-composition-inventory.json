@@ -1,0 +1,184 @@
+{
+  "base_head": "3d6d7ffc961b65fa5a44ce277a7d1168ba69b6fe",
+  "tree_algorithm": "SHA256 sorted src-relative UTF8 path, NUL, file bytes, NUL",
+  "original_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "composed_source_tree_sha256": "0683697c6f17c1d650982be1ce30a2f8a1ae888816f415a8a51f3abe4d288853",
+  "combined_patch_sha256": "a963144788ba80e5313320f2bd8f54f30615db0962cabd1ac7d0fd58e7137c62",
+  "changed_files": {
+    "docs/design/21-payload-v2-multiblock-schema.md": {
+      "original_sha256": "02fe6d274d83b2c62ae972f11d32186c507e083ef19fcb1dd6702b514adb3e80",
+      "composed_sha256": "2828a8b7840775873fc5dad052d6cec7eb3acb4fd6b344923b210b53e69a8785"
+    },
+    "docs/design/capability-status.md": {
+      "original_sha256": "daf32aaaa16834a148d2240336990ef835befe8a6df298be6007ce91288b3e01",
+      "composed_sha256": "10037f7361da6b71579e6eed2a0a940da2286772d9dd5288ebe5c427fd399bf3"
+    },
+    "docs/design/legacy-laplace-objective-clarification.md": {
+      "original_sha256": null,
+      "composed_sha256": "ad94ca5c1018f0174e1d14960bedc7d0662745fbc44ae20bad1cf3a85ed0a89a"
+    },
+    "docs/design/validation-debt-register.md": {
+      "original_sha256": "df409aab18c1de885acdabcbc84eacebac6956bc3bb2ef0ce936da1f5a41f46e",
+      "composed_sha256": "6c72e93e45c3746d0b8e573d71eb2e9e15983b151c4a38aa6132f24e22cfb662"
+    },
+    "docs/src/genomics-qtl-gpu-hpc.md": {
+      "original_sha256": "cfd529ba8e6860c005cb4e73d3b174b57248c52d71e04efbc299cfc8abf38dcc",
+      "composed_sha256": "ee2478c753f4d394a0e1b99f719493728919f73be4840fe0f8cc7dbf9b4a5f56"
+    },
+    "src/bridge_payload_v2.jl": {
+      "original_sha256": "3f1c5eed39414860953898ec23e6a8cec622d90d7009f107519892b22b63a7e0",
+      "composed_sha256": "9d389444008a25ddfb3ba140836bab5a3d2c8ebfb94052424d8d1ac6c0c5a3e9"
+    },
+    "src/data.jl": {
+      "original_sha256": "39efaac183375e0f735836e5c3d398a1b8f59fffb5b7e7f3b616678b01d727b8",
+      "composed_sha256": "5ac87d115a0b8c41822f38cfb54cbdffc3f298578bbf1ddb9aec0edc6c823012"
+    },
+    "src/genetic_gllvm.jl": {
+      "original_sha256": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+      "composed_sha256": "8392d7964f72d18278db130d5afd5ada30778233581bfe4090031b3fac3b4f71"
+    },
+    "src/genomic.jl": {
+      "original_sha256": "76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f",
+      "composed_sha256": "f6f8ba22302d55f81d25d36c2f8803fc22dfa4473cb0087613f37ec403e91523"
+    },
+    "src/nongaussian.jl": {
+      "original_sha256": "24a31752319a1c51dbded522d8e20d066227d208e71be970cb94891beb87da00",
+      "composed_sha256": "741a4bbed6182756e7bf8d02e082236de99a230c8019b7bd075b0f7783d28571"
+    },
+    "src/postfit.jl": {
+      "original_sha256": "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f",
+      "composed_sha256": "28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3"
+    },
+    "src/random_regression.jl": {
+      "original_sha256": "761151eb0297bece4c859db8a504a244a26510d320f123f85a9a9295621e7a5c",
+      "composed_sha256": "91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33"
+    },
+    "src/validation_status.jl": {
+      "original_sha256": "95f90c3a166f7ead65afc4205d5139155f86c002c697045388a1b2d383d14010",
+      "composed_sha256": "1d1d444bea3a5dc7a2dfccf5549b4d3082acfe3bf48761fe203a9d5f993c5316"
+    },
+    "test/data_dict_missing_count_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "080b4bb5e72a93d0585bfa52c2782ec4abde7ce3238bda5ad08bc3b1227c1bcb"
+    },
+    "test/flat_integral_endpoint_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "0897e4b8cdc7c9579886d006ce8465a985969390888c528b268997caa0cb110b"
+    },
+    "test/gllvm_descriptor_record_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "9932c6e4a91a065c519a41d66f11aadf4d829d2f8eb75329f9f5b6635ccbbd36"
+    },
+    "test/gllvm_input_guard_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "d78fd02d163eb5c4c3c27c060647ac1819c05d27cb7406a9d47447a73ca51bc1"
+    },
+    "test/nongaussian_finite_ingress_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "1947ae4f703436392d0a3556fefdfeec69bfd7eee5e704db833c021e366f9ab3"
+    },
+    "test/rr_descriptor_scale_regression.jl": {
+      "original_sha256": null,
+      "composed_sha256": "f92c48de5a8c1b67d03b01dcad5b44ff3d3cd0ff200ca162ee753f6ed2dd1c41"
+    },
+    "test/runtests.jl": {
+      "original_sha256": "b2d77c7f0937f5fcf0ed8ec32913c816b2c942f27c83825c8424107a5bc58b24",
+      "composed_sha256": "af8681e54ae7ac6582042ef848ddc0d7b29f66cd0e81b2c5504bf5ea23e939b1"
+    },
+    "test/test_coefcov_fields.jl": {
+      "original_sha256": null,
+      "composed_sha256": "45f9ebd3d4d65e7b4c2d3d394ef338f72efae648c1c7d448df7e48b92d2c9c4d"
+    }
+  },
+  "unchanged_key_files": {
+    "src/multivariate.jl": "fc41aefefb61b2cc915d4f802b0017dc4daea5daa795a9d3421854e9c4958670",
+    "sim/fa_ordinary_start_recovery_20260928.jl": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "test/test_fa_weak_direction.jl": "158ae089596b4c2bcf9e1fd889e0777771776d11c417359a9aba350fe6b82b5c",
+    "test/test_payload_v2_parity.jl": "8f281fb60bbc9bf0ccf46559f5152ef32b68148eff1c0457fa01c9abb0dccc73"
+  },
+  "inputs": [
+    {
+      "name": "gllvm-input-guards",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-gllvm-input-guards/gllvm-input-guards.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-input-guards--gllvm-input-guards.patch",
+      "sha256": "b3dd47ab24c491ec4e727cb3a36b2d5aa89a5dfc1bc3bb35092853029fff9ef1"
+    },
+    {
+      "name": "gllvm-descriptor-record",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-gllvm-descriptor-record/gllvm-descriptor-record.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-descriptor-record--gllvm-descriptor-record.patch",
+      "sha256": "737bd4156a4ac8186ea49c9af1eb6ddc0275c68a1a7f3801d0fc6301e6ae680d"
+    },
+    {
+      "name": "coefcov-fields",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-coefcov-fields/coefcov-field-validation.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/coefcov-fields--coefcov-field-validation.patch",
+      "sha256": "ea88557d2533bc8bb5e2f0270eb825967e8622d32543188fedf959808403f72f"
+    },
+    {
+      "name": "rr-descriptors",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-rr-descriptors/rr-descriptor-fixes.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/rr-descriptors--rr-descriptor-fixes.patch",
+      "sha256": "ec27b69dc016d5cd1f9cd18a757da78eddc7115ce27767c129469105433f4290"
+    },
+    {
+      "name": "validation-status",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-status/validation-status-wording.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-status--validation-status-wording.patch",
+      "sha256": "e2d76592dc28faa99c36808d063619e2cc80e25da107f2ef9794687a08cba042"
+    },
+    {
+      "name": "validation-ledger-sync",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-ledger-sync/docs.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--docs.patch",
+      "sha256": "5462382c48f55702cf04ac974370b94ec24dfc52544aca20a5afb68d5f0b0ba7"
+    },
+    {
+      "name": "validation-ledger-sync",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-ledger-sync/nongaussian-docstring.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--nongaussian-docstring.patch",
+      "sha256": "4b702a972ea1f79c929614791b4849190d224c94783a857ea7e73b4f5a6d35a1"
+    },
+    {
+      "name": "data-dict-missing-count",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-data-dict-missing-count/data-dict-missing-count.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/data-dict-missing-count--data-dict-missing-count.patch",
+      "sha256": "7f8255c686f74c097b4787d85742c0cc4c9a7dcaefea001fba98ad7e27ff26c1"
+    },
+    {
+      "name": "flat-integral-endpoints",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-flat-integral-endpoints/flat-integral-endpoints.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/flat-integral-endpoints--flat-integral-endpoints.patch",
+      "sha256": "377949339080913493db2a6c48916b4eae7aae9c15f5c54c5d859c1f139c1e9e"
+    },
+    {
+      "name": "postfit-marker-contract",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-postfit-marker-contract/contract-fix.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/postfit-marker-contract--contract-fix.patch",
+      "sha256": "67281094c94e34fd7a29414534f5304b1a5e5fb02a5598f547e909f37afff70c"
+    },
+    {
+      "name": "nongaussian-finite-ingress",
+      "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-nongaussian-finite-ingress/nongaussian-finite-ingress.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/nongaussian-finite-ingress--nongaussian-finite-ingress.patch",
+      "sha256": "2e3aa1fac2f1a5b1567113bd9e986992315b756faf3350df83678d657aa102db"
+    },
+    {
+      "name": "mv-repeatability-labels-schema",
+      "source": "/private/tmp/hsq-mv-repeatability-label-fix-20260930/schema-wording.patch",
+      "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/mv-repeatability-labels--schema-wording.patch",
+      "sha256": "bb03a9d1ef664b61b28d70fd7f3658e730d1eb5a5411f42128cbf7cf1a733175"
+    }
+  ],
+  "status_and_id_table_fields_equal": true,
+  "runner_reconstructed_from_dirty_original_plus_two_approved_patches_and_registration": true,
+  "focused_checks_log_sha256": "fe98f3daba58ea10a2d357b6bc333ab974be41c1ef6a53960eaf4fdb41c7b5a2",
+  "focused_check_exit": 0,
+  "focused_assertions": 481,
+  "live_head_at_close": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "replay_changed_file_hashes_equal": true,
+  "live_combined_apply_check": "PASS",
+  "live_source_tree_unchanged": true
+}

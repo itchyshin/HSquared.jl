@@ -1,0 +1,44 @@
+ERROR: LoadError: Some tests did not pass: 190 passed, 0 failed, 1 errored, 0 broken.
+in expression starting at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:24
+supplied solve permits saturated full-rank fixed design: Error During Test at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:95
+  Got exception outside of a @test
+  ArgumentError: REML requires fewer fixed-effect columns than observations
+  Stacktrace:
+    [1] _likelihood_design(y::Vector{Float64}, X::Matrix{Float64}; method::Symbol)
+      @ HSquared /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:26
+    [2] _likelihood_design
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:19 [inlined]
+    [3] _likelihood_validated_spec(spec::AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}; method::Symbol)
+      @ HSquared /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:58
+    [4] _likelihood_validated_spec
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:55 [inlined]
+    [5] _validated_sparse_relationship_spec
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:287 [inlined]
+    [6] henderson_mme(spec::AnimalModelSpec{Vector{Float64}, Matrix{Float64}, SparseMatrixCSC{Float64, Int64}, SparseMatrixCSC{Float64, Int64}, Vector{Int64}}, sigma_a2::Float64, sigma_e2::Float64)
+      @ HSquared /private/tmp/hsq-likelihood-input-fix-20260930/src/likelihood.jl:1256
+    [7] macro expansion
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:97 [inlined]
+    [8] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+    [9] macro expansion
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:96 [inlined]
+   [10] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [11] top-level scope
+      @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+   [12] include(mod::Module, _path::String)
+      @ Base ./Base.jl:495
+   [13] exec_options(opts::Base.JLOptions)
+      @ Base ./client.jl:318
+   [14] _start()
+      @ Base ./client.jl:552
+Test Summary:                                             | Pass  Error  Total   Time
+likelihood input and result boundaries                    |  190      1    191  11.1s
+  malformed model inputs reject before fitting            |   98            98   9.0s
+  supplied finite positive representable variance domain  |   36            36   0.5s
+  precision representability is specific to MME paths     |    4             4   0.0s
+  starts controls and IDs                                 |   29            29   0.9s
+  finite model can exceed arithmetic range                |    3             3   0.0s
+  finite fitting failures and model-method metadata       |    4             4   0.1s
+  supplied solve permits saturated full-rank fixed design |           1      1   0.4s
+  valid calculations and p0 remain supported              |   16            16   0.2s

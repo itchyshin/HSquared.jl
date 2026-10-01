@@ -1,0 +1,115 @@
+--- a/src/postfit.jl
++++ b/src/postfit.jl
+@@ -21,7 +21,9 @@
+ of [`mixed_model_marker_scan`](@ref) on a fitted animal model, using the fit's
+ `y`/`X`/`Z`, its relationship precision `Ainv`, and its fitted variance components
+ `(σ²a, σ²e)`. Equivalent to calling the explicit-argument method with those values
+-pulled off `fit.spec` and `fit.variance_components`.
++pulled off `fit.spec` and `fit.variance_components`. The fit must have
++converged. Marker rows must be in the same observation order as `fit.spec.y`;
++this method has no observation-ID alignment information.
+ 
+ EXPERIMENTAL, dense/validation-scale. The Wald p-values are NOT genome-wide
+ calibrated (see #48); this does not activate the R `marker_scan()` formula path or
+@@ -29,6 +31,7 @@
+ """
+ function mixed_model_marker_scan(fit::AnimalModelFit, markers::AbstractMatrix;
+                                  allele_frequencies = nothing, marker_ids = nothing)
++    fit.converged || throw(ArgumentError("fit must have converged before marker scanning"))
+     return mixed_model_marker_scan(
+         fit.spec.y, fit.spec.X, fit.spec.Z, fit.spec.Ainv, markers,
+         fit.variance_components.sigma_a2, fit.variance_components.sigma_e2;
+@@ -50,6 +53,7 @@
+ """
+ function single_marker_scan(fit::AnimalModelFit, markers::AbstractMatrix;
+                             allele_frequencies = nothing, marker_ids = nothing)
++    fit.converged || throw(ArgumentError("fit must have converged before marker scanning"))
+     return single_marker_scan(
+         fit.spec.y, fit.spec.X, markers;
+         allele_frequencies = allele_frequencies,
+--- a/src/genomic.jl
++++ b/src/genomic.jl
+@@ -856,8 +856,8 @@
+         throw(ArgumentError("X must have full column rank"))
+     sa2 = Float64(sigma_a2)
+     se2 = Float64(sigma_e2)
+-    isfinite(sa2) && sa2 > 0 ||
+-        throw(ArgumentError("sigma_a2 must be positive and finite"))
++    isfinite(sa2) && sa2 >= 0 ||
++        throw(ArgumentError("sigma_a2 must be nonnegative and finite"))
+     isfinite(se2) && se2 > 0 ||
+         throw(ArgumentError("sigma_e2 must be positive and finite"))
+ 
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -5592,6 +5592,53 @@
+     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
+     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
+           single_marker_scan(fit, markers; marker_ids = mids)
++
++    # Fitted convenience routes fail closed before delegating when convergence
++    # was not reported, even though their six-argument fixture constructor is valid.
++    unresolved = AnimalModelFit(spec, lik, (sigma_a2 = 1.2, sigma_e2 = 0.8), false, "supplied", 0)
++    for scan in (mixed_model_marker_scan, single_marker_scan)
++        err = try
++            scan(unresolved, markers)
++            nothing
++        catch e
++            e
++        end
++        @test err isa ArgumentError
++        @test occursin("fit must have converged", sprint(showerror, err))
++    end
++
++    # At sigma_a2 = 0 the mixed GLS covariance is sigma_e2*I. Compare its
++    # coefficients and Wald errors to an independent residualized OLS calculation.
++    sigma_e2_zero_additive = 0.8
++    W = markers .- mean(markers; dims = 1)
++    XtX = transpose(X) * X
++    y_resid = y - X * (XtX \ (transpose(X) * y))
++    oracle_effects = Float64[]
++    oracle_ses = Float64[]
++    oracle_denominators = Float64[]
++    for j in axes(W, 2)
++        w = W[:, j]
++        w_resid = w - X * (XtX \ (transpose(X) * w))
++        d = dot(w_resid, w_resid)
++        push!(oracle_denominators, d)
++        push!(oracle_effects, dot(w_resid, y_resid) / d)
++        push!(oracle_ses, sqrt(sigma_e2_zero_additive / d))
++    end
++    zero_mixed = mixed_model_marker_scan(y, X, Z, Ainv, markers, 0.0, sigma_e2_zero_additive)
++    zero_loco = loco_mixed_model_marker_scan(
++        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
++        fill("chr1", size(markers, 2)), markers, 0.0, sigma_e2_zero_additive,
++    )
++    for scan in (zero_mixed, zero_loco)
++        @test scan.effects ≈ oracle_effects rtol = 1e-12 atol = 1e-12
++        @test scan.standard_errors ≈ oracle_ses rtol = 1e-12 atol = 1e-12
++        @test scan.z_scores ≈ oracle_effects ./ oracle_ses rtol = 1e-12 atol = 1e-12
++        @test scan.denominators .* sigma_e2_zero_additive ≈ oracle_denominators rtol = 1e-12 atol = 1e-12
++    end
++    @test zero_mixed.variance_components == (sigma_a2 = 0.0, sigma_e2 = sigma_e2_zero_additive)
++    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, -eps(), 1.0)
++    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, NaN, 1.0)
++    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, Inf, 1.0)
+ end
+ 
+ @testset "Phase 5 marker-scan parity fixture (#45)" begin
+--- a/docs/src/genomics-qtl-gpu-hpc.md
++++ b/docs/src/genomics-qtl-gpu-hpc.md
+@@ -417,7 +417,13 @@
+ `loco_relationship_precisions()` constructs dense VanRaden-plus-ridge
+ leave-one-group-out relationship precisions from marker groups, and
+ `loco_mixed_model_marker_scan()` selects a precision by marker group before
+-running the same dense GLS scan. These helpers do not compute interval-mapping
++running the same dense GLS scan. For both fitted convenience scans, marker rows
++must be in the same observation order as `fit.spec.y`; the scan has no
++observation IDs with which to align rows. They require a converged fit. The
++mixed and LOCO routes are experimental, dense validation-scale scans, and their
++Wald p-values are not genome-wide calibrated.
++
++These helpers do not compute interval-mapping
+ or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
+ workflows, estimate marker-scan variance components, claim calibrated
+ PVE/model R², choose public LOCO defaults, choose calibrated genome-wide

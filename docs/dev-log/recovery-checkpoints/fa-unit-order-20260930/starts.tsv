@@ -1,0 +1,11 @@
+case	start	available	valid	converged	iterations	loglik	minimum_uniqueness	floor_distance	note
+baseline	default	true	true	true	3173	-1243.4504945670315	0.22579973258434402	0.22569973258434403	reported_by_frozen_API
+baseline	balanced	true	true	true	2079	-1243.45049453844	0.22580080226700588	0.2257008022670059	reported_by_frozen_API
+units_D1	default	true	true	true	2949	-1279.7324843471542	0.16638441751049324	0.16628441751049325	reported_by_frozen_API
+units_D1	balanced	true	true	true	2133	-1279.732484341624	0.1663772721503321	0.1662772721503321	reported_by_frozen_API
+units_inverse_D1	default	true	true	true	2447	-1207.1685047401825	0.05645391773274675	0.05635391773274675	reported_by_frozen_API
+units_inverse_D1	balanced	true	true	true	2299	-1207.1685047420824	0.05645146960938095	0.05635146960938095	reported_by_frozen_API
+order_3142	default	true	true	true	3127	-1243.4504945424428	0.22582701059066201	0.22572701059066203	reported_by_frozen_API
+order_3142	balanced	true	true	true	2357	-1243.4504945405945	0.2258145185653959	0.2257145185653959	reported_by_frozen_API
+order_4321	default	true	true	true	3770	-1243.4504945374263	0.22581330241522343	0.22571330241522344	reported_by_frozen_API
+order_4321	balanced	true	true	true	2219	-1243.4504945444885	0.22582285013055847	0.22572285013055848	reported_by_frozen_API

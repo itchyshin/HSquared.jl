@@ -30,6 +30,37 @@ using Test
         @test occursin("t=4 K=1", err)
     end
 
+    @testset "Production FA covariance map local Jacobian" begin
+        # Differentiate the exact fitter parameter map: unconstrained loadings
+        # followed by log-uniqueness coordinates, including the production floor.
+        map_vech = function (params)
+            G, _, _ = HSquared._structured_genetic_params_to_cov(
+                params, 4, :factor_analytic, 1)
+            return [G[i, j] for j in 1:4 for i in j:4]
+        end
+        central_jacobian = function (f, x)
+            y = f(x)
+            J = zeros(length(y), length(x))
+            h = 1e-6
+            for j in eachindex(x)
+                xp = copy(x)
+                xm = copy(x)
+                xp[j] += h
+                xm[j] -= h
+                J[:, j] .= (f(xp) .- f(xm)) ./ (2h)
+            end
+            return J
+        end
+        numerical_rank = J -> count(>(maximum(svdvals(J)) * 1e-6), svdvals(J))
+
+        ψ = [0.4, 0.6, 0.8, 0.5]
+        θ = log.(ψ .- FA_UNIQUENESS_FLOOR)
+        generic = vcat([0.7, -0.5, 1.2, 0.9], θ)
+        nonidentified = vcat([1.0, 1.0, 0.0, 0.0], θ)
+        @test numerical_rank(central_jacobian(map_vech, generic)) == 8
+        @test numerical_rank(central_jacobian(map_vech, nonidentified)) == 7
+    end
+
     @testset "Unconstrained uniqueness never drops below the floor" begin
         θ = [-40.0, -1.0, 0.0]
         ψ = HSquared._fa_uniqueness_from_unconstrained(θ)

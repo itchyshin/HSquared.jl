@@ -1,0 +1,33 @@
+--- a/src/nongaussian.jl
++++ b/src/nongaussian.jl
+@@ -640,12 +640,25 @@
+ """
+     laplace_marginal_loglik(y, X, Z, Ainv, sigma_a2, family; tol = 1e-10, maxiter = 100)
+ 
+-Laplace-approximate marginal log-likelihood of the non-Gaussian animal model,
+-integrating the random effect `u ~ N(0, A·σ²a)` (and `β` under a flat prior).
++Joint integrated-Laplace objective for the non-Gaussian animal model. It
++approximates `∫∫ exp(ℓ(y | Xβ + Zu)) φ(u; 0, G) du dβ`, with `G = A·σ²a`.
++The measure `dβ` has density one in the supplied X coefficient coordinates;
++it is flat and unnormalized. The genetic Gaussian density is normalized.
++
++At the joint mode of `F = ℓ(y | Xβ + Zu) - u′G⁻¹u/2`, the reported value is
++`F - log|G|/2 + p*log(2π)/2 - log|H_joint|/2`, where `p = size(X, 2)` and
++`H_joint` is the negative observed-curvature Hessian in `(β, u)` at that mode.
++This integrates fixed effects as well as genetic effects. It generally differs
++from conventional Laplace-ML, which profiles fixed effects after integrating
++only genetic effects. The integral must be proper; current necessary guards
++and local mode convergence do not establish propriety for every design.
++
+ Returns `(loglik, beta, u, converged, gradient_norm, iterations)`.
+-
+-Experimental, dense, validation-scale. For a `GaussianResponse` it is exact and
+-equals `sparse_reml_loglik`.
++Experimental, dense, validation-scale. For `GaussianResponse` the integral is
++exact and equals `sparse_reml_loglik` under the same fixed-effect measure and
++likelihood normalization. That Gaussian REML reduction does not define a
++non-Gaussian REML or AI-REML objective. The historical `fit_laplace_reml` name
++is retained for compatibility.
+ """
+ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                                  Ainv::AbstractMatrix, sigma_a2::Real,

@@ -1,0 +1,3 @@
+First setup command attempted to use the not-yet-created scratch root as workdir. Tool refused process creation. Repeated setup from /private/tmp; no source mutation in failed attempt.
+Initial in-memory preparation used the wrong internal AI symbol _fit_ai_reml_with_diagnostics. Assertion stopped before writing. The shell then ran a requested green invocation against unchanged baseline; it repeated51PASS13FAIL and is retained as green-001.log with actual exit1. Correct internal symbol is _fit_ai_reml_diagnostics. Corrected script saved separately.
+Corrected preparation then used an incorrect multiline docstring marker; assertion stopped before writing. Saved failed-002 script and corrected exact marker a conservative optimizer path.

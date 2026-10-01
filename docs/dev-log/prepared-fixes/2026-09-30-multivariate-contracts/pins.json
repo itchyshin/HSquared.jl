@@ -1,0 +1,25 @@
+{
+  "base_head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "original_source_sha256": "fc41aefefb61b2cc915d4f802b0017dc4daea5daa795a9d3421854e9c4958670",
+  "prepared_source_sha256": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
+  "patch_sha256": "105dcd37e391d06efbf042bfac85de622a5087af0329e79c8ad462f8f3c73b43",
+  "test_sha256": "c794be805263c73e4e3d454924dffef3aa1ac3f7bd4abd3b435d95fcb7d42504",
+  "last_tested_source_before_prose_sha256": "840aca7ab7f9e66afa17aa5328d806dc37d305548cea903b02dd0132c76a4a6e",
+  "baseline_primary_tests": 96,
+  "baseline_primary_pass": 27,
+  "baseline_primary_fail": 69,
+  "final_tests": 107,
+  "last_green_testset_seconds": 8.7,
+  "artifacts": {
+    "original/src/multivariate.jl": "fc41aefefb61b2cc915d4f802b0017dc4daea5daa795a9d3421854e9c4958670",
+    "prepared/src/multivariate.jl": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
+    "test/multivariate_contract_regression.jl": "c794be805263c73e4e3d454924dffef3aa1ac3f7bd4abd3b435d95fcb7d42504",
+    "prepare.py": "602f8da871ef2d911744266c97984d0d5c07553b1d8a6d393ab6ee23ff30f690",
+    "baseline-red.log": "bf2a2d91cd714997e35d365070db1238a5719752f29db567f7c87ade7f66129b",
+    "baseline-complete-red.log": "024919b73fef0ee488c805da88c2afb7a5af4dd8139c77ad49a1fd0f4c0e8152",
+    "prepared-green.log": "4b2fac565b74d90b74dae2187759eff97d9185dcbef4fe192cd1361724f65b9f",
+    "final-prepared-green.log": "07340276bbf86eca6bfce34817aa33c600e38044698e93b9437c1e9bfbfcc3e9",
+    "source-before-final-prose.jl": "840aca7ab7f9e66afa17aa5328d806dc37d305548cea903b02dd0132c76a4a6e",
+    "multivariate-contracts.patch": "105dcd37e391d06efbf042bfac85de622a5087af0329e79c8ad462f8f3c73b43"
+  }
+}

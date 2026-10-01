@@ -1,0 +1,18 @@
+{
+  "green.log": "381f73326114e2399a2e4d8d9b2136967a61f57883105b933c007dc0eb8e300e",
+  "original/src/takahashi_selinv.jl": "38a07e2e34da2f4a295e52e25b1f1d067a0b7e1b2893bdef8c73f1f78c704782",
+  "prepared/src/takahashi_selinv.jl": "3ac12ece1d095852f0937d63c97a03333665560a2c4876c138b4c547fec4e0ed",
+  "red.log": "99b9903d24be41df520d35a43c447fe24894f8f4874349efd38e51c9bc0bc9c4",
+  "report.md": "ac73835255f40042fa4fdf5218cddddb27651542bb9b4e360c88d7f36ac5cbec",
+  "revision-1/green.log": "381f73326114e2399a2e4d8d9b2136967a61f57883105b933c007dc0eb8e300e",
+  "revision-1/prepared/src/takahashi_selinv.jl": "92229743288e97ecc0f324105060aafaacf785767225ab5e26e624d91d90ba93",
+  "revision-1/report.md": "b9ed2bf2d1c848b3f388d14de30c2afe578222f4e9a7a8d7e376310d64a93b8a",
+  "revision-1/selinv-trace-finite.patch": "654cd3cfef0fab90040cfe93f05b8e6336f3d0839e18a48f4321d493b19bdb29",
+  "revision-1/test/existing_selinv_contracts.jl": "ac0cc9a8d371093c6aa8719ef612f794486db6e55c7470c01af800b5a7eb4a05",
+  "revision-1/test/selinv_trace_finite_regression.jl": "8d02b94442b13ff0b14aec18addec09ac9f8be2feb08aca02225085d9218ca52",
+  "revision-2-green.log": "48d6761bbd555114e1e24fceb67d93c098ef4b9e30b10b098376c9b4622edaa1",
+  "run.jl": "4383848e08aaad952d02877689a2b78d5a697e0168bae261156297e78eca2c4c",
+  "selinv-trace-finite.patch": "1b7af93b73cd2ad23f9eea3cadf7536566c3792d3bf0d4653fbeeabfdb37c0f4",
+  "test/existing_selinv_contracts.jl": "ac0cc9a8d371093c6aa8719ef612f794486db6e55c7470c01af800b5a7eb4a05",
+  "test/selinv_trace_finite_regression.jl": "10ff2a39b9159de5082614ac7b5b00c9d5823853aacb53beac48d3f426c35f65"
+}

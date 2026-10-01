@@ -1,0 +1,390 @@
+--- a/src/likelihood.jl
++++ b/src/likelihood.jl
+@@ -426,11 +426,12 @@
+ 
+ REML-only and experimental: it is validated to recover the same optimum as the
+ dense and sparse NelderMead optimizers, but is not yet checked against external
+-comparators or hardened for boundary/large-pedigree cases. The AI form is exact
+-for the *Gaussian* linear mixed model (the information matrix uses the data
+-directly, so it matches the observed information); it does NOT transfer to
+-Laplace-approximated / non-Gaussian models, where observed-information Newton is
+-required instead.
++comparators or hardened for boundary/large-pedigree cases. For a Gaussian linear
++mixed model whose covariance is linear in the variance components, average
++information is the arithmetic average of observed and expected REML information.
++Its working-variate quadratic need not equal the observed information. This
++Gaussian identity does not directly extend to Laplace-approximated non-Gaussian
++models.
+ 
+ An optional **EM-REML warm-start** (`em_warmup`, default `0`) runs that many
+ EM-REML iterations before the AI/Newton loop. The EM update is the closed form
+@@ -1552,8 +1553,9 @@
+ # vector `[σ_1², …, σ_{d-1}², σ_e²]` (`d = 3` for the two-effect model, `d = K+1`
+ # for the K-effect model) and `keep_num` is the numerator component. Components
+ # whose variance is a negligible fraction of the total are BOUNDARY components:
+-# they are dropped from `info` (the interior information conditional on a boundary
+-# component being fixed at 0 is the corresponding sub-block), so a ratio built on
++# they are dropped from `info` while held fixed at their supplied values. The
++# reported ratio retains the full denominator; only its active coordinates vary.
++# At an exact zero component this is conditional information at zero, so a ratio built on
+ # a non-boundary numerator (e.g. `ratio1` when only σ2²→0) still gets a valid
+ # interval — this is what makes the σ2²=0 reduction match `heritability_interval`.
+ # A ratio whose OWN numerator or whose total-defining denominator is degenerate is
+@@ -1562,6 +1564,52 @@
+     (isfinite(boundary_tol) && boundary_tol >= 0) ||
+         throw(ArgumentError("boundary_tol must be finite and nonnegative"))
+     return boundary_tol
++end
++
++# Invalid user controls are errors, distinct from unavailable boundary information.
++function _validate_uncertainty_fd_step(fd_step::Real)
++    (isfinite(fd_step) && fd_step > 0) ||
++        throw(ArgumentError("fd_step must be finite and positive"))
++    step = Float64(fd_step)
++    (isfinite(step) && step > 0) ||
++        throw(ArgumentError("fd_step must remain finite and positive after Float64 conversion"))
++    return step
++end
++
++function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)
++    step = _validate_uncertainty_fd_step(fd_step)
++    h = step .* max.(abs.(theta), 1e-3)
++    all(x -> isfinite(x) && x > 0, h) ||
++        throw(ArgumentError("fd_step must produce finite positive component steps"))
++    return h
++end
++
++function _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)
++    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
++    all(s -> s isa Real && isfinite(s) && s > 0, sigmas) ||
++        throw(ArgumentError("all sigmas must be finite and positive"))
++    (isfinite(sigma_e2) && sigma_e2 > 0) ||
++        throw(ArgumentError("sigma_e2 must be finite and positive"))
++    ss = Float64.(collect(sigmas))
++    all(s -> isfinite(s) && s > 0, ss) ||
++        throw(ArgumentError("all sigmas must remain finite and positive after Float64 conversion"))
++    se = Float64(sigma_e2)
++    (isfinite(se) && se > 0) ||
++        throw(ArgumentError("sigma_e2 must remain finite and positive after Float64 conversion"))
++    theta = vcat(ss, se)
++    isfinite(sum(theta)) || throw(ArgumentError("total variance must be finite after Float64 conversion"))
++    return theta
++end
++
++function _validate_uncertainty_selection(which, K::Integer)
++    applicable(iterate, which) ||
++        throw(ArgumentError("which must be a nonempty collection of unique integer component indices"))
++    idx = collect(which)
++    isempty(idx) && throw(ArgumentError("which must select at least one component"))
++    all(i -> i isa Integer && !(i isa Bool) && 1 <= i <= K, idx) ||
++        throw(ArgumentError("which must contain integer component indices 1..$K; Boolean values are invalid"))
++    allunique(idx) || throw(ArgumentError("which must contain unique component indices"))
++    return Int.(idx)
+ end
+ 
+ function _ratio_delta_ci(info::AbstractMatrix, theta::AbstractVector,
+@@ -1589,9 +1637,9 @@
+                 lower_clamped = false, upper_clamped = false, boundary = true)
+     covar = inv(sub)
+     # delta-method gradient of ratio = θ[keep_num]/Σθ wrt the KEPT components only
+-    subtotal = sum(theta[k] for k in keep)   # == total (dropped comps are ≈ 0)
+-    g = [k == keep_num ? (subtotal - theta[keep_num]) / subtotal^2 :
+-                         -theta[keep_num] / subtotal^2 for k in keep]
++    # Inactive components stay in total and are held fixed at their supplied values.
++    g = [k == keep_num ? (total - theta[keep_num]) / total^2 :
++                         -theta[keep_num] / total^2 for k in keep]
+     se = sqrt(max(dot(g, covar * g), 0.0))
+     (0 < ratio < 1 && isfinite(se) && se > 0) ||
+         return (estimate = ratio, lower = NaN, upper = NaN, se = se,
+@@ -1631,8 +1679,11 @@
+ # That noise floor is a property of this estimand (see the `fd_step` caveat on
+ # `multi_effect_variance_component_covariance`), not of the loop.
+ function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     d = length(theta)
+-    h = fd_step .* max.(abs.(theta), 1e-3)
++    d >= 1 || throw(ArgumentError("variance vector must be nonempty"))
++    theta = _uncertainty_variance_vector(theta[1:end-1], theta[end], d - 1)
++    h = _uncertainty_component_steps(theta, fd_step)
+     H = zeros(d, d)
+     for i in 1:d, j in i:d
+         ei = zeros(d); ei[i] = h[i]
+@@ -1672,8 +1723,8 @@
+ `σ_i / total ≤ boundary_tol`) the ratio built on it is flagged `boundary = true`
+ with a `NaN` interval — never a spuriously tight CI. A ratio built on a
+ non-boundary numerator drops the degenerate component and uses the corresponding
+-information sub-block (the interior information conditional on the boundary
+-component being fixed at 0), so e.g. `ratio1` remains well-defined when only
++information sub-block conditional on that component held at its supplied value.
++The reported ratio and its gradient retain the full denominator, so e.g. `ratio1` remains well-defined when only
+ `σ2² → 0`; in that reduction it recovers [`heritability_interval`](@ref) on the
+ underlying animal model. `converged` is carried from the REML fit.
+ 
+@@ -1693,6 +1744,7 @@
+ )
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     which in (:both, :ratio1, :ratio2) ||
+         throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+     fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
+@@ -1733,7 +1785,7 @@
+ record→level incidence, `Ainv_i` the `q_i×q_i` relationship precision — pass
+ `I` for a plain i.i.d. `(1|group)` effect), `sigmas[i]` the variance of effect
+ `i`, and `sigma_e2 > 0`. The stacked random precision is
+-`blockdiag(A_1/σ_1, …, A_K/σ_K)` over `[u_1; …; u_K]` and the random design is
++`blockdiag(Ainv_1/σ_1, …, Ainv_K/σ_K)` over `[u_1; …; u_K]` and the random design is
+ `hcat(Z_1, …, Z_K)`, exactly as the two-effect kernel. `ids` may be `nothing`
+ or a length-`K` vector of per-effect id vectors.
+ 
+@@ -1862,9 +1914,9 @@
+ (≲4) and `n` (≲2000), NOT a production sparse estimator — that is the owed sparse
+ AI-REML `K`-component path. On small/uninformative data the optimum can sit on a
+ boundary (a variance → 0), reported via `converged` / `boundary`, never hidden.
+-Non-identifiability (e.g. two `A=I` effects on the same grouping) shows as a flat
+-ridge (`converged = false`); the engine reports it, it does not certify
+-identifiability.
++Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a
++flat ridge even when the optimizer reports `converged = true`. Optimizer
++convergence and boundary flags do not certify identifiability.
+ """
+ function fit_multi_effect_reml(
+     y::AbstractVector,
+@@ -1973,8 +2025,10 @@
+ boundary (σ_i / total ≤ `boundary_tol`) is flagged `boundary = true` with a `NaN`
+ interval — never a spuriously tight CI. A ratio built on a non-boundary numerator
+ drops the degenerate component(s) and uses the corresponding information sub-block
+-(the interior information conditional on the boundary component fixed at 0), so a
+-well-identified component keeps a valid interval even when another collapses.
++conditional on those components held at their supplied values. The reported
++ratio and its gradient retain the full denominator. At exact zero this gives
++the corresponding zero-component reduction; the approximation is not a
++near-boundary coverage guarantee.
+ 
+ Reductions: at `K = 2` this matches [`two_effect_ratio_interval`](@ref) (same
+ finite-difference information, same estimand); at `K = 1` it matches
+@@ -1998,6 +2052,7 @@
+ )
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     if which isa Symbol
+@@ -2053,18 +2108,15 @@
+         throw(ArgumentError("unavailable must be :throw or :nothing"))
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+-    length(sigmas) == K ||
+-        throw(ArgumentError("sigmas length must match number of effects"))
+-    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
+ 
+     # `_reml_fd_information` perturbs coordinate i by at most 2·h[i] (the i == j
+     # diagonal term). A component near the boundary would be pushed non-positive
+     # there, and `sparse_multi_reml_loglik` would throw "all sigmas must be
+     # positive" from inside the difference quotient — an opaque failure that
+     # looks like a bug rather than a boundary. Refuse up front instead.
+-    h = fd_step .* max.(abs.(theta), 1e-3)
++    h = _uncertainty_component_steps(theta, fd_step)
+     if !all(theta .- 2 .* h .> 0)
+         unavailable === :nothing && return nothing
+         throw(ArgumentError(
+@@ -2170,6 +2222,7 @@
+ 
+ function _sum_ratio_ci_from_cov(cov, theta::AbstractVector, idx, K::Integer,
+                                 level::Real, na)
++    idx = _validate_uncertainty_selection(idx, K)
+     total = sum(theta)
+     numer = sum(theta[i] for i in idx)
+     ratio = numer / total
+@@ -2210,7 +2263,10 @@
+ Returns a `NamedTuple` matching the single-ratio shape: `estimate`, `lower`,
+ `upper`, `se`, `lower_clamped`, `upper_clamped`, `boundary`. Returns `NaN`
+ endpoints with `boundary = true` rather than throwing when the ratio sits on a
+-rail or the information is not positive definite. Asymptotic; REML only.
++rail or the information is not positive definite. `which` must be a nonempty
++collection of unique integer component indices (Boolean values are invalid).
++Variances and `fd_step` must remain finite and positive after Float64 conversion;
++invalid inputs throw even when the ratio would lie on a rail. Asymptotic; REML only.
+ """
+ function multi_effect_sum_ratio_interval(
+     y::AbstractVector,
+@@ -2226,11 +2282,10 @@
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
+     K = length(effects)
+-    idx = collect(which)
+-    isempty(idx) && throw(ArgumentError("which must select at least one component"))
+-    all(i -> 1 <= i <= K, idx) ||
+-        throw(ArgumentError("which must index components 1..$K"))
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
++    idx = _validate_uncertainty_selection(which, K)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
++    _uncertainty_component_steps(theta, fd_step)
+     total = sum(theta)
+     numer = sum(theta[i] for i in idx)
+     ratio = numer / total
+@@ -2304,7 +2359,9 @@
+ the pre-workspace cost (see `_MultiREMLWorkspace`).
+ 
+ The returned values are identical to calling the three functions separately;
+-this only stops paying three times for one matrix.
++this only stops paying three times for one matrix. `which` has the same nonempty,
++unique integer selection contract as `multi_effect_sum_ratio_interval`. Invalid
++variances or finite-difference controls throw before information is computed.
+ 
+ Failure behaviour follows the individual functions. The covariance THROWS at a
+ flat or boundary optimum, so this throws too, once, rather than reporting three
+@@ -2330,14 +2387,13 @@
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
+     K = length(effects)
+-    idx = collect(which)
+-    all(i -> 1 <= i <= K, idx) ||
+-        throw(ArgumentError("which must index components 1..$K"))
++    idx = _validate_uncertainty_selection(which, K)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
+ 
+     cov = multi_effect_variance_component_covariance(
+         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+     )
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+     total = sum(theta)
+     ratio = sum(theta[i] for i in idx) / total
+     na = (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+--- /dev/null
++++ b/test/likelihood_uncertainty_contract_regression.jl
+@@ -0,0 +1,117 @@
++using Test, LinearAlgebra, SparseArrays, Random, HSquared
++const H = HSquared
++message(f) = try
++    f(); "no exception"
++catch e
++    e isa ArgumentError ? sprint(showerror,e) : string(typeof(e),": ",sprint(showerror,e))
++end
++const na = (estimate=NaN,lower=NaN,upper=NaN,se=NaN,lower_clamped=false,upper_clamped=false,boundary=true)
++# A small supplied-variance fixture, with no optimizer or fit.
++rng = MersenneTwister(913)
++n=48; g1=repeat(1:8,6); g2=repeat(1:6,inner=8)
++Z1=sparse(1:n,g1,1.0,n,8); Z2=sparse(1:n,g2,1.0,n,6)
++X=ones(n,1); effects=[(Z1,spdiagm(0=>ones(8))),(Z2,spdiagm(0=>ones(6)))]
++y=2 .+ 2 .* (Z1*randn(rng,8) .+ Z2*randn(rng,6) .+ randn(rng,n))
++@testset "Likelihood uncertainty contracts" begin
++    @testset "Unique integer selection" begin
++        for idx in ([1,1],Int[],[1.0],[1.5],[true],[0],[3],[big"1e100"])
++            for call in (H.multi_effect_sum_ratio_interval,H.multi_effect_uncertainty)
++                msg=message(()->call(y,X,effects,[1.0,1.0],1.0;which=idx))
++                @test occursin("ArgumentError",msg) && occursin("which",msg)
++            end
++            @test_throws ArgumentError H._sum_ratio_ci_from_cov(Matrix{Float64}(I,3,3),[1.0,1.0,1.0],idx,2,.95,na)
++        end
++        theta=[2.0,1.0,3.0]; cov=Matrix{Float64}(I,3,3)
++        expected=[3.0,3.0,-3.0]./36
++        ci=H._sum_ratio_ci_from_cov(cov,theta,[1,2],2,.95,na)
++        @test ci.estimate == .5
++        @test ci.se ≈ norm(expected) rtol=1e-14
++        @test H._sum_ratio_ci_from_cov(cov,theta,[2,1],2,.95,na) == ci
++    end
++    @testset "Full denominator with inactive coordinate fixed" begin
++        theta=[2.0,1.0,3.0]; ci=H._ratio_delta_ci(Matrix{Float64}(I,3,3),theta,1,.95,.2)
++        @test ci.estimate == 1/3
++        @test !ci.boundary
++        @test ci.se ≈ hypot(4.0,-2.0)/36 rtol=1e-14
++        fd=[begin
++            lo=copy(theta);hi=copy(theta);lo[k]-=1e-5;hi[k]+=1e-5
++            (hi[1]/sum(hi)-lo[1]/sum(lo))/(2e-5)
++        end for k in (1,3)]
++        @test ci.se ≈ norm(fd) rtol=1e-10
++        interior=H._ratio_delta_ci(Matrix{Float64}(I,3,3),theta,1,.95,0.0)
++        @test interior.se ≈ norm([4.0,-2.0,-2.0]./36) rtol=1e-14
++        exact_zero=H._ratio_delta_ci(Matrix{Float64}(I,3,3),[2.0,0.0,3.0],1,.95,1e-6)
++        @test exact_zero.estimate == .4
++        @test exact_zero.se ≈ hypot(3.0,-2.0)/25 rtol=1e-14
++    end
++    @testset "Finite positive FD step before evaluation" begin
++        calls=Ref(0);f=t->(calls[]+=1;-sum(abs2,t)/2)
++        for step in (0.0,-1e-4,NaN,Inf,-Inf,big"1e-400",big"1e400")
++            calls[]=0
++            @test_throws ArgumentError H._reml_fd_information(f,[1.0,1.0],step)
++            @test calls[] == 0
++            for call in (
++                ()->H.two_effect_ratio_interval(Float64[],ones(1,1),ones(1,1),ones(1,1),ones(1,1),ones(1,1);fd_step=step),
++                ()->H.multi_effect_ratio_interval(Float64[],ones(1,1),[];fd_step=step),
++                ()->H.multi_effect_variance_component_covariance(y,X,effects,[1.0,1.0],1.0;fd_step=step),
++                ()->H.multi_effect_sum_ratio_interval(y,X,effects,[1.0,1.0],1.0;fd_step=step,boundary_tol=.9),
++                ()->H.multi_effect_uncertainty(y,X,effects,[1.0,1.0],1.0;fd_step=step))
++                msg=message(call)
++                @test occursin("ArgumentError",msg) && occursin("fd_step",msg)
++            end
++        end
++        info=H._reml_fd_information(t->-sum(abs2,t)/2,[1.0,2.0],1e-3)
++        @test Matrix(info) ≈ Matrix{Float64}(I,2,2) atol=1e-9
++    end
++    @testset "Invalid variances cannot become boundary information" begin
++        for bad in (NaN,Inf,-Inf,0.0,-1.0,big"-1e-400",big"1e-400",big"1e400")
++            for call in (H.multi_effect_variance_component_covariance,H.multi_effect_sum_ratio_interval,H.multi_effect_uncertainty)
++                @test occursin("ArgumentError",message(()->call(y,X,effects,[bad,1.0],1.0)))
++                @test occursin("sigmas",message(()->call(y,X,effects,[bad,1.0],1.0)))
++                @test occursin("ArgumentError",message(()->call(y,X,effects,[1.0,1.0],bad)))
++                @test occursin("sigma_e2",message(()->call(y,X,effects,[1.0,1.0],bad)))
++            end
++        end
++        for call in (H.multi_effect_variance_component_covariance,H.multi_effect_sum_ratio_interval,H.multi_effect_uncertainty)
++            @test_throws ArgumentError call(y,X,effects,[1.0],1.0)
++        end
++    end
++    @testset "Valid supplied-variance covariance and boundary controls" begin
++        cov=H.multi_effect_variance_component_covariance(y,X,effects,[1.0,1.0],1.0)
++        @test all(isfinite,cov) && isposdef(cov)
++        allout=H.multi_effect_uncertainty(y,X,effects,[1.0,1.0],1.0;which=[2,1])
++        single=H.multi_effect_sum_ratio_interval(y,X,effects,[1.0,1.0],1.0;which=[1,2])
++        @test allout.covariance == cov
++        @test allout.sum_ratio_interval == single
++        @test single.estimate ≈ 2/3
++        @test all(isfinite,allout.ratio_se)
++        @test H.multi_effect_sum_ratio_interval(y,X,effects,[1e-12,1.0],1.0;which=[1,2]).boundary
++        @test H._multi_effect_variance_component_covariance(y,X,effects,[1e-12,1.0],1.0;unavailable=:nothing) === nothing
++        @test_throws ArgumentError H.multi_effect_variance_component_covariance(y,X,effects,[1e-12,1.0],1.0)
++        @test H.multi_effect_sum_ratio_interval(y,X,effects,[1.0,1.0],1.0;boundary_tol=.9).boundary
++    end
++end
++
++@testset "Derived component step precedes rail returns" begin
++ effects=[(ones(1,1),ones(1,1)),(ones(1,1),ones(1,1))]
++ y=[1.0];X=ones(1,1)
++ for (theta,step) in (([2.0,2.0,1.0],floatmax(Float64)),(fill(1e-4,3),nextfloat(0.0)))
++  for tol in (.9,1e-6)
++   call=()->H.multi_effect_sum_ratio_interval(y,X,effects,theta[1:2],theta[3];fd_step=step,boundary_tol=tol)
++   @test_throws ArgumentError call()
++   @test occursin("fd_step",message(call))
++  end
++  call=()->H._multi_effect_variance_component_covariance(y,X,effects,theta[1:2],theta[3];fd_step=step,unavailable=:nothing)
++  @test_throws ArgumentError call()
++  @test occursin("fd_step",message(call))
++  call=()->H.multi_effect_uncertainty(y,X,effects,theta[1:2],theta[3];fd_step=step,boundary_tol=.9)
++  @test_throws ArgumentError call()
++  @test occursin("fd_step",message(call))
++  count=Ref(0);f=t->(count[]+=1;-sum(abs2,t)/2)
++  @test_throws ArgumentError H._reml_fd_information(f,theta,step)
++  @test count[] == 0
++ end
++ # A finite positive component step preserves both ordinary and near-zero rails.
++ @test H.multi_effect_sum_ratio_interval(y,X,effects,[2.0,2.0],1.0;boundary_tol=.9).boundary
++ @test H.multi_effect_sum_ratio_interval(y,X,effects,[1e-12,1.0],1.0;which=[1],boundary_tol=.9).boundary
++end
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -11237,3 +11237,7 @@
+ module E1NonGaussianH2Descriptors
+     include(joinpath(@__DIR__, "nongaussian_h2_descriptor_regression.jl"))
+ end
++
++module E1LikelihoodUncertaintyContracts
++    include(joinpath(@__DIR__, "likelihood_uncertainty_contract_regression.jl"))
++end

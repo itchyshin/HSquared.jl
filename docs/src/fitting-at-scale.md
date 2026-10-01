@@ -25,7 +25,7 @@ the accuracy-vs-feasibility trade, and how to control it.
 | function | [`fit_sparse_multi_effect_aireml`](@ref) | [`fit_multi_effect_mc_reml`](@ref) |
 | method | sparse AI-REML (exact gradient from a Cholesky **selected inverse**) | Monte-Carlo EM-REML (matrix-free solves + a **Hutchinson stochastic trace**) |
 | forms/factorizes `C`? | **yes** — a sparse Cholesky each iteration | **no** — only "matrix × vector" |
-| accuracy | exact | approximate — the gradient carries a Monte-Carlo standard error |
+| accuracy | exact | approximate — the trace estimate has Monte-Carlo error; this is not parameter uncertainty |
 | where it wins | small–moderate size (exact, few iterations) | very large size, where the factorization is infeasible |
 
 **Why two?** With a *single* random effect the animal-model factorization stays sparse and scales
@@ -34,8 +34,7 @@ permanent-environment term alongside the animal effect) the sparse Cholesky **fi
 factor becomes far denser than `C` — and past roughly `10⁵` individuals it becomes infeasible in
 memory and time (measured: the direct multi-effect path is already ~quadratic by `q ≈ 50 000`; a
 METIS reordering did **not** fix it). The matrix-free engine never forms or factorizes `C`, so it
-has no fill wall — it has stayed feasible fitting `K = 3` models to 200 000 individuals in testing (the matrix-free *solve* it is built on reaches a million) — but it pays
-with Monte-Carlo noise in the variance-component gradient.
+has no fill wall — it has stayed feasible fitting `K = 3` models to 200 000 individuals in testing (the matrix-free *solve* it is built on reaches a million) — but it uses stochastic trace estimates. Their MCSE is not a variance-component standard error and excludes PCG solve error.
 
 This is the same accuracy-for-feasibility trade a variational approximation makes: you reach for
 the approximate engine **only** where the exact one cannot run.
@@ -49,8 +48,8 @@ fit = fit_multi_effect(y, X, effects)                 # method = :auto (the defa
 `:auto` routes on feasibility:
 
 - a **single** random effect (`K = 1`), or `N = p + Σqᵢ ≤ direct_max_n` → **exact**;
-- otherwise → **matrix-free**, printing a one-line `@info` that it switched and that the estimates
-  carry a Monte-Carlo standard error.
+- otherwise → **matrix-free**, printing a one-line `@info` that it switched and that its trace
+  estimates have Monte-Carlo standard errors, not variance-component uncertainty.
 
 ```julia
 fit = fit_multi_effect(y, X, effects; method = :exact)        # force exact (may run out of memory)
@@ -64,15 +63,17 @@ fit = fit_multi_effect(y, X, effects; method = :matrix_free)  # force matrix-fre
     problem, try `method = :exact` first; if it fits in memory, its answer is exact.
 
 The returned `NamedTuple` carries a `dispatch` field (`:exact` or `:matrix_free`) recording which
-engine ran. The two result shapes differ: the matrix-free result has a `trace_mcse` (and **no**
-`loglik` — a matrix-free REML log-likelihood needs a stochastic log-determinant, which is not yet
-implemented).
+engine ran. The matrix-free result reports `trace_mcse`. Its `loglik` and `loglik_mcse` fields are
+`NaN` by default; set `compute_loglik = true` to estimate the REML log-likelihood using stochastic
+Lanczos quadrature for the log-determinant. That likelihood estimate is stochastic, and
+`loglik_mcse` reports its Monte-Carlo standard error.
 
 ## Reading the Monte-Carlo noise
 
-When the matrix-free engine runs, the fit reports `trace_mcse` — the Monte-Carlo standard error of
-the score-trace terms, i.e. the noise you traded for feasibility. It shrinks like `1/√nprobe`
-(more probe vectors ⇒ tighter). If you need a tighter answer, raise `nprobe`:
+When the matrix-free engine runs, the result reports `trace_mcse`, the Monte-Carlo standard error
+of its final trace estimate at the returned variance components. It shrinks like `1/√nprobe` under
+independent probes. It is not a score-gradient or variance-component standard error. If you need a
+more precise trace estimate, raise `nprobe`:
 
 ```julia
 fit = fit_multi_effect(y, X, effects; method = :matrix_free, nprobe = 256)

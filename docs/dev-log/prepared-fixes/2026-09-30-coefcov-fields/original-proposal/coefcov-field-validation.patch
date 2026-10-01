@@ -1,0 +1,207 @@
+--- a/src/bridge_payload_v2.jl
++++ b/src/bridge_payload_v2.jl
+@@ -25,7 +25,8 @@
+ - `X`              — fixed-effects design matrix.
+ - `blocks`         — Vector of per-block NamedTuples with resolved engine matrices
+                      `(name, type, Z, relmat_inverse, ids)`.  For `correlated` blocks:
+-                     also `partner_incidence` and `partner_name`.
++                     also `partner_incidence` and `partner_name`. For `coefcov`: also `basis`,
++                     `order`, `Phi`, `covariate`, `covariate_bounds`, and `cov_structure`.
+ - `method`         — Symbol `:REML` or `:ML`.
+ - `is_multivariate`— Bool.
+ """
+@@ -145,6 +146,51 @@
+     return nothing
+ end
+ 
++# Validate and retain the coefficient-covariance frozen slot. This does not
++# wire a fitting route. Raw slopes need no standardization bounds; Legendre
++# blocks require them so covariate-indexed results can be reconstructed later.
++function _parse_coefcov_fields(block, name, Z)
++    basis = _field(block, "basis", :basis)
++    basis isa AbstractString && basis in ("raw", "legendre") || throw(ArgumentError(
++        "coefcov block '$name': basis must be 'raw' or 'legendre'"))
++    order_raw = _field(block, "order", :order)
++    order_raw isa Integer && !(order_raw isa Bool) && order_raw >= 1 || throw(ArgumentError(
++        "coefcov block '$name': order must be a positive integer (number of basis columns)"))
++    Phi_raw = _field(block, "Phi", :Phi)
++    Phi_raw isa AbstractMatrix && !(Phi_raw isa AbstractSparseMatrix) || throw(ArgumentError(
++        "coefcov block '$name': Phi must be a dense real matrix"))
++    size(Phi_raw) == (size(Z, 1), order_raw) || throw(ArgumentError(
++        "coefcov block '$name': Phi must have $(size(Z, 1)) rows and $order_raw columns"))
++    all(x -> x isa Real && !(x isa Bool) && isfinite(x), Phi_raw) || throw(ArgumentError(
++        "coefcov block '$name': Phi must contain finite real values"))
++    Phi = Matrix{Float64}(Phi_raw)
++    all(isfinite, Phi) || throw(ArgumentError(
++        "coefcov block '$name': Phi values must remain finite as Float64"))
++    covariate = _field(block, "covariate", :covariate)
++    covariate isa AbstractString && !isempty(strip(covariate)) || throw(ArgumentError(
++        "coefcov block '$name': covariate must be a nonempty string"))
++    bounds_raw = _field(block, "covariate_bounds", :covariate_bounds)
++    bounds = if bounds_raw === nothing
++        basis == "raw" || throw(ArgumentError(
++            "coefcov block '$name': Legendre basis requires covariate_bounds"))
++        nothing
++    else
++        bounds_raw isa AbstractVector && length(bounds_raw) == 2 &&
++            all(x -> x isa Real && !(x isa Bool) && isfinite(x), bounds_raw) || throw(ArgumentError(
++                "coefcov block '$name': covariate_bounds must contain two finite real values"))
++        values = Float64.(bounds_raw)
++        all(isfinite, values) && values[1] < values[2] || throw(ArgumentError(
++            "coefcov block '$name': covariate_bounds must be finite with lower < upper"))
++        values
++    end
++    cov_structure = _field(block, "cov_structure", :cov_structure)
++    cov_structure isa AbstractString && cov_structure in ("unstructured", "diagonal") || throw(ArgumentError(
++        "coefcov block '$name': cov_structure must be 'unstructured' or 'diagonal'"))
++    return (basis=String(basis), order=Int(order_raw), Phi=Phi,
++            covariate=String(covariate), covariate_bounds=bounds,
++            cov_structure=String(cov_structure))
++end
++
+ # Parse a single block dict/namedtuple into a resolved NamedTuple.
+ function _parse_one_block(block)
+     name_raw = _field(block, "name", :name)
+@@ -189,7 +235,11 @@
+     relmat_inverse, relationship_diag = _resolve_relmat(block, Z; ids = block_ids)
+     _validate_resolved_block(name, Z, relmat_inverse, block_ids)
+ 
+-    if btype == "correlated"
++    if btype == "coefcov"
++        fields = _parse_coefcov_fields(block, name, Z)
++        return merge((name=name, type=btype, Z=Z, relmat_inverse=relmat_inverse,
++                      ids=block_ids, relationship_diag=relationship_diag), fields)
++    elseif btype == "correlated"
+         # §2 correlated block: Z → Zd, partner_incidence → Zm.
+         Zm_raw = _field(block, "partner_incidence", :partner_incidence)
+         Zm_raw === nothing && throw(ArgumentError(
+--- a/docs/design/21-payload-v2-multiblock-schema.md
++++ b/docs/design/21-payload-v2-multiblock-schema.md
+@@ -113,6 +113,18 @@
+ | `cov_structure` | string \| `NULL` | `coefcov` | `"unstructured"` \| `"diagonal"`. |
+ | `partner_incidence` | `dgCMatrix` \| `NULL` | `correlated` | the SECOND incidence `Z_m` (dam) sharing this block's relationship; the engine's `Zm`. |
+ | `partner_name` | string \| `NULL` | `correlated` | label for the partner sub-effect (e.g. `"maternal"`), so the result can label direct vs maternal. |
++
++For a `coefcov` block, the parser requires `basis`, `order`, `Phi`,
++`covariate`, and `cov_structure`. `basis` is `"raw"` or `"legendre"`;
++`order` is a positive integer counting basis columns, and Boolean values are
++invalid. `Phi` must be a dense real matrix with one row per observation and
++`order` columns, finite before and after conversion to `Float64`. `covariate`
++is a nonempty string, and `cov_structure` is `"unstructured"` or `"diagonal"`.
++Legendre blocks require two finite standardization bounds with lower < upper.
++Raw blocks may omit the bounds; supplied bounds use the same validation.
++The resolved block preserves all six fields. These checks validate the frozen
++payload slot; `fit_payload_v2` continues to raise `Phase0NotImplementedError`
++for this block type.
+ 
+ **Notes (each tied to the engine argument it feeds).**
+ - `type = "iid"` ⇒ `relmat_status = "identity"`; Julia uses `I` (never
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -11048,6 +11048,11 @@
+                 "Z" => Z_animal,
+                 "relmat_status" => "identity",
+                 "ids" => ped_ids,
++                "basis" => "raw",
++                "order" => 2,
++                "Phi" => hcat(ones(length(y_obs)), collect(1.0:length(y_obs))),
++                "covariate" => "time",
++                "cov_structure" => "unstructured",
+             )],
+         )
+         parsed_coefcov = parse_payload_v2(coefcov_payload)
+@@ -11066,6 +11071,9 @@
+         @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
+     end
+ end
++
++# Frozen coefficient-covariance payload field validation; no fitting route.
++include(joinpath(@__DIR__, "test_coefcov_fields.jl"))
+ 
+ # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
+ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
+--- /dev/null
++++ b/test/test_coefcov_fields.jl
+@@ -0,0 +1,82 @@
++using Test, LinearAlgebra, SparseArrays, HSquared
++
++function coefcov_test_payload(; basis="legendre", bounds=[10.0, 30.0])
++    block = Dict{String,Any}(
++        "name"=>"reaction", "type"=>"coefcov", "Z"=>sparse([1.0 0; 0 1; 1 0]),
++        "relmat_status"=>"identity", "ids"=>["a", "b"],
++        "basis"=>basis, "order"=>2, "Phi"=>[1.0 -1; 1 0; 1 1],
++        "covariate"=>"age", "covariate_bounds"=>bounds,
++        "cov_structure"=>"unstructured")
++    Dict{String,Any}("payload_version"=>2, "y"=>[1.0, 2.0, 3.0],
++                    "X"=>ones(3,1), "random_effects"=>[block])
++end
++
++coefcov_malformed = Pair{String,Function}[]
++for field in ("basis", "order", "Phi", "covariate", "cov_structure")
++    push!(coefcov_malformed, "missing $field" => (p -> delete!(p["random_effects"][1], field)))
++end
++for (field, value) in (
++    ("basis", "spline"), ("basis", :legendre), ("order", true),
++    ("order", 0), ("order", -1), ("order", 2.0), ("order", "2"),
++    ("Phi", ones(2,2)), ("Phi", ones(3,3)), ("Phi", [1., 2., 3.]),
++    ("Phi", [1.0 NaN; 1 0; 1 1]), ("Phi", [1.0 Inf; 1 0; 1 1]),
++    ("Phi", ["1" "0"; "1" "0"; "1" "0"]),
++    ("Phi", ones(ComplexF64,3,2)), ("Phi", sparse(ones(3,2))),
++    ("Phi", [big"1e1000" big"0"; big"1" big"0"; big"1" big"0"]),
++    ("covariate", " "), ("covariate", 7),
++    ("covariate_bounds", nothing), ("covariate_bounds", [0., 0.]),
++    ("covariate_bounds", [30., 10.]), ("covariate_bounds", [10., Inf]),
++    ("covariate_bounds", [10.]), ("covariate_bounds", [true, false]),
++    ("covariate_bounds", ["10", "30"]),
++    ("cov_structure", "full"), ("cov_structure", :diagonal))
++    label = "$field = $(repr(value))"
++    push!(coefcov_malformed, label => (p -> p["random_effects"][1][field] = value))
++end
++
++@testset "coefcov parser contract" begin
++@testset "coefcov preserves metadata and frozen fit boundary" begin
++    p = coefcov_test_payload()
++    parsed = HSquared.parse_payload_v2(p)
++    @test parsed.dispatch == :coefcov
++    b = parsed.blocks[1]
++    for field in (:basis, :order, :Phi, :covariate, :covariate_bounds, :cov_structure)
++        @test hasproperty(b, field)
++        hasproperty(b, field) && @test getproperty(b,field) == p["random_effects"][1][string(field)]
++    end
++    @test_throws HSquared.Phase0NotImplementedError HSquared.fit_payload_v2(p)
++    raw = HSquared.parse_payload_v2(coefcov_test_payload(basis="raw",bounds=nothing))
++    @test raw.dispatch == :coefcov
++    hasproperty(raw.blocks[1], :covariate_bounds) && @test raw.blocks[1].covariate_bounds === nothing
++    diagonal = coefcov_test_payload()
++    diagonal["random_effects"][1]["cov_structure"] = "diagonal"
++    @test HSquared.parse_payload_v2(diagonal).dispatch == :coefcov
++    # Symbol-key Dict and NamedTuple forms share the same field contract.
++    sym = Dict(Symbol(k)=>v for (k,v) in p)
++    sym[:random_effects] = [Dict(Symbol(k)=>v for (k,v) in p["random_effects"][1])]
++    @test HSquared.parse_payload_v2(sym).dispatch == :coefcov
++    nt = (; (Symbol(k)=>v for (k,v) in p)...)
++    nt = merge(nt, (random_effects=[(; (Symbol(k)=>v for (k,v) in p["random_effects"][1])...)],))
++    @test HSquared.parse_payload_v2(nt).dispatch == :coefcov
++end
++
++@testset "coefcov rejects malformed coefficient fields" begin
++    for (label, mutate!) in coefcov_malformed
++        @testset "$label" begin
++            p = coefcov_test_payload(); mutate!(p)
++            @test_throws ArgumentError HSquared.parse_payload_v2(p)
++        end
++    end
++end
++
++@testset "ordinary independent-block parsing remains valid" begin
++    p = coefcov_test_payload()
++    first = p["random_effects"][1]
++    first["type"] = "pedigree"; first["relmat_status"] = "supplied"
++    first["relmat_inverse"] = sparse(I,2,2)
++    @test HSquared.parse_payload_v2(p).dispatch == :animal
++    second = Dict{String,Any}("name"=>"group", "type"=>"iid",
++        "Z"=>first["Z"], "ids"=>["c", "d"], "relmat_status"=>"identity")
++    push!(p["random_effects"], second)
++    @test HSquared.parse_payload_v2(p).dispatch == :two_effect
++end
++end

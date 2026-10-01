@@ -1,0 +1,12 @@
+{
+  "source_sha256": "5219cf48be1933a01afe4bb5ba40278d4610b455b5fd7d85a078ce2947c10e57",
+  "patch_sha256": "ef090df9a6bc700ffbd2d5c5fab98ff7a7673bb0f735ffa530dfdf9bcc9904fa",
+  "baseline_sha256": "90cc76897c2b977f4bebc456d1e6c8d8f2647a7bb7ec6e8c9135884da0f17e30",
+  "mutation_groups": 112,
+  "nonoverlapping_verified": true,
+  "simultaneous_replay_matches": true,
+  "test_count": 514,
+  "test_exit_status": 0,
+  "log_sha256": "31a09365daff67f67c477029a36e490ac1f30c5b78847bcdbb96a5c794c6a220",
+  "status": "Scratch only; component input independent review pending. Stale runner patch excluded; live source unchanged."
+}

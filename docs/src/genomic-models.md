@@ -112,7 +112,10 @@ over the genotyped animals, where `A₂₂⁻¹ = inv(A[g, g])` is the inverse o
 validation-scale construction helper. The exported `single_step_inverse`,
 `fit_single_step`, and `fit_single_step_reml` wrappers expose the same dense
 relationship-precision path for tests and bridge targets. Its blending / `τ` /
-`ω` / `ridge` knobs are not comparator-validated.
+`ω` / `ridge` knobs are not comparator-validated. Inputs must be finite and
+symmetric; `A` and `A⁻¹` and the returned precision must be positive definite;
+genotyped row indices must be unique; and require `τ > 0`, `ω ≥ 0`, blend
+weight in `[0, 1]`, and non-negative ridge.
 
 The supplied-Γ metafounder variant uses the same update with `A` replaced by
 the animal block of `A^Γ`:

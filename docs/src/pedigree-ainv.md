@@ -25,6 +25,11 @@ By default, unknown parents are represented by `missing`, `nothing`, `""`,
 It returns a `Pedigree` whose rows are topologically sorted and whose `sire` and
 `dam` fields are integer parent indices. `0` means unknown parent.
 
+The exported `Pedigree(ids, sire, dam, original_order)` constructor accepts
+already-indexed data and checks equal lengths, unique IDs, parent indices that
+refer only to earlier rows (or `0`), and a valid permutation for
+`original_order`. Use `normalize_pedigree` for raw parent labels and sorting.
+
 ## Direct Sparse Inverse
 
 `pedigree_inverse` applies Henderson's direct contribution pattern. Each animal

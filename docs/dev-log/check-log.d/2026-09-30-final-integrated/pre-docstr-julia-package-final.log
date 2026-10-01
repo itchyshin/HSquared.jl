@@ -1,0 +1,764 @@
+┌ Warning: The project dependencies or compat requirements have changed since the manifest was last resolved.
+│ It is recommended to `Pkg.resolve()` or consider `Pkg.update()` if necessary.
+└ @ Pkg.API ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Pkg/src/API.jl:1800
+     Testing HSquared
+      Status `/private/var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/jl_MxD1P5/Project.toml`
+  [4c88cf16] Aqua v0.8.18
+  [8bb1440f] DelimitedFiles v1.9.1
+  [31c24e10] Distributions v0.25.131
+  [a0667dea] HSquared v0.9.0 `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`
+  [0f8b85d8] JSON3 v1.14.3
+⌅ [429524aa] Optim v1.13.3
+  [ade2ca70] Dates
+  [37e2e46d] LinearAlgebra
+  [de0858da] Printf
+  [9a3f8284] Random
+  [ea8e919c] SHA v0.7.0
+  [6462fe0b] Sockets
+  [2f01184e] SparseArrays v1.10.0
+  [10745b16] Statistics v1.10.0
+  [fa267f1f] TOML v1.0.3
+  [8dfed614] Test
+      Status `/private/var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/jl_MxD1P5/Manifest.toml`
+  [47edcb42] ADTypes v1.24.0
+  [7d9f7c33] Accessors v0.1.45
+  [79e6a3ab] Adapt v4.7.1
+  [66dad0bd] AliasTables v1.1.3
+  [4c88cf16] Aqua v0.8.18
+  [4fba245c] ArrayInterface v7.30.2
+  [38540f10] CommonSolve v0.2.14
+  [bbf7d656] CommonSubexpressions v0.3.1
+  [34da2185] Compat v4.18.1
+  [a33af91c] CompositionsBase v0.1.2
+  [187b0558] ConstructionBase v1.6.0
+  [9a962f9c] DataAPI v1.16.0
+  [864edb3b] DataStructures v0.19.6
+  [8bb1440f] DelimitedFiles v1.9.1
+  [163ba53b] DiffResults v1.1.0
+  [b552c78f] DiffRules v1.16.0
+  [a0c0ee7d] DifferentiationInterface v0.7.21
+  [31c24e10] Distributions v0.25.131
+  [ffbed154] DocStringExtensions v0.9.5
+  [4e289a0a] EnumX v1.0.7
+  [1a297f60] FillArrays v1.17.1
+  [6a86dc24] FiniteDiff v2.33.0
+  [f6369f11] ForwardDiff v1.4.6
+  [a0844989] Gamma v1.2.0
+  [a0667dea] HSquared v0.9.0 `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`
+  [34004b35] HypergeometricFunctions v0.3.30
+  [3587e190] InverseFunctions v0.1.17
+  [92d709cd] IrrationalConstants v0.2.6
+  [692b3bcd] JLLWrappers v1.8.0
+  [0f8b85d8] JSON3 v1.14.3
+⌃ [d3d80556] LineSearches v7.5.1
+  [2ab3a3ac] LogExpFunctions v1.0.2
+  [1914dd2f] MacroTools v0.5.16
+  [e1d29d7a] Missings v1.2.0
+⌅ [d41bc354] NLSolversBase v7.10.0
+  [77ba4419] NaNMath v1.1.4
+⌅ [429524aa] Optim v1.13.3
+  [bac558e1] OrderedCollections v2.0.1
+  [90014a1f] PDMats v0.11.41
+⌅ [69de0a69] Parsers v2.8.8
+  [85a6dd25] PositiveFactorizations v0.2.4
+⌅ [aea7be01] PrecompileTools v1.2.1
+  [21216c6a] Preferences v1.6.0
+  [43287f4e] PtrArrays v1.4.0
+  [1fd47b50] QuadGK v2.11.3
+  [189a3867] Reexport v1.2.2
+  [79098fc4] Rmath v0.9.0
+  [f2b01f46] Roots v3.0.8
+  [efcf1570] Setfield v1.1.2
+  [a2af1166] SortingAlgorithms v1.2.3
+  [276daf66] SpecialFunctions v2.9.0
+  [1e83bf80] StaticArraysCore v1.4.4
+  [82ae8749] StatsAPI v1.8.0
+  [2913bbd2] StatsBase v0.34.13
+  [4c63d2b9] StatsFuns v2.2.1
+  [856f2bd8] StructTypes v1.11.0
+  [efe28fd5] OpenSpecFun_jll v0.5.6+0
+  [f50d1b31] Rmath_jll v0.5.2+0
+  [0dad84c5] ArgTools v1.1.1
+  [56f22d72] Artifacts
+  [2a0f44e3] Base64
+  [ade2ca70] Dates
+  [8ba89e20] Distributed
+  [f43a241f] Downloads v1.6.0
+  [7b1f6079] FileWatching
+  [9fa8497b] Future
+  [b77e0a4c] InteractiveUtils
+  [b27032c2] LibCURL v0.6.4
+  [76f85450] LibGit2
+  [8f399da3] Libdl
+  [37e2e46d] LinearAlgebra
+  [56ddb016] Logging
+  [d6f4376e] Markdown
+  [a63ad114] Mmap
+  [ca575930] NetworkOptions v1.2.0
+  [44cfe95a] Pkg v1.10.0
+  [de0858da] Printf
+  [3fa0cd96] REPL
+  [9a3f8284] Random
+  [ea8e919c] SHA v0.7.0
+  [9e88b42a] Serialization
+  [6462fe0b] Sockets
+  [2f01184e] SparseArrays v1.10.0
+  [10745b16] Statistics v1.10.0
+  [4607b0f0] SuiteSparse
+  [fa267f1f] TOML v1.0.3
+  [a4e569a6] Tar v1.10.0
+  [8dfed614] Test
+  [cf7118a7] UUIDs
+  [4ec0a83e] Unicode
+  [e66e0078] CompilerSupportLibraries_jll v1.0.5+1
+  [deac9b47] LibCURL_jll v8.4.0+0
+  [e37daf67] LibGit2_jll v1.6.4+0
+  [29816b5a] LibSSH2_jll v1.11.0+1
+  [c8ffd9c3] MbedTLS_jll v2.28.2+1
+  [14a3606d] MozillaCACerts_jll v2023.1.10
+  [4536629a] OpenBLAS_jll v0.3.23+2
+  [05823500] OpenLibm_jll v0.8.1+2
+  [bea87d4a] SuiteSparse_jll v7.2.1+1
+  [83775a58] Zlib_jll v1.2.13+1
+  [8e850b90] libblastrampoline_jll v5.8.0+1
+  [8e850ede] nghttp2_jll v1.52.0+1
+  [3f19e933] p7zip_jll v17.4.0+2
+        Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading.
+     Testing Running tests...
+Test Summary:                                           | Pass  Total  Time
+Selected inverse trace validates support and dimensions |   28     28  0.1s
+Test Summary:                                     | Pass  Total  Time
+Selected inverse rejects a failed Cholesky factor |    2      2  0.1s
+Test Summary:                                     | Pass  Total  Time
+Selected inverse rejects nonfinite inverse values |    3      3  0.0s
+Test Summary:                                            | Pass  Total  Time
+one known inbred parent and one unrelated missing parent |   18     18  0.6s
+Test Summary:                                            | Pass  Total  Time
+Float64 selfing boundary rejects zero Mendelian variance |    2      2  0.0s
+Test Summary:             | Pass  Total  Time
+Aqua.jl quality assurance |   10     10  6.9s
+Test Summary:             | Pass  Total  Time
+HSquared Phase 0 scaffold |  446    446  1.7s
+Test Summary:                       | Pass  Total  Time
+Recovery calibration log summarizer |   21     21  1.1s
+Test Summary:                          | Pass  Total  Time
+Validation-debt burn-down tracker (I9) |   11     11  0.6s
+Test Summary:                              | Pass  Total  Time
+nested_lrt helper + chi-bar boundary (C10) |   14     14  0.1s
+Test Summary:                                         | Pass  Total  Time
+Phase 6 negative-binomial (NB2, log link) family (H1) |   20     20  6.4s
+Test Summary:                                             | Pass  Total  Time
+Phase 6 beta-binomial (logit, overdispersion) family (H2) |   85     85  3.5s
+Test Summary:                                              | Pass  Total  Time
+Phase 6 Bernoulli probit (threshold/liability) family (H3) |   66     66  1.1s
+Test Summary:                                                            | Pass  Total  Time
+Phase 6 ordered-categorical probit (ordinal threshold) family (T1, v0.6) |   62     62  0.4s
+Test Summary:                                                   | Pass  Total  Time
+Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6) |   10     10  0.2s
+Test Summary:                                                        | Pass  Total  Time
+Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6) |   31     31  0.4s
+Test Summary:                                                   | Pass  Total  Time
+Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6) |    6      6  0.0s
+Test Summary:                                            | Pass  Total  Time
+Phase 6 non-Gaussian interval cross-family contract (H6) |   10     10  1.1s
+Test Summary:                                                   | Pass  Total  Time
+Phase 6 non-Gaussian latent/observation-scale heritability (H7) |   25     25  1.4s
+Test Summary:                                                                   | Pass  Total  Time
+Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2) |   21     21  0.4s
+Test Summary:                                                                      | Pass  Total  Time
+Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2) |   16     16  0.0s
+Test Summary:                           | Pass  Total  Time
+Phase 1 pedigree normalization and Ainv |   22     22  0.1s
+Test Summary:                                                 | Pass  Total  Time
+F1 Meuwissen-Luo inbreeding avoids dense relationship storage |   13     13  0.3s
+Test Summary:                                       | Pass  Total  Time
+Phase 3 cytoplasmic (maternal-lineage) relationship |   53     53  0.1s
+Test Summary:                        | Pass  Total  Time
+Phase 3 selfing (self-fertilization) |   11     11  0.0s
+Test Summary:                         | Pass  Total  Time
+Phase 3 clonal (asexual) relationship |   15     15  0.1s
+Test Summary:                  | Pass  Total  Time
+Phase 3 dominance relationship |   22     22  0.0s
+Test Summary:                                          | Pass  Total  Time
+Phase 1 additive relationship matrix (public accessor) |   10     10  0.0s
+Test Summary:                        | Pass  Total  Time
+Phase 1 Mendelian sampling variances |   12     12  0.1s
+Test Summary:                                       | Pass  Total  Time
+Phase 1 finite deep-inbreeding case (V1-DENSE-COND) |   12     12  2.8s
+Test Summary:                                      | Pass  Total  Time
+Phase 3 epistatic relationship (Hadamard products) |   13     13  0.3s
+Test Summary:                                                | Pass  Total  Time
+Phase 1 metafounder relationship / inverse (supplied Γ, #53) |   19     19  1.3s
+Test Summary:                                                | Pass  Total  Time
+Phase 1 metafounder animal-model MME solve (supplied Γ, #53) |    7      7  0.4s
+Test Summary:               | Pass  Total  Time
+Phase 1 HSData ID container |  114    114  2.9s
+Test Summary:                         | Pass  Total  Time
+Phase 1 sparse CSC bridge marshalling |   15     15  2.8s
+Test Summary:                        | Pass  Total  Time
+Phase 1 animal model spec validation |   16     16  0.2s
+Test Summary:                          | Pass  Total  Time
+Phase 1 Gaussian likelihood evaluation |   25     25  0.5s
+Test Summary:                            | Pass  Total  Time
+Phase 1 dense variance component fitting |   37     37  1.2s
+Test Summary:                | Pass  Total  Time
+Phase 1 dense fit extractors |   87     87  1.6s
+Test Summary:                     | Pass  Total  Time
+Phase 1 bridge payload fit target |   24     24  0.1s
+Test Summary:                                              | Pass  Total  Time
+Phase 1 Henderson MME supplied-variance validation fixture |   42     42  0.4s
+Test Summary:                                            | Pass  Total  Time
+Phase 1 Mrode-style supplied-variance validation fixture |   31     31  0.2s
+Test Summary:                                                 | Pass  Total  Time
+Phase 1 Mrode Example 3.1 published animal-model anchor (#46) |    9      9  0.1s
+Test Summary:                                     | Pass  Total  Time
+Phase 1 sparse selected-inversion PEV/reliability |   16     16  0.2s
+Test Summary:                                                         | Pass  Total  Time
+Phase 1 selinv PEV — larger multi-generation pedigree (V1-SELINV-PEV) |    6      6  0.1s
+Test Summary:                                        | Pass  Total  Time
+Phase 1 PCG MME solver (iterative == direct, V1-PCG) |   42     42  1.2s
+Test Summary:                                                                     | Pass  Total  Time
+Multi-effect matrix-free PCG (iterative == direct, V1-PCG multi-effect / v0.8-S2) |   29     29  0.5s
+Test Summary:                                                                  | Pass  Total  Time
+Matrix-free MC REML block traces (Hutchinson == selinv, v0.8-S2 fit primitive) |   18     18  0.1s
+Test Summary:                                                         | Pass  Total  Time
+Matrix-free REML loglik via stochastic Lanczos quadrature (v0.8 V8.1) |    8      8  1.6s
+Test Summary:                                            | Pass  Total  Time
+Matrix-free AI information + ratio intervals (v0.8 V8.3) |   12     12  1.7s
+Test Summary:                                                        | Pass  Total  Time
+fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability) |   11     11  1.9s
+Test Summary:                                                              | Pass  Total  Time
+V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name) |   21     21  0.8s
+Test Summary:                                                       | Pass  Total  Time
+V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) |   22     22  1.2s
+Test Summary:                                                  | Pass  Total  Time
+0.7-S0 genomic GREML identity scaffolding (not a covered flip) |   13     13  2.1s
+Test Summary:                                                   | Pass  Total   Time
+Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit) |    9      9  37.2s
+Test Summary:                                             | Pass  Total  Time
+Phase 1 fused AI-REML selinv trace (selinv_trace_against) |    7      7  0.3s
+Test Summary:                                                   | Pass  Total  Time
+Variance-component forest plot-data (#54 set B, R hs_gg_forest) |   18     18  0.3s
+Test Summary:                                     | Pass  Total  Time
+Phase 1 REML optimizer recovery (dense vs sparse) |   11     11  0.0s
+Test Summary:             | Pass  Total  Time
+Phase 1 AI-REML estimator |   16     16  0.0s
+Test Summary:                                           | Pass  Total  Time
+fit_ai_reml internal optimizer-localization diagnostics |   23     23  0.0s
+Test Summary:                                    | Pass  Total  Time
+v0.7 genomic closed-boundary resolution (doc 46) |   71     71  4.1s
+Test Summary:                                                     | Pass  Total  Time
+genomic boundary profile retains a near-endpoint interior optimum |   28     28  0.7s
+Test Summary:                                                    | Pass  Total  Time
+fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec) |    6      6  0.4s
+Test Summary:                                                 | Pass  Total  Time
+fit_ai_reml EM-REML warm-start (em_warmup, opt-in robustness) |   23     23  0.1s
+Test Summary:                                                         | Pass  Total  Time
+Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6) |    7      7  0.1s
+Test Summary:                                           | Pass  Total  Time
+Phase 1 sparse AI-REML / selinv boundary hardening (#6) |   14     14  0.0s
+Test Summary:                                  | Pass  Total  Time
+Phase 2 genomic relationship matrix (VanRaden) |    9      9  0.0s
+Test Summary:                                                 | Pass  Total  Time
+Phase 2 VanRaden method-2 (standardized) genomic relationship |    8      8  0.2s
+Test Summary:                                                 | Pass  Total  Time
+APY genomic inverse (Algorithm for Proven & Young, v0.8 V8.5) |    9      9  1.2s
+Test Summary:                                            | Pass  Total  Time
+v0.7 G-D backend dispatch (:cpu default / :cuda routing) |    7      7  0.0s
+Test Summary:                                          | Pass  Total  Time
+Phase 2 weighted genomic relationship (weighted GBLUP) |    9      9  0.2s
+Test Summary:                              | Pass  Total  Time
+Phase 2 regularized genomic inverse (Ginv) |   10     10  0.5s
+Test Summary:                         | Pass  Total  Time
+Phase 2 GBLUP supplied-variance solve |   11     11  0.5s
+Test Summary:                                   | Pass  Total  Time
+Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence |   15     15  0.2s
+Test Summary:                           | Pass  Total  Time
+Phase 5 fixed-effect single-marker scan |  443    443  8.7s
+Test Summary:                      | Pass  Total  Time
+Phase 5 post-fit marker scan (#45) |   45     45  0.1s
+Test Summary:                            | Pass  Total  Time
+Phase 5 marker-scan parity fixture (#45) |   19     19  0.3s
+Test Summary:                                 | Pass  Total  Time
+Phase 5 genome-wide threshold machinery (#48) |   57     57  0.7s
+Test Summary:                                                              | Pass  Total  Time
+genome_wide_marker_scan (R-activation entry point, exact per-dataset rule) |   29     29  0.7s
+Test Summary:            | Pass  Total  Time
+Phase 2 dense NRM helper |    7      7  0.1s
+Test Summary:                                          | Pass  Total  Time
+Phase 2 genomic reliability / PEV / accuracy semantics |    9      9  0.3s
+Test Summary:                                                                           | Pass  Total  Time
+_relationship_diag(:selinv) matches dense diag(inv(Ainv)) directly (pedigree + genomic) |    3      3  0.0s
+Test Summary:                                                          | Pass  Total  Time
+_sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit |   25     25  0.0s
+Test Summary:                                                    | Pass  Total  Time
+_selinv_zvals clique-scatter path == per-pair reference, bitwise |    8      8  0.3s
+Test Summary:                                                                      | Pass  Total  Time
+_selinv_zvals aligned-tail SIMD path: fill-path property, rtol, fit-level equality |   15     15  0.5s
+Test Summary:                                                                           | Pass  Total  Time
+_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale |    1      1  0.3s
+Test Summary:                              | Pass  Total  Time
+Phase 2 single-step H-inverse construction |   18     18  0.8s
+Test Summary:                                   | Pass  Total  Time
+Phase 2 single-step fitting (public Hinv + fit) |   11     11  0.0s
+Test Summary:                                            | Pass  Total  Time
+Phase 2 metafounder single-step H^Gamma bridge primitive |   40     40  0.6s
+Test Summary:                                    | Pass  Total  Time
+Phase 2 GBLUP REML variance-component estimation |   11     11  0.4s
+Test Summary:                                                           | Pass  Total  Time
+Phase 2 GBLUP/SNP-BLUP REML convenience (variance-component estimation) |   13     13  0.1s
+Test Summary:                                                   | Pass  Total  Time
+Phase 1 variance-component covariance and heritability interval |   50     50  0.9s
+Test Summary:                                                 | Pass  Total  Time
+Phase 1 parametric-bootstrap variance-component interval (C6) |   22     22  4.7s
+Test Summary:                                                         | Pass  Total  Time
+Phase 3 repeatability / permanent-environment MME (supplied variance) |   11     11  0.2s
+Test Summary:                                              | Pass  Total  Time
+Phase 3 repeatability t confidence interval (delta method) |    6      6  0.9s
+Test Summary:                                              | Pass  Total  Time
+Phase 3 repeatability REML (variance-component estimation) |   13     13  0.1s
+Test Summary:                                       | Pass  Total  Time
+Phase 3 general two-effect MME (common environment) |    8      8  0.1s
+Test Summary:                                                      | Pass  Total  Time
+Phase 3 two-effect REML (common-environment / maternal estimation) |   12     12  0.1s
+Test Summary:                                               | Pass  Total  Time
+Phase 3 two-effect ratio interval (asymptotic delta-method) |   26     26  3.6s
+Test Summary:                                                      | Pass  Total  Time
+Phase 3 N-effect MME + REML (arbitrary independent random effects) |   26     26  0.0s
+Test Summary:                                             | Pass  Total  Time
+Phase 3 N-effect ratio interval (asymptotic delta-method) |   46     46  8.2s
+Test Summary:                                                                   | Pass  Total  Time
+Phase 5 sparse multi-effect AI-REML (reduces EXACTLY to dense N-effect optimum) |   27     27  0.6s
+Test Summary:                                                   | Pass  Total  Time
+Phase 4 direct–maternal 2×2 G (first correlated genetic effect) |   16     16  0.0s
+Test Summary:                                              | Pass  Total  Time
+direct_maternal_interval (asymptotic delta-method SEs/CIs) |   32     32  2.0s
+Test Summary:                                                         | Pass  Total  Time
+Phase 4 multivariate (multi-trait) animal model (supplied covariance) |   37     37  0.0s
+Test Summary:                             | Pass  Total  Time
+Phase 4 multivariate covariance hardening |   11     11  0.5s
+Test Summary:                                           | Pass  Total  Time
+Phase 4 multivariate missing-trait records (unbalanced) |    8      8  0.6s
+Test Summary:                              | Pass  Total  Time
+Phase 4 multivariate REML (estimate G0/R0) |   34     34  0.1s
+Test Summary:                                            | Pass  Total  Time
+Phase 4 derived-estimand identities on the REML fit path |   69     69  0.4s
+Test Summary:                             | Pass  Total  Time
+Phase 4 shared multi-trait parity fixture |   13     13  0.3s
+Test Summary:                                          | Pass  Total  Time
+Phase 4B diagonal structured-covariance parity fixture |   10     10  0.0s
+Test Summary:                                       | Pass  Total  Time
+Univariate fitted animal-model target fixture (#46) |   13     13  0.2s
+Test Summary:                                       | Pass  Total  Time
+Phase 2 genomic GBLUP/SNP-BLUP target fixture (#49) |   22     22  0.0s
+Test Summary:                                              | Pass  Total  Time
+v0.7 genomic public-activation construction and provenance |   71     71  1.1s
+Test Summary:                          | Pass  Total  Time
+Sire-model fitted target fixture (#16) |   17     17  0.0s
+Test Summary:                                 | Pass  Total  Time
+Comparator target manifest (#49 coordination) |  117    117  0.1s
+Test Summary:                                  | Pass  Total  Time
+Unified comparator harness (A11 validate-only) |   34     34  2.8s
+Test Summary:                                         | Pass  Total  Time
+Real-data validation manifest (A13 three-tier ladder) |  126    126  0.2s
+Test Summary:                                         | Pass  Total  Time
+FA t=4 K=1 local rank, uniqueness, and variance units |   16     16  0.1s
+Test Summary:                                            | Pass  Total  Time
+Phase 4B structured genetic covariance (diag/lowrank/fa) |  121    121  0.6s
+Test Summary:                                      | Pass  Total  Time
+Phase 6 non-Gaussian Laplace marginal (foundation) |   11     11  0.5s
+Test Summary:                                  | Pass  Total  Time
+Phase 6 variational (VA) marginal (foundation) |   16     16  1.1s
+Test Summary:                         | Pass  Total  Time
+Phase 6 non-Gaussian family hardening |    6      6  0.0s
+Test Summary:                                             | Pass  Total  Time
+Phase 6 Poisson marginal value vs Gauss–Hermite (β-fixed) |    3      3  0.1s
+Test Summary:                                      | Pass  Total  Time
+Phase 6 public (exported) non-Gaussian fitting API |   14     14  0.3s
+Test Summary:                                                       | Pass  Total  Time
+Phase 6 MarginalMethod dispatch + non-Gaussian bridge payload (#44) |   41     41  1.0s
+Test Summary:                             | Pass  Total  Time
+Phase 6 non-Gaussian parity fixture (#44) |   46     46  0.9s
+Test Summary:                                             | Pass  Total  Time
+Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting) |   11     11  0.0s
+Test Summary:                                       | Pass  Total  Time
+Phase 6 Poisson variance-component profile interval |   12     12  0.1s
+Test Summary:                                         | Pass  Total  Time
+Phase 6 Binomial/Bernoulli profile-LRT interval (σ²a) |   19     19  0.8s
+Test Summary:                                   | Pass  Total  Time
+Phase 6 Bernoulli (logit) family (Laplace + VA) |   15     15  3.4s
+Test Summary:                             | Pass  Total  Time
+Phase 6 Binomial (logit, n trials) family |   31     31  0.4s
+Test Summary:                                     | Pass  Total  Time
+Phase 6 Binomial per-record n_trials (cbind GLMM) |   39     39  0.9s
+Test Summary:                              | Pass  Total  Time
+Phase 4 multivariate covariance SEs + LRTs |   34     34  0.8s
+Test Summary:                             | Pass  Total  Time
+Phase 4 genetic-correlation interval (C2) |   16     16  0.2s
+Test Summary:                                   | Pass  Total  Time
+Phase 4B evolvability / G-matrix geometry (#55) |   67     67  0.0s
+Test Summary:                                                     | Pass  Total  Time
+G-geometry plot-data preparers (#54 plotting, rotation-invariant) |   18     18  0.3s
+Test Summary:                                                   | Pass  Total  Time
+Phase 3 random-regression covariance-function descriptors (#54) |   31     31  1.2s
+Test Summary:                                                        | Pass  Total  Time
+Phase 3 random-regression eigen-function decomposition (#54 slice 4) |   17     17  0.3s
+Test Summary:                                                       | Pass  Total  Time
+Phase 3 random-regression plot-data preparers (#54, plotting layer) |   18     18  0.0s
+Test Summary:                                                   | Pass  Total  Time
+Phase 3 supplied-covariance random-regression MME (#54 slice 2) |   14     14  0.3s
+Test Summary:                                | Pass  Total  Time
+Phase 3 random-regression REML (#54 slice 3) |   21     21  0.4s
+Test Summary:                                                        | Pass  Total  Time
+Genetic-GLLVM latent-structure descriptors (#50 slice 1, supplied Λ) |   24     24  0.5s
+Test Summary:                                                     | Pass  Total  Time
+Genetic-GLLVM Gaussian latent solve (#50 slice 2, supplied G_lat) |   15     15  0.1s
+Test Summary:                                                    | Pass  Total  Time
+Genetic-GLLVM descriptors from an estimated FA/lowrank fit (#50) |   14     14  0.4s
+Test Summary:                                                              | Pass  Total  Time
+Genetic-GLLVM K-factor latent Laplace marginal (#50 slice 2, non-Gaussian) |   15     15  2.4s
+Test Summary:                               | Pass  Total  Time
+Genetic-GLLVM REML over G_lat (#50 slice 3) |   21     21  2.0s
+Test Summary:                                                     | Pass  Total  Time
+Genetic-GLLVM per-trait response families (#50 slice 2 extension) |    8      8  1.0s
+Test Summary:                                                                   | Pass  Total  Time
+Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50) |   19     19  0.2s
+Test Summary:                                                      | Pass  Total  Time
+breeding_values_plot_data (#54 set B, EBV caterpillar, #93 parity) |    7      7  0.1s
+Test Summary:                                                 | Pass  Total  Time
+hsquared_figure drawing stub (HSquaredMakieExt weak-dep, #93) |   11     11  0.1s
+Test Summary:                                                        | Pass  Total  Time
+gpu genomic relationship stubs (HSquaredCUDAExt weak-dep, Wave F G1) |   11     11  0.0s
+Test Summary:                                       | Pass  Total  Time
+BLUPF90 multivariate starter packet preflight (#49) |   42     42  0.6s
+Test Summary:            | Pass  Total  Time
+payload-v2 parser (P0.3) |   67     67  3.2s
+Test Summary:           | Pass  Total  Time
+coefcov parser contract |   74     74  1.6s
+Test Summary:                                            | Pass  Total  Time
+0.8 S3 FA uniqueness-interior bound (not a covered flip) |   29     29  0.2s
+Test Summary:                                       | Pass  Total  Time
+#331 structured LRT df counts identified parameters |   34     34  1.2s
+Test Summary:                                                          | Pass  Total  Time
+Payload-v2 rejects unsupported versions and malformed block boundaries |   13     13  0.0s
+Test Summary:                                                             | Pass  Total  Time
+Payload-v2 rejects ambiguous responses and malformed top-level dimensions |    5      5  0.0s
+Test Summary:                                              | Pass  Total  Time
+Payload-v2 block names follow the nonempty string contract |    3      3  0.0s
+Test Summary:                                                   | Pass  Total  Time
+Payload-v2 correlated block uses the documented partner default |    2      2  0.2s
+Test Summary:                                                   | Pass  Total  Time
+Payload-v2 rejects correlated blocks for multivariate responses |    1      1  0.1s
+Test Summary:                                                           | Pass  Total  Time
+Payload-v2 validates supplied and legacy correlated relationship inputs |    7      7  0.1s
+Test Summary:                         | Pass  Total  Time
+P0.5 payload-v2 frozen request schema |   33     33  0.1s
+Test Summary:                                            | Pass  Total  Time
+P0.5 payload-v2 parity — fixture (a) single animal model |   23     23  0.8s
+Test Summary:                                            | Pass  Total  Time
+P0.5 payload-v2 parity — fixture (b) animal + common_env |   27     27  0.6s
+Test Summary:                                                | Pass  Total  Time
+W3-05 structured dispatch refuses an ML label before fitting |    3      3  0.0s
+Test Summary:                                          | Pass  Total  Time
+W3-05 two-effect result includes honest model metadata |   10     10  0.1s
+Test Summary:                                                               | Pass  Total  Time
+W3-05 multi-effect result distinguishes dense, exact, and stochastic loglik |   14     14  0.2s
+Test Summary:                                             | Pass  Total  Time
+W3-05 direct-maternal result counts covariance parameters |    8      8  0.1s
+Test Summary:                                           | Pass  Total  Time
+P0.5 payload-v2 parity — fixture (c) animal + permanent |   19     19  0.0s
+Test Summary:                                              | Pass  Total  Time
+hsquared#212 engine controls: initial/iterations threading |   15     15  0.3s
+Test Summary:                                               | Pass  Total  Time
+genomic utilities reject malformed input before calculation |   25     25  0.1s
+Test Summary:                                                            | Pass  Total  Time
+#343 engine controls: initial/iterations on the :multi_effect :auto path |    3      3  0.4s
+Test Summary:                         | Pass  Total  Time
+A3 three-field private Julia envelope |   44     44  0.0s
+Test Summary:                                 | Pass  Total  Time
+A4-1 Binomial-logit observation-scale payload |   23     23  0.0s
+A4_BINOMIAL_OBSERVATION_SCALE_OK
+Test Summary:                                     | Pass  Total  Time
+#327 boundary flag: honest search-bound reporting |   13     13  1.8s
+SELF_TEST_PASS deterministic ratio decomposition, covariance sensitivity, order invariance, Hessian
+Test Summary:                                 | Pass  Total  Time
+Repeatability ratio-bias decomposition kernel |    1      1  0.4s
+Test Summary:                                                  | Pass  Total  Time
+214/217: max_dense_cells kwarg on the dense-validation fitters |   11     11  0.3s
+Test Summary:                                      | Pass  Total  Time
+K-effect variance-component standard errors (#352) |   21     21  8.8s
+Test Summary:                                       | Pass  Total  Time
+sparse summed-ratio (repeatability) interval (#352) |   16     16  4.8s
+PE_NOT_ABSORBED
+G4_PAYLOAD_CONTRACT
+Test Summary:                                   | Pass  Total  Time
+Multivariate repeatability REML (hsquared #237) |   63     63  1.1s
+Test Summary:                                                         | Pass  Total  Time
+optimizer Cholesky covariance proposals reject underflow and overflow |    5      5  0.0s
+Test Summary:                                                  | Pass  Total  Time
+optimizer log-variance proposals reject underflow and overflow |    7      7  0.2s
+Test Summary:                                                            | Pass  Total  Time
+multivariate genetic covariance candidates preserve correlation contract |    6      6  0.2s
+G0_P0_RECOVERY_PINNED
+PE_AWARE_NOT_ABSORBED
+Test Summary:                                                   | Pass  Total   Time
+Multivariate repeatability known-truth recovery (hsquared #237) |    8      8  11.8s
+Test Summary:                                                       | Pass  Total  Time
+FA fitted likelihood separates G and R only when the design permits |    4      4  0.6s
+Test Summary:                                     | Pass  Total  Time
+multivariate start selection respects convergence |    4      4  0.1s
+Test Summary:                                                | Pass  Total  Time
+FA optimizer maps overflow proposals to an invalid objective |   12     12  0.0s
+Test Summary:                                          | Pass  Total  Time
+multivariate REML rejects rank-deficient fixed effects |    2      2  0.1s
+Test Summary:                                       | Pass  Total  Time
+FA uses deterministic starts and reports fit limits |   28     28  5.3s
+Test Summary:                                                   | Pass  Total     Time
+Gaussian FA fit transforms with trait units away from the floor |   19     19  2m06.4s
+Test Summary:                                                  | Pass  Total  Time
+T4 K1 FA expected information detects a weak natural direction |   36     36  0.3s
+Test Summary:                                         | Pass  Total  Time
+FA ordinary-start driver retains nullable diagnostics |    6      6  0.0s
+Test Summary:                                            | Pass  Total  Time
+FA ordinary-start driver labels source and driver hashes |    4      4  0.1s
+Test Summary:                                        | Pass  Total  Time
+FA ordinary-start driver retains simulation failures |    6      6  0.0s
+Test Summary:                               | Pass  Total  Time
+HSquared.jl #365 loglik convention metadata |   21     21  0.0s
+Test Summary:                               | Pass  Total  Time
+post-fit uncertainty reuse (#352 follow-on) |   56     56  0.6s
+Test Summary:                               | Pass  Total  Time
+boundary_tol must be finite and nonnegative |   18     18  0.6s
+Test Summary:                            | Pass  Total  Time
+every api.md @docs entry has a docstring |    3      3  0.1s
+Test Summary:                                       | Pass  Total  Time
+fit_animal_model help describes implemented methods |    5      5  0.0s
+Test Summary:                                        | Pass  Total  Time
+sparse AI-REML workspace reuse (#352/#360 follow-on) |   51     51  1.4s
+Test Summary:                                                         | Pass  Total  Time
+#334: validation-status page regeneration is idempotent, no timestamp |    5      5  0.1s
+Test Summary:                                                           | Pass  Total  Time
+350 (i): selinv PEV/reliability parity with the dense oracle, q = 1,000 |   15     15  0.5s
+Test Summary:                                                          | Pass  Total  Time
+350 (ii): result_payload + breeding_values_plot_data budget, q = 3,000 |    6      6  0.3s
+Test Summary:                                                  | Pass  Total  Time
+350 (iii): :auto keeps the dense path for a dense genomic Ginv |    6      6  0.0s
+Test Summary:                                                          | Pass  Total  Time
+350 (iv): a numerically singular MME fails loudly, never quietly wrong |    2      2  0.0s
+Test Summary:                                            | Pass  Total  Time
+350 (v): Int32-indexed sparse Ainv takes the selinv path |    2      2  0.1s
+Test Summary:                                                           | Pass  Total  Time
+350 (vi): the singularity guard is invariant to rescaling a column of X |    8      8  0.0s
+Test Summary:                                                  | Pass  Total  Time
+350 (vii): the quickstart toy fixture is accepted, not refused |    4      4  0.1s
+Test Summary:                                                        | Pass  Total  Time
+1+F (i): pedigree_inverse exposes the F it was built from, unchanged |    4      4  0.0s
+Test Summary:                                                          | Pass  Total  Time
+1+F (ii): :auto reads the attached diagonal; equals :selinv and :dense |    9      9  0.1s
+Test Summary:                                       | Pass  Total  Time
+1+F (iii): the spec validates the supplied diagonal |    3      3  0.0s
+┌ Info: Fixture (a) VC diff
+│   max_abs = 0.0
+└   max_rel = 0.0
+┌ Info: Fixture (a) byte-identity
+└   sigma_a2_identical = true
+┌ Info: Fixture (b) VC diff
+│   max_abs = 0.0
+└   max_rel = 0.0
+┌ Info: Fixture (c) VC diff
+│   max_abs = 0.0
+└   max_rel = 0.0
+┌ Info: FA weak-direction diagnostic
+│   epsilon = 0.0
+│   rank = 17
+│   eigen_ratio = 1.6842173434477085e-17
+└   directional_information = 3.0582316242457447e-16
+┌ Info: FA weak-direction diagnostic
+│   epsilon = 0.01
+│   rank = 18
+│   eigen_ratio = 1.5249482458536264e-5
+└   directional_information = 0.0007187037064672384
+┌ Info: FA weak-direction diagnostic
+│   epsilon = 0.001
+│   rank = 18
+│   eigen_ratio = 1.5247144561941927e-7
+└   directional_information = 7.185853062817942e-6
+┌ Info: FA weak-direction control diagnostics
+│   null_residual = 1.4165255149211353e-17
+│   wrong_null_residual = 0.06734119796930865
+└   contraction_ratio = 0.009998352586964854
+┌ Info: 350 budget at q = 3,000
+│   bytes_MB = 54.394891
+└   seconds = 0.015014791
+Test Summary:                                                              | Pass  Total  Time
+1+F (iv): payload-v2 pedigree built in Julia carries 1 + F in Ainv's order |    5      5  0.7s
+Test Summary:                                                    | Pass  Total  Time
+genetic GLLVM handles inner convergence before Laplace curvature |    8      8  2.5s
+Test Summary:                                    | Pass  Total  Time
+genetic GLLVM Gaussian one-step mode convergence |    5      5  0.0s
+Test Summary:                                                    | Pass  Total  Time
+genetic GLLVM Gaussian reduction with multi-column fixed effects |    6      6  0.0s
+Test Summary:                              | Pass  Total  Time
+genetic GLLVM accepts damped scoring steps |    4      4  0.5s
+Test Summary:                                      | Pass  Total  Time
+genetic GLLVM trait effects include specific modes |    4      4  0.0s
+Test Summary:                                                  | Pass  Total  Time
+genetic GLLVM Poisson intercept boundary and count-scale start |    7      7  0.2s
+Test Summary:                                 | Pass  Total  Time
+genetic GLLVM Poisson T3 K2 ordinary restarts |   34     34  1.0s
+Test Summary:                                          | Pass  Total  Time
+genetic GLLVM fitted breeding values are trait effects |    5      5  0.0s
+Test Summary:                            | Pass  Total  Time
+Independent dense T=4 K=1 FA REML oracle |    7      7  0.4s
+Test Summary:                        | Pass  Total  Time
+bootstrap refit convergence contract |    4      4  0.0s
+Test Summary:              | Pass  Total  Time
+Wave 1 numerical contracts |  167    167  3.2s
+Test Summary:                                                  | Pass  Total  Time
+constructed genomic relationships are symmetric and invertible |   16     16  0.0s
+Test Summary:                                    | Pass  Total  Time
+APY finite inputs and conditional variance scale |    8      8  0.8s
+Test Summary:                                   | Pass  Total  Time
+APY partial-core block formula and Schur cutoff |    5      5  0.0s
+Test Summary:                                                  | Pass  Total  Time
+dense Gaussian routes reject indefinite relationship precision |    4      4  0.0s
+Test Summary:                                                | Pass  Total  Time
+dense Gaussian routes validate relationship precision inputs |    4      4  0.0s
+Test Summary:                                            | Pass  Total  Time
+W1 ND successful solve and scale-relative ridge fallback |    6      6  0.0s
+Test Summary:                                            | Pass  Total  Time
+W1-07 small scores and steps do not certify stationarity |   12     12  0.1s
+Test Summary:                                               | Pass  Total  Time
+W1-07 interior AI-REML fits are invariant to response units |   56     56  0.0s
+Test Summary:                                        | Pass  Total  Time
+W1-07 nonstationary boundary fits remain unconverged |    5      5  0.0s
+Test Summary:                                           | Pass  Total  Time
+W1-07 stationarity retains frozen genomic fit precision |    6      6  1.3s
+Test Summary:                               | Pass  Total  Time
+W1-09 multi-effect fixed-point score ladder |   36     36  0.2s
+Test Summary:                                           | Pass  Total  Time
+W1-09 large boundary score refuses unbounded trace work |    8      8  0.0s
+Test Summary:                                                  | Pass  Total  Time
+W1-09 multi-effect boundary budget covers all triggered blocks |    5      5  0.0s
+Test Summary:                                    | Pass  Total  Time
+W1-09 fixed-point additive-boundary score ladder |  108    108  0.0s
+Test Summary:                                     | Pass  Total  Time
+W1-05 strict-order versus SIMD AI-REML fit parity |   40     40  0.7s
+W105_FIT_PARITY_PASS
+Test Summary:                                          | Pass  Total  Time
+W1 multi-REML structural support survives cancellation |   82     82  0.0s
+Test Summary:                           | Pass  Total  Time
+Wave 2 non-Gaussian objective contracts |   92     92  1.1s
+Test Summary:                           | Pass  Total  Time
+Wave 2 beta-binomial symbolic curvature |   11     11  0.0s
+Test Summary:                             | Pass  Total  Time
+Wave 2 GLLVM observed-curvature reduction |    2      2  0.0s
+Test Summary:                                       | Pass  Total  Time
+Wave 2 GLLVM improper per-trait intercept integrals |   15     15  0.8s
+Test Summary:                                                  | Pass  Total  Time
+Wave 2 non-Gaussian fitter validates effect IDs before fitting |    8      8  0.4s
+Test Summary:                                       | Pass  Total  Time
+Wave 2 profile intervals require a usable point fit |    6      6  0.1s
+Test Summary:                                                  | Pass  Total  Time
+Wave 2 profile LRT rejects failed inner likelihood evaluations |    2      2  0.0s
+Test Summary:                                        | Pass  Total  Time
+Variational inner covariance convergence is required |   13     13  0.0s
+Test Summary:                           | Pass  Total  Time
+Wave 2 relationship precision contracts |  105    105  0.0s
+Test Summary:                                        | Pass  Total  Time
+payload-v2 pedigree precision follows block ID order |    9      9  0.1s
+Test Summary:                                   | Pass  Total  Time
+legacy maternal alias preserves pedigree labels |   16     16  0.2s
+Test Summary:                                  | Pass  Total  Time
+single iid block cannot become an animal model |    2      2  0.1s
+Test Summary:                                                | Pass  Total  Time
+payload-v2 pedigree self-relationships follow block ID order |    2      2  0.1s
+Test Summary:                         | Pass  Total  Time
+Scale-relative G covariance contracts |   22     22  0.0s
+Test Summary:                                            | Pass  Total  Time
+Animal-only covariance uncertainty rejects repeatability |    4      4  0.1s
+Test Summary:                                   | Pass  Total  Time
+reserved formula terms describe their own scope |    8      8  0.0s
+Test Summary:                                      | Pass  Total  Time
+empty marker maps have unavailable position bounds |    2      2  0.2s
+Test Summary:                                     | Pass  Total  Time
+raw pedigree status preserves a lone parent alias |   13     13  0.3s
+Test Summary:                                            | Pass  Total  Time
+dictionary genotype and expression IDs match source rows |   11     11  0.4s
+Test Summary:                            | Pass  Total  Time
+HSData preserves exact typed ID matching |    3      3  0.0s
+Test Summary:                                 | Pass  Total  Time
+Sparse REML rejects nonfinite variance inputs |    7      7  0.0s
+Test Summary:                            | Pass  Total  Time
+G-metric conditioning and extreme scales |   18     18  0.0s
+Test Summary:                                           | Pass  Total  Time
+Pedigree direct constructor enforces normalized indices |   21     21  0.1s
+Test Summary:                                                   | Pass  Total  Time
+metafounder relationship rejects nonpositive Mendelian variance |    5      5  0.0s
+Test Summary:                                               | Pass  Total  Time
+fully parented animals ignore their metafounder group entry |    1      1  0.1s
+Test Summary:                                           | Pass  Total  Time
+Raw metafounder wrappers preserve pedigree ID alignment |   18     18  0.2s
+Test Summary:                                       | Pass  Total  Time
+direct sparse REML validates relationship precision |    9      9  0.0s
+Test Summary:                                                | Pass  Total  Time
+direct sparse REML uses one canonical relationship precision |    4      4  0.0s
+Test Summary:                                             | Pass  Total  Time
+sparse REML optimizers reject unusable iteration controls |    8      8  0.0s
+Test Summary:                                           | Pass  Total  Time
+AI-REML rejects invalid numeric controls before fitting |    5      5  0.3s
+Test Summary:                 | Pass  Total  Time
+GLLVM input guard regressions |   48     48  0.1s
+Test Summary:                      | Pass  Total  Time
+GLLVM descriptor and record guards |   50     50  2.2s
+Test Summary:                | Pass  Total  Time
+RR descriptor finite scaling |   41     41  0.0s
+Test Summary:                          | Pass  Total  Time
+Dictionary physical marker missingness |   29     29  0.8s
+Test Summary:                          | Pass  Total  Time
+flat integral omitted family endpoints |   35     35  1.1s
+Test Summary:               | Pass  Total  Time
+non-Gaussian finite ingress |  141    141  1.2s
+Test Summary:          | Pass  Total  Time
+H2 descriptor contract |  170    170  0.7s
+Test Summary:                             | Pass  Total  Time
+G2-G6 genomic input and summary contracts |   76     76  0.1s
+Test Summary:                                 | Pass  Total  Time
+public genomic documentation remains attached |    4      4  0.0s
+Test Summary:                                        | Pass  Total  Time
+finite median extremes and label metadata neighbours |    8      8  0.1s
+Test Summary:                                             | Pass  Total  Time
+representable weighted contributions near Float64 maximum |   12     12  0.2s
+Test Summary:                                                | Pass  Total  Time
+finite fast candidates cannot conceal true weighted overflow |   12     12  0.0s
+Test Summary:                  | Pass  Total  Time
+Multivariate bounded contracts |  107    107  2.2s
+Test Summary:                          | Pass  Total  Time
+likelihood input and result boundaries |  202    202  2.6s
+Test Summary:                    | Pass  Total  Time
+Likelihood uncertainty contracts |  192    192  1.9s
+Test Summary:                                | Pass  Total  Time
+Derived component step precedes rail returns |   22     22  0.4s
+Test Summary:                               | Pass  Total  Time
+likelihood profile PEV and scalar contracts |   71     71  0.1s
+Test Summary:                          | Pass  Total  Time
+independent supplied-variance controls |   23     23  0.0s
+Test Summary:                         | Pass  Total  Time
+iterative finite arithmetic contracts |  105    105  2.4s
+Test Summary:                      | Pass  Total  Time
+independent probe summary controls |   18     18  0.0s
+Test Summary:                                  | Pass  Total  Time
+Pedigree clonal and lineage residual contracts |   30     30  0.3s
+Test Summary:                           | Pass  Total  Time
+Selected-inverse trace finite contracts |   29     29  0.1s
+Test Summary:                        | Pass  Total  Time
+Evolvability finite output contracts |    7      7  0.0s
+Test Summary:                            | Pass  Total  Time
+likelihood result specification identity |   64     64  0.1s
+Test Summary:                                               | Pass  Total  Time
+legacy sparse validator and canonical computational buffers |   46     46  0.8s
+Test Summary:                             | Pass  Total  Time
+stationary endpoint likelihood comparison |   52     52  0.2s
+Test Summary:                              | Pass  Total  Time
+PCG verifies true residual before stopping |   31     31  1.0s
+     Testing HSquared tests passed 

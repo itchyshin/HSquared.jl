@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/z3437171/.juliaup/bin/julia",
+    "--compiled-modules=no",
+    "--startup-file=no",
+    "--project=package",
+    "-e",
+    "using LinearAlgebra; println(\"Julia=\",VERSION,\" JuliaThreads=\",Threads.nthreads(),\" BLASThreads=\",BLAS.get_num_threads());include(\"/private/tmp/hsq-likelihood-helper-identity-fix-20260930/test/test_sparse_aireml_input_contracts.jl\");"
+  ],
+  "elapsed_seconds": 20.546120583079755,
+  "exitcode": 1,
+  "threads": 1,
+  "timeout": 110
+}

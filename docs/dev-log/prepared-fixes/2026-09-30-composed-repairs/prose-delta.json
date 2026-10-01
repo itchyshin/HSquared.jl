@@ -1,0 +1,128 @@
+[
+  {
+    "file": "src/nongaussian.jl",
+    "old": "# log-scale distribution-specific variance V_link = Var[log Y] = ψ₁(shape)",
+    "new": "# log-scale residual variance V_link = Var(log Y | η) = ψ₁(shape)",
+    "before_line": 293,
+    "origin": "Astra Gamma conditional residual correction; adjacent same notation"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "#    h²_obs ∈ (0,1) (verified numerically in the tests, not assumed). The expectation is",
+    "new": "#    the theoretical population projection satisfies h²_obs ∈ [0,1] when the\n#    observation variance is finite and positive, including zero at V_A = 0.\n#    Finite quadrature approximates these population moments. The expectation is",
+    "before_line": 1629,
+    "origin": "parent bound qualification"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "(verified equal), always < h2_latent.",
+    "new": "(verified equal). In the exact finite-moment model, h2_observation is no greater than h2_latent; equal at zero genetic variance. Finite quadrature approximates this ordering.",
+    "before_line": 1746,
+    "origin": "Astra probit zero variance qualification"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "# Gamma (log link). LATENT (log) scale: V_link = Var[log Y] = ψ₁(shape) (trigamma) — EXACT,",
+    "new": "# Gamma (log link). LATENT (log) scale: V_link = Var(log Y | η) = ψ₁(shape) (trigamma), EXACT,",
+    "before_line": 1777,
+    "origin": "Astra Gamma conditional residual correction"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "V_link = trigamma(shape) = Var[log Y] (EXACT, doc-19 §3.1)",
+    "new": "V_link = trigamma(shape) = Var(log Y | eta), the log-residual variance (EXACT, doc-19 §3.1)",
+    "before_line": 1797,
+    "origin": "Astra Gamma returned caveat correction"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "`h2_observation ∈ (0,1)`), integrating over the LINEAR-PREDICTOR distribution",
+    "new": "the theoretical population projection satisfies `h2_observation ∈ [0,1]` when\nobservation variance is finite and positive, including zero at `V_A = 0`), integrating\nover the LINEAR-PREDICTOR distribution",
+    "before_line": 1832,
+    "origin": "parent public docstring bound qualification"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "variance) via the module's existing 20-node Gauss–Hermite for logit and the",
+    "new": "variance) via the module's existing 20-node Gauss–Hermite for logit, which approximates\nthe population moments, and the",
+    "before_line": 1836,
+    "origin": "parent quadrature qualification"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. **Threshold\nfamilies**",
+    "new": "COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. Gaussian uses\nthis conditional ratio on both scales and requires `predictor_variance = 0`; nonzero\nfixed-effect spread is rejected. **Threshold families**",
+    "before_line": 1839,
+    "origin": "parent Gaussian conditional ratio requirement"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "predictor variance, is the NS \"variance explained by fixed effects\" term). The",
+    "new": "predictor variance, is the NS \"variance explained by fixed effects\" term). This is\nadditional fixed-predictor spread, not total predictor variance. `V_η = V_A + V_fixed`\nassumes zero covariance between genetic and fixed contributions and a normal\npredictor approximation. The",
+    "before_line": 1851,
+    "origin": "parent predictor variance assumptions"
+  },
+  {
+    "file": "src/nongaussian.jl",
+    "old": "with a caveat for a per-record varying `n_trials` (a single data-scale h² is\nill-defined under varying denominators — not silently averaged).",
+    "new": "with a caveat for genuinely varying per-record `n_trials` (a single data-scale h²\nis ill-defined under varying denominators). Constant fit trial vectors use their\ncommon scalar trial count.",
+    "before_line": 1856,
+    "origin": "parent common versus varying trials"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "Var[log Y]",
+    "new": "Var(log Y | η)",
+    "before_line": 91,
+    "origin": "Astra Gamma conditional residual correction"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "Var[log Y]",
+    "new": "Var(log Y | η)",
+    "before_line": 171,
+    "origin": "Astra Gamma conditional residual correction"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "Var[log Y]",
+    "new": "Var(log Y | η)",
+    "before_line": 194,
+    "origin": "Astra Gamma conditional residual correction"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "Var[log Y]",
+    "new": "Var(log Y | η)",
+    "before_line": 202,
+    "origin": "Astra Gamma conditional residual correction"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "`Ψ² V_A ≤ Var(E[y|η])`, so `h²_observation ∈ (0,1)` — verified numerically in the suite, not\nassumed.",
+    "new": "`Ψ² V_A ≤ Var(E[y|η])`, so the theoretical population projection satisfies\n`h²_observation ∈ [0,1]` when observation variance is finite and positive, including\nzero at `V_A = 0`. Finite quadrature approximates these population moments.",
+    "before_line": 126,
+    "origin": "parent zero variance bound synchronization"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **always smaller\nthan the liability heritability** — the classic Dempster–Lerner ordering (verified\nempirically:",
+    "new": "incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **no greater\nthan the liability heritability**, with equality at zero genetic variance and strict\ninequality at positive genetic variance in the exact finite-moment model. This is\nthe classic Dempster–Lerner ordering; finite quadrature approximates it (verified\nempirically:",
+    "before_line": 152,
+    "origin": "Astra probit zero variance qualification"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "log(Y/μ)`, whose variance for `Y ~ Gamma(shape ν, mean μ)` is a standard, mean-independent fact:",
+    "new": "log(Y/μ)`, whose conditional variance for `Y | η ~ Gamma(shape ν, mean μ)`\nwith `η` held fixed is a standard, mean-independent fact:",
+    "before_line": 194,
+    "origin": "Astra conditional Gamma interpretation"
+  },
+  {
+    "file": "docs/design/19-h2-scale-contract.md",
+    "old": "**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape): the empirical",
+    "new": "**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape,\nwith `η` held fixed): the empirical",
+    "before_line": 205,
+    "origin": "Astra historical Gamma check clarification"
+  }
+]

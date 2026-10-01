@@ -1,6 +1,6 @@
 # test_payload_v2_parity.jl — P0.5 cross-lane round-trip parity
 #
-# Contract: docs/design/21-payload-v2-multiblock-schema.md (FREEZE-READY).
+# Contract: docs/design/21-payload-v2-multiblock-schema.md (ratification pending).
 # No covered-status change; this contract-only slice does not change public_covered_count
 # or the validation_status() row count.
 #
@@ -39,6 +39,210 @@ function _json_to_sparse(Z_json)
     nrow  = Int(Z_json["nrow"])
     ncol  = Int(Z_json["ncol"])
     return sparse(i_raw, j_raw, v_raw, nrow, ncol)
+end
+
+function _wave2_minimal_v2_payload()
+    Z = sparse(ones(1, 1))
+    Ainv = sparse(I, 1, 1)
+    pedigree_block = Dict{String, Any}(
+        "name" => "animal",
+        "type" => "pedigree",
+        "relmat_status" => "supplied",
+        "relmat_inverse" => Ainv,
+        "ids" => ["a"],
+        "Z" => Z,
+    )
+    iid_block = Dict{String, Any}(
+        "name" => "litter",
+        "type" => "iid",
+        "relmat_status" => "identity",
+        "ids" => ["L1"],
+        "Z" => Z,
+    )
+    return Dict{String, Any}(
+        "payload_version" => 2,
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "method" => "REML",
+        "random_effects" => [pedigree_block, iid_block],
+    )
+end
+
+@testset "Payload-v2 rejects unsupported versions and malformed block boundaries" begin
+    for version in (0, -1, 3, 2.5, true, "2")
+        payload = _wave2_minimal_v2_payload()
+        payload["payload_version"] = version
+        @test_throws ArgumentError parse_payload_v2(payload)
+    end
+
+    payload = _wave2_minimal_v2_payload()
+    payload["payload_version"] = 1
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    payload = _wave2_minimal_v2_payload()
+    payload["random_effects"][2]["relmat_status"] = "build_in_julia"
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    payload = _wave2_minimal_v2_payload()
+    payload["random_effects"][1]["relmat_status"] = "identity"
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    payload = _wave2_minimal_v2_payload()
+    payload["random_effects"][1]["relmat_inverse"] = sparse(ones(1, 2))
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    payload = _wave2_minimal_v2_payload()
+    payload["random_effects"][1]["ids"] = String[]
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    payload = _wave2_minimal_v2_payload()
+    payload["random_effects"][1]["ids"] = ["a", "a"]
+    @test_throws ArgumentError parse_payload_v2(payload)
+
+    legacy_without_pedigree = Dict{String, Any}(
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "Z" => sparse(ones(1, 1)),
+        "ids" => ["a"],
+    )
+    @test_throws ArgumentError parse_payload_v2(legacy_without_pedigree)
+end
+
+@testset "Payload-v2 rejects ambiguous responses and malformed top-level dimensions" begin
+    both_responses = _wave2_minimal_v2_payload()
+    both_responses["Y"] = ones(1, 2)
+    @test_throws ArgumentError parse_payload_v2(both_responses)
+
+    wrong_X_rows = _wave2_minimal_v2_payload()
+    wrong_X_rows["X"] = ones(2, 1)
+    @test_throws ArgumentError parse_payload_v2(wrong_X_rows)
+
+    zero_rows = _wave2_minimal_v2_payload()
+    zero_rows["y"] = Float64[]
+    zero_rows["X"] = zeros(0, 1)
+    @test_throws ArgumentError parse_payload_v2(zero_rows)
+
+    for Y in (zeros(1, 0), zeros(0, 1))
+        empty_response = _wave2_minimal_v2_payload()
+        delete!(empty_response, "y")
+        empty_response["Y"] = Y
+        empty_response["X"] = ones(size(Y, 1), 1)
+        @test_throws ArgumentError parse_payload_v2(empty_response)
+    end
+end
+
+@testset "Payload-v2 block names follow the nonempty string contract" begin
+    for name in ("", " \t ", 7)
+        payload = _wave2_minimal_v2_payload()
+        payload["random_effects"][1]["name"] = name
+        @test_throws ArgumentError parse_payload_v2(payload)
+    end
+end
+
+@testset "Payload-v2 correlated block uses the documented partner default" begin
+    pedigree = Dict{String, Any}(
+        "id" => ["a"],
+        "sire" => [nothing],
+        "dam" => [nothing],
+    )
+    incidence = sparse(ones(1, 1))
+    block = Dict{String, Any}(
+        "name" => "direct_maternal",
+        "type" => "correlated",
+        "relmat_status" => "build_in_julia",
+        "pedigree" => pedigree,
+        "ids" => ["a"],
+        "Z" => incidence,
+        "partner_incidence" => incidence,
+    )
+    payload = Dict{String, Any}(
+        "payload_version" => 2,
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "random_effects" => [block],
+    )
+    parsed = parse_payload_v2(payload)
+    @test parsed.dispatch == :direct_maternal
+    @test parsed.blocks[1].partner_name == "maternal"
+end
+
+@testset "Payload-v2 rejects correlated blocks for multivariate responses" begin
+    incidence = sparse(ones(1, 1))
+    block = Dict{String, Any}(
+        "name" => "direct_maternal",
+        "type" => "correlated",
+        "relmat_status" => "build_in_julia",
+        "pedigree" => Dict("id" => ["a"], "sire" => [nothing], "dam" => [nothing]),
+        "ids" => ["a"],
+        "Z" => incidence,
+        "partner_incidence" => incidence,
+    )
+    payload = Dict{String, Any}(
+        "payload_version" => 2,
+        "Y" => ones(1, 2),
+        "X" => ones(1, 1),
+        "random_effects" => [block],
+    )
+    @test_throws ArgumentError parse_payload_v2(payload)
+end
+
+@testset "Payload-v2 validates supplied and legacy correlated relationship inputs" begin
+    Z = sparse(ones(1, 1))
+    supplied_correlated = Dict{String, Any}(
+        "name" => "animal",
+        "type" => "correlated",
+        "relmat_status" => "supplied",
+        "relmat_inverse" => sparse(I, 1, 1),
+        "ids" => ["a"],
+        "Z" => Z,
+        "partner_incidence" => Z,
+        "partner_name" => "maternal",
+    )
+    payload = Dict{String, Any}(
+        "payload_version" => 2,
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "random_effects" => [supplied_correlated],
+    )
+    @test parse_payload_v2(payload).blocks[1].relmat_inverse == sparse(I, 1, 1)
+
+    collision = deepcopy(payload)
+    collision["random_effects"][1]["partner_name"] = "animal"
+    @test_throws ArgumentError parse_payload_v2(collision)
+
+    for (ids, Ainv) in ((["a"], sparse(ones(1, 2))), (["a", "b"], sparse(I, 1, 1)),
+                        (["a", "a"], sparse(I, 1, 1)))
+        legacy = Dict{String, Any}(
+            "y" => [1.0],
+            "X" => ones(1, 1),
+            "Z" => Z,
+            "ids" => ids,
+            "Ainv" => Ainv,
+            "metadata" => Dict("ainv_status" => "supplied"),
+        )
+        @test_throws ArgumentError parse_payload_v2(legacy)
+    end
+
+    legacy_bad_status = Dict{String, Any}(
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "Z" => Z,
+        "ids" => ["a"],
+        "metadata" => Dict("ainv_status" => "typo"),
+    )
+    @test_throws ArgumentError parse_payload_v2(legacy_bad_status)
+
+    legacy_bad_effect2 = Dict{String, Any}(
+        "y" => [1.0],
+        "X" => ones(1, 1),
+        "Z" => Z,
+        "Z2" => Z,
+        "ids" => ["a"],
+        "Ainv" => sparse(I, 1, 1),
+        "effect2" => Dict("relationship" => "typo", "group" => "litter"),
+        "metadata" => Dict("ainv_status" => "supplied"),
+    )
+    @test_throws ArgumentError parse_payload_v2(legacy_bad_effect2)
 end
 
 """
@@ -249,6 +453,21 @@ end
     @test res_v2.loglik === res_direct.loglik
     @info "Fixture (a) byte-identity" sigma_a2_identical=(res_v2.variance_components.sigma_a2 === res_direct.variance_components.sigma_a2)
 
+    # A partial raw tuple cannot satisfy the established single-animal payload
+    # (fixed effects, predictions, PEV, reliability, and diagnostics are absent).
+    # Fail explicitly instead of returning a deceptively compatible fragment.
+    raw_fit = (variance_components = fit_direct_a.variance_components,
+               effects = res_direct.breeding_values,
+               loglik = res_direct.loglik, converged = res_direct.converged)
+    err = try
+        result_payload_v2(raw_fit, parsed_a)
+        nothing
+    catch e
+        e
+    end
+    @test err isa ArgumentError
+    @test occursin("complete legacy result contract", sprint(showerror, err))
+
     # ---- 6. Boundary check: pedigree null-to-nothing roundtrip --------------
     # The R emitter writes NA parents as JSON null; JSON3 reads them as nothing.
     # normalize_pedigree must accept nothing in the sire/dam vectors.
@@ -320,7 +539,10 @@ end
     @test res_v2_b.variance_components.blocks[1].variance ≈ vc_direct_b.sigma1
     @test res_v2_b.variance_components.blocks[2].variance ≈ vc_direct_b.sigma2
     @test res_v2_b.variance_components.residual ≈ vc_direct_b.sigma_e2
-    @test _nt_keys(res_v2_b) == Set([:variance_components, :random_effects, :loglik, :converged])
+    @test _nt_keys(res_v2_b) == Set([
+        :variance_components, :random_effects, :loglik, :df, :nobs,
+        :diagnostics, :converged,
+    ])
     @test _nt_keys(res_v2_b.variance_components) == Set([:residual, :blocks])
     @test all(_nt_keys(block) == Set([:name, :type, :variance])
               for block in res_v2_b.variance_components.blocks)
@@ -338,6 +560,8 @@ end
     # field-name test above already proves the dispatch was :two_effect.
     @test parsed_b.dispatch == :two_effect  # re-assert for clarity
 end
+
+include(joinpath(@__DIR__, "wave3_payload_result_shape.jl"))
 
 # ---------------------------------------------------------------------------
 # Fixture (c): animal + permanent()  → :two_effect

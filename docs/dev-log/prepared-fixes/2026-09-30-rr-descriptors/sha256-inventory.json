@@ -1,0 +1,18 @@
+{
+  "base_random_regression_sha256": "761151eb0297bece4c859db8a504a244a26510d320f123f85a9a9295621e7a5c",
+  "patched_random_regression_sha256": "91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33",
+  "base_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "patched_source_tree_sha256": "985bb88ddeb64b37ac6859fcbeff5864716d1f01ac8a9c0ded4340bba9a90c3f",
+  "changed_source_files": [
+    "random_regression.jl"
+  ],
+  "artifacts": {
+    "test/rr_descriptor_scale_regression.jl": "f92c48de5a8c1b67d03b01dcad5b44ff3d3cd0ff200ca162ee753f6ed2dd1c41",
+    "rr-descriptor-fixes.patch": "ec27b69dc016d5cd1f9cd18a757da78eddc7115ce27767c129469105433f4290",
+    "red.log": "b0859f38fef058b7cfb40da81644576dc6a887761c8b720ad99a7d742899b7a2",
+    "green.log": "76c1aee5df896efa683a6bf365940efc5b40f5ef4bce6473dd723376de161aad",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "green-final.log": "76c1aee5df896efa683a6bf365940efc5b40f5ef4bce6473dd723376de161aad"
+  }
+}

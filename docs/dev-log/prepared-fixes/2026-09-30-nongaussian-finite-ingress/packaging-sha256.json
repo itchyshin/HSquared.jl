@@ -1,0 +1,9 @@
+{
+  "green.log": "8236cf7e49e7ab45d510dbaaef38cd0241ed147e97282f71ae269277e661d08c",
+  "independent-review.md": "be9aff17fc863c921204ce941988df62e3e1a52169e7cd6ec515a64d33a07944",
+  "nongaussian-finite-ingress.patch": "2e3aa1fac2f1a5b1567113bd9e986992315b756faf3350df83678d657aa102db",
+  "receipt.md": "505c1d5d4e15b450ac92374aefa371ba745bdbddebf87919b21f360415b89e29",
+  "red.log": "1f3d090153717c7b825ccdd9a11969c33b3f9501de4e20718c82b99e9ee1f319",
+  "sha256-inventory.json": "b6f1127477dc52ee7e90b1e982154dcc53773c8d91fbe5faca649999bc3418b5",
+  "test/nongaussian_finite_ingress_regression.jl": "1947ae4f703436392d0a3556fefdfeec69bfd7eee5e704db833c021e366f9ab3"
+}

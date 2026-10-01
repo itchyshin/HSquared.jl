@@ -1,0 +1,16 @@
+{
+  "start_utc": "2026-09-30T22:26:29.956826+00:00",
+  "elapsed_seconds": 27.636385291116312,
+  "exit_status": 0,
+  "over_estimate": false,
+  "estimate_seconds": 180,
+  "command": [
+    "/usr/local/bin/Rscript",
+    "-e",
+    "devtools::test(filter = \"fa-optin|gllvm-optin\", stop_on_failure=TRUE)"
+  ],
+  "require_bridge": true,
+  "project": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "julia_threads": 1,
+  "blas_threads": 1
+}

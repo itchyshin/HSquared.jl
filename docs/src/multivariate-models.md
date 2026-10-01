@@ -151,7 +151,11 @@ The direct matrix builders are `diagonal_covariance`, `lowrank_covariance`, and
 ```
 
 The same structures can constrain the genetic covariance in the dense REML
-estimator while leaving the residual covariance unstructured:
+estimator while leaving the residual covariance unstructured. The existing
+two-trait, one-factor example below is saturated: its fitted `Ψ` is only one
+optimizer-selected decomposition of `G` and must not be interpreted as an
+identified estimate. The bounded four-trait R route has its own local-
+identification and fitted-information limits; see the FA design note.
 
 ```@example mv
 fad = fit_multivariate_reml(
@@ -163,9 +167,20 @@ fad = fit_multivariate_reml(
 (G0 = round.(fad.genetic_covariance; digits = 3),
  structure = genetic_structure(fad),
  loadings = round.(genetic_loadings(fad); digits = 3),
- uniqueness = round.(genetic_uniqueness(fad); digits = 3),
+ uniqueness_decomposition_diagnostic_only = round.(genetic_uniqueness(fad); digits = 3),
  converged = fad.converged)
 ```
+
+The loadings and uniqueness above expose the fitted decomposition for engine
+diagnostics; they do not make the decomposition identified. `genetic_rank` is
+the requested factor count, traits follow the input `Y` column order, and
+`mean_evolvability` depends on the trait coordinates and units. Directional
+metrics and genetic PCA axes are also coordinate- and unit-dependent: they use
+Euclidean unit directions or eigenvectors in the supplied trait scale. The
+rotation invariance here means invariance to orthogonal latent-factor rotations
+that preserve G; it does not imply invariance to rescaling traits. Choose and
+report a scientifically meaningful common scale before comparing directions
+across traits. The per-trait heritability uses `Gᵢᵢ/(Gᵢᵢ + Rᵢᵢ)` on the relationship matrix reference scale.
 
 The structured metadata accessors copy existing Julia result fields. They do not
 change `result_payload()` or the R bridge contract.

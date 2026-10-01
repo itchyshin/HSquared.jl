@@ -1,0 +1,2 @@
+Command: JULIA_DEPOT_PATH=/private/tmp/hsq-postfit-marker-contract-fix-20260930/julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. check_marker_contract.jl
+Result: Optim [429524aa-4258-5aef-a3af-852621145aeb] required but not installed in the reachable depot. No test code executed.

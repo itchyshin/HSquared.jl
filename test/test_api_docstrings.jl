@@ -15,6 +15,8 @@
 # Neither instance was a docs edit. Both were ordinary refactors that moved a definition out
 # from under its docstring, which is why this is asserted as a PROPERTY of `api.md` rather
 # than pinned symbol by symbol: the next one will be a different name.
+using REPL  # Render documentation through Docs.doc on Julia 1.10 and newer.
+
 @testset "every api.md @docs entry has a docstring" begin
     api = joinpath(@__DIR__, "..", "docs", "src", "api.md")
     @test isfile(api)
@@ -34,4 +36,14 @@
     ]
     @test isempty(undocumented)
     isempty(undocumented) || @info "api.md entries without a docstring" undocumented
+end
+
+@testset "fit_animal_model help describes implemented methods" begin
+    help = string(Base.Docs.doc(HSquared.fit_animal_model))
+    @test occursin("AnimalModelSpec", help)
+    @test occursin("y, X, Z, Ainv", help)
+    @test all(target -> occursin(target, help),
+              (":variance_components", ":sparse_reml", ":ai_reml", ":henderson_mme"))
+    @test occursin(":ai_reml", help)
+    @test !occursin("intentionally not implemented in Phase 0", help)
 end

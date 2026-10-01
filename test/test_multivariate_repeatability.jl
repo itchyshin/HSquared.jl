@@ -79,7 +79,6 @@ using Test
     @test length(payload.repeatability) == 2
     println("G4_PAYLOAD_CONTRACT")
 
-    Ipe = Matrix(1.0I, q, q)
     payload_in = Dict(
         "payload_version" => 2,
         "Y" => Y2,
@@ -97,8 +96,7 @@ using Test
             Dict(
                 "name" => "permanent",
                 "type" => "iid",
-                "relmat_status" => "supplied",
-                "relmat_inverse" => Ipe,
+                "relmat_status" => "identity",
                 "ids" => collect(1:q),
                 "Z" => Z,
             ),
@@ -107,10 +105,113 @@ using Test
     parsed = parse_payload_v2(payload_in)
     @test parsed.dispatch === :multivariate_repeatability
     @test parsed.is_multivariate
+
+    payload_ml = deepcopy(payload_in)
+    payload_ml["method"] = "ML"
+    @test_throws ArgumentError fit_payload_v2(payload_ml)
+
+    payload_bad_pe = deepcopy(payload_in)
+    bad_pe_Z = copy(Z)
+    bad_pe_Z[1, 1] = 0.0
+    bad_pe_Z[1, 2] = 1.0
+    payload_bad_pe["random_effects"][2]["Z"] = bad_pe_Z
+    @test_throws ArgumentError parse_payload_v2(payload_bad_pe)
+
+    payload_bad_ids = deepcopy(payload_in)
+    payload_bad_ids["random_effects"][2]["ids"] = reverse(collect(1:q))
+    @test_throws ArgumentError parse_payload_v2(payload_bad_ids)
+
     fit_v2 = fit_payload_v2(payload_in)
     out = result_payload_v2(fit_v2, parsed)
     @test out.target == "multivariate_repeatability_reml"
     @test out.component_names == ["animal", "permanent", "residual"]
+    @test out.traits == fit_v2.traits
+    @test hasproperty(out, :variance_components)
+    @test hasproperty(out.variance_components, :residual)
+    @test length(out.variance_components.blocks) == 2
+    @test out.variance_components.blocks[1].name == "animal"
+    @test out.variance_components.blocks[2].name == "permanent"
+    @test out.variance_components.blocks[1].variance ≈ fit_v2.genetic_covariance
+    @test out.variance_components.blocks[2].variance ≈ fit_v2.permanent_covariance
+    @test out.variance_components.residual ≈ fit_v2.residual_covariance
+    @test [effect.name for effect in out.random_effects] == ["animal", "permanent"]
+    @test out.random_effects[1].ids == fit_v2.breeding_values.ids
+    @test out.random_effects[1].values ≈ fit_v2.breeding_values.values
+    @test out.random_effects[2].ids == fit_v2.permanent_effects.ids
+    @test out.random_effects[2].values ≈ fit_v2.permanent_effects.values
+    @test size(out.random_effects[1].values) == (q, length(out.traits))
+    @test size(out.random_effects[2].values) == (q, length(out.traits))
+    @test size(out.variance_components.residual) == (length(out.traits), length(out.traits))
+    @test out.nobs == length(Y2)
+    @test out.df == 2 + 3 * 3
+    @test out.diagnostics.method === :REML
+    @test out.diagnostics.loglik_convention === :reml_full_constant
+
+    payload_custom_names = deepcopy(payload_in)
+    payload_custom_names["random_effects"][1]["name"] = "dam"
+    payload_custom_names["random_effects"][2]["name"] = "plot"
+    parsed_custom_names = parse_payload_v2(payload_custom_names)
+    fit_custom_names = fit_payload_v2(payload_custom_names)
+    out_custom_names = result_payload_v2(fit_custom_names, parsed_custom_names)
+    @test out_custom_names.component_names == ["dam", "plot", "residual"]
+    @test [effect.name for effect in out_custom_names.random_effects] == ["dam", "plot"]
+end
+
+@testset "optimizer Cholesky covariance proposals reject underflow and overflow" begin
+    params = HSquared._cov_to_chol_params(Matrix{Float64}(I, 2, 2), 2)
+    @test HSquared._try_chol_params_to_cov(params, 2) ≈ Matrix{Float64}(I, 2, 2)
+
+    underflow = copy(params)
+    underflow[1] = -1000.0
+    underflow[3] = -1000.0
+    collapsed = HSquared._chol_params_to_cov(underflow, 2)
+    @test iszero(collapsed[1, 1])
+    @test iszero(collapsed[2, 2])
+    @test HSquared._try_chol_params_to_cov(underflow, 2) === nothing
+
+    overflow = copy(params)
+    overflow[1] = 1000.0
+    @test HSquared._try_chol_params_to_cov(overflow, 2) === nothing
+end
+
+@testset "optimizer log-variance proposals reject underflow and overflow" begin
+    @test HSquared._try_positive_exp([0.0, log(2.0)]) ≈ [1.0, 2.0]
+    @test HSquared._try_positive_exp([-1000.0]) === nothing
+    @test HSquared._try_positive_exp([1000.0]) === nothing
+
+    X = ones(2, 1)
+    Z = Matrix{Float64}(I, 2, 2)
+    Ainv = Matrix{Float64}(I, 2, 2)
+    y = [1.0, 2.0]
+    @test_throws ArgumentError fit_repeatability_reml(
+        y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = Inf))
+    @test_throws ArgumentError fit_two_effect_reml(
+        y, X, Z, Ainv, Z, Ainv; initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = Inf))
+    @test_throws ArgumentError fit_multi_effect_reml(
+        y, X, [(Z, Ainv)]; initial = [Inf, 1.0])
+    @test_throws ArgumentError fit_direct_maternal_reml(
+        y, X, Z, Z, Ainv; initial = (G_dm = Matrix{Float64}(I, 2, 2), sigma_e2 = Inf))
+end
+
+@testset "multivariate genetic covariance candidates preserve correlation contract" begin
+    @test HSquared._mv_genetic_covariance_admissible(Matrix{Float64}(I, 2, 2), :unstructured)
+    @test !HSquared._mv_genetic_covariance_admissible([1.0 0.0; 0.0 0.0], :diagonal)
+    @test HSquared._mv_genetic_covariance_admissible([1.0 1.0; 1.0 1.0], :lowrank)
+    @test !HSquared._mv_genetic_covariance_admissible([1.0 1.0; 1.0 1.0], :unstructured)
+
+    Y = [0.0 0.4; 1.0 -0.3]
+    X = ones(2, 1)
+    Z = Matrix{Float64}(I, 2, 2)
+    A = Matrix{Float64}(I, 2, 2)
+    yvec, Xfull, Zfull, indiv, N = HSquared._mv_observed(Y, X, Z, 2, 2, 2, 1)
+    params = vcat(HSquared._cov_to_chol_params(A, 2), HSquared._cov_to_chol_params(A, 2))
+    objective = p -> HSquared._mv_reml_objective(
+        p, yvec, Xfull, Zfull, A, indiv, N, 2, :unstructured, 2, 3)
+    @test isfinite(objective(params))
+    genetic_underflow = copy(params)
+    genetic_underflow[1] = -1000.0
+    genetic_underflow[3] = -1000.0
+    @test objective(genetic_underflow) == Inf
 end
 
 # Known-truth G0 and P0 recovery (hsquared #237). Y is the Julia 1.10 pin in

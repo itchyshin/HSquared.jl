@@ -1,0 +1,1 @@
+First packaging check used an absolute git-apply --directory and Git rejected the absolute path before application. Repeated using an isolated relative directory. No source mutation occurred in the failed attempt.

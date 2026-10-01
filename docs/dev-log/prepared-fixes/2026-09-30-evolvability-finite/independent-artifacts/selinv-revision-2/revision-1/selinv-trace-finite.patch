@@ -1,0 +1,88 @@
+--- a/src/takahashi_selinv.jl
++++ b/src/takahashi_selinv.jl
+@@ -310,6 +310,17 @@
+     return d
+ end
+ 
++# Trace weights and results must be representable in the Float64 engine.
++function _selinv_trace_values(Ainv::SparseMatrixCSC)
++    vals = nonzeros(Ainv)
++    all(v -> v isa Real && isfinite(v), vals) || throw(ArgumentError(
++        "selected inverse trace weights must be finite real values"))
++    converted = Float64.(vals)
++    all(isfinite, converted) || throw(ArgumentError(
++        "selected inverse trace weights must be finite Float64 values"))
++    return converted
++end
++
+ """
+     selinv_trace_against(ch, Ainv, nfixed) -> Float64
+ 
+@@ -319,7 +330,9 @@
+ full selected-inverse sparse matrix. `Ainv`'s sparsity pattern is a subset of the
+ random block of `C`, hence of the `L + Lᵀ` pattern, so every entry looked up is
+ in-pattern (exact); the helper checks dimensions and this support condition and
+-throws `ArgumentError` when either fails. Numerically identical (up to summation order) to
++throws `ArgumentError` when either fails. Weights must be finite real values
++representable as Float64; trace accumulation outside finite Float64 range also
++throws `ArgumentError`. Numerically identical (up to summation order) to
+ `sum(Ainv .* takahashi_selinv(ch)[(nfixed+1):end, (nfixed+1):end])`, and without
+ the `O(nnz)` output allocation of materialising that matrix — but this function's
+ own cost is dominated by `_selinv_zvals`'s `Θ(Σⱼ|L[:,j]|²)` recursion (NOT
+@@ -349,11 +362,11 @@
+     n = size(ch, 1)
+     0 <= nfixed <= n && size(Ainv, 1) == n - nfixed && size(Ainv, 2) == size(Ainv, 1) ||
+         throw(ArgumentError("Ainv must be square and match the random block after nfixed columns"))
++    vals = _selinv_trace_values(Ainv)
+     Zvals, colptr, rowval, perm, _ = _selinv_zvals(ch; strict_order = strict_order)
+     offset = Int(nfixed)
+     iperm = invperm(perm)            # original index -> permuted index
+     rows = rowvals(Ainv)
+-    vals = nonzeros(Ainv)
+     trace = 0.0
+     @inbounds for jcol in 1:size(Ainv, 2)
+         vp = iperm[offset + jcol]
+@@ -376,6 +389,7 @@
+             trace += vals[k] * z
+         end
+     end
++    isfinite(trace) || throw(ArgumentError("selected inverse trace is outside finite Float64 range"))
+     return trace
+ end
+ 
+@@ -396,7 +410,9 @@
+ `K` times. Each `Ainvs[b]` pattern is a subset of `C`'s block-`b`
+ diagonal block, hence of the `L + Lᵀ` pattern, so every entry looked up is
+ in-pattern (exact); dimensions, offsets, and this support condition are checked
+-and invalid inputs throw `ArgumentError`. This is the `[tr(A₁⁻¹ C^{u₁u₁}), …, tr(A_K⁻¹ C^{u_Ku_K})]`
++and invalid inputs throw `ArgumentError`. Weights must be finite real values
++representable as Float64; nonfinite accumulated traces throw `ArgumentError`.
++This is the `[tr(A₁⁻¹ C^{u₁u₁}), …, tr(A_K⁻¹ C^{u_Ku_K})]`
+ vector used by [`fit_sparse_multi_effect_aireml`](@ref).
+ """
+ function selinv_block_traces(ch::SparseArrays.CHOLMOD.Factor{Float64},
+@@ -414,6 +430,7 @@
+         off isa Integer && 0 <= off <= n && size(Ainv, 1) == size(Ainv, 2) &&
+             size(Ainv, 1) <= n - off ||
+             throw(ArgumentError("each Ainv must be square and its integer offset must fit the factor"))
++        _selinv_trace_values(Ainv)
+         checked_offsets[b] = Int(off)
+     end
+ 
+@@ -424,7 +441,7 @@
+         Ainv = Ainvs[b]
+         offset = checked_offsets[b]
+         rows = rowvals(Ainv)
+-        vals = nonzeros(Ainv)
++        vals = _selinv_trace_values(Ainv)
+         t = 0.0
+         for jcol in 1:size(Ainv, 2)
+             vp = iperm[offset + jcol]
+@@ -447,6 +464,7 @@
+                 t += vals[k] * z
+             end
+         end
++        isfinite(t) || throw(ArgumentError("selected inverse block trace is outside finite Float64 range"))
+         traces[b] = t
+     end
+     return traces

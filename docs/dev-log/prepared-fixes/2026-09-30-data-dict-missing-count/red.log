@@ -1,0 +1,95 @@
+ERROR: LoadError: Some tests did not pass: 22 passed, 7 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:4
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19
+  Expression: HSquared._genotype_missing_value_count(genotypes, :id) == physical_count
+   Evaluated: 0 == 1
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20
+  Expression: metrics["missing_genotype_values"] == string(physical_count)
+   Evaluated: "0" == "1"
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19
+  Expression: HSquared._genotype_missing_value_count(genotypes, :id) == physical_count
+   Evaluated: 2 == 1
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20
+  Expression: metrics["missing_genotype_values"] == string(physical_count)
+   Evaluated: "2" == "1"
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19
+  Expression: HSquared._genotype_missing_value_count(genotypes, :id) == physical_count
+   Evaluated: 4 == 3
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20
+  Expression: metrics["missing_genotype_values"] == string(physical_count)
+   Evaluated: "4" == "3"
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:20 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Dictionary physical marker missingness: Test Failed at /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:41
+  Expression: metrics["missing_genotype_values"] == "1"
+   Evaluated: "0" == "1"
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:41 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-data-dict-missing-fix-20260930/test/data_dict_missing_count_regression.jl:5
+Test Summary:                          | Pass  Fail  Total  Time
+Dictionary physical marker missingness |   22     7     29  1.5s

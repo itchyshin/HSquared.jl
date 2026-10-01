@@ -1,0 +1,11 @@
+THREADS 1 BLAS 1
+Test Summary:                            | Pass  Total  Time
+likelihood result specification identity |   64     64  7.3s
+Test Summary:                          | Pass  Total  Time
+likelihood input and result boundaries |  202    202  4.2s
+Test Summary:                            | Pass  Total  Time
+Phase 1 dense variance component fitting |   37     37  1.0s
+Test Summary:                               | Pass  Total  Time
+Independent specification identity controls |   27     27  0.0s
+
+EXIT 0 WALL 29.40s

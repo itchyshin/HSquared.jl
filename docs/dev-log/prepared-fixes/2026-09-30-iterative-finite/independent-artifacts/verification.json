@@ -1,0 +1,31 @@
+{
+  "author_pins_verified": 38,
+  "baseline_lines": 1408,
+  "prepared_lines": 1467,
+  "protected_baseline_spans": [
+    [
+      56,
+      61
+    ],
+    [
+      303,
+      320
+    ],
+    [
+      324,
+      334
+    ]
+  ],
+  "prepared_source": "91317fe23ab913767b3f4ed44f74b69b9d5e0f5a5ce46fa09ed442047f361769",
+  "patch_application_matches_execution_snapshot": true,
+  "protected_whole_body_SHA256": {
+    "_require_full_fixed_effect_rank": "a2fd38cd6a4c5307434466af55170713ee7dff96f93a1d8e4ac4460905f5692b",
+    "_canonicalize_matrix_free_precision": "24b0d5f18bf9e4a676da7b97c877ee0a514018e03fb3d80633c463b1197dc813",
+    "_validate_matrix_free_precision": "eb8c787bb567f859e7d690d4d18b967c4eea5b37c6fdb5244bab283a0bf3de87",
+    "_lanczos_logquad": "facf812f799dc72cfd039fef0fe5edb5407e5abe40828b18f89ba7fefc364c13",
+    "_mme_matvec": "4b073aad959e50e3c5742d4e026c98a051ef50fcc2f9c1d1bff70261dbc1725e",
+    "_multi_mme_matvec": "3516fa1bdc79d966745f027a9d278d144ba5e5e6f3d12269ea5e0d2c013ddd29",
+    "_mme_diag": "849adba37de98457f0a15be9611013b74a0fc2ac6288cfc6ef687f0dd5d7ab58",
+    "_multi_mme_diag": "bb19e273efe0743ef468c0ba52399ff1e70d120c130a39b217dd9c065866761d"
+  }
+}

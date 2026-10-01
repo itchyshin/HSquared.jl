@@ -15,7 +15,7 @@ GPU-accelerated VanRaden genomic relationship matrix `G` — the device twin of
 [`genomic_relationship_matrix`](@ref). **STUB:** the method is provided by the
 `HSquaredCUDAExt` package extension, which activates only when CUDA is loaded
 (`using CUDA`). Without a CUDA backend in scope, calling this throws a
-`MethodError` asking you to load CUDA.
+generic `MethodError`; load CUDA to activate the extension method.
 
 It is a NUMERICAL ACCELERATION, not a new estimand: it reuses the validated CPU
 centering and validation (`centered_markers`) verbatim — same allele frequencies,

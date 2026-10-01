@@ -256,7 +256,12 @@ function adapter_sire_model_fitted_target(target, fixture)
 end
 
 function adapter_phase4_multitrait_parity(target, fixture)
-    generate_blupf90_multitrait_packet()
+    # Harness validation may run from a read-only checkout (for example under
+    # Pkg.test or an isolated worktree). Keep generated comparator files out of
+    # the source tree; this adapter only needs to confirm packet construction.
+    mktempdir() do out
+        generate_blupf90_multitrait_packet(; out)
+    end
     executables = probe_blupf90_executables(BLUPF90_EXECUTABLES)
     absent = [name for name in BLUPF90_EXECUTABLES if isnothing(executables[name])]
     isempty(absent) && return (

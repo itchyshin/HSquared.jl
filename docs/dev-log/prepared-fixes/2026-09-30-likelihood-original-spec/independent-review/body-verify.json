@@ -1,0 +1,9 @@
+{
+  "computation_bodies_unchanged": {
+    "fit_variance_components": true,
+    "fit_sparse_reml": true,
+    "_fit_ai_reml_diagnostics": true,
+    "henderson_mme": true
+  },
+  "predicted_source_tree_with_exact_delta": "2ae2c98f8bc7e664a6e07571a08775359d79698689470bc19feb97657d420869"
+}

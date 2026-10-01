@@ -1,0 +1,3 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                          | Pass  Total   Time
+likelihood input and result boundaries |  202    202  10.8s

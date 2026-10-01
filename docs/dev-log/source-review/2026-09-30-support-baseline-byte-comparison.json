@@ -1,0 +1,72 @@
+[
+  {
+    "file": "src/HSquared.jl",
+    "lines": 258,
+    "baseline_sha256": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
+    "current_sha256": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/backends.jl",
+    "lines": 167,
+    "baseline_sha256": "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9",
+    "current_sha256": "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/control.jl",
+    "lines": 107,
+    "baseline_sha256": "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f",
+    "current_sha256": "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/model_spec.jl",
+    "lines": 104,
+    "baseline_sha256": "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb",
+    "current_sha256": "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/plotting_ext.jl",
+    "lines": 61,
+    "baseline_sha256": "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569",
+    "current_sha256": "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/postfit.jl",
+    "lines": 58,
+    "baseline_sha256": "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f",
+    "current_sha256": "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/sparse_bridge.jl",
+    "lines": 87,
+    "baseline_sha256": "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427",
+    "current_sha256": "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427",
+    "identical_to_baseline": true
+  },
+  {
+    "file": "src/gpu_ext.jl",
+    "lines": 90,
+    "baseline_sha256": "d4d104771f5c937d653bcbca3ef7d311cf9431111d0c83b447a8d0ba09e549ed",
+    "current_sha256": "b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f",
+    "identical_to_baseline": false
+  },
+  {
+    "file": "src/errors.jl",
+    "lines": 22,
+    "baseline_sha256": "c339f1a48a39073aed0bb1d2fc8bbe6d79eff53db4ade465a162f9d87a778966",
+    "current_sha256": "6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba",
+    "identical_to_baseline": false
+  },
+  {
+    "file": "src/planned_terms.jl",
+    "lines": 359,
+    "baseline_sha256": "868d14ba17e97fee97beb01fc9d226248a016cfd62c4d0f8fe8fbb23d789eddb",
+    "current_sha256": "a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c",
+    "identical_to_baseline": false
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "cwd": "/private/tmp/hsq-reviewed-repairs-composed-20260930/original",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

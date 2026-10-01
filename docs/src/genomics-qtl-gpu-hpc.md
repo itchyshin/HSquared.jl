@@ -4,10 +4,11 @@
 ```
 
 !!! warning "Experimental · opt-in · not the default fit"
-    This page is a **roadmap**. Engine utilities exist; production genomics,
-    QTL/eQTL, GLLVM, and GPU backends do not. Live status is
-    [`validation_status()`](validation-status.md), not the section headings
-    below.
+    This page is a **roadmap**. A narrow experimental genetic GLLVM route
+    exists for the documented Poisson-log T3/K2 cell. Production genomics,
+    QTL/eQTL, broad GLLVM, and GPU backends remain unavailable. Check
+    [`validation_status()`](validation-status.md) and the capability records
+    for current scope; the section headings below do not establish status.
 
 This page records the long-range technical plan for `hsquared` and
 `HSquared.jl`.
@@ -15,21 +16,23 @@ This page records the long-range technical plan for `hsquared` and
 Status: roadmap plus experimental Julia engine utilities. The implemented
 Julia capability now includes pedigree/Ainv utilities, validation-scale animal
 models, genomic relationship / GBLUP / SNP-BLUP utilities, and a fixed-effect
-single-marker screening helper. Public R-facing genomic/QTL/eQTL syntax,
-mixed-model marker scans, GLLVM-style models, and GPU acceleration remain
-planned unless a capability table says otherwise.
+single-marker screening helper. Public genomic and QTL/eQTL routes and
+mixed-model marker scans remain bounded or planned as listed in the capability
+records. Genetic GLLVM has a narrow experimental R/Julia opt-in route; broader
+families and response patterns remain planned. GPU acceleration remains
+planned.
 
 See [Backend And Algorithm Roadmap](backend-algorithm-roadmap.md) for the
 Julia-side execution plan behind CPU, threaded CPU, CUDA, AMDGPU, Metal,
 oneAPI, AI-REML, Takahashi selected inversion, Woodbury paths, APY, and backend
 claim gates.
 
-The formula names `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
-and `qtl_scan()` are reserved in both twins. In Julia they currently throw
-planned-not-implemented errors. They do not fit genomic models or run QTL/eQTL
-scans. Direct Julia utilities such as `fit_snp_blup()` and
-`single_marker_scan()` are engine-internal and do not activate those formula
-terms.
+The Julia functions `genomic()`, `single_step()`, `markers()`, `marker_scan()`,
+and `qtl_scan()` are placeholders and throw planned-not-implemented errors.
+The R package owns formula parsing; similarly named formula or expert-control
+routes have their own status there. These Julia placeholders do not fit genomic
+models or run QTL/eQTL scans. Direct Julia utilities such as `fit_snp_blup()`
+and `single_marker_scan()` remain separate engine APIs.
 
 Do **not** read every reserved name as unimplemented. On the R twin,
 `permanent()`, `common_env()`, and `maternal_genetic()` fit through opt-in
@@ -417,7 +420,13 @@ for R-lane parity.
 `loco_relationship_precisions()` constructs dense VanRaden-plus-ridge
 leave-one-group-out relationship precisions from marker groups, and
 `loco_mixed_model_marker_scan()` selects a precision by marker group before
-running the same dense GLS scan. These helpers do not compute interval-mapping
+running the same dense GLS scan. For both fitted convenience scans, marker rows
+must be in the same observation order as `fit.spec.y`; the scan has no
+observation IDs with which to align rows. They require a converged fit. The
+mixed and LOCO routes are experimental, dense validation-scale scans, and their
+Wald p-values are not genome-wide calibrated.
+
+These helpers do not compute interval-mapping
 or mixed-model LOD workflows or calibrated/correlated-marker multiple-testing
 workflows, estimate marker-scan variance components, claim calibrated
 PVE/model R², choose public LOCO defaults, choose calibrated genome-wide

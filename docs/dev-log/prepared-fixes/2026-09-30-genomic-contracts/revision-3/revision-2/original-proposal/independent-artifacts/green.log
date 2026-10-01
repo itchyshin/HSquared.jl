@@ -1,0 +1,4 @@
+Test Summary:                   | Pass  Total   Time
+Complete G2-G6 scratch controls |   88     88  23.1s
+BOUNDARY_MISMATCH p=0.5 effect=1.8961503816218352e154 ref=1.7976931348623155e308 got=ArgumentError("marker variances exceed the finite Float64 range")
+BOUNDARY_MISMATCH p=0.1 effect=3.160250636036392e154 ref=1.7976931348623155e308 got=ArgumentError("marker variances exceed the finite Float64 range")

@@ -1,0 +1,25 @@
+{
+  "base_source_sha256": "76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f",
+  "base_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "base_head": "3d6d7ffc961b65fa5a44ce277a7d1168ba69b6fe",
+  "live_head_observed": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "prepared_source_tree_sha256": "ab724bd7b701bcd4f80b98e655abab13b8d91301a5301e9694b5f0121be71e97",
+  "artifacts": {
+    "contract-fix.patch": "aa67600abde5cff6f62de93a7cfe903bf2a583751e893ae44493a811d3209d40",
+    "src/genomic.jl": "65c97421e92b3a731e49dda7122c19449dbbe43707d7a635825746be6ea9bce2",
+    "frozen/genomic.jl": "76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f",
+    "test/test_genomic_summary_contracts.jl": "4abf2b647d13110f92fb91f572e182a914f50f982fa513b37c4645b668e8c23c",
+    "test/test_genomic_doc_bindings.jl": "9d18639f80a0a6847f13128a26fe6a77117d9a58b4c0f08012f56c2eb37c0b27",
+    "run_contracts.jl": "62c332ce822bf6bbd12dec1ed5266029ad4230effe444a96820815a4bcdbcdd3",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "red.log": "c3d26564e2c4da7c9ec29605ca188114870fec97af795baae7e09a20a6f0c1b1",
+    "green.log": "48fe98f37d74e6d673babeb45d695d9dd61ba43bb5e471749958c3ed6c07054f",
+    "midpoint-red.log": "c135664ae4722b9065247b76d8372335a89ce6223e6c3d68e7cb4f798a059a2e",
+    "label-neighbours-red.log": "e5c01d685045079aa2f236e2285eb18fb6fb2bac59ab5c3311d8362018c96c52",
+    "doc-binding-before-metadata-check.log": "e5a5064e83e89dc2d56e8b6955cc29ff1e5fa2a919131426601de8818627bd54",
+    "final-green.log": "f195f25347b1e35fcb91b6e6ada9bce52781c9504052d44fa5e5a171114fdec3",
+    "final-baseline-red.log": "200fc18247737522de7cb8c1ce27ac8443400894cb831232c3823f28ebb6ee1c",
+    "receipt.md": "834ae5c5a0bcae851651efbe10ab0e8a17810df26dd9734e3ce5cd10fb99d647"
+  }
+}

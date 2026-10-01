@@ -1,0 +1,17 @@
+[
+  {
+    "old": "function _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)",
+    "new": "function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)\n    step = _validate_uncertainty_fd_step(fd_step)\n    h = step .* max.(abs.(theta), 1e-3)\n    all(x -> isfinite(x) && x > 0, h) ||\n        throw(ArgumentError(\"fd_step must produce finite positive component steps\"))\n    return h\nend\n\nfunction _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)",
+    "count": 1
+  },
+  {
+    "old": "    h = fd_step .* max.(abs.(theta), 1e-3)\n    all(x -> isfinite(x) && x > 0, h) ||\n        throw(ArgumentError(\"fd_step must produce finite positive component steps\"))",
+    "new": "    h = _uncertainty_component_steps(theta, fd_step)",
+    "count": 2
+  },
+  {
+    "old": "    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n    total = sum(theta)",
+    "new": "    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n    _uncertainty_component_steps(theta, fd_step)\n    total = sum(theta)",
+    "count": 1
+  }
+]

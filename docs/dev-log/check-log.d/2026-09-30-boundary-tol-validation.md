@@ -1,0 +1,3 @@
+# Boundary tolerance validation and current Julia suite
+
+The shared validator now rejects negative and nonfinite `boundary_tol` values across the exact and matrix-free interval routes. Focused tests passed 74/74, including 18 invalid-input assertions; the full Julia 1.10 `Pkg.test()` passed on the current candidate. `git diff --check` and `bash tools/preamble_cap.sh` also passed. Unlazy reverify passed V1 and V2; the programme ledger remains 8/11 met with A2, E1, and V3 open. Exact hashes and limitations are recorded in `docs/dev-log/after-task/2026-09-30-boundary-tol-validation.md`. No capability, release, registry, or GPU status changed.

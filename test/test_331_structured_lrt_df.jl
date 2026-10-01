@@ -15,15 +15,18 @@
 # `_mv_nparams`, not the issue's genetic-only shorthand.
 #
 # F1 (Rose BLOCK on #339, resolution 1, Ada/Noether-decided): a factor-analytic
-# null (`G = ΛΛ' + Ψ`, `Ψ > 0`) is a regular lower-dimensional submanifold of
-# the unstructured parameter space, not a variance-at-zero boundary, so the
-# classical χ²_df reference (df = identified-parameter difference) applies and
+# null (`G = ΛΛ' + Ψ`, `Ψ > 0`) is not a variance-at-zero PSD boundary, so the
+# implementation reports the plain χ²_df tail. This tail is a regular
+# asymptotic reference only at a locally identifiable interior point under
+# the usual likelihood conditions; rotation-adjusted parameter counting and
+# positive Ψ alone do not establish those conditions. The nominal df
+# difference applies to the generic covariance parameterization, and
 # the Self & Liang (1987) / Stram & Lee (1994) 50:50 chi-bar mixture must NOT
-# be entered for structured nulls. A low-rank null (`G = ΛΛ'`, rank r < t)
-# lies on the boundary of the PSD cone, where the true reference is a chi-bar
-# mixture whose weights this function does not compute, so the naive χ²_df
-# tail is reported with its direction relative to that mixture explicitly
-# unknown. The assertions below pin `covariance_structure_lrt`'s
+# be entered for these structured nulls. A low-rank null (`G = ΛΛ'`, rank r < t)
+# lies on the boundary of the PSD cone, but this test does not derive its
+# nonstandard limit law; the function reports a naive χ²_df tail and leaves
+# its direction relative to the relevant limit law unknown. The assertions
+# below pin `covariance_structure_lrt`'s
 # `reference`/`boundary` fields and its `pvalue` against an independent
 # `Distributions.jl` χ² tail, and pin that the 50:50 chi-bar mixture
 # (`nested_lrt`'s own `boundary_df = 1` branch, left untouched) is never the
@@ -74,18 +77,28 @@ using Distributions: Chisq, ccdf
         )
         @test fa.genetic_structure == :factor_analytic
         @test fa.genetic_rank == 2
+        @test !fa.converged
+        @test !full.converged
+        @test_throws ArgumentError covariance_structure_lrt(fa, full)
 
         # Identified-parameter count: t*r + t - r(r-1)/2 (+ the unstructured-R0
         # term shared with `full`) = 5*2+5-1 = 14, plus R0 15 => 29.
         @test HSquared._mv_nparams(fa) == 29
         @test HSquared._mv_nparams(full) == 30   # unstructured: no rotational indeterminacy to remove
 
-        lrt = covariance_structure_lrt(fa, full)   # (constrained, full) — fa nests inside unstructured
+        # Isolate parameter counting and reference-tail behavior with valid
+        # synthetic converged result records. The optimizer fits above did not
+        # converge and are explicitly refused for inferential comparison.
+        fa_contract = (genetic_covariance = Matrix{Float64}(I, 5, 5), genetic_structure = :factor_analytic,
+                       genetic_rank = 2, loglik = -100.0, converged = true)
+        full_contract = (genetic_covariance = Matrix{Float64}(I, 5, 5), genetic_structure = :unstructured,
+                         genetic_rank = 0, loglik = -95.0, converged = true)
+        lrt = covariance_structure_lrt(fa_contract, full_contract)
         @test lrt.df == 1                        # was: npf == npc == 30 => ArgumentError (df = 0)
 
-        # F1 resolution 1: a factor-analytic null is a regular submanifold, not
-        # a variance-at-zero boundary — `boundary` must be false and the
-        # reference distribution the plain χ²_df, not a chi-bar mixture.
+        # F1 resolution 1: the FA null is not a variance-at-zero PSD
+        # boundary, so `boundary` is false and the reported tail is plain
+        # χ²_df. This field is not a certificate of local identification.
         @test lrt.boundary == false
         @test lrt.reference == :chisq
         @test 0.0 <= lrt.pvalue <= 1.0
@@ -103,10 +116,11 @@ using Distributions: Chisq, ccdf
     end
 
     @testset "lowrank t=6 rank=3 (rotational indeterminacy r(r-1)/2 = 3)" begin
-        fake_full = (genetic_covariance = zeros(6, 6), genetic_structure = :unstructured,
-                     genetic_rank = 0, loglik = -95.0)
-        fake_lr = (genetic_covariance = zeros(6, 6), genetic_structure = :lowrank,
-                  genetic_rank = 3, loglik = -100.0)
+        fake_full = (genetic_covariance = Matrix{Float64}(I, 6, 6), genetic_structure = :unstructured,
+                     genetic_rank = 0, loglik = -95.0, converged = true)
+        fake_lr = (genetic_covariance = Matrix(Diagonal([1.0, 2.0, 3.0, 0.0, 0.0, 0.0])),
+                  genetic_structure = :lowrank,
+                  genetic_rank = 3, loglik = -100.0, converged = true)
 
         # ngen(:lowrank) = t*r - r(r-1)/2 = 6*3-3 = 15, plus R0 t(t+1)/2 = 21 => 36.
         @test HSquared._mv_nparams(fake_lr) == 36
@@ -114,7 +128,8 @@ using Distributions: Chisq, ccdf
 
         # F1 resolution 1: a low-rank null genuinely sits on the PSD-cone
         # boundary — `boundary` stays true, but the reported p-value is the
-        # naive (not the true chi-bar-mixture) χ²_df tail, direction unknown.
+        # naive χ²_df tail; direction relative to the uncomputed limit law is
+        # unknown.
         lrt2 = covariance_structure_lrt(fake_lr, fake_full)
         @test lrt2.df == 6
         @test lrt2.boundary == true
@@ -122,5 +137,35 @@ using Distributions: Chisq, ccdf
         @test 0.0 <= lrt2.pvalue <= 1.0
         @test lrt2.pvalue ≈ ccdf(Chisq(lrt2.df), lrt2.statistic)
         @test !occursin("conservative", lowercase(lrt2.note))
+    end
+
+    @testset "structured LRT rejects invalid fit pairs" begin
+        full = (genetic_covariance = Matrix{Float64}(I, 4, 4),
+                genetic_structure = :unstructured, genetic_rank = 0,
+                loglik = -10.0, converged = true)
+        fa = (genetic_covariance = Matrix{Float64}(I, 4, 4),
+              genetic_structure = :factor_analytic, genetic_rank = 1,
+              loglik = -15.0, converged = true)
+        @test covariance_structure_lrt(fa, full).df > 0
+        @test_throws ArgumentError covariance_structure_lrt(merge(fa, (converged = false,)), full)
+        @test_throws ArgumentError covariance_structure_lrt(fa, merge(full, (loglik = Inf,)))
+        @test_throws ArgumentError covariance_structure_lrt(
+            fa, merge(full, (genetic_covariance = Matrix{Float64}(I, 3, 3),)))
+        larger_fa = merge(fa, (genetic_rank = 2, loglik = -10.0,))
+        @test HSquared._mv_nparams(larger_fa) > HSquared._mv_nparams(fa)
+        unsupported = try
+            covariance_structure_lrt(fa, larger_fa)
+            nothing
+        catch err
+            err
+        end
+        @test unsupported isa ArgumentError
+        @test occursin("supports only", sprint(showerror, unsupported))
+        diagonal = merge(fa, (genetic_structure = :diagonal, genetic_rank = 0,))
+        lowrank = (genetic_covariance = Matrix(Diagonal([1.0, 2.0, 0.0, 0.0])),
+                   genetic_structure = :lowrank, genetic_rank = 2,
+                   loglik = -12.0, converged = true)
+        @test covariance_structure_lrt(diagonal, full).df == 6
+        @test covariance_structure_lrt(lowrank, full).df == 3
     end
 end

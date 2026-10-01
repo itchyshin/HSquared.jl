@@ -71,17 +71,21 @@ relmat()
 HSquared.precision()
 ```
 
-These names mirror the R twin's planned formula markers from `hsquared` heads
-`3c82c9a` and `10e8fd7`. They are vocabulary reservations only. Calls throw
-planned-not-implemented errors and do not construct `AnimalModelSpec` objects,
-genomic relationship specs, marker scans, QTL/eQTL scans, standard
-quantitative-genetic extension specs, custom relationship/precision specs, or
-fitted models.
+These Julia placeholder names overlap with terms in the R model language, but
+their status is Julia-local; the R package may parse or fit a similarly named
+route. Calls here throw planned-not-implemented errors and do not construct
+`AnimalModelSpec` objects, genomic relationship specs, marker scans, QTL/eQTL
+scans, standard quantitative-genetic extension specs, custom
+relationship/precision specs, or fitted models.
 
-`formula_status()` mirrors the R twin's 20-row grammar diagnostic with columns
+`formula_status()` is a Julia-local, 20-row engine-term diagnostic with columns
 `term`, `category`, `phase`, `syntax_status`, `fitting_status`, and
-`current_behavior`. It is a status table only; it does not parse formulas,
-construct model specs, or enable fitting.
+`current_behavior`. The R package owns public formula parsing and its status
+table has a broader inventory. Julia has no formula parser, so these rows do
+not mirror R syntax or report end-to-end R availability. Bounded Gaussian FA
+and genetic GLLVM fits use separate expert-control routes; they are not
+activated by formula terms. See `validation_status()` and the capability
+records for their exact limits.
 
 The term `:precision` is reserved for bridge payload vocabulary. Direct Julia
 calls should use `HSquared.precision()` because `Base.precision` already exists.

@@ -1,0 +1,99 @@
+
+> env
+> env vitepress build /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/build/.documenter
+
+
+  vitepress v1.6.4
+
+- building client + server bundles...
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32m✓[0m building client + server bundles...
+- rendering pages...
+[32m✓[0m rendering pages...
+build complete in 5.36s.
+   Resolving package versions...
+  No Changes to `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Project.toml`
+  No Changes to `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Manifest.toml`
+[ Info: SetupBuildDirectory: setting up build directory.
+[ Info: Doctest: running doctests.
+[ Info: ExpandTemplates: expanding markdown templates.
+[ Info: CrossReferences: building cross-references.
+[ Info: CheckDocument: running document checks.
+┌ Warning: 47 docstrings not included in the manual:
+│
+│     HSquared.BetaBinomialResponse
+│     HSquared.loglik :: Tuple{HSquared.GeneticGLLVMFit}
+│     HSquared._genomic_precision_provenance :: Tuple{AbstractMatrix, Any}
+│     HSquared.BinomialVectorResponse
+│     HSquared._meuwissen_luo_inbreeding :: Tuple{Pedigree}
+│     HSquared.GeneticGLLVMFit
+│     HSquared._single_step_Hinv :: Tuple{AbstractMatrix, AbstractMatrix, AbstractMatrix, AbstractVector{<:Integer}}
+│     HSquared.fa_covered_flip_cell :: Tuple{Integer, Integer}
+│     HSquared.BernoulliProbitResponse
+│     HSquared.gllvm_laplace_marginal_loglik :: Tuple{AbstractMatrix, AbstractMatrix, AbstractMatrix, Union{HSquared.ResponseFamily, AbstractVector}}
+│     HSquared.ParsedPayloadV2
+│     HSquared.ledermann_slack :: Tuple{Integer, Integer}
+│     HSquared.variational_marginal_loglik :: Tuple{AbstractVector, AbstractMatrix, AbstractMatrix, AbstractMatrix, Real, HSquared.ResponseFamily}
+│     HSquared.takahashi_diag :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}}
+│     HSquared.parse_payload_v2 :: Tuple{Any}
+│     HSquared.multivariate_repeatability_result_payload :: Tuple{Any}
+│     HSquared.fit_matrix_free_reml :: Tuple{AnimalModelSpec}
+│     HSquared.fit_gllvm_laplace_reml :: Tuple{AbstractMatrix, AbstractMatrix, Union{HSquared.ResponseFamily, AbstractVector}}
+│     HSquared.nongaussian_heritability :: Tuple{HSquared.NonGaussianFit}
+│     HSquared.latent_structure :: Tuple{HSquared.GeneticGLLVMFit}
+│     HSquared.fit_payload_v2 :: Tuple{Any}
+│     HSquared.BernoulliResponse
+│     HSquared.takahashi_selinv :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}}
+│     HSquared.laplace_marginal_loglik :: Tuple{AbstractVector, AbstractMatrix, AbstractMatrix, AbstractMatrix, Real, HSquared.ResponseFamily}
+│     HSquared.GammaResponse
+│     HSquared.PoissonResponse
+│     HSquared.gpu_fit_gblup
+│     HSquared.require_fa_covered_flip_cell :: Tuple{Integer, Integer}
+│     HSquared._numerator_relationship :: Tuple{Pedigree}
+│     HSquared.BinomialResponse
+│     HSquared.genetic_correlation_interval :: NTuple{5, Any}
+│     HSquared.NegativeBinomialResponse
+│     HSquared.loglik_convention_fields :: Tuple{Symbol, Integer, Integer}
+│     HSquared.GaussianResponse
+│     HSquared.bootstrap_variance_component_interval :: Tuple{AnimalModelFit}
+│     HSquared.variance_component_interval :: Tuple{AnimalModelFit}
+│     HSquared._v2_structured_result_metadata :: Tuple{Any, HSquared.ParsedPayloadV2, Integer}
+│     HSquared.nested_lrt :: Tuple{Real, Real}
+│     HSquared.genetic_covariance :: Tuple{HSquared.GeneticGLLVMFit}
+│     HSquared.GLLVMParameterEvaluationError
+│     HSquared._genomic_activation_construction :: Tuple{AbstractMatrix, Any}
+│     HSquared.fit_multivariate_repeatability_reml :: NTuple{4, AbstractMatrix}
+│     HSquared.structured_genetic_payload :: Tuple{Any}
+│     HSquared.nongaussian_three_field_payload :: Tuple{HSquared.NonGaussianFit}
+│     HSquared.selinv_trace_against :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}, SparseArrays.SparseMatrixCSC, Integer}
+│     HSquared.OrderedProbitResponse
+│     HSquared.selinv_block_traces :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}, AbstractVector, AbstractVector}
+│
+│ These are docstrings in the checked modules (configured with the modules keyword)
+│ that are not included in canonical @docs or @autodocs blocks.
+└ @ Documenter ~/.julia/packages/Documenter/13nbQ/src/utilities/utilities.jl:49
+[ Info: Populate: populating indices.
+[ Info: RenderDocument: rendering document.
+[ Info: DocumenterVitepress: rendering MarkdownVitepress pages.
+┌ Warning: Documenter could not auto-detect the building environment. Skipping deployment.
+└ @ Documenter ~/.julia/packages/Documenter/13nbQ/src/deployconfig.jl:95
+[ Info: Automatic `version="0.9.0"` for inventory from ../Project.toml
+[ Info: Bases that will be built: [""]
+[ Info: DocumenterVitepress: Did not detect `docs/src/.vitepress/config.mts` file. Substituting in the default file.
+[ Info: DocumenterVitepress: Did not detect `docs/src/.vitepress/mathjax-plugin.ts` file. Substituting in the default file.
+[ Info: DocumenterVitepress: Did not detect `docs/src/.vitepress/julia-repl-transformer.ts` file. Substituting in the default file.
+[ Info: DocumenterVitepress: Did not detect `docs/src/.vitepress/theme/style.css` file. Substituting in the default file.
+[ Info: DocumenterVitepress: Did not detect `docs/src/.vitepress/theme/docstrings.css` file. Substituting in the default file.
+[ Info: Base is "" and ENV["CI"] is not set so this is a local build. Not adding any additional base prefix based on the repository or deploy url and instead using absolute path "/" to facilitate serving docs locally.
+┌ Warning: DocumenterVitepress: No favicon.ico file found in `docs/src/assets`.  Skipping favicon replacement.
+└ @ DocumenterVitepress ~/.julia/packages/DocumenterVitepress/BNfZY/src/vitepress_config.jl:172
+[ Info: DocumenterVitepress: building Vitepress site 1 of 1 with base "".
+[ Info: Found no bases suitable for deployment (empty bases are skipped).
+Copied: /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/build/.documenter/components/AuthorBadge.vue
+Copied: /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/build/.documenter/components/Authors.vue
+Copied: /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/build/.documenter/components/SidebarDrawerToggle.vue
+Copied: /private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/build/.documenter/components/VersionPicker.vue

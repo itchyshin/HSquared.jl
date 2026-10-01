@@ -1,0 +1,6 @@
+Finished named case baseline; exceptions retained; seconds=52.71075327
+Finished named case units_D1; exceptions retained; seconds=51.336258384
+Finished named case units_inverse_D1; exceptions retained; seconds=49.035914139
+Finished named case order_3142; exceptions retained; seconds=55.521037383
+Finished named case order_4321; exceptions retained; seconds=61.368066646
+diagnostic_complete; A2_complete=false; attempted=5/5; finite=5/5; correctness_failures=0

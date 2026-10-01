@@ -8,10 +8,11 @@
 # genetic principal axes (genetic_pca / g_max), and the genetic variance of an
 # index. EXPERIMENTAL, validation-scale.
 #
-# These are functions of G itself, so they are ROTATION-INVARIANT — for a
-# reduced-rank / factor-analytic fit, G = ΛΛ' (+Ψ) is identical for any orthogonal
-# rotation Λ→ΛQ, so evolvability sidesteps the loading-rotation ambiguity that
-# gates the structured bridge payload and structured SEs. They are descriptive
+# These are functions of G itself, so they are invariant to orthogonal latent-factor
+# rotations that preserve G — for a reduced-rank / factor-analytic fit,
+# G = ΛΛ' (+Ψ) is identical for any orthogonal rotation Λ→ΛQ. This does not make
+# directional metrics or genetic PCA axes invariant to trait rescaling: beta is
+# normalized with the Euclidean norm in the supplied trait coordinates. They are descriptive
 # geometry, NOT a selection-response prediction (no realized response without a
 # real, unmodelled selection gradient) and NOT a fitting/estimation claim; metrics
 # on an ESTIMATED G inherit all of fit_multivariate_reml's estimation caveats.
@@ -35,30 +36,59 @@ _evolvability_G(result) = getproperty(result, :genetic_covariance)
 function _check_symmetric_psd_G(G::AbstractMatrix)
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
+    n > 0 || throw(ArgumentError("G must be nonempty"))
     Gf = Matrix{Float64}(G)
     all(isfinite, Gf) || throw(ArgumentError("G must contain only finite values"))
-    gscale = max(1.0, maximum(abs, Gf))
-    isapprox(Gf, transpose(Gf); atol = 1e-10 * gscale) ||
+    gscale = maximum(abs, Gf)
+    isapprox(Gf, transpose(Gf); atol = 1e-12 * gscale, rtol = 1e-12) ||
         throw(ArgumentError("G must be symmetric"))
     S = Symmetric(Gf)
     ev = eigvals(S)
-    escale = max(1.0, maximum(abs, ev))
-    minimum(ev) >= -1e-8 * escale ||
+    all(isfinite, ev) || throw(ArgumentError("G eigenvalues must be representable as finite Float64 values"))
+    minimum(ev) >= -1e-12 * gscale ||
         throw(ArgumentError("G must be positive semidefinite"))
+    d = diag(Gf)
+    all(x -> x >= -1e-12 * gscale, d) ||
+        throw(ArgumentError("G diagonal must be nonnegative within roundoff"))
+    for i in findall(<=(0), d)
+        all(j == i || iszero(Gf[i, j]) for j in 1:n) ||
+            throw(ArgumentError("a nonpositive-variance trait must have zero covariance"))
+    end
+    positive = findall(>(0), d)
+    if !isempty(positive)
+        sd = sqrt.(d[positive])
+        R = Matrix{Float64}(Gf[positive, positive])
+        @inbounds for j in eachindex(sd), i in eachindex(sd)
+            R[i, j] = R[i, j] / sd[i] / sd[j]
+        end
+        all(isfinite, R) && eigmin(Symmetric(R)) >= -1e-12 ||
+            throw(ArgumentError("G must be positive semidefinite after trait scaling"))
+    end
     return S
 end
 
 # Additionally positive-DEFINITE: required by the inverse-using metrics
 # (conditional_evolvability, autonomy). A merely PSD (singular / reduced-rank) G
 # makes G⁻¹ undefined, so those metrics must throw rather than silently regularize.
-# Uses the scale-free `isposdef` (a Cholesky attempt), so a well-conditioned PD G
-# at any scale is accepted and a singular one rejected.
+# Inverse metrics use a scale-normalized factorization. Matrices above the stated
+# condition limit are refused because Float64 forward error can overwhelm their
+# directional summaries; silently returning a number would imply unsupported precision.
+const _INVERSE_METRIC_MAX_CONDITION = inv(sqrt(eps(Float64)))
 function _check_symmetric_pd_G(G::AbstractMatrix)
     S = _check_symmetric_psd_G(G)
-    isposdef(S) ||
+    scale = maximum(abs, S)
+    scale > 0 || throw(ArgumentError("G must be positive definite for this metric"))
+    scaled = Symmetric(Matrix(S) ./ scale)
+    factor = cholesky(scaled; check = false)
+    issuccess(factor) ||
         throw(ArgumentError("G must be positive definite for this metric (it inverts G); " *
                             "a singular / reduced-rank G has no conditional evolvability or autonomy"))
-    return S
+    λ = eigvals(scaled)
+    κ = maximum(λ) / minimum(λ)
+    isfinite(κ) && κ <= _INVERSE_METRIC_MAX_CONDITION ||
+        throw(ArgumentError("G is too ill-conditioned for conditional evolvability or autonomy " *
+                            "in Float64 (estimated condition number $(κ); limit $(_INVERSE_METRIC_MAX_CONDITION))"))
+    return (matrix = S, scale = scale, scaled = scaled, factor = factor)
 end
 
 function _normalize_beta(beta::AbstractVector, t::Integer)
@@ -66,9 +96,11 @@ function _normalize_beta(beta::AbstractVector, t::Integer)
         throw(ArgumentError("beta length ($(length(beta))) must match the number of traits ($t)"))
     b = Vector{Float64}(beta)
     all(isfinite, b) || throw(ArgumentError("beta must contain only finite values"))
-    nrm = norm(b)
-    nrm > 0 || throw(ArgumentError("beta must be a nonzero direction"))
-    return b ./ nrm
+    scale = maximum(abs, b)
+    scale > 0 || throw(ArgumentError("beta must be a nonzero direction"))
+    scaled = b ./ scale
+    nrm = norm(scaled)
+    return scaled ./ nrm
 end
 
 """
@@ -84,7 +116,9 @@ predicted response; see the module note for caveats.
 function evolvability(G, beta)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     b = _normalize_beta(beta, size(S, 1))
-    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
+    value = dot(b, S * b)
+    isfinite(value) || throw(ArgumentError("genetic variance is outside finite Float64 range"))
+    return max(0.0, value)   # clamp admissible roundoff
 end
 
 """
@@ -93,14 +127,18 @@ end
 Hansen & Houle (2008) **conditional evolvability** `c(β) = 1 / (β̂ᵀ G⁻¹ β̂)` — the
 genetic variance available in direction `β` when all other directions are held at
 their conditional optima (i.e. under a constraint). Requires `G` positive
-DEFINITE (it inverts `G`); a singular / reduced-rank `G` throws. Along an
-eigenvector of `G` it equals that eigenvalue, and `c(β) ≤ e(β)` always.
+DEFINITE (it inverts `G`); singular or excessively ill-conditioned matrices throw.
+The condition estimate must be at most `1/sqrt(eps(Float64))`. Along an
+eigenvector of `G` it equals that eigenvalue, and `c(β) ≤ e(β)` always. The unit
+direction is Euclidean in the supplied trait coordinates; values depend on trait scaling.
 """
 function conditional_evolvability(G, beta)
-    S = _check_symmetric_pd_G(_evolvability_G(G))
-    b = _normalize_beta(beta, size(S, 1))
-    F = cholesky(S)
-    return 1.0 / dot(b, F \ b)
+    checked = _check_symmetric_pd_G(_evolvability_G(G))
+    b = _normalize_beta(beta, size(checked.matrix, 1))
+    value = checked.scale / dot(b, checked.factor \ b)
+    isfinite(value) && value > 0 ||
+        throw(ArgumentError("conditional evolvability is outside the representable Float64 range"))
+    return value
 end
 
 """
@@ -113,7 +151,9 @@ Along an eigenvector of `G` it equals that (non-negative) eigenvalue.
 function respondability(G, beta)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     b = _normalize_beta(beta, size(S, 1))
-    return norm(S * b)
+    value = norm(S * b)
+    isfinite(value) || throw(ArgumentError("respondability is outside finite Float64 range"))
+    return value
 end
 
 """
@@ -125,11 +165,14 @@ other traits. Requires `G` positive definite (via `conditional_evolvability`).
 Along an eigenvector of `G` it equals `1`.
 """
 function autonomy(G, beta)
-    S = _check_symmetric_pd_G(_evolvability_G(G))   # PD required (validated once)
-    b = _normalize_beta(beta, size(S, 1))
-    e = dot(b, S * b)                # > 0 for a PD G, so no clamp / divide-by-zero
-    c = 1.0 / dot(b, cholesky(S) \ b)
-    return c / e
+    checked = _check_symmetric_pd_G(_evolvability_G(G))
+    b = _normalize_beta(beta, size(checked.matrix, 1))
+    e_scaled = dot(b, checked.scaled * b)
+    c_scaled = 1.0 / dot(b, checked.factor \ b)
+    value = c_scaled / e_scaled
+    isfinite(value) && value > 0 ||
+        throw(ArgumentError("autonomy is outside the representable Float64 range"))
+    return min(value, 1.0) # exact autonomy is in (0, 1]; remove roundoff above one
 end
 
 """
@@ -138,7 +181,8 @@ end
 Additive genetic variance of the linear index `βᵀ a`, `βᵀ G β`. With
 `normalize = true` (default) `β` is scaled to unit length first, so this returns
 [`evolvability`](@ref); with `normalize = false` it uses `β` as given (the raw
-genetic variance of the index for an arbitrary contrast). PSD-safe.
+genetic variance of the index for an arbitrary contrast). PSD-safe. Derived
+variances outside finite Float64 range throw `ArgumentError`.
 """
 function variance_along_gradient(G, beta; normalize::Bool = true)
     S = _check_symmetric_psd_G(_evolvability_G(G))
@@ -151,7 +195,9 @@ function variance_along_gradient(G, beta; normalize::Bool = true)
         b = Vector{Float64}(beta)
         all(isfinite, b) || throw(ArgumentError("beta must contain only finite values"))
     end
-    return max(0.0, dot(b, S * b))   # a variance is non-negative; clamp numerical roundoff
+    value = dot(b, S * b)
+    isfinite(value) || throw(ArgumentError("genetic variance is outside finite Float64 range"))
+    return max(0.0, value)   # clamp admissible roundoff
 end
 
 # Deterministic sign canonicalization: make the largest-magnitude entry of each
@@ -172,14 +218,17 @@ Genetic principal-component decomposition of `G`. Returns
 along the genetic principal axes / "genetic lines of least resistance") and the
 corresponding eigenvectors as the columns of `vectors`, each deterministically
 sign-canonicalized (largest-magnitude entry positive). PSD-safe. Under repeated
-eigenvalues individual PCs are span-ambiguous — do not over-interpret beyond the
-leading axis when eigenvalues are near-degenerate.
+eigenvalues, individual eigenvectors within the repeated eigenspace are not
+unique. Interpret that eigenspace rather than an individual axis. This also
+applies to the leading axis when the largest eigenvalue is repeated. Individual
+axes can be unstable when eigenvalues are close. Eigenvectors and eigenvalues are
+expressed in the supplied trait coordinates; changing trait units can change both.
 """
 function genetic_pca(G)
     S = _check_symmetric_psd_G(_evolvability_G(G))
     E = eigen(S)
     order = sortperm(E.values; rev = true)
-    values = E.values[order]
+    values = max.(E.values[order], 0.0)
     vectors = Matrix{Float64}(E.vectors[:, order])
     for j in axes(vectors, 2)
         _sign_canonicalize!(view(vectors, :, j))
@@ -193,6 +242,8 @@ end
 Leading genetic principal axis of `G`: returns `(eigenvalue, eigenvector)` for the
 largest eigenvalue — `g_max`, the direction of maximum additive genetic variance
 ("genetic line of least resistance"). The eigenvector is sign-canonicalized.
+When the largest eigenvalue is repeated, `g_max` is not a unique direction;
+interpret the full leading eigenspace instead.
 """
 function g_max(G)
     pca = genetic_pca(G)
@@ -210,7 +261,8 @@ simple closed form and are left to future work.
 """
 function mean_evolvability(G)
     S = _check_symmetric_psd_G(_evolvability_G(G))
-    return tr(S) / size(S, 1)
+    n = size(S, 1)
+    return sum(diag(S) ./ n)
 end
 
 # ── Plot-data preparers (G-geometry figure set, rotation-invariant) ──────────────
@@ -237,8 +289,10 @@ function genetic_pca_plot_data(G; n_axes = nothing)
     p = length(pca.values)
     k = n_axes === nothing ? p : Int(n_axes)
     (1 <= k <= p) || throw(ArgumentError("n_axes must be in 1:$p"))
-    total = sum(pca.values)
-    ve = total > 0 ? pca.values ./ total : zeros(p)
+    peak = maximum(pca.values)
+    scaled_values = peak > 0 ? pca.values ./ peak : zeros(p)
+    total = sum(scaled_values)
+    ve = total > 0 ? scaled_values ./ total : zeros(p)
     V = Matrix{Float64}(pca.vectors[:, 1:k])
     scaled = V .* sqrt.(max.(pca.values[1:k], 0.0))'
     return (eigenvalues = pca.values, variance_explained = ve, eigenvectors = V,

@@ -176,13 +176,13 @@ high-level genomic fitting remains unimplemented.
   extractors (`variance_components`, `fixed_effects`, `heritability`, and
   `breeding_values`/`EBV`/`BLUP`) wrap existing multivariate result fields
   without changing `result_payload()` or the R bridge. Phase 4B now has
-engine-internal utilities; V4-FA coverage does not activate R `cov = fa(K)` syntax or change the R twin's planned FA status.
-  structured genetic
-  covariance builders and REML constraints for diagonal, low-rank, and
+  structured genetic covariance builders and REML constraints for diagonal, low-rank, and
   factor-analytic `G0`, copy-returning structured-metadata accessors, plus its
-  own opt-in seeded recovery harness. No R-facing multivariate model-spec, no
-  external comparator parity, no full loading rotation/interpretation
-  convention, and no production sparse multivariate fitting.
+  own opt-in seeded recovery harness. V4-FA engine coverage does not activate
+  R `cov = fa(K)` syntax. The R twin separately exposes one bounded,
+  experimental four-trait rank-one FA expert-control route; it remains partial.
+  External comparator parity, a full loading rotation/interpretation
+  convention, and production sparse multivariate fitting remain open.
 - Sparse CSC marshalling helper exists for R `Matrix::dgCMatrix` slots.
 - R twin has an opt-in experimental tiny/local Julia engine path at `hsquared`
   head `9eabf0d`; earlier R heads `8235289` and `d7e8914` enriched tiny
@@ -375,8 +375,10 @@ matrices (`epistatic_relationship`, additive×additive / additive×dominance /
 dominance×dominance). The dense additive relationship `A` is also now a public
 accessor (`additive_relationship`). Sire models, the remaining non-standard
 inheritance systems (haplodiploid, polyploid), dominance-inbreeding corrections,
-unknown-parent groups, and random regression remain open, as does any public
-model-spec.
+unknown-parent groups, and broader random-regression routes remain open. The
+Julia k=2 dense REML cell and R k=2 opt-in `rr()` surface have separate covered
+status; a general R model-spec and routes beyond that bounded surface remain
+open. These do not make broader random-regression covered.
 
 Gate: every model has a canonical example, recovery check, extractor check,
 capability row, and validation-debt row.

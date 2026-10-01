@@ -1,0 +1,5 @@
+THREADS 1 BLAS 1
+Test Summary:                          | Pass  Total   Time
+likelihood input and result boundaries |  202    202  11.8s
+
+EXIT 0 WALL 28.43s
