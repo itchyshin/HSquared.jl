@@ -1764,3 +1764,8 @@ The proposed next arc is `docs/design/auto-fa-rank-design-plan-20261001.md`. It 
 ## Automatic Gaussian genetic FA-rank design, 2026-10-01
 
 The approved Ultra Plan/Unlazy arc completes V0 design only. The contract compares K0 diagonal genetic covariance and K1 shared factor with a future internal matched floor and experimental common-X REML covariance score. Both candidates must be eligible; failures and conditional uncertainty stay visible. Independent method/user/mechanical judgments pass after contrast-space identification and retry-policy corrections. Five acceptance gates pass, four executable checks replayed and one manual judgment. No source/test/capability/debt change or numerical run. Public count stays seven. Contract, validation plan, exact receipts and local branch state: [after-task report](after-task/2026-10-01-auto-fa-rank-design.md). Implementation remains future work.
+
+
+## Automatic FA-rank implementation arc sizing, 2026-10-01
+
+The requested [implementation Arc Card](../design/auto-fa-rank-implementation-arc-20261001.md) preserves Julia and R together. Target 450 minutes, inferred range 6 to 10 hours; Arc 0 is a 120-minute engine foundation, followed by selector, R transport, mandatory live verification/repair and closeout. This is sizing and handoff only. Automatic rank selection is not implemented and no auto-rank tests have run. Ultra Plan owns execution coordination and Unlazy acceptance. No covered-count, release, campaign or protected-lane change.
