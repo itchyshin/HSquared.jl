@@ -6,9 +6,9 @@ To: Codex
 
 ## Critical context
 
-Continue the approved bounded HSquared twin programme on the Julia candidate. The fixed-rank Gaussian FA and narrow genetic GLLVM work is experimental. No covered-count change, release, registry submission, tag, or GPU work is authorized. The user has approved the two public pushes associated with this programme. Do not interpret that as permission to merge or release.
+The approved bounded HSquared twin programme is closed by Julia PR #402, merged at `570f49ba`. Fixed-rank Gaussian FA and narrow genetic GLLVM remain experimental; `public_covered_count` stays 7. No release, registry submission, tag, or GPU work is authorized. The user approved the two public pushes for the implementation PRs; those PRs are now merged. That does not authorize a release.
 
-The next planned capability arc is automatic FA rank selection, coordinated with the GLLVM project's `d = "auto"` work. However, the latest committed Julia acceptance record still lists V3 as open. Close or explicitly disposition that current-candidate gate before starting implementation of the next capability.
+The next bounded arc is automatic FA rank design and coordination with the GLLVM project's `d = "auto"` work. First refresh the current GLLVM.jl and protected gllvmTMB lane contracts, then freeze HSquared's selection rule and acceptance gates. This is design work; automatic rank remains unimplemented and unvalidated in HSquared.
 
 ## What was accomplished
 
@@ -16,15 +16,17 @@ The next planned capability arc is automatic FA rank selection, coordinated with
 - The bounded genetic GLLVM route is Poisson-log, three traits, two genetic factors, pure low-rank genetic covariance, balanced complete responses, and pedigree. Trait effects are reconstructed as factor effects times loadings plus supported specific effects. Its objective integrates fixed and genetic effects by Laplace approximation.
 - The approved 200-seed FA primary is complete and immutable: 110 diagnostic recoveries, 20 genetic-error classifications, 11 residual-error classifications, and 59 nonconverged fits. All attempts remain in the denominator. This is bounded experimental evidence, not general reliability or calibration.
 - Local exact-source R bridge, R package check, Julia package tests, and documentation checks passed in the recorded environment. All 24 tracked Julia source files have scoped dispositions, with residual debt recorded.
-- The latest status report says the root ledger is 10/11 and V3 remains open for its final independent receipt, current-head hosted acceptance, and ordinary Julia landing. Read the exact status and limitations in `docs/dev-log/after-task/2026-09-30-bounded-twin-programme-local-acceptance.md` and its hosted-check follow-up.
+- Julia PR #401 landed at `829e86ce`; R PR #259 landed at `e82f5c95`. Julia PR #402 closed the remaining V3 evidence gap and merged at `570f49ba`. The durable closeout is `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`.
+- Hosted Julia CI passed on Julia 1.10 and latest Julia on Ubuntu and Windows; Julia docs deploy passed. R CMD check and pkgdown passed at the recorded merge SHA. The closeout report names the exact run IDs and limits.
 
 ## Current working state
 
-- Candidate ref: `origin/codex/hsquared-fa-gllvm-20260927`, current local tip `365f173f`.
-- This handover is on `codex/h2-codex-handover-20261001`, commit `08215275`, pushed to origin. GitHub API access failed while checking PR #402, so a PR for the handover branch has not been opened; do not target `main` until the relationship to PR #402 is known.
+- Current base: `origin/main` at `570f49ba`, including PR #401 and PR #402.
+- Implementation candidate: `origin/codex/hsquared-fa-gllvm-20260927` at `365f173f`, landed by PR #401.
+- This handover is on `codex/h2-codex-handover-20261001`; it was pushed before PR #402 merged and is being rebased onto the current `origin/main`. GitHub API access remains unavailable, so the handover PR itself has not been opened.
 - This handover checkout is detached at that tip. The original candidate worktree has uncommitted changes to protected `.claude/settings.json` and `.cursor/hooks.json`. Preserve them and do not stage them.
 - The main checkout at authoring time had unrelated untracked paths. Do not clean or stage them.
-- Local `origin/main` was `829e86ce`, through PR #401. A live `gh pr view 402` check failed because `api.github.com` was unreachable. PR #402's current state and whether its changes are on remote main are therefore **unverified**. Refresh GitHub state before claiming merge or current-head hosted acceptance.
+- Local `origin/main` now points to merge commit `570f49ba`, whose first parent is `829e86ce` and second parent is `d7d50e9b` (`docs: close bounded twin programme landing gate`). The GitHub API query failed, but the refreshed remote-tracking ref and merged closeout record verify the landing. No status uncertainty remains for V3.
 - No new simulation is authorized by this handover. Do not rerun the frozen 200-seed campaign.
 
 ## Key decisions and rationale
@@ -46,17 +48,17 @@ The next planned capability arc is automatic FA rank selection, coordinated with
 
 ## Next immediate steps
 
-1. Refresh GitHub state for HSquared.jl PR #402 and inspect its checks, merge status, head SHA, and relationship to the local candidate. Also check PR #259 only if needed to confirm the paired R landing; its recorded merge is in the acceptance report.
-2. Reconcile current source, hosted checks, and the V3 ledger. If #402 has not landed, continue the candidate's ordinary Julia landing gate. If it has landed, verify the exact landed SHA and required checks, then update the ledger from evidence.
-3. Run a Rose claim-versus-evidence audit and complete the required after-task/check-log records. Leave `public_covered_count` at 7 and preserve the experimental status.
-4. Once the current programme is accurately closed or its remaining gate explicitly owned, open the next bounded **auto-rank design/coordination arc**. First reread the GLLVM.jl `d = "auto"` contract and protected gllvmTMB lane state. Freeze HSquared's candidate range, criterion, tie/boundary behavior, failure table, uncertainty language, and acceptance tests before implementation.
-5. Do not run campaigns estimated over three hours without a pre-run result and Shinichi's approval. Keep all simulation work off GitHub Actions. No GPU, release tag, registry submission, CRAN submission, or merge is included.
+1. Start the bounded **auto-rank design/coordination arc**. Read the latest automatic-rank records in GLLVM.jl and the current protected gllvmTMB lane read-only. Do not alter those lanes.
+2. Write the HSquared symbolic selection contract: candidate rank range, criterion, boundary and tie rules, complete attempt/failure table, diagnostics, and how selection uncertainty will be explained. Keep fixed-rank fitting available.
+3. Define identifiability and recovery checks for rank-zero/no-signal, weak and separated factors, upper-bound selection, ordinary starts/restarts, trait order/units, and failure denominators. Specify same-model comparators and R-Julia parity before implementation.
+4. Run a Rose claim/evidence review of the design, then implement only after the acceptance gates and ownership are clear. Keep the ordinary default route closed until its own gates pass.
+5. Estimate each simulation before execution. Any run over three hours requires a pre-run result and Shinichi's approval. Keep campaigns off GitHub Actions. No GPU, release tag, registry submission, CRAN submission, or release is included.
 
 ## Blockers and open questions
 
-- Is PR #402 merged, and what exact head SHA has current hosted acceptance? GitHub was unreachable during this handover.
-- Does the latest V3 final independent receipt exist outside the current committed acceptance note? Locate and verify it rather than inferring completion.
-- What precise HSquared rank-selection criterion and rank range best serve this FA estimand? Do not assume the GLLVM criterion transfers.
+- What current GLLVM.jl and gllvmTMB `d = "auto"` contracts can be reused as design references? Refresh them before making claims.
+- What rank-selection criterion and candidate range best serve this HSquared FA estimand? Do not assume the GLLVM criterion transfers.
+- How should HSquared report selection uncertainty and a failed/all-rejected candidate sweep?
 
 ## Gotchas and failed approaches
 
@@ -67,16 +69,16 @@ The next planned capability arc is automatic FA rank selection, coordinated with
 
 ## Mission-control summary
 
-| Repo | Branch / main | CI and landing | Shipped in scope | Next by leverage |
+| Repo | Branch / main | CI and landing | Shipped in scope | Prioritized next step |
 |---|---|---|---|---|
-| HSquared.jl | Candidate `codex/hsquared-fa-gllvm-20260927` at `365f173f`; local `origin/main` observed at `829e86ce` | Local acceptance recorded; V3 hosted acceptance/landing open; PR #402 state unverified due network failure | Bounded experimental FA/GLLVM routes and source review | Verify #402 and finish V3, then freeze auto-rank design |
+| HSquared.jl | `origin/main` at `570f49ba`; PR #401 and #402 merged | V3 closed by exact merge/CI receipts in the final closeout | Bounded experimental FA/GLLVM routes and source review | Design automatic FA rank selection with explicit acceptance gates |
 | hsquared | Paired R lane; PR #259 recorded merged | R Linux/Windows main CI recorded passing; verify only if paired closeout needs current evidence | Experimental R opt-in FA/GLLVM routes | Keep R/J contract aligned; no new release |
 | GLLVM.jl / gllvmTMB | Separate project lanes | Existing auto-rank reference is not HSquared parity evidence | GLLVM.jl auto rank selection is a design reference; R-side work is separate | Read-only contract refresh and coordination |
 
 ## How to resume
 
-You are Codex, picking up the HSquared Julia candidate. Start with `AGENTS.md` and this handover. Reconcile the handover against current GitHub state and the exact candidate refs before editing. Continue only the V3 closure steps above; preserve all protected and untracked work. Use the repository's Julia project for `julia --project=. -e 'using Pkg; Pkg.test()'`, and the docs project for `julia --project=docs docs/make.jl`. Use `bash tools/preamble_cap.sh` before closing. Codex owns live Julia/R fits, package checks, simulations, and rendering. Read `.codex/agents/rose.toml` and request Rose's audit before any public claim.
+You are Codex, starting the HSquared automatic-rank design arc. Read `AGENTS.md`, this handover, and `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`. The bounded FA/GLLVM programme is closed at the stated cells; do not reopen V3 or widen capability claims. Refresh GLLVM.jl and gllvmTMB rank-selection status read-only, then write and review HSquared's selection contract and acceptance plan. Preserve all protected and untracked work. Codex owns live Julia/R fits, package checks, simulations, and rendering. Read `.codex/agents/rose.toml`; Rose reviews the design and any later public claim.
 
 From the repo root, start a fresh Codex task and paste:
 
-> Rehydrate from `docs/dev-log/handover/2026-10-01-codex-handover.md` and the `AGENTS.md` snapshot. Verify PR #402 and V3 against current hosted evidence, then continue only the owed closure steps. Preserve protected and untracked work. Do not start auto-rank implementation until V3 is closed or explicitly dispositioned.
+> Rehydrate from `docs/dev-log/handover/2026-10-01-codex-handover.md` and the `AGENTS.md` snapshot. The bounded twin programme closed with PR #402 at `570f49ba`. Start the bounded auto-rank design/coordination arc: refresh GLLVM.jl and protected gllvmTMB `d = "auto"` status read-only, then define HSquared's selection rule, diagnostics, uncertainty statement, and acceptance gates before implementation. Preserve protected/untracked work and all release, GPU, simulation, and claim gates.
