@@ -21,6 +21,7 @@ The next planned capability arc is automatic FA rank selection, coordinated with
 ## Current working state
 
 - Candidate ref: `origin/codex/hsquared-fa-gllvm-20260927`, current local tip `365f173f`.
+- This handover is on `codex/h2-codex-handover-20261001`, commit `08215275`, pushed to origin. GitHub API access failed while checking PR #402, so a PR for the handover branch has not been opened; do not target `main` until the relationship to PR #402 is known.
 - This handover checkout is detached at that tip. The original candidate worktree has uncommitted changes to protected `.claude/settings.json` and `.cursor/hooks.json`. Preserve them and do not stage them.
 - The main checkout at authoring time had unrelated untracked paths. Do not clean or stage them.
 - Local `origin/main` was `829e86ce`, through PR #401. A live `gh pr view 402` check failed because `api.github.com` was unreachable. PR #402's current state and whether its changes are on remote main are therefore **unverified**. Refresh GitHub state before claiming merge or current-head hosted acceptance.
