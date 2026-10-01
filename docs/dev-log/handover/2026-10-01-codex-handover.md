@@ -23,7 +23,7 @@ The next bounded arc is automatic FA rank design and coordination with the GLLVM
 
 - Current base: `origin/main` at `570f49ba`, including PR #401 and PR #402.
 - Implementation candidate: `origin/codex/hsquared-fa-gllvm-20260927` at `365f173f`, landed by PR #401.
-- This handover is on `codex/h2-codex-handover-20261001`; it has been rebased onto `origin/main` at `570f49ba`. The rebased commits still need to be pushed. GitHub API access remains unavailable, so the handover PR itself has not been opened.
+- This handover is on `codex/h2-codex-handover-20261001`, rebased onto `origin/main` at `570f49ba` and pushed. Documentation-only PR #403 is open: https://github.com/itchyshin/HSquared.jl/pull/403.
 - The original candidate worktree has uncommitted changes to protected `.claude/settings.json` and `.cursor/hooks.json`. Preserve them and do not stage them.
 - The main checkout at authoring time had unrelated untracked paths. Do not clean or stage them.
 - Local `origin/main` now points to merge commit `570f49ba`, whose first parent is `829e86ce` and second parent is `d7d50e9b` (`docs: close bounded twin programme landing gate`). The GitHub API query failed, but the refreshed remote-tracking ref and merged closeout record verify the landing. No status uncertainty remains for V3.
