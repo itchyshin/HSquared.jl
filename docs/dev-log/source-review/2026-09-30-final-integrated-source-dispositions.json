@@ -1,6 +1,6 @@
 {
-  "timestamp_utc": "2026-10-01T01:29:05.343294+00:00",
-  "head": "ec9414c35d7621c6bd4321a9d16067ac9a2ea2eb",
+  "timestamp_utc": "2026-10-01T11:39:00+00:00",
+  "head": "829e86ce67b61118eae8aa7e1fdda1d3899c6f9f",
   "source_tree_sha256": "59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e",
   "runner_sha256": "27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3",
   "tracked_src_files": 24,
@@ -228,7 +228,7 @@
       "runtime_scope": "boundedCPU"
     }
   ],
-  "status": "Complete bounded source dispositions and independently accepted deltas; fresh complete local suite and docs pass. Exact-current hosted checks and landing remain pending.",
+  "status": "Complete bounded source dispositions and independently accepted deltas; fresh complete local suite, docs, exact-current hosted CI, and ordinary Julia landing pass at the recorded merge commit. Residual findings and broader capability limits remain explicit.",
   "previous_source_tree_sha256": "11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773",
   "previous_runner_sha256": "095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97",
   "runner_change": "Two documentation readers use supported Docs.doc with REPL loaded. Original documentation assertions and numerical source unchanged; hosted numerical regressions remain isolated modules. Four empirical FA test expectations separately replaced with reviewed diagnostic/status oracles.",
