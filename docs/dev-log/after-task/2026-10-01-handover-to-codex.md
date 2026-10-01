@@ -34,7 +34,7 @@ Golden Set: not in scope; no implementation or known-mistake class was changed.
 
 ## 7a. Issue Ledger
 
-- The handover branch PR has not been opened; the GitHub API was unreachable during this turn.
+- Documentation-only handover PR #403 was created. Later GitHub API reads failed, so its live state could not be independently rechecked after creation.
 - Automatic FA rank selection remains queued and unvalidated in HSquared.
 
 ## 8. Consistency Audit
@@ -47,7 +47,7 @@ The initial checkout was not the candidate branch and contained unrelated untrac
 
 ## 10. Known Residuals
 
-The new Codex lane has not been confirmed ready. A PR for the handover branch has not been opened. V3 is closed at the scope in the merged closeout; automatic rank selection remains unimplemented and unvalidated. The unused managed worktree based on `origin/main` could not be archived because the app marked it protected.
+The new Codex lane has not been confirmed ready. Handover PR #403 was created, but its live state could not be rechecked after creation because GitHub API reads failed. V3 is closed at the scope in the merged closeout; automatic rank selection remains unimplemented and unvalidated. The unused managed worktree based on `origin/main` could not be archived because the app marked it protected.
 
 ## 11. Team Learning
 
