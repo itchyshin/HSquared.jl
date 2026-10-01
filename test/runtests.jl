@@ -11297,3 +11297,13 @@ include("likelihood_original_spec_regression.jl")
 
 # Preserve original specification identity while computing validated buffers.
 include("likelihood_helper_identity_regression.jl")
+
+# Hosted rounding regression, isolated from existing fixture namespaces.
+module HostedGenomicEndpointRoundoff
+include("wave4_genomic_endpoint_roundoff.jl")
+end
+
+# Hosted true-residual regression, isolated from existing fixture namespaces.
+module HostedPCGTrueResidual
+include("pcg_true_residual_regression.jl")
+end

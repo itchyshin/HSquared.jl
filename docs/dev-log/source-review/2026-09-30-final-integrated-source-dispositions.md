@@ -1,68 +1,43 @@
-# Final integrated source dispositions, 2026-09-30
+# Current bounded Julia source dispositions
 
-## Candidate and acceptance boundary
+Updated after independently accepted hosted-platform fixes. Prior inventories are preserved verbatim in the adjacent before-hosted-platform-fixes files.
 
-The24 tracked src files are inventoried at the current exact bytes below. Source tree11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773, runner58cea5f51ec130ff75b9246fa7cf7dcfbdba70342cfb38ff7420953d788d0408 and HEAD6271cfd58651e69cd27a64dcf02cb8960a29e260 are frozen for final checks and panel review. Baseline span receipts and approved delta packets provide complete recorded dispositions. Their scoped approvals do not yet constitute whole-wave or programme signoff. A2/E1/V3 remain open.
+All 24 tracked core source files have baseline review dispositions and independently accepted deltas. Fresh local package and documentation checks pass; current-head hosted CI and landing remain pending.
 
-The two likelihood waves cover all4613 original lines; the second-wave receipt supplements the first listed below. Exact112 nonoverlapping source mutations are replayed and independently verified. Likelihood input299 independent, uncertainty214+7 independent, profile/PEV98+52 independent and iterative383 independent checks precede integration. A final combined637 assertions pass in one process on the likelihood/iterative composition. These distinct component and combined counts are not added into a single package-wide count.
+Source aggregate: `59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e`.
+Runner: `095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97`.
 
-Pedigree179 independent controls, trace revision2 90 and evolvability54 precede their exact integration. The first trace revision had a real independent HOLD; both tiny nonzero-weight defects and all original failures are retained. Original complete source spans and repaired deltas are recorded separately. The FA objective, optimizer, starts and absolute uniqueness floor are unchanged; its200-seed primary is retained as frozen historical evidence, never restarted. Protected driver, Project/Manifest, weak-direction and old payload-parity tests remain unchanged.
+| File | Lines | SHA-256 | Baseline disposition |
+| --- | ---: | --- | --- |
+| src/HSquared.jl | 258 | `5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/backends.jl | 167 | `b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/bridge_payload_v2.jl | 930 | `9d389444008a25ddfb3ba140836bab5a3d2c8ebfb94052424d8d1ac6c0c5a3e9` | docs/dev-log/source-review/2026-09-30-bridge-payload-complete-current-review.md |
+| src/control.jl | 107 | `c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/data.jl | 1253 | `5ac87d115a0b8c41822f38cfb54cbdffc3f298578bbf1ddb9aec0edc6c823012` | docs/dev-log/source-review/2026-09-30-data-complete-current-review.md |
+| src/errors.jl | 22 | `6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/evolvability.jl | 321 | `4dc5b5e0b1f51abaa97bdee77b3205129470ca5107628390cf3ef1578452306f` | docs/dev-log/source-review/2026-09-30-evolvability-complete-current-review.md |
+| src/genetic_gllvm.jl | 750 | `8392d7964f72d18278db130d5afd5ada30778233581bfe4090031b3fac3b4f71` | docs/dev-log/source-review/2026-09-30-gllvm-residual-contract-review.md |
+| src/genomic.jl | 3011 | `a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17` | docs/dev-log/source-review/2026-09-30-genomic-complete-current-review.md |
+| src/gpu_ext.jl | 90 | `b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/iterative_solve.jl | 1484 | `e1b50131c5e38b59a200925e0ff2f2377fecc7c5e4f0c63a90fe33261dbf2133` | docs/dev-log/source-review/2026-09-30-iterative-complete-current-review.md |
+| src/likelihood.jl | 4876 | `9e4b7b422f0ba6daac41b39aadf2172b56fc1879b91563ca40d2df9e374d9f11` | docs/dev-log/source-review/2026-09-30-likelihood-first-wave-current-review.md |
+| src/model_spec.jl | 104 | `d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/multivariate.jl | 1933 | `f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2` | docs/dev-log/source-review/2026-09-30-multivariate-complete-current-review.md |
+| src/nongaussian.jl | 1918 | `3a43d7f1ebbc2c6b05bfe20306a2e48cfd24c9bb1bcbacf999200e800a4a6bd6` | docs/dev-log/source-review/2026-09-30-nongaussian-complete-current-review.md |
+| src/pedigree.jl | 907 | `6f4661f1e64dd0c079595be5b754813ba66ea998fc301bdcbd5422c5cdf72f86` | docs/dev-log/source-review/2026-09-30-pedigree-complete-current-review.md |
+| src/placeholders.jl | 26 | `e95f47efb13018fa8fc2fb7cbf6b08d4c4a1add8ca3b9c95b43ead259bf9955b` | docs/dev-log/source-review/2026-09-30-placeholder-exact-review.md |
+| src/planned_terms.jl | 359 | `a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/plotting_ext.jl | 61 | `e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/postfit.jl | 62 | `28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/random_regression.jl | 564 | `91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33` | docs/dev-log/source-review/2026-09-30-random-regression-exact-review.md |
+| src/sparse_bridge.jl | 87 | `f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427` | docs/dev-log/source-review/2026-09-30-support-source-reattestation.md |
+| src/takahashi_selinv.jl | 475 | `3ac12ece1d095852f0937d63c97a03333665560a2c4876c138b4c547fec4e0ed` | docs/dev-log/source-review/2026-09-30-selinv-complete-current-review.md |
+| src/validation_status.jl | 598 | `1d1d444bea3a5dc7a2dfccf5549b4d3082acfe3bf48761fe203a9d5f993c5316` | docs/dev-log/source-review/2026-09-30-validation-status-exact-review.md |
 
-## Current inventory and receipts
+## Reviewed hosted-platform deltas
 
-| File | Lines | Current SHA256 | Baseline complete scoped receipt | Approved delta packet |
-| --- | --- | --- | --- | --- |
-|src/HSquared.jl|258|`5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/backends.jl|167|`b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/bridge_payload_v2.jl|930|`9d389444008a25ddfb3ba140836bab5a3d2c8ebfb94052424d8d1ac6c0c5a3e9`|docs/dev-log/source-review/2026-09-30-bridge-payload-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/control.jl|107|`c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/data.jl|1253|`5ac87d115a0b8c41822f38cfb54cbdffc3f298578bbf1ddb9aec0edc6c823012`|docs/dev-log/source-review/2026-09-30-data-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/errors.jl|22|`6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/evolvability.jl|321|`4dc5b5e0b1f51abaa97bdee77b3205129470ca5107628390cf3ef1578452306f`|docs/dev-log/source-review/2026-09-30-evolvability-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-evolvability-finite|
-|src/genetic_gllvm.jl|750|`8392d7964f72d18278db130d5afd5ada30778233581bfe4090031b3fac3b4f71`|docs/dev-log/source-review/2026-09-30-gllvm-residual-contract-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/genomic.jl|3011|`a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17`|docs/dev-log/source-review/2026-09-30-genomic-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-genomic-contracts/revision-3|
-|src/gpu_ext.jl|90|`b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/iterative_solve.jl|1467|`91317fe23ab913767b3f4ed44f74b69b9d5e0f5a5ce46fa09ed442047f361769`|docs/dev-log/source-review/2026-09-30-iterative-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-iterative-finite|
-|src/likelihood.jl|4848|`d77e6565e574ce428371fb86f8322d12edc977ead5f05093d24c4204ef85e935`|docs/dev-log/source-review/2026-09-30-likelihood-first-wave-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-likelihood-composition|
-|src/model_spec.jl|104|`d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/multivariate.jl|1933|`f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2`|docs/dev-log/source-review/2026-09-30-multivariate-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-multivariate-contracts|
-|src/nongaussian.jl|1918|`3a43d7f1ebbc2c6b05bfe20306a2e48cfd24c9bb1bcbacf999200e800a4a6bd6`|docs/dev-log/source-review/2026-09-30-nongaussian-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/pedigree.jl|907|`6f4661f1e64dd0c079595be5b754813ba66ea998fc301bdcbd5422c5cdf72f86`|docs/dev-log/source-review/2026-09-30-pedigree-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-pedigree-residual|
-|src/placeholders.jl|26|`e95f47efb13018fa8fc2fb7cbf6b08d4c4a1add8ca3b9c95b43ead259bf9955b`|docs/dev-log/source-review/2026-09-30-placeholder-exact-review.md|unchanged at attested current bytes|
-|src/planned_terms.jl|359|`a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/plotting_ext.jl|61|`e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/postfit.jl|62|`28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/random_regression.jl|564|`91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33`|docs/dev-log/source-review/2026-09-30-random-regression-exact-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
-|src/sparse_bridge.jl|87|`f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427`|docs/dev-log/source-review/2026-09-30-support-source-reattestation.md|unchanged at attested current bytes|
-|src/takahashi_selinv.jl|475|`3ac12ece1d095852f0937d63c97a03333665560a2c4876c138b4c547fec4e0ed`|docs/dev-log/source-review/2026-09-30-selinv-complete-current-review.md|docs/dev-log/prepared-fixes/2026-09-30-selinv-trace-finite|
-|src/validation_status.jl|598|`1d1d444bea3a5dc7a2dfccf5549b4d3082acfe3bf48761fe203a9d5f993c5316`|docs/dev-log/source-review/2026-09-30-validation-status-exact-review.md|docs/dev-log/prepared-fixes/2026-09-30-composed-repairs|
+The likelihood delta resolves cancellation in endpoint-adjacent likelihood comparisons using the same eigen-context estimand. It preserves the strict positive-gain rule and all original tests. The solver delta verifies the true residual before stopping and restarts within the existing iteration budget. Requested tolerance and failure behavior are unchanged.
 
-## Carried findings and explicit boundaries
+Signed independent reviews and complete author/replay archives are in docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/. Original hosted failures, R landing and post-merge checks are in docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. The original test runner remains an exact prefix of the current runner; both new tests are isolated modules.
 
-- Sparse/dense numerical input and finite-result guards are repaired in their named routes. Optimizer stopping is not score stationarity or identifiability; closed variance-boundary inference, conditioning beyond the stated thresholds and general dynamic-range support remain debts.
-- Profile intervals and ratio summaries retain their symbolic models, finite-domain refusals and explicit boundary behavior. Bootstrap original-fit authenticity, complete failure taxonomy and general calibration remain debts. Synthetic NamedTuples and positional covariance/trait associations remain expert caller responsibilities.
-- FA is bounded complete-response Gaussian T4/K1 with known pedigree, trait intercepts and estimated unstructured residual covariance. Genetic covariance and uniqueness have identified-cell limits; loading inference and broader calibration are unavailable. The200-seed diagnostic has110/200 recoveries and59/200 nonconverged outcomes; neither failures nor true-start fixtures are hidden.
-- Genetic GLLVM is bounded complete balanced Poisson-log T3/K2 pure low-rank pedigree covariance and trait intercepts. Public effects are trait-level conditional modes on the link scale. Non-Gaussian uniqueness, Bernoulli, missing records, response-scale heritability, loading inference and broad calibration remain unavailable.
-- Existing non-Gaussian Laplace objectives integrate fixed and genetic effects jointly. Legacy labels are explained; identity-relationship comparisons are reductions. Outer-failure consistency, general improper-integral detection, quadrature/order stationarity and calibration remain debts outside the accepted bounded route.
-- IDs aligned to supplied arrays, by-reference structural specifications, generic direct constructor use, custom backend metadata extensions, plotting annotation provenance, optional label/h2 validation and generalized result authenticity are documented caller/development boundaries. They do not authorize ambiguous public transport.
-- Genomic/APY/LOCO and selected-inverse helpers remain bounded CPU utilities with explicit dense allocation, fill, conditioning and scaling debt. Historical performance numbers are fixture-specific; no new performance conclusion follows. Trace weights and outputs have explicit Float64 conversion/range refusals; representable cancellation after overflowing intermediates is not generally supported.
-- Existing inheritance primitives retain their stated model boundaries. Clone sexual-parent use is now refused, cytoplasmic equality matches pedigree keys, and Gamma group order/founder-F documentation is corrected. General unusual-inheritance fitting stays queued. Absolute metafounder inverse floor and pedigree finite-precision limits are retained.
-- Formula grammar status is diagnostic, reserved syntax stays closed, fixed-rank opt-in fits are experimental, and backend controls are metadata where documented. Public covered count remains7 and all56 validation ID/status records are unchanged. Plot extensions and GPU interfaces have static source dispositions only; no drawing or GPU execution follows.
-
-## Remaining acceptance
-
-The first full package run failed three stale status assertions; after regeneration and strengthened semantic checks, the scaffold passes446/446. The second run stops at two original fit.spec identity regressions. The author is repairing that contract while preserving the original tests. V1/V2 are reopened; exact failures and freezes are retained in the final-integrated check-log folder. Final R-Julia bridge, R package/document checks, reader-surface synchronization and finalpanel/Rose acceptance remain owed. Source coverage and bounded repair approval alone do NOT cover whole-programme completion, a new capability promotion, GPU, submission or tag.
-
-## Original specification compatibility delta
-
-The b39 inventory is preserved verbatim in the sibling before-spec-fix files. The sole subsequent numerical-source change restores original model references in fit/MME results when method and converted precision are unchanged; all computation still uses validated buffers. Four computational bodies are byte-identical apart from reference selection. The new64 controls,202 prior input controls,37 unchanged original fitting assertions and27 independently supplied controls pass330/330. Applied source1a6fa733 and aggregate2ae2c98 are checked exactly. Final source/test freeze and full package/transport/docs reruns are in progress. The independently reviewed delta and all original failures are retained; source coverage and bounded panel PASS do not imply completed current package or programme gates.
-
-The subsequent full run passed original model-reference checks and stopped at a missing Statistics import in the newly registered marker fixture. The explicit standard-library import is now present; assertions and source bytes are unchanged. Current runner 58cea5f51ec130ff75b9246fa7cf7dcfbdba70342cfb38ff7420953d788d0408 matches the final package freeze. Prior failure/freeze artifacts are retained with the pre-statistics prefix.
-
-## Complete helper identity delta
-
-The prior2ae inventory is preserved verbatim in before-helper-fix files. All original helper, constructor, fit, AI and Henderson assertions remain unchanged. The legacy validation helper retains original references while three computational callers explicitly use canonical Float64 buffers. Exact patch replay and670 author/original plus24 independent controls pass694/694. Sole source delta is likelihoodd77e6565; current aggregate11f6319f and runner02a30cde match the new package freeze. Current live R-Julia FA/GLLVM transport passes213/213 in27.64seconds, with zero failure/warning/skip; exact-source isolated Documenter build exits0 in49.34seconds. Full package check remains running. No campaign restart, capability promotion, GPU, submission or tag.
-
-## Isolated module import correction
-
-The next full package run passed the original compatibility checks and reached the new selected-inverse fixture, which failed because its isolated namespace lacked an HSquared import. The adjacent evolvability module had the same missing import. Both now import HSquared explicitly. Numerical source and all assertions are unchanged. All16 appended modules replay in their actual namespaces, passing1432 assertions across23 testsets. Fresh full package check is running on runner58cea5f. Failure/freeze artifacts are retained with pre-module-imports names. The one stale direct-maternal test citation is corrected from7237 to7366; all87 capability citations verify. This is a source-neutral integration correction and no capability/status change.
+The approved experimental outcome, covered count seven, fixed-rank scope, calibration/scaling debt and GPU/release exclusions are unchanged. The completed FA campaign is never restarted.

@@ -818,6 +818,31 @@ function _genomic_endpoint_adjacent_improves(ratio, interior_ll, lower_ll, upper
     return false
 end
 
+
+# Resolve cancellation in an adjacent-candidate comparison without broadening the
+# scientific tie tolerance. A genuine positive gain, however small, still blocks
+# endpoint acceptance. The high-precision calculation uses the same eigen context.
+function _genomic_endpoint_adjacent_improves(context, ratio, interior_ll, lower_ll, upper_ll)
+    all(isfinite, (ratio, interior_ll, lower_ll, upper_ll)) || return true
+    0.0 <= ratio <= 1.0 || return true
+    epsilon = _GENOMIC_BOUNDARY_EPSILON
+    endpoint = ratio <= epsilon ? 0.0 : ratio >= 1.0 - epsilon ? 1.0 : nothing
+    endpoint === nothing && return false
+    endpoint_ll = endpoint == 0.0 ? lower_ll : upper_ll
+    gain = interior_ll - endpoint_ll
+    cancellation_scale = 32eps(Float64) * max(1.0, abs(interior_ll), abs(endpoint_ll))
+    abs(gain) > cancellation_scale && return gain > 0
+    # Do not change MPFR's process-wide precision in a fitting routine. A caller
+    # choosing less than 128 bits gets an unresolved result, not a guessed sign.
+    Base.precision(BigFloat) >= 128 || return nothing
+    precise_context = (eigenvalues = BigFloat.(context.eigenvalues),
+        y = BigFloat.(context.y), X = BigFloat.(context.X), n = context.n, p = context.p)
+    candidate = _genomic_profile_reml(precise_context, BigFloat(ratio))
+    boundary = _genomic_profile_reml(precise_context, BigFloat(endpoint))
+    (candidate === nothing || boundary === nothing) && return nothing
+    return candidate.loglik > boundary.loglik
+end
+
 function _genomic_boundary_precheck(spec::AnimalModelSpec, provenance, kernel)
     n = length(spec.y)
     p = size(spec.X, 2)
@@ -963,7 +988,7 @@ function _genomic_boundary_classify_candidates(lower_ll, interior_ll, upper_ll,
 end
 
 function _genomic_profile_reml(context, ratio::Real)
-    r = Float64(ratio)
+    r = eltype(context.eigenvalues) === BigFloat ? BigFloat(ratio) : Float64(ratio)
     0.0 <= r <= 1.0 || return nothing
     h = r .* context.eigenvalues .+ (1.0 - r)
     all(isfinite, h) && all(>(0), h) || return nothing
@@ -1053,9 +1078,12 @@ function _genomic_boundary_profile(spec::AnimalModelSpec, precheck)
     d1 = _genomic_profile_derivative(context, 1.0)
     (d0 === nothing || d1 === nothing) &&
         return (status = "boundary_unresolved", reason = "endpoint_derivative_failed")
-    if !distinct_interior && _genomic_endpoint_adjacent_improves(
-        interior_r, interior_part.loglik, lower_part.loglik, upper_part.loglik)
-        return (status = "boundary_unresolved", reason = "endpoint_adjacent_candidate_beats_endpoint")
+    if !distinct_interior
+        improves = _genomic_endpoint_adjacent_improves(
+            context, interior_r, interior_part.loglik, lower_part.loglik, upper_part.loglik)
+        improves === nothing &&
+            return (status = "boundary_unresolved", reason = "endpoint_comparison_failed")
+        improves && return (status = "boundary_unresolved", reason = "endpoint_adjacent_candidate_beats_endpoint")
     end
     classification = _genomic_boundary_classify_candidates(
         lower_part.loglik, interior_part.loglik, upper_part.loglik,

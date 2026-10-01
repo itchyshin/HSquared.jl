@@ -1,0 +1,88 @@
+--- a/src/iterative_solve.jl
++++ b/src/iterative_solve.jl
+@@ -9,7 +9,8 @@
+ # callable `r ↦ M⁻¹·r` (the preconditioner solve): `identity` for plain CG, `r ↦ Minv .* r`
+ # for Jacobi, or the IC(0) back/forward triangular solve for `:ichol`. `x0 = 0`, so the
+ # initial residual is `b`. Returns `(x, iterations, relative_residual)`.
+-# Unsupported arithmetic range throws; a finite unconverged iterate is still returned.
++# Convergence uses the true residual; a misleading recursive residual triggers a
++# restart within maxiter. Unsupported range throws; finite unconverged iterates return.
+ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, applyMinv)
+     _require_finite_matrix_free_result("PCG right-hand side", b)
+     x = zeros(length(b))
+@@ -39,7 +40,23 @@
+         @. r -= alpha * Cp
+         iters = k
+         relres = norm(r) / bnorm
+-        relres <= tol && break
++        if relres <= tol
++            # Roundoff can put the recursive residual below tol before the true
++            # residual is small enough. Verify before stopping, then restart PCG
++            # from b-Cx if needed, using only the remaining iteration budget.
++            r = b - applyC(x)
++            _require_finite_matrix_free_result("PCG true residual", r)
++            relres = norm(r) / bnorm
++            _require_finite_matrix_free_result("PCG relative residual", relres)
++            relres <= tol && break
++            z = applyMinv(r)
++            _require_finite_matrix_free_result("PCG preconditioned residual", z)
++            rz = dot(r, z)
++            isfinite(rz) && rz > 0 ||
++                throw(ArgumentError("PCG residual inner product is outside the supported positive Float64 range"))
++            p .= z
++            continue
++        end
+         z = applyMinv(r)
+         rz_new = dot(r, z)
+         isfinite(rz_new) && rz_new > 0 ||
+--- /dev/null
++++ b/test/pcg_true_residual_regression.jl
+@@ -0,0 +1,48 @@
++using Test, HSquared, LinearAlgebra, SparseArrays
++BLAS.set_num_threads(1)
++@testset "PCG verifies true residual before stopping" begin
++    # Fixed SPD fixture (condition number about 1e8). The prior solver's
++    # recursive residual crossed 1e-9 with a true residual still above it.
++C = Symmetric([4.283402513198173e6 1.5885256450667826e6 -7.697162459520015e6 1.2808736318363806e6 7.098118070187878e6 -1.477926858125567e6 -6.643550172106186e6 1.2694383809583655e6 1.35373189607223e6 -2.5021353497074987e6 4.499808352942612e6 6.73016812207673e6; 1.5885256450667826e6 3.5307959552636226e6 -4.964855266951281e6 517369.8160961804 8.696587549673455e6 4.771875266937737e6 -8.968842835133605e6 1.4332122309122302e6 922488.07090998 -5.03605306942736e6 1.1120154142805028e6 5.584764131640713e6; -7.697162459520015e6 -4.964855266951281e6 1.5959477096936354e7 -2.2122474463468855e6 -1.799443677487386e7 -1.4834644366909077e6 1.775442013171814e7 -2.912228745989579e6 -2.4068207017206675e6 8.427087029144589e6 -7.843506965499284e6 -1.4956886258357532e7; 1.2808736318363806e6 517369.8160961804 -2.2122474463468855e6 517202.8224853672 1.6885511930374736e6 -388570.43601104984 -1.6266145663283553e6 231024.4099691679 534778.2160567846 10648.575439581185 1.4451082752474966e6 1.6737755026503764e6; 7.098118070187878e6 8.696587549673455e6 -1.799443677487386e7 1.6885511930374736e6 2.6751570823796403e7 8.867279666845592e6 -2.6767017958136696e7 4.546291863869356e6 2.4300841175530935e6 -1.6060208450800622e7 6.081129896826925e6 1.934862277478587e7; -1.477926858125567e6 4.771875266937737e6 -1.4834644366909077e6 -388570.43601104984 8.867279666845592e6 1.0361798068070756e7 -1.0021531276540644e7 1.225930845669932e6 130503.86249581941 -6.886799360034762e6 -2.4627209669336984e6 3.5069969838793725e6; -6.643550172106186e6 -8.968842835133605e6 1.775442013171814e7 -1.6266145663283553e6 -2.6767017958136696e7 -1.0021531276540644e7 2.736143430016099e7 -4.36077379937323e6 -2.289221594402258e6 1.6113280801082194e7 -5.735473863529197e6 -1.897891376378171e7; 1.2694383809583655e6 1.4332122309122302e6 -2.912228745989579e6 231024.4099691679 4.546291863869356e6 1.225930845669932e6 -4.36077379937323e6 979583.6467846299 472705.7107600775 -2.987154538507396e6 905697.4102767602 3.340194183839981e6; 1.35373189607223e6 922488.07090998 -2.4068207017206675e6 534778.2160567846 2.4300841175530935e6 130503.86249581941 -2.289221594402258e6 472705.7107600775 701730.8023568026 -497846.43206503405 1.3448389653197005e6 2.0728985384186867e6; -2.5021353497074987e6 -5.03605306942736e6 8.427087029144589e6 10648.575439581185 -1.6060208450800622e7 -6.886799360034762e6 1.6113280801082194e7 -2.987154538507396e6 -497846.43206503405 1.2369115364320982e7 -1.2882741721564585e6 -1.07713362621139e7; 4.499808352942612e6 1.1120154142805028e6 -7.843506965499284e6 1.4451082752474966e6 6.081129896826925e6 -2.4627209669336984e6 -5.735473863529197e6 905697.4102767602 1.3448389653197005e6 -1.2882741721564585e6 5.077791538061075e6 6.320349411235081e6; 6.73016812207673e6 5.584764131640713e6 -1.4956886258357532e7 1.6737755026503764e6 1.934862277478587e7 3.5069969838793725e6 -1.897891376378171e7 3.340194183839981e6 2.0728985384186867e6 -1.07713362621139e7 6.320349411235081e6 1.5165108927264702e7])
++b = [-1.1379701658541732, -1.6528788411065058, 0.17151530836587794, 0.6744164693288635, -1.7275449579167026, 1.6263297294529095, -0.40076604363958884, 0.4222341264996432, 0.04381801924058626, 1.5636763482482077, 0.2809572569902338, -0.25057417640862534]
++
++    @test isposdef(C)
++    tol = 1e-9
++    budget = 240
++    x, iterations, reported = HSquared._pcg_solve(v -> C*v, b;
++        tol=tol, maxiter=budget, applyMinv=identity)
++    actual = norm(b-C*x)/norm(b)
++    @test reported == actual
++    @test iterations <= budget
++    @test actual <= tol
++    @test actual <= tol || iterations == budget
++    @test isnothing(HSquared._require_pcg_convergence(reported,tol))
++    # No successful relabeling when the existing budget is exhausted.
++    short, steps, residual = HSquared._pcg_solve(v -> C*v, b;
++        tol=tol, maxiter=1, applyMinv=identity)
++    @test steps == 1
++    @test residual == norm(b-C*short)/norm(b)
++    @test residual > tol
++    @test_throws ArgumentError HSquared._require_pcg_convergence(residual,tol)
++    # Arithmetic and non-SPD failures keep their original refusal behavior.
++    @test_throws ArgumentError HSquared._pcg_solve(v -> -v, [1.];
++        tol=1e-9,maxiter=4,applyMinv=identity)
++    @test_throws ArgumentError HSquared._pcg_solve(v -> fill(Inf,length(v)), [1.];
++        tol=1e-9,maxiter=4,applyMinv=identity)
++    zero, steps0, residual0 = HSquared._pcg_solve(identity,zeros(3);
++        tol=1e-9,maxiter=4,applyMinv=identity)
++    @test zero == zeros(3)
++    @test steps0 == 0
++    @test residual0 == 0
++    for A in (Diagonal([1.,2.,5.]), sparse([4. 1.;1. 3.]))
++        rhs = ones(size(A,1))
++        for preconditioner in (identity, r -> r ./ diag(A))
++            sol,k,rel = HSquared._pcg_solve(v -> A*v,rhs;
++                tol=1e-12,maxiter=20,applyMinv=preconditioner)
++            @test rel <= 1e-12
++            @test rel == norm(rhs-A*sol)/norm(rhs)
++            @test sol ≈ A\rhs rtol=1e-12 atol=1e-12
++            @test k <= 20
++        end
++    end
++end

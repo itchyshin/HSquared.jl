@@ -1,8 +1,8 @@
 {
-  "timestamp_utc": "2026-10-01T00:15:02.757452+00:00",
-  "head": "73ace301a7e79e922d911345f5033c72968e2ecd",
-  "source_tree_sha256": "59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e",
-  "runner_sha256": "095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97",
+  "timestamp_utc": "2026-09-30T22:43:05.617759+00:00",
+  "head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "source_tree_sha256": "11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773",
+  "runner_sha256": "58cea5f51ec130ff75b9246fa7cf7dcfbdba70342cfb38ff7420953d788d0408",
   "tracked_src_files": 24,
   "files": [
     {
@@ -11,7 +11,7 @@
       "current_sha256": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -20,7 +20,7 @@
       "current_sha256": "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -29,7 +29,7 @@
       "current_sha256": "9d389444008a25ddfb3ba140836bab5a3d2c8ebfb94052424d8d1ac6c0c5a3e9",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-bridge-payload-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -38,7 +38,7 @@
       "current_sha256": "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -47,7 +47,7 @@
       "current_sha256": "5ac87d115a0b8c41822f38cfb54cbdffc3f298578bbf1ddb9aec0edc6c823012",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-data-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -56,7 +56,7 @@
       "current_sha256": "6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -65,7 +65,7 @@
       "current_sha256": "4dc5b5e0b1f51abaa97bdee77b3205129470ca5107628390cf3ef1578452306f",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-evolvability-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-evolvability-finite",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -74,7 +74,7 @@
       "current_sha256": "8392d7964f72d18278db130d5afd5ada30778233581bfe4090031b3fac3b4f71",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-gllvm-residual-contract-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -83,7 +83,7 @@
       "current_sha256": "a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-genomic-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-genomic-contracts/revision-3",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -92,32 +92,28 @@
       "current_sha256": "b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "staticonly,noGPU"
     },
     {
       "file": "src/iterative_solve.jl",
-      "current_lines": 1484,
-      "current_sha256": "e1b50131c5e38b59a200925e0ff2f2377fecc7c5e4f0c63a90fe33261dbf2133",
+      "current_lines": 1467,
+      "current_sha256": "91317fe23ab913767b3f4ed44f74b69b9d5e0f5a5ce46fa09ed442047f361769",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-iterative-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-iterative-finite",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
-      "runtime_scope": "boundedCPU",
-      "hosted_platform_delta": "docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/",
-      "independent_delta_review": "pcg-independent.md"
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
+      "runtime_scope": "boundedCPU"
     },
     {
       "file": "src/likelihood.jl",
-      "current_lines": 4876,
-      "current_sha256": "9e4b7b422f0ba6daac41b39aadf2172b56fc1879b91563ca40d2df9e374d9f11",
+      "current_lines": 4848,
+      "current_sha256": "d77e6565e574ce428371fb86f8322d12edc977ead5f05093d24c4204ef85e935",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-likelihood-first-wave-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-composition",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU",
       "identity_delta": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-original-spec",
-      "helper_identity_delta": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-helper-identity",
-      "hosted_platform_delta": "docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/",
-      "independent_delta_review": "endpoint-independent.md"
+      "helper_identity_delta": "docs/dev-log/prepared-fixes/2026-09-30-likelihood-helper-identity"
     },
     {
       "file": "src/model_spec.jl",
@@ -125,7 +121,7 @@
       "current_sha256": "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -134,7 +130,7 @@
       "current_sha256": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-multivariate-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-multivariate-contracts",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -143,7 +139,7 @@
       "current_sha256": "3a43d7f1ebbc2c6b05bfe20306a2e48cfd24c9bb1bcbacf999200e800a4a6bd6",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-nongaussian-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -152,7 +148,7 @@
       "current_sha256": "6f4661f1e64dd0c079595be5b754813ba66ea998fc301bdcbd5422c5cdf72f86",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-pedigree-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-pedigree-residual",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -161,7 +157,7 @@
       "current_sha256": "e95f47efb13018fa8fc2fb7cbf6b08d4c4a1add8ca3b9c95b43ead259bf9955b",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-placeholder-exact-review.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -170,7 +166,7 @@
       "current_sha256": "a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -179,7 +175,7 @@
       "current_sha256": "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -188,7 +184,7 @@
       "current_sha256": "28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -197,7 +193,7 @@
       "current_sha256": "91992a87f0c6b20101154ed000b1f993b062c73e9c032effa54923eda5ee6c33",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-random-regression-exact-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -206,7 +202,7 @@
       "current_sha256": "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-support-source-reattestation.md",
       "reviewed_delta_packet": null,
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -215,7 +211,7 @@
       "current_sha256": "3ac12ece1d095852f0937d63c97a03333665560a2c4876c138b4c547fec4e0ed",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-selinv-complete-current-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-selinv-trace-finite",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     },
     {
@@ -224,14 +220,12 @@
       "current_sha256": "1d1d444bea3a5dc7a2dfccf5549b4d3082acfe3bf48761fe203a9d5f993c5316",
       "baseline_disposition": "docs/dev-log/source-review/2026-09-30-validation-status-exact-review.md",
       "reviewed_delta_packet": "docs/dev-log/prepared-fixes/2026-09-30-composed-repairs",
-      "coverage": "Complete baseline disposition plus independently accepted changed-source deltas; final panels and explicit residual debt retained.",
+      "coverage": "Baseline complete scoped source disposition plus independently reviewed delta, if changed; finalpanel pending.",
       "runtime_scope": "boundedCPU"
     }
   ],
-  "status": "Complete bounded source dispositions and independently accepted deltas; fresh complete local suite and docs pass. Exact-current hosted checks and landing remain pending.",
-  "previous_source_tree_sha256": "11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773",
-  "previous_runner_sha256": "58cea5f51ec130ff75b9246fa7cf7dcfbdba70342cfb38ff7420953d788d0408",
-  "runner_change": "Original runner at 73ace301 is an exact byte prefix; 316 bytes append two isolated Hosted regression modules. Original assertions remain unchanged.",
-  "head_is_base_for_reviewed_dirty_delta": true,
-  "source_aggregate_algorithm": "SHA-256 over sorted src/*.jl files, concatenating each bare src-relative filename, NUL, raw file bytes, NUL."
+  "status": "Integrated candidate frozen for package/bridge/docschecks and finalpanel; acceptance pending.",
+  "previous_source_tree_sha256": "2ae2c98f8bc7e664a6e07571a08775359d79698689470bc19feb97657d420869",
+  "previous_runner_sha256": "02a30cdeedf0dfd201020ef616060872100942d54a6ab3e04695ba449373b70b",
+  "runner_change": "Explicit HSquared import in two isolated regression modules; unchanged original assertions and numerical source"
 }

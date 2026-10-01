@@ -34,6 +34,28 @@ adjacent. Such a candidate cannot be reported as a strict interior fit; if its
 likelihood beats an endpoint, classification fails closed as
 `boundary_unresolved`.
 
+
+### Cancellation in adjacent likelihood comparisons
+
+Near a stationary endpoint, the true likelihood change can be smaller than
+rounding in the two Float64 objective values. For comparisons within
+`32 * eps(Float64) * max(1, abs(candidate), abs(endpoint))`, the resolver
+re-evaluates both values from the same eigen context using BigFloat arithmetic.
+This threshold selects the arithmetic used for comparison; it does not relax
+the likelihood tie rule or permit a positive gain. A genuine positive gain
+still gives `boundary_unresolved`, including gains below the Float64 rounding
+scale. KKT signs, refinement acceptance, and endpoint representation remain
+unchanged. The routine does not change the process-wide BigFloat precision;
+if the caller has set fewer than 128 bits, or the re-evaluation fails, the
+comparison is unresolved with reason `endpoint_comparison_failed`.
+
+These checks resolve arithmetic cancellation in the existing computational
+model. They do not remove uncertainty from an ill-conditioned eigendecomposition
+or establish boundary calibration. The focused tests retain the original
+closed-boundary assertions and add scaled copies of the stationary lower
+fixture, an independent paired-data likelihood identity, and genuine small
+improvements at both endpoints.
+
 ## Verification and evidence boundary
 
 The focused regression uses `n=3`, one fixed effect, identity incidence,

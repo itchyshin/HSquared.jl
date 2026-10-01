@@ -9,7 +9,8 @@
 # callable `r ↦ M⁻¹·r` (the preconditioner solve): `identity` for plain CG, `r ↦ Minv .* r`
 # for Jacobi, or the IC(0) back/forward triangular solve for `:ichol`. `x0 = 0`, so the
 # initial residual is `b`. Returns `(x, iterations, relative_residual)`.
-# Unsupported arithmetic range throws; a finite unconverged iterate is still returned.
+# Convergence uses the true residual; a misleading recursive residual triggers a
+# restart within maxiter. Unsupported range throws; finite unconverged iterates return.
 function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, applyMinv)
     _require_finite_matrix_free_result("PCG right-hand side", b)
     x = zeros(length(b))
@@ -39,7 +40,23 @@ function _pcg_solve(applyC, b::Vector{Float64}; tol::Float64, maxiter::Int, appl
         @. r -= alpha * Cp
         iters = k
         relres = norm(r) / bnorm
-        relres <= tol && break
+        if relres <= tol
+            # Roundoff can put the recursive residual below tol before the true
+            # residual is small enough. Verify before stopping, then restart PCG
+            # from b-Cx if needed, using only the remaining iteration budget.
+            r = b - applyC(x)
+            _require_finite_matrix_free_result("PCG true residual", r)
+            relres = norm(r) / bnorm
+            _require_finite_matrix_free_result("PCG relative residual", relres)
+            relres <= tol && break
+            z = applyMinv(r)
+            _require_finite_matrix_free_result("PCG preconditioned residual", z)
+            rz = dot(r, z)
+            isfinite(rz) && rz > 0 ||
+                throw(ArgumentError("PCG residual inner product is outside the supported positive Float64 range"))
+            p .= z
+            continue
+        end
         z = applyMinv(r)
         rz_new = dot(r, z)
         isfinite(rz_new) && rz_new > 0 ||
