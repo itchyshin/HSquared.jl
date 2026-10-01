@@ -167,7 +167,7 @@ end
             @test row.minimum_uniqueness ≈ minimum(single.genetic_uniqueness)
             @test row.uniqueness_floor_distance ≈ minimum(single.genetic_uniqueness .- HSquared.FA_UNIQUENESS_FLOOR)
         end
-        @test diag.objective_range ≈ abs(default.loglik - alternative.loglik)
+        @test diag.objective_range ≈ abs(default.loglik - reported_alternative.loglik)
         @test diag.better_nonconverged_start == any(
             !fit.converged && isfinite(fit.loglik) && fit.loglik > automatic.loglik
             for fit in (default, reported_alternative))

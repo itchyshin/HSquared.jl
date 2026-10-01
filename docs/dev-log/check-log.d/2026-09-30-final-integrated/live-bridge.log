@@ -4,30 +4,35 @@ What you may report is listed on Can I fit and report this? -- not in validation
 See https://itchyshin.github.io/hsquared/articles/current-limits.html
 ✔ | F W  S  OK | Context
 
-⠏ |          0 | fa-optin                                                       
-⠧ |          8 | fa-optin                                                       
-⠦ |         27 | fa-optin                                                       
-⠼ |         45 | fa-optin                                                       
-⠏ |         60 | fa-optin                                                       
-⠴ |         66 | fa-optin                                                       
-⠇ |         69 | fa-optin                                                       
-⠏ |         70 | fa-optin                                                       
-⠴ |         76 | fa-optin                                                       
-⠴ |         86 | fa-optin                                                       
-⠋ |        111 | fa-optin                                                       
-✔ |        116 | fa-optin [17.5s]
+⠏ |          0 | fa-optin
+⠙ |          2 | fa-optin
+⠧ |          8 | fa-optin
+⠸ |         14 | fa-optin
+⠹ |         23 | fa-optin
+⠹ |         33 | fa-optin
+⠦ |         47 | fa-optin
+⠏ |         60 | fa-optin
+⠴ |         66 | fa-optin
+⠇ |         69 | fa-optin
+⠏ |         70 | fa-optin
+⠏ |         80 | fa-optin
+⠴ |         86 | fa-optin
+⠙ |        102 | fa-optin
+⠋ |        111 | fa-optin
+✔ |        116 | fa-optin [18.4s]
 
-⠏ |          0 | gllvm-optin                                                    
-⠙ |         12 | gllvm-optin                                                    
-⠙ |         32 | gllvm-optin                                                    
-⠦ |         57 | gllvm-optin                                                    
-⠋ |         61 | gllvm-optin                                                    
-⠇ |         69 | gllvm-optin                                                    
-⠙ |         82 | gllvm-optin                                                    
-✔ |         97 | gllvm-optin [3.3s]
+⠏ |          0 | gllvm-optin
+⠇ |          9 | gllvm-optin
+⠦ |         27 | gllvm-optin
+⠸ |         44 | gllvm-optin
+⠋ |         61 | gllvm-optin
+⠇ |         69 | gllvm-optin
+⠙ |         82 | gllvm-optin
+⠼ |         95 | gllvm-optin
+✔ |         97 | gllvm-optin [3.6s]
 
 ══ Results ═════════════════════════════════════════════════════════════════════
-Duration: 20.8 s
+Duration: 22.0 s
 
 [ FAIL 0 | WARN 0 | SKIP 0 | PASS 213 ]
 Julia exit.

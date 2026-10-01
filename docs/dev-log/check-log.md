@@ -34,7 +34,7 @@ Focused `test/test_data_dict_id_lengths.jl` passed 5/5 using a task-local Julia 
 
 <!-- slop-ok: historical append-only check records retain their original wording; new receipts are audited separately. -->
 
-Latest per-slice receipt: [`check-log.d/2026-09-30-va-schur-recheck.md`](check-log.d/2026-09-30-va-schur-recheck.md).
+Latest per-slice receipt: [`check-log.d/2026-10-01-fa-objective-range-oracle.md`](check-log.d/2026-10-01-fa-objective-range-oracle.md).
 
 ## 2026-09-08 A4-1 private Binomial observation-scale candidate (Julia)
 

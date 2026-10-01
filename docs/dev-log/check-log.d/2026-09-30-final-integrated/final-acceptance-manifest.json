@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-01T01:29:05.343294+00:00",
+  "utc": "2026-10-01T02:26:06.869877+00:00",
   "artifacts": {
     "npm-timeout-docs.log": "a5f1acdb8a17cfbb50a0a45f5e74b505e2f4a27683b3807479610256f61b8310",
     "R-site.log": "9b8bf0da32382eab37a33f1bd1c581cb406ea57e235a5b04167cdaa30cb10a22",
@@ -11,11 +11,11 @@
     "R-site-result.json": "33b416dda7c59714b88e621abfb9201a8a184f39ea1c9df6fbe0f3dc2ccd931f",
     "pre-hosted-repair-julia-package-final-result.json": "4946f4c10ee180a3741c4ea32e6e1b38f51e6e76e822642f1d1e28ac4b4838c5",
     "module-import-sweep.log": "0adb8f21064f89b0d11e045bd37e2bd761845f734a7090c74d2f49110717f524",
-    "source-test-freeze-final.json": "170e4dda33d2b357b2c24a4b10b94fe3d15597b355436d9d471dced2afc736c0",
+    "source-test-freeze-final.json": "5bf196a1133204c247b823bc69acdfa53ea077004fc8882512ff1d3269df3e19",
     "rendered-julia-multivariate-models.html": "49732e1f1437c3c3efec11d88245697858215ebfc6ac822dddb4476ac473b641",
     "module-import-sweep.jl": "78291b42c8e39bd5669ffff40239a9d9fe9db1d70a6a042f1082d57a66bd6899",
     "pre-hosted-repair-live-bridge.log": "84b740c6ed5b64e5432424111e67ced32acca181fd90062accbf9a783ef7c333",
-    "docs-result.json": "4af0a87530f67f4f2895b5889fba6fdc879808e2960e6bad02cfc8e309755deb",
+    "docs-result.json": "218b75ed45c9d444dc87f2511241023ea3e3d894092bb748ce32a1220b56c342",
     "pre-hosted-repair-docs.log": "3401a0743da0b3278c8371e5c0b44c0bc7441b8d6a5c3d5632c43a4fae773d5b",
     "R.log": "e2b465132e207f0379d2ef3b8a3ffb76d1e6897a66d4d061ea2b4bfecf2a1743",
     "pre-module-imports-julia-package-final.log": "a1792e2660dcb6826f34806de832c85d395f0a0ab11dda2c9ee283adae38c9a0",
@@ -33,9 +33,9 @@
     "pre-module-imports-julia-package-final-result.json": "8a40df34bd97947be9d66d677432fca833fb9a9aa67c824a2c1922761b1e40e9",
     "julia-package-result.json": "ba8abfad42e1f88f0e6da241c74eb41681ce95dbc6714150c5492573204edb15",
     "first-R-site.log": "d6e03356cea319430393e6629ef810a9f516dc89306b8720f01067d144009acc",
-    "docs.log": "30f94656afd0f3946efa9d6de05a84a8de0fa3e98ebf975f96b163773b9a3f15",
+    "docs.log": "ce00e923b933a9c8eff309fe382f379dbe4dc27abdb5f74de4cc4fc0a5140cae",
     "pre-docstr-julia-package-final.log": "b97eeb32979d49579a8bbb1792aed3f3bde95218682952e8cc7fc806f9d38015",
-    "julia-package-final.log": "eab6e241c985277bb2cc1fa11a6a3b3393b9c0f3e18d57f567b8fae355df3e53",
+    "julia-package-final.log": "a36bdc581143254db64ae5c29bccfac06c9c2521b3428e4be615daf743c7d55e",
     "rendered-julia-validation-status.html": "a51e5256c2090bdd5efbad33bc1daa466191b84d0ecc6ba0eef0ae06f67e4e66",
     "npm-timeout-docs-result.json": "f010521b4130a2c1686bdf52acdc5959b003cfd252d78c1d45e92c83ce40449e",
     "docs-Manifest.toml": "41cf2c2792c216c5d2372d74fb59283cbaa40c7298b6fe9cfd15c2cf6693c7af",
@@ -48,11 +48,11 @@
     "pre-docstr-final-acceptance-manifest.json": "e63f3f676971c2cd05498e3f4209bd071cad51554ee15b7bdd1a78a19d8e0581",
     "pre-hosted-repair-live-bridge-result.json": "56fbfaac200dd00e08fa5569ad55661bf1a262cf76b18aa053fa910c3054ef0a",
     "first-docs-result.json": "4f279a07b09e43aaf1073a92b759afc94ed566af578028c251bb2d2e82eaabfc",
-    "julia-package-final-result.json": "56d48a9d45afb2225f5eb2d9e10b9e1e12165e41404e3609a25f7092d743f9c4",
+    "julia-package-final-result.json": "68c653df99d5674495730d68e4c2e00af3e1d0d38518dab05b85d0cb54f37f12",
     "pre-docstr-julia-package-final-result.json": "1a6919ef6f974cdc5fd81e8be7aac3a2e68c59128888e1b2a11925574b87bbdb",
     "local-gate-reverification.log": "34d0498bfd9a4ae135088f0361ae38d6419448069cbe15257814cdee306bdbaa",
-    "live-bridge-result.json": "8506a16c341b7f8edab65b7dd86f1e8cac5226862101d71d4c454b0000b99b45",
-    "live-bridge.log": "e251eca552dfc8f08d5ead1e01ae69e5924fb29fa2e656e44fc2f90241f99c87",
+    "live-bridge-result.json": "ab99796403f7b8f7c266094b7e2da763e6a63f5e366233c16ba68a6db41ec386",
+    "live-bridge.log": "2f3488ac73ce290eb3c726d4547d04d0fbea16a25c2b391191c7526295423398",
     "pre-module-imports-source-test-freeze-final.json": "cd2c6ad996df1b02804c88b85b4f40d90bf80f9c26eff83cfaf902eecaf7eda6",
     "source-test-freeze-rerun.json": "e2ad7cc5fe91f7f97bb454527e7266b67f0996d23924e38dcb18a7ba3d6de198",
     "R-00check.log": "04373e46542738ea2c9ed2ff41be8f8672efb347f9f26a0bd16e45e67946a5c4",
@@ -438,7 +438,7 @@
     }
   ],
   "docs_normalization": "All dependency versions identical; only HSquared package path normalized to the isolated copy. Candidate docs/Project now matches tested relative-path Project exactly.",
-  "package_scope": "Fresh complete Julia1.13.1 suite, live R transport and documentation after independently approved doc API, REPL test declaration and FA diagnostic oracle corrections. Numerical source and runtime dependencies unchanged. Historical campaign remains immutable. Exact-current hosted checks and landing pending.",
+  "package_scope": "Fresh complete Julia 1.13.1 suite, live R bridge, and Julia documentation after a one-line FA multistart diagnostic-oracle correction. Numerical source and runtime dependencies unchanged. Exact-current hosted checks and landing pending.",
   "r_inventory_expansion": "All test data, fixture generators, manual figures and articles match the successfully checked/rendered source copy; original R code/manual freeze retained separately.",
   "checker_sha256": "2a404a0a2bb478b5f45bced92993a3c8193196f92f322f5f820fa892b26e0c4d",
   "preserved_prior_evidence": "pre-hosted-repair-* files retain the original successful local checks and manifest; original hosted red logs and signed repair packets are retained separately.",
@@ -449,8 +449,8 @@
     "review": "docs/dev-log/prepared-fixes/2026-09-30-docstr-portability/independent-v2.md"
   },
   "reviewed_fa_test_delta": {
-    "test_sha256": "e340a84b71b6ae3b62ffa96591d5b576ba9c0d43c6fdb9e24382fa198ef942ea",
-    "scope": "Four empirical fit-outcome assertions replaced by defined diagnostic/status oracles, with ordinary single-start and deterministic selection controls. Numerical source, scientific tolerances and campaign unchanged.",
-    "review": "docs/dev-log/prepared-fixes/2026-09-30-fa-diagnostic-portability/independent.md"
+    "test_sha256": "6f290549df40224b5785f4c48d47fe478dfd9a0eb84b0e9c9bd6e04331bbf4af",
+    "scope": "One expected-value assertion now compares the optimizer diagnostic with the exact internally constructed balanced start; numerical source and scientific tolerances are unchanged.",
+    "review": "docs/dev-log/prepared-fixes/2026-09-30-fa-objective-range-oracle/independent.md"
   }
 }

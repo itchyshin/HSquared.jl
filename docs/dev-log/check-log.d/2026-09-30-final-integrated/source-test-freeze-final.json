@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-01T01:20:49.002579+00:00",
+  "utc": "2026-10-01T02:15:00+00:00",
   "files": {
     "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
     "Project.toml": "8797dab5ac93c3c03e29c6fa3924056c173873d40356e8be86a7367344cdd9dc",
@@ -161,7 +161,7 @@
     "test/test_genomic_summary_contracts.jl": "4abf2b647d13110f92fb91f572e182a914f50f982fa513b37c4645b668e8c23c",
     "test/test_genomic_variance_boundary.jl": "a1113c6f13defe90a419442ffd4f98b7cd6182820ba3e3095ce9020cf2b0897f",
     "test/test_matfree_reml_inci_pins.jl": "decca8dccfdb244e8260f5bfacf1da5c05a10602a70b718ba4761ea514608282",
-    "test/test_multivariate_fa_multistart.jl": "e340a84b71b6ae3b62ffa96591d5b576ba9c0d43c6fdb9e24382fa198ef942ea",
+    "test/test_multivariate_fa_multistart.jl": "6f290549df40224b5785f4c48d47fe478dfd9a0eb84b0e9c9bd6e04331bbf4af",
     "test/test_multivariate_repeatability.jl": "276017e88ebf8b266d3b613166cf43ed81f7ae31144c73e79c35a7a8e13a6d87",
     "test/test_nongaussian_inner_convergence.jl": "f405a75e14da1be035c9de29cc17accef4dbaedeeb740d0d96f7d44f401cb33c",
     "test/test_payload_v2_parity.jl": "8f281fb60bbc9bf0ccf46559f5152ef32b68148eff1c0457fa01c9abb0dccc73",
@@ -188,5 +188,5 @@
     "test/wave4_genomic_endpoint_roundoff.jl": "7c2623319bbef4fa8520588283790ba30e6ff3f0456fa318776271eb9f9cdc09",
     "test/wave4_planned_term_wording.jl": "6fb59d8d85cd4ab9fbbe6fb2598689147d4d55f4d7e6d1445af23deb09470a3d"
   },
-  "purpose": "Fresh package verification after reviewed documentation-only test API correction; numerical source, bridge and documentation inputs unchanged."
+  "purpose": "Fresh exact-source package, documentation, and live bridge acceptance after one test-oracle correction; numerical source, R API, and frozen campaign unchanged."
 }

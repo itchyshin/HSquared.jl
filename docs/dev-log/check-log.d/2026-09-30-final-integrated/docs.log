@@ -14,7 +14,7 @@
 [32m✓[0m building client + server bundles...
 - rendering pages...
 [32m✓[0m rendering pages...
-build complete in 5.00s.
+build complete in 5.36s.
    Resolving package versions...
   No Changes to `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Project.toml`
   No Changes to `/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/Manifest.toml`
@@ -24,7 +24,7 @@ build complete in 5.00s.
 [ Info: CrossReferences: building cross-references.
 [ Info: CheckDocument: running document checks.
 ┌ Warning: 47 docstrings not included in the manual:
-│ 
+│
 │     HSquared.BetaBinomialResponse
 │     HSquared.loglik :: Tuple{HSquared.GeneticGLLVMFit}
 │     HSquared._genomic_precision_provenance :: Tuple{AbstractMatrix, Any}
@@ -72,7 +72,7 @@ build complete in 5.00s.
 │     HSquared.selinv_trace_against :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}, SparseArrays.SparseMatrixCSC, Integer}
 │     HSquared.OrderedProbitResponse
 │     HSquared.selinv_block_traces :: Tuple{SparseArrays.CHOLMOD.Factor{Float64}, AbstractVector, AbstractVector}
-│ 
+│
 │ These are docstrings in the checked modules (configured with the modules keyword)
 │ that are not included in canonical @docs or @autodocs blocks.
 └ @ Documenter ~/.julia/packages/Documenter/13nbQ/src/utilities/utilities.jl:49
