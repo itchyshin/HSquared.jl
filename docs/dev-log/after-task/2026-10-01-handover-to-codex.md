@@ -4,7 +4,7 @@ Create a durable handover to a fresh Codex lane for the HSquared twin programme 
 
 ## 2. Implemented
 
-Wrote a standalone handover that records the bounded FA/GLLVM scope, measured FA outcomes, PR #402's merged closeout, protected work, and the next auto-rank design arc. Refreshed the AGENTS snapshot and archived the old snapshot verbatim. Committed and pushed the handover branch.
+Wrote a standalone handover that records the bounded FA/GLLVM scope, measured FA outcomes, PR #402's merged closeout, protected work, and the next auto-rank design arc. Refreshed the AGENTS snapshot and archived the old snapshot verbatim. The initial handover commits were pushed; corrected commits were rebased onto current main and still need to be pushed.
 
 ## 3a. Decisions and Rejected Alternatives
 
@@ -24,7 +24,7 @@ The first draft used a stale local ref and incorrectly left V3 open. Rose identi
 - `git diff --check`: passed for the handover/snapshot edits before commit.
 - `origin/main` refreshed to merge commit `570f49ba`, with PR #402 closeout at `d7d50e9b`; verified the retained exact hosted-check receipts in the merged report.
 - GitHub `gh pr view 402`: API query failed. Merge state was verified from the refreshed remote-tracking ref and merged report instead.
-- Handover branch `codex/h2-codex-handover-20261001` was pushed; corrected files are awaiting commit and push.
+- Handover branch `codex/h2-codex-handover-20261001` has corrected local commits atop `570f49ba`; the lease-protected update is still to be pushed.
 
 ## 6. Tests of the Tests
 
@@ -43,7 +43,7 @@ Checked the current candidate ref, latest local acceptance and source-review rec
 
 ## 9. What Did Not Go Smoothly
 
-The initial checkout was not the candidate branch and contained unrelated untracked work. A clean managed worktree was used. The GitHub API was unavailable, preventing PR #402 verification and handover PR creation. The project task creation returned a pending `clientThreadId`; it had not resolved to a ready thread ID by this report. The pushed branch and one-command resume prompt remain available for Codex to open.
+The initial checkout was not the candidate branch and contained unrelated untracked work. A clean managed worktree was used. The GitHub API query failed. PR #402 was verified as merged from the refreshed `origin/main` ref and its merged closeout report. The handover PR has not been created yet. The project task creation returned a pending `clientThreadId`; it had not resolved to a ready thread ID by this report. The corrected handover branch still needs its lease-protected push before a PR can be opened.
 
 ## 10. Known Residuals
 
