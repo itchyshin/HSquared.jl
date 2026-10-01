@@ -1,0 +1,52 @@
+[
+  {
+    "archive": "hsq-docstr-contract-fix-20261001.tar.gz",
+    "sha256": "234de42330eb8bc8c5a905b22a52f66526cbafdd06ba62eeabceff97fd2ea9f3",
+    "count": 24,
+    "files": {
+      "candidate/docs/src/api.md": "a9964ecd572066a8acb3fff9491a404203ff425b25d45d925635038100b93e44",
+      "candidate/test/runtests.jl": "27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3",
+      "candidate/test/test_api_docstrings.jl": "3a3afbfbfb1cf3f81566b8cdb7871dd874b73c4481736a8f097fda8dd3215299",
+      "docstr-contract.patch": "c818a18f2cc0e428709f213a07ff02c8a4f9fee72c1395d564c11454ca6d2d88",
+      "green_doc_contracts.jl": "60dab3f798670882825e3597ba05e8290afe9d70047601de5e3e25a6bff62fb1",
+      "logs/baseline-doc-1.10-result.json": "347af3dee1f7c44ed11d3ae3e940657fd6f6ae210ed36558353ce8e973079aa0",
+      "logs/baseline-doc-1.10.log": "19b758d90a27c185cb0de53a61da708c06f9f658a6cf79c043993b89778d54aa",
+      "logs/doc-api-diagnostic-1.13-result.json": "d285ead8261b46a888ead635de0a3be88d21e9bf4d98240f06f42d4b31bf6537",
+      "logs/doc-api-diagnostic-1.13.log": "ce6349a036b2b21fc9852d7654e49e2b1aad5251c757d36e53c3828db7c55bdb",
+      "logs/doc-api-diagnostic-corrected-1.13-result.json": "69c7e5b56c9b57ac51515267e0a7175d20fe846d40029c4d121ef44a50fa64c4",
+      "logs/doc-api-diagnostic-corrected-1.13.log": "fa614cdd3df361cdf3065d0f126036607b00fbedecfbdd498ea38ebb020d8977",
+      "logs/green-doc-neighbors-1.10-result.json": "ecba1cd2eee2425857b649e9cb0571ec1e1fbe2270cb59f96372136bacc03d46",
+      "logs/green-doc-neighbors-1.10.log": "e5248c295bca35ffdf39820172f1fdf85523dbed4b17398f3b3d13d16a8eb581",
+      "logs/green-doc-neighbors-1.13-result.json": "ce64e871b99eb85d7742d10640d0992a73d8f740bf5c98f66387ebcc4049d2d9",
+      "logs/green-doc-neighbors-1.13.log": "f448e47e3ee2cda8edb74146bb8abbd411249646b5e7037ebe6063b02666dc64",
+      "logs/red-doc-1.13-result.json": "8b1fd96fb7bdbfc12e8889a801d16796f6117210e525be4da1591e91a24aee39",
+      "logs/red-doc-1.13.log": "059bb37e189ce59fb401c362f605c0df3b4b408624ee0f74c4219dc0ac19dad5",
+      "pins.json": "e4d9d8dbb5b49c9a5f502cf54a3379c33bb0b18a50d08c2e37ac38da61282607",
+      "probe_doc.jl": "7ade5c8b9a3f2f0c94e3497339a5c525e0806a8a2967d0a018631532d456f768",
+      "receipt.md": "532ebbe3a7875aa0fbbd30e5e5b3e9cdbdde6a9cc2a1b73a30da51e726ba6c10",
+      "red_doc_contract.jl": "b72be99720b0bc21590523d55311a5621236d1e72097edd08c796f911323fccf",
+      "run_owned.py": "3d47c9e0fd72d8553e69a2592e1ddee0e29905f006acc9a374264cf6b829f57c",
+      "runtests-original.jl": "095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97",
+      "test_api_docstrings-original.jl": "11aef2709edc07e7c4497e763e77868a66b7c0c9bf551700e0820a9b8c20a068"
+    }
+  },
+  {
+    "archive": "e1-docstr-contract-independent-review-20261001-probes.tar.gz",
+    "sha256": "b82a5437f0141bdebded72cc205a65173da8355bebb8c189335cf83cf3d71e90",
+    "count": 12,
+    "files": {
+      "api-controls.jl": "e16a61bdee2fa2e0ff4668df8f3b93efb6d183850f9a987a219566c2f58a0694",
+      "exact-reader-1.10.log": "ecc5807cb79360eab015ce78b992a3f7a620d785be47df061f35601b557bd91b",
+      "exact-reader-1.13.log": "4384d386934cb8c46d78137596b77202fd6611c4906ae3cc54c68b848b7359d3",
+      "exact-reader-controls.jl": "e440db80015bfa797bd21c8b83b96e32798c0111c8061165f7db8721058f2b5a",
+      "exact-reader-results.json": "3c59e3000e67db968a8de5c3a48b623dc0d747e6d55191003b003ba559aceb89",
+      "independent-1.10.log": "ecc5807cb79360eab015ce78b992a3f7a620d785be47df061f35601b557bd91b",
+      "independent-1.13.log": "ea11991432a637bfc0172face9a69b40cc2516740f04718a021afbfd92a384dd",
+      "independent-red-1.13.log": "a2485004ecd7bbe8ca1baa2e594c7e1438d668291f990a2b28112823561e7595",
+      "original-red.jl": "84c194fa5e2726e4926c47227ac669dd92fa4f67d6705638ae8094ac0d12bf60",
+      "patch-replay/test/runtests.jl": "27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3",
+      "patch-replay/test/test_api_docstrings.jl": "3a3afbfbfb1cf3f81566b8cdb7871dd874b73c4481736a8f097fda8dd3215299",
+      "static-validation.json": "712de68e663b8876609626a0194a1399a41275b827262df955c696b6bf4d5b43"
+    }
+  }
+]

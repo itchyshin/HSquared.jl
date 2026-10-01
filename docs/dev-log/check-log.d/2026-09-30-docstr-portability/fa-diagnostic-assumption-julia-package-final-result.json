@@ -1,9 +1,9 @@
 {
-  "start_utc": "2026-10-01T01:20:49.159727+00:00",
-  "elapsed_seconds": 466.95290774991736,
-  "exit_status": 0,
+  "start_utc": "2026-10-01T00:56:48.426840+00:00",
+  "elapsed_seconds": 311.6657864579465,
+  "exit_status": 1,
   "over_estimate": false,
-  "estimate_seconds": 1200,
+  "estimate_seconds": 720,
   "command": [
     "/Users/z3437171/.julia/juliaup/julia-1.13.1+0.aarch64.apple.darwin14/Julia-1.13.app/Contents/Resources/julia/bin/julia",
     "--startup-file=no",

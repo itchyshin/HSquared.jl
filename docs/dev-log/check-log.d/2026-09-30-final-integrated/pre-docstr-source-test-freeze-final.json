@@ -1,8 +1,8 @@
 {
-  "utc": "2026-10-01T01:20:49.002579+00:00",
+  "utc": "2026-10-01T00:04:37.314882+00:00",
   "files": {
     "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
-    "Project.toml": "8797dab5ac93c3c03e29c6fa3924056c173873d40356e8be86a7367344cdd9dc",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
     "docs/src/validation-status.md": "62ecbc19dbbc793aea7e4c6f78b33d1711623195c05d4ad7c004da79c2ec2a13",
     "sim/fa_ordinary_start_recovery_20260928.jl": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
     "src/HSquared.jl": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
@@ -135,7 +135,7 @@
     "test/pcg_true_residual_regression.jl": "7d2ba4868e9202c04217cd0f53e3245ecf25201107d7cc48364cc4f67f6e280a",
     "test/pedigree_residual_contracts.jl": "b5340105415224aa1ca2602107c5da4feafddfbeedff84bdd6bde2c78cb00670",
     "test/rr_descriptor_scale_regression.jl": "f92c48de5a8c1b67d03b01dcad5b44ff3d3cd0ff200ca162ee753f6ed2dd1c41",
-    "test/runtests.jl": "27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3",
+    "test/runtests.jl": "095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97",
     "test/selinv_trace_finite_regression.jl": "10ff2a39b9159de5082614ac7b5b00c9d5823853aacb53beac48d3f426c35f65",
     "test/test_212_engine_controls.jl": "9c3b9d4bd8d075ff3931d59f3e909e9983c98ebe8bf02d7908d38be1950a7d6b",
     "test/test_214_217_dense_cells.jl": "5a809b56f09923c9fa63be67314f665656ed1c4616f7dc5fea03f124fe005c5a",
@@ -146,7 +146,7 @@
     "test/test_352_multi_effect_se.jl": "6841fb2bd7764c9bd4b6859d2f74d6392a877ebaefa2b40beec5e938c2aaade1",
     "test/test_365_loglik_convention.jl": "34e85bf6590baf14fdf3b73954873be1afba2011cd22b67aa75739f89672ed87",
     "test/test_aireml_workspace_reuse.jl": "350e6498d9147742c2597a5cd9405b30a4c410e183fc873ff6dd385e17420856",
-    "test/test_api_docstrings.jl": "3a3afbfbfb1cf3f81566b8cdb7871dd874b73c4481736a8f097fda8dd3215299",
+    "test/test_api_docstrings.jl": "11aef2709edc07e7c4497e763e77868a66b7c0c9bf551700e0820a9b8c20a068",
     "test/test_aqua.jl": "1b89930fd073fbf06ba2092cd219af52df7fd2f670dec250440c5f28c85af124",
     "test/test_coefcov_fields.jl": "45f9ebd3d4d65e7b4c2d3d394ef338f72efae648c1c7d448df7e48b92d2c9c4d",
     "test/test_data_dict_id_lengths.jl": "f589690d9d58c945c287103837cfa81a0395b87a37567c7540027d744ab54c37",
@@ -161,7 +161,7 @@
     "test/test_genomic_summary_contracts.jl": "4abf2b647d13110f92fb91f572e182a914f50f982fa513b37c4645b668e8c23c",
     "test/test_genomic_variance_boundary.jl": "a1113c6f13defe90a419442ffd4f98b7cd6182820ba3e3095ce9020cf2b0897f",
     "test/test_matfree_reml_inci_pins.jl": "decca8dccfdb244e8260f5bfacf1da5c05a10602a70b718ba4761ea514608282",
-    "test/test_multivariate_fa_multistart.jl": "e340a84b71b6ae3b62ffa96591d5b576ba9c0d43c6fdb9e24382fa198ef942ea",
+    "test/test_multivariate_fa_multistart.jl": "e621d60892c9ec9ceab6a1b06d051495d2aa1b9d6c70346023129a993b2d9085",
     "test/test_multivariate_repeatability.jl": "276017e88ebf8b266d3b613166cf43ed81f7ae31144c73e79c35a7a8e13a6d87",
     "test/test_nongaussian_inner_convergence.jl": "f405a75e14da1be035c9de29cc17accef4dbaedeeb740d0d96f7d44f401cb33c",
     "test/test_payload_v2_parity.jl": "8f281fb60bbc9bf0ccf46559f5152ef32b68148eff1c0457fa01c9abb0dccc73",
@@ -188,5 +188,5 @@
     "test/wave4_genomic_endpoint_roundoff.jl": "7c2623319bbef4fa8520588283790ba30e6ff3f0456fa318776271eb9f9cdc09",
     "test/wave4_planned_term_wording.jl": "6fb59d8d85cd4ab9fbbe6fb2598689147d4d55f4d7e6d1445af23deb09470a3d"
   },
-  "purpose": "Fresh package verification after reviewed documentation-only test API correction; numerical source, bridge and documentation inputs unchanged."
+  "purpose": "Fresh full package verification after independently reviewed hosted-platform repairs; original evidence retained."
 }

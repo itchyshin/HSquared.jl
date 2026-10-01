@@ -103,6 +103,19 @@ end
     @test occursin("full column rank", sprint(showerror, err))
 end
 
+# Match the automatic balanced initializer's arithmetic so individual fits
+# isolate diagnostic reporting rather than roundoff in equivalent starts.
+function fa_reported_balanced_start(Y)
+    phen = [begin
+        vals = Float64.(Y[:, k])
+        mu = sum(vals) / length(vals)
+        sum(abs2, vals .- mu) / (length(vals) - 1)
+    end for k in axes(Y, 2)]
+    (; loadings = reshape(sqrt(0.5) .* sqrt.(0.5 .* phen), length(phen), 1),
+       uniqueness = max.(0.5 .* phen, 2 * HSquared.FA_UNIQUENESS_FLOOR),
+       R0 = Matrix(Diagonal(0.5 .* phen)))
+end
+
 @testset "FA uses deterministic starts and reports fit limits" begin
     d = fa_multistart_fixture(20260927)
     phen = [var(d.Y[:, k]) for k in 1:4]
@@ -121,6 +134,8 @@ end
     alternative = fit_multivariate_reml(d.Y, d.X, d.Z, d.Ainv;
         common..., initial = balanced)
     automatic = fit_multivariate_reml(d.Y, d.X, d.Z, d.Ainv; common...)
+    reported_alternative = fit_multivariate_reml(d.Y, d.X, d.Z, d.Ainv;
+        common..., initial = fa_reported_balanced_start(d.Y))
 
     converged_candidates = filter(x -> x.converged, (default, alternative))
     eligible = isempty(converged_candidates) ? (default, alternative) : converged_candidates
@@ -138,10 +153,27 @@ end
         @test length(diag.starts) == 2
         @test all(s.valid for s in diag.starts)
         @test diag.selected_start in (:default, :balanced)
-        @test diag.g_relative_disagreement > 0.1
-        @test diag.r_relative_disagreement > 0.05
+        # The amount of disagreement is data dependent; test the reported
+        # normalized Frobenius differences against independent single starts.
+        G1, G2 = default.genetic_covariance, reported_alternative.genetic_covariance
+        R1, R2 = default.residual_covariance, reported_alternative.residual_covariance
+        @test diag.g_relative_disagreement ≈ norm(G1 - G2) / max(norm(G1), norm(G2), eps(Float64))
+        @test diag.r_relative_disagreement ≈ norm(R1 - R2) / max(norm(R1), norm(R2), eps(Float64))
+        for (name, single) in ((:default, default), (:balanced, reported_alternative))
+            row = only(filter(s -> s.name == name, diag.starts))
+            @test row.converged == single.converged
+            @test row.iterations == single.iterations
+            @test row.loglik ≈ single.loglik
+            @test row.minimum_uniqueness ≈ minimum(single.genetic_uniqueness)
+            @test row.uniqueness_floor_distance ≈ minimum(single.genetic_uniqueness .- HSquared.FA_UNIQUENESS_FLOOR)
+        end
         @test diag.objective_range ≈ abs(default.loglik - alternative.loglik)
-        @test !diag.better_nonconverged_start
+        @test diag.better_nonconverged_start == any(
+            !fit.converged && isfinite(fit.loglik) && fit.loglik > automatic.loglik
+            for fit in (default, reported_alternative))
+        @test diag.uniqueness_floor_distance ≈ minimum(automatic.genetic_uniqueness .- HSquared.FA_UNIQUENESS_FLOOR)
+        @test diag.near_uniqueness_floor == (diag.uniqueness_floor_distance <= 1e-6)
+        @test all(>=(HSquared.FA_UNIQUENESS_FLOOR), automatic.genetic_uniqueness)
         @test diag.near_uniqueness_floor
         selected = only(filter(s -> s.name == diag.selected_start, diag.starts))
         @test automatic.converged == selected.converged
@@ -170,7 +202,19 @@ end
     d2 = fa_multistart_fixture(20260928)
     mixed_status = fit_multivariate_reml(d2.Y, d2.X, d2.Z, d2.Ainv; common...)
     @test mixed_status.converged
-    @test any(!s.converged for s in mixed_status.fa_start_diagnostics.starts)
+    # A random response fixture need not produce mixed convergence statuses.
+    # The deterministic selector test above covers that case; here each row
+    # must reproduce an ordinary fit from its reported start.
+    default2 = fit_multivariate_reml(d2.Y, d2.X, d2.Z, d2.Ainv;
+        common..., initial = NamedTuple())
+    balanced2 = fit_multivariate_reml(d2.Y, d2.X, d2.Z, d2.Ainv;
+        common..., initial = fa_reported_balanced_start(d2.Y))
+    for (name, single) in ((:default, default2), (:balanced, balanced2))
+        row = only(filter(s -> s.name == name, mixed_status.fa_start_diagnostics.starts))
+        @test row.converged == single.converged
+        @test row.iterations == single.iterations
+        @test row.loglik ≈ single.loglik
+    end
     chosen = only(filter(s -> s.name == mixed_status.fa_start_diagnostics.selected_start,
                          mixed_status.fa_start_diagnostics.starts))
     @test mixed_status.converged == chosen.converged

@@ -2,6 +2,7 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using REPL  # Julia >= 1.11 loads the Docs.doc rendering API through this stdlib.
 using TOML
 using Statistics  # means used by post-fit contract fixtures
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
@@ -11134,7 +11135,7 @@ end
         coefcov_message = sprint(showerror, coefcov_error)
         @test occursin("no coefcov payload fitting route is currently wired", coefcov_message)
         @test !occursin("multi-block", coefcov_message)
-        coefcov_doc = string(@doc fit_payload_v2)
+        coefcov_doc = string(Base.Docs.doc(fit_payload_v2))
         @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
     end
 end

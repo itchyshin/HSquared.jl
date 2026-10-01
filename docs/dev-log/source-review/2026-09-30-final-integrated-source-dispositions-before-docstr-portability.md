@@ -5,7 +5,7 @@ Updated after independently accepted hosted-platform fixes. Prior inventories ar
 All 24 tracked core source files have baseline review dispositions and independently accepted deltas. Fresh local package and documentation checks pass; current-head hosted CI and landing remain pending.
 
 Source aggregate: `59d4a803e4d290a840927b4bce26ea4722f4404c009c171d173ba0c300c7d76e`.
-Runner: `27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3`.
+Runner: `095f584c0a78e4f51fc34f37f1feb81f314c45831bd24f5e7bdec4ffdc30ea97`.
 
 | File | Lines | SHA-256 | Baseline disposition |
 | --- | ---: | --- | --- |
@@ -38,6 +38,6 @@ Runner: `27b7adbfe0b1c8d397e9041710fe713410d6692d9ef8ebf50af4354a0429adf3`.
 
 The likelihood delta resolves cancellation in endpoint-adjacent likelihood comparisons using the same eigen-context estimand. It preserves the strict positive-gain rule and all original tests. The solver delta verifies the true residual before stopping and restarts within the existing iteration budget. Requested tolerance and failure behavior are unchanged.
 
-Signed independent reviews and complete author/replay archives are in docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/. Original hosted failures, R landing and post-merge checks are in docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. Both numerical regression modules remain isolated. Two documentation readers use the supported Docs.doc API with REPL loaded, preserving their original assertions. Four empirical FA fit-outcome assertions are separately replaced by independently reviewed diagnostic/status oracles; all numerical source bytes remain unchanged.
+Signed independent reviews and complete author/replay archives are in docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/. Original hosted failures, R landing and post-merge checks are in docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. The original test runner remains an exact prefix of the current runner; both new tests are isolated modules.
 
 The approved experimental outcome, covered count seven, fixed-rank scope, calibration/scaling debt and GPU/release exclusions are unchanged. The completed FA campaign is never restarted.

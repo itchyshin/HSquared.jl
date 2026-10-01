@@ -78,13 +78,13 @@ Scope: Deliver bounded opt-in FA and genetic GLLVM fits through hsquared, then r
 - [x] V1: Julia package suite passes on the current integrated candidate.
   CHECK: python3 tools/check_final_programme_evidence.py julia
   EXPECT: HSQ_FINAL_JULIA_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=92bc7ecaf2f4/34 entries; output=HSQ_FINAL_JULIA_PASS
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=b60e7089475a/36 entries; output=HSQ_FINAL_JULIA_PASS
   Final recheck after iterative-solver input-contract repair also exited 0 with `Testing HSquared tests passed`; final source/test hashes and the command environment are recorded in `docs/dev-log/check-log.d/2026-09-29-iterative-solve-precision-controls.md`. Rechecked again 2026-09-30 on the current integrated dirty tree at HEAD `a7ca8ed557b23ec23c8486365e97a7bac4b71c16`; exit 0, `Testing HSquared tests passed`. Exact non-Gaussian source/test/runner hashes and focused VA tests are in `docs/dev-log/check-log.d/2026-09-30-va-schur-recheck.md`.
 
 - [x] V2: Current Julia documentation source builds locally from the integrated candidate.
   CHECK: python3 tools/check_final_programme_evidence.py docs
   EXPECT: HSQ_FINAL_DOCS_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=92bc7ecaf2f4/34 entries; output=HSQ_FINAL_DOCS_PASS
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl; path=b60e7089475a/36 entries; output=HSQ_FINAL_DOCS_PASS
 
 - [ ] V3: Final R package/bridge checks, current source-bound evidence, capability/debt records, reports and Rose audit pass; exact-current hosted CI and ordinary landing are verified for both twins.
   EVIDENCE: Local package/bridge/docs components pass and are source-bound by the independently reviewed35-control oracle; local report structure/prose and bounded Rose claims accept. Final current-head hosted CI, landing and consolidated compiler outcome remain owed. This gate is deliberately open.
@@ -181,3 +181,12 @@ Both exact reviewed deltas are integrated and their frozen tests are registered 
 Original successful receipts are retained with pre-hosted-repair names. Original red hosted logs, signed reviews, complete byte-verified author/independent packet archives and R landing evidence are retained under docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/ and docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. The previous source inventory is preserved verbatim before the current two-delta inventory. Archive filenames preserve their author labels; timing receipts establish actual chronology.
 
 The repaired Julia candidate has renewed local acceptance. Its new hosted checks and landing remain pending, so V3 stays open. This paragraph supersedes earlier present-tense push, local-check and source-review gaps at the stated scope. The measured experimental limitations, all200 FA attempts, public covered count seven, automatic-rank/inheritance/scaling/calibration debt, and GPU/release exclusions are unchanged. No campaign was rerun, original assertion weakened, release submitted or tag created.
+
+
+## Latest-runtime test portability and fresh local acceptance
+
+Commit ec9414c3 passed both full Julia 1.10 hosted jobs. Latest Linux and Windows failed the documentation phrase assertion. The supported Docs.doc API needs the REPL standard library loaded on the tested latest runtime. Independent review accepted both readers and the required REPL test extra, target and compatibility entry; runtime dependencies, version and Manifest are unchanged. The focused v1 review did not exercise the Pkg.test sandbox. The actual full sandbox exposed the missing test dependency at 84.49 seconds; the v2 review then passed actual Pkg.test sandboxes on both runtimes. That failed run is preserved.
+
+The next full suite failed three FA fixture outcome assumptions at 311.67 seconds. Measured original seeds give different response/normal-draw bytes between Julia 1.10.0 and1.13.1, while Ainv/G/R agree. Sol replaced four empirical expectations with checks of the defined diagnostic/status quantities against ordinary single-start fits and controlled selection cases. Astra approved the exact patch after 83 independent replay assertions. Both author focused runs pass 68 assertions; the original red and terminated 120-second whole-file probe are retained. All remaining original assertions and the complete unit/order block are preserved. No numerical source, optimizer tolerance, frozen campaign, covered count or release state changed.
+
+Fresh complete Julia 1.13.1 Pkg.test passed in 466.95 seconds; live R bridge passed in 22.73 seconds; current Julia documentation passed in 44.26 seconds. Each run used one Julia/BLAS thread and stayed within its stated cap. Complete current source/test and documentation input inventories, logs, results and rendered caveat pages are pinned. Source-bound evidence modes must pass on these refreshed bytes. Exact-current hosted checks and landing remain pending, so V3 stays open.

@@ -1,8 +1,8 @@
 {
-  "utc": "2026-10-01T01:20:49.002579+00:00",
+  "utc": "2026-10-01T00:44:33.663230+00:00",
   "files": {
     "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
-    "Project.toml": "8797dab5ac93c3c03e29c6fa3924056c173873d40356e8be86a7367344cdd9dc",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
     "docs/src/validation-status.md": "62ecbc19dbbc793aea7e4c6f78b33d1711623195c05d4ad7c004da79c2ec2a13",
     "sim/fa_ordinary_start_recovery_20260928.jl": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
     "src/HSquared.jl": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
@@ -161,7 +161,7 @@
     "test/test_genomic_summary_contracts.jl": "4abf2b647d13110f92fb91f572e182a914f50f982fa513b37c4645b668e8c23c",
     "test/test_genomic_variance_boundary.jl": "a1113c6f13defe90a419442ffd4f98b7cd6182820ba3e3095ce9020cf2b0897f",
     "test/test_matfree_reml_inci_pins.jl": "decca8dccfdb244e8260f5bfacf1da5c05a10602a70b718ba4761ea514608282",
-    "test/test_multivariate_fa_multistart.jl": "e340a84b71b6ae3b62ffa96591d5b576ba9c0d43c6fdb9e24382fa198ef942ea",
+    "test/test_multivariate_fa_multistart.jl": "e621d60892c9ec9ceab6a1b06d051495d2aa1b9d6c70346023129a993b2d9085",
     "test/test_multivariate_repeatability.jl": "276017e88ebf8b266d3b613166cf43ed81f7ae31144c73e79c35a7a8e13a6d87",
     "test/test_nongaussian_inner_convergence.jl": "f405a75e14da1be035c9de29cc17accef4dbaedeeb740d0d96f7d44f401cb33c",
     "test/test_payload_v2_parity.jl": "8f281fb60bbc9bf0ccf46559f5152ef32b68148eff1c0457fa01c9abb0dccc73",

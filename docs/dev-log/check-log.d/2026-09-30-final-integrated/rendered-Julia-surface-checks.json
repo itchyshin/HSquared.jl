@@ -1,7 +1,7 @@
 {
   "validation-status": {
     "path": "rendered-julia-validation-status.html",
-    "sha256": "c493bec88ec5e3e8c232c4270ac46bd03d2a5efb0011895ecccce70a970a17e7",
+    "sha256": "a51e5256c2090bdd5efbad33bc1daa466191b84d0ecc6ba0eef0ae06f67e4e66",
     "terms_present": {
       "V4-FA": true,
       "not conventional": true,
@@ -10,7 +10,7 @@
   },
   "multivariate-models": {
     "path": "rendered-julia-multivariate-models.html",
-    "sha256": "9ee3d2c487847c901b9f9548af1bc309d70b3feeadfea4282685d54f872ea4fa",
+    "sha256": "49732e1f1437c3c3efec11d88245697858215ebfc6ac822dddb4476ac473b641",
     "terms_present": {
       "factor": true,
       "rank": true,

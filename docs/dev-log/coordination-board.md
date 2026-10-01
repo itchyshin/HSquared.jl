@@ -1,3 +1,5 @@
+Current status (2026-10-01T01:30:53.684964+00:00): fresh Julia 1.13.1 package, required R bridge and documentation checks pass; all three exact-source evidence modes pass. Root ledger is 10/11 and all child ledgers pass. V3 remains open for final independent receipt, current-head hosted acceptance and ordinary Julia landing. R PR #259 is merged with Linux and Windows main CI passing. Numerical source aggregate 59d4a803 is unchanged by the independently reviewed test corrections. Historical states below retain their original scope and timestamps.
+
 # Coordination Board
 
 ## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
@@ -1731,3 +1733,12 @@ Both exact reviewed deltas are integrated and their frozen tests are registered 
 Original successful receipts are retained with pre-hosted-repair names. Original red hosted logs, signed reviews, complete byte-verified author/independent packet archives and R landing evidence are retained under docs/dev-log/prepared-fixes/2026-09-30-hosted-platform-remediation/ and docs/dev-log/check-log.d/2026-09-30-hosted-platform-remediation/. The previous source inventory is preserved verbatim before the current two-delta inventory. Archive filenames preserve their author labels; timing receipts establish actual chronology.
 
 The repaired Julia candidate has renewed local acceptance. Its new hosted checks and landing remain pending, so V3 stays open. This paragraph supersedes earlier present-tense push, local-check and source-review gaps at the stated scope. The measured experimental limitations, all200 FA attempts, public covered count seven, automatic-rank/inheritance/scaling/calibration debt, and GPU/release exclusions are unchanged. No campaign was rerun, original assertion weakened, release submitted or tag created.
+
+
+## Latest-runtime test portability and fresh local acceptance
+
+Commit ec9414c3 passed both full Julia 1.10 hosted jobs. Latest Linux and Windows failed the documentation phrase assertion. The supported Docs.doc API needs the REPL standard library loaded on the tested latest runtime. Independent review accepted both readers and the required REPL test extra, target and compatibility entry; runtime dependencies, version and Manifest are unchanged. The focused v1 review did not exercise the Pkg.test sandbox. The actual full sandbox exposed the missing test dependency at 84.49 seconds; the v2 review then passed actual Pkg.test sandboxes on both runtimes. That failed run is preserved.
+
+The next full suite failed three FA fixture outcome assumptions at 311.67 seconds. Measured original seeds give different response/normal-draw bytes between Julia 1.10.0 and1.13.1, while Ainv/G/R agree. Sol replaced four empirical expectations with checks of the defined diagnostic/status quantities against ordinary single-start fits and controlled selection cases. Astra approved the exact patch after 83 independent replay assertions. Both author focused runs pass 68 assertions; the original red and terminated 120-second whole-file probe are retained. All remaining original assertions and the complete unit/order block are preserved. No numerical source, optimizer tolerance, frozen campaign, covered count or release state changed.
+
+Fresh complete Julia 1.13.1 Pkg.test passed in 466.95 seconds; live R bridge passed in 22.73 seconds; current Julia documentation passed in 44.26 seconds. Each run used one Julia/BLAS thread and stayed within its stated cap. Complete current source/test and documentation input inventories, logs, results and rendered caveat pages are pinned. Source-bound evidence modes must pass on these refreshed bytes. Exact-current hosted checks and landing remain pending, so V3 stays open.
