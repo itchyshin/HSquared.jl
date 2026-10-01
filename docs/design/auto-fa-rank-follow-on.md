@@ -59,7 +59,7 @@ explicitly and add these checks to its own follow-on acceptance set.
 
 ## Status
 
-Queued as a separate usability follow-on. No automatic-rank implementation, validation result, R-Julia parity evidence, capability-status row, or release claim is accepted by this note. No GPU work is part of the follow-on.
+V0 design complete as a separate usability follow-on; implementation and selection validation remain queued. No automatic-rank implementation, validation result, R-Julia parity evidence, capability-status row, or release claim is accepted by this note. No GPU work is part of the follow-on.
 
 
 ## Read-only refresh, 2026-10-01
@@ -79,6 +79,4 @@ and implementation worktrees are separate and remain protected. Its scoped
 simulation verdict does not validate HSquared genetic FA selection. See the
 paired protected-lane receipt in that directory.
 
-V3 technical landing is verified. The next design arc is specified in
-[the design plan](auto-fa-rank-design-plan-20261001.md). No automatic-rank
-implementation or validation claim is added by this refresh.
+V3 technical landing is verified. The approved [design arc](auto-fa-rank-design-plan-20261001.md) is complete at V0 only. The [contract](auto-fa-rank-contract.md) and [validation plan](auto-fa-rank-validation-plan.md) have independent acceptance. No automatic-rank implementation or measured selection claim is added.

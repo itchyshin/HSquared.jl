@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-01T20:39:50.762356+00:00",
+  "base": "28f90e095baa827682d416fc0be8e1fc7f2446c2",
+  "implementation_status_diff_exit": 0,
+  "implementation_status_diff_stdout": "",
+  "protected_worktrees": [
+    {
+      "path": "/Users/z3437171/Dropbox/Github Local/HSquared.jl",
+      "head": "35442c7f8758c5b275ca49dca6adf0ef66e6ff95",
+      "status": "?? .claude/agents/shannon.md\n?? comparator/sommer_aireml/\n?? comparator/sommer_eigen/\n?? docs/dev-log/inbox/\n?? sim/phase2_v07_genomic_recovery_v3_downstream_replay.jl\n",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches_prior_snapshot": true
+    },
+    {
+      "path": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+      "head": "365f173fa192856f9c29ac1743344c0ae7d8edd1",
+      "status": " M .claude/settings.json\n M .cursor/hooks.json\n",
+      "tracked_diff_sha256": "3228c39bbf621026e9a6c2a7f89a06dcc6fb87c7013988010bc809a587a26ebf",
+      "matches_prior_snapshot": true
+    }
+  ]
+}

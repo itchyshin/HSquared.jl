@@ -26,7 +26,7 @@ The four-trait, one-factor Gaussian FA route and three-trait, two-factor
 Poisson-log genetic GLLVM route remain experimental. Public covered count
 stays seven. The frozen 200-attempt FA outcome is unchanged.
 
-The next proposed arc is [automatic FA-rank design and coordination](docs/design/auto-fa-rank-design-plan-20261001.md).
+The [automatic FA-rank design arc](docs/design/auto-fa-rank-design-plan-20261001.md) is complete at V0 only. Its [contract](docs/design/auto-fa-rank-contract.md) and [validation plan](docs/design/auto-fa-rank-validation-plan.md) are independently reviewed; implementation and selection performance remain future work.
 It produces a reviewed contract and a future validation plan; it does not
 implement automatic selection or run simulations. Live closure evidence is
 in [the refresh report](docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md).

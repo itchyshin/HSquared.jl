@@ -1759,3 +1759,8 @@ Julia PR #401 merged at `829e86ce67b61118eae8aa7e1fdda1d3899c6f9f`. Post-merge C
 Live GitHub receipts confirm PR #402 merged at `570f49ba`, with passing current-head and post-merge Julia CI and documentation. R PR #259 remains merged at `e82f5c95`, with passing R CMD check and pkgdown. Source and tests match candidate `365f173f`; all three read-only evidence modes pass. The final independent audit is `docs/dev-log/source-review/2026-10-01-v3-live-refresh-independent.md`. This supplements the already-landed bounded V3 closure. Routes remain experimental and public count seven.
 
 The proposed next arc is `docs/design/auto-fa-rank-design-plan-20261001.md`. It is design-only and requires owner approval before execution. Protected GLLVM/gllvmTMB lanes, the frozen FA campaign, GPU and release boundaries are unchanged. Full receipt and local branch state: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.
+
+
+## Automatic Gaussian genetic FA-rank design, 2026-10-01
+
+The approved Ultra Plan/Unlazy arc completes V0 design only. The contract compares K0 diagonal genetic covariance and K1 shared factor with a future internal matched floor and experimental common-X REML covariance score. Both candidates must be eligible; failures and conditional uncertainty stay visible. Independent method/user/mechanical judgments pass after contrast-space identification and retry-policy corrections. Five acceptance gates pass, four executable checks replayed and one manual judgment. No source/test/capability/debt change or numerical run. Public count stays seven. Contract, validation plan, exact receipts and local branch state: [after-task report](after-task/2026-10-01-auto-fa-rank-design.md). Implementation remains future work.
