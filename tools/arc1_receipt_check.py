@@ -66,7 +66,20 @@ def _expected_bootstrap_count(cell: dict[str, Any], outer: int) -> int | None:
     # The first 20 pooled pilot indices in null/weak/strong round-robin are the
     # endpoint set. They reuse each outer data seed and extend its B prefix.
     pooled = (outer - 1) * len(manifest.FA_SIGNALS) + manifest.FA_SIGNALS.index(cell["signal"]) + 1
+    # Endpoint attempts retain all nested draws for stability diagnostics, but
+    # the pilot result and denominator remain the frozen B=199 prefix.
     return 999 if pooled <= 20 else 199
+
+
+def _expected_bootstrap_prefixes(cell: dict[str, Any], outer: int) -> list[int]:
+    if cell["programme"] != "fa_interval":
+        return []
+    if cell["phase"] == "pilot":
+        pooled = (outer - 1) * len(manifest.FA_SIGNALS) + manifest.FA_SIGNALS.index(cell["signal"]) + 1
+        if pooled <= 20:
+            return [199, 499, 999]
+        return [199]
+    return [19] if cell["phase"] == "development" else [499]
 
 
 def _expected_interval_truths(cell: dict[str, Any]) -> dict[str, float]:
@@ -287,7 +300,9 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
     record = attempt.get("bootstrap")
     _need(isinstance(record, dict), "FA interval attempt lacks explicit bootstrap admission record")
     expected_b = len(expected_inner_seeds)
-    _need(record.get("requested_B") == expected_b,
+    prefixes = _expected_bootstrap_prefixes(cell, int(attempt["outer"]))
+    primary_b = prefixes[0]
+    _need(record.get("requested_B") == primary_b,
           "bootstrap requested_B differs from the externally pinned fixed budget")
     _need(record.get("stage") in {"not_started", "started"}, "bootstrap stage must be explicit")
     if record["stage"] == "not_started":
@@ -327,15 +342,15 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
     digest = hashlib.sha256("".join(f"{seed}\n" for seed in actual_seeds).encode("ascii")).hexdigest()
     _need(record.get("inner_seed_sha256") == digest,
           "bootstrap ordered inner-seed digest does not match retained attempts")
-    usable = sum(bool(item["success"]) for item in inner_attempts)
+    usable = sum(bool(item["success"]) for item in inner_attempts[:primary_b])
     _need(record.get("usable_inner") == usable,
-          "bootstrap usable count does not equal the recomputed successful inner count")
+          "bootstrap usable count does not equal the recomputed primary-prefix successful count")
     intervals = record.get("intervals")
     targets = _expected_interval_truths(cell)
     formulas = _expected_interval_formulas(cell)
     _need(isinstance(intervals, dict) and set(intervals) == set(targets),
           "started bootstrap must retain every target-specific interval row")
-    minimum = math.ceil(0.99 * expected_b)
+    minimum = math.ceil(0.99 * primary_b)
     formed_targets = 0
     for target, item in intervals.items():
         _check_interval_row(target, item, formulas[target])
@@ -343,7 +358,8 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
             _need(usable >= minimum,
                   f"{target} interval formed below the fixed-B 0.99 usable threshold")
             target_index = int(target.split("_")[1]) - 1
-            values = [row["_computed_h2"][target_index] for row in inner_attempts if row["success"]]
+            primary_attempts = inner_attempts[:primary_b]
+            values = [row["_computed_h2"][target_index] for row in primary_attempts if row["success"]]
             expected_segment = [_type7_quantile(values, 0.025), _type7_quantile(values, 0.975)]
             observed_segment = item.get("segments")
             _need(isinstance(observed_segment, list) and len(observed_segment) == 1 and
@@ -352,11 +368,41 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
                       for x, y in zip(observed_segment[0], expected_segment)),
                   f"{target} endpoints do not match retained selected-fit h2 values and Type-7 quantiles")
             formed_targets += 1
+    prefix_records = record.get("prefix_results")
+    _need(isinstance(prefix_records, list) and [p.get("B") for p in prefix_records] == prefixes,
+          "bootstrap must retain each externally pinned prefix result in order")
+    _need(record.get("intervals") == prefix_records[0].get("intervals"),
+          "ordinary bootstrap interval must equal the first, primary-B prefix result")
+    for prefix_row in prefix_records:
+        b = int(prefix_row["B"])
+        prefix_inner = inner_attempts[:b]
+        prefix_usable = sum(bool(item["success"]) for item in prefix_inner)
+        _need(prefix_row.get("usable_inner") == prefix_usable,
+              f"B={b} prefix usable count differs from retained attempts")
+        _need(prefix_row.get("usable_fraction") == prefix_usable / b,
+              f"B={b} prefix usability fraction is incorrect")
+        prefix_intervals = prefix_row.get("intervals")
+        _need(isinstance(prefix_intervals, dict) and set(prefix_intervals) == set(targets),
+              f"B={b} prefix must retain every target interval")
+        for target, item in prefix_intervals.items():
+            _check_interval_row(target, item, formulas[target])
+            if item["formed"]:
+                _need(prefix_usable >= math.ceil(0.99 * b),
+                      f"B={b} formed interval below its independent 0.99 usability threshold")
+                target_index = int(target.split("_")[1]) - 1
+                values = [row["_computed_h2"][target_index] for row in prefix_inner if row["success"]]
+                expected_segment = [_type7_quantile(values, 0.025), _type7_quantile(values, 0.975)]
+                observed = item.get("segments")
+                _need(isinstance(observed, list) and len(observed) == 1 and len(observed[0]) == 2 and
+                      all(math.isclose(float(x), y, rel_tol=1e-12, abs_tol=1e-14)
+                          for x, y in zip(observed[0], expected_segment)),
+                      f"B={b} {target} endpoints do not match this prefix's retained draws")
     _need(record.get("method") == "candidate_percentile_bootstrap" and
           record.get("quantiles") == [0.025, 0.975],
           "FA intervals must identify the fixed 95% candidate percentile method")
     return {"stage": "started", "attempted_inner": expected_b,
-            "usable_inner": usable, "usable_denominator": expected_b,
+            "usable_inner": sum(bool(item["success"]) for item in inner_attempts[:primary_b]),
+            "usable_denominator": primary_b, "prefix_B": prefixes,
             "formed_targets": formed_targets, "total_targets": len(targets)}
 
 
@@ -493,7 +539,8 @@ def verify_receipt(
                                "fixed_B": sorted({item["attempted_inner"] for item in bootstrap_summaries}),
                                "refused_before_start": sum(item["stage"] == "not_started" for item in bootstrap_summaries),
                                "usable_denominators_retained": all(
-                                   item["stage"] == "not_started" or item["usable_denominator"] == item["attempted_inner"]
+                                   item["stage"] == "not_started" or
+                                   item["usable_denominator"] == item["prefix_B"][0]
                                    for item in bootstrap_summaries)}
     return result
 

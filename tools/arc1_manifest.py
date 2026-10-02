@@ -29,6 +29,24 @@ PHASES = ("development", "pilot", "confirmation")
 STREAMS = ("data", "bootstrap", "reference")
 PROTOCOL_VERSION = "arc1-seed-manifest-v1"
 CSV_FIELDS = ("programme", "phase", "N", "signal", "outer", "inner", "stream", "seed")
+def discover_admission_source_paths(root: Path) -> list[str]:
+    """Discover engine includes and Arc1 runner, protocol, and test sources."""
+    root = root.resolve()
+    module_file = root / "src/HSquared.jl"
+    if not module_file.is_file():
+        raise ValueError("source root lacks src/HSquared.jl")
+    include_names = re.findall(r'^\s*include\("([^"/]+)"\)',
+                               module_file.read_text(encoding="utf-8"), flags=re.MULTILINE)
+    paths = {"src/HSquared.jl", *(f"src/{name}" for name in include_names)}
+    for base, patterns in ((root / "sim/arc1", ("*.py", "*.jl", "*.r", "*.md", "*.toml", "*.json", "*.csv")),
+                           (root / "tools", ("arc1_*.py",)),
+                           (root / "test", ("*.jl", "*.py", "*.r")),
+                           (root / "docs/design", ("arc1*.md",)),
+                           (root / "LOOP/lanes/arc1-gaussian-reliability-20261002", ("*.md",))):
+        if base.exists():
+            for pattern in patterns:
+                paths.update(path.relative_to(root).as_posix() for path in base.rglob(pattern) if path.is_file())
+    return sorted(paths)
 
 # This is the stable protocol identity. Mutable execution notes, manifest file
 # hashes, and run status are intentionally outside this object.
@@ -55,7 +73,10 @@ SCIENTIFIC_CONTRACT = {
                          "development": 30, "pilot": 30, "confirmation": 400,
                          "bootstrap_B": {"development": 19, "pilot": 199, "confirmation": 499},
                          "endpoint_pilot_round_robin_outer_count": 20,
-                         "endpoint_nested_B": [199, 499, 999]},
+                         "endpoint_nested_B": [199, 499, 999],
+                         "endpoint_primary_result_B": 199,
+                         "endpoint_stability_results_B": [499, 999],
+                         "endpoint_prefix_usability_checked_independently": True},
         "repeatability": {"N": [80, 160, 320], "signals": {k: list(v) for k, v in REPEATABILITY_TRUTHS.items()},
                           "development": 30, "pilot": 30, "confirmation": 400,
                           "records_per_offspring": 2},
@@ -93,11 +114,25 @@ SCIENTIFIC_CONTRACT = {
                      "optimizer_tolerance": 1e-8, "final_scaled_gradient_inf_norm_max": 1e-6,
                      "K0_starts": "existing single start",
                      "K1_starts": "existing two starts plus 16 deterministic K0-derived starts",
-                     "derived_signs": [[1, *tail] for tail in itertools.product((1, -1), repeat=3)],
+                     "derived_signs": [[1, *[(-1 if mask & (1 << bit) else 1) for bit in range(3)]]
+                                        for mask in range(8)],
+                     "derived_start_order": "amplitude-major a=(0.1,0.7), then mask=0:7; mask bit 0 flips trait 2",
                      "derived_amplitudes": [0.1, 0.7],
                      "uniqueness_floor": 1e-4,
                      "loading": "L_i=a*s_i*sqrt(g_i-1e-4)",
                      "specific_variance": "psi_i=g_i-L_i^2", "carry_residual_covariance": True},
+        "invalid_trials": {
+            "policy": "guard callbacks and restart Hager-Zhang from the same iterate/direction with a halved offending step bound",
+            "artificial_penalty": False, "feasible_interval_assumption": False,
+            "max_domain_restarts": 32, "max_callback_requests": 256,
+            "count_separately": ["callback_requests", "objective_evaluations", "rejected_trials", "domain_restarts"],
+            "exhaustion": "failed start; restore objective/gradient caches and scratch coordinates; failure step is zero",
+            "wolfe": {"delta": 0.1, "sigma": 0.9, "epsilon": 1e-6},
+            "verify_returned_step_against_true_objective_and_gradient": True,
+            "numerical_gradient_failure_status_preserved": True,
+            "finite_difference_verification_tolerance": 5e-6,
+            "analytic_gradient_eligibility_threshold": 1e-6,
+        },
         "existing_start_construction": {
             "Gbase": "Diagonal(0.5*phenotypic_variance)",
             "Rbase": "Diagonal(0.5*phenotypic_variance)",
@@ -112,10 +147,12 @@ SCIENTIFIC_CONTRACT = {
         "expanded_reference": {"status": "best found, never claim global optimum",
                                "K0_split": [0.05, 0.15, 0.3, 0.5, 0.7, 0.9],
                                "K1_signs": [[1, *tail] for tail in itertools.product((1, -1), repeat=3)],
+                               "K1_sign_order": "lexicographic product order, separate from ordinary engine mask order",
                                "K1_amplitudes": [0.025, 0.1, 0.25, 0.5, 0.7, 0.9, 0.97, 0.995],
                                "each_start": {"method": "BFGS", "line_search": "Hager-Zhang",
                                               "iterations": 10000},
-                               "top_finite_solutions": 4,
+        "top_finite_solutions": 4,
+        "top_finite_solutions_scope": "per rank, independently for K0 and K1",
                                "refinement": [{"method": "Nelder-Mead", "iterations": 20000},
                                               {"method": "BFGS", "iterations": 10000}],
                                "maximum_raw_loglik_shortfall": 1e-4},
@@ -138,6 +175,8 @@ SCIENTIFIC_CONTRACT = {
                                     "also_complements": True, "bounded_refinement": "Brent",
                                     "allocation_tolerance": 1e-7, "likelihood_tolerance": 1e-8,
                                     "max_evaluations_per_bracket": 2000,
+                                    "final_certificate": "actual final bracket width <= 1e-7 and raw likelihood spread across endpoints/returned maximum <= 1e-8",
+                                    "refinement_and_certificate_share_budget": True,
                                     "compare_valid_exact_endpoints": True},
         "fixed_raw_variance": {"nuisance_starts_s0_multipliers": [0.01, 0.1, 0.5, 1.0, 5.0],
                                "nuisance_start_grid": "Cartesian product squared multipliers",
@@ -158,14 +197,32 @@ SCIENTIFIC_CONTRACT = {
         "raw_variance_target_search": {"initial_points": ["zero", "point estimate", "s0*2^(j/2), j=-40:8"],
                                        "positive_gap_max_octaves": 0.125,
                                        "zero_first_gap_max": "1e-6*s0",
+                                       "densify_complete_rail_including_tail_extensions": True,
                                        "upper_tail_extension": "double until four successive outside-cutoff points with decreasing profile likelihood",
                                        "hard_upper_bound": "1e6*s0", "root_tolerance": "1e-6*s0",
                                        "max_distinct_evaluations_per_target": 4097,
                                        "unbracketed_at_bound": "explicit refusal"},
         "common_unrestricted_maximum": True,
+        "maximum_check_includes_valid_evaluations_from_failed_nuisance_searches": True,
         "point_fit_violation_max": 1e-7,
         "point_fit_violation_refusal": "point_fit_not_optimal",
         "analytic_exclusions": ["exact ratio-one boundary", "zero-residual boundary"],
+        "certified_zero_face_resolution": {
+            "scope": "matching competitive positive lower-bound approximations only",
+            "projectable_nuisance_components": ["Va", "Vpe"],
+            "all_contacts_must_be_lower_bounds": True,
+            "preserve_fixed_target_and_other_components": True,
+            "require_certified_matching_face_or_intersection": True,
+            "raw_loglikelihood_agreement_max": 1e-8,
+            "remaining_log_gradient_inf_norm_max": 1e-6,
+            "dimensionless_one_sided_derivative": "s0*dq/dv, finite and >5e-6",
+            "independent_forward_derivative": "(-3q(0)+4q(h)-q(2h))/(2h) in v/s0 coordinates",
+            "finite_difference_steps": [1e-4, 1e-5],
+            "finite_difference_estimates_nonnegative": True,
+            "finite_difference_agreement_max": 5e-6,
+            "retain_original_failure_and_separate_zero_face_status": True,
+            "upper_bounds_and_unrelated_failed_competitors_resolved": False,
+        },
         "reduced_models": ["zero additive variance", "zero permanent-environment variance",
                            "h2 zero", "repeatability zero"],
         "unresolved_evaluation": "do not interpolate across; retain disconnected components, domain, gaps, refinement history, brackets, tail evidence, and nuisance statuses",
@@ -184,6 +241,8 @@ SCIENTIFIC_CONTRACT = {
         "fa_pilot": {"N": 160, "outer_per_signal": 30, "B": 199,
                      "formed_min": 29, "all_target_all_attempt_coverage": [0.85, 1.0]},
         "endpoint_pilot": {"preselected_outer_count": 20, "nested_B": [199, 499, 999],
+                           "primary_result_B": 199, "stability_results_B": [499, 999],
+                           "each_prefix_has_independent_usability_check": True,
                            "max_difference_0_02_min": 18, "max_difference_0_05_max": 0},
         "confirmation": {"outer_per_signal": 400, "B": 499,
                          "formation_fraction_min": 0.99,
@@ -222,8 +281,222 @@ def contract_sha256_for(contract: dict[str, object]) -> str:
                                      separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: list[str],
+                        julia_version: str, julia_threads: int, blas_threads: int,
+                        manifest_audit_root: Path | None = None) -> dict[str, object]:
+    """Pin source, environment, exact seeds, and execution settings before a cell run."""
+    root = root.resolve()
+    if julia_version != "1.10.0":
+        raise ValueError("Arc1 admitted run requires Julia 1.10.0")
+    if julia_threads < 1 or blas_threads < 1:
+        raise ValueError("thread counts must be positive integers")
+    manifest_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
+    manifest_verification = verify_manifest(manifest_path, audit_root=manifest_audit_root or root)
+    required = {"programme", "phase", "N", "signal"}
+    if not required.issubset(cell):
+        raise ValueError("cell pin is missing programme/phase/N/signal")
+    count = _cell_outer_count(cell)
+    outer_seeds = [seed_for(str(cell["programme"]), str(cell["phase"]), int(cell["N"]),
+                            str(cell["signal"]), i, 0, "data") for i in range(1, count + 1)]
+    bootstrap_seeds: dict[str, list[int]] = {}
+    if cell["programme"] == "fa_interval":
+        for outer in range(1, count + 1):
+            budget = _expected_bootstrap_budget(cell, outer)
+            bootstrap_seeds[str(outer)] = [seed_for("fa_interval", str(cell["phase"]), int(cell["N"]),
+                                                    str(cell["signal"]), outer, inner, "bootstrap")
+                                           for inner in range(1, budget + 1)]
+    paths = sorted(set(source_paths) | set(discover_admission_source_paths(root)) |
+                   {"Project.toml", "Manifest.toml"})
+    hashes: dict[str, str] = {}
+    for relative in paths:
+        rel = Path(relative)
+        if rel.is_absolute() or ".." in rel.parts:
+            raise ValueError(f"admission path must remain inside repository: {relative}")
+        file = (root / rel).resolve()
+        if not file.is_relative_to(root) or not file.is_file():
+            raise ValueError(f"admission source is missing or outside repository: {relative}")
+        hashes[rel.as_posix()] = _file_sha256(file)
+    return {"schema": "arc1-run-admission-v1", "protocol_sha256": contract_sha256(),
+            "cell": dict(cell), "planned_attempts": count, "expected_outer_seeds": outer_seeds,
+            "expected_bootstrap_seeds": bootstrap_seeds,
+            "source_sha256": hashes,
+            "environment_sha256": {key: hashes[key] for key in ("Project.toml", "Manifest.toml")},
+            "manifest_verification": manifest_verification,
+            "seed_manifest_sha256": hashes["sim/arc1/manifests/arc1_seed_manifest.json"],
+            "outer_csv_sha256": hashes["sim/arc1/manifests/arc1_outer_seeds.csv"],
+            "julia_version": julia_version,
+            "threads": {"julia": julia_threads, "blas": blas_threads},
+            "thread_environment": {"JULIA_NUM_THREADS": str(julia_threads),
+                                   "OPENBLAS_NUM_THREADS": str(blas_threads)},
+            "status": "admitted_before_execution"}
+
+
+def validate_candidate_manifest(root: Path) -> None:
+    """Fast integrity check; exhaustive seed validation belongs to initial admission."""
+    root = root.resolve()
+    json_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
+    csv_path = root / "sim/arc1/manifests/arc1_outer_seeds.csv"
+    if not json_path.is_file() or not csv_path.is_file():
+        raise ValueError("canonical Arc1 seed manifest files are missing")
+    value = json.loads(json_path.read_text(encoding="utf-8"))
+    canonical_contract = json.loads(json.dumps(SCIENTIFIC_CONTRACT, sort_keys=True))
+    if value.get("scientific_contract") != canonical_contract or \
+       value.get("protocol_sha256") != contract_sha256():
+        raise ValueError("candidate seed manifest is stale and not admitted for execution")
+    if value.get("outer_csv_sha256") != _file_sha256(csv_path):
+        raise ValueError("candidate outer-seed CSV hash does not match its manifest pin")
+
+
+def verify_execution_identity(root: Path, admission: dict[str, object], identity: dict[str, object]) -> None:
+    """Check an executor's runtime report against the admitted engine and environment pins."""
+    if not isinstance(identity, dict):
+        raise ValueError("successful fit lacks runtime execution identity")
+    hashes = admission["source_sha256"]
+    engine_sources = {path: digest for path, digest in hashes.items() if path.startswith("src/")}
+    if identity.get("engine_package_uuid") != "a0667dea-0f38-44e8-9150-4fda00624eac" or \
+       identity.get("engine_module_path") != str((root.resolve() / "src/HSquared.jl")):
+        raise ValueError("runtime loaded engine identity differs from the admitted HSquared source")
+    modules = identity.get("loaded_module_names")
+    if not isinstance(modules, list) or "HSquared" not in modules:
+        raise ValueError("runtime report does not identify the loaded HSquared module")
+    if identity.get("loaded_engine_source_sha256") != engine_sources:
+        raise ValueError("runtime loaded engine source set/hash differs from admission")
+    if identity.get("source_sha256_at_load") != engine_sources or \
+       identity.get("source_sha256_after_load") != engine_sources:
+        raise ValueError("runtime load-time/final source pins differ from admitted engine bytes")
+    if identity.get("environment_sha256") != admission.get("environment_sha256"):
+        raise ValueError("runtime dependency environment differs from admitted Project/Manifest")
+    if identity.get("active_project") != str(root.resolve() / "Project.toml"):
+        raise ValueError("runtime active Julia project differs from the admitted source root")
+    dependencies = identity.get("loaded_dependencies")
+    if identity.get("dependency_environment_verified") is not True or not isinstance(dependencies, list):
+        raise ValueError("runtime loaded dependency identities were not verified against Manifest.toml")
+    seen_dependency_uuids = set()
+    for dependency in dependencies:
+        if not isinstance(dependency, dict) or not all(
+                isinstance(dependency.get(key), str) for key in ("name", "uuid", "version", "tree_hash", "source")):
+            raise ValueError("runtime dependency identity is incomplete")
+        if dependency["uuid"] in seen_dependency_uuids:
+            raise ValueError("runtime dependency identity contains a duplicate UUID")
+        seen_dependency_uuids.add(dependency["uuid"])
+    if identity.get("julia_version") != admission.get("julia_version") or \
+       identity.get("julia_threads") != admission["threads"]["julia"] or \
+       identity.get("blas_runtime_threads") != admission["threads"]["blas"]:
+        raise ValueError("runtime Julia/BLAS thread identity differs from admission")
+    if identity.get("thread_environment") != admission.get("thread_environment"):
+        raise ValueError("runtime thread environment differs from admission")
+    if not isinstance(identity.get("blas_vendor"), str) or not identity["blas_vendor"]:
+        raise ValueError("runtime identity must retain the BLAS vendor")
+
+
+def _cell_outer_count(cell: dict[str, object]) -> int:
+    programme, phase = cell.get("programme"), cell.get("phase")
+    n, signal = cell.get("N"), cell.get("signal")
+    if programme == "fa_rank":
+        valid = n in {80, 160, 320} and signal in FA_SIGNALS
+        allowed_phases = {"development": 30, "pilot": 30, "confirmation": 400}
+    elif programme == "repeatability":
+        valid = n in {80, 160, 320} and signal in REPEATABILITY_SIGNALS
+        allowed_phases = {"development": 30, "pilot": 30, "confirmation": 400}
+    elif programme == "fa_interval":
+        valid = n == 160 and signal in FA_SIGNALS
+        allowed_phases = {"development": 30, "pilot": 30, "confirmation": 400}
+    elif programme == "boundary":
+        valid = n == 160 and signal in {"Va_zero", "Vpe_zero"}
+        allowed_phases = {"diagnostic": 200}
+    else:
+        valid, allowed_phases = False, {}
+    expected = allowed_phases.get(str(phase), 0) if valid else 0
+    if expected <= 0:
+        raise ValueError("cell is outside the frozen Arc1 allocation")
+    return expected
+
+
+def _expected_bootstrap_budget(cell: dict[str, object], outer: int) -> int:
+    phase = str(cell["phase"])
+    if phase == "development":
+        return 19
+    if phase == "confirmation":
+        return 499
+    pooled = (outer - 1) * len(FA_SIGNALS) + FA_SIGNALS.index(str(cell["signal"])) + 1
+    return 999 if pooled <= 20 else 199
+
+
+def verify_run_admission(root: Path, admission: dict[str, object], *, julia_version: str,
+                         julia_threads: int, blas_threads: int) -> None:
+    """Fail closed on protocol, source, dependency, seed, or execution drift at resume."""
+    root = root.resolve()
+    if admission.get("schema") != "arc1-run-admission-v1":
+        raise ValueError("unsupported Arc1 run admission schema")
+    if admission.get("protocol_sha256") != contract_sha256():
+        raise ValueError("Arc1 canonical protocol changed since run admission")
+    if admission.get("julia_version") != julia_version or julia_version != "1.10.0":
+        raise ValueError("Julia version differs from the admitted run")
+    if admission.get("threads") != {"julia": julia_threads, "blas": blas_threads}:
+        raise ValueError("Julia/BLAS thread counts differ from the admitted run")
+    if admission.get("thread_environment") != {"JULIA_NUM_THREADS": str(julia_threads),
+                                               "OPENBLAS_NUM_THREADS": str(blas_threads)}:
+        raise ValueError("thread environment pins disagree with the admitted Julia/BLAS counts")
+    manifest_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
+    csv_path = root / "sim/arc1/manifests/arc1_outer_seeds.csv"
+    if admission.get("seed_manifest_sha256") != _file_sha256(manifest_path) or \
+       admission.get("outer_csv_sha256") != _file_sha256(csv_path):
+        raise ValueError("seed manifest or CSV bytes changed after exhaustive admission verification")
+    verified_manifest = admission.get("manifest_verification")
+    if not isinstance(verified_manifest, dict) or \
+       verified_manifest.get("protocol_sha256") != contract_sha256() or \
+       verified_manifest.get("outer_csv_sha256") != admission.get("outer_csv_sha256"):
+        raise ValueError("admission lacks successful exhaustive seed-manifest verification")
+    environment = admission.get("environment_sha256")
+    source_hashes = admission.get("source_sha256")
+    if not isinstance(environment, dict) or not isinstance(source_hashes, dict) or \
+       environment != {name: source_hashes.get(name) for name in ("Project.toml", "Manifest.toml")}:
+        raise ValueError("environment hash mapping disagrees with pinned Project/Manifest bytes")
+    cell = admission.get("cell")
+    if not isinstance(cell, dict):
+        raise ValueError("admission lacks a pinned cell")
+    expected_count = _cell_outer_count(cell)
+    if admission.get("planned_attempts") != expected_count:
+        raise ValueError("planned attempt count differs from the frozen allocation")
+    seeds = [seed_for(str(cell["programme"]), str(cell["phase"]), int(cell["N"]),
+                      str(cell["signal"]), i, 0, "data") for i in range(1, expected_count + 1)]
+    if admission.get("expected_outer_seeds") != seeds:
+        raise ValueError("outer seed partition differs from the canonical allocation")
+    bootstrap = admission.get("expected_bootstrap_seeds")
+    expected_bootstrap: dict[str, list[int]] = {}
+    if cell.get("programme") == "fa_interval":
+        for outer in range(1, expected_count + 1):
+            budget = _expected_bootstrap_budget(cell, outer)
+            expected_bootstrap[str(outer)] = [seed_for("fa_interval", str(cell["phase"]), int(cell["N"]),
+                                                       str(cell["signal"]), outer, inner, "bootstrap")
+                                              for inner in range(1, budget + 1)]
+    if bootstrap != expected_bootstrap:
+        raise ValueError("bootstrap seed partition differs from the canonical allocation")
+    hashes = admission.get("source_sha256")
+    if not isinstance(hashes, dict) or not hashes:
+        raise ValueError("admission lacks source hashes")
+    discovered = set(discover_admission_source_paths(root))
+    if not discovered.issubset(hashes):
+        raise ValueError("admission omits dynamically discovered engine, protocol, or test sources")
+    for relative, expected_digest in hashes.items():
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root) or not path.is_file() or _file_sha256(path) != expected_digest:
+            raise ValueError(f"source or dependency bytes differ from the admitted run: {relative}")
+    validate_candidate_manifest(root)
+
+
 def fa_sign_patterns() -> list[list[int]]:
-    return [[1, *tail] for tail in itertools.product((1, -1), repeat=3)]
+    """Ordinary K1 derived-start sign order used by Julia masks 0:7."""
+    return [[1, *[(-1 if mask & (1 << bit) else 1) for bit in range(3)]]
+            for mask in range(8)]
 
 
 _INTEGER_LITERAL = re.compile(r"(?<![\w.])(?:0[xX][0-9a-fA-F]{1,16}|\d{1,20})(?![\w.])")
@@ -390,7 +663,9 @@ def nested_ranges() -> list[dict[str, object]]:
                 ranges.append({"programme": "fa_interval", "phase": phase, "N": 160,
                                "signal": signal, "outer": outer, "stream": "bootstrap",
                                "inner_start": 1, "inner_stop": 999 if endpoint else budget,
-                               "endpoint": endpoint})
+                               "endpoint": endpoint,
+                               "result_prefixes": [199, 499, 999] if endpoint else [budget],
+                               "primary_result_B": 199 if endpoint else budget})
     return ranges
 
 
@@ -429,9 +704,9 @@ def validate(root: Path | None = None) -> dict[str, object]:
             "historical_seed_audit": historical}
 
 
-def write_manifest(outdir: Path) -> dict[str, object]:
+def write_manifest(outdir: Path, *, audit_root: Path | None = None) -> dict[str, object]:
     outdir.mkdir(parents=True, exist_ok=True)
-    checked = validate()
+    checked = validate(audit_root or Path(__file__).resolve().parents[1])
     validation_counts = {key: checked[key] for key in ("unique_keys", "unique_seeds", "outer", "nested")}
     csv_path = outdir / "arc1_outer_seeds.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as stream:
@@ -477,7 +752,7 @@ def write_manifest(outdir: Path) -> dict[str, object]:
             "protocol_sha256": protocol["protocol_sha256"], "outer_csv_sha256": csv_sha}
 
 
-def verify_manifest(json_path: Path) -> dict[str, object]:
+def verify_manifest(json_path: Path, *, audit_root: Path | None = None) -> dict[str, object]:
     """Verify frozen descriptor, compact CSV, and every materialized seed."""
     manifest = json.loads(json_path.read_text(encoding="utf-8"))
     recorded_protocol_hash = manifest.get("protocol_sha256")
@@ -488,7 +763,7 @@ def verify_manifest(json_path: Path) -> dict[str, object]:
         raise ValueError("manifest schema or namespace mismatch")
     if manifest.get("nested_seed_ranges") != nested_ranges():
         raise ValueError("nested seed ranges differ from the frozen allocation")
-    current_audit = historical_seed_audit(json_path.resolve().parents[3])
+    current_audit = historical_seed_audit(audit_root or json_path.resolve().parents[3])
     if manifest.get("historical_seed_audit") != current_audit:
         raise ValueError("tracked historical seed audit paths or hashes changed")
     csv_path = json_path.parent / str(manifest.get("outer_csv"))
@@ -501,7 +776,7 @@ def verify_manifest(json_path: Path) -> dict[str, object]:
     expected_rows = list(outer_rows())
     if rows != [{key: str(value) for key, value in row.items()} for row in expected_rows]:
         raise ValueError("outer CSV rows differ from deterministic seed allocation")
-    counts = validate(json_path.resolve().parents[3])
+    counts = validate(audit_root or json_path.resolve().parents[3])
     validation_counts = {key: counts[key] for key in ("unique_keys", "unique_seeds", "outer", "nested")}
     if manifest.get("validation") != validation_counts or manifest.get("all_seed_rows_exhaustively_validated") != counts["unique_seeds"]:
         raise ValueError("manifest exhaustive seed validation counts mismatch")

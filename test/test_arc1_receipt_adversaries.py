@@ -3,15 +3,50 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
+import math
+import multiprocessing
+import os
+import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "sim" / "arc1"))
 
 import arc1_manifest
 import arc1_receipt_check as checker
+import runner as arc1_runner
+
+
+def _overlapping_store_worker(source_root, output_dir, admission, result_queue):
+    try:
+        arc1_runner.Arc1AttemptStore(Path(source_root), Path(output_dir), admission,
+                                     julia_version="1.10.0", julia_threads=4, blas_threads=1)
+    except arc1_runner.StoreBusyError:
+        result_queue.put("busy")
+    else:
+        result_queue.put("unexpectedly-acquired")
+
+
+def _dead_owner_worker(source_root, output_dir, admission):
+    store = arc1_runner.Arc1AttemptStore(Path(source_root), Path(output_dir), admission,
+                                         julia_version="1.10.0", julia_threads=4, blas_threads=1)
+    store.begin(2)
+    os._exit(0)
+
+
+def _copy_valid_source_tree(destination: Path) -> Path:
+    source = ROOT
+    for relative in ("Project.toml", "Manifest.toml", *arc1_manifest.discover_admission_source_paths(source)):
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source / relative, target)
+    arc1_manifest.write_manifest(destination / "sim/arc1/manifests", audit_root=ROOT)
+    return destination
 
 
 SOURCE_HASHES = {"engine": "a" * 64, "driver": "b" * 64}
@@ -94,6 +129,7 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
             for item in intervals.values():
                 item.update({"formed": False, "segments": [], "status": "insufficient_usable_bootstrap",
                              "refusal_status": "insufficient_usable_bootstrap"})
+        intervals = copy.deepcopy(intervals)
         attempts.append({"attempt_id": f"interval-{outer:03d}", "outer": outer, "seed": seed,
                          "status": "ok", "success": True,
                          "outer_selection": {"eligible": True, "selected_rank": "K0",
@@ -104,6 +140,9 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
                                        "inner_seed_sha256": hashlib.sha256(
                                            "".join(f"{s}\n" for s in inner_seeds).encode("ascii")).hexdigest(),
                                        "usable_inner": usable, "intervals": intervals,
+                                       "prefix_results": [{"B": B, "usable_inner": usable,
+                                                           "usable_fraction": usable / B,
+                                                           "intervals": copy.deepcopy(intervals)}],
                                        "method": "candidate_percentile_bootstrap",
                                        "quantiles": [0.025, 0.975]}})
     receipt = {"schema": "arc1-attempt-receipt-v1", **INTERVAL_CELL,
@@ -129,6 +168,141 @@ def verify(receipt: dict, *, cell: dict | None = None, seeds: list[int] | None =
 
 
 class Arc1ReceiptAdversaries(unittest.TestCase):
+    def test_canonical_seed_vectors_are_pinned(self):
+        self.assertEqual(arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, 0, "data"),
+                         5356929701607681179)
+        self.assertEqual(arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, 1, "bootstrap"),
+                         7620720963701940051)
+        self.assertEqual(arc1_manifest.seed_for("repeatability", "confirmation", 320,
+                                                "near_zero_additive", 400, 0, "data"),
+                         18307736988284808080)
+
+    def test_ordinary_fa_derived_start_order_matches_julia_mask_schedule(self):
+        ordinary = arc1_manifest.SCIENTIFIC_CONTRACT["fa_optimizer"]["ordinary"]
+        expected = [[1] + [-1 if mask & (1 << bit) else 1 for bit in range(3)]
+                    for mask in range(8)]
+        self.assertEqual(ordinary["derived_signs"], expected)
+        self.assertEqual(ordinary["derived_start_order"],
+                         "amplitude-major a=(0.1,0.7), then mask=0:7; mask bit 0 flips trait 2")
+        self.assertEqual(arc1_manifest.SCIENTIFIC_CONTRACT["fa_optimizer"]["expanded_reference"]
+                         ["top_finite_solutions_scope"], "per rank, independently for K0 and K1")
+
+    def test_endpoint_manifest_keeps_199_primary_and_499_999_stability_prefixes(self):
+        specs = {(row["phase"], row["signal"], row["outer"]): row
+                 for row in arc1_manifest.nested_ranges()}
+        first = specs[("pilot", "null", 1)]
+        twentieth = specs[("pilot", "strong", 6)]
+        outside = specs[("pilot", "strong", 7)]
+        self.assertEqual(first["inner_stop"], 999)
+        self.assertEqual(first["result_prefixes"], [199, 499, 999])
+        self.assertEqual(first["primary_result_B"], 199)
+        self.assertEqual(twentieth["primary_result_B"], 199)
+        self.assertEqual(outside["inner_stop"], 199)
+        self.assertEqual(outside["result_prefixes"], [199])
+
+    def test_run_admission_pins_exact_sources_environment_seeds_and_threads(self):
+        with tempfile.TemporaryDirectory(prefix="arc1-valid-admission-") as temp:
+            root = _copy_valid_source_tree(Path(temp) / "source")
+            cell = {"programme": "fa_interval", "phase": "pilot", "N": 160, "signal": "null"}
+            admission = arc1_manifest.build_run_admission(
+                root, cell, source_paths=["sim/arc1/independent_dgp.jl", "tools/arc1_manifest.py",
+                                          "tools/arc1_receipt_check.py"],
+                julia_version="1.10.0", julia_threads=4, blas_threads=1, manifest_audit_root=ROOT)
+            arc1_manifest.verify_run_admission(root, admission, julia_version="1.10.0",
+                                               julia_threads=4, blas_threads=1)
+            altered = copy.deepcopy(admission)
+            altered["source_sha256"]["tools/arc1_manifest.py"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "source or dependency bytes"):
+                arc1_manifest.verify_run_admission(root, altered, julia_version="1.10.0",
+                                                   julia_threads=4, blas_threads=1)
+            with self.assertRaisesRegex(ValueError, "thread counts"):
+                arc1_manifest.verify_run_admission(root, admission, julia_version="1.10.0",
+                                                   julia_threads=8, blas_threads=1)
+            altered = copy.deepcopy(admission)
+            altered["expected_bootstrap_seeds"]["1"].pop()
+            with self.assertRaisesRegex(ValueError, "bootstrap seed partition"):
+                arc1_manifest.verify_run_admission(root, altered, julia_version="1.10.0",
+                                                   julia_threads=4, blas_threads=1)
+            csv_path = root / "sim/arc1/manifests/arc1_outer_seeds.csv"
+            csv_path.write_text(csv_path.read_text().replace("5356929701607681179", "5356929701607681178", 1))
+            json_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
+            descriptor = json.loads(json_path.read_text())
+            descriptor["outer_csv_sha256"] = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+            json_path.write_text(json.dumps(descriptor, sort_keys=True, indent=2) + "\n")
+            with self.assertRaisesRegex(ValueError, "outer CSV rows differ"):
+                arc1_manifest.build_run_admission(
+                    root, cell, source_paths=[], julia_version="1.10.0", julia_threads=4,
+                    blas_threads=1, manifest_audit_root=ROOT)
+        with self.assertRaisesRegex(ValueError, "candidate seed manifest is stale"):
+            arc1_manifest.validate_candidate_manifest(ROOT)
+
+    def test_attempt_store_writes_once_and_turns_dangling_start_into_interruption(self):
+        with tempfile.TemporaryDirectory(prefix="arc1-attempt-store-") as temp:
+            temp_root = Path(temp)
+            root = _copy_valid_source_tree(temp_root / "source")
+            cell = {"programme": "fa_rank", "phase": "development", "N": 80, "signal": "null"}
+            admission = arc1_manifest.build_run_admission(
+                root, cell, source_paths=["sim/arc1/runner.py", "sim/arc1/independent_dgp.jl",
+                                          "tools/arc1_manifest.py", "tools/arc1_receipt_check.py"],
+                julia_version="1.10.0", julia_threads=4, blas_threads=1,
+                manifest_audit_root=ROOT)
+            output_dir = arc1_runner.cell_output_dir(temp_root / "results", cell)
+            store = arc1_runner.Arc1AttemptStore(root, output_dir, admission, julia_version="1.10.0",
+                                                 julia_threads=4, blas_threads=1)
+            store.begin(1)
+            progress = store.rows()
+            self.assertEqual(progress[0]["status"], "started")
+            self.assertFalse(store._path(1, "result").exists())
+
+            context = multiprocessing.get_context("spawn")
+            queue = context.Queue()
+            other = context.Process(target=_overlapping_store_worker,
+                                    args=(str(root), str(output_dir), admission, queue))
+            other.start()
+            other.join(timeout=30)
+            self.assertEqual(other.exitcode, 0)
+            self.assertEqual(queue.get(timeout=2), "busy")
+
+            engine_sources = {path: digest for path, digest in admission["source_sha256"].items()
+                              if path.startswith("src/")}
+            identity = {"engine_package_uuid": "a0667dea-0f38-44e8-9150-4fda00624eac",
+                        "engine_module_path": str(root.resolve() / "src/HSquared.jl"),
+                        "loaded_module_names": ["HSquared"],
+                        "loaded_engine_source_sha256": engine_sources,
+                        "source_sha256_at_load": engine_sources,
+                        "source_sha256_after_load": engine_sources,
+                        "environment_sha256": admission["environment_sha256"],
+                        "active_project": str(root.resolve() / "Project.toml"),
+                        "loaded_dependencies": [], "dependency_environment_verified": True,
+                        "julia_version": "1.10.0", "julia_threads": 4,
+                        "blas_runtime_threads": 1, "blas_vendor": "test-vendor",
+                        "thread_environment": admission["thread_environment"]}
+            completed = store.finish(1, {"status": "ok", "success": True,
+                                         "observed_seed": admission["expected_outer_seeds"][0],
+                                         "execution_identity": identity})
+            self.assertEqual(completed["status"], "ok")
+            store.close()
+
+            dead = context.Process(target=_dead_owner_worker,
+                                   args=(str(root), str(output_dir), admission))
+            dead.start()
+            dead.join(timeout=30)
+            self.assertEqual(dead.exitcode, 0)
+            resumed = arc1_runner.Arc1AttemptStore(root, output_dir, admission, julia_version="1.10.0",
+                                                   julia_threads=4, blas_threads=1)
+            progress = resumed.rows()
+            self.assertEqual(progress[1]["status"], "started")
+            self.assertFalse(resumed._path(2, "result").exists())
+            interrupted_rows = resumed.recover_orphans()
+            self.assertEqual(len(interrupted_rows), 1)
+            self.assertEqual(interrupted_rows[0]["status"], "interrupted")
+            self.assertEqual(resumed.rows()[1]["status"], "interrupted")
+            errored = arc1_runner.execute_one(resumed, 3,
+                lambda *_: (_ for _ in ()).throw(RuntimeError("fit failed")))
+            self.assertEqual(errored["status"], "error")
+            self.assertIn("fit failed", errored["failure_reason"])
+            resumed.close()
+
     def test_valid_full_cell_receipt_counts_failed_candidate_in_all_attempt_denominator(self):
         receipt, seeds = rank_receipt()
         result = verify(receipt, seeds=seeds)
@@ -228,6 +402,97 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         self.assertEqual(result["bootstrap"]["fixed_B"], [19])
         self.assertEqual(result["bootstrap"]["refused_before_start"], 0)
         self.assertEqual(result["interval_targets"]["h2_1"]["formation_denominator"], 30)
+
+    def test_pilot_199_failure_is_not_replaced_by_formed_999_extension(self):
+        # First pooled round-robin pilot endpoint: retain 999 seeds, but the
+        # primary pilot interval must use the first 199 and fail 99% usability.
+        cell = {"programme": "fa_interval", "phase": "pilot", "N": 160, "signal": "null"}
+        seeds = [arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, i, "bootstrap")
+                 for i in range(1, 1000)]
+        rows = []
+        for i, seed in enumerate(seeds, 1):
+            failed = i <= 3
+            rows.append({"inner_index": i, "seed": seed,
+                         "status": "fit_failed" if failed else "ok", "success": not failed,
+                         "failure_reason": "synthetic retained failure" if failed else None,
+                         "eligible": not failed, "selected_rank": "K0" if not failed else None,
+                         "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1", not failed)},
+                         "selected_fit": None if failed else {"G_diag": [0.25] * 4, "R_diag": [0.25] * 4}})
+
+        def prefix_result(b):
+            usable_rows = [row for row in rows[:b] if row["success"]]
+            values = [row["selected_fit"]["G_diag"][0] /
+                      (row["selected_fit"]["G_diag"][0] + row["selected_fit"]["R_diag"][0])
+                      for row in usable_rows]
+            formed = len(usable_rows) >= math.ceil(0.99 * b)
+            intervals = {}
+            for trait in range(1, 5):
+                item = {"formed": formed, "segments": [[0.5, 0.5]] if formed else [],
+                        "formula": f"G_{trait}{trait}/(G_{trait}{trait}+R_{trait}{trait})",
+                        "status": "formed" if formed else "insufficient_usable_bootstrap"}
+                if not formed:
+                    item["refusal_status"] = "insufficient_usable_bootstrap"
+                else:
+                    vals = [r["selected_fit"]["G_diag"][trait - 1] /
+                            (r["selected_fit"]["G_diag"][trait - 1] + r["selected_fit"]["R_diag"][trait - 1])
+                            for r in usable_rows]
+                    item["segments"] = [[checker._type7_quantile(vals, 0.025),
+                                          checker._type7_quantile(vals, 0.975)]]
+                intervals[f"h2_{trait}"] = item
+            return {"B": b, "usable_inner": len(usable_rows), "usable_fraction": len(usable_rows) / b,
+                    "intervals": intervals}
+
+        primary = prefix_result(199)
+        self.assertFalse(primary["intervals"]["h2_1"]["formed"])
+        self.assertTrue(prefix_result(999)["intervals"]["h2_1"]["formed"])
+        attempt = {"outer": 1, "success": True,
+                   "outer_selection": {"eligible": True, "selected_rank": "K0",
+                                       "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1")}},
+                   "bootstrap": {"stage": "started", "requested_B": 199,
+                                 "inner_attempts": rows, "usable_inner": 196,
+                                 "inner_seed_sha256": hashlib.sha256("".join(f"{s}\n" for s in seeds).encode("ascii")).hexdigest(),
+                                 "intervals": primary["intervals"],
+                                 "prefix_results": [prefix_result(b) for b in (199, 499, 999)],
+                                 "method": "candidate_percentile_bootstrap", "quantiles": [0.025, 0.975]}}
+        result = checker._check_bootstrap(attempt, cell, seeds)
+        self.assertEqual(result["usable_inner"], 196)
+        self.assertEqual(result["usable_denominator"], 199)
+        self.assertEqual(result["prefix_B"], [199, 499, 999])
+
+    def test_pilot_primary_interval_cannot_diverge_from_199_prefix_record(self):
+        cell = {"programme": "fa_interval", "phase": "pilot", "N": 160, "signal": "null"}
+        seeds = [arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, i, "bootstrap")
+                 for i in range(1, 1000)]
+        receipt, _, _ = interval_attempts()
+        attempt = receipt["attempts"][0]
+        attempt["outer"] = 1
+        boot = attempt["bootstrap"]
+        # Rebuild this tiny fixture's B=19 rows into the externally pinned 999 stream;
+        # this adversary targets only the primary/prefix equality condition.
+        boot["requested_B"] = 199
+        original_rows = boot["inner_attempts"]
+        boot["inner_attempts"] = ([copy.deepcopy(row) for _ in range(52) for row in original_rows] +
+                                   [copy.deepcopy(row) for row in original_rows[:11]])
+        for i, row in enumerate(boot["inner_attempts"], 1):
+            row["inner_index"] = i
+            row["seed"] = seeds[i - 1]
+        boot["usable_inner"] = sum(row["success"] for row in boot["inner_attempts"][:199])
+        boot["inner_seed_sha256"] = hashlib.sha256("".join(f"{s}\n" for s in seeds).encode("ascii")).hexdigest()
+        primary = copy.deepcopy(boot["intervals"])
+        for item in primary.values():
+            item.update({"formed": False, "segments": [], "status": "insufficient_usable_bootstrap",
+                         "refusal_status": "insufficient_usable_bootstrap"})
+        boot["intervals"] = copy.deepcopy(primary)
+        boot["prefix_results"] = []
+        for b in (199, 499, 999):
+            usable = sum(row["success"] for row in boot["inner_attempts"][:b])
+            intervals = copy.deepcopy(primary)
+            if b == 199:
+                intervals["h2_1"]["refusal_status"] = "unresolved_evaluation"
+            boot["prefix_results"].append({"B": b, "usable_inner": usable,
+                                            "usable_fraction": usable / b, "intervals": intervals})
+        with self.assertRaisesRegex(checker.ReceiptError, "must equal the first"):
+            checker._check_bootstrap(attempt, cell, seeds)
 
     def test_bootstrap_rejects_dropped_failed_inner_and_false_usable_count(self):
         receipt, seeds, inner = interval_attempts()
