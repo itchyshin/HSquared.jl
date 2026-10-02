@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-10-02T15:38:17.540046+00:00",
+  "scope": "deterministic objective cores only; full Arc1 gates pending",
+  "fa_leaf": "G1-FA-objective:G1_FA",
+  "fa_assertions": 70,
+  "fa_exit": 0,
+  "fa_marker": "ARC1_OBJECTIVES_PASS",
+  "profile_assertions": 29,
+  "profile_exit": 0,
+  "source_sha256": {
+    "src/arc1_fa.jl": "a3d1d76296d44a1fe4df2e28420d86136f1bdb83eb4de38d1190f31b8011dc3e",
+    "test/arc1_exact_objectives.jl": "ec21e00d21c6d800b27f358215a3e04bf9edee4d373e0e65fbe0a06ddfe95b32",
+    "src/arc1_profiles.jl": "7d65b19be9bf5c72d55ce637d7e159c1e1c485fda7befeeada15a094d3d41250",
+    "test/arc1_profiles.jl": "749758f60f52d7a6820a4493481524c8eb40d127b6d4d5d1e34a348d8a0f7e93"
+  },
+  "independent_review": "Astra reviewed exact formula and parameter chain; negative canonicalization pivot regression added. Repeatability cancellation fixed with large-mean regression.",
+  "protected_julia_hashes_match": true
+}
