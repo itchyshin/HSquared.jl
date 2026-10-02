@@ -1,15 +1,15 @@
 # Automatic FA rank: planned versus actual work
 
-Status: repair and verification in progress. This receipt-based reconciliation covers the original paired programme; final acceptance remains open. The raw v2 reviews and routing receipts are preserved in `docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/review-v2-receipts.json`.
+Status: final repaired-source verification and closeout in progress. This receipt-based reconciliation covers the original paired programme; final acceptance remains open. The raw v2 reviews and routing receipts are preserved in `docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/review-v2-receipts.json`.
 
 | Axis | Evidence and decision | Classification and owner |
 | --- | --- | --- |
-| Scope | Julia T4 Gaussian pedigree K0/K1 mechanics and the explicit R expert route remain the deliverable. Larger ranks, new providers, recovery campaigns and releases stay deferred. The 5 a.m. deadline changes the work window. | Within plan; Ada owns scope. |
-| Verification | Earlier focused and full checks passed at the archived source pins. The independent numerical and evidence reviews found a failed-score defect and missing required negative controls. Runnable gates are reopened for repaired-source replay. | Drift identified; engine and test producers are repairing it. |
+| Scope | Julia T4 Gaussian pedigree K0/K1 mechanics and the explicit R expert route remain the deliverable. Larger ranks, new providers, recovery campaigns and releases stay deferred. The 5 a.m. deadline was honored, then the human extended work until all passes. | Within plan; Ada owns scope. |
+| Verification | Earlier focused and full checks passed at the archived source pins. The independent numerical and evidence reviews found a failed-score defect and missing required negative controls. The repaired-source V7 root replay passes all six runnable gates. | Adaptive repairs completed; six V7 technical gates and three review lenses pass. |
 | Model routing | Sol high reviewed numerics; Luna medium reviewed the bridge and evidence. A separate Luna medium mechanical audit passed file and command integrity. All V2/V3 CLI dispatches completed with exit zero; their judgments can still be HOLD. Final V4 launches were rejected before execution. | Within plan. |
 | Safety | The old CLI rejected all three model routes. The bundled CLI passed a compatibility probe, and its bounded source panel ran only after explicit human payload approval. One Julia and one BLAS thread cap numerical checks; protected configuration and original R files remain outside staging. | Adaptive CLI repair and approval delay; no bypass. |
 | Claims | Public covered count remains seven. Both ordinary witnesses selected K0. Controlled selected-K1 transport exercises a real eligible fit, without proving ordinary optimizer-driven K1 selection or reliability. | Limits retained; Rose owns claim review. |
-| Handoff | Local code and evidence commits preserve both twins. The durable goal now records source approval and the October 2, 5 a.m. Edmonton deadline. The final report and handover will be synchronized after repaired checks and review. | Pending closeout; Rose owns handoff. |
+| Handoff | Local code and evidence commits preserve both twins. The durable goal records accepted source approval, the honored deadline and the later explicit extension. The final report and handover will be synchronized after repaired checks and review. | Pending closeout; Rose owns handoff. |
 
 ## Mechanical audit adjudication
 
@@ -42,3 +42,15 @@ V4 root replay passed all six technical gates, with a retained log interval of 7
 Affected V5 G1/G5 replay passed. All six technical gates now have successful receipts for the final candidate or unchanged exact component sources, declared in `root-replay-v5-result.json`. Final G7/G8 acceptance remains open. Final full report validation is required before closure, and its acceptance status cannot be called green while those gates remain pending.
 
 The global account-wide October 1 routing audit fails the composition rule across all sessions; the raw result is preserved. Owned V2/V3 panel manifests prove the planned two-Luna/one-Sol composition with correct efforts, while native producers were two Luna and one Sol. October 2 UTC retained CLI routes are five Luna and two Sol. This boundary prevents an unrelated global failure from being concealed or misreported as a programme-specific route change. No final V5 dispatch or usage is invented.
+
+## O1 conformance repair and resumed V7 panel
+
+The source-transfer approval was accepted and the original V5 numerical review completed PASS before the 5 a.m. deadline. The bridge job was stopped at that deadline and evidence had not started. The human then extended work until all gates pass. Missing fresh V6 jobs returned bridge PASS and evidence HOLD for the O1 real-comparator negative control. The required obligation was repaired, not deferred.
+
+The independent matched/no-floor dense scores and production comparator controls raise focused acceptance to 249/13. The parent parsed the exact log; source/test candidate is 3ef362b1 with unchanged engine/R. A fresh exactly-three V7 panel accepted all assigned lenses at the new eighteen pins. This panel responds to a substantive missing test control; the earlier deadline resumption preserves partial launches separately from completed judgments.
+
+Classification: scope and public claims stay within plan; verification strengthening is adaptive after identified evidence drift; the accepted explicit source permission and later work-window extension resolve the safety/time boundaries; model routing remains one Sol-high numerical plus two Luna-medium completion reviewers; handoff and final mechanical audit are pending. The original 450-minute estimate is not filled with unrelated work, and elapsed wall time includes overnight approval waits. No active-engineering or billing inference is made from account telemetry.
+
+## Final technical replay and closeout control
+
+The terminal V7 root replay passes all six technical gates; R check has zero errors, warnings and notes. G7 is accepted from the three current V7 PASS judgments, independently source-pinned. The separate final mechanical/reconciliation CLI launch was rejected by automatic approval review for unclear specific payload/destination authorization. No job ran or workaround was used. The parent asked explicitly for that one read-only audit and continues local closeout work. G8 remains open until final reconciliation, local documentation commits and mandatory full report acceptance are proved.

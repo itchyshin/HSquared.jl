@@ -1,4 +1,8 @@
+Current V7 closeout: technical root terminated, G1-G6 PASS; G7 accepted from all three exact-current V7 PASS judgments. All eighteen source pins and 39 protected R dirty statuses/hashes match. G8 reconciliation, full report validation and local documentation commits remain open. One final external mechanical audit was rejected; explicit scoped authorization is pending. Preserve all earlier states below as historical.
+
 # Checkpoint
+
+LATEST: the human extended work until all gates pass. O1 comparator test repair is committed at 3ef362b1, focused 249/13 independently parsed. Fresh V7 numerical/bridge/evidence all PASS, eighteen pins match; core engine/R unchanged. Full paired root replay and G8 mechanical/reconciliation/report validation remain pending. This update supersedes earlier deadline/approval-wait status below.
 
 ## October 2, 5 a.m. Edmonton checkpoint
 

@@ -13,3 +13,7 @@ Finish only after all required gates in `.unlazy/auto-fa-rank-implementation-202
 ## Overnight continuation
 
 Shinichi approved the pending source-review payload and autonomous work until 2026-10-02 05:00 America/Edmonton (11:00 UTC). Complete the original programme within that window; at the deadline, checkpoint any remaining work and provide the handoff. A one-time 5 a.m. chat handoff is scheduled as automation hsquared-5-a-m-handoff. The time window does not expand ranks, providers or capability claims.
+
+## Authorized resumption on October 2
+
+The human instructed "contiune till all passes", extending the earlier 5 a.m. work window until all original eight acceptance gates pass. The accepted source-review approval remains valid. The stopped deadline batch is preserved and its guard is terminal; do not restart that guard. Complete the original paired programme, fix accepted findings, finish independent review and final validation, and retain all deferred scope.

@@ -1,0 +1,76 @@
+{
+  "utc": "2026-10-02T11:43:37.011342+00:00",
+  "source_test_sha256": "c51b440aed4c392679559e47a8e8095cbdef02c2e79056214d6fde54e6da198d",
+  "log_sha256": "043e135dcefab922becf731830f1748f915bb84f479e3b199eb823c305ba4248",
+  "passes": 249,
+  "testsets": 13,
+  "rows": [
+    {
+      "testset": "automatic FA independent ordering and confounding witnesses",
+      "passes": 5,
+      "total": 5
+    },
+    {
+      "testset": "automatic FA production selector preserves animal and trait order",
+      "passes": 23,
+      "total": 23
+    },
+    {
+      "testset": "automatic FA selector dense REML and criterion contract",
+      "passes": 18,
+      "total": 18
+    },
+    {
+      "testset": "automatic FA matched floor and injected failure ledger",
+      "passes": 39,
+      "total": 39
+    },
+    {
+      "testset": "automatic FA rejects corrupted optimizer receipts",
+      "passes": 28,
+      "total": 28
+    },
+    {
+      "testset": "automatic FA selected K1 fit uses same-covariance dense objective",
+      "passes": 13,
+      "total": 13
+    },
+    {
+      "testset": "automatic FA refuses non-PD covariance receipts and sole survivor",
+      "passes": 17,
+      "total": 17
+    },
+    {
+      "testset": "automatic FA near-floor flags and persistent non-nesting refusal",
+      "passes": 21,
+      "total": 21
+    },
+    {
+      "testset": "automatic FA bounded retry and interrupt ledger",
+      "passes": 19,
+      "total": 19
+    },
+    {
+      "testset": "automatic FA better-unconverged retry trigger and bounded refusal",
+      "passes": 7,
+      "total": 7
+    },
+    {
+      "testset": "automatic FA interruption at each initial and retry start",
+      "passes": 28,
+      "total": 28
+    },
+    {
+      "testset": "automatic FA rejects forbidden data and confounded pedigree designs",
+      "passes": 23,
+      "total": 23
+    },
+    {
+      "testset": "automatic FA selector public shape and refusal contract",
+      "passes": 8,
+      "total": 8
+    }
+  ],
+  "parent_independently_parsed": true,
+  "scope": "Focused acceptance only; full Julia G5 and final review still pending"
+}

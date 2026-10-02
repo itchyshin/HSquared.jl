@@ -12,7 +12,7 @@ Scope: complete approved bounded experimental Julia/R implementation; no reliabi
 - [x] G2: Established fixed-rank regressions remain compatible.
   CHECK: env JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using HSquared, Test, LinearAlgebra, SparseArrays; include("test/test_multivariate_fa_multistart.jl"); include("test/multivariate_contract_regression.jl"); println("AUTO_FA_FIXED_COMPATIBILITY_PASS")'
   EXPECT: AUTO_FA_FIXED_COMPATIBILITY_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=692d5958748b/8 entries; output=Multivariate bounded contracts |  107    107  4.0s | AUTO_FA_FIXED_COMPATIBILITY_PASS
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=692d5958748b/8 entries; output=Multivariate bounded contracts |  107    107  4.3s | AUTO_FA_FIXED_COMPATIBILITY_PASS
 
 - [x] G3: R expert-control and complete object/transport tests pass.
   CHECK: env PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 Rscript -e 'devtools::test(filter="auto-fa-rank", stop_on_failure=TRUE); cat("AUTO_FA_R_ACCEPTANCE_PASS\n")'
@@ -29,7 +29,7 @@ Scope: complete approved bounded experimental Julia/R implementation; no reliabi
 - [x] G5: Current Julia full package tests pass.
   CHECK: env JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using Pkg; Pkg.test(); println("AUTO_FA_JULIA_FULL_PASS")'
   EXPECT: AUTO_FA_JULIA_FULL_PASS
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=692d5958748b/8 entries; output=PCG verifies true residual before stopping |   31     31  0.8s | Testing HSquared tests passed
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; path=692d5958748b/8 entries; output=PCG verifies true residual before stopping |   31     31  0.9s | Testing HSquared tests passed
 
 - [x] G6: R package check has no errors or warnings.
   CHECK: env PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 HSQUARED_JULIA_PROJECT=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl Rscript -e 'x <- devtools::check(document=FALSE, cran=FALSE, error_on="never", check_dir="/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/r-package-check"); dput(list(errors=x$errors, warnings=x$warnings, notes=x$notes), file="/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/r-package-check-result.R"); stopifnot(length(x$errors)==0L, length(x$warnings)==0L); cat("AUTO_FA_R_FULL_PASS\n")'
@@ -37,8 +37,10 @@ Scope: complete approved bounded experimental Julia/R implementation; no reliabi
   EXPECT: AUTO_FA_R_FULL_PASS
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/private/tmp/hsquared-auto-fa-r-20261001; path=692d5958748b/8 entries; output=running command ''quarto' -V' had status 1 | AUTO_FA_R_FULL_PASS
 
-- [ ] G7: Fresh independent numerical, bridge and claim reviewers accept the exact current sources.
-  EVIDENCE: V5 numerical PASS; bridge interrupted at the 5 a.m. deadline, evidence unstarted. See source-review-deadline-v5-receipts.json. Whole-panel acceptance remains pending.
+- [x] G7: Fresh independent numerical, bridge and claim reviewers accept the exact current sources.
+  EVIDENCE: Fresh V7 numerical, bridge and evidence reviewers each returned PASS on Julia 3ef362b1 / R source 2108c0d with all eighteen source pins matched. Terminal raw judgments and events are retained in review-v7-receipts.json; O1 repair and earlier HOLD receipts remain preserved.
 
 - [ ] G8: Documentation, capability/debt boundaries, after-task validation, source-pinned receipts, local commits and final replay are complete.
   EVIDENCE: pending
+
+Reopened G1 and G5 for the O1 independent-comparator test repair; earlier success receipts remain archived. The user extended work until all original gates pass.
