@@ -1,0 +1,12 @@
+[
+  {
+    "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+    "branch": "codex/h2-v3-refresh-auto-rank-plan-20261001",
+    "source_candidate_commit": "61a9f82d4b309afc26464cacd1cdfcebcc1da489"
+  },
+  {
+    "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+    "branch": "codex/auto-fa-rank-implementation-20261001",
+    "source_candidate_commit": "ab7aedc6625f8586b643365f446bb44025c53a46"
+  }
+]

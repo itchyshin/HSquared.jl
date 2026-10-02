@@ -1,0 +1,13 @@
+{
+  "recorded_files": 39,
+  "recorded_file_hashes_match": true,
+  "recorded_statuses_match": true,
+  "status_hash_match": false,
+  "additional_short_status_paths": [
+    "docs/dev-log/inbox/",
+    "graft/",
+    "tests/graft/"
+  ],
+  "branch": "codex/2026-07-13-v07-performance-localization",
+  "head": "f5c0d46bdb2ae3c2dfb2cc932883610d88f67f77"
+}
