@@ -28,12 +28,14 @@ FINDINGS-OF-RECORD: none. This checkpoint preserves implementation evidence with
 
 G1-G6 have passing child execution receipts. G7 requires a fresh Sol-high numerical reviewer plus Luna-medium bridge and claim reviewers. G8 requires final current-root replay and full report acceptance. Child approval records bind their own paths; consolidated checkboxes do not imply a completed root re-execution.
 
-The shared handoff gate exits 1 for local-only/unlanded state and two historical ledgers. Those are the design leaf and old root FA/GLLVM packet, with source checks tied to earlier milestones. Preserve their receipts and explicitly scope or archive them at final G8 closeout. Do not remove any of the eight live implementation requirements.
+The earlier shared handoff gate exited 1 for local-only/unlanded state and two historical ledgers. That run checked the design leaf and old root FA/GLLVM packet against the later source, although their checks were tied to earlier milestones. Their receipts are now preserved in a hashed historical archive, and the active eight-gate ledger is indexed from the repository root. Do not remove any of the eight live implementation requirements.
 
 The ordinary n8 fixture selects K0 at 10000 iterations, with unavailable selection at default 2000; the single frozen n16 strong-factor fixture also selects K0. K1 serialization uses a controlled winner override around an actual eligible K1 fit. Ordinary K1 selection and selection reliability remain unverified. Covered count stays seven. No campaign, external comparator conclusion, broader ranks/designs, selection-adjusted inference, default activation, promotion, release, tag, registry, GPU or publication is authorized.
 
 ## Next action
 
-After explicit payload authorization, use the bundled Codex CLI 0.159.2 and prepared completion-plan-v2.tsv, sequentially, with read-only reviewers and exact source pins. Repair actual findings and replay affected checks. Resolve historical ledger scoping, replay the current root, validate both reports, then mark the app goal complete only when all eight requirements pass. The entire paired programme remains the stopping condition.
+After explicit payload authorization, use the bundled Codex CLI 0.159.2 and prepared completion-plan-v2.tsv, sequentially, with read-only reviewers and exact source pins. Repair actual findings and replay affected checks. Replay the canonical current ledger, validate both reports, then mark the app goal complete only when all eight requirements pass. The entire paired programme remains the stopping condition.
 
 Read LOOP/lanes/auto-fa-rank-implementation-20261001/GOAL.md, ultra-plan.md, checkpoint.md, the frozen contract and retained implementation receipts first. Recheck branch/HEAD and the registered leases before edits. Numerical producer was GPT-6 Sol high; R and test producers were GPT-6 Luna medium. No fresh completion reviewer has yet accepted these candidates.
+
+Continuation: historical scoping and consolidated CHECK syntax are repaired and verified. The six commands byte-match their passing child commands; prior malformed R command copies fail the negative syntax control. All 17 source/test/help pins remain unchanged. The source-review payload question is still unanswered, so G7 and final G8 acceptance remain open.

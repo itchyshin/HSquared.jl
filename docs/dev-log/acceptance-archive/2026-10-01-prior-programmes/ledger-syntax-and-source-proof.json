@@ -1,0 +1,45 @@
+{
+  "current_commands": {
+    "G1": {
+      "shell_parse_exit": 0,
+      "command_sha256": "1cbbd26c72b9b391622b775f3e0d9531ae4ea7c91976cf10c4935222ac6cd3e6"
+    },
+    "G2": {
+      "shell_parse_exit": 0,
+      "command_sha256": "188dfe48383d5c924b764ebcc2ccde8c093eb39b33721b37bb9469632022c368"
+    },
+    "G3": {
+      "shell_parse_exit": 0,
+      "command_sha256": "ae5d07d4c5940e501050e756ba01ba99f6c0a66d100fd22187ac1bfc14bfb33a"
+    },
+    "G4": {
+      "shell_parse_exit": 0,
+      "command_sha256": "549f2533a4f6df2474b2e2e92e2d4a41c76cfe487800d7f9493701ab2ff0ed71"
+    },
+    "G5": {
+      "shell_parse_exit": 0,
+      "command_sha256": "6f9ab92af7bcef338e249a6dd98ea81f34ca53b96ba41b8d088d9ad5e84b6721"
+    },
+    "G6": {
+      "shell_parse_exit": 0,
+      "command_sha256": "1a118b66240f895b8adfdac5bf86b1aa20eb839d06c5fbbecb284e0c1a1ba054"
+    }
+  },
+  "prior_malformed_copy_negative_control": {
+    "G3": {
+      "shell_parse_exit": 2,
+      "diagnostic": "/bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file"
+    },
+    "G4": {
+      "shell_parse_exit": 2,
+      "diagnostic": "/bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file"
+    },
+    "G6": {
+      "shell_parse_exit": 2,
+      "diagnostic": "/bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file"
+    }
+  },
+  "source_test_help_pins_unchanged": true,
+  "all_six_commands_match_passing_child_commands": true,
+  "all_historical_archive_hashes_match": true
+}
