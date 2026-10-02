@@ -38,7 +38,7 @@ Scope: complete approved bounded experimental Julia/R implementation; no reliabi
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/private/tmp/hsquared-auto-fa-r-20261001; path=692d5958748b/8 entries; output=running command ''quarto' -V' had status 1 | AUTO_FA_R_FULL_PASS
 
 - [ ] G7: Fresh independent numerical, bridge and claim reviewers accept the exact current sources.
-  EVIDENCE: pending
+  EVIDENCE: V5 numerical PASS; bridge interrupted at the 5 a.m. deadline, evidence unstarted. See source-review-deadline-v5-receipts.json. Whole-panel acceptance remains pending.
 
 - [ ] G8: Documentation, capability/debt boundaries, after-task validation, source-pinned receipts, local commits and final replay are complete.
   EVIDENCE: pending

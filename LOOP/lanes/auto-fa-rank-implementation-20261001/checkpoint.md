@@ -1,5 +1,15 @@
 # Checkpoint
 
+## October 2, 5 a.m. Edmonton checkpoint
+
+The new explicit human source-review approval was accepted. Final V5 review launched through the bundled Codex CLI at 4:51 a.m. Edmonton. The Sol high numerical reviewer completed PASS, independently matching all eighteen source pins and confirming 236 assertions across thirteen testsets. It found no blocking numerical source defect or missing required numerical control. The Luna medium bridge reviewer started but returned no final judgment before the deadline; the evidence reviewer had not started. The verified owned review process group was stopped at exactly 5 a.m. Edmonton, and the launcher terminated exit 143. No owned review or numerical process remains running.
+
+G1-G6 remain met; G7 and G8 remain open. The prior approval rejection is resolved, but completion of the source reviews and final programme acceptance are unproved. Sources and tests are unchanged. The deadline receipt preserves the completed numerical report, its terminal event and the partial bridge event stream losslessly. Ordinary optimizer-driven K1 selection, reliability, recovery and selection-adjusted inference remain untested; public covered count stays seven.
+
+The authorized overnight work window has ended. A question about extending the work window is pending. On an approved resumption, preserve V5 receipts, finish fresh bridge and evidence reviews using new output paths, then reconcile G7 and complete the required G8 validation. Do not overwrite or rerun the completed numerical judgment merely because the batch ended before writing its combined receipt. If a finding requires source changes, reopen the affected acceptance and independent review obligations. No release, push, registry action, campaign or capability promotion is authorized.
+
+Historical checkpoint follows; its pending source-approval language is superseded by the update above.
+
 STATE: full paired programme active under final verification. Final V5 focused Julia acceptance passes 236 assertions across thirteen testsets. V4 G1-G6 root replay and affected V5 G1/G5 replay passed; all six technical gates are met. Required full after-task validation terminated exit 1: structure passed and all six technical gates remain met after actual re-verification, but original G7/G8 are open. No owned numerical process remains running. G7/G8 remain open. All eight original requirements remain intact.
 
 Julia branch: codex/h2-v3-refresh-auto-rank-plan-20261001. Final test candidate 45ae9216 includes engine repair 526c85b7. R branch: codex/auto-fa-rank-implementation-20261001 in /private/tmp/hsquared-auto-fa-r-20261001, repair candidate 2108c0d. Earlier source commits 61a9f82d and ab7aedc remain in history with their original receipts. Protected original R remains outside ownership; all 39 recorded dirty hashes/statuses match, while additional untracked directories remain separately disclosed. Julia configuration dirt stays excluded.
