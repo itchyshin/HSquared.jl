@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-02T12:11:01.971965+00:00",
+  "command": "Rscript source(check-after-task.R); check_after_task() for each current paired report; byte equality comparison",
+  "exit": 0,
+  "scope": "Structure and paired-report byte equality only; full acceptance validator and G8 remain open",
+  "log_sha256": "99144159e2439330142c6661e9c62e3067682867c3e5db46ca890ca3e3faa964",
+  "raw_log": "CURRENT_PAIRED_REPORT_STRUCTURE_PASS\nStructure only; G8 whole acceptance remains open.\n",
+  "blocker": "Separate final external audit was rejected; specific human payload/destination permission question remains pending; no retry or bypass."
+}
