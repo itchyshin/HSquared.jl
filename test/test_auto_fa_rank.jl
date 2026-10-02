@@ -234,12 +234,14 @@ end
     @test size(L1) == (4, 1)
     @test psi1 ≈ c .+ exp.(fa_params[5:8])
     @test G1 ≈ L1 * L1' + Diagonal(psi1)
+    @test L1 ≈ reshape(loading, 4, 1)
     G1_ref = zeros(4, 4)
     for i in 1:4, j in 1:4
-        G1_ref[i, j] = L1[i, 1] * L1[j, 1] + (i == j ? c + exp(fa_params[4 + i]) : 0.0)
+        G1_ref[i, j] = loading[i] * loading[j] +
+                       (i == j ? c + exp(fa_params[4 + i]) : 0.0)
     end
     @test G1 ≈ G1_ref
-    G1_unmatched = L1 * L1' + Diagonal(exp.(fa_params[5:8]))
+    G1_unmatched = loading * loading' + Diagonal(exp.(fa_params[5:8]))
     @test !isapprox(G1_unmatched, G1_ref; atol=1e-12, rtol=1e-12)
     @test all(isposdef(Symmetric(g)) for g in (G0, G1))
 
@@ -334,6 +336,29 @@ end
     invalid_fa = filter(a -> a.rank == 1, offset.attempts)
     @test all(a -> a.status == :failed && a.optimizer_objective !== nothing &&
         a.loglik === nothing && a.criterion === nothing, invalid_fa)
+
+    # Force finite optimizer receipts to reach the covariance-definiteness
+    # guard. The intentionally wrong finite raw objective is diagnostic only;
+    # it must not hide the semidefinite estimate behind the objective guard.
+    finite_semidefinite_r = function (objective, params0, iterations, rank, start_id)
+        p = copy(params0)
+        if rank == 0
+            for j in (5, 9, 12, 14)
+                p[j] = -600log(2.0)
+            end
+            return (; phat=p, objective=0.0, converged=true, iterations=1,
+                    optimizer_status="finite objective semidefinite R control")
+        end
+        return (; phat=p, objective=objective(p), converged=true, iterations=1,
+                optimizer_status="finite objective covariance control")
+    end
+    finite_r = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=finite_semidefinite_r)
+    bad_finite_r = filter(a -> a.rank == 0, finite_r.attempts)
+    @test !isempty(bad_finite_r)
+    @test all(a -> a.finite_objective === true && a.pd_residual === false &&
+        a.status == :failed && occursin("non-positive-definite covariance estimate", a.reason) &&
+        a.loglik === nothing && a.criterion === nothing, bad_finite_r)
 end
 
 @testset "automatic FA selected K1 fit uses same-covariance dense objective" begin
@@ -371,6 +396,8 @@ end
         result.selected_fit.genetic_covariance, result.selected_fit.residual_covariance;
         shared_intercept=true)
     @test abs(wrong_design.loglik - ref.loglik) > 1e-8
+    @test result.nesting_witness_discrepancy !== nothing
+    @test result.nesting_witness_discrepancy <= 1e-8
 
     # Explicit fixed-rank behavior remains its ordinary fit result.
     fixed = fit_multivariate_reml(Y, d.X, d.Z, pedigree_inverse(d.ped);
@@ -390,6 +417,8 @@ end
             for j in (5, 9, 12, 14)
                 p[j] = -600log(2.0)
             end
+            return (; phat=p, objective=0.0, converged=true,
+                iterations=1, optimizer_status="semidefinite residual control")
         end
         return (; phat=p, objective=objective(p), converged=true,
                 iterations=1, optimizer_status="semidefinite residual control")
@@ -400,6 +429,8 @@ end
     badr = filter(a -> a.rank == 0, rbad.attempts)
     @test !isempty(badr)
     @test all(a -> a.status == :failed && a.pd_residual === false &&
+        a.finite_objective === true &&
+        occursin("non-positive-definite covariance estimate", a.reason) &&
         a.loglik === nothing && a.criterion === nothing, badr)
     @test rbad.candidate_summary[1].reason !== nothing
     @test rbad.candidate_summary[1].loglik === nothing
@@ -410,6 +441,8 @@ end
         p = copy(params0)
         if rank == 1
             p[1:4] .= 2.0^500
+            return (; phat=p, objective=0.0, converged=true,
+                    iterations=1, optimizer_status="finite objective ill-conditioned G control")
         end
         return (; phat=p, objective=objective(p), converged=true,
                 iterations=1, optimizer_status="finite ill-conditioned G control")
@@ -419,7 +452,9 @@ end
     badg = filter(a -> a.rank == 1, gbig.attempts)
     @test !isempty(badg)
     @test all(a -> a.status == :failed && a.finite_estimates &&
-        all(isfinite, a.genetic_covariance) && a.pd_genetic === false &&
+        a.finite_objective === true && all(isfinite, a.genetic_covariance) &&
+        a.pd_genetic === false &&
+        occursin("non-positive-definite covariance estimate", a.reason) &&
         a.loglik === nothing && a.criterion === nothing, badg)
     @test !gbig.candidate_summary[2].eligible
     @test gbig.candidate_summary[2].reason !== nothing
@@ -446,6 +481,93 @@ end
     fake = (; genetic_covariance=Diagonal(fill(c, 4)),
             residual_covariance=Matrix{Float64}(I, 4, 4))
     @test_throws ArgumentError HSquared._fa_rank_retry_params(fake)
+end
+
+@testset "automatic FA near-floor flags and persistent non-nesting refusal" begin
+    d = _auto_fa_fixture()
+    c = HSquared.FA_UNIQUENESS_FLOOR
+    delta = 5e-7
+    rparams = HSquared._cov_to_chol_params(d.R, 4)
+    p0 = vcat(log.(fill(delta, 4)), rparams)
+    p1 = vcat(zeros(4), log.(fill(delta, 4)), rparams)
+    near_floor_runner = function (objective, params0, iterations, rank, start_id)
+        p = rank == 0 ? copy(p0) : copy(p1)
+        return (; phat=p, objective=objective(p), converged=true, iterations=1,
+                optimizer_status="eligible near-floor witness")
+    end
+    near = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped; ids=d.ids,
+        attempt_runner=near_floor_runner)
+    @test near.selection_status == :selected
+    @test near.selected_rank == 0
+    @test near.boundary_sensitive
+    @test near.candidate_summary[1].near_floor === true
+    @test near.candidate_summary[2].near_floor === true
+    @test near.candidate_summary[1].minimum_floor_distance ≈ delta atol = 1e-12
+    @test near.candidate_summary[2].minimum_floor_distance ≈ delta atol = 1e-12
+    @test all(a -> a.near_floor === true && a.status == :completed, near.attempts)
+    @test all(a -> all(x -> 0 < x <= 1e-6, a.floor_distances), near.attempts)
+
+    # Reuse the finite better-unconverged construction with a deliberately bad
+    # but valid retry receipt. The selector must measure the L=0 witness and
+    # refuse persistent K1 non-nesting after spending its sole retry.
+    calls = Tuple{Int,Symbol}[]
+    diagonal_params = Ref{Any}(nothing)
+    best_fa_params = function (objective, start)
+        candidates = Vector{Vector{Float64}}()
+        for loading_scale in (0.0, 0.25, 0.5, 1.0, 1.5),
+            uniqueness_shift in (-2.0, -1.0, 0.0, 1.0, 2.0),
+            residual_shift in (-1.0, 0.0, 1.0, 2.0)
+            p = copy(start)
+            p[1:4] .*= loading_scale
+            p[5:8] .+= uniqueness_shift
+            p[9:end] .+= residual_shift
+            push!(candidates, p)
+        end
+        scores = [objective(p) for p in candidates]
+        valid = findall(isfinite, scores)
+        i = valid[argmin(scores[valid])]
+        return candidates[i], scores[i]
+    end
+    nonnested_runner = function (objective, params0, iterations, rank, start_id)
+        push!(calls, (rank, start_id))
+        if rank == 0
+            p = copy(params0)
+            p[1:4] .-= 2.0
+            p[5:end] .+= 1.5
+            diagonal_params[] = p
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="weak diagonal for non-nesting control")
+        elseif rank == 1 && start_id in (:default, :balanced)
+            p, value = best_fa_params(objective, params0)
+            value < objective(diagonal_params[]) - 1e-3 ||
+                error("failed to create a better unconverged FA control")
+            return (; phat=p, objective=value, converged=false, iterations=1,
+                    optimizer_status="better but unconverged non-nesting control")
+        end
+        p = copy(params0)
+        # Inflate each residual Cholesky diagonal: valid R, deliberately worse
+        # likelihood than the matched diagonal fit, while retaining nonzero L.
+        for j in (9, 13, 16, 18)
+            p[j] += 3.0
+        end
+        return (; phat=p, objective=objective(p), converged=true, iterations=1,
+                optimizer_status="persistent non-nesting retry control")
+    end
+    nonnested = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped; ids=d.ids,
+        attempt_runner=nonnested_runner)
+    @test count(==((1, :diagonal_retry)), calls) == 1
+    @test length(nonnested.attempts) <= 4
+    @test nonnested.nesting_witness_discrepancy !== nothing
+    @test nonnested.nesting_witness_discrepancy <= 1e-8
+    @test nonnested.selection_status == :unavailable
+    @test nonnested.selected_rank === nothing
+    @test occursin("FA likelihood remains non-nested below the diagonal fit", nonnested.reason)
+    @test nonnested.candidate_summary[1].eligible && nonnested.candidate_summary[2].eligible
+    retry = only(filter(a -> a.rank == 1 && a.start_id == :diagonal_retry,
+        nonnested.attempts))
+    diagonal = only(filter(a -> a.rank == 0, nonnested.attempts))
+    @test retry.loglik < diagonal.loglik - 1e-6
+    @test all(a -> a.status !== :unattempted, nonnested.attempts)
 end
 
 @testset "automatic FA bounded retry and interrupt ledger" begin
