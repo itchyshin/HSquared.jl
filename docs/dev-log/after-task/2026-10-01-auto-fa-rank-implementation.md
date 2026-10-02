@@ -1,6 +1,6 @@
 # Automatic genetic FA-rank implementation report
 
-Status: final O1-repaired candidate under programme acceptance. Focused Julia acceptance passes 249 assertions across thirteen testsets. All three fresh V7 independent numerical, bridge and evidence lenses returned PASS at eighteen matched source pins. The full paired technical replay passed G1-G6; G7 is accepted from the three V7 judgments. G8 closeout remains pending. Engine and R source files are unchanged by the O1 repair. This report does not yet close the goal.
+Status: final O1-repaired candidate under programme acceptance. Focused Julia acceptance passes 249 assertions across thirteen testsets. All three fresh V7 independent numerical, bridge and evidence lenses returned PASS at eighteen matched source pins. The full paired technical replay passed G1-G6; G7 is accepted from the three V7 judgments. The final mechanical/reconciliation audit passes; G8 whole report validation remains pending. Engine and R source files are unchanged by the O1 repair. This report does not yet close the goal.
 
 ## 1. Goal
 
@@ -131,3 +131,9 @@ Full V7 technical replay passed all six runnable gates. The fresh R package chec
 Automatic approval review rejected the separate final read-only mechanical/reconciliation CLI job before process creation because available authorization did not specifically confirm this payload and destination. The parent asked for the one explicit scoped audit and continued local closeout. No workaround or review judgment is invented. The rejection is preserved in mechanical-v7-control-rejection.json.
 
 All eighteen source/test/help/usage pins still match. The original R checkout remains on codex/2026-07-13-v07-performance-localization at f5c0d46, with all 39 recorded dirty statuses and hashes preserved. Shared handoff-gate exit 1 is declared with unpushed/local documentation state, protected configuration and the scope-index acceptance probe; unrelated branches remain outside task ownership. The final local handover states exact checkout paths and carried-over publication state.
+
+## Final approved reconciliation
+
+The human explicitly approved the pending one-job read-only audit. The scoped GPT-6 Luna medium CLI job terminated with mechanical PASS and reconciliation PASS. Raw report, events, brief and launcher output are retained losslessly in mechanical-reconcile-v7-receipts.json. The earlier rejection remains preserved; no workaround occurred. The audit covers artifact integrity and all six plan-versus-actual axes. Its result is distinct from the three scientific V7 judgments and from the whole after-task validator, which is the remaining G8 verification.
+
+Parent routing adjudication: the outer approved GPT-6 Luna medium CLI audit actually started and terminated exit zero, proved by its dispatch manifest and terminal event stream. The reviewer attempted an unnecessary nested CLI launch, which failed sandbox initialization before creating another review. Its raw report conflates that failure with the successful outer route. The raw text is preserved; the parent corrects this routing statement and records the unnecessary nested attempt as workflow drift under Ada. Only the one actual final mechanical/reconciliation judgment is counted. No additional scientific panel, source change or claimed token saving follows.

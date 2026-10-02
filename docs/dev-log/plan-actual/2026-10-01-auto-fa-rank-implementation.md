@@ -54,3 +54,9 @@ Classification: scope and public claims stay within plan; verification strengthe
 ## Final technical replay and closeout control
 
 The terminal V7 root replay passes all six technical gates; R check has zero errors, warnings and notes. G7 is accepted from the three current V7 PASS judgments, independently source-pinned. The separate final mechanical/reconciliation CLI launch was rejected by automatic approval review for unclear specific payload/destination authorization. No job ran or workaround was used. The parent asked explicitly for that one read-only audit and continues local closeout work. G8 remains open until final reconciliation, local documentation commits and mandatory full report acceptance are proved.
+
+## Final approved mechanical and reconciliation audit
+
+The explicit human approval resolved the external audit control. The one fresh Luna medium job returned mechanical PASS and reconciliation PASS on the unchanged eighteen reviewed pins, preserving all original requirements and failure evidence. Raw judgments remain separate from parent adjudication. All six axes have dispositions; final whole after-task validation and closure receipts remain owed. No source repair, capability promotion, default activation or public action follows from this audit.
+
+Parent routing adjudication: the outer approved GPT-6 Luna medium CLI audit actually started and terminated exit zero, proved by its dispatch manifest and terminal event stream. The reviewer attempted an unnecessary nested CLI launch, which failed sandbox initialization before creating another review. Its raw report conflates that failure with the successful outer route. The raw text is preserved; the parent corrects this routing statement and records the unnecessary nested attempt as workflow drift under Ada. Only the one actual final mechanical/reconciliation judgment is counted. No additional scientific panel, source change or claimed token saving follows.
