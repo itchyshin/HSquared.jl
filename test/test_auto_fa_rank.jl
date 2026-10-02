@@ -245,6 +245,55 @@ end
     @test !isapprox(G1_unmatched, G1_ref; atol=1e-12, rtol=1e-12)
     @test all(isposdef(Symmetric(g)) for g in (G0, G1))
 
+    # O1 comparator negative control through the selector's real objective
+    # check: hold data, design, relationship and R fixed; only the genetic
+    # uniqueness floor differs. Scale V and Y alike so omitting c changes the
+    # independent REML score safely beyond the 1e-8 receipt tolerance.
+    d = _auto_fa_fixture()
+    small_y = 1e-3 .* d.Y
+    small_R = 1e-6 .* Matrix{Float64}(I, 4, 4)
+    small_theta = log.([5e-7, 8e-7, 1.0e-6, 1.5e-6])
+    small_G_matched = Matrix(Diagonal(c .+ exp.(small_theta)))
+    small_G_unmatched = Matrix(Diagonal(exp.(small_theta)))
+    matched_dense_ll = _auto_fa_dense_reml(small_y, d.X, d.A,
+        small_G_matched, small_R).loglik
+    unmatched_dense_ll = _auto_fa_dense_reml(small_y, d.X, d.A,
+        small_G_unmatched, small_R).loglik
+    @test isfinite(matched_dense_ll) && isfinite(unmatched_dense_ll)
+    @test abs(matched_dense_ll - unmatched_dense_ll) > 1e-8
+    small_p = vcat(small_theta, HSquared._cov_to_chol_params(small_R, 4))
+    matched_runner = function (objective, params0, iterations, rank, start_id)
+        rank == 0 || error("K1 is deliberately unavailable in O1 comparator control")
+        return (; phat=copy(small_p), objective=objective(small_p), converged=true,
+                iterations=1, optimizer_status="matched-floor comparator control")
+    end
+    matched_result = HSquared._select_fa_rank(small_y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=matched_runner)
+    matched_k0 = only(filter(a -> a.rank == 0, matched_result.attempts))
+    @test matched_k0.status == :completed
+    @test isapprox(matched_k0.loglik, matched_dense_ll; atol=1e-8, rtol=0)
+    @test matched_k0.eligible
+
+    unmatched_receipt_runner = function (objective, params0, iterations, rank, start_id)
+        rank == 0 || error("K1 is deliberately unavailable in O1 comparator control")
+        # The optimizer reports the independently evaluated no-floor score,
+        # despite returning parameters that encode the matched-floor G.
+        return (; phat=copy(small_p), objective=-unmatched_dense_ll,
+                converged=true, iterations=1,
+                optimizer_status="mismatched no-floor comparator control")
+    end
+    unmatched_result = HSquared._select_fa_rank(small_y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=unmatched_receipt_runner)
+    unmatched_k0 = only(filter(a -> a.rank == 0, unmatched_result.attempts))
+    @test unmatched_result.selection_status == :unavailable
+    @test unmatched_k0.finite_objective === true
+    @test unmatched_k0.status == :failed
+    @test occursin("independent dense objective discrepancy", unmatched_k0.reason)
+    @test isapprox(unmatched_k0.optimizer_objective, -unmatched_dense_ll; atol=1e-12, rtol=0)
+    @test isapprox(unmatched_k0.reevaluated_loglik, matched_dense_ll; atol=1e-8, rtol=0)
+    @test unmatched_k0.objective_discrepancy > 1e-8
+    @test unmatched_k0.loglik === nothing && unmatched_k0.criterion === nothing
+
     d = _auto_fa_fixture()
     calls = Tuple{Int,Symbol}[]
     runner = function (objective, params0, iterations, rank, start_id)
