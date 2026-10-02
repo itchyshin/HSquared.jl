@@ -73,3 +73,14 @@ Each line search allows at most 32 domain restarts and 256 callback requests. Re
 Verify each returned step against the true objective and gradient and the same standard or approximate Hager-Zhang Wolfe conditions, with delta 0.1, sigma 0.9 and epsilon 1e-6. Preserve numerical-gradient failure status and distinguish the finite-difference verification tolerance of 5e-6 from the analytic-gradient eligibility threshold of 1e-6. Regression checks must cover invalid interior trials with valid endpoints, invalid values and slopes, exhausted retries, unchanged failed iterates, valid accepted steps and an ordinary-start real fit.
 
 These implementation details still require source tests and inclusion in the canonical execution contract before any scientific study. The previous feasible-ray wrapper failed the tiny fit and is superseded.
+
+## Search and evidence clarifications before study admission
+
+Astra reviewed these implementation clarifications on 2026-10-02. They preserve the declared candidate method and acceptance criteria.
+
+1. Raw-variance scan spacing is measured in octaves: `log2(b/a) <= 1/8` for positive adjacent points. The first zero gap and root brackets use absolute variance tolerance `1e-6*s0`. Complete and densify the entire rail, including tail extensions. Preserve the union of every evaluated point. The ratio-target adaptive cutoff-band rule does not apply to raw-variance targets.
+2. A Brent allocation result must meet both the `1e-7` final-bracket width and `1e-8` raw log-likelihood spread across its final endpoints and returned interior maximum. Inspect the actual final bracket, not the optimizer's initial bounds. Further refinement and certification share the total 2,000-evaluation budget. A failed budget or certificate remains unresolved. Valid exact global allocation endpoints are compared separately. The installed Optim 1.13.3 univariate API takes keyword tolerances; positional `Optim.Options` is unsupported.
+3. Every valid evaluated nuisance likelihood contributes to the common unrestricted-maximum check, including finite results from failed searches. Preserve acceptance separately from the maximum evaluated likelihood. A better failed competitor cannot disappear behind a successful but worse result. A competitive raw nuisance bound hit remains unresolved.
+4. Every FA interval pilot contributes its B=199 result to pilot formation and coverage. The designated 20 outer datasets additionally retain B=499 and B=999 prefix results for endpoint stability. Each prefix has its own 99% usability check; extension cannot replace a failed B=199 pilot result.
+
+These clarifications must enter the canonical execution contract and be independently checked before that contract is frozen for a study. Current candidate manifest hashes do not yet incorporate them.
