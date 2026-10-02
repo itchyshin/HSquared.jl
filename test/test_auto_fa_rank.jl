@@ -511,7 +511,7 @@ end
     # but valid retry receipt. The selector must measure the L=0 witness and
     # refuse persistent K1 non-nesting after spending its sole retry.
     calls = Tuple{Int,Symbol}[]
-    diagonal_params = Ref{Any}(nothing)
+    diagonal_objective = Ref(NaN)
     best_fa_params = function (objective, start)
         candidates = Vector{Vector{Float64}}()
         for loading_scale in (0.0, 0.25, 0.5, 1.0, 1.5),
@@ -534,12 +534,13 @@ end
             p = copy(params0)
             p[1:4] .-= 2.0
             p[5:end] .+= 1.5
-            diagonal_params[] = p
-            return (; phat=p, objective=objective(p), converged=true,
+            value = objective(p)
+            diagonal_objective[] = value
+            return (; phat=p, objective=value, converged=true,
                     iterations=1, optimizer_status="weak diagonal for non-nesting control")
         elseif rank == 1 && start_id in (:default, :balanced)
             p, value = best_fa_params(objective, params0)
-            value < objective(diagonal_params[]) - 1e-3 ||
+            value < diagonal_objective[] - 1e-3 ||
                 error("failed to create a better unconverged FA control")
             return (; phat=p, objective=value, converged=false, iterations=1,
                     optimizer_status="better but unconverged non-nesting control")
@@ -566,6 +567,12 @@ end
     retry = only(filter(a -> a.rank == 1 && a.start_id == :diagonal_retry,
         nonnested.attempts))
     diagonal = only(filter(a -> a.rank == 0, nonnested.attempts))
+    better_unconverged = filter(a -> a.rank == 1 && a.status == :completed &&
+        a.converged === false, nonnested.attempts)
+    @test !isempty(better_unconverged)
+    @test all(a -> a.loglik !== nothing && isfinite(a.loglik) &&
+        a.loglik > nonnested.candidate_summary[1].loglik + 1e-3,
+        better_unconverged)
     @test retry.loglik < diagonal.loglik - 1e-6
     @test all(a -> a.status !== :unattempted, nonnested.attempts)
 end
@@ -640,7 +647,7 @@ end
     calls = Tuple{Int,Symbol}[]
     diagonal_G = Ref{Any}(nothing)
     diagonal_R = Ref{Any}(nothing)
-    diagonal_params = Ref{Any}(nothing)
+    diagonal_objective = Ref(NaN)
     best_fa_params = function (objective, start)
         candidates = Vector{Vector{Float64}}()
         for loading_scale in (0.0, 0.25, 0.5, 1.0, 1.5),
@@ -666,14 +673,15 @@ end
             p = copy(params0)
             p[1:4] .-= 2.0
             p[5:end] .+= 1.5
-            diagonal_params[] = p
             diagonal_G[] = HSquared._fa_rank_cov(p[1:4], 0)[1]
             diagonal_R[] = HSquared._chol_params_to_cov(p[5:end], 4)
-            return (; phat=p, objective=objective(p), converged=true,
+            value = objective(p)
+            diagonal_objective[] = value
+            return (; phat=p, objective=value, converged=true,
                     iterations=1, optimizer_status="injected weak diagonal")
         elseif rank == 1 && start_id == :default
             p, value = best_fa_params(objective, params0)
-            value < objective(diagonal_params[]) - 1e-3 ||
+            value < diagonal_objective[] - 1e-3 ||
                 error("test failed to make the unconverged FA receipt better than K0")
             return (; phat=p, objective=value, converged=false,
                     iterations=1, optimizer_status="injected better unconverged")
@@ -698,6 +706,12 @@ end
     @test result.selection_status == :unavailable
     @test occursin("better finite unconverged FA attempt", result.reason)
     @test result.start_sensitive
+    better_unconverged = filter(a -> a.rank == 1 && a.status == :completed &&
+        a.converged === false, result.attempts)
+    @test !isempty(better_unconverged)
+    @test all(a -> a.loglik !== nothing && isfinite(a.loglik) &&
+        a.loglik > result.candidate_summary[1].loglik + 1e-3,
+        better_unconverged)
 end
 
 @testset "automatic FA interruption at each initial and retry start" begin
