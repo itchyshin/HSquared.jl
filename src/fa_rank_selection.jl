@@ -30,7 +30,8 @@ function _fa_rank_attempt(k, start_id, retry_index; status = :running, reason = 
                           converged = nothing, optimizer_status = nothing,
                           optimizer_iterations = nothing, finite_objective = nothing,
                           finite_estimates = nothing, pd_genetic = nothing,
-                          pd_residual = nothing, loglik = nothing,
+                          pd_residual = nothing, optimizer_objective = nothing,
+                          loglik = nothing,
                           reevaluated_loglik = nothing, objective_discrepancy = nothing,
                           criterion = nothing, uniqueness = nothing,
                           floor_distances = nothing, near_floor = nothing,
@@ -41,7 +42,8 @@ function _fa_rank_attempt(k, start_id, retry_index; status = :running, reason = 
     (; rank = k, structure = _fa_rank_structure(k), start_id, retry_index,
        attempted = true,
        status, reason, converged, optimizer_status, optimizer_iterations,
-       finite_objective, finite_estimates, pd_genetic, pd_residual, loglik,
+       finite_objective, finite_estimates, pd_genetic, pd_residual,
+       optimizer_objective, loglik,
        reevaluated_loglik, objective_discrepancy, q = _fa_rank_q(k),
        penalty = 2 * _fa_rank_q(k), criterion, uniqueness, floor_distances,
        near_floor, eligible, selected_within_rank, selected,
@@ -267,7 +269,8 @@ function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out)
     finite_objective = isfinite(obj)
     finite_estimates = length(p) == _fa_rank_q(k) && all(isfinite, p)
     core = (; converged, optimizer_status = opt_status, optimizer_iterations = opt_iter,
-            finite_objective, finite_estimates, estimated_parameters = p)
+            finite_objective, finite_estimates, estimated_parameters = p,
+            optimizer_objective = finite_objective ? obj : nothing)
     finite_estimates || return merge(base, core,
         (; status = :failed, reason = "optimizer returned nonfinite or wrong-length estimates"))
     local G, R, L, ψ
@@ -288,8 +291,7 @@ function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out)
     info = merge(base, core, (; finite_estimates, pd_genetic = pd_g,
         pd_residual = pd_r, genetic_covariance = G, residual_covariance = R,
         genetic_loadings = L, uniqueness = ψ, floor_distances = distances,
-        near_floor = near, loglik = finite_objective ? -obj : nothing,
-        criterion = finite_objective ? 2obj + 2 * _fa_rank_q(k) : nothing))
+        near_floor = near))
     finite_objective || return merge(info, (; status = :failed, reason = "nonfinite optimizer objective"))
     finite_estimates && pd_g && pd_r || return merge(info,
         (; status = :failed, reason = "nonfinite or non-positive-definite covariance estimate"))
@@ -308,6 +310,7 @@ function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out)
     isfinite(ll2) && discrepancy <= _FA_RANK_RECHECK_TOL || return merge(info,
         (; status = :failed, reason = "independent dense objective discrepancy exceeds 1e-8"))
     return merge(info, (; status = :completed,
+        loglik = ll2, criterion = -2ll2 + 2 * _fa_rank_q(k),
         reason = converged ? nothing : "optimizer did not converge",
         eligible = converged))
 end
@@ -316,11 +319,12 @@ function _fa_rank_candidate_from_attempts(k, attempts)
     rows = filter(a -> a.rank == k, attempts)
     isempty(rows) && return _fa_rank_candidate(k)
     good = filter(a -> a.eligible, rows)
-    finite = filter(a -> a.loglik !== nothing && isfinite(a.loglik), rows)
+    finite = filter(a -> a.status == :completed && a.loglik !== nothing && isfinite(a.loglik), rows)
     chosen = isempty(good) ? nothing : good[argmax(getproperty.(good, :loglik))]
     obj_range = length(finite) > 1 ? maximum(a.loglik for a in finite) -
                                      minimum(a.loglik for a in finite) : nothing
-    covs = filter(a -> a.genetic_covariance !== nothing && a.residual_covariance !== nothing &&
+    covs = filter(a -> a.status == :completed &&
+                       a.genetic_covariance !== nothing && a.residual_covariance !== nothing &&
                        a.finite_estimates === true, rows)
     function max_pairwise(field)
         length(covs) > 1 || return nothing
@@ -523,7 +527,8 @@ function _select_fa_rank(Y, X, Z,
     end
     c0, c1 = candidates
     start_sensitive = begin
-        fa_finite = [a.loglik for a in attempts if a.rank == 1 && a.loglik !== nothing && isfinite(a.loglik)]
+        fa_finite = [a.loglik for a in attempts if a.rank == 1 && a.status == :completed &&
+                     a.loglik !== nothing && isfinite(a.loglik)]
         length(fa_finite) > 1 && maximum(fa_finite) - minimum(fa_finite) > _FA_RANK_TAU / 2 ||
             (c1.eligible && any(a -> a.rank == 1 && a.status == :completed && a.converged === false &&
                 a.loglik !== nothing && a.loglik > c1.loglik, attempts))

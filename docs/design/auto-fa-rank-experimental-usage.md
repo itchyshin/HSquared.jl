@@ -47,8 +47,10 @@ The default iteration budget is 2000. In the retained eight-animal execution wit
 
 ## Reading the result
 
-Both candidate-summary rows remain visible, including refused or unattempted candidates. The attempt table retains actual optimizer starts and their failure reasons. Failed numbers are missing, not zero. Cancellation propagates and retains a partial ledger rather than returning a completed winner.
+Both candidate-summary rows remain visible, including refused or unattempted candidates. The attempt table retains actual optimizer starts and their failure reasons. Its `optimizer_objective` column stores the raw negative log likelihood reported by the optimizer for troubleshooting. The comparison fields `loglik` and `criterion` are populated only after the independent same-covariance check passes; rejected or unfinished scores remain missing. The independently reevaluated likelihood and discrepancy can remain visible on a rejected attempt as diagnostics. Candidate ranges, covariance disagreement and start sensitivity use completed, verified attempts, including verified attempts that did not converge. Cancellation propagates and retains a partial ledger with no completed winner.
 
 In R, a propagated cancellation condition has class `hsquared_fa_rank_interrupt`. Its `partial_ledger` contains the candidate-summary and actual-attempt tables captured before interruption. Unfinished likelihood, iteration and convergence fields stay missing. It is an interrupted record, with no selected fit.
 
 The uniqueness floor is 1e-4 in each trait's squared units, so changes in trait units can affect the admissible candidates. Near-floor and start-sensitivity flags are visible. The score is an experimental comparison rule for this singular covariance family. It does not give a probability that a biological rank is true. Fit uncertainty is conditional on the selected rank; selection reliability and selection-adjusted interval coverage require separate evidence.
+
+The retained ordinary optimizer fixtures select K0. Selected-K1 fit construction and R transport have controlled witnesses built around eligible K1 fits; an ordinary optimizer-driven K1 selection has not been demonstrated. This execution gap is distinct from rank-recovery or reliability studies, which remain separate work.

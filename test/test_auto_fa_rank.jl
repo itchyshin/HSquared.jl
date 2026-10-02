@@ -5,16 +5,22 @@ using Test
 
 # This oracle deliberately assembles record-major V and X_full from scalar
 # indices. It shares no Kronecker/order helper with the selector.
-function _auto_fa_dense_reml(Y, X, A, G, R)
+function _auto_fa_dense_reml(Y, X, A, G, R; shared_intercept = false)
     n, t = size(Y)
     p = size(X, 2)
     y = [Y[i, j] for i in 1:n for j in 1:t]
-    D = zeros(n * t, p * t)
+    D = zeros(n * t, shared_intercept ? p : p * t)
     V = zeros(n * t, n * t)
     for i in 1:n, a in 1:t
         row = (i - 1) * t + a
-        for c in 1:p
-            D[row, (c - 1) * t + a] = X[i, c]
+        if shared_intercept
+            # Deliberately wrong negative-control design: one intercept shared
+            # across all traits instead of one fixed intercept per trait.
+            D[row, 1] = X[i, 1]
+        else
+            for c in 1:p
+                D[row, (c - 1) * t + a] = X[i, c]
+            end
         end
         for k in 1:n, b in 1:t
             col = (k - 1) * t + b
@@ -89,6 +95,79 @@ end
     @test det(K' * K) < 1e-12
 end
 
+@testset "automatic FA production selector preserves animal and trait order" begin
+    d = _auto_fa_fixture()
+    canonical_traits = ["a", "b", "c", "d"]
+    c = HSquared.FA_UNIQUENESS_FLOOR
+    runner_for = function (ordered_traits)
+        ix = [findfirst(==(trait), canonical_traits) for trait in ordered_traits]
+        G0 = Matrix(Diagonal(diag(d.G)[ix]))
+        R = d.R[ix, ix]
+        p0 = vcat(log.(diag(G0) .- c), HSquared._cov_to_chol_params(R, 4))
+        # This controlled FA receipt is exactly nested at L=0, so the order
+        # witness does not depend on an optimizer finding a better rank-1 fit.
+        p1 = vcat(zeros(4), log.(diag(G0) .- c), HSquared._cov_to_chol_params(R, 4))
+        return function (objective, params0, iterations, rank, start_id)
+            p = rank == 0 ? copy(p0) : copy(p1)
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="permutation witness")
+        end
+    end
+    runner = runner_for(canonical_traits)
+    base = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped; ids=d.ids,
+        traits=canonical_traits, attempt_runner=runner)
+    @test base.selection_status == :selected
+    @test base.selected_rank == 0
+    expected_G = Matrix(Diagonal(diag(d.G)))
+    expected_R = copy(d.R)
+    independent = _auto_fa_dense_reml(d.Y, d.X, d.A, expected_G, expected_R)
+    @test base.selected_fit.genetic_covariance ≈ expected_G atol = 1e-10
+    @test base.selected_fit.residual_covariance ≈ expected_R atol = 1e-10
+    @test base.selected_fit.loglik ≈ independent.loglik atol = 1e-8
+
+    # Row permutation must move Y, X and the observation-to-pedigree map as one
+    # object. The independent dense REML oracle fixes the expected same G/R;
+    # the returned ID-indexed BLUP matrix must agree after mapping by IDs.
+    ap = [12, 3, 8, 1, 7, 2, 11, 4, 9, 6, 5, 10]
+    animal = HSquared._select_fa_rank(d.Y[ap, :], d.X[ap, :], d.Z[ap, :], d.ped;
+        ids=d.ids, traits=["a", "b", "c", "d"], attempt_runner=runner)
+    @test animal.selection_status == :selected
+    @test animal.selected_rank == base.selected_rank
+    @test animal.criterion_difference ≈ base.criterion_difference atol = 1e-8
+    @test animal.selected_fit.loglik ≈ base.selected_fit.loglik atol = 1e-8
+    @test animal.selected_fit.genetic_covariance ≈ base.selected_fit.genetic_covariance atol = 1e-8
+    @test animal.selected_fit.residual_covariance ≈ base.selected_fit.residual_covariance atol = 1e-8
+    @test animal.selected_fit.breeding_values.ids == base.selected_fit.breeding_values.ids
+    @test animal.selected_fit.breeding_values.values ≈ base.selected_fit.breeding_values.values atol = 1e-7
+
+    # Trait permutation has to carry labels and both covariance axes, then map
+    # the user-visible result back to the original trait order.
+    tp = [3, 1, 4, 2]
+    permuted_traits = canonical_traits[tp]
+    trait_runner = runner_for(permuted_traits)
+    trait = HSquared._select_fa_rank(d.Y[:, tp], d.X, d.Z, d.ped; ids=d.ids,
+        traits=permuted_traits, attempt_runner=trait_runner)
+    @test trait.selection_status == :selected
+    @test trait.selected_rank == base.selected_rank
+    @test trait.criterion_difference ≈ base.criterion_difference atol = 1e-8
+    @test trait.selected_fit.loglik ≈ base.selected_fit.loglik atol = 1e-8
+    @test trait.selected_fit.breeding_values.traits == ["c", "a", "d", "b"]
+    @test trait.selected_fit.breeding_values.values[:, invperm(tp)] ≈
+          base.selected_fit.breeding_values.values atol = 1e-7
+    @test trait.selected_fit.genetic_covariance[invperm(tp), invperm(tp)] ≈
+          base.selected_fit.genetic_covariance atol = 1e-8
+    @test trait.selected_fit.residual_covariance[invperm(tp), invperm(tp)] ≈
+          base.selected_fit.residual_covariance atol = 1e-8
+
+    # Negative control: permuting responses but leaving Z in the old order is
+    # a different model. Its independently evaluated likelihood must not pass
+    # as an order-preserving transformation.
+    wrong = HSquared._select_fa_rank(d.Y[ap, :], d.X[ap, :], d.Z, d.ped;
+        ids=d.ids, traits=canonical_traits, attempt_runner=runner)
+    @test wrong.selection_status == :selected
+    @test abs(wrong.selected_fit.loglik - animal.selected_fit.loglik) > 1e-6
+end
+
 @testset "automatic FA selector dense REML and criterion contract" begin
     d = _auto_fa_fixture()
     ref = _auto_fa_dense_reml(d.Y, d.X, d.A, d.G, d.R)
@@ -138,6 +217,16 @@ end
     @test L0 === nothing
     @test psi0 ≈ c .+ exp.(theta)
     @test G0 ≈ Matrix(Diagonal(c .+ exp.(theta)))
+    # Independent scalar construction is the O1 oracle; the no-floor version
+    # is an explicit wrong comparator and must fail the same-covariance check.
+    G0_ref = zeros(4, 4)
+    for i in 1:4
+        G0_ref[i, i] = c + exp(theta[i])
+    end
+    @test G0 ≈ G0_ref
+    G0_unmatched = Matrix(Diagonal(exp.(theta)))
+    @test !isapprox(G0_unmatched, G0_ref; atol=1e-12, rtol=1e-12)
+    @test minimum(diag(G0_unmatched) .- c) < minimum(diag(G0_ref) .- c)
     loading = [0.4, -0.7, 0.2, 0.9]
     fa_params = vcat(loading, log.([0.3, 0.4, 0.5, 0.6]))
     G1, L1, psi1 = HSquared._fa_rank_cov(fa_params, 1)
@@ -145,6 +234,13 @@ end
     @test size(L1) == (4, 1)
     @test psi1 ≈ c .+ exp.(fa_params[5:8])
     @test G1 ≈ L1 * L1' + Diagonal(psi1)
+    G1_ref = zeros(4, 4)
+    for i in 1:4, j in 1:4
+        G1_ref[i, j] = L1[i, 1] * L1[j, 1] + (i == j ? c + exp(fa_params[4 + i]) : 0.0)
+    end
+    @test G1 ≈ G1_ref
+    G1_unmatched = L1 * L1' + Diagonal(exp.(fa_params[5:8]))
+    @test !isapprox(G1_unmatched, G1_ref; atol=1e-12, rtol=1e-12)
     @test all(isposdef(Symmetric(g)) for g in (G0, G1))
 
     d = _auto_fa_fixture()
@@ -167,6 +263,10 @@ end
     @test result.candidate_summary[1].eligible
     @test !result.candidate_summary[2].eligible
     @test result.candidate_summary[2].reason !== nothing
+    @test result.candidate_summary[1].eligible && !result.candidate_summary[2].eligible
+    @test all(a -> a.rank == 1 ? a.reason !== nothing : a.status == :completed, result.attempts)
+    @test all(a -> a.rank == 1 ? a.loglik === nothing && a.criterion === nothing :
+              a.loglik !== nothing && a.criterion !== nothing, result.attempts)
 end
 
 @testset "automatic FA rejects corrupted optimizer receipts" begin
@@ -204,7 +304,36 @@ end
         @test result.selected_rank === nothing
         @test any(a -> a.rank == 0 && a.status == :failed, result.attempts)
         @test all(!a.selected for a in result.attempts)
+        if corruption == :wrong_objective
+            bad = filter(a -> a.rank == 0, result.attempts)
+            @test all(a -> a.status == :failed && a.optimizer_objective !== nothing &&
+                a.objective_discrepancy > 1e-8, bad)
+            @test all(a -> a.loglik === nothing && a.criterion === nothing, bad)
+        end
     end
+
+    # Invalid optimizer minima cannot contaminate cross-start range or the
+    # start-sensitivity flag. K0 is retained as an eligible ordinary winner;
+    # every K1 receipt is independently rejected by the same +0.01 offset.
+    offset_runner = function (objective, params0, iterations, rank, start_id)
+        p = copy(params0)
+        value = objective(p)
+        rank == 1 && (value += 0.01)
+        return (; phat=p, objective=value, converged=true, iterations=1,
+                optimizer_status="offset negative control")
+    end
+    offset = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=offset_runner)
+    @test offset.selection_status == :unavailable
+    @test offset.candidate_summary[1].eligible
+    @test !offset.candidate_summary[2].eligible
+    @test offset.candidate_summary[2].loglik === nothing
+    @test offset.candidate_summary[2].criterion === nothing
+    @test offset.candidate_summary[2].objective_range === nothing
+    @test !offset.start_sensitive
+    invalid_fa = filter(a -> a.rank == 1, offset.attempts)
+    @test all(a -> a.status == :failed && a.optimizer_objective !== nothing &&
+        a.loglik === nothing && a.criterion === nothing, invalid_fa)
 end
 
 @testset "automatic FA selected K1 fit uses same-covariance dense objective" begin
@@ -238,12 +367,85 @@ end
     @test isapprox(result.selected_fit.loglik, ref.loglik; atol=1e-8, rtol=0)
     @test isapprox(result.selected_fit.genetic_covariance, G1; atol=1e-8, rtol=1e-8)
     @test isapprox(result.selected_fit.residual_covariance, R1; atol=1e-8, rtol=1e-8)
+    wrong_design = _auto_fa_dense_reml(Y, d.X, d.A,
+        result.selected_fit.genetic_covariance, result.selected_fit.residual_covariance;
+        shared_intercept=true)
+    @test abs(wrong_design.loglik - ref.loglik) > 1e-8
 
     # Explicit fixed-rank behavior remains its ordinary fit result.
     fixed = fit_multivariate_reml(Y, d.X, d.Z, pedigree_inverse(d.ped);
         genetic_structure=:factor_analytic, rank=1, iterations=2, ids=d.ids)
     @test !hasproperty(fixed, :selection_status)
     @test fixed.genetic_rank == 1
+end
+
+@testset "automatic FA refuses non-PD covariance receipts and sole survivor" begin
+    d = _auto_fa_fixture()
+    c = HSquared.FA_UNIQUENESS_FLOOR
+    semidefinite_r = function (objective, params0, iterations, rank, start_id)
+        p = copy(params0)
+        if rank == 0
+            # Finite Cholesky log-diagonals whose squared scale underflows to
+            # zero, producing a finite but semidefinite R estimate.
+            for j in (5, 9, 12, 14)
+                p[j] = -600log(2.0)
+            end
+        end
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="semidefinite residual control")
+    end
+    rbad = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=semidefinite_r)
+    @test rbad.selection_status == :unavailable
+    badr = filter(a -> a.rank == 0, rbad.attempts)
+    @test !isempty(badr)
+    @test all(a -> a.status == :failed && a.pd_residual === false &&
+        a.loglik === nothing && a.criterion === nothing, badr)
+    @test rbad.candidate_summary[1].reason !== nothing
+    @test rbad.candidate_summary[1].loglik === nothing
+
+    # Exact powers of two keep the huge loading finite while making the
+    # uniqueness eigen-direction numerically disappear in LL' + diag(psi).
+    huge_loading = function (objective, params0, iterations, rank, start_id)
+        p = copy(params0)
+        if rank == 1
+            p[1:4] .= 2.0^500
+        end
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="finite ill-conditioned G control")
+    end
+    gbig = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=huge_loading)
+    badg = filter(a -> a.rank == 1, gbig.attempts)
+    @test !isempty(badg)
+    @test all(a -> a.status == :failed && a.finite_estimates &&
+        all(isfinite, a.genetic_covariance) && a.pd_genetic === false &&
+        a.loglik === nothing && a.criterion === nothing, badg)
+    @test !gbig.candidate_summary[2].eligible
+    @test gbig.candidate_summary[2].reason !== nothing
+
+    # A sole eligible K0 candidate is not a permitted automatic winner.
+    sole = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped; ids=d.ids,
+        attempt_runner=function (objective, params0, iterations, rank, start_id)
+            rank == 1 && error("sole-survivor FA failure")
+            p = copy(params0)
+            (; phat=p, objective=objective(p), converged=true,
+               iterations=1, optimizer_status="sole survivor control")
+        end)
+    @test sole.selection_status == :unavailable
+    @test sole.selected_rank === nothing
+    @test length(sole.candidate_summary) == 2
+    @test sole.candidate_summary[1].eligible && !sole.candidate_summary[2].eligible
+    @test sole.candidate_summary[1].reason === nothing
+    @test sole.candidate_summary[2].reason !== nothing
+    @test all(a -> a.rank == 1 ? a.status == :failed && a.reason !== nothing :
+              a.status == :completed, sole.attempts)
+
+    # At the exact floor, the diagonal-derived FA initializer would have
+    # zero loading and is refused before an optimizer attempt is created.
+    fake = (; genetic_covariance=Diagonal(fill(c, 4)),
+            residual_covariance=Matrix{Float64}(I, 4, 4))
+    @test_throws ArgumentError HSquared._fa_rank_retry_params(fake)
 end
 
 @testset "automatic FA bounded retry and interrupt ledger" begin
@@ -265,6 +467,10 @@ end
     @test count(x -> x == (1, :diagonal_retry), calls) == 1
     @test length(retried.attempts) <= 4
     @test length(retried.candidate_summary) == 2
+    retry_row = only(filter(a -> a.rank == 1 && a.start_id == :diagonal_retry,
+        retried.attempts))
+    @test all(!iszero, retry_row.initial_parameters[1:4])
+    @test all(isfinite, retry_row.initial_parameters[1:4])
 
     ledger = Ref{Any}(nothing)
     interrupting = (objective, params0, iterations, rank, start_id) ->
