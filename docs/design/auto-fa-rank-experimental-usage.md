@@ -54,3 +54,30 @@ In R, a propagated cancellation condition has class `hsquared_fa_rank_interrupt`
 The uniqueness floor is 1e-4 in each trait's squared units, so changes in trait units can affect the admissible candidates. Near-floor and start-sensitivity flags are visible. The score is an experimental comparison rule for this singular covariance family. It does not give a probability that a biological rank is true. Fit uncertainty is conditional on the selected rank; selection reliability and selection-adjusted interval coverage require separate evidence.
 
 The retained ordinary optimizer fixtures select K0. Selected-K1 fit construction and R transport have controlled witnesses built around eligible K1 fits; an ordinary optimizer-driven K1 selection has not been demonstrated. This execution gap is distinct from rank-recovery or reliability studies, which remain separate work.
+
+## Separate Arc1 optimizer policy
+
+The `optimizer_policy = "arc1_v1"` control is a separate opt-in optimizer policy introduced by the Arc1 Gaussian reliability programme. The examples above document the earlier bounded selector route and retain their original meaning. To select the newer policy in R, add it explicitly:
+
+```r
+selection <- hsquared(
+  cbind(t1, t2, t3, t4) ~ animal(1 | id, pedigree = ped),
+  data = dat,
+  control = hs_control(engine = "julia", engine_control = list(
+    target = "multivariate", rank_selection = "auto",
+    optimizer_policy = "arc1_v1"
+  ))
+)
+print(selection)
+fit_diagnostics(selection)
+```
+
+The corresponding Julia call supplies a validated `Pedigree`:
+
+```julia
+selection = select_fa_rank(Y, X, Z, pedigree;
+    ids=pedigree.ids, traits=["t1", "t2", "t3", "t4"],
+    optimizer_policy="arc1_v1")
+```
+
+This policy fixes the per-start iteration budget at 2,000; do not also supply an `iterations` override. Omitting the policy preserves the earlier route. The earlier implementation programme's eight completed gates concern bounded selector mechanics and do not satisfy Arc1's separate G0-G8 reliability gates. The [Arc1 Gaussian usage note](arc1-experimental-usage.md) documents profile and full-reselection bootstrap controls, current evidence, and remaining limits. No Arc1 study or campaign has run, and selection reliability and interval calibration remain unestablished.
