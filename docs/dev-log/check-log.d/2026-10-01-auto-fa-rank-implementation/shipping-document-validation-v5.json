@@ -1,0 +1,51 @@
+{
+  "utc": "2026-10-02T04:03:00.302889+00:00",
+  "scope": "Local prose/links/structure checks only; original G7/G8 still unmet",
+  "link_errors": [],
+  "new_em_dashes": 0,
+  "prose_delta_sha256": "8b4c2e3aa88a11fcafbf61bbbf2e76e78c90cda73a5d07bd8ba742a05d61eaf4",
+  "checks": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "tools/preamble_cap.sh"
+      ],
+      "exit": 0,
+      "stdout": "PREAMBLE CAP -- AGENTS.md is @imported by CLAUDE.md, so this is paid every session.\n  size            :   9624 B  (~2406 tok)   cap 14000 B\n  snapshot entries:      1               cap 1\n\nCAP OK -- preamble within budget.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "Rscript",
+        "-e",
+        "source(\"/Users/z3437171/shinichi-brain/tools/check-after-task.R\"); stopifnot(isTRUE(check_after_task(\"/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md\"))); cat(\"AFTER_TASK_STRUCTURE_PASS\\n\")"
+      ],
+      "exit": 0,
+      "stdout": "AFTER_TASK_STRUCTURE_PASS\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/z3437171/shinichi-brain/tools/slop_check.py",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/shipping-prose-delta-v5.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/plan-actual/2026-10-01-auto-fa-rank-implementation.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/handover/2026-10-01-auto-fa-rank-implementation-checkpoint.md"
+      ],
+      "exit": 0,
+      "stdout": " \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/shipping-prose-delta-v5.md: 1 hits / 5530 words = 0.2 per 1000 (em dashes 0/1000)\n        1 \u00d7 bold-label opener\n            L124: - **As of 2026-10-01 (automatic FA rank candidate locally tested; final review OPEN).** Th\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md: 0 hits / 3168 words = 0.0 per 1000 (em dashes 0/1000)\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/plan-actual/2026-10-01-auto-fa-rank-implementation.md: 0 hits / 1058 words = 0.0 per 1000 (em dashes 0/1000)\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/handover/2026-10-01-auto-fa-rank-implementation-checkpoint.md: 0 hits / 914 words = 0.0 per 1000 (em dashes 0/1000)\nFINDINGS: 0\n",
+      "stderr": ""
+    }
+  ]
+}

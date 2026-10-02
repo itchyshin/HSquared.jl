@@ -1,0 +1,22 @@
+date	source	tier	model	effort	sessions	turns	compactions
+2026-10-01	auto_review	Other	codex-auto-review	low	76	717	1
+2026-10-01	parent	Sol	gpt-6.1-sol	high	1	17	6
+2026-10-01	subagent	Astra	gpt-6-astra	high	4	14	1
+2026-10-01	subagent	Luna	gpt-6-luna	high	2	15	3
+2026-10-01	subagent	Luna	gpt-6-luna	medium	31	97	16
+2026-10-01	subagent	Sol	gpt-6-sol	high	5	10	0
+2026-10-01	subagent	Sol	gpt-6.1-sol	high	25	91	12
+2026-10-01	subagent	Sol	gpt-6.1-sol	medium	1	1	0
+SUMMARY	date=2026-10-01	n_sessions=68	Luna=33	Terra=0	Sol=31	Astra=4	Ceiling_share=51.5%
+TURN_SUMMARY	date=2026-10-01	n_turns=228	Luna=112	Terra=0	Sol=102	Astra=14
+TIER_RECEIPT_SUMMARY	date=2026-10-01	n_receipts=1	Luna=1	Terra=0	Sol=0	Astra=0
+ROUTING_SUMMARY	date=2026-10-01	n_routes=69	Luna=34	Terra=0	Sol=31	Astra=4
+FAIL	date=2026-10-01	Composition gate: Luna/Terra are not the majority of native sessions plus retained tier receipts.
+AUTO_REVIEW_SUMMARY	date=2026-10-01	sessions=76	calls=721	input_tokens=51427720	cached_input_tokens=44694528	total_tokens=51581315
+SUMMARY	date=2026-10-02	n_sessions=0	Luna=0	Terra=0	Sol=0	Astra=0	Ceiling_share=0.0%
+TURN_SUMMARY	date=2026-10-02	n_turns=0	Luna=0	Terra=0	Sol=0	Astra=0
+TIER_RECEIPT_SUMMARY	date=2026-10-02	n_receipts=7	Luna=5	Terra=0	Sol=2	Astra=0
+ROUTING_SUMMARY	date=2026-10-02	n_routes=7	Luna=5	Terra=0	Sol=2	Astra=0
+AUTO_REVIEW_SUMMARY	date=2026-10-02	sessions=0	calls=0	input_tokens=0	cached_input_tokens=0	total_tokens=0
+NOTE	Session and turn counts are routing evidence, not billing records.
+NOTE	Auto-review token-event telemetry is not proof of billing calls; cached input is a subset, and the dashboard's usage weighting is not exposed.

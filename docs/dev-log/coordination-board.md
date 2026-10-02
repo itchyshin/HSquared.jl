@@ -1769,3 +1769,12 @@ The approved Ultra Plan/Unlazy arc completes V0 design only. The contract compar
 ## Automatic FA-rank implementation arc sizing, 2026-10-01
 
 The requested [implementation Arc Card](../design/auto-fa-rank-implementation-arc-20261001.md) preserves Julia and R together. Target 450 minutes, inferred range 6 to 10 hours; Arc 0 is a 120-minute engine foundation, followed by selector, R transport, mandatory live verification/repair and closeout. This is sizing and handoff only. Automatic rank selection is not implemented and no auto-rank tests have run. Ultra Plan owns execution coordination and Unlazy acceptance. No covered-count, release, campaign or protected-lane change.
+
+
+## Automatic FA-rank final local verification, 2026-10-01
+
+The approved paired Julia/R programme is implemented in owned local branches. Julia candidate 45ae9216 includes the rejected-score repair and final test-oracle controls; isolated R candidate 2108c0d carries the expert interface, full ledgers and interruption transport. Focused Julia acceptance passes 236 assertions across 13 testsets. All six technical gates pass, including both full packages; R check has zero errors/warnings/notes. Exact unchanged-component reuse and actual reviews are retained in the [implementation receipts](check-log.d/2026-10-01-auto-fa-rank-implementation/README.md).
+
+The complete goal remains active. Final independent G7 and closure G8 are open: automatic approval review rejected the prepared final CLI source panel and did not accept the retrieved earlier human approval as authorization. A new specific source-payload/destination question is pending. Neither final source-panel launch ran; no bypass or capability promotion occurred. User-approved overnight work ends October 2 at 5 a.m. Edmonton, with a scheduled chat handoff. The [paired checkpoint](../../LOOP/lanes/auto-fa-rank-implementation-20261001/checkpoint.md) preserves all eight original requirements.
+
+Source and docs are local only. Public covered count stays seven. Ordinary selected K0 is witnessed; selected K1 transport is controlled and ordinary optimizer-driven K1 selection remains untested. Larger ranks, reliability/coverage campaigns, default activation, remote compute, GPU, release and hosted landing stay deferred. Protected configuration dirt and all 39 recorded original R dirty files remain outside task staging. The frozen shared check log is supplemented through the dated check-log.d folder.

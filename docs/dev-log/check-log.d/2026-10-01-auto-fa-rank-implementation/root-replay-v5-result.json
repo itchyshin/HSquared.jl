@@ -1,0 +1,31 @@
+{
+  "utc": "2026-10-02T03:40:10.667232+00:00",
+  "scope": "Final V5 technical source proof, all six gates satisfied; independent acceptance still open",
+  "candidate_julia": "45ae9216",
+  "candidate_r": "2108c0d",
+  "technical_gates_passed": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6"
+  ],
+  "pending": [
+    "G7",
+    "G8"
+  ],
+  "replayed_after_v5_delta": [
+    "G1",
+    "G5"
+  ],
+  "unchanged_reused_from_v4": [
+    "G2",
+    "G3",
+    "G4",
+    "G6"
+  ],
+  "reason": "V5 changes only test/test_auto_fa_rank.jl. Engine, bridge, R tests/help, fixed-rank regression sources are unchanged from successful V4 checks. No neighboring-source acceptance is inferred.",
+  "freeze_files_verified": 18,
+  "receipt_sha256": "6d65afd89ec1573b44a3f2ccdf4b15b7b4c90c66bb1ae871ae6af7f811c8aefe"
+}

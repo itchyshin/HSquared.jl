@@ -100,20 +100,20 @@ Full programme closes only with executable numerical/policy tests, mandatory pai
 
 Sizing evidence: source/bridge planning scouts inspected Julia56536532 and immutable R e82f5c95; their findings are consolidated above. The design and validation plan have independent V0 acceptance. [Design closeout](../dev-log/after-task/2026-10-01-auto-fa-rank-design.md) records the current starting state. The main check log carries the cited fixed-rank timing receipts. No close numerical implementation analogue measures the core build estimate, so confidence stays inferred.
 
-Recommended / actual: programme 450 minutes / active. Arc 0 and the selector mechanics pass focused checks; integration repair and final acceptance continue. Full engineering time will be recorded at closeout.
+Recommended / actual: programme 450 minutes / still active. The plan does not require filling that estimate. Final focused V5 acceptance passes 236 assertions across 13 testsets. The observed interval from the implementation-loop commit at 17:24 Edmonton to the 21:33 checkpoint is about 4 hours 9 minutes; it includes implementation, verification, repairs and approval waits and is not an active-engineering-hours measure. No final under-run or completed-programme calibration is claimed.
 
-Requested / used: complete paired programme approved / three disjoint producers plus parent consolidation. No fixed token or wall-time capacity requested.
+Requested / used: complete paired programme approved / three disjoint native producers, parent consolidation, fresh numerical/bridge/evidence panels V2 and V3, and a separate mechanical receipt audit. The overnight instruction supplies a deadline of October 2 at 5 a.m. Edmonton. No fixed token budget was requested.
 
-Rungs completed: V0 design is prior work. Julia numerical, policy and fixed-rank checks pass. Paired transport and current full checks pass; independent completion review and final root acceptance remain open before V1/V4 closure.
+Rungs completed: prior V0 design accepted. Julia and R implementation exist. V4 root replay passed G1-G6, including mandatory live transport/interruption and full packages. V5 fixes two parent-discovered false-positive test comparisons; its focused 236/13 proof and affected Julia replay pass. Final G7/G8 acceptance remains open.
 
-Under-run event: none.
+Under-run event: none declared while acceptance is incomplete.
 
-Calibration: complete here at each implementation checkpoint; record core work, verification, repair and waiting separately.
+Calibration: V4 final root log records a 722.49-second interval, about 12 minutes, within the 15-20 minute estimate. R full check has zero errors/warnings/notes; its test phase records 3871 passes, 26 test warnings and 48 existing opt-in skips. These broad opt-in skips are separate from required-live acceptance. Final R source is 2108c0d. Julia final test candidate 45ae9216 includes engine repair 526c85b7; source and R interface are unchanged since V3.
 
-Metric movement: Julia focused acceptance has 147 passing assertions; R mandatory live acceptance initially had 75 passing assertions with no skips; the final strengthened slice has 116 passes, zero warnings or skips. Parent focused/live replay and the full R package check pass. The package check has zero errors, warnings or notes; its test phase has 3871 passes, 26 test warnings and 48 existing opt-in skips. Fresh source review is pending explicit payload authorization. No rank-reliability measure is claimed.
+Metric movement: initial focused Julia 147; first repaired log 208/12, correcting an unsupported 220/11 assertion; combined V4 controls 232/13; final V5 controls 236/13. Counts come from independently parsed retained logs. R mandatory-live producer reports 128 passes with zero warnings/skips; parent G4 at the same sources passed. Count growth alone cannot establish acceptance. Both ordinary optimizer witnesses selected K0; ordinary selected K1 remains untested and rank reliability is deferred.
 
-Result: paired implementation under verification; no capability promotion or complete-programme claim.
+Result: tested paired implementation under final verification. Source-review V2 found a genuine rejected-score defect and missing controls, which were repaired. V3 bridge/evidence passed; numerical review requested the now implemented near-floor and persistent-nonnesting controls. Parent then repaired two test comparisons that evaluated a 14-element K0 vector with the 18-element K1 objective. No capability promotion or complete-programme claim.
 
-Next action: complete current numerical/transport replays, full checks, independent review and evidence closeout. Automatic approval review rejected the fresh CLI source panel because it exports private source; explicit payload authorization is pending. Local verification continues.
+Next action: finish affected V5 Julia replay, accept the prepared final source panel, validate paired reports and reconcile the final ledger. The human approved the earlier exact source-review question, and V2/V3 panels ran. Automatic approval review rejected both final V4 launches, then refused the retrieved prior approval as trusted authorization. A new specific payload/destination question is pending; no final reviewer ran and no bypass occurred. All eight original requirements remain binding.
 
 HAND TO ULTRA PLAN: paired automatic FA-rank implementation, target 7.5 hours (inferred 6 to 10), Arc 0 120 minutes, complete T4 Gaussian pedigree K0/K1 mechanics plus experimental R transport, mandatory tests and ledgers, no promotion/campaign/release/protected-lane work. Use Unlazy for acceptance; keep the complete paired outcome intact across checkpoints.

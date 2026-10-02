@@ -8,4 +8,8 @@ Read the approved implementation card and frozen contract before each checkpoint
 
 Execution roots: Julia `/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl`; isolated R `/private/tmp/hsquared-auto-fa-r-20261001`, base e82f5c95e514028a7126fdd667c4ac7a840c9e6b. The already-managed Julia worktree is reused rather than making another copy. The existing approved Arc Card supplies the LOOP plan.
 
-Finish only after all required gates in `.unlazy/auto-fa-rank-implementation-20261001/GATES.md` pass and are replayed. Retain failure receipts and explicitly qualified limits. Ordinary local implementation, tests, repairs and commits are authorized. New external actions are outside this goal.
+Finish only after all required gates in `.unlazy/auto-fa-rank-implementation-20261001/GATES.md` pass and are replayed. Retain failure receipts and explicitly qualified limits. Ordinary local implementation, tests, repairs and commits are authorized. The bounded independent source review through the bundled Codex CLI was explicitly approved in this chat. Other external actions remain outside this goal.
+
+## Overnight continuation
+
+Shinichi approved the pending source-review payload and autonomous work until 2026-10-02 05:00 America/Edmonton (11:00 UTC). Complete the original programme within that window; at the deadline, checkpoint any remaining work and provide the handoff. A one-time 5 a.m. chat handoff is scheduled as automation hsquared-5-a-m-handoff. The time window does not expand ranks, providers or capability claims.

@@ -1,0 +1,82 @@
+{
+  "source": "docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/engine-repair-focused.log",
+  "sha256": "831375d8d2a2225380537da3237eafc85f53a17108414876d8e5d0cce710afba",
+  "method": "independent parse of every Julia Test Summary numeric row",
+  "sets": 12,
+  "passes": 208,
+  "rows": [
+    {
+      "testset": "automatic FA independent ordering and confounding witnesses",
+      "pass": 5,
+      "total": 5,
+      "seconds": 2.4
+    },
+    {
+      "testset": "automatic FA production selector preserves animal and trait order",
+      "pass": 23,
+      "total": 23,
+      "seconds": 2.8
+    },
+    {
+      "testset": "automatic FA selector dense REML and criterion contract",
+      "pass": 18,
+      "total": 18,
+      "seconds": 0.1
+    },
+    {
+      "testset": "automatic FA matched floor and injected failure ledger",
+      "pass": 25,
+      "total": 25,
+      "seconds": 0.7
+    },
+    {
+      "testset": "automatic FA rejects corrupted optimizer receipts",
+      "pass": 26,
+      "total": 26,
+      "seconds": 0.3
+    },
+    {
+      "testset": "automatic FA selected K1 fit uses same-covariance dense objective",
+      "pass": 11,
+      "total": 11,
+      "seconds": 1.1
+    },
+    {
+      "testset": "automatic FA refuses non-PD covariance receipts and sole survivor",
+      "pass": 17,
+      "total": 17,
+      "seconds": 0.4
+    },
+    {
+      "testset": "automatic FA bounded retry and interrupt ledger",
+      "pass": 19,
+      "total": 19,
+      "seconds": 0.5
+    },
+    {
+      "testset": "automatic FA better-unconverged retry trigger and bounded refusal",
+      "pass": 5,
+      "total": 5,
+      "seconds": 0.4
+    },
+    {
+      "testset": "automatic FA interruption at each initial and retry start",
+      "pass": 28,
+      "total": 28,
+      "seconds": 0.1
+    },
+    {
+      "testset": "automatic FA rejects forbidden data and confounded pedigree designs",
+      "pass": 23,
+      "total": 23,
+      "seconds": 0.7
+    },
+    {
+      "testset": "automatic FA selector public shape and refusal contract",
+      "pass": 8,
+      "total": 8,
+      "seconds": 0.0
+    }
+  ],
+  "correction": "producer-reported 220/11 was unsupported; retained log proves208/12"
+}

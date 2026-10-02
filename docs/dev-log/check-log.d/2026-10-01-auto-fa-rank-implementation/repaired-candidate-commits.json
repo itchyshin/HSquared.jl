@@ -1,0 +1,25 @@
+{
+  "captured_utc": "2026-10-02T02:52:17.884722+00:00",
+  "scope": "local repaired candidates; focused checks pass; full replay and final review pending",
+  "candidates": [
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "branch": "codex/h2-v3-refresh-auto-rank-plan-20261001",
+      "head": "526c85b72c1d1d24488c92ee2b3a821830f3c048"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "branch": "codex/auto-fa-rank-implementation-20261001",
+      "head": "2108c0d0d2a9b528d257dea0b2f5f4a87c19a080"
+    }
+  ],
+  "r_focused_attestation": {
+    "source": "completed native R producer message in this chat",
+    "assertions": 128,
+    "warnings": 0,
+    "skips": 0,
+    "failures": 0,
+    "seconds": 21.1,
+    "separate_stdout_file": false
+  }
+}

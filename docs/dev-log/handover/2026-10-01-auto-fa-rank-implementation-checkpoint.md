@@ -1,41 +1,41 @@
-# Automatic FA-rank paired implementation checkpoint
+# Automatic FA-rank paired implementation handoff
 
-Meta: 2026-10-01, from Codex, same active paired goal. Independent source-review authorization is pending.
+Meta: October 1 local overnight checkpoint, Codex; full paired goal remains active. Work is authorized until October 2, 05:00 America/Edmonton (11:00 UTC). One-time chat handoff is scheduled as hsquared-5-a-m-handoff.
 
 ## Critical context
 
-Keep the complete Julia/R goal active. The local implementation and package checks pass, but final programme acceptance is open. Automatic approval review rejected the prepared fresh CLI source panel because it would send private source/tests/check artifacts to an external model service. A human authorization question remains pending. Do not bypass it or count the successful no-source model probe as review.
+The bounded T4 Gaussian pedigree K0/K1 Julia selector and explicit R expert interface are implemented and locally tested. Six technical gates pass. Final independent G7 and closure G8 remain open. The prior exact source-review question received human approval and V2/V3 panels ran. Automatic approval review rejected both final-panel requests, then refused the retrieved earlier approval as trusted authorization. A new exact source-payload/destination question is pending. Neither final panel launch ran; do not bypass this rejection or infer final acceptance from an older panel.
 
-## Accomplished
+## Accomplished and evidence
 
-Julia select_fa_rank implements the bounded T4 Gaussian pedigree K0/K1 comparison, matched floors, complete actual attempts, bounded retry, independent covariance REML checks and refusal/cancellation ledgers. The explicit R expert route preserves user formula/call and a nested selected fit, complete typed rows, missing failed-start metadata, and a full plain-R partial ledger after controlled engine interruption. Fixed-rank numerical behavior is preserved.
+Final focused Julia acceptance passes 236 assertions/13 testsets, independently parsed from the byte-retained V5 log. The V4 paired root replay passed G1-G6, including fixed-rank regressions, mandatory-live ordinary K0 transport, full controlled interruption and both full packages. V5 changed only the Julia test file; affected G1/fullJuliaG5 replay passed. Engine/R sources are unchanged and exact-component reuse is declared in root-replay-v5-result.json. The mandatory full after-task validator reverified the technical checks and retained all six PASS states. Its structure check passes; overall exit 1 correctly reflects G7/G8 open. R check has zero errors/warnings/notes; full R tests have 3871 passes, 26 warnings and 48 existing opt-in skips. Mandatory-live acceptance is enforced separately; R producer's repaired schema slice reports 128 passes, zero warnings/skips.
 
-Julia focused acceptance has 147 assertions; fixed-rank regressions and the full Julia suite pass. Final R focused and required-live parent replay pass. The final live worker slice has 116 assertions, zero warnings/skips/failures. Full R package check is Status OK with zero errors, warnings or notes; testthat has 3871 passes, 26 test warnings and 48 existing opt-in skips. All 17 source/test/help pins match the final checks. No owned process remains active.
+V2 found a real failed-score reporting defect and missing controls. Engine now retains optimizer_objective but publishes comparison scores only after covariance/floor/dense verification, with completed-only summaries. V3 found no new source defect but requested near-floor and persistent-nonnesting controls. Both are added. Parent then found two controls passing 14-element K0 parameters to 18-element K1 objective, yielding Inf. Both now capture finite K0 objective scalars and assert the actual returned likelihood ordering. No source or tolerance change was needed for that test repair. Original failures, erroneous 220/11 count, corrected 208/12 log, V4 and V5 results, and all raw reviews are retained honestly.
 
-## Landing state
+## Landing and ownership
 
-| State | Branch and location | Why carried | Resume |
+| State | Branch/location and tested source | Why retained | Resume |
 | --- | --- | --- | --- |
-| CARRIED-OVER | Julia codex/h2-v3-refresh-auto-rank-plan-20261001, /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; source candidate 61a9f82d | Local source is saved; independent review and final acceptance pending. Push is outside scope. | cd /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; git status --short --branch |
-| CARRIED-OVER | R codex/auto-fa-rank-implementation-20261001, /private/tmp/hsquared-auto-fa-r-20261001; source candidate ab7aedc | Clean isolated local source candidate; paired acceptance pending. Keep this worktree until ordinary landing is authorized. | cd /private/tmp/hsquared-auto-fa-r-20261001; git status --short --branch |
-| PROTECTED | Julia .claude/settings.json and .cursor/hooks.json | Pre-existing unrelated dirty files excluded from commits. | Read current diff only; do not revert or stage. |
-| PROTECTED | Original R /Users/z3437171/Dropbox/Github Local/hsquared at f5c0d46b, 39 recorded dirty files | All recorded hashes/statuses match. Additional inbox/graft/tests-graft directories remain untouched; whole-status preservation is not claimed. | Re-measure against protected-r-before.json before any new boundary action. |
-| PROTECTED | Other unpushed branches reported by the shared handoff tool | Owned by other or historical lanes and outside this programme. | Read the retained gate output if coordination becomes necessary; never land or rewrite them from this lane. |
+| CARRIED-OVER | Julia codex/h2-v3-refresh-auto-rank-plan-20261001; /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl; final test candidate 45ae9216 includes engine 526c85b7 | Locally committed implementation and evidence; final review/closure pending. Push is deferred. | Recheck git status, HEAD and scoped lease; read LOOP checkpoint. |
+| CARRIED-OVER | R codex/auto-fa-rank-implementation-20261001; /private/tmp/hsquared-auto-fa-r-20261001; source 2108c0d | Isolated locally committed R candidate; preserve checkout and paired report. | Recheck git status/HEAD and canonical hsquared lease before edits. |
+| PROTECTED | Julia .claude/settings.json and .cursor/hooks.json | Unrelated existing dirt excluded from staging. | Never revert or stage from this task. |
+| PROTECTED | Original R /Users/z3437171/Dropbox/Github Local/hsquared at f5c0d46b | All 39 recorded dirty statuses/hashes match. Extra inbox/graft/tests-graft directories remain disclosed; no whole-status claim. | Compare protected-r-before.json and protected-r-final-v4.json; leave untouched. |
+| PROTECTED | Other local/unpushed branches and frozen FA/GLLVM/sibling campaigns | Outside this programme. | Never land, rewrite or extend their work from this lane. |
 
-FINDINGS-OF-RECORD: none. This checkpoint preserves implementation evidence within the approved contract; no new general scientific result is claimed.
+The handoff gate ran before this file was updated and exited1. It reports local/unpushed state and treats the root scope index as an unmet runnable ledger. The task-local validator correctly treats that zero-gate index as benign and checks the real eight-gate leaf. The actual leaf remains incomplete at G7/G8. This tool disagreement does not establish landing or justify abandoning either requirement. The unmodified shared closeout compiler also anchors in the brain repository and exits1; its result is separately retained. No shared tool or unrelated ledger was changed.
 
-## Acceptance and limits
+FINDINGS-OF-RECORD: no new general scientific finding. This is implementation and controlled mechanics evidence within the frozen contract.
 
-G1-G6 have passing child execution receipts. G7 requires a fresh Sol-high numerical reviewer plus Luna-medium bridge and claim reviewers. G8 requires final current-root replay and full report acceptance. Child approval records bind their own paths; consolidated checkboxes do not imply a completed root re-execution.
+## Current limits
 
-The earlier shared handoff gate exited 1 for local-only/unlanded state and two historical ledgers. That run checked the design leaf and old root FA/GLLVM packet against the later source, although their checks were tied to earlier milestones. Their receipts are now preserved in a hashed historical archive, and the active eight-gate ledger is indexed from the repository root. Do not remove any of the eight live implementation requirements.
+Ordinary n8 fixture selects K0 at 10000 iterations and is unavailable at 2000. The one frozen n16 strong-factor fixture also selects K0. Controlled K1 transport uses a genuine eligible K1 fit; ordinary optimizer-driven K1 selection remains untested. Rank reliability, biological-rank probabilities, global optimization, selection-adjusted intervals, larger ranks/designs/providers, sparse production FA and default activation remain unproved. Covered count stays 7. No campaign, remote compute, GPU, public deployment, release, registry, submission, tag, push or promotion occurred.
 
-The ordinary n8 fixture selects K0 at 10000 iterations, with unavailable selection at default 2000; the single frozen n16 strong-factor fixture also selects K0. K1 serialization uses a controlled winner override around an actual eligible K1 fit. Ordinary K1 selection and selection reliability remain unverified. Covered count stays seven. No campaign, external comparator conclusion, broader ranks/designs, selection-adjusted inference, default activation, promotion, release, tag, registry, GPU or publication is authorized.
+## Next action and exact resume
 
-## Next action
+Read LOOP/lanes/auto-fa-rank-implementation-20261001/GOAL.md, ultra-plan.md, checkpoint.md, the frozen contract/validation plan and dated check evidence. Recheck branch/HEAD and scoped leases. Julia parent is GPT-6.1 Sol high; numerical producer GPT-6 Sol high; R/tests GPT-6 Luna medium. Completed V2/V3 panels each use Sol high numerical plus two Luna medium bridge/evidence reviewers. Final V5 panel is unlaunched.
 
-After explicit payload authorization, use the bundled Codex CLI 0.159.2 and prepared completion-plan-v2.tsv, sequentially, with read-only reviewers and exact source pins. Repair actual findings and replay affected checks. Replay the canonical current ledger, validate both reports, then mark the app goal complete only when all eight requirements pass. The entire paired programme remains the stopping condition.
+After accepted explicit source-review approval, launch completion-plan-v5.tsv through bundled CLI 0.159.2, sequentially, read-only, with one Sol-high numerical and two Luna-medium reviewers. Complete all original O1-O11 obligations. If actual findings require edits, stop source races, preserve the failure and replay affected checks. All 18 source/test/help/usage pins currently match final-check-source-freeze-v5.json. Restore missing ignored local packet files from tracked final-review-packet-v5.json if necessary; copied checkboxes do not establish fresh execution.
 
-Read LOOP/lanes/auto-fa-rank-implementation-20261001/GOAL.md, ultra-plan.md, checkpoint.md, the frozen contract and retained implementation receipts first. Recheck branch/HEAD and the registered leases before edits. Numerical producer was GPT-6 Sol high; R and test producers were GPT-6 Luna medium. No fresh completion reviewer has yet accepted these candidates.
+Once fresh judgments accept the current candidate, finish G8 constituent evidence/local commits and run the required full validator with exact PATH, UNLAZY_APPROVAL_DIR=/private/tmp/hsq-auto-fa-final-approvals and retained final-gate-check.mjs timeout 1800. Its six technical replays usually take 12-15 minutes on one Julia/BLAS thread. Mark the app goal complete only when all eight original outcomes and final validation pass. No owned numerical or reviewer process remains active at this checkpoint.
 
-Continuation: historical scoping and consolidated CHECK syntax are repaired and verified. The six commands byte-match their passing child commands; prior malformed R command copies fail the negative syntax control. All 17 source/test/help pins remain unchanged. The source-review payload question is still unanswered, so G7 and final G8 acceptance remain open.
+At October 2, 5 a.m. Edmonton, stop starting new work and give the exact highest-proven handoff if anything remains unfinished. Keep the original whole paired programme and deferred scope intact.

@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-02T03:33:01.737126+00:00",
+  "source_review_status": "V5 final panel ready but not launched; human authorization control pending",
+  "composition": {
+    "numerical": "gpt-6-sol high",
+    "bridge": "gpt-6-luna medium",
+    "evidence": "gpt-6-luna medium"
+  },
+  "manifest_sha256": "52845ab37bc6e7ec6fe259eb1239eb35e814d24401dc0159ed3a7aa897763ced",
+  "candidate_julia": "45ae9216",
+  "candidate_r": "2108c0d",
+  "source_freeze": "final-check-source-freeze-v5.json",
+  "parent_test_audit": "two14-versus18parameter false-positive guards fixed and independently counted236/13",
+  "not_independent_review": "Worker repair and parent confirmation are production/debugging receipts; G7 remains open."
+}

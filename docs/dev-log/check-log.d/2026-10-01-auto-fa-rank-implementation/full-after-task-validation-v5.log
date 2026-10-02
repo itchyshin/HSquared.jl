@@ -1,0 +1,6 @@
+after-task structure check passed
+Error: Acceptance ledger has UNMET gates -- the report is well-formed but the work is not finished:
+  ./.unlazy/auto-fa-rank-implementation-20261001/GATES.md
+Finish the slice, or mark the gate ABANDONED with its handoff note, then re-run.
+Detail: node "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/final-gate-check.mjs" --status
+Execution halted

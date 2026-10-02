@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-02T03:58:39.752099+00:00",
+  "full_after_task_exit": 1,
+  "full_after_task_structure": "PASS",
+  "acceptance": "UNMET originalG7/G8; all six technical gates retained PASS after mandatory reverify",
+  "r_report_exit": 0,
+  "r_report_scope": "Structure passes; Rworktree has no separate live ledger. Paired acceptance is owned by Julia canonical ledger, not inferred from Rreport exit.",
+  "shared_closeout_exit": 1,
+  "shared_closeout_scope": "Unmodified compiler anchors its child Rvalidator at brain repository; not this checkout acceptance. Memory/GoldenSet markers are present; no shared tool or unrelated ledger changed.",
+  "frozen_pins_match": 18,
+  "gates_passed": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6"
+  ],
+  "gates_pending": [
+    "G7",
+    "G8"
+  ]
+}

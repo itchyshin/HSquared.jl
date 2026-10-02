@@ -1,0 +1,75 @@
+{
+  "utc": "2026-10-02T03:31:15.660157+00:00",
+  "method": "Parent independently parses each Test Summary row from the saved unmodified log",
+  "testsets": 13,
+  "passes": 236,
+  "rows": [
+    {
+      "testset": "automatic FA independent ordering and confounding witnesses",
+      "passes": 5,
+      "total": 5
+    },
+    {
+      "testset": "automatic FA production selector preserves animal and trait order",
+      "passes": 23,
+      "total": 23
+    },
+    {
+      "testset": "automatic FA selector dense REML and criterion contract",
+      "passes": 18,
+      "total": 18
+    },
+    {
+      "testset": "automatic FA matched floor and injected failure ledger",
+      "passes": 26,
+      "total": 26
+    },
+    {
+      "testset": "automatic FA rejects corrupted optimizer receipts",
+      "passes": 28,
+      "total": 28
+    },
+    {
+      "testset": "automatic FA selected K1 fit uses same-covariance dense objective",
+      "passes": 13,
+      "total": 13
+    },
+    {
+      "testset": "automatic FA refuses non-PD covariance receipts and sole survivor",
+      "passes": 17,
+      "total": 17
+    },
+    {
+      "testset": "automatic FA near-floor flags and persistent non-nesting refusal",
+      "passes": 21,
+      "total": 21
+    },
+    {
+      "testset": "automatic FA bounded retry and interrupt ledger",
+      "passes": 19,
+      "total": 19
+    },
+    {
+      "testset": "automatic FA better-unconverged retry trigger and bounded refusal",
+      "passes": 7,
+      "total": 7
+    },
+    {
+      "testset": "automatic FA interruption at each initial and retry start",
+      "passes": 28,
+      "total": 28
+    },
+    {
+      "testset": "automatic FA rejects forbidden data and confounded pedigree designs",
+      "passes": 23,
+      "total": 23
+    },
+    {
+      "testset": "automatic FA selector public shape and refusal contract",
+      "passes": 8,
+      "total": 8
+    }
+  ],
+  "log_sha256": "cc4025494c91fc60d39326e421abf0771e17df01086e7c57b50adf448ef112a7",
+  "test_sha256": "4542a09b3eb85be4a3ed3d31607945277a12cbeeadd93844da725219598c348d"
+}

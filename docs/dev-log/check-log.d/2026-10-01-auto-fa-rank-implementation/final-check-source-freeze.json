@@ -1,5 +1,6 @@
 {
-  "captured_at_unix": 1790901807.070382,
+  "captured_utc": "2026-10-02T03:31:15.661466+00:00",
+  "scope": "V5 final two-instance cross-rank test-oracle repair before source review and acceptance replay",
   "files": [
     {
       "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
@@ -9,7 +10,7 @@
     {
       "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
       "path": "src/fa_rank_selection.jl",
-      "sha256": "8051cf7297377e815755babe5642113f53a1257b97dfaa7e2578ed86cc5bd750"
+      "sha256": "7dd1e728c4c61f21689114729759b6d02ff8fb3eaf6076e33e7df1494474a4a6"
     },
     {
       "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
@@ -19,7 +20,7 @@
     {
       "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
       "path": "test/test_auto_fa_rank.jl",
-      "sha256": "43ea1d3b9007513f1cb2195f708f97a4d2c69972fe164b8f5a9534c3b0c2aac0"
+      "sha256": "4542a09b3eb85be4a3ed3d31607945277a12cbeeadd93844da725219598c348d"
     },
     {
       "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
@@ -39,7 +40,7 @@
     {
       "root": "/private/tmp/hsquared-auto-fa-r-20261001",
       "path": "R/fa-rank-selection.R",
-      "sha256": "8b9702a71df3fc7b7c6e7d5e042e0c1db8ffd782e76609585651e63824cc3d1d"
+      "sha256": "82b70bb7f274ab2774330a96a8849120fb85411450b8f1503560697ccf08e326"
     },
     {
       "root": "/private/tmp/hsquared-auto-fa-r-20261001",
@@ -74,7 +75,7 @@
     {
       "root": "/private/tmp/hsquared-auto-fa-r-20261001",
       "path": "tests/testthat/test-auto-fa-rank-optin.R",
-      "sha256": "722d5f456c75d626031abfa17f30693bb724ac302e1564c216ab6ba2523e58f7"
+      "sha256": "da973074dbd87fc8df26968c8b192556ba6592e05c384b134797d8d2d591d9a6"
     },
     {
       "root": "/private/tmp/hsquared-auto-fa-r-20261001",
@@ -85,6 +86,13 @@
       "root": "/private/tmp/hsquared-auto-fa-r-20261001",
       "path": "tests/testthat/test-multivariate.R",
       "sha256": "d01fb2d5f7a1b26231b4d53784e4981ad3d4d64b301397a65e96fce67b9e98f7"
+    }
+  ],
+  "additional_docs": [
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "docs/design/auto-fa-rank-experimental-usage.md",
+      "sha256": "f566affb320cdfa390c601c47d854f4b459c008408ca6b88465e252c2667b80c"
     }
   ]
 }
