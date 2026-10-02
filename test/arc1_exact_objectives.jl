@@ -3,9 +3,10 @@ using Random
 using Test
 using HSquared
 
-# This milestone is intentionally loaded directly until the parent integrates
-# it into HSquared.jl and the package test runner.
-Base.include(HSquared, joinpath(@__DIR__, "..", "src", "arc1_fa.jl"))
+# Keep this file usable both standalone and through the integrated module.
+if !isdefined(HSquared, :_arc1_fa_exact_objective_gradient)
+    Base.include(HSquared, joinpath(@__DIR__, "..", "src", "arc1_fa.jl"))
+end
 
 function _arc1_test_case(; correlated_residual = true)
     rng = MersenneTwister(41027)

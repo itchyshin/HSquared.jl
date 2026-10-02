@@ -1018,7 +1018,13 @@ function fit_multivariate_reml(
     traits = nothing,
     genetic_structure::Symbol = :unstructured,
     rank = nothing,
+    optimizer_policy = nothing,
 )
+    if optimizer_policy !== nothing
+        optimizer_policy in ("arc1_v1", :arc1_v1) && throw(ArgumentError(
+            "arc1_v1 requires a validated Pedigree; call fit_multivariate_reml(Y, X, Z, pedigree::Pedigree; ...)"))
+        throw(ArgumentError("unknown optimizer_policy: $(repr(optimizer_policy)); supported value is \"arc1_v1\""))
+    end
     n = size(Y, 1)
     t = size(Y, 2)
     t >= 1 || throw(ArgumentError("Y must have at least one trait column"))
@@ -1189,6 +1195,52 @@ function fit_multivariate_reml(
         fa_start_diagnostics = fa_start_diagnostics,
         traits = tlabels,
     )
+end
+
+"""
+    fit_multivariate_reml(Y, X, Z, pedigree::Pedigree; optimizer_policy="arc1_v1",
+                          genetic_structure=:factor_analytic, rank=1, ...)
+
+Fit the requested rank-one four-trait FA model with the bounded ARC1 optimizer
+policy. A validated pedigree is required so the K0/K1 schedule and its REML
+nestedness check use the supported relationship path. The fit is returned only
+after the frozen K0 plus 18-start K1 schedule is eligible. `ledger_sink` may be
+a `Ref` used to retain attempt rows if fitting is interrupted or unavailable.
+"""
+function fit_multivariate_reml(
+    Y::AbstractMatrix,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    pedigree::Pedigree;
+    initial = nothing,
+    iterations = nothing,
+    ids = nothing,
+    traits = nothing,
+    genetic_structure::Symbol = :unstructured,
+    rank = nothing,
+    optimizer_policy = nothing,
+    ledger_sink = nothing,
+)
+    if optimizer_policy === nothing
+        niter = iterations === nothing ? 2_000 : iterations
+        return fit_multivariate_reml(Y, X, Z, pedigree_inverse(pedigree);
+            initial, iterations = niter, ids = ids === nothing ? pedigree.ids : ids,
+            traits, genetic_structure, rank)
+    end
+    optimizer_policy in ("arc1_v1", :arc1_v1) || throw(ArgumentError(
+        "unknown optimizer_policy: $(repr(optimizer_policy)); supported value is \"arc1_v1\""))
+    genetic_structure == :factor_analytic && rank == 1 || throw(ArgumentError(
+        "arc1_v1 fixed-fit dispatch requires genetic_structure=:factor_analytic and rank=1"))
+    initial === nothing || throw(ArgumentError(
+        "arc1_v1 does not accept user-supplied initial values or truth starts"))
+    niter = iterations === nothing ? 2_000 : iterations
+    niter == 2_000 || throw(ArgumentError("arc1_v1 fixes iterations at 2,000 per start"))
+    result = _arc1_select_fa_rank(Y, X, Z, pedigree; ids, traits,
+        iterations = 2_000, fixed_rank = 1, ledger_sink)
+    if result.selection_status != :fixed_rank_fit || result.selected_fit === nothing
+        throw(ArgumentError("arc1_v1 fixed K1 fit unavailable: $(result.reason)"))
+    end
+    return result.selected_fit
 end
 
 # ---------------------------------------------------------------------------
