@@ -1,6 +1,6 @@
 # Automatic FA-rank implementation evidence
 
-Status: final repaired candidate has six technical PASS gates and three independent V7 PASS judgments; G8 final closeout remains open. Historical receipt states below retain their original scope. These files retain numerical checks and ordinary-start execution witnesses. They do not establish selection reliability.
+Status: final bounded paired programme locally accepted. All eight original gates, three independent source lenses and final reconciliation pass. Historical receipt states below retain their original scope. These files retain numerical checks and ordinary-start execution witnesses. They do not establish selection reliability.
 
 ## Archived receipts before source-review repairs
 
@@ -35,3 +35,7 @@ Final affected V5 G1/G5 replay passed after the two-instance test-oracle repair.
 The user extended the work window until all original gates pass. V6 evidence HOLD identified a missing O1 production-comparator negative control. Test-only candidate 3ef362b1 repairs that obligation; focused acceptance independently sums 249 assertions across thirteen sets. All eighteen current source/test/help/usage pins match. V7 numerical, bridge and evidence reviewers each return PASS, with raw terminal reports, events and routing evidence retained losslessly in review-v7-receipts.json. Earlier HOLDs and interrupted/unlaunched batches are preserved.
 
 The terminal root replay passes G1-G6. R package check reports zero errors, warnings and notes; required-live transport passes without accepted skips. root-replay-v7-receipts.json retains exact root output, check result, package log and full testthat output, with original byte counts and hashes. Root exit 1 reflects the two manual gates open at execution; G7 is now accepted. G8 final mechanical reconciliation and whole after-task validation are pending. No reliability or ordinary selected-K1 claim, promotion, push or release follows. protected-r-final-v7.json confirms all 39 initially recorded R dirty statuses and hashes without claiming whole-status equality.
+
+## Final acceptance
+
+All eight original gates pass, with no abandonment. full-report-validation-v7-receipts.json retains the mandatory whole CLI exit-zero proof and fresh package/test logs. The final Luna mechanical/reconciliation audit passes; its raw routing statement is corrected separately using its actual outer dispatch and terminal events. final-requirement-audit-v7.json maps every original obligation to authoritative evidence. The seventeen reviewed source/test/help pins are unchanged; final-closeout-source-freeze-v7.json declares the usage status-only update and unchanged body hash. All raw HOLDs, wrong-project failures, approval rejection and deadline interruption remain intact. No selection reliability, ordinary selected-K1 execution, promotion, default activation or publication is inferred.

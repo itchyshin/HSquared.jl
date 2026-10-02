@@ -1,0 +1,105 @@
+{
+  "utc": "2026-10-02T12:42:49.487795+00:00",
+  "tested_source_candidate": "Julia 3ef362b1 / R 2108c0d",
+  "reviewed_freeze": "final-check-source-freeze-v7.json",
+  "all_seventeen_source_test_help_pins_unchanged": true,
+  "R_usage_mirror_sha256": "d77a3d1d5fb398fd91b0f882d21e321bb3f3690f6082e77c4c5da616a4c37973",
+  "usage_status_only_delta": {
+    "reviewed_sha256": "f566affb320cdfa390c601c47d854f4b459c008408ca6b88465e252c2667b80c",
+    "final_sha256": "d77a3d1d5fb398fd91b0f882d21e321bb3f3690f6082e77c4c5da616a4c37973",
+    "body_sha256_unchanged": "60efdd25b9dc9c00bbac45bf5b757a23d105a943901103cdcd8bbe61ec6d2f0d",
+    "reason": "Replace stale pending acceptance status using terminal full validator; every usage/code/limit paragraph unchanged. No new numerical or public capability claim."
+  },
+  "files": [
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "src/HSquared.jl",
+      "sha256": "f61c313446b79b22d32ab83d3542980e8b4e65011d77b0c7774a44e25daf946c"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "src/fa_rank_selection.jl",
+      "sha256": "7dd1e728c4c61f21689114729759b6d02ff8fb3eaf6076e33e7df1494474a4a6"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "test/runtests.jl",
+      "sha256": "baee244af5b54415265572757aa22bcb2772500fdc419304f4ba754764f2675c"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "test/test_auto_fa_rank.jl",
+      "sha256": "c51b440aed4c392679559e47a8e8095cbdef02c2e79056214d6fde54e6da198d"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "test/auto_fa_rank_acceptance.jl",
+      "sha256": "c7a031c323dc5dceeefcdf9fe64902a2d8204498d80b041de75b031d2bb16d0f"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "test/fixtures/auto_fa_rank/ordinary_start.tsv",
+      "sha256": "8db98179a862897bc0b52998caf0ca5e1166d79d93607b73547117400eca8ade"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "NAMESPACE",
+      "sha256": "76e0f3b9a623f0d2e468a2fe213ecccad26655e11278e7d80c7a75c99c60c2c9"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "R/fa-rank-selection.R",
+      "sha256": "82b70bb7f274ab2774330a96a8849120fb85411450b8f1503560697ccf08e326"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "R/hsquared.R",
+      "sha256": "9fd940a366f5fd5e317d872a8a4299bcb4fcd4a6a2a2584bfcc2307f5cc78d3c"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "R/julia-bridge.R",
+      "sha256": "f0e5d7498f40004f31ce14df39aa749ee5858605113376674948bd6b05dc6f51"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "R/hs_control.R",
+      "sha256": "c43cfef5f7863eaffde04c5d33f5844c4f7778c5bcd7169558480c2f065262d8"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "man/hs_control.Rd",
+      "sha256": "a03dc57e47c9f87fbd59f47de4de2c748b92b82d6bde4afa6d8a3e8c6b48693a"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "man/hsquared.Rd",
+      "sha256": "daeb298a2550811feda99b5c35bba6d279d0ad150a6514750ac0d2c5e06e50e8"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "man/hsquared_fa_rank_selection.Rd",
+      "sha256": "e6c281573a7f175e53299dcf0e1fdca643087a5f940b8b59b5aa67e55a4db8da"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "tests/testthat/test-auto-fa-rank-optin.R",
+      "sha256": "da973074dbd87fc8df26968c8b192556ba6592e05c384b134797d8d2d591d9a6"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+      "sha256": "8db98179a862897bc0b52998caf0ca5e1166d79d93607b73547117400eca8ade"
+    },
+    {
+      "root": "/private/tmp/hsquared-auto-fa-r-20261001",
+      "path": "tests/testthat/test-multivariate.R",
+      "sha256": "d01fb2d5f7a1b26231b4d53784e4981ad3d4d64b301397a65e96fce67b9e98f7"
+    },
+    {
+      "root": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "path": "docs/design/auto-fa-rank-experimental-usage.md",
+      "sha256": "d77a3d1d5fb398fd91b0f882d21e321bb3f3690f6082e77c4c5da616a4c37973"
+    }
+  ]
+}

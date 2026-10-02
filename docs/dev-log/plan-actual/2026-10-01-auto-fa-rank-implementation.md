@@ -1,6 +1,6 @@
 # Automatic FA rank: planned versus actual work
 
-Status: final repaired-source verification and closeout in progress. This receipt-based reconciliation covers the original paired programme; final acceptance remains open. The raw v2 reviews and routing receipts are preserved in `docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/review-v2-receipts.json`.
+Status: complete bounded local paired programme. Final reconciliation and all eight original acceptance gates pass; historical dispositions below retain their original scope. The raw v2 reviews and routing receipts are preserved in `docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/review-v2-receipts.json`.
 
 | Axis | Evidence and decision | Classification and owner |
 | --- | --- | --- |
@@ -60,3 +60,7 @@ The terminal V7 root replay passes all six technical gates; R check has zero err
 The explicit human approval resolved the external audit control. The one fresh Luna medium job returned mechanical PASS and reconciliation PASS on the unchanged eighteen reviewed pins, preserving all original requirements and failure evidence. Raw judgments remain separate from parent adjudication. All six axes have dispositions; final whole after-task validation and closure receipts remain owed. No source repair, capability promotion, default activation or public action follows from this audit.
 
 Parent routing adjudication: the outer approved GPT-6 Luna medium CLI audit actually started and terminated exit zero, proved by its dispatch manifest and terminal event stream. The reviewer attempted an unnecessary nested CLI launch, which failed sandbox initialization before creating another review. Its raw report conflates that failure with the successful outer route. The raw text is preserved; the parent corrects this routing statement and records the unnecessary nested attempt as workflow drift under Ada. Only the one actual final mechanical/reconciliation judgment is counted. No additional scientific panel, source change or claimed token saving follows.
+
+## Final disposition
+
+All original bounded paired requirements and eight gates pass. The mandatory full report validator actually replays the six executable checks and terminates exit zero. The final independent and mechanical judgments, original failure history and parent routing adjudication remain separate and retained. Source/test/help pins are unchanged; the usage note has only its status refreshed from proved outcomes. Final documentation/receipt commits close local state. Scope, claims and deferred scientific work remain unchanged. The 450-minute engineering target was exceeded in calendar time across an overnight deadline, approval waits and accepted repairs; active engineering time was not independently measured, so no productivity or billing inference is made. Adaptive repairs are recorded; the unnecessary nested audit launch is retained as routing/workflow drift owned by Ada and did not create another review. No required item is dropped or declared N/A.

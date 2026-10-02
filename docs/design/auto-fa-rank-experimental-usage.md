@@ -1,6 +1,6 @@
 # Experimental automatic genetic FA rank selection
 
-Status: implementation under verification. Julia focused and full package checks pass. R focused, required live and full package checks also pass. Independent source review and final programme acceptance remain pending. Public covered count remains seven.
+Status: bounded experimental Julia/R mechanics locally accepted, 2026-10-02. All eight programme gates pass, including focused and full package checks, mandatory live parity, three independent source judgments and final reconciliation. Public covered count remains seven. Selection reliability and ordinary optimizer-driven K1 selection remain untested.
 
 This comparison asks whether four traits are better described by separate genetic variances or by those variances plus one shared genetic factor. It compares K0 and K1 on the same observations. K0 still estimates a genetic variance for each trait. K counts shared factors; positive uniqueness variances keep the full genetic covariance matrix of full rank.
 
