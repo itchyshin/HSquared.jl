@@ -61,3 +61,21 @@ Astra completed the independent centering review in 344.58 seconds with source h
 
 
 Astra v2 reviewed source `5a23f175` and test `a2fb8671`, confirmed both original repairs, and independently passed 50 centering assertions including 11 retained-N80 arithmetic assertions with no skips. Two neighboring tag paths remain blocked: a missing scalar tag produces a three-valued Boolean exception rather than a structured refusal, and BFGS/continuation maximum aggregation can ingest a centered maximum from another fixed Ve. Luna is auditing every tag/centered-maximum ingestion path and adding regressions. The same numerical thresholds, starts and budgets remain frozen. Review process duration was 284.92 seconds with unchanged reviewed source hashes. No real profile fit has run on the changed source.
+
+## Third centering review: retained maxima on refusal
+
+Astra completed a bounded read-only review in 493.781 seconds against source `26033c45ef68a580bb61bbfc934404eddf442ab8c8845c559afe1de4b91882fc` and test `e9f6377ab8e908fd2f8765eddbded70975e0a66c28dbe59268a721a6625597dc`. Both hashes remained unchanged. The parent made the authorized documentation-only checkpoint `1f5643ad` during review; the reviewer correctly limited its verdict to the inspected source hashes.
+
+Verdict: BLOCKED. A continuation with invalid terminal score returned before ingesting valid same-Ve centered history. An end-to-end nuisance probe incorrectly accepted after losing an improvement of `2e-7`. Scalar refusal replaced a higher historical full maximum with a fresh terminal value; a valid tag with invalid terminal score also lost centered history. Luna owns repairs across all maximum-ingestion and refusal paths.
+
+All 88 independent centering assertions passed, including 11 actual N80 arithmetic assertions without skips. Candidate 24 resolved and candidate 7 remained refused at centered spread `1.3393616882240167e-8`, preserving the `1e-8` threshold. These arithmetic checks do not override the two source defects. Report: `.unlazy/arc1-gaussian-reliability/evidence/centering-astra-review-v3/review.md`.
+
+## Fourth candidate submitted for review
+
+Source `5768e810b067ac02764b888fc65acc4dc1fe985cb8194f80c177100870883c70` and test `276420266e7a9e9fa0ee9090951063203dc6e0dc90f1c1064ff50d92e9a5998d` centralize history ingestion before terminal refusal. Worker focused tests passed 365 assertions; the expensive profile wrapper was excluded and no data fit was run. Astra review is retained under `centering-astra-review-v4`.
+
+The arithmetic regression now generates the inspected N80 example from engineering seed 2026100204 and no longer skips when an ignored artifact is absent. It matches the retained 12-digit response fingerprint. Response values differ by at most `4.44e-16` and transformed responses by `8.88e-16`; X, Z, pedigree inverse, transformed design and eigenvalues are exactly equal. This is a portable same-seed/design regression with measured platform rounding, not byte-identical input reconstruction.
+
+## Fifth centering repair awaiting independent review
+
+Luna consolidated candidate, continuation, scalar and returned-certificate history ingestion. Focused arithmetic and controlled tests passed 835 assertions in 24.4 seconds, including a 192-case adapter matrix. Source SHA-256 is `5f1d7c1288b6a08b504c909ee855577648963c1e4932b5fde2bb8c2f2d6e85d3`; test SHA-256 is `9bd451799c736ecad250d2e38b63a857c87cdab03c0bcc8c5947ac5edf343de0`. The bounded Astra review is retained under `centering-astra-review-v5/`. No optimizer or real profile fit has been run on this candidate. The v4 defects remain open until independent review accepts the repairs.

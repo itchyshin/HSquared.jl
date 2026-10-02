@@ -23,3 +23,9 @@ The repaired source is frozen for an independent read-only Astra high review. Th
 The bounded reviewer completed in 410.156 seconds with all ten reviewed source hashes unchanged. Verdict: BLOCKED. The full report is retained in `.unlazy/arc1-gaussian-reliability/evidence/scientific-checkers-astra-review/review.md`.
 
 Bootstrap prefix and guard validation, plus selector audit-flag transport, received bounded acceptance. Remaining defects were reproduced in profile method-version transport and pre-engine failure records; reference start, uniqueness, fallback, intermediate-maximum and iteration-budget validation; full-artifact semantic binding and returned outer/seed handling; and consistency of pilot-qualification evidence before confirmation admission. Passing 14 scientific-gate and seven focused adversary tests did not detect these defects. Luna owns the repairs. No source admission, study, or acceptance gate was created by this review.
+
+## Second receipt-admission review
+
+Astra's second review completed in 572.701 seconds with eleven scoped hashes unchanged. Verdict: BLOCKED. The original reference mutations, actual profile-method transport, and valid pre-engine failure denominators passed their bounded checks. Remaining defects concern encoded reference parameters and history order, identity rewriting in the neighboring live launcher, an inspector that trusts its duplicated summary instead of the retained result, returned-fit failures conflicting with artifact checks, and a pilot cache that can reuse stale referenced artifacts. Full report: `.unlazy/arc1-gaussian-reliability/evidence/scientific-checkers-astra-review-v2/review.md`.
+
+Luna owns repairs across the full S3 path, including `run_cell.py`. The next freeze must include those transitive launcher and inspector files. No study or admission was created.

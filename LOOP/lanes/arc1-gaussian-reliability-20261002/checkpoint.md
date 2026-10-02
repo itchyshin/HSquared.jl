@@ -2,7 +2,21 @@
 
 Status: implementation in progress. The user approved the complete programme on 2026-10-02. No acceptance gate is yet claimed complete. Continue authorized reversible work without another approval request.
 
-## Latest retained checkpoint
+## Current resume state, 2026-10-02 23:15 UTC
+
+Julia HEAD is `1f5643ad`; isolated R HEAD is `4c8457b`. Earlier paragraphs below are retained history and do not describe current ownership. All G0-G8 gates remain open. No allocated study seed has run, and all remote engineering processes have ended.
+
+The fifth centered-profile repair is frozen at source `5f1d7c1288b6a08b504c909ee855577648963c1e4932b5fde2bb8c2f2d6e85d3` and tests `9bd451799c736ecad250d2e38b63a857c87cdab03c0bcc8c5947ac5edf343de0`. Luna passed 835 focused assertions, including a 192-case adapter/history matrix, in 24.4 seconds. Astra's bounded read-only review is running under `centering-astra-review-v5/`. The fourth review's four blockers remain open until independent replay accepts their repairs. No real N80 profile replay has run on the centered source.
+
+The second scientific-checker review completed in 572.70 seconds with all eleven frozen hashes unchanged and five remaining blockers. The actual launcher still overwrites returned identities; reference encodings and chronological maxima are incompletely checked; retained artifact summaries are not recomputed from actual results; returned scientific failures are confused with pre-engine failures; pilot qualification can reuse a stale transitive artifact cache. Luna simulation owns the repairs. The next review must freeze the full transitive executor and checker source set, including `run_cell.py`.
+
+The covariance-representation question remains pending. Only observation and fixed-coordinate arithmetic are authorized on that path. The new observation-only source passed 198 worker assertions, but parent inspection found that budget/invalid-step events can attach stale coordinates and values. Repair that provenance after the fixed-coordinate task releases its source freeze. Do not change numerical acceptance while the decision is pending.
+
+The fixed-coordinate FA check completed all three reconstructed inner-bootstrap witnesses in 8.53 seconds. The parent inspected the independent high-precision likelihood and central gradients and verified all five recorded source hashes matched. The original consumed response bytes were not retained; reconstruction is not proof of bit identity. Evidence is `fa-fixed-coordinate-prerun/`. This releases the observation-only source freeze but does not authorize a numerical change.
+
+The canonical G1/G6 runner is now `tools/arc1_oracles.py`, SHA-256 `f82316db2c52b69e232b138e8df2a55807f0a4ef8df2b8959d67b46f37f319c2`. The only changes from the parent-tested ignored runner are repository-root and output-directory resolution. Compilation and synthetic tests pass; actual G1/G6 execution and the external reviewed source freeze are still pending. The rolling `after-task-progress.md` is explicitly incomplete. Its structural check passed; acceptance remains unmet. The parent verified both protected Julia files and all 38 original dirty R files unchanged at 23:04:59 UTC.
+
+## Earlier retained checkpoints
 
 Isolated R commit `05dc4a9` retains the Arc1 controls, transport, tests and help. The final focused R control check passed 79 assertions with one expected optional-live skip and no warnings. `R CMD build --no-manual` built vignettes and completed in 13.75 seconds; artifact `/private/tmp/h2-arc1-r-check-05dc4a9/hsquared_0.9.0.tar.gz` has SHA-256 `231c7952fa38ce5a52cd51eb8b53c8cc9c256128b8e397e422b3f19157b55f08`. Full check and final-source live replay remain pending. Nothing is pushed.
 
@@ -83,7 +97,7 @@ The app goal API unexpectedly contains an unrelated manuscript objective. It has
 
 ## Next action
 
-Finish fixed-residual-variance centering, six scientific-checker review repairs, and exact R help recovery. Independently review and replay the returned code, then freeze matching source/protocol versions and run full package checks. Present the confirmation allocation issue together with measured campaign costs for the required pre-run decision. Continue authorized engineering without another approval request.
+Finish the profile history and scientific-checker repairs named in the current resume state. Independently review and replay the returned code, then freeze matching source/protocol versions and run full package checks. Preserve the pending covariance-representation decision. Present the confirmation allocation issue together with measured campaign costs for the required pre-run decision. Continue unaffected authorized engineering.
 
 ## Continuation checkpoint, 2026-10-02: scaling and third profile review
 
@@ -94,3 +108,25 @@ The third centered-profile candidate is frozen at source SHA-256 26033c45ef68a58
 The scientific-checker Astra review finished BLOCKED. It identified profile-method transport and pre-engine failure contradictions, five expanded-reference audit bypasses, unverified full-artifact semantics, overwritten returned identities, and insufficient pilot-qualification validation. Luna owns repairs with unchanged acceptance rules. Confirmation remains HOLD and allocation remains 400.
 
 R HEAD is 05dc4a9. A narrow uncommitted follow-up refuses max_dense_cells for the profile method because that route cannot honor it. Its help and direct no-engine test are under parent verification. G1/G6 runner exists but is not approved: parent requested transitive-input freezing, robust skipped/empty-test detection, realistic caps, and signal cleanup before execution.
+
+## Oracle preflight and FA diagnosis continuation
+
+The narrowed R refusal is committed at `4c8457b`. The rebuilt source artifact is `/private/tmp/h2-arc1-r-build-4c8457b/hsquared_0.9.0.tar.gz`, SHA-256 `e957355172574c96d49fa168a3be3d7af3b41d89c6db6efe5f123a33695bbe0d`. Julia documentation checkpoint is `1f5643ad`.
+
+The draft G1/G6 runner hash `f152a473653cd7034308f82a66905694522a8144ec82fbf113da77e3fac10c5e` passed its parent replayed self-test in 4.329 seconds. A separate parent probe of its exact Julia command found a macro syntax error before the synthetic passing test could run: concatenated string expressions are not accepted as the testset label. The runner remains unapproved. Luna has the precise repair and stronger synthetic-test requirements queued. No actual G1 or G6 gate was attempted.
+
+Astra is diagnosing retained FA fitting failures under `.unlazy/arc1-gaussian-reliability/evidence/fa-failure-astra-diagnosis/`. The six FA source/test hashes are frozen; no new fits or optimizer changes are permitted in that read-only review. Luna continues the third profile-review repairs and scientific-checker repairs in disjoint files. No study seeds have been consumed.
+
+## Scientific representation decision pending
+
+Astra's FA diagnosis completed with all six reviewed hashes unchanged. Two demonstrated problems are uniqueness addition rounding and residual-covariance reconstruction losing positive definiteness. A one-line floor relaxation is not justified. Consistent factor-based evaluation, certification, results and bootstrap would clarify the plan's current refusal contract. Shinichi has been asked to choose retained factors with explicit matrix-precision diagnostics, or retain strict rounded-matrix checks. No response is recorded. The full proposed decision is in `covariance-representation-decision.md`.
+
+While that question is pending, Luna may add observation-only failure telemetry in `src/arc1_fa.jl` and its optimizer-contract tests. It must preserve the mathematical and numerical behaviour, all existing counters, starts, thresholds and budgets. No substantive covariance or admissibility change is authorized by that instrumentation task. Luna's eleven checker files are frozen for a second Astra review under `scientific-checkers-astra-review-v2`. Profile maximum-history repairs continue separately.
+
+The gate ledger now labels historical and missing commands as planning references, not executable CHECK entries. In particular, the historical 70-assertion objective command cannot mark the complete G1 gate passed. Fresh status confirms all nine gates unmet. Complete reviewed runners and externally frozen inputs must replace these references before execution.
+
+## Oracle synthetic verification repaired
+
+The parent replayed the repaired G1/G6 runner self-test in 6.516 seconds. Runner SHA-256 remained `980d6b1bf6dd6197ac9a146f77d02c5c44dd2d1edd64caf8fab6bd88af6723ae`. Synthetic R cases correctly distinguished pass, failure, skip, error and empty tests; synthetic Julia cases rejected failed, skipped and empty runs and accepted a passing nested test. Logs and receipt are in `.unlazy/arc1-gaussian-reliability/evidence/parent-oracle-selftests-v2/`.
+
+This verifies the runner's tested failure detection, not G1 or G6 project acceptance. The source/input freeze is still pending, and the runner's obsolete ignored N80 input requirement must be removed after the portable profile regression is finalized.

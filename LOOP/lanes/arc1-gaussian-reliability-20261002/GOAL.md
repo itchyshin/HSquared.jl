@@ -54,6 +54,8 @@ Deliver reliable ordinary factor-analytic (FA) fitting, evaluate automatic K0/K1
 
 This lane-local file is the control record for this Arc1 run. The existing `LOOP/GOAL.md` describes a separate, older H² programme and remains untouched. The application goal returned by the goal API is also separate and is not modified here.
 
+The table below preserves the initial execution snapshot. Current implementation, review, compute and ownership status is recorded in [checkpoint.md](checkpoint.md); it supersedes this table's status labels without changing the approved goal or acceptance requirements above.
+
 | Slice | Status | Dependency / exit condition |
 |---|---|---|
 | S0: freeze mathematics, protocol, seed rule, and ledger | IN PROGRESS | Deterministic contract and seed rule frozen in these records; exact manifest generation/validation is an S3 prerequisite before studies. No fit has been run by S0. |
