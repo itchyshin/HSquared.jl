@@ -1,0 +1,473 @@
+using HSquared
+using LinearAlgebra
+using Random
+using Test
+
+# This oracle deliberately assembles record-major V and X_full from scalar
+# indices. It shares no Kronecker/order helper with the selector.
+function _auto_fa_dense_reml(Y, X, A, G, R)
+    n, t = size(Y)
+    p = size(X, 2)
+    y = [Y[i, j] for i in 1:n for j in 1:t]
+    D = zeros(n * t, p * t)
+    V = zeros(n * t, n * t)
+    for i in 1:n, a in 1:t
+        row = (i - 1) * t + a
+        for c in 1:p
+            D[row, (c - 1) * t + a] = X[i, c]
+        end
+        for k in 1:n, b in 1:t
+            col = (k - 1) * t + b
+            V[row, col] = A[i, k] * G[a, b] + (i == k ? R[a, b] : 0.0)
+        end
+    end
+    F = cholesky(Symmetric(V))
+    yw = F.L \ y
+    Dw = F.L \ D
+    C = cholesky(Symmetric(Dw' * Dw))
+    beta = C \ (Dw' * yw)
+    e = yw - Dw * beta
+    ll = -0.5 * ((n * t - p * t) * log(2π) +
+        2sum(log, diag(F.L)) + 2sum(log, diag(C.L)) + dot(e, e))
+    return (; loglik = ll, V, D, y)
+end
+
+function _auto_fa_fixture(; n = 12, seed = 20261001, informative = true)
+    ids = collect(1:n)
+    sire = zeros(Int, n); dam = zeros(Int, n)
+    if informative
+        for i in 5:n
+            sire[i] = 1 + (i - 5) % 2
+            dam[i] = 3 + (i - 5) % 2
+        end
+    end
+    ped = normalize_pedigree(ids, sire, dam)
+    A = informative ? Matrix(inv(Symmetric(Matrix(pedigree_inverse(ped))))) : Matrix{Float64}(I, n, n)
+    rng = MersenneTwister(seed)
+    lambda = reshape([0.85, -0.55, 0.72, 0.43], 4, 1)
+    psi = [0.38, 0.52, 0.47, 0.61]
+    G = lambda * lambda' + Diagonal(psi)
+    R = [1.0 0.12 0.02 0.0; 0.12 0.9 -0.04 0.03;
+         0.02 -0.04 1.1 0.08; 0.0 0.03 0.08 0.95]
+    U = cholesky(Symmetric(A)).L * randn(rng, n, 4) * cholesky(Symmetric(Matrix(G))).L'
+    E = randn(rng, n, 4) * cholesky(Symmetric(R)).L'
+    Y = repeat(reshape([0.5, -0.2, 0.8, 1.1], 1, 4), n, 1) + U + E
+    return (; Y, X = ones(n, 1), Z = Matrix{Float64}(I, n, n), ped, A, G, R, ids)
+end
+
+@testset "automatic FA independent ordering and confounding witnesses" begin
+    d = _auto_fa_fixture()
+    ell = _auto_fa_dense_reml(d.Y, d.X, d.A, d.G, d.R).loglik
+    ap = [12, 3, 8, 1, 7, 2, 11, 4, 9, 6, 5, 10]
+    tp = [3, 1, 4, 2]
+    mapped = _auto_fa_dense_reml(d.Y[ap, tp], d.X[ap, :], d.A[ap, ap],
+        d.G[tp, tp], d.R[tp, tp])
+    @test mapped.loglik ≈ ell atol = 1e-10
+    wrong_trait_order = [d.Y[i, j] for j in 1:4 for i in 1:12]
+    @test norm(wrong_trait_order - mapped.y) > 1e-3
+
+    # With one record per unrelated animal, only G+R enters V.
+    I4 = Matrix{Float64}(I, 4, 4)
+    G1 = [1.0 0.1 0 0; 0.1 1.2 0 0; 0 0 0.8 0.1; 0 0 0.1 1.1]
+    R1 = Matrix{Float64}(I, 4, 4)
+    G2 = G1 + Diagonal([0.2, 0.1, 0.3, 0.2])
+    R2 = R1 - Diagonal([0.2, 0.1, 0.3, 0.2])
+    V1 = kron(I4, G1) + kron(I4, R1)
+    V2 = kron(I4, G2) + kron(I4, R2)
+    @test V1 == V2
+
+    # Half-sib relatedness is proportional to identity after removing the
+    # intercept direction, so raw A != I does not rescue G/R separation.
+    n, rho = 8, 0.25
+    Ahs = (1 - rho) * Matrix{Float64}(I, n, n) + rho * ones(n, n)
+    Xfull = ones(n, 1)
+    Q = nullspace(Xfull')
+    H = Q' * Ahs * Q
+    J = Q' * Matrix{Float64}(I, n, n) * Q
+    @test H ≈ (1 - rho) .* J atol = 1e-12
+    K = hcat(vec(H) / norm(H), vec(J) / norm(J))
+    @test det(K' * K) < 1e-12
+end
+
+@testset "automatic FA selector dense REML and criterion contract" begin
+    d = _auto_fa_fixture()
+    ref = _auto_fa_dense_reml(d.Y, d.X, d.A, d.G, d.R)
+    @test ref.y[1:4] == collect(d.Y[1, :])
+    @test ref.V[1, 6] == d.A[1, 2] * d.G[1, 2]
+    @test ref.V[1, 2] == d.A[1, 1] * d.G[1, 2] + d.R[1, 2]
+    @test ref.loglik ≈ HSquared._multivariate_reml_loglik(
+        d.Y, d.X, d.Z, pedigree_inverse(d.ped), d.G, d.R) atol = 1e-10
+
+    q0, q1, qr = 14, 18, 10
+    ell0, ell1 = -120.0, -115.0
+    c0, c1 = -2ell0 + 2q0, -2ell1 + 2q1
+    D = 8 - 2(ell1 - ell0)
+    @test (q0 - qr, q1 - qr) == (4, 8)
+    @test (c0, c1, D) == (268.0, 266.0, -2.0)
+    @test c1 - c0 == D
+    preferred = HSquared._fa_rank_score(ell0, ell1)
+    @test preferred.criterion_difference == D
+    @test preferred.selected_rank == 1
+    # A 3.9-unit likelihood gain still favors K=0 under the declared +8
+    # penalty; reversing the sign would incorrectly select K=1.
+    margin_control = HSquared._fa_rank_score(0.0, 3.9)
+    @test margin_control.criterion_difference ≈ 0.2
+    @test margin_control.selected_rank == 0
+    wrong_sign_difference = 8 + 2 * (4.1)
+    @test wrong_sign_difference > 0
+    just_over = HSquared._fa_rank_score(0.0, 4.1)
+    @test (wrong_sign_difference < -1e-6 ? 1 : 0) != just_over.selected_rank
+    wrong_penalty_difference = 6 - 2 * 3.9
+    @test (wrong_penalty_difference < -1e-6 ? 1 : 0) != margin_control.selected_rank
+
+    tau = 1e-6
+    exact = HSquared._fa_rank_score(0.0, 4.0)
+    inside = HSquared._fa_rank_score(0.0, 4.0 + tau / 4)
+    outside_k1 = HSquared._fa_rank_score(0.0, 4.0 + tau)
+    outside_k0 = HSquared._fa_rank_score(0.0, 4.0 - tau)
+    @test exact.near_tie && exact.selected_rank == 0
+    @test inside.near_tie && inside.selected_rank == 0
+    @test !outside_k1.near_tie && outside_k1.selected_rank == 1
+    @test !outside_k0.near_tie && outside_k0.selected_rank == 0
+end
+
+@testset "automatic FA matched floor and injected failure ledger" begin
+    c = HSquared.FA_UNIQUENESS_FLOOR
+    theta = log.([0.25, 0.4, 0.55, 0.7])
+    G0, L0, psi0 = HSquared._fa_rank_cov(theta, 0)
+    @test L0 === nothing
+    @test psi0 ≈ c .+ exp.(theta)
+    @test G0 ≈ Matrix(Diagonal(c .+ exp.(theta)))
+    loading = [0.4, -0.7, 0.2, 0.9]
+    fa_params = vcat(loading, log.([0.3, 0.4, 0.5, 0.6]))
+    G1, L1, psi1 = HSquared._fa_rank_cov(fa_params, 1)
+    @test size(G0) == size(G1) == (4, 4)
+    @test size(L1) == (4, 1)
+    @test psi1 ≈ c .+ exp.(fa_params[5:8])
+    @test G1 ≈ L1 * L1' + Diagonal(psi1)
+    @test all(isposdef(Symmetric(g)) for g in (G0, G1))
+
+    d = _auto_fa_fixture()
+    calls = Tuple{Int,Symbol}[]
+    runner = function (objective, params0, iterations, rank, start_id)
+        push!(calls, (rank, start_id))
+        rank == 1 && error("synthetic FA optimizer failure")
+        p = copy(params0)
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="injected")
+    end
+    result = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=runner)
+    @test result.selection_status == :unavailable
+    @test result.selected_rank === nothing
+    @test length(calls) == 4
+    @test length(result.attempts) == 4
+    @test all(a.rank == 0 || a.status == :failed for a in result.attempts)
+    @test length(result.candidate_summary) == 2
+    @test result.candidate_summary[1].eligible
+    @test !result.candidate_summary[2].eligible
+    @test result.candidate_summary[2].reason !== nothing
+end
+
+@testset "automatic FA rejects corrupted optimizer receipts" begin
+    d = _auto_fa_fixture()
+    corruptions = (
+        :nonfinite,
+        :wrong_length,
+        :wrong_objective,
+        :at_floor,
+    )
+    for corruption in corruptions
+        runner = function (objective, params0, iterations, rank, start_id)
+            p = copy(params0)
+            reported = objective(p)
+            if rank == 0
+                if corruption == :nonfinite
+                    p[1] = NaN
+                    reported = objective(p)
+                elseif corruption == :wrong_length
+                    p = p[1:end-1]
+                    reported = objective(p)
+                elseif corruption == :wrong_objective
+                    reported += 0.01
+                elseif corruption == :at_floor
+                    p[1] = -1000.0
+                    reported = objective(p)
+                end
+            end
+            return (; phat=p, objective=reported, converged=true,
+                    iterations=1, optimizer_status="injected")
+        end
+        result = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+            ids=d.ids, attempt_runner=runner)
+        @test result.selection_status == :unavailable
+        @test result.selected_rank === nothing
+        @test any(a -> a.rank == 0 && a.status == :failed, result.attempts)
+        @test all(!a.selected for a in result.attempts)
+    end
+end
+
+@testset "automatic FA selected K1 fit uses same-covariance dense objective" begin
+    d = _auto_fa_fixture(n = 24, seed = 90101)
+    lambda = [2.0, -1.8, 1.7, 2.1]
+    psi = fill(0.15, 4)
+    G1 = lambda * lambda' + Diagonal(psi)
+    R1 = 0.15I(4)
+    rng = MersenneTwister(90102)
+    U = cholesky(Symmetric(d.A)).L * randn(rng, 24, 4) * cholesky(Symmetric(Matrix(G1))).L'
+    E = randn(rng, 24, 4) * cholesky(Symmetric(Matrix(R1))).L'
+    Y = repeat(reshape([0.4, -0.1, 0.6, 1.0], 1, 4), 24, 1) + U + E
+    rparams = HSquared._cov_to_chol_params(Matrix(R1), 4)
+    p0 = vcat(log.(diag(G1) .- HSquared.FA_UNIQUENESS_FLOOR), rparams)
+    p1 = vcat(lambda, log.(psi .- HSquared.FA_UNIQUENESS_FLOOR), rparams)
+    runner = function (objective, params0, iterations, rank, start_id)
+        p = rank == 0 ? copy(p0) : copy(p1)
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="injected known covariance")
+    end
+    result = HSquared._select_fa_rank(Y, d.X, d.Z, d.ped; ids=d.ids,
+        traits=["t1", "t2", "t3", "t4"], attempt_runner=runner)
+    @test result.selection_status == :selected
+    @test result.selected_rank == 1
+    @test result.selected_fit !== nothing
+    chosen = only(filter(a -> a.selected, result.attempts))
+    @test chosen.rank == 1
+    @test chosen.start_id == result.candidate_summary[2].selected_start
+    ref = _auto_fa_dense_reml(Y, d.X, d.A, result.selected_fit.genetic_covariance,
+        result.selected_fit.residual_covariance)
+    @test isapprox(result.selected_fit.loglik, ref.loglik; atol=1e-8, rtol=0)
+    @test isapprox(result.selected_fit.genetic_covariance, G1; atol=1e-8, rtol=1e-8)
+    @test isapprox(result.selected_fit.residual_covariance, R1; atol=1e-8, rtol=1e-8)
+
+    # Explicit fixed-rank behavior remains its ordinary fit result.
+    fixed = fit_multivariate_reml(Y, d.X, d.Z, pedigree_inverse(d.ped);
+        genetic_structure=:factor_analytic, rank=1, iterations=2, ids=d.ids)
+    @test !hasproperty(fixed, :selection_status)
+    @test fixed.genetic_rank == 1
+end
+
+@testset "automatic FA bounded retry and interrupt ledger" begin
+    d = _auto_fa_fixture()
+    calls = Tuple{Int,Symbol}[]
+    runner = function (objective, params0, iterations, rank, start_id)
+        push!(calls, (rank, start_id))
+        if rank == 1 && start_id == :default
+            p = copy(params0); p[1:4] .= 0.0; p[5:8] .-= 2.0
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="injected")
+        end
+        p = copy(params0)
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="injected")
+    end
+    retried = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=runner)
+    @test count(x -> x == (1, :diagonal_retry), calls) == 1
+    @test length(retried.attempts) <= 4
+    @test length(retried.candidate_summary) == 2
+
+    ledger = Ref{Any}(nothing)
+    interrupting = (objective, params0, iterations, rank, start_id) ->
+        throw(InterruptException())
+    @test_throws InterruptException HSquared._select_fa_rank(
+        d.Y, d.X, d.Z, d.ped; ids=d.ids, ledger_sink=ledger,
+        attempt_runner=interrupting)
+    @test ledger[] !== nothing
+    @test length(ledger[].attempts) == 1
+    @test ledger[].attempts[1].status == :interrupted
+    @test ledger[].selection_status == :interrupted
+
+    call_number = Ref(0)
+    between = function (objective, params0, iterations, rank, start_id)
+        call_number[] += 1
+        call_number[] == 2 && throw(InterruptException())
+        p = copy(params0)
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="injected")
+    end
+    @test_throws InterruptException HSquared._select_fa_rank(
+        d.Y, d.X, d.Z, d.ped; ids=d.ids, ledger_sink=ledger,
+        attempt_runner=between)
+    @test length(ledger[].attempts) == 2
+    @test ledger[].attempts[1].status != :interrupted
+    @test ledger[].attempts[2].status == :interrupted
+
+    between_candidates = Ref{Any}(nothing)
+    @test_throws InterruptException HSquared._select_fa_rank(
+        d.Y, d.X, d.Z, d.ped; ids=d.ids, ledger_sink=between_candidates,
+        checkpoint=() -> throw(InterruptException()),
+        attempt_runner=(objective, params0, iterations, rank, start_id) -> begin
+            p = copy(params0)
+            (; phat=p, objective=objective(p), converged=true,
+               iterations=1, optimizer_status="injected")
+        end)
+    @test between_candidates[].selection_status == :interrupted
+    @test length(between_candidates[].attempts) == 1
+    @test between_candidates[].candidate_summary[1].status == :completed
+    @test between_candidates[].candidate_summary[2].status == :unattempted
+end
+
+@testset "automatic FA better-unconverged retry trigger and bounded refusal" begin
+    d = _auto_fa_fixture()
+    calls = Tuple{Int,Symbol}[]
+    diagonal_G = Ref{Any}(nothing)
+    diagonal_R = Ref{Any}(nothing)
+    diagonal_params = Ref{Any}(nothing)
+    best_fa_params = function (objective, start)
+        candidates = Vector{Vector{Float64}}()
+        for loading_scale in (0.0, 0.25, 0.5, 1.0, 1.5),
+            uniqueness_shift in (-2.0, -1.0, 0.0, 1.0, 2.0),
+            residual_shift in (-1.0, 0.0, 1.0, 2.0)
+            p = copy(start)
+            p[1:4] .*= loading_scale
+            p[5:8] .+= uniqueness_shift
+            p[9:end] .+= residual_shift
+            push!(candidates, p)
+        end
+        scores = [objective(p) for p in candidates]
+        eligible = findall(i -> isfinite(scores[i]), eachindex(scores))
+        isempty(eligible) && error("test could not construct a finite FA receipt")
+        i = eligible[argmin(scores[eligible])]
+        return candidates[i], scores[i]
+    end
+    runner = function (objective, params0, iterations, rank, start_id)
+        push!(calls, (rank, start_id))
+        if rank == 0
+            # Make the sole eligible K0 receipt deliberately poor. The FA
+            # starts and retry still use the same observed data.
+            p = copy(params0)
+            p[1:4] .-= 2.0
+            p[5:end] .+= 1.5
+            diagonal_params[] = p
+            diagonal_G[] = HSquared._fa_rank_cov(p[1:4], 0)[1]
+            diagonal_R[] = HSquared._chol_params_to_cov(p[5:end], 4)
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="injected weak diagonal")
+        elseif rank == 1 && start_id == :default
+            p, value = best_fa_params(objective, params0)
+            value < objective(diagonal_params[]) - 1e-3 ||
+                error("test failed to make the unconverged FA receipt better than K0")
+            return (; phat=p, objective=value, converged=false,
+                    iterations=1, optimizer_status="injected better unconverged")
+        elseif rank == 1 && start_id == :balanced
+            g = diag(diagonal_G[])
+            c = HSquared.FA_UNIQUENESS_FLOOR
+            loading = [0.1 * (-1.0)^(i - 1) * sqrt(g[i] - c) for i in 1:4]
+            psi = g .- loading.^2
+            p = vcat(loading, log.(psi .- c),
+                     HSquared._cov_to_chol_params(diagonal_R[], 4))
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="injected nested diagonal")
+        end
+        p = copy(params0)
+        return (; phat=p, objective=objective(p), converged=true,
+                iterations=1, optimizer_status="injected diagonal retry")
+    end
+    result = HSquared._select_fa_rank(d.Y, d.X, d.Z, d.ped;
+        ids=d.ids, attempt_runner=runner)
+    @test count(x -> x == (1, :diagonal_retry), calls) == 1
+    @test length(result.attempts) == 4
+    @test result.selection_status == :unavailable
+    @test occursin("better finite unconverged FA attempt", result.reason)
+    @test result.start_sensitive
+end
+
+@testset "automatic FA interruption at each initial and retry start" begin
+    d = _auto_fa_fixture()
+    targets = ((0, :default), (1, :default), (1, :balanced), (1, :diagonal_retry))
+    for target in targets
+        ledger = Ref{Any}(nothing)
+        runner = function (objective, params0, iterations, rank, start_id)
+            (rank, start_id) == target && throw(InterruptException())
+            p = copy(params0)
+            if rank == 1 && start_id != :diagonal_retry
+                p[1:4] .= 0.0
+                p[5:8] .-= 2.0
+            elseif rank == 1 && start_id == :diagonal_retry
+                # Reaching this target means both initial FA starts completed
+                # and the contract's single retry was authorized.
+                p[1:4] .= 0.0
+                p[5:8] .-= 2.0
+            end
+            return (; phat=p, objective=objective(p), converged=true,
+                    iterations=1, optimizer_status="injected interruption witness")
+        end
+        @test_throws InterruptException HSquared._select_fa_rank(
+            d.Y, d.X, d.Z, d.ped; ids=d.ids, ledger_sink=ledger,
+            attempt_runner=runner)
+        @test ledger[] !== nothing
+        @test ledger[].selection_status == :interrupted
+        @test !isempty(ledger[].attempts)
+        @test ledger[].attempts[end].status == :interrupted
+        @test (ledger[].attempts[end].rank, ledger[].attempts[end].start_id) == target
+        @test all(a -> a.attempted, ledger[].attempts)
+    end
+end
+
+@testset "automatic FA rejects forbidden data and confounded pedigree designs" begin
+    d = _auto_fa_fixture()
+    unsupported = select_fa_rank(d.Y, hcat(d.X, collect(1.0:size(d.Y, 1))), d.Z, d.ped;
+        ids=d.ids)
+    @test unsupported.selection_status == :unsupported_input
+    @test isempty(unsupported.attempts)
+    @test all(row.status == :unattempted for row in unsupported.candidate_summary)
+
+    missing = copy(d.Y); missing[1, 2] = NaN
+    bad_cases = (
+        (missing, d.X, d.Z, d.ped, d.ids, ["a", "b", "c", "d"]),
+        (d.Y, d.X, d.Z, d.ped, reverse(d.ids), ["a", "b", "c", "d"]),
+        (d.Y, d.X, d.Z, d.ped, d.ids, ["a", "a", "c", "d"]),
+        (d.Y, d.X, vcat(2 .* d.Z[1:1, :], d.Z[2:end, :]), d.ped, d.ids,
+            ["a", "b", "c", "d"]),
+    )
+    for (Y, X, Z, ped, ids, traits) in bad_cases
+        refused = select_fa_rank(Y, X, Z, ped; ids=ids, traits=traits)
+        @test refused.selection_status == :unsupported_input
+        @test isempty(refused.attempts)
+        @test all(row.status == :unattempted for row in refused.candidate_summary)
+    end
+    too_few = select_fa_rank(d.Y[1:2, :], d.X[1:2, :], d.Z[1:2, :], d.ped;
+        ids=d.ids)
+    @test too_few.selection_status == :unsupported_input
+    @test isempty(too_few.attempts)
+
+    unrelated = normalize_pedigree(collect(1:12), zeros(Int, 12), zeros(Int, 12))
+    identity = select_fa_rank(d.Y, d.X, d.Z, unrelated; ids=unrelated.ids)
+    @test identity.selection_status == :unsupported_input
+    @test isempty(identity.attempts)
+    @test occursin("unresolved on REML contrasts", identity.reason)
+
+    pid = ["s1", "d1", "d2", "d3", "d4", "o1", "o2", "o3", "o4"]
+    psire = ["0", "0", "0", "0", "0", "s1", "s1", "s1", "s1"]
+    pdam = ["0", "0", "0", "0", "0", "d1", "d2", "d3", "d4"]
+    halfped = normalize_pedigree(pid, psire, pdam)
+    Zhalf = zeros(4, length(halfped))
+    for i in 1:4
+        Zhalf[i, 5 + i] = 1.0
+    end
+    half = select_fa_rank(reshape(collect(1.0:16.0), 4, 4), ones(4, 1), Zhalf,
+        halfped; ids=halfped.ids)
+    @test half.selection_status == :unsupported_input
+    @test isempty(half.attempts)
+    @test occursin("unresolved on REML contrasts", half.reason)
+end
+
+@testset "automatic FA selector public shape and refusal contract" begin
+    d = _auto_fa_fixture()
+    @test isdefined(HSquared, :select_fa_rank)
+    if isdefined(HSquared, :select_fa_rank)
+        refused = select_fa_rank(d.Y[:, 1:3], d.X, d.Z, d.ped; ids=d.ids)
+        @test refused.selection_status == :unsupported_input
+        @test refused.selected_rank === nothing
+        @test isempty(refused.attempts)
+        @test length(refused.candidate_summary) == 2
+        @test all(!row.eligible for row in refused.candidate_summary)
+
+        repeated_Z = vcat(d.Z[1:5, :], d.Z[1:5, :])
+        repeated_Y = vcat(d.Y[1:5, :], d.Y[1:5, :])
+        repeated = select_fa_rank(repeated_Y, ones(10, 1), repeated_Z, d.ped;
+            ids=vcat(d.ids[1:5], d.ids[1:5]))
+        @test repeated.selection_status == :unsupported_input
+        @test isempty(repeated.attempts)
+    end
+end

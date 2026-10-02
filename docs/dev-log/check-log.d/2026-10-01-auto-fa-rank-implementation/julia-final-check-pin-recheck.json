@@ -1,0 +1,35 @@
+{
+  "files": [
+    {
+      "path": "src/HSquared.jl",
+      "sha256": "f61c313446b79b22d32ab83d3542980e8b4e65011d77b0c7774a44e25daf946c",
+      "matches_final_julia_check": true
+    },
+    {
+      "path": "src/fa_rank_selection.jl",
+      "sha256": "8051cf7297377e815755babe5642113f53a1257b97dfaa7e2578ed86cc5bd750",
+      "matches_final_julia_check": true
+    },
+    {
+      "path": "test/runtests.jl",
+      "sha256": "baee244af5b54415265572757aa22bcb2772500fdc419304f4ba754764f2675c",
+      "matches_final_julia_check": true
+    },
+    {
+      "path": "test/test_auto_fa_rank.jl",
+      "sha256": "43ea1d3b9007513f1cb2195f708f97a4d2c69972fe164b8f5a9534c3b0c2aac0",
+      "matches_final_julia_check": true
+    },
+    {
+      "path": "test/auto_fa_rank_acceptance.jl",
+      "sha256": "c7a031c323dc5dceeefcdf9fe64902a2d8204498d80b041de75b031d2bb16d0f",
+      "matches_final_julia_check": true
+    },
+    {
+      "path": "test/fixtures/auto_fa_rank/ordinary_start.tsv",
+      "sha256": "8db98179a862897bc0b52998caf0ca5e1166d79d93607b73547117400eca8ade",
+      "matches_final_julia_check": true
+    }
+  ],
+  "all_match": true
+}

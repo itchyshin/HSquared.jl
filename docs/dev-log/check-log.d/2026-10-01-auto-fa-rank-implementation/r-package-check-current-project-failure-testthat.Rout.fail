@@ -1,0 +1,516 @@
+
+R version 4.6.0 (2026-04-24) -- "Because it was There"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin23
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(hsquared)
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+>
+> test_check("hsquared")
+6×6 Matrix{Float64}:
+  3.0   2.0  -1.0  -1.0  -1.0  -1.0
+  2.0   3.0  -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0   2.0   0.0   0.0   0.0
+ -1.0  -1.0   0.0   2.0   0.0   0.0
+ -1.0  -1.0   0.0   0.0   2.0   0.0
+ -1.0  -1.0   0.0   0.0   0.0   2.0
+
+Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_multivariate_repeatability_reml(Y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+1
+
+Saving _problems/test-multivariate-544.R
+Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_repeatability_reml(y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_animal_model(y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+'as(<dtTMatrix>, "dtCMatrix")' is deprecated.
+Use 'as(., "CsparseMatrix")' instead.
+See help("Deprecated") and help("Matrix-deprecated").
+Version out of date. Please update sommer to the newest version using:
+install.packages('sommer') in a new session
+ Use the 'dateWarning' argument to disable the warning message.Adding additional levels of Gu in the model matrix of 'ANIMAL'
+[ FAIL 1 | WARN 27 | SKIP 48 | PASS 3866 ]
+
+══ Skipped tests (48) ══════════════════════════════════════════════════════════
+• 06-public-claims-register.md is not in the build tarball (2):
+  'test-claims-register-a4-c6.R:11:3', 'test-claims-register-a4-c6.R:39:3'
+• capability-status.md is not in the build tarball (1):
+  'test-direct-maternal.R:380:3'
+• dashboard source file not available: bridge-boundary.tsv (1):
+  'test-bridge-dashboard-contracts.R:98:3'
+• dashboard source file not available: bridge-parity-smoke-status.tsv (1):
+  'test-bridge-dashboard-contracts.R:113:3'
+• dashboard source file not available: bridge-payload-schema.tsv (2):
+  'test-bridge-dashboard-contracts.R:31:3',
+  'test-bridge-dashboard-contracts.R:66:3'
+• data-raw MCMCglmm agreement script is not available in built-package checks.
+  (1): 'test-comparator-scripts.R:52:3'
+• design-19 not present in the check copy (1):
+  'test-bridge-engine-status-crosslinks.R:7:3'
+• design-25 not present in the check copy (1):
+  'test-bridge-engine-status-crosslinks.R:30:3'
+• design-29 not present in the check copy (1):
+  'test-bridge-engine-status-crosslinks.R:50:3'
+• docs/design/06-public-claims-register.md is not in the build tarball (1):
+  'test-random-regression.R:656:5'
+• docs/design/real-data-validation-manifest.toml is not in the build tarball
+  (2): 'test-realdata-validation-manifest.R:2:3',
+  'test-realdata-validation-manifest.R:83:3'
+• docs/dev-log/dashboard is not in the build tarball (2):
+  'test-bridge-ci-tier0-contracts.R:64:3',
+  'test-bridge-ci-tier0-contracts.R:101:3'
+• generator script not present in the installed package (8):
+  'test-capability-ledger-summary.R:28:3',
+  'test-capability-ledger-summary.R:41:3',
+  'test-capability-ledger-summary.R:49:3',
+  'test-capability-ledger-summary.R:63:3',
+  'test-capability-ledger-summary.R:78:3',
+  'test-capability-ledger-summary.R:91:3',
+  'test-capability-ledger-summary.R:106:3',
+  'test-capability-ledger-summary.R:127:3'
+• Legacy envelope only: A3 evidence is in test-nongaussian-three-field-v09.R.
+  (2): 'test-nongaussian.R:206:3', 'test-nongaussian.R:257:3'
+• man/hs_control.Rd not present in the check copy (2):
+  'test-hs-control-targets.R:6:3', 'test-hs-control-targets.R:48:3'
+• man/hsquared-package.Rd not present in the check copy (1):
+  'test-package-help-honesty.R:8:3'
+• man/hsquared.Rd not present in the check copy (1):
+  'test-hsquared-help-frontdoor.R:6:3'
+• model-status.Rmd not present in the check copy (1):
+  'test-d41-experimental-honesty.R:138:3'
+• on-bridge REML routing is covered by the live REML SNP-BLUP test (1):
+  'test-snp-blup.R:58:3'
+• parity-09 REACHABLE target `metafounder_single_step` named for matrix
+  coverage; metafounder construct fixture beyond tiny smoke — existing route
+  tests cover live path. (1): 'test-engine-julia-parity-smoke.R:290:3'
+• parity-09 REACHABLE target `metafounder` named for matrix coverage;
+  Gamma/group fixture beyond tiny smoke — existing route tests cover live path.
+  (1): 'test-engine-julia-parity-smoke.R:283:3'
+• parity-09 REACHABLE target `single_step_construct` named for matrix coverage;
+  construct needs pedigree+markers fixture beyond tiny smoke — existing route
+  tests cover live path. (1): 'test-engine-julia-parity-smoke.R:276:3'
+• reader article sources not present in the check copy (1):
+  'test-d41-experimental-honesty.R:171:3'
+• README.md not present in the check copy (3):
+  'test-d41-experimental-honesty.R:75:3',
+  'test-d41-experimental-honesty.R:88:3',
+  'test-d41-experimental-honesty.R:116:3'
+• repository-only capability-status.md is unavailable in the build tarball (1):
+  'test-fa-planned-surface.R:18:3'
+• repository-only v0.7 boundary oracle is unavailable in the built package (1):
+  'test-v07-genomic-boundary-oracle.R:2:1'
+• Set HSQUARED_AUTO_FA_REQUIRE_LIVE=true for mandatory-live FA-rank acceptance.
+  (1): 'test-auto-fa-rank-optin.R:169:5'
+• sim/phase1_interval_coverage_ext.R is not in the build tarball (3):
+  'test-c1-ext-h1-h3-harness.R:19:3', 'test-c1-ext-h1-h3-harness.R:50:3',
+  'test-c1-ext-h1-h3-harness.R:78:3'
+• source vignette not present in the check copy (1):
+  'test-package-help-honesty.R:30:3'
+• validate-bridge-dashboard.py not present (1):
+  'test-bridge-dashboard-contracts.R:128:3'
+• validation-evidence.Rmd not present in the check copy (1):
+  'test-d41-experimental-honesty.R:156:3'
+
+══ Warnings ════════════════════════════════════════════════════════════════════
+── Warning ('test-diagonal-multivariate.R:164:3'): the live Julia bridge fits diagonal G and the structure LRT end-to-end ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-diagonal-multivariate.R:164:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-diagonal-multivariate.R:178:3'): the live Julia bridge fits diagonal G and the structure LRT end-to-end ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-diagonal-multivariate.R:178:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-engine-julia-parity-smoke.R:346:3'): parity-09 REACHABLE smoke: multivariate ──
+The fit succeeded, but 1 post-fit quantity could not be computed and is absent from the fit. The engine threw:
+  - multivariate_covariance_standard_errors(): ArgumentError: observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable
+Full messages: attr(fit, "bridge_errors").
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-engine-julia-parity-smoke.R:346:3
+ 2.   └─hsquared:::hs_fit_julia_multivariate_payload(...)
+ 3.     └─hsquared:::hs_julia_surface_bridge_errors(fit)
+ 4.       └─hsquared:::hs_attach_bridge_errors(fit, hs_julia_read_bridge_errors())
+── Warning ('test-engine-julia-parity-smoke.R:365:3'): parity-09 REACHABLE smoke: random_regression ──
+The data have repeated records per individual (8 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─base::tryCatch(...) at test-engine-julia-parity-smoke.R:365:3
+ 2. │ └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+ 3. │   └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+ 4. │     └─base (local) doTryCatch(return(expr), name, parentenv, handler)
+ 5. └─hsquared::hsquared(...)
+ 6.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-genomic.R:956:3'): explicit marker and exact supplied-Q routes agree [live] ──
+This `hsquared_fit` object did not converge. The heritability number is not an estimate; do not report it. A variance component is also at or near a boundary, so a near-zero value is a failed-fit artefact, not evidence that heritability is zero. Inspect `fit_diagnostics(fit)` before reading any number.
+Backtrace:
+    ▆
+ 1. ├─hsquared::heritability(fit) at test-genomic.R:956:3
+ 2. └─hsquared:::heritability.hsquared_fit(fit)
+ 3.   └─hsquared:::hs_warn_if_unusable_fit(object)
+── Warning ('test-genomic.R:992:3'): explicit marker and exact supplied-Q routes agree [live] ──
+This `hsquared_fit` object did not converge. The heritability number is not an estimate; do not report it. A variance component is also at or near a boundary, so a near-zero value is a failed-fit artefact, not evidence that heritability is zero. Inspect `fit_diagnostics(fit)` before reading any number.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_equal(...) at test-genomic.R:992:3
+ 2. │ └─testthat::quasi_label(enquo(object), label)
+ 3. │   └─rlang::eval_bare(expr, quo_get_env(quo))
+ 4. ├─hsquared::heritability(fit)
+ 5. └─hsquared:::heritability.hsquared_fit(fit)
+ 6.   └─hsquared:::hs_warn_if_unusable_fit(object)
+── Warning ('test-genomic.R:992:3'): explicit marker and exact supplied-Q routes agree [live] ──
+This `hsquared_fit` object did not converge. The heritability number is not an estimate; do not report it. A variance component is also at or near a boundary, so a near-zero value is a failed-fit artefact, not evidence that heritability is zero. Inspect `fit_diagnostics(fit)` before reading any number.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_equal(...) at test-genomic.R:992:3
+ 2. │ └─testthat::quasi_label(enquo(expected), expected.label)
+ 3. │   └─rlang::eval_bare(expr, quo_get_env(quo))
+ 4. ├─hsquared::heritability(fit_q)
+ 5. └─hsquared:::heritability.hsquared_fit(fit_q)
+ 6.   └─hsquared:::hs_warn_if_unusable_fit(object)
+── Warning ('test-gwas.R:486:3'): loco gwas() uses ANIMAL-level precisions under a non-square Z ──
+The data have repeated records per individual (110 records for 80 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-gwas.R:486:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-julia-bridge.R:650:3'): hsquared can use the opt-in supplied-variance Henderson MME bridge ──
+The data have repeated records per individual (4 records for 3 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-julia-bridge.R:650:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-julia-error-translation.R:231:3'): target = repeatability honours max_dense_cells [live] ──
+The fit succeeded, but 1 post-fit quantity could not be computed and is absent from the fit. The engine threw:
+  - repeatability_interval(): ArgumentError: repeatability interval undefined: REML information is not positive definite (flat surface / boundary optimum)
+Full messages: attr(fit, "bridge_errors").
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-julia-error-translation.R:231:3
+ 2.   └─hsquared:::hs_fit_julia_repeatability_payload(...)
+ 3.     └─hsquared:::hs_julia_surface_bridge_errors(fit)
+ 4.       └─hsquared:::hs_attach_bridge_errors(fit, hs_julia_read_bridge_errors())
+── Warning ('test-multivariate-engine-parity.R:153:3'): Tier B1/B2: the bridge reproduces the serialized k=2 target element-wise ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(ped, pheno, initial = hs_a26_engine_start(pheno)) at test-multivariate-engine-parity.R:153:3
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-multivariate-engine-parity.R:205:3'): Tier B1/B2: the bridge reproduces the serialized k=2 target element-wise ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(ped, pheno) at test-multivariate-engine-parity.R:205:3
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-multivariate-engine-parity.R:272:5'): Tier B3: the fit is invariant to pedigree row order ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(permuted, pheno, initial = initial) at test-multivariate-engine-parity.R:272:5
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-multivariate-engine-parity.R:272:5'): Tier B3: the fit is invariant to pedigree row order ──
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(permuted, pheno, initial = initial) at test-multivariate-engine-parity.R:272:5
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-multivariate.R:532:3'): hsquared can use the opt-in experimental multivariate REML bridge ──
+The fit succeeded, but 1 post-fit quantity could not be computed and is absent from the fit. The engine threw:
+  - multivariate_covariance_standard_errors(): ArgumentError: multivariate uncertainty requires a fit with converged = true
+Full messages: attr(fit, "bridge_errors").
+Backtrace:
+     ▆
+  1. ├─testthat::expect_warning(...) at test-multivariate.R:532:3
+  2. │ └─testthat:::expect_condition_matching_(...)
+  3. │   └─testthat:::quasi_capture(...)
+  4. │     ├─testthat (local) .capture(...)
+  5. │     │ └─base::withCallingHandlers(...)
+  6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+  7. └─hsquared::hsquared(...)
+  8.   └─hsquared:::hs_fit_julia_multivariate_payload(...)
+  9.     └─hsquared:::hs_julia_surface_bridge_errors(fit)
+ 10.       └─hsquared:::hs_attach_bridge_errors(fit, hs_julia_read_bridge_errors())
+── Warning ('test-multivariate.R:552:3'): hsquared can use the opt-in experimental multivariate REML bridge ──
+This `hsquared_fit` object did not converge. The heritability number is not an estimate; do not report it. A near-zero value is not evidence that heritability is zero. Inspect `fit_diagnostics(fit)` before reading any number.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_equal(heritability(fit)$trait, c("y1", "y2")) at test-multivariate.R:552:3
+ 2. │ └─testthat::quasi_label(enquo(object), label)
+ 3. │   └─rlang::eval_bare(expr, quo_get_env(quo))
+ 4. ├─hsquared::heritability(fit)
+ 5. └─hsquared:::heritability.hsquared_fit(fit)
+ 6.   └─hsquared:::hs_warn_if_unusable_fit(object)
+── Warning ('test-nongaussian-three-field-v09.R:654:3'): the v0.9 Binomial route carries A4-1 observation semantics through the live bridge ──
+The data have repeated records per individual (24 records for 8 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-nongaussian-three-field-v09.R:654:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:142:3'): random_regression target is explicitly opt-in ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_error(...) at test-random-regression.R:142:3
+ 2. │ └─testthat:::expect_condition_matching_(...)
+ 3. │   └─testthat:::quasi_capture(...)
+ 4. │     ├─testthat (local) .capture(...)
+ 5. │     │ └─base::withCallingHandlers(...)
+ 6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+ 7. └─hsquared::hsquared(...)
+ 8.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:152:3'): random_regression target is explicitly opt-in ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_error(...) at test-random-regression.R:152:3
+ 2. │ └─testthat:::expect_condition_matching_(...)
+ 3. │   └─testthat:::quasi_capture(...)
+ 4. │     ├─testthat (local) .capture(...)
+ 5. │     │ └─base::withCallingHandlers(...)
+ 6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+ 7. └─hsquared::hsquared(...)
+ 8.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:163:3'): random_regression target is explicitly opt-in ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_error(...) at test-random-regression.R:163:3
+ 2. │ └─testthat:::expect_condition_matching_(...)
+ 3. │   └─testthat:::quasi_capture(...)
+ 4. │     ├─testthat (local) .capture(...)
+ 5. │     │ └─base::withCallingHandlers(...)
+ 6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+ 7. └─hsquared::hsquared(...)
+ 8.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:463:3'): hsquared can use the opt-in experimental random-regression bridge ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-random-regression.R:463:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:592:3'): rr() argument naming and the RR heritability accessor are pinned ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_error(...) at test-random-regression.R:592:3
+ 2. │ └─testthat:::expect_condition_matching_(...)
+ 3. │   └─testthat:::quasi_capture(...)
+ 4. │     ├─testthat (local) .capture(...)
+ 5. │     │ └─base::withCallingHandlers(...)
+ 6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+ 7. └─hsquared::hsquared(...)
+ 8.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-random-regression.R:602:3'): rr() argument naming and the RR heritability accessor are pinned ──
+The data have repeated records per individual (12 records for 4 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. ├─base::tryCatch(...) at test-random-regression.R:602:3
+ 2. │ └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+ 3. │   └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+ 4. │     └─base (local) doTryCatch(return(expr), name, parentenv, handler)
+ 5. └─hsquared::hsquared(...)
+ 6.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-relmat-precision.R:468:3'): relmat with K = A_pedigree fits identically to the animal model ──
+The data have repeated records per individual (64 records for 8 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-relmat-precision.R:468:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-relmat-precision.R:518:3'): precision with Q = Ainv matches the animal model ──
+The data have repeated records per individual (64 records for 8 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-relmat-precision.R:518:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+── Warning ('test-relmat-precision.R:574:3'): relmat with an arbitrary PD K fits and returns sane components ──
+This `hsquared_fit` object did not converge. The heritability number is not an estimate; do not report it. A near-zero value is not evidence that heritability is zero. Inspect `fit_diagnostics(fit)` before reading any number.
+Backtrace:
+    ▆
+ 1. ├─hsquared::heritability(fit) at test-relmat-precision.R:574:3
+ 2. └─hsquared:::heritability.hsquared_fit(fit)
+ 3.   └─hsquared:::hs_warn_if_unusable_fit(object)
+── Warning ('test-relmat-precision.R:625:3'): relmat with K = I reduces to an independent iid animal fit ──
+The data have repeated records per individual (64 records for 8 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To separate them, add a permanent-environment effect:
+  hsquared(
+    <response> ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>,
+    control = hs_control(engine = "julia", engine_control = list(
+      target = "repeatability", scale_method = "auto"))
+  )
+Suppress with suppressWarnings() if the single-effect model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared::hsquared(...) at test-relmat-precision.R:625:3
+ 2.   └─hsquared:::hs_warn_unmodelled_repeated_records(spec)
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-multivariate.R:532:3'): hsquared can use the opt-in experimental multivariate REML bridge ──
+Expected `... <- NULL` to throw a warning.
+
+[ FAIL 1 | WARN 27 | SKIP 48 | PASS 3866 ]
+Error:
+! Test failures.
+Execution halted
+Julia exit.
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`

@@ -1,0 +1,13 @@
+# Automatic FA-rank implementation decisions
+
+Status: local experimental candidate under verification, 2026-10-01. This note records implementation choices within Shinichi's approved complete paired programme; it does not promote a capability or close the goal.
+
+The [frozen contract](../../design/auto-fa-rank-contract.md) and [validation plan](../../design/auto-fa-rank-validation-plan.md) govern the numerical policy. The selector compares K0 and K1 on the same complete T4 Gaussian pedigree observations, using the same trait-intercept design and unstructured residual covariance. Both ranks must have eligible converged attempts. The private matched K0 floor leaves the public fixed-rank diagonal mapping unchanged. Nominal covariance counts are 14 and 18; criterion ties within 1e-6 choose K0.
+
+The R route is an explicit expert control, rank_selection="auto", with engine="julia" and target="multivariate". Omitted rank alone does not enable it. A successful selection nests an ordinary hsquared_fit with the original user specification and call; unavailable/refused/interrupted results carry no selected fit. Failed optimizer fields remain missing. Complete and interrupted attempt rows use the same plain-field serialization. The interrupted request snapshot is normalized into R before the request Ref is cleared.
+
+The ordinary n8 witness selected K0 at 10000 iterations and was unavailable at the default 2000. One separately frozen n16 strong-factor witness also selected K0. No seed or dataset search was used to obtain a K1 winner. K1 serialization is covered by a controlled winner override around an actual eligible K1 fit, with a retained failed alternate start. This provides transport evidence only. Ordinary selected-K1 behavior and selection reliability remain unverified.
+
+An older R uncertainty regression is updated narrowly to recognize the actual convergence refusal before the non-positive-definite-information check. The warning remains required and no covariance standard errors are fabricated. The existing fixture and iteration budget remain fixed.
+
+Automatic approval review rejected fresh CLI source-review dispatch because it would send private source and check artifacts to an external model service. Explicit payload authorization is pending; the rejection has not been bypassed. The [checkpoint report](../after-task/2026-10-01-auto-fa-rank-implementation.md) and [check receipts](../check-log.d/2026-10-01-auto-fa-rank-implementation/README.md) record the current acceptance state. No push, public release, rank-reliability campaign, version, registry, GPU, default activation or covered-count change follows from this candidate.

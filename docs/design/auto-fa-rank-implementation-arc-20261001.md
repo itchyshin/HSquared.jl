@@ -1,6 +1,6 @@
 # Automatic FA-rank twin implementation programme
 
-Status: sized implementation programme, 2026-10-01. Execution has not started. Automatic rank selection is not implemented and no auto-rank fit or test has run. The completed [design contract](auto-fa-rank-contract.md) and [validation plan](auto-fa-rank-validation-plan.md) remain the starting evidence. Shinichi chose Julia and R together during implementation planning.
+Status: approved implementation programme executing, 2026-10-01. The bounded Julia selector and R expert route are implemented under verification. Current evidence is recorded in the [implementation receipts](../dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/README.md). The completed [design contract](auto-fa-rank-contract.md) and [validation plan](auto-fa-rank-validation-plan.md) remain the starting evidence. Shinichi chose Julia and R together during implementation planning.
 
 ## Programme ladder
 
@@ -100,20 +100,20 @@ Full programme closes only with executable numerical/policy tests, mandatory pai
 
 Sizing evidence: source/bridge planning scouts inspected Julia56536532 and immutable R e82f5c95; their findings are consolidated above. The design and validation plan have independent V0 acceptance. [Design closeout](../dev-log/after-task/2026-10-01-auto-fa-rank-design.md) records the current starting state. The main check log carries the cited fixed-rank timing receipts. No close numerical implementation analogue measures the core build estimate, so confidence stays inferred.
 
-Recommended / actual: programme 450 minutes / not started; Arc 0 120 minutes / not started.
+Recommended / actual: programme 450 minutes / active. Arc 0 and the selector mechanics pass focused checks; integration repair and final acceptance continue. Full engineering time will be recorded at closeout.
 
-Requested / used: no fixed capacity requested / no implementation time used.
+Requested / used: complete paired programme approved / three disjoint producers plus parent consolidation. No fixed token or wall-time capacity requested.
 
-Rungs completed: V0 design is prior work; no implementation rung completed.
+Rungs completed: V0 design is prior work. Julia numerical, policy and fixed-rank checks pass. Paired transport and current full checks pass; independent completion review and final root acceptance remain open before V1/V4 closure.
 
 Under-run event: none.
 
 Calibration: complete here at each implementation checkpoint; record core work, verification, repair and waiting separately.
 
-Metric movement: none yet; implementation state remains reviewed design only.
+Metric movement: Julia focused acceptance has 147 passing assertions; R mandatory live acceptance initially had 75 passing assertions with no skips; the final strengthened slice has 116 passes, zero warnings or skips. Parent focused/live replay and the full R package check pass. The package check has zero errors, warnings or notes; its test phase has 3871 passes, 26 test warnings and 48 existing opt-in skips. Fresh source review is pending explicit payload authorization. No rank-reliability measure is claimed.
 
-Result: sized programme awaiting the execution task; no auto-rank test result.
+Result: paired implementation under verification; no capability promotion or complete-programme claim.
 
-Next arc: Arc 0 engine foundation, followed by the retained ladder.
+Next action: complete current numerical/transport replays, full checks, independent review and evidence closeout. Automatic approval review rejected the fresh CLI source panel because it exports private source; explicit payload authorization is pending. Local verification continues.
 
 HAND TO ULTRA PLAN: paired automatic FA-rank implementation, target 7.5 hours (inferred 6 to 10), Arc 0 120 minutes, complete T4 Gaussian pedigree K0/K1 mechanics plus experimental R transport, mandatory tests and ledgers, no promotion/campaign/release/protected-lane work. Use Unlazy for acceptance; keep the complete paired outcome intact across checkpoints.

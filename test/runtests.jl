@@ -11203,6 +11203,7 @@ include(joinpath(@__DIR__, "test_relationship_diag_1pF.jl"))
 include(joinpath(@__DIR__, "genetic_gllvm_trait_effects.jl"))
 
 include(joinpath(@__DIR__, "fa_independent_dense_reml.jl"))
+include(joinpath(@__DIR__, "test_auto_fa_rank.jl"))
 include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
 include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))

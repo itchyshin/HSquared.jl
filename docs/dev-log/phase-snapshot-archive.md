@@ -796,3 +796,8 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   START HERE: `docs/dev-log/handover/2026-09-07-codex-handover.md` (this repo's pointer doc;
   it sends you to `hsquared/docs/dev-log/handover/2026-09-07-codex-handover.md` — the sibling
   repo, same Dropbox parent — for the full Path FULL narrative and Landing State ledger).
+
+
+## Archived on 2026-10-01 before automatic-rank implementation checkpoint
+
+- **As of 2026-10-01 (bounded FA/GLLVM V3 landing verified).** Candidate `365f173f` landed through PR #401; closure PR #402 merged at `570f49ba`. Live GitHub receipts confirm four Julia OS/runtime jobs and documentation deployment passed at the implementation and closure merge commits. Final source and tests match the candidate. Fixed-rank Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. Automatic FA rank selection is a separate design arc; its plan is `docs/design/auto-fa-rank-design-plan-20261001.md`. No GPU, release, tag, registry, submission, capability promotion, or protected sibling-lane work. START HERE: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.

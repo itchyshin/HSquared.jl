@@ -1,0 +1,27 @@
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | auto-fa-rank-optin
+⠇ |          9 | auto-fa-rank-optin
+⠇ |         19 | auto-fa-rank-optin                                             Julia version 1.10.0 at location /Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/bin will be used.
+Loading setup script for JuliaCall...
+Finish loading setup script for JuliaCall.
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`
+
+⠋ |         31 | auto-fa-rank-optin
+⠼ |         45 | auto-fa-rank-optin
+⠴ |         66 | auto-fa-rank-optin
+⠇ |         79 | auto-fa-rank-optin
+⠸ |         84 | auto-fa-rank-optin
+⠏ |        100 | auto-fa-rank-optin
+⠋ |        101 | auto-fa-rank-optin
+✔ |        116 | auto-fa-rank-optin [14.7s]
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 14.7 s
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 116 ]
+Julia exit.
