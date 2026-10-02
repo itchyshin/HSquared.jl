@@ -1,3 +1,5 @@
+Next required action: resolve the pending explicit approval for one final read-only external mechanical/reconciliation audit. The audit launch was rejected before process creation and has no live session. No numerical/review process remains running. Julia documentation checkpoint is 85c5f150; R report checkpoint is c36e5a9. After the audit passes, provisionally close G8 only for the mandatory full after-task validator, reopen it if the actual whole check fails, retain final receipts and scoped local commits, then mark the goal complete only at eight proved gates. Expected full validator runtime is 12 to 15 minutes from the terminal paired replay. No current deadline guard is live.
+
 Current V7 closeout: technical root terminated, G1-G6 PASS; G7 accepted from all three exact-current V7 PASS judgments. All eighteen source pins and 39 protected R dirty statuses/hashes match. G8 reconciliation, full report validation and local documentation commits remain open. One final external mechanical audit was rejected; explicit scoped authorization is pending. Preserve all earlier states below as historical.
 
 # Checkpoint

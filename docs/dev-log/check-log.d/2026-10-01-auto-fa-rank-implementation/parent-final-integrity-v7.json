@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-02T12:08:49.924558+00:00",
+  "parent_check_only_not_fresh_mechanical_judgment": true,
+  "eighteen_pins_match": true,
+  "six_commands_shell_parse": true,
+  "original_gate_count": 8,
+  "terminal_technical_pass_count": 6,
+  "protected_R_files": 39,
+  "manual_G8_still_open": true,
+  "Julia_documentation_head": "85c5f150e911eb8648bba34d2112ebfc1430e98e",
+  "R_documentation_head": "c36e5a936171c4fb233aeff61be6b5553be87eb8"
+}

@@ -41,6 +41,6 @@ Scope: complete approved bounded experimental Julia/R implementation; no reliabi
   EVIDENCE: Fresh V7 numerical, bridge and evidence reviewers each returned PASS on Julia 3ef362b1 / R source 2108c0d with all eighteen source pins matched. Terminal raw judgments and events are retained in review-v7-receipts.json; O1 repair and earlier HOLD receipts remain preserved.
 
 - [ ] G8: Documentation, capability/debt boundaries, after-task validation, source-pinned receipts, local commits and final replay are complete.
-  EVIDENCE: pending
+  EVIDENCE: G1-G6 technical replay and G7 reviews pass; source-pinned records and local documentation checkpoints are committed. Separate final mechanical audit is rejected before launch with specific approval pending; final full after-task validation and closure receipts remain owed. No requirement is abandoned.
 
 Reopened G1 and G5 for the O1 independent-comparator test repair; earlier success receipts remain archived. The user extended work until all original gates pass.
