@@ -39,7 +39,7 @@ Automatic selection remains distinct from a fixed-rank call. It does not open `c
 
 ## Repeatability profile intervals
 
-`arc1_profile_v1` profiles five quantities: additive variance (`Va`), permanent-environment variance (`Vpe`), residual variance (`Ve`), heritability (`h2`), and repeatability (`t`). The model is univariate Gaussian, with a pedigree animal effect and a permanent-environment effect. Each observed animal must have exactly two records. The current R route also requires the dense scale path and does not accept `initial` or `iterations` overrides. The likelihood-ratio cutoff is fixed at 3.841458820694124, the candidate nominal 95% cutoff; coverage remains unvalidated.
+`arc1_profile_v1` profiles five quantities: additive variance (`Va`), permanent-environment variance (`Vpe`), residual variance (`Ve`), heritability (`h2`), and repeatability (`t`). The model is univariate Gaussian, with a pedigree animal effect and a permanent-environment effect. Each observed animal must have exactly two records. The current R route also requires the dense scale path and does not accept `initial`, `iterations`, or `max_dense_cells` overrides. The profile route cannot apply the legacy dense-cell cap. The likelihood-ratio cutoff is fixed at 3.841458820694124, the candidate nominal 95% cutoff; coverage remains unvalidated.
 
 This complete R example uses six pedigree animals, including four descendants, and two records per animal. The values provide a small software-use example only:
 
