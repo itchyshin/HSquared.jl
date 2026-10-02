@@ -11,7 +11,7 @@ Deliver reliable ordinary factor-analytic (FA) fitting, evaluate automatic K0/K1
 - Exact spectral REML objective with analytic gradient; BFGS capped at 2,000 iterations per start, optimizer tolerance `1e-8`, and final scaled-gradient infinity norm `≤1e-6`.
 - New behavior is opt-in through `optimizer_policy="arc1_v1"`. An omitted policy preserves the legacy path exactly.
 - K0 starts from the existing start. K1 uses the existing two starts plus 16 deterministic K0-derived starts: eight sign patterns with the first sign positive, crossed with `a∈{0.1,0.7}`. Set `L_i=a*s_i*sqrt(g_i-1e-4)`, `psi_i=g_i-L_i²`, and carry residual covariance forward.
-- Compare with `-2*raw_REML_loglik + 2p`, covariance-parameter penalties `p=14` for K0 and `p=18` for K1. Tie tolerance `1e-6` favors K0. The expanded ordinary-start reference uses best found; accept only when shortfall is `≤1e-4`.
+- Compare with `-2*raw_REML_loglik + 2p`, covariance-parameter counts `p=14` for K0 and `p=18` for K1 (AIC penalty terms 28 and 36). Tie tolerance `1e-6` favors K0. The expanded ordinary-start reference uses best found; accept only when shortfall is `≤1e-4`.
 
 ### Repeatability profiles
 

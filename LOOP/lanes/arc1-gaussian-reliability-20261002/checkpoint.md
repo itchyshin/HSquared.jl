@@ -4,11 +4,13 @@ Status: implementation in progress. The user approved the complete programme on 
 
 ## Current work
 
-Luna produced the exact FA spectral likelihood and analytic gradient in `src/arc1_fa.jl`, with 64 focused assertions before independent review. Astra found a missing canonicalization-pivot regression; Luna is repairing that test, adding the success-only gate marker, and correcting the explicit 2,000-iteration limit in the protocol. Optimizer dispatch has not changed.
+The initial exact objective cores were retained in local commit `7de25478`. The FA core passed 70 assertions through its inspected Unlazy leaf; the repeatability core passed 29 assertions, including cancellation and unphenotyped-ancestor regressions. These receipts prove that checkpoint only. Current source is changing, so its live objective leaf is unmet until reverified.
 
-Luna produced the repeatability likelihood, analytic scale, and component-ratio core in `src/arc1_profiles.jl`. Parent review added unphenotyped ancestor coverage. Astra found cancellation in the residual quadratic, which Luna repaired. The parent reran the resulting 29 assertions successfully on Julia 1.10.0, with four Julia threads and one BLAS thread. Confidence-set search and public integration are still pending.
+Luna is integrating the opt-in `arc1_v1` FA policy, its cached spectral objective, the frozen start schedule, and a validated-Pedigree fixed-K1 overload. The first tiny selector was correctly unavailable because its fits failed convergence and final gradient checks. No ordinary K1 reliability claim is established. Astra is reviewing handling of invalid line-search trials.
 
-Luna is building independent seed-manifest and receipt-checker foundations in `tools/arc1_manifest.py`, `tools/arc1_receipt_check.py`, `test/test_arc1_receipt_adversaries.py`, and `sim/arc1/`. No development, pilot, or confirmation datasets have run. Exact seed-manifest validation is required before studies.
+Luna implemented candidate finite-resolution profile searches. The deterministic core, scanner and boundary suite passed 44 assertions with the expensive wrapper explicitly skipped. The full five-target wrapper exceeded its five-minute estimate, was stopped through its owned process, and remains unverified. Astra is reviewing an exact paired-record sum/difference diagonalization before Luna changes the computation. This optimization must preserve the full fixed-effect correction, ancestor relationships and all frozen search criteria.
+
+The evidence-harness owner is repairing protocol hashing, programme-specific seed labels, independent rank-score verification and per-bootstrap-attempt proof after review. Candidate manifests are not frozen. No development, pilot or confirmation study has run. R controls and live parity remain to be implemented after the Julia contracts stabilize.
 
 ## Evidence and protected state
 
@@ -24,4 +26,4 @@ The app goal API unexpectedly contains an unrelated manuscript objective. It has
 
 ## Next action
 
-Finish independent G1 verification, including the corrected pivot regression and exact checked command. Then implement the opt-in optimizer policy with a cached spectral context, while completing the finite-resolution repeatability profile search under Astra's reviewed contract. Invalid proposals must never become successful stationary fits. Continue through S3 and live R parity before measured Totoro pilots. A measured campaign above three hours still requires its specific pre-run approval.
+Complete Astra's exact paired-record computation review and Luna's implementation, then independently rerun the current objective and profile checks. Complete the FA policy and evidence-harness repairs in parallel. Continue through bootstrap, independent simulation drivers and live R parity before measured Totoro pilots. A measured campaign above three hours requires its specific pre-run approval. All nine original acceptance gates remain unmet.

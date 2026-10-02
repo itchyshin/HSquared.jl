@@ -19,7 +19,7 @@ S0's deterministic protocol and math contract are frozen. S1's exact objective/g
 
 ## Frozen numeric protocol
 
-`GOAL.md` carries the full DGP, pedigree, optimizer, score, replicate allocation, selection-bound, and interval rules. Key facts are four traits with means `[0,1,-1,2]`; rho values 0, 0.15, 0.70; genetic diagonal 0.5; residual diagonal 0.5 and off-diagonal 0.1; N counts offspring at 80, 160, 320; REML AIC covariance penalties 14/18; nine selection and univariate repeatability cells; and the stated pilot/confirmation allocations. Both-candidates-eligible rate lower Wilson 95% bound is `≥0.90`; null K1 selection upper bound `≤0.20`; strong N=320 K1 selection lower bound `≥0.80`. All-attempt denominators include failures. No covariance-recovery tolerance is to be invented; recovery is descriptive.
+`GOAL.md` carries the full DGP, pedigree, optimizer, score, replicate allocation, selection-bound, and interval rules. Key facts are four traits with means `[0,1,-1,2]`; rho values 0, 0.15, 0.70; genetic diagonal 0.5; residual diagonal 0.5 and off-diagonal 0.1; N counts offspring at 80, 160, 320; REML AIC parameter counts 14/18 and penalty terms 28/36; nine selection and univariate repeatability cells; and the stated pilot/confirmation allocations. Both-candidates-eligible rate lower Wilson 95% bound is `≥0.90`; null K1 selection upper bound `≤0.20`; strong N=320 K1 selection lower bound `≥0.80`. All-attempt denominators include failures. No covariance-recovery tolerance is to be invented; recovery is descriptive.
 
 ## S0 items still to freeze
 
