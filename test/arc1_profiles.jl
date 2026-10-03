@@ -1658,6 +1658,12 @@ end
             @test returned_certificate_history.max_valid_centered_loglik ==
                 (certificate_tag === Ve ? 7e-7 : 0.0)
             @test returned_certificate_history.status == :nuisance_unresolved
+            if certificate_tag === Ve
+                search = only(filter(x -> x.kind == :raw_nuisance_search,
+                    returned_certificate_history.nuisance_statuses))
+                @test any(row -> hasproperty(row, :centering_ve) &&
+                    row.centering_ve === Ve, search.lower_bound_resolutions)
+            end
         end
 
         # Scalar history is tag-governed even when its own active flag is false
@@ -3118,10 +3124,10 @@ end
 end
 end
 
-# This contract-only entry point is deliberately outside the broad profile
-# test guard above. It exercises no whole-profile wrapper or Optim optimizer.
-if get(ENV, "ARC1_PROFILE_V3_ONLY", "0") == "1"
-    @testset "Arc1 v3 bounded producer, provenance, and callback contracts" begin
+# These bounded contract tests run in every profile-file mode. They exercise
+# no whole-profile wrapper or Optim optimizer and guard producer provenance,
+# inheritance, and interruption behavior in the mandatory suite.
+@testset "Arc1 v3 bounded producer, provenance, and callback contracts" begin
         yv3, _, Zv3, Ainvv3, _ = _arc1_test_data()
         na_v3 = size(Zv3, 2)
         Xv3 = hcat(ones(length(yv3)), repeat(collect(1.0:na_v3), inner = 2))
@@ -3549,5 +3555,107 @@ if get(ENV, "ARC1_PROFILE_V3_ONLY", "0") == "1"
             @test event_record[:status] == :interrupted
             @test event_record[:max_valid_loglik] == 100.0
         end
-    end
+
+        @testset "native zero-face certificate carries its own fixed-Ve tag" begin
+            ve = 9.74052290149441e-7
+            df, s0 = 1.0, 1.0
+            analytic = 0.019254271008761707
+            original = [9.289286519522098e-13, 0.6397602825832304, ve]
+            projected = [0.0, 0.6397602825832304, ve]
+            face_components = [0.0, 0.6397602721682137, ve]
+            original_full = -62815142.74513186
+            projected_full = -62815142.74513186
+            face_full = -62815142.74513185
+            original_centered = -101.97981224657958
+            projected_centered = -101.97981224657403
+            face_centered = -101.97981224657396
+            candidate_centered_maximum = -101.97981224657954
+
+            full_score(components) = components == original ? (original_full, :ok) :
+                components == projected ? (projected_full, :ok) :
+                components == face_components ? (face_full, :ok) : (face_full, :ok)
+            centered_score(components) = components == original ? (original_centered, :ok) :
+                components == projected ? (projected_centered, :ok) :
+                components == face_components ? (face_centered, :ok) :
+                (face_centered - df * analytic * components[1] / s0, :ok)
+            gradient_score(components; free_indices) = begin
+                component_gradient = [analytic / s0, 0.0, 0.0]
+                (; loglik = first(full_score(components)), component_gradient,
+                   log_gradient = component_gradient[free_indices] .* components[free_indices])
+            end
+
+            candidate = (loglik = original_full, max_valid_loglik = original_full,
+                centered_loglik = original_centered,
+                max_valid_centered_loglik = candidate_centered_maximum,
+                centering_ve = ve, components = original, optimizer_converged = true,
+                analytic_gradient_valid = true, line_search_failed = false,
+                free_indices = [1, 2], finite_difference_errors = Dict(1 => Inf, 2 => 0.0),
+                gradient_norm = 0.0, hit_bound_components =
+                    [(component = 1, side = :lower, value = original[1])])
+            face = (status = :ok, zero_index = 1, loglik = face_full,
+                centered_loglik = face_centered, max_valid_centered_loglik = face_centered,
+                centering_ve = ve, components = face_components)
+
+            certificate = H._arc1_zero_bound_face_certificate(candidate, 3, s0, df,
+                [face], nothing, full_score, gradient_score;
+                centered_loglik_at = centered_score, centering_ve = ve,
+                historical_likelihoods = [original_full],
+                historical_centered_likelihoods = [candidate_centered_maximum])
+            @test certificate.status == :resolved_lower_bound_by_zero_face
+            @test certificate.centered_active
+            @test certificate.centering_ve === ve
+            @test certificate.candidate_max_valid_centered_loglik == candidate_centered_maximum
+            full_history, centered_history = Ref(-Inf), Ref(-Inf)
+            history = H._arc1_profile_v3_history!(full_history, centered_history,
+                certificate, ve; path = "native-zero-face-certificate")
+            @test isempty(history.provenance_failures)
+            @test centered_history[] == face_centered
+
+            mismatched_maximum = merge(candidate,
+                (max_valid_centered_loglik = face_centered + 2e-8,))
+            mismatch_certificate = H._arc1_zero_bound_face_certificate(
+                mismatched_maximum, 3, s0, df, [face], nothing,
+                full_score, gradient_score; centered_loglik_at = centered_score,
+                centering_ve = ve)
+            @test mismatch_certificate.status == :candidate_maximum_mismatch
+            @test mismatch_certificate.centering_ve === ve
+
+            unresolved_gradient(components; free_indices) = merge(
+                gradient_score(components; free_indices),
+                (log_gradient = fill(2e-6, length(free_indices)),))
+            unresolved_certificate = H._arc1_zero_bound_face_certificate(
+                candidate, 3, s0, df, [face], nothing, full_score,
+                unresolved_gradient; centered_loglik_at = centered_score,
+                centering_ve = ve)
+            @test unresolved_certificate.status == :projected_gradient_unresolved
+            @test unresolved_certificate.centering_ve === ve
+
+            malformed_tagged = merge(candidate, (components = nothing,))
+            invalid_tagged = H._arc1_zero_bound_face_certificate(malformed_tagged,
+                3, s0, df, [face], nothing, full_score, gradient_score;
+                centered_loglik_at = centered_score, centering_ve = ve)
+            @test invalid_tagged.status == :candidate_record_invalid
+            @test invalid_tagged.max_valid_loglik == original_full
+            @test invalid_tagged.max_valid_centered_loglik == candidate_centered_maximum
+            @test invalid_tagged.centering_ve === ve
+
+            malformed_wrong_tag = merge(malformed_tagged, (centering_ve = 2ve,))
+            invalid_wrong_tag = H._arc1_zero_bound_face_certificate(malformed_wrong_tag,
+                3, s0, df, [face], nothing, full_score, gradient_score;
+                centered_loglik_at = centered_score, centering_ve = ve)
+            @test invalid_wrong_tag.status == :candidate_record_invalid
+            @test invalid_wrong_tag.max_valid_loglik == original_full
+            @test invalid_wrong_tag.max_valid_centered_loglik == -Inf
+            @test invalid_wrong_tag.centering_ve === 2ve
+
+            malformed_untagged = Base.structdiff(malformed_tagged,
+                NamedTuple{(:centering_ve,)}((ve,)))
+            invalid_untagged = H._arc1_zero_bound_face_certificate(malformed_untagged,
+                3, s0, df, [face], nothing, full_score, gradient_score;
+                centered_loglik_at = centered_score, centering_ve = ve)
+            @test invalid_untagged.status == :candidate_record_invalid
+            @test invalid_untagged.max_valid_loglik == original_full
+            @test invalid_untagged.max_valid_centered_loglik == -Inf
+            @test !hasproperty(invalid_untagged, :centering_ve)
+        end
 end

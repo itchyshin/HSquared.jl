@@ -1617,9 +1617,17 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
         all(i -> i isa Integer && i in 1:3, candidate.free_indices) &&
         (!hasproperty(candidate, :hit_bound_components) ||
          _arc1_profile_bound_contacts_valid(candidate.hit_bound_components))
-    candidate_schema_valid || return (status = :candidate_record_invalid,
-        max_valid_loglik = candidate_history.max_valid_loglik,
-        max_valid_centered_loglik = candidate_history.max_valid_centered_loglik)
+    if !candidate_schema_valid
+        invalid_record = (status = :candidate_record_invalid,
+            max_valid_loglik = candidate_history.max_valid_loglik,
+            max_valid_centered_loglik = candidate_history.max_valid_centered_loglik)
+        # Preserve only the producer's own tag. The history helper admits a
+        # centered maximum only when that tag matches the fixed Ve supplied
+        # for this certificate; never manufacture provenance for a bad row.
+        return hasproperty(candidate, :centering_ve) ?
+            merge(invalid_record, (; centering_ve = candidate.centering_ve)) :
+            invalid_record
+    end
     contacts = hasproperty(candidate, :hit_bound_components) ?
                candidate.hit_bound_components : Any[]
     isempty(contacts) && return (status = :not_applicable,)
@@ -1686,6 +1694,8 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
         _arc1_profile_centering_tag_matches(candidate, centering_ve) &&
         candidate.components[3] == centering_ve && projected[3] == centering_ve &&
         face.components[3] == centering_ve
+    centered_metadata = centered_active ?
+        (; centering_ve = Float64(centering_ve)) : NamedTuple()
     original_centered = centered_active ?
         _arc1_profile_centered_value(candidate, :centered_loglik, centering_ve) : nothing
     face_centered = centered_active ?
@@ -1734,20 +1744,20 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
     candidate_face_difference = centered_active ?
         candidate_centered_maximum - face_centered_ll : candidate_maximum - face.loglik
     abs(candidate_face_difference) <= 1e-8 ||
-        return (status = :candidate_maximum_mismatch, zero_indices = zero_indices,
+        return merge((status = :candidate_maximum_mismatch, zero_indices = zero_indices,
                 original_loglik = original_ll, projected_loglik = projected_ll,
                 face_loglik = face.loglik, candidate_max_valid_loglik = candidate_maximum,
                 likelihood_spread = likelihood_spread,
                 centered_active = centered_active,
                 candidate_max_valid_centered_loglik = candidate_centered_maximum,
                 face_centered_loglik = face_centered_ll,
-                likelihood_spread_centered = centered_spread)
+                likelihood_spread_centered = centered_spread), centered_metadata)
 
     free_indices = filter(i -> i != target_index && !(i in zero_indices), 1:3)
     grad = gradient_at(projected; free_indices)
     projected_gradient_norm = maximum(abs, grad.log_gradient; init = 0.0)
     isfinite(projected_gradient_norm) && projected_gradient_norm <= 1e-6 ||
-        return (status = :projected_gradient_unresolved, zero_indices = zero_indices,
+        return merge((status = :projected_gradient_unresolved, zero_indices = zero_indices,
                 original_loglik = original_ll, projected_loglik = projected_ll,
                 face_loglik = face.loglik, likelihood_spread = likelihood_spread,
                 centered_active = centered_active,
@@ -1756,7 +1766,7 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
                 face_centered_loglik = face_centered_ll,
                 candidate_max_valid_centered_loglik = candidate_centered_maximum,
                 likelihood_spread_centered = centered_spread,
-                projected_gradient_norm = projected_gradient_norm)
+                projected_gradient_norm = projected_gradient_norm), centered_metadata)
 
     analytic_active = Dict{Int,Float64}()
     forward_active = Dict{Int,NTuple{2,Float64}}()
@@ -1835,7 +1845,7 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
                     likelihood_spread_centered = centered_spread)
         forward_active[index] = (estimates[1], estimates[2])
     end
-    return (status = :resolved_lower_bound_by_zero_face,
+    return merge((status = :resolved_lower_bound_by_zero_face,
             zero_indices = zero_indices, components = copy(face.components),
             loglik = face.loglik, projected_components = projected,
             original_loglik = original_ll, projected_loglik = projected_ll,
@@ -1850,7 +1860,7 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
             projected_remaining_finite_difference_errors =
                 projected_remaining_fd_errors,
             analytic_active_derivatives = analytic_active,
-            forward_derivatives = forward_active)
+            forward_derivatives = forward_active), centered_metadata)
 end
 
 function _arc1_projected_face_polish(context, candidate, target_index::Int,
