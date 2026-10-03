@@ -360,7 +360,7 @@ def _julia_env() -> dict[str, str]:
 def _r_env(run_dir: Path, bootstrap_dir: Path) -> dict[str, str]:
     env = _julia_env()
     env.update({
-        "PATH": R_PATH,
+        "PATH": str(Path(JULIA_BIN).resolve().parent) + os.pathsep + R_PATH,
         "HSQUARED_JULIA_PROJECT": str(JULIA_ROOT),
         "JULIA_PROJECT": str(bootstrap_dir),
         "JULIA_PKG_OFFLINE": "true",
@@ -1437,9 +1437,15 @@ def _self_test() -> None:
         shutil.copyfile(bootstrap_spec["project_path"], fake_bootstrap / "Project.toml")
         shutil.copyfile(bootstrap_spec["manifest_path"], fake_bootstrap / "Manifest.toml")
         bootstrap_env = _r_env(root, fake_bootstrap)
+        assert bootstrap_env["PATH"].split(os.pathsep, 1)[0] == str(Path(JULIA_BIN).resolve().parent)
         assert bootstrap_env["JULIA_PROJECT"] == str(fake_bootstrap)
         assert bootstrap_env["HSQUARED_JULIA_PROJECT"] == str(JULIA_ROOT)
         assert bootstrap_env["JULIA_PKG_OFFLINE"] == "true"
+        assert bootstrap_env["JULIA_DEPOT_PATH"] == JULIA_DEPOT
+        assert bootstrap_env["JULIA_NUM_THREADS"] == JULIA_THREAD_COUNT
+        assert bootstrap_env["OPENBLAS_NUM_THREADS"] == BLAS_THREAD_COUNT
+        assert bootstrap_env["HSQUARED_ARC1_REQUIRE_LIVE"] == "true"
+        assert bootstrap_env["ARC1_ORACLE_PACKAGE_ROOT"] == str(R_ROOT)
         freeze = {
             "schema": SCHEMA,
             "review": {"status": "reviewed", "reviewer": "synthetic external reviewer",
