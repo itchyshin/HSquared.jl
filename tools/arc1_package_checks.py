@@ -6,18 +6,24 @@ explicit gate selection. The runner has a fixed command allowlist and no
 freeze-generation mode. ``--self-test`` uses synthetic files and disposable
 Python/Julia child processes; it never launches project tests or docs builds.
 
-Freeze format: ``hsquared-arc1-package-freeze-v1`` with an independent review
-record, exact Julia/R roots and runtime pins, and ``files`` maps whose keys
-must equal the complete inventories discovered under the fixed source trees.
+Freeze format: ``hsquared-arc1-package-freeze-v2`` with an independent review
+record, exact Julia/R roots and runtime pins, complete ``files`` inventories,
+and independently reviewed hashes for the resolved Julia test sandbox and
+JuliaCall bootstrap environment. R/all freezes require the latter so the
+bridge can initialize without using the frozen target project as its setup env.
 The runner has no candidate-freeze generation mode.
 
 Required JSON fields are ``review: {status: "reviewed", reviewer,
 reviewed_at_utc, review_receipt_path, review_receipt_sha256}``, ``roots:
 {julia: JULIA_ROOT, r: R_ROOT}``, ``runtime: {julia, julia_executable,
-rscript, rscript_executable}``, and ``files: {julia: {relative_path: sha256},
-r: {relative_path: sha256}}``. The review receipt must be an existing external
-file whose bytes match its digest. Runtime strings are exact output from the
-fixed version commands; executable paths are resolved paths.
+rscript, rscript_executable}``, ``files: {julia: {relative_path: sha256},
+r: {relative_path: sha256}}``, and ``julia_test_sandbox`` with absolute
+Project.toml/Manifest.toml paths and SHA-256 values. R/all additionally require
+``julia_call_bootstrap`` with absolute Project.toml/Manifest.toml paths and
+SHA-256 values. The review receipt, sandbox files, and bootstrap files must be
+existing external files whose bytes match their digests.
+Runtime strings are exact output from the fixed version commands; executable
+paths are resolved paths.
 """
 
 from __future__ import annotations
@@ -48,7 +54,7 @@ BLAS_THREAD_COUNT = "1"
 R_PATH = "/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 RUN_TIMEOUT_S = {"julia": 600, "r": 480, "docs": 180}
 COMMAND_TIMEOUT_S = {"version": 20}
-SCHEMA = "hsquared-arc1-package-freeze-v1"
+SCHEMA = "hsquared-arc1-package-freeze-v2"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 JULIA_TREES = (
@@ -182,7 +188,8 @@ def require_success_marker(name: str, status: int, output: str, marker: str | No
         raise PackageCheckError(f"{name} lacks required success marker {marker!r}")
 
 
-def validate_freeze(doc: Any, expected_roots: dict[str, str], file_map: dict[str, dict[str, Path]]) -> None:
+def validate_freeze(doc: Any, expected_roots: dict[str, str], file_map: dict[str, dict[str, Path]],
+                    *, gate: str | None = None) -> None:
     if not isinstance(doc, dict) or doc.get("schema") != SCHEMA:
         raise PackageCheckError(f"freeze schema must be {SCHEMA!r}")
     review = doc.get("review")
@@ -215,6 +222,31 @@ def validate_freeze(doc: Any, expected_roots: dict[str, str], file_map: dict[str
     if runtime["julia_executable"] != str(Path(JULIA_BIN).resolve()) or \
        runtime["rscript_executable"] != str(Path(RSCRIPT_BIN).resolve()):
         raise PackageCheckError("runtime executable paths differ from the approved freeze")
+    sandbox = doc.get("julia_test_sandbox")
+    required = {"project_path", "manifest_path", "project_sha256", "manifest_sha256"}
+    if not isinstance(sandbox, dict) or set(sandbox) != required:
+        raise PackageCheckError("freeze needs exact julia_test_sandbox paths and hashes")
+    sandbox_paths: dict[str, Path] = {}
+    for key, filename in (("project_path", "Project.toml"), ("manifest_path", "Manifest.toml")):
+        value = sandbox[key]
+        path = Path(value) if isinstance(value, str) else Path()
+        if not path.is_absolute() or path.is_symlink() or not path.is_file():
+            raise PackageCheckError(f"julia_test_sandbox {key} must be an existing absolute nonsymlink file")
+        if path.is_relative_to(EVIDENCE_ROOT) or path.name != filename:
+            raise PackageCheckError(f"julia_test_sandbox {key} must name an external {filename}")
+        sandbox_paths[key] = path
+    if sandbox_paths["project_path"].parent != sandbox_paths["manifest_path"].parent:
+        raise PackageCheckError("test sandbox Project.toml and Manifest.toml must share a directory")
+    for digest_key, path_key in (("project_sha256", "project_path"), ("manifest_sha256", "manifest_path")):
+        digest = sandbox[digest_key]
+        if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest) or \
+           sha256_file(sandbox_paths[path_key]) != digest:
+            raise PackageCheckError(f"julia_test_sandbox {digest_key} does not match its external file")
+    try:
+        _oracle.validate_julia_call_bootstrap(
+            doc.get("julia_call_bootstrap"), required=gate in {"r", "all"})
+    except _oracle.OracleError as exc:
+        raise PackageCheckError(str(exc)) from exc
 
 
 def _julia_env() -> dict[str, str]:
@@ -230,11 +262,13 @@ def _julia_env() -> dict[str, str]:
     }
 
 
-def _r_env(run_dir: Path) -> dict[str, str]:
+def _r_env(run_dir: Path, bootstrap_dir: Path) -> dict[str, str]:
     env = _julia_env()
     env.update({
         "PATH": R_PATH,
         "HSQUARED_JULIA_PROJECT": str(JULIA_ROOT),
+        "JULIA_PROJECT": str(bootstrap_dir),
+        "JULIA_PKG_OFFLINE": "true",
         "HSQUARED_ARC1_REQUIRE_LIVE": "true",
         "ARC1_ORACLE_PACKAGE_ROOT": str(R_ROOT),
         "ARC1_ORACLE_RESULTS_RDS": str(run_dir / "arc1-live-results.rds"),
@@ -249,16 +283,48 @@ def _version_command(name: str) -> list[str]:
     if name == "julia":
         return [JULIA_BIN, "--startup-file=no", "--version"]
     if name == "rscript":
-        return [RSCRIPT_BIN, "--vanilla", "--version"]
+        return [RSCRIPT_BIN, "--version"]
     raise PackageCheckError(f"unsupported version check: {name}")
 
 
-def _julia_command() -> tuple[list[str], dict[str, str]]:
+JULIA_TEST_SANDBOX_CALLBACK = r'''
+function arc1_capture_pkg_test_sandbox()
+    project_file = Base.active_project()
+    project_file === nothing && error("Pkg.test sandbox has no active Project.toml")
+    sandbox_dir = dirname(project_file)
+    manifest_file = joinpath(sandbox_dir, "Manifest.toml")
+    isfile(manifest_file) || error("Pkg.test sandbox Manifest.toml is absent")
+    capture_dir = ENV["ARC1_TEST_SANDBOX_CAPTURE_DIR"]
+    mkpath(capture_dir)
+    project_copy = joinpath(capture_dir, "Project.toml")
+    manifest_copy = joinpath(capture_dir, "Manifest.toml")
+    write(project_copy, read(project_file))
+    write(manifest_copy, read(manifest_file))
+    project_sha = bytes2hex(sha256(read(project_copy)))
+    manifest_sha = bytes2hex(sha256(read(manifest_copy)))
+    write(joinpath(capture_dir, "sha256.txt"), project_sha * "\n" * manifest_sha * "\n")
+    project_sha == ENV["ARC1_TEST_SANDBOX_PROJECT_SHA256"] || error("Pkg.test sandbox Project.toml hash mismatch")
+    manifest_sha == ENV["ARC1_TEST_SANDBOX_MANIFEST_SHA256"] || error("Pkg.test sandbox Manifest.toml hash mismatch")
+    println("ARC1_TEST_SANDBOX_VERIFIED")
+    return nothing
+end
+'''
+
+
+def _julia_command(capture_dir: Path, sandbox: dict[str, Any]) -> tuple[list[str], dict[str, str]]:
+    env = _julia_env()
+    env.update({
+        "ARC1_TEST_SANDBOX_CAPTURE_DIR": str(capture_dir),
+        "ARC1_TEST_SANDBOX_PROJECT_SHA256": sandbox["project_sha256"],
+        "ARC1_TEST_SANDBOX_MANIFEST_SHA256": sandbox["manifest_sha256"],
+    })
     driver = (
-        'using LinearAlgebra; BLAS.set_num_threads(1); using Pkg; '
-        'Pkg.test(allow_reresolve=false); println("ARC1_PACKAGE_JULIA_COMPONENT_PASS")'
+        'using LinearAlgebra, SHA; BLAS.set_num_threads(1); using Pkg; '
+        + JULIA_TEST_SANDBOX_CALLBACK
+        + 'Pkg.test(test_fn=arc1_capture_pkg_test_sandbox, allow_reresolve=false); '
+          'println("ARC1_PACKAGE_JULIA_COMPONENT_PASS")'
     )
-    return ([JULIA_BIN, "--startup-file=no", "--project=.", "-e", driver], _julia_env())
+    return ([JULIA_BIN, "--startup-file=no", "--project=.", "-e", driver], env)
 
 
 R_PACKAGE_DRIVER = r'''check_dir <- Sys.getenv("ARC1_R_CHECK_DIR")
@@ -330,16 +396,16 @@ def parse_julia_test_output(
             "required_arc1_testsets": list(required_arc1_testsets)}
 
 
-def _r_check_command(run_dir: Path) -> tuple[list[str], dict[str, str]]:
+def _r_check_command(run_dir: Path, bootstrap_dir: Path) -> tuple[list[str], dict[str, str]]:
     driver_path = run_dir / "r-package-check-driver.R"
     driver_path.write_text(R_PACKAGE_DRIVER, encoding="utf-8")
-    return ([RSCRIPT_BIN, "--vanilla", str(driver_path)], _r_env(run_dir))
+    return ([RSCRIPT_BIN, "--vanilla", str(driver_path)], _r_env(run_dir, bootstrap_dir))
 
 
-def _r_live_command(run_dir: Path) -> tuple[list[str], dict[str, str]]:
+def _r_live_command(run_dir: Path, bootstrap_dir: Path) -> tuple[list[str], dict[str, str]]:
     driver_path = run_dir / "r-arc1-live-driver.R"
     driver_path.write_text(_oracle.R_DRIVER, encoding="utf-8")
-    return ([RSCRIPT_BIN, "--vanilla", str(driver_path)], _r_env(run_dir))
+    return ([RSCRIPT_BIN, "--vanilla", str(driver_path)], _r_env(run_dir, bootstrap_dir))
 
 
 def _julia_string(path: Path) -> str:
@@ -461,6 +527,9 @@ class PackageRun:
         self.review_receipt_hash: str | None = None
         self.expected: dict[str, dict[str, str]] | None = None
         self.file_map: dict[str, dict[str, Path]] | None = None
+        self.test_sandbox: dict[str, Any] | None = None
+        self.julia_call_bootstrap: dict[str, Any] | None = None
+        self.julia_call_bootstrap_dir: Path | None = None
         self.runner_hash = sha256_file(RUNNER)
         EVIDENCE_ROOT.mkdir(parents=True, exist_ok=True)
         stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -496,7 +565,7 @@ class PackageRun:
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise PackageCheckError(f"external source freeze JSON is invalid: {exc}") from exc
         self.file_map = build_file_map()
-        validate_freeze(doc, {"julia": str(JULIA_ROOT), "r": str(R_ROOT)}, self.file_map)
+        validate_freeze(doc, {"julia": str(JULIA_ROOT), "r": str(R_ROOT)}, self.file_map, gate=self.gate)
         self.review_receipt_path = Path(doc["review"]["review_receipt_path"])
         if self.review_receipt_path.is_symlink() or not self.review_receipt_path.is_file() or \
            self.review_receipt_path.is_relative_to(EVIDENCE_ROOT):
@@ -505,9 +574,17 @@ class PackageRun:
         if self.review_receipt_hash != doc["review"]["review_receipt_sha256"]:
             raise PackageCheckError("independent review receipt SHA-256 does not match the freeze")
         self.expected = doc["files"]
+        self.test_sandbox = doc["julia_test_sandbox"]
+        self.julia_call_bootstrap = _oracle.validate_julia_call_bootstrap(
+            doc.get("julia_call_bootstrap"), required=self.gate in {"r", "all"})
         self.meta.update({"freeze_path": str(self.freeze_path), "freeze_sha256": self.freeze_hash,
                           "review": doc["review"], "review_receipt_sha256": self.review_receipt_hash,
                           "runtime_expected": doc["runtime"],
+                          "julia_test_sandbox_expected": {
+                              "project_sha256": self.test_sandbox["project_sha256"],
+                              "manifest_sha256": self.test_sandbox["manifest_sha256"],
+                          },
+                          "julia_call_bootstrap_expected": self.julia_call_bootstrap,
                           "input_counts": {key: len(value) for key, value in self.file_map.items()}})
         self.verify_inputs("initial")
         return doc
@@ -522,6 +599,16 @@ class PackageRun:
         if self.review_receipt_path is None or self.review_receipt_hash is None or \
            sha256_file(self.review_receipt_path) != self.review_receipt_hash:
             raise PackageCheckError("independent source-review receipt changed during this run")
+        if self.test_sandbox is not None:
+            for path_key, digest_key in (("project_path", "project_sha256"),
+                                         ("manifest_path", "manifest_sha256")):
+                if sha256_file(Path(self.test_sandbox[path_key])) != self.test_sandbox[digest_key]:
+                    raise PackageCheckError(f"reviewed Julia test sandbox changed: {path_key}")
+        if self.julia_call_bootstrap is not None:
+            try:
+                _oracle.validate_julia_call_bootstrap(self.julia_call_bootstrap, required=True)
+            except _oracle.OracleError as exc:
+                raise PackageCheckError(str(exc)) from exc
         current = build_file_map()
         actual_keys = {group: set(paths) for group, paths in current.items()}
         expected_keys = {group: set(paths) for group, paths in self.file_map.items()}
@@ -551,12 +638,22 @@ class PackageRun:
         timeout = min(timeout_s, self._remaining(component)) if component else timeout_s
         env = os.environ.copy()
         env.update(env_overrides)
+        bootstrap_dir: Path | None = None
+        bootstrap_before: dict[str, str] | None = None
+        if "JULIA_PROJECT" in env_overrides and self.julia_call_bootstrap is not None:
+            bootstrap_dir = Path(env_overrides["JULIA_PROJECT"]).resolve()
+            if self.julia_call_bootstrap_dir is None or bootstrap_dir != self.julia_call_bootstrap_dir:
+                raise PackageCheckError("R JULIA_PROJECT does not identify this run's isolated JuliaCall bootstrap")
+            bootstrap_before = _oracle.bootstrap_snapshot(bootstrap_dir)
         record: dict[str, Any] = {
             "name": name, "component": component, "argv": argv, "cwd": str(cwd), "env_overrides": env_overrides,
             "timeout_s": timeout, "log": log_path.name, "started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
             "process_status": None, "timed_out": False, "interrupted": False,
             "cleanup": None, "before_sha256": before,
         }
+        if bootstrap_before is not None:
+            record["julia_call_bootstrap_path"] = str(bootstrap_dir)
+            record["julia_call_bootstrap_before_sha256"] = bootstrap_before
         started = time.monotonic()
         interrupted = False
         with log_path.open("wb") as log:
@@ -588,6 +685,19 @@ class PackageRun:
         record["elapsed_s"] = round(time.monotonic() - started, 3)
         record["ended_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
         record["log_sha256"] = sha256_file(log_path)
+        if bootstrap_dir is not None and bootstrap_before is not None:
+            try:
+                bootstrap_after = _oracle.bootstrap_snapshot(bootstrap_dir)
+                record["julia_call_bootstrap_after_sha256"] = bootstrap_after
+                record["julia_call_bootstrap_changed"] = bootstrap_after != bootstrap_before
+                expected_bootstrap = {
+                    "Project.toml": self.julia_call_bootstrap["project_sha256"],
+                    "Manifest.toml": self.julia_call_bootstrap["manifest_sha256"],
+                }
+                if bootstrap_before != expected_bootstrap or bootstrap_after != expected_bootstrap:
+                    record["after_hash_error"] = "isolated JuliaCall bootstrap Project/Manifest changed"
+            except Exception as exc:
+                record["after_hash_error"] = f"cannot hash isolated JuliaCall bootstrap: {exc}"
         if component:
             elapsed = self.meta.setdefault("component_elapsed_s", {})
             elapsed[component] = round(elapsed.get(component, 0.0) + record["elapsed_s"], 3)
@@ -611,7 +721,7 @@ class PackageRun:
         except PackageCheckError as exc:
             raise PackageCheckError(f"{exc}; see {log_path}") from exc
         if record.get("after_hash_error"):
-            raise PackageCheckError(f"{name} changed a frozen input: {record['after_hash_error']}")
+            raise PackageCheckError(f"{name} changed a frozen input or bootstrap environment: {record['after_hash_error']}")
         return record
 
     def check_runtime(self, doc: dict[str, Any]) -> None:
@@ -631,7 +741,10 @@ class PackageRun:
         self.save()
 
     def run_julia(self) -> None:
-        argv, env = _julia_command()
+        if self.test_sandbox is None:
+            raise PackageCheckError("reviewed Julia test sandbox is unavailable")
+        capture_dir = self.out / "julia-test-sandbox"
+        argv, env = _julia_command(capture_dir, self.test_sandbox)
         profile_test_source = (JULIA_ROOT / "test" / "arc1_profiles.jl").read_text(encoding="utf-8")
         if env.get("ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER") != "0" or \
            'if get(ENV, "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "0") != "1"' not in profile_test_source or \
@@ -639,18 +752,43 @@ class PackageRun:
             raise PackageCheckError("Arc1 all-five profile wrapper is not proven enabled by the frozen test source")
         record = self.run_command("julia-pkg-test", argv, JULIA_ROOT, env, RUN_TIMEOUT_S["julia"],
                                   marker="ARC1_PACKAGE_JULIA_COMPONENT_PASS", component="julia")
+        captured_project = capture_dir / "Project.toml"
+        captured_manifest = capture_dir / "Manifest.toml"
+        captured_receipt = capture_dir / "sha256.txt"
+        if not all(path.is_file() for path in (captured_project, captured_manifest, captured_receipt)):
+            raise PackageCheckError("Pkg.test did not retain its sandbox callback capture")
         test_output = (self.out / record["log"]).read_text(encoding="utf-8", errors="replace")
+        if "ARC1_TEST_SANDBOX_VERIFIED" not in test_output:
+            raise PackageCheckError("Pkg.test did not report successful sandbox verification before tests")
+        observed_sandbox = {
+            "project_sha256": sha256_file(captured_project),
+            "manifest_sha256": sha256_file(captured_manifest),
+        }
+        if observed_sandbox != {key: self.test_sandbox[key] for key in observed_sandbox}:
+            raise PackageCheckError(f"captured Pkg.test sandbox differs from reviewed candidate: {observed_sandbox}")
+        expected_receipt = observed_sandbox["project_sha256"] + "\n" + observed_sandbox["manifest_sha256"] + "\n"
+        if captured_receipt.read_text(encoding="ascii") != expected_receipt:
+            raise PackageCheckError("Pkg.test sandbox callback receipt does not match captured files")
         test_summary = parse_julia_test_output(test_output)
         self.meta["julia_test_summary"] = test_summary
         self.meta.setdefault("component_receipts", {})["julia"] = {
             "status": "passed", "log": record["log"], "log_sha256": record["log_sha256"],
             "test_summary": test_summary, "elapsed_s": record["elapsed_s"],
+            "test_sandbox": {**observed_sandbox, "capture_dir": str(capture_dir)},
         }
         self.meta["passed_components"].append("julia")
         self.save()
 
     def run_r(self) -> None:
-        live_argv, live_env = _r_live_command(self.out)
+        if self.julia_call_bootstrap is None:
+            raise PackageCheckError("R package checks require the reviewed JuliaCall bootstrap environment")
+        self.julia_call_bootstrap_dir, bootstrap_hashes = _oracle.prepare_julia_call_bootstrap(
+            self.julia_call_bootstrap, self.out)
+        self.meta["julia_call_bootstrap_run"] = {
+            "path": str(self.julia_call_bootstrap_dir), "initial_sha256": bootstrap_hashes,
+        }
+        self.save()
+        live_argv, live_env = _r_live_command(self.out, self.julia_call_bootstrap_dir)
         live_record = self.run_command("r-arc1-mandatory-live", live_argv, R_ROOT, live_env,
                                        RUN_TIMEOUT_S["r"], marker="ARC1_TESTTHAT_COUNTS", component="r")
         # The shared R driver returns nonzero for empty, failed, error, or skipped
@@ -658,7 +796,7 @@ class PackageRun:
         for path in (self.out / "arc1-live-results.rds", self.out / "arc1-live-results.csv"):
             if not path.is_file() or path.stat().st_size == 0:
                 raise PackageCheckError(f"mandatory-live R driver did not retain {path.name}")
-        check_argv, check_env = _r_check_command(self.out)
+        check_argv, check_env = _r_check_command(self.out, self.julia_call_bootstrap_dir)
         check_record = self.run_command("r-cmd-check", check_argv, R_ROOT, check_env,
                                         RUN_TIMEOUT_S["r"], marker="ARC1_PACKAGE_R_CHECK_COMPONENT_PASS", component="r")
         check_log = self.out / "r-check" / "hsquared.Rcheck" / "00check.log"
@@ -877,6 +1015,31 @@ def _self_test_package_run(root: Path) -> None:
             f"from pathlib import Path; p=Path({str(frozen_input)!r}); p.write_text('changed'); print('RUNNER_PASS_MARKER')"],
             timeout=3, marker="RUNNER_PASS_MARKER")
         frozen_input.write_text("stable", encoding="utf-8")
+
+        bootstrap_run = new_run()
+        template = _oracle.JULIA_CALL_BOOTSTRAP_TEMPLATE
+        bootstrap_spec = {
+            "project_path": str((template / "Project.toml").resolve()),
+            "manifest_path": str((template / "Manifest.toml").resolve()),
+            "project_sha256": sha256_file(template / "Project.toml"),
+            "manifest_sha256": sha256_file(template / "Manifest.toml"),
+        }
+        bootstrap_run.julia_call_bootstrap = bootstrap_spec
+        bootstrap_run.julia_call_bootstrap_dir, _ = _oracle.prepare_julia_call_bootstrap(
+            bootstrap_spec, bootstrap_run.out)
+        bootstrap_run.julia_call_bootstrap_dir = bootstrap_run.julia_call_bootstrap_dir.resolve()
+        bootstrap_project = bootstrap_run.julia_call_bootstrap_dir / "Project.toml"
+        try:
+            bootstrap_run.run_command("synthetic-bootstrap-mutation", [sys.executable, "-c",
+                f"from pathlib import Path; p=Path({str(bootstrap_project)!r}); p.write_text('changed'); print('RUNNER_PASS_MARKER')"],
+                root, {"JULIA_PROJECT": str(bootstrap_run.julia_call_bootstrap_dir)}, 3,
+                marker="RUNNER_PASS_MARKER")
+        except PackageCheckError:
+            command_receipt = bootstrap_run.meta["commands"][-1]
+            assert command_receipt["julia_call_bootstrap_changed"] is True
+            assert command_receipt["julia_call_bootstrap_before_sha256"] != command_receipt["julia_call_bootstrap_after_sha256"]
+        else:
+            raise AssertionError("mutated JuliaCall bootstrap environment was accepted")
     finally:
         EVIDENCE_ROOT = original_evidence_root
         build_file_map = original_builder
@@ -936,6 +1099,28 @@ def _self_test() -> None:
 
         review_file = root / "independent-review.txt"
         review_file.write_text("reviewed external fixture", encoding="utf-8")
+        sandbox_root = root / "reviewed-sandbox"
+        sandbox_root.mkdir()
+        sandbox_project = sandbox_root / "Project.toml"
+        sandbox_manifest = sandbox_root / "Manifest.toml"
+        sandbox_project.write_text('name = "SyntheticTestEnv"\n', encoding="utf-8")
+        sandbox_manifest.write_text('manifest_format = "2.0"\n', encoding="utf-8")
+        bootstrap_template = _oracle.JULIA_CALL_BOOTSTRAP_TEMPLATE
+        bootstrap_spec = {
+            "project_path": str((bootstrap_template / "Project.toml").resolve()),
+            "manifest_path": str((bootstrap_template / "Manifest.toml").resolve()),
+            "project_sha256": sha256_file(bootstrap_template / "Project.toml"),
+            "manifest_sha256": sha256_file(bootstrap_template / "Manifest.toml"),
+        }
+        _oracle.validate_julia_call_bootstrap(bootstrap_spec, required=True)
+        fake_bootstrap = root / "bootstrap-copy"
+        fake_bootstrap.mkdir()
+        shutil.copyfile(bootstrap_spec["project_path"], fake_bootstrap / "Project.toml")
+        shutil.copyfile(bootstrap_spec["manifest_path"], fake_bootstrap / "Manifest.toml")
+        bootstrap_env = _r_env(root, fake_bootstrap)
+        assert bootstrap_env["JULIA_PROJECT"] == str(fake_bootstrap)
+        assert bootstrap_env["HSQUARED_JULIA_PROJECT"] == str(JULIA_ROOT)
+        assert bootstrap_env["JULIA_PKG_OFFLINE"] == "true"
         freeze = {
             "schema": SCHEMA,
             "review": {"status": "reviewed", "reviewer": "synthetic external reviewer",
@@ -947,8 +1132,23 @@ def _self_test() -> None:
                         "julia_executable": str(Path(JULIA_BIN).resolve()),
                         "rscript_executable": str(Path(RSCRIPT_BIN).resolve())},
             "files": frozen,
+            "julia_test_sandbox": {
+                "project_path": str(sandbox_project), "manifest_path": str(sandbox_manifest),
+                "project_sha256": sha256_file(sandbox_project),
+                "manifest_sha256": sha256_file(sandbox_manifest),
+            },
+            "julia_call_bootstrap": bootstrap_spec,
         }
         validate_freeze(freeze, freeze["roots"], inventory)
+        validate_freeze(freeze, freeze["roots"], inventory, gate="r")
+        bad_sandbox_freeze = json.loads(json.dumps(freeze))
+        bad_sandbox_freeze["julia_test_sandbox"]["project_sha256"] = "0" * 64
+        try:
+            validate_freeze(bad_sandbox_freeze, freeze["roots"], inventory)
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("mismatched external sandbox hash was accepted")
         incomplete = json.loads(json.dumps(freeze))
         incomplete["files"]["julia"].pop(next(iter(incomplete["files"]["julia"])))
         try:
@@ -1014,6 +1214,41 @@ def _self_test() -> None:
         )
         assert julia_probe.returncode == 0
         parse_julia_test_output(julia_probe.stdout, required_arc1_testsets=())
+        callback_dir = root / "callback-capture"
+        callback_dir.mkdir()
+        start_flag = root / "synthetic-tests-started"
+        callback_source = "using SHA\n" + JULIA_TEST_SANDBOX_CALLBACK
+        matching_probe = (
+            callback_source
+            + "arc1_capture_pkg_test_sandbox(); write(" + _julia_string(start_flag) + ", \"started\")\n"
+        )
+        matching_script = root / "callback-match.jl"
+        matching_script.write_text(matching_probe, encoding="utf-8")
+        callback_env = {**os.environ, **_julia_env(),
+                        "ARC1_TEST_SANDBOX_CAPTURE_DIR": str(callback_dir),
+                        "ARC1_TEST_SANDBOX_PROJECT_SHA256": sha256_file(sandbox_project),
+                        "ARC1_TEST_SANDBOX_MANIFEST_SHA256": sha256_file(sandbox_manifest)}
+        match_result = subprocess.run(
+            [JULIA_BIN, "--startup-file=no", f"--project={sandbox_root}", str(matching_script)],
+            cwd=root, env=callback_env, capture_output=True, text=True, timeout=20, check=False,
+        )
+        assert match_result.returncode == 0, match_result.stderr
+        assert start_flag.read_text(encoding="utf-8") == "started"
+        assert (callback_dir / "Project.toml").read_bytes() == sandbox_project.read_bytes()
+        assert (callback_dir / "Manifest.toml").read_bytes() == sandbox_manifest.read_bytes()
+        start_flag.unlink()
+        mismatch_dir = root / "callback-mismatch"
+        mismatch_env = {**callback_env, "ARC1_TEST_SANDBOX_CAPTURE_DIR": str(mismatch_dir),
+                        "ARC1_TEST_SANDBOX_PROJECT_SHA256": "0" * 64}
+        mismatch_script = root / "callback-mismatch.jl"
+        mismatch_script.write_text(matching_probe, encoding="utf-8")
+        mismatch_result = subprocess.run(
+            [JULIA_BIN, "--startup-file=no", f"--project={sandbox_root}", str(mismatch_script)],
+            cwd=root, env=mismatch_env, capture_output=True, text=True, timeout=20, check=False,
+        )
+        assert mismatch_result.returncode != 0
+        assert not start_flag.exists(), "callback mismatch did not fail before synthetic tests start"
+        assert (mismatch_dir / "sha256.txt").is_file(), "mismatch diagnostics were not retained"
         positive_arc1_summary = "Test Summary: | Pass  Total  Time\n" + \
             REQUIRED_ARC1_TESTSETS[0] + " |    1      1  0.0s\n"
         parsed_arc1 = parse_julia_test_output(
@@ -1064,7 +1299,7 @@ def _self_test() -> None:
         assert f"root = {_julia_string(root / 'docs-scratch')}" in transformed
         assert 'source = "src"' in transformed and 'build = "build"' in transformed
         assert f"write_legacy_dev_reference_redirect!({_julia_string(root / 'docs-output')})" in transformed
-    print("synthetic_cases=pass,nonzero,missing_marker,timeout,interrupt,input_mutation,julia_summary,empty_summary,broken_summary,docs_env_rebase")
+    print("synthetic_cases=pass,nonzero,missing_marker,timeout,interrupt,input_mutation,bootstrap_mutation,julia_summary,empty_summary,broken_summary,docs_env_rebase,test_sandbox_match,test_sandbox_mismatch_before_tests")
     print("ARC1_PACKAGE_CHECKS_SYNTHETIC_SELFTEST_PASS")
 
 

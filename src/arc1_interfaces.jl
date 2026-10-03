@@ -6,9 +6,15 @@
 
 Fit the bounded `arc1_profile_v1` uncertainty path for a univariate Gaussian
 animal-plus-permanent-environment repeatability design. Each observed animal
-must have exactly two records. The point fit is the same likelihood fit used
-for the profile intervals. Formation is a finite-search result, not a coverage
-or calibration claim.
+must have exactly two records. `X` must be finite and full column rank, with
+fewer columns than response rows; the interface does not require an
+intercept-only design. The result profiles additive variance, permanent-
+environment variance, residual variance, heritability, and repeatability using
+the fixed likelihood-ratio cutoff 3.841458820694124, the candidate nominal
+95% cutoff. Coverage remains unvalidated. The point fit is the same likelihood
+fit used for the profile intervals. Formation is a finite-search result, not
+a coverage or calibration claim; refused targets retain their failure status,
+and disconnected confidence-set segments are kept separately.
 """
 function arc1_profile_repeatability(y::AbstractVector, X::AbstractMatrix,
                                     Z::AbstractMatrix, pedigree::Pedigree;
@@ -107,9 +113,13 @@ end
 """
     arc1_confint(profile_result)
 
-Return the long interval table for an `arc1_profile_v1` result. Disconnected
-formed confidence-set segments produce separate rows; refused estimands remain
-as rows with missing bounds. This reports computational formation only.
+Return the long interval table for an `arc1_profile_v1` result. The five
+profiled estimands are additive variance, permanent-environment variance,
+residual variance, heritability, and repeatability. Disconnected formed
+confidence-set segments produce separate rows; refused estimands remain as
+rows with missing bounds and a status. The fixed cutoff 3.841458820694124 is
+the candidate nominal 95% cutoff; coverage remains unvalidated. This reports
+computational formation only.
 """
 function arc1_confint(profile_result)
     hasproperty(profile_result, :method) && profile_result.method == "arc1_profile_v1" ||
@@ -151,10 +161,12 @@ end
 """
     arc1_bootstrap(selection, Y, X, Z, pedigree; selector=:arc1_v1, B, seeds, ids, traits)
 
-Run `B` full-reselection bootstrap attempts with exactly `B` explicit `UInt64`
-seeds and the supported `:arc1_v1` selector policy. No seed schedule or
-bootstrap count is chosen implicitly. Interval formation is not evidence of
-coverage or calibration.
+Run `B` full-reselection bootstrap attempts with exactly `B` distinct explicit
+`UInt64` seeds and the supported `:arc1_v1` selector policy. Each attempt
+reruns the selector. No seed schedule or bootstrap count is chosen implicitly;
+failed attempts remain visible in the result. The R interface accepts exact
+UInt64 decimal seed strings and requires an explicit matching `confint()`
+method. Interval formation is not evidence of coverage or calibration.
 """
 function arc1_bootstrap(selection, Y, X, Z, pedigree::Pedigree;
                         selector = :arc1_v1, B::Integer, seeds::AbstractVector{UInt64},

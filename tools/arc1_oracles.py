@@ -11,7 +11,10 @@ FREEZE_SCHEMA = {
   "review": {"status": "reviewed", "reviewer": "...", "reviewed_at_utc": "..."},
   "roots": {"julia": "<exact Julia root>", "r": "<exact R root>"},
   "runtime": {"julia": "<exact output of julia --startup-file=no --version>",
-              "rscript": "<exact output of Rscript --vanilla --version>"},
+              "rscript": "<exact output of Rscript --version>"},
+  "julia_call_bootstrap": {"project_path": "<retained bootstrap Project.toml>",
+                            "manifest_path": "<retained bootstrap Manifest.toml>",
+                            "project_sha256": "<sha256>", "manifest_sha256": "<sha256>"},
   "files": {"julia": {"Project.toml": "<sha256>", "src/...": "<sha256>", ...},
             "r": {"DESCRIPTION": "<sha256>", "R/...": "<sha256>", ...}}
 }
@@ -41,6 +44,7 @@ RUNNER = Path(__file__).resolve()
 JULIA_ROOT = RUNNER.parents[1].resolve()
 R_ROOT = Path("/private/tmp/hsquared-auto-fa-r-20261001").resolve()
 RUNS_ROOT = JULIA_ROOT / ".unlazy" / "arc1-gaussian-reliability" / "oracles" / "runs"
+JULIA_CALL_BOOTSTRAP_TEMPLATE = JULIA_ROOT / ".unlazy" / "arc1-gaussian-reliability" / "evidence" / "live-r-environment-mutation"
 JULIA_DEPOT = "/private/tmp/hsquared-arc1-bootstrap-depot:/Users/z3437171/.julia"
 JULIA_THREADS = "4"
 BLAS_THREADS = "1"
@@ -175,7 +179,47 @@ def snapshot(groups: dict[str, tuple[Path, list[str]]]) -> dict[str, dict[str, s
             for group, (root, paths) in groups.items()}
 
 
-def validate_freeze(doc: Any, groups: dict[str, tuple[Path, list[str]]]) -> None:
+def validate_julia_call_bootstrap(spec: Any, *, required: bool) -> dict[str, Any] | None:
+    if spec is None and not required:
+        return None
+    fields = {"project_path", "manifest_path", "project_sha256", "manifest_sha256"}
+    if not isinstance(spec, dict) or set(spec) != fields:
+        raise OracleError("G6 freeze needs exact JuliaCall bootstrap paths and hashes")
+    expected_paths = {
+        "project_path": JULIA_CALL_BOOTSTRAP_TEMPLATE / "Project.toml",
+        "manifest_path": JULIA_CALL_BOOTSTRAP_TEMPLATE / "Manifest.toml",
+    }
+    for key, path in expected_paths.items():
+        if not path.is_file() or path.is_symlink() or spec[key] != str(path.resolve()):
+            raise OracleError(f"JuliaCall bootstrap {key} must name the retained external template")
+    for digest_key, path_key in (("project_sha256", "project_path"),
+                                 ("manifest_sha256", "manifest_path")):
+        digest = spec[digest_key]
+        if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest) or \
+           sha256_file(Path(spec[path_key])) != digest:
+            raise OracleError(f"JuliaCall bootstrap {digest_key} differs from retained template")
+    return dict(spec)
+
+
+def bootstrap_snapshot(directory: Path) -> dict[str, str]:
+    return {name: sha256_file(directory / name) for name in ("Project.toml", "Manifest.toml")}
+
+
+def prepare_julia_call_bootstrap(spec: dict[str, Any], run_dir: Path) -> tuple[Path, dict[str, str]]:
+    """Copy the reviewed bootstrap pins into a unique disposable run directory."""
+    validate_julia_call_bootstrap(spec, required=True)
+    destination = run_dir / "julia-call-bootstrap"
+    destination.mkdir(parents=True, exist_ok=False)
+    for name, key in (("Project.toml", "project_path"), ("Manifest.toml", "manifest_path")):
+        shutil.copyfile(spec[key], destination / name)
+    observed = bootstrap_snapshot(destination)
+    expected = {"Project.toml": spec["project_sha256"], "Manifest.toml": spec["manifest_sha256"]}
+    if observed != expected:
+        raise OracleError("per-run JuliaCall bootstrap copy differs from its frozen template")
+    return destination, observed
+
+
+def validate_freeze(doc: Any, groups: dict[str, tuple[Path, list[str]]], *, gate: str | None = None) -> None:
     if not isinstance(doc, dict) or doc.get("schema") != SCHEMA:
         raise OracleError(f"freeze schema must be {SCHEMA!r}")
     review = doc.get("review")
@@ -201,6 +245,7 @@ def validate_freeze(doc: Any, groups: dict[str, tuple[Path, list[str]]]) -> None
             raise OracleError(f"freeze {group} paths do not exactly match the required input set")
         if any(not isinstance(v, str) or not SHA256_RE.fullmatch(v) for v in values.values()):
             raise OracleError(f"freeze {group} contains a malformed SHA-256 value")
+    validate_julia_call_bootstrap(doc.get("julia_call_bootstrap"), required=gate == "g6")
 
 
 def compare_hashes(actual: dict[str, dict[str, str]], expected: dict[str, dict[str, str]]) -> None:
@@ -275,6 +320,8 @@ class Runner:
         self.start = time.monotonic()
         self.freeze_hash: str | None = None
         self.expected: dict[str, dict[str, str]] | None = None
+        self.bootstrap_spec: dict[str, Any] | None = None
+        self.bootstrap_dir: Path | None = None
         self.runner_hash = sha256_file(RUNNER)
         self.meta: dict[str, Any] = {
             "schema": "hsquared-arc1-oracle-run-v1", "gate": gate,
@@ -296,11 +343,14 @@ class Runner:
             doc = json.loads(raw)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise OracleError(f"external freeze JSON is invalid: {exc}") from exc
-        validate_freeze(doc, self.groups)
+        validate_freeze(doc, self.groups, gate=self.gate)
         self.expected = doc["files"]
+        self.bootstrap_spec = validate_julia_call_bootstrap(
+            doc.get("julia_call_bootstrap"), required=self.gate == "g6")
         self.meta.update({"freeze_sha256": self.freeze_hash, "review": doc["review"],
                           "runtime_expected": doc["runtime"],
-                          "required_file_counts": {k: len(v[1]) for k, v in self.groups.items()}})
+                          "required_file_counts": {k: len(v[1]) for k, v in self.groups.items()},
+                          "julia_call_bootstrap_expected": self.bootstrap_spec})
         self.verify("initial")
         return doc
 
@@ -315,6 +365,8 @@ class Runner:
         compare_path_sets(current_groups, self.groups)
         actual = snapshot(current_groups)
         compare_hashes(actual, self.expected)
+        if self.bootstrap_spec is not None:
+            validate_julia_call_bootstrap(self.bootstrap_spec, required=True)
         self.meta["freeze_checks"].append({"label": label,
             "at_utc": dt.datetime.now(dt.timezone.utc).isoformat(), "sha256": actual})
         return actual
@@ -332,11 +384,21 @@ class Runner:
         timeout = min(timeout_s, self.remaining())
         env = os.environ.copy()
         env.update(overrides)
+        bootstrap_dir = None
+        bootstrap_before = None
+        if "JULIA_PROJECT" in overrides and self.bootstrap_spec is not None:
+            bootstrap_dir = Path(overrides["JULIA_PROJECT"]).resolve()
+            if self.bootstrap_dir is None or bootstrap_dir != self.bootstrap_dir:
+                raise OracleError("G6 JULIA_PROJECT does not identify this run's isolated bootstrap environment")
+            bootstrap_before = bootstrap_snapshot(bootstrap_dir)
         record: dict[str, Any] = {"name": name, "argv": argv, "cwd": str(cwd),
             "env_overrides": overrides, "timeout_s": timeout, "log": log_path.name,
             "started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
             "process_status": None, "timed_out": False, "interrupted": False,
             "cleanup": None, "before_sha256": before}
+        if bootstrap_before is not None:
+            record["julia_call_bootstrap_path"] = str(bootstrap_dir)
+            record["julia_call_bootstrap_before_sha256"] = bootstrap_before
         start = time.monotonic()
         with log_path.open("wb") as log:
             try:
@@ -364,6 +426,17 @@ class Runner:
         record["elapsed_s"] = round(time.monotonic() - start, 3)
         record["ended_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
         record["log_sha256"] = sha256_file(log_path)
+        if bootstrap_dir is not None and bootstrap_before is not None:
+            try:
+                bootstrap_after = bootstrap_snapshot(bootstrap_dir)
+                record["julia_call_bootstrap_after_sha256"] = bootstrap_after
+                record["julia_call_bootstrap_changed"] = bootstrap_after != bootstrap_before
+                expected = {"Project.toml": self.bootstrap_spec["project_sha256"],
+                            "Manifest.toml": self.bootstrap_spec["manifest_sha256"]}
+                if bootstrap_before != expected or bootstrap_after != expected:
+                    record["after_hash_error"] = "isolated JuliaCall bootstrap Project/Manifest changed"
+            except Exception as exc:
+                record["after_hash_error"] = f"cannot hash isolated JuliaCall bootstrap: {exc}"
         try:
             record["after_sha256"] = self.verify(f"{name}:after")
         except Exception as exc:
@@ -387,7 +460,7 @@ class Runner:
         versions = (
             ("julia-version", ["julia", "--startup-file=no", "--version"], JULIA_ROOT,
              {k: v for k, v in julia_env().items() if k != "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER"}),
-            ("rscript-version", ["Rscript", "--vanilla", "--version"], R_ROOT,
+            ("rscript-version", ["Rscript", "--version"], R_ROOT,
              {"OPENBLAS_NUM_THREADS": BLAS_THREADS}),)
         actual = {}
         for name, argv, cwd, env in versions:
@@ -408,6 +481,13 @@ class Runner:
                 raise OracleError(f"{test} omitted clean positive Julia assertion counts")
 
     def run_g6(self) -> None:
+        if self.bootstrap_spec is None:
+            raise OracleError("G6 freeze lacks the reviewed JuliaCall bootstrap environment")
+        self.bootstrap_dir, bootstrap_hashes = prepare_julia_call_bootstrap(self.bootstrap_spec, self.out)
+        self.meta["julia_call_bootstrap_run"] = {
+            "path": str(self.bootstrap_dir), "initial_sha256": bootstrap_hashes,
+        }
+        self.save()
         driver = self.out / f"arc1_live_driver_{uuid.uuid4().hex[:10]}.R"
         results_path = self.out / "testthat-results.rds"
         driver.write_text(R_DRIVER)
@@ -416,7 +496,8 @@ class Runner:
         env = julia_env()
         env.update({"HSQUARED_ARC1_REQUIRE_LIVE": "true",
                     "HSQUARED_JULIA_PROJECT": str(JULIA_ROOT),
-                    "JULIA_PROJECT": str(JULIA_ROOT),
+                    "JULIA_PROJECT": str(self.bootstrap_dir),
+                    "JULIA_PKG_OFFLINE": "true",
                     "ARC1_ORACLE_RESULTS_RDS": str(result_path),
                     "ARC1_ORACLE_RESULTS_CSV": str(csv_path)})
         if not driver.is_absolute() or driver.parent != self.out:
@@ -474,6 +555,17 @@ def self_test() -> None:
         raise AssertionError("arbitrary Julia command escaped allowlist")
     with tempfile.TemporaryDirectory(prefix="arc1-oracle-selftest-") as temp:
         root = Path(temp)
+        template = JULIA_CALL_BOOTSTRAP_TEMPLATE
+        bootstrap_spec = {
+            "project_path": str((template / "Project.toml").resolve()),
+            "manifest_path": str((template / "Manifest.toml").resolve()),
+            "project_sha256": sha256_file(template / "Project.toml"),
+            "manifest_sha256": sha256_file(template / "Manifest.toml"),
+        }
+        bootstrap_dir, bootstrap_hashes = prepare_julia_call_bootstrap(bootstrap_spec, root)
+        assert bootstrap_hashes == bootstrap_snapshot(bootstrap_dir)
+        assert bootstrap_hashes == {"Project.toml": bootstrap_spec["project_sha256"],
+                                    "Manifest.toml": bootstrap_spec["manifest_sha256"]}
         path = root / "x"
         path.write_text("stable")
         groups = {"julia": (root, ["x"])}

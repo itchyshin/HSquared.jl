@@ -31,7 +31,7 @@ function _bootstrap_test_selection(Y = _BOOT_Y)
         selected_fit = fit, source_identity = HSquared._ARC1_SOURCE_IDENTITY,
         guard_results = (; schedule_complete = true, better_unaccepted = false,
             nonnested = false, nesting_witness = (; status = :passed,
-                discrepancy = 0.0, tolerance = 1e-4)),
+                discrepancy = 0.0, tolerance = 1e-8)),
         optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
         starts_planned = 19, starts_attempted = 19,
         design_fingerprint = HSquared._arc1_bootstrap_design_fingerprint(
@@ -61,7 +61,7 @@ function _bootstrap_fake_selector(counter; fail_at = nothing, interrupt_at = not
                 starts_attempted = length(partial_attempts), attempts = partial_attempts,
                 guard_results = (; schedule_complete = false, better_unaccepted = false,
                     nonnested = false, nesting_witness = (; status = :unavailable,
-                        discrepancy = nothing, tolerance = 1e-4)))
+                        discrepancy = nothing, tolerance = 1e-8)))
             kwargs[:ledger_sink][] = partial_ledger
             A = HSquared._arc1_bootstrap_relationship(pedigree)
             return (; selection_status = :interrupted, reason = "controlled returned interruption",
@@ -82,7 +82,7 @@ function _bootstrap_fake_selector(counter; fail_at = nothing, interrupt_at = not
                 selected_fit = nothing, reason = "K0 optimizer failure",
                 guard_results = (; schedule_complete = false, better_unaccepted = false,
                     nonnested = false, nesting_witness = (; status = :unavailable,
-                        discrepancy = nothing, tolerance = 1e-4)),
+                        discrepancy = nothing, tolerance = 1e-8)),
                 source_identity = HSquared._ARC1_SOURCE_IDENTITY,
                 optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
                 starts_planned = 19, starts_attempted = 3,
@@ -107,7 +107,7 @@ function _bootstrap_fake_selector(counter; fail_at = nothing, interrupt_at = not
                 HSquared._ARC1_SOURCE_IDENTITY,
             guard_results = (; schedule_complete = true, better_unaccepted = false,
                 nonnested = false, nesting_witness = (; status = :passed,
-                    discrepancy = 0.0, tolerance = 1e-4)),
+                    discrepancy = 0.0, tolerance = 1e-8)),
             optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
             starts_planned = 19, starts_attempted = 19,
             design_fingerprint = HSquared._arc1_bootstrap_design_fingerprint(
