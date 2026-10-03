@@ -1,6 +1,8 @@
 # Repeatability development execution preflight
 
-Status updated 2026-10-03 after the bounded engineering size pre-run. The six-case timing run completed, but it did not create a development admission or consume study seeds. G0 through G8 remain open, and no study admission is authorized.
+Current status, 2026-10-03 06:37 UTC: explicit profile v2 passed independent source review, G1, required-live R parity, and the complete Julia/R/documentation package checks. The current source-bound ledger snapshot records G1/G6/G7 passed and six gates unmet. No allocated study seed has run. Contract metadata reconciliation is in progress because the previous scientific-contract object still described v1 while admission required v2. Regenerate and validate the complete freeze after reconciliation before any study admission. The bounded replay of two saved engineering inputs has separate authority and does not admit a study.
+
+The timing, failures and projections below are retained v1 engineering history. Their old G7-failed and all-gates-open statements describe that earlier snapshot. They do not supersede the current package receipt `20261003T061429Z-1a5ef047d4`. Later source changes require appropriate renewed verification. Campaign approval above three hours, the pending FA representation decision, and the confirmation-allocation decision remain separate boundaries.
 
 ## Completed engineering size pre-run
 
@@ -55,7 +57,7 @@ The proposed bound is four concurrent Totoro workers, each with four Julia threa
 
 ## Supported route after final-source checks
 
-The repeatability branch is available through the existing one-attempt executor. For each cell, `tools/arc1_manifest.py` exposes `build_run_admission(...)`; it performs exhaustive seed-manifest verification and returns an `arc1-run-admission-v1` record. There is no admission-builder CLI. After the read-only manifest validation, the admission is created programmatically; for example:
+The repeatability branch is available through the existing one-attempt executor. For each cell, `tools/arc1_manifest.py` exposes `build_run_admission(...)`; it performs exhaustive seed-manifest verification and returns an `arc1-run-admission-v2` record. There is no admission-builder CLI. After the read-only manifest validation, the admission is created programmatically; for example:
 
 ```sh
 PYTHONPATH=tools python3 - <<'PY'
@@ -68,7 +70,7 @@ cell = {"programme": "repeatability", "phase": "development",
         "N": 80, "signal": "interior"}
 admission = arc1_manifest.build_run_admission(
     root, cell, source_paths=[], julia_version="1.10.0",
-    julia_threads=4, blas_threads=1)
+    julia_threads=4, blas_threads=1, profile_method_version="arc1_profile_v2")
 Path("/path/to/admissions/repeatability-development-N80-interior.json").write_text(
     json.dumps(admission, sort_keys=True, indent=2) + "\n", encoding="utf-8")
 PY

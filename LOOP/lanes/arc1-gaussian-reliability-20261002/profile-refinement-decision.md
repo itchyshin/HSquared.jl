@@ -1,6 +1,6 @@
 # Adopted repeatability refinement revision
 
-Status: bounded implementation authorized after independent feasibility review, 2026-10-03. Implementation is in progress under disjoint numerical, interface and receipt ownership. The new method must pass independent source review and final certificates before any engineering or study result is accepted under it.
+Status updated 2026-10-03 06:37 UTC: explicit v2 implementation passed independent source review (74 targeted assertions), integrated exact checks (1,767 assertions), mandatory live R parity, and the full Julia/R/documentation package checks. A separately authorized two-input engineering replay is pending. Scientific calibration and study admission remain unmet. The numerical source and test hashes are `19b568ce1bf682256ef57d52ba0454b5c98699644dab07a5147e4a72d75eca8f` and `1b033615d55e4ea08b21147b407cf6a26a2ebd27af976ffbb8bd9c51d93b0b7b`.
 
 The user authorized method revision through an explicit decision while preserving failed gates. The proposed revision stays within the Gaussian repeatability model and existing scientific criteria. It does not change the separately pending FA covariance-representation choice.
 

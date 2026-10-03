@@ -1,6 +1,6 @@
 # Arc1: H² Gaussian reliability
 
-S0 planning and freeze are in progress. This document records the approved programme and evidence contract; it does not report fit or simulation results. The immutable lane control is [`LOOP/lanes/arc1-gaussian-reliability-20261002/GOAL.md`](../../LOOP/lanes/arc1-gaussian-reliability-20261002/GOAL.md), with the original acceptance gates in `.unlazy/arc1-gaussian-reliability/GATES.md`.
+Current status, 2026-10-03: the exact core, ordinary optimizer policy, candidate intervals, evidence checks and R access are implemented. Independent checks and complete package verification passed on the retained v2 source freeze. Scientific reliability and calibration remain unproved; no allocated study has run. Executable contract metadata is being reconciled with the adopted explicit v2 profile revision before a new study freeze. This document records the approved programme and evidence contract; it does not report fit or simulation results. The immutable lane control is [`LOOP/lanes/arc1-gaussian-reliability-20261002/GOAL.md`](../../LOOP/lanes/arc1-gaussian-reliability-20261002/GOAL.md), with the original acceptance gates in `.unlazy/arc1-gaussian-reliability/GATES.md`.
 
 ## Objective
 
@@ -12,7 +12,7 @@ The four-trait genetic DGP has mean vector `[0,1,-1,2]`, `rho∈{0,0.15,0.70}`, 
 
 The optimizer contract uses the exact spectral REML objective and analytic gradients, with BFGS capped at 2,000 iterations per start, optimizer tolerance `1e-8`, and final scaled-gradient infinity norm at most `1e-6`. K0 uses its existing start. K1 uses its existing two starts plus 16 deterministic K0-derived starts (eight sign patterns, first sign positive, crossed with `a=0.1,0.7`), `L_i=a*s_i*sqrt(g_i-1e-4)`, `psi_i=g_i-L_i²`, carrying residual covariance forward. Selection score is `-2*raw_REML_loglik+2p`, with covariance-parameter counts 14/18 and AIC penalty terms 28/36; ties within `1e-6` favor K0. Expanded ordinary-start reference accepts a best-found shortfall no greater than `1e-4`.
 
-The exact-objective core and deterministic checks are in progress under S1; the optimizer dispatch and policy integration remain outstanding. The likelihood/gradient proof is a G1 obligation and awaits independent review. S2 core profile work and S3 seed-manifest/checker work are also in progress. G0–G8 statuses remain as recorded in the acceptance ledger; no gate is marked complete by these source and test files.
+The retained v2 G1 run passed 1,767 assertions across eight suites. G6/G7 passed through inspected receipt checks for the same implementation. This establishes the recorded source identities and package behavior. G2 through G5 still require the declared scientific studies; G0 protocol/execution reconciliation and G8 final scientific review remain open. The acceptance ledger is authoritative after any later source changes.
 
 ## Uncertainty and evidence design
 

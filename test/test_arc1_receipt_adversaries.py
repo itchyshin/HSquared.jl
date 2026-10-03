@@ -199,6 +199,93 @@ def verify(receipt: dict, *, cell: dict | None = None, seeds: list[int] | None =
 
 
 class Arc1ReceiptAdversaries(unittest.TestCase):
+    def test_profile_search_contract_matches_explicit_v2_admission_without_changing_v1_default(self):
+        profile = arc1_manifest.SCIENTIFIC_CONTRACT["profile_search"]
+        self.assertEqual(profile["method_version"], "arc1_profile_v2")
+        self.assertEqual(profile["default_method_version"], "arc1_profile_v1")
+        self.assertEqual(profile["study_admission_method_version"], "arc1_profile_v2")
+        self.assertTrue(profile["method_version_policy"]["explicit_request_required"])
+        self.assertTrue(profile["method_version_policy"]["refuse_mismatch"])
+        self.assertTrue(profile["method_version_policy"]["preserve_v1_implementation_and_artifacts"])
+
+        refinement = profile["positive_bound_refinement"]
+        self.assertEqual(refinement["name"], "positive_bound_refine_v1")
+        eligibility = refinement["eligibility"]
+        self.assertEqual(eligibility["termination"], "NoObjectiveChange")
+        self.assertIs(eligibility["candidate_final_converged"], False)
+        self.assertTrue(eligibility["optimizer_converged"])
+        self.assertEqual(eligibility["optimizer_status"], "converged")
+        self.assertTrue(eligibility["analytic_gradient_valid"])
+        self.assertFalse(eligibility["line_search_failed"])
+        self.assertEqual(eligibility["total_bound_contacts_exactly"], 1)
+        self.assertEqual(eligibility["permitted_contact_side"], "lower")
+        self.assertEqual(eligibility["permitted_contact_components"], ["Va", "Vpe"])
+        self.assertTrue(eligibility["contact_must_differ_from_target"])
+        self.assertFalse(eligibility["upper_or_mixed_contacts_allowed"])
+        self.assertEqual(eligibility["remaining_positive_nuisance_coordinates"], 1)
+        self.assertEqual(eligibility["initial_certificate"], "face_likelihood_mismatch")
+        self.assertTrue(eligibility["initial_certificate_must_be_finite"])
+        self.assertTrue(eligibility["matching_zero_face_independently_certified"])
+        self.assertEqual(eligibility["remaining_coordinate_fd_error_max"], 5e-6)
+        self.assertEqual(eligibility["contact_coordinate_fd_error_policy"],
+                         {"finite_max": 5e-6, "allow_positive_infinity": True,
+                          "reject_nan": True, "reject_negative_infinity": True})
+
+        budget = refinement["shared_iteration_budget"]
+        self.assertEqual(budget["total_maximum"], 2000)
+        self.assertTrue(budget["original_iterations_must_be_below_total_maximum"])
+        self.assertEqual(budget["continuation_allowance"], "max(0, total_maximum-original_iterations)")
+        self.assertEqual(budget["continuations_per_original_candidate"], 1)
+        self.assertTrue(budget["no_retry_or_replenishment"])
+        self.assertTrue(refinement["projected_face_polish_v1_unchanged"])
+        self.assertTrue(refinement["continuations_mutually_exclusive"])
+
+        certificate = refinement["terminal_and_physical_zero_certificate"]
+        self.assertTrue(certificate["valid_covariance"])
+        self.assertTrue(certificate["optimizer_success_without_line_search_failure"])
+        self.assertTrue(certificate["fixed_target_and_contact_coordinates_unchanged"])
+        self.assertTrue(certificate["no_additional_bound_contact"])
+        self.assertEqual(certificate["remaining_scaled_gradient_inf_norm_max"], 1e-6)
+        self.assertEqual(certificate["finite_difference_agreement_max"], 5e-6)
+        self.assertEqual(certificate["physical_zero_dimensionless_active_derivative_min_exclusive"], 5e-6)
+        self.assertEqual(certificate["physical_zero_forward_probe_steps"], [1e-4, 1e-5])
+        self.assertTrue(certificate["physical_zero_forward_probe_estimates_finite_and_nonnegative"])
+        self.assertEqual(certificate["physical_zero_forward_probe_agreement_with_analytic_and_each_other_max"],
+                         5e-6)
+        self.assertEqual(certificate["terminal_projection_face_score_range_max"], 1e-8)
+
+        history = refinement["likelihood_history_guards"]
+        self.assertEqual(history["capture_stages"], [
+            "original_native_before_summary_projection", "continuation", "certificate_probes",
+            "valid_values_before_exception"])
+        self.assertTrue(history["full_and_same_target_centered_histories_separate"])
+        self.assertTrue(history["preserve_centering_tag"])
+        self.assertEqual(history["authoritative_raw_nuisance_max_guard"], {
+            "uncentered_scale": "full_loglik_vs_winning_certified_nuisance_score",
+            "centered_scale": "fixed_ve_centered_loglik_vs_winning_certified_nuisance_score",
+            "centered_requires_matching_fixed_ve_tag": True,
+            "maximum_excess": 1e-8,
+            "final_refusal_status": "nuisance_unresolved",
+        })
+        self.assertEqual(history["shared_unrestricted_point_guard"],
+                         "retained_full_loglik_compared_separately_to_shared_point")
+        self.assertEqual(history["local_refinement_success_status"],
+                         "resolved_positive_bound_refine_is_not_final_profile_acceptance")
+        self.assertTrue(history["preserve_original_failed_candidate_and_certificate"])
+        self.assertTrue(history["preserve_shared_unrestricted_point_and_other_candidate_guards"])
+        self.assertEqual(history["nuisance_winner"], "independently_certified_exact_zero_face")
+
+        manifest_path = ROOT / "sim/arc1/manifests/arc1_seed_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        canonical_contract = json.loads(json.dumps(arc1_manifest.SCIENTIFIC_CONTRACT,
+                                                   sort_keys=True))
+        self.assertEqual(manifest["scientific_contract"], canonical_contract)
+        self.assertEqual(manifest["protocol_sha256"], arc1_manifest.contract_sha256())
+        self.assertEqual(manifest["nested_seed_ranges"], arc1_manifest.nested_ranges())
+        self.assertEqual(manifest["outer_csv_sha256"],
+                         "4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf")
+        arc1_manifest.verify_manifest(manifest_path, audit_root=ROOT)
+
     def test_actual_run_cell_closure_rejects_child_outer_seed_relabeling(self):
         julia = shutil.which("julia")
         self.assertIsNotNone(julia, "Julia is required for source-bound admission")
@@ -687,8 +774,21 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                 arc1_manifest.build_run_admission(
                     root, cell, source_paths=[], julia_version="1.10.0", julia_threads=4,
                     blas_threads=1, manifest_audit_root=ROOT)
-        with self.assertRaisesRegex(ValueError, "candidate seed manifest is stale"):
-            arc1_manifest.validate_candidate_manifest(ROOT)
+        with tempfile.TemporaryDirectory(prefix="arc1-stale-contract-") as temp:
+            stale_root = Path(temp)
+            stale_manifest_dir = stale_root / "sim/arc1/manifests"
+            stale_manifest_dir.mkdir(parents=True)
+            shutil.copy2(ROOT / "sim/arc1/manifests/arc1_outer_seeds.csv",
+                         stale_manifest_dir / "arc1_outer_seeds.csv")
+            stale_descriptor = json.loads(
+                (ROOT / "sim/arc1/manifests/arc1_seed_manifest.json").read_text()
+            )
+            stale_descriptor["scientific_contract"]["profile_search"]["method_version"] = "arc1_profile_v1"
+            (stale_manifest_dir / "arc1_seed_manifest.json").write_text(
+                json.dumps(stale_descriptor, sort_keys=True, indent=2) + "\n"
+            )
+            with self.assertRaisesRegex(ValueError, "candidate seed manifest is stale"):
+                arc1_manifest.validate_candidate_manifest(stale_root)
 
     def test_attempt_store_writes_once_and_turns_dangling_start_into_interruption(self):
         with tempfile.TemporaryDirectory(prefix="arc1-attempt-store-") as temp:
