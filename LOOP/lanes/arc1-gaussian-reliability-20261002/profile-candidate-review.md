@@ -79,3 +79,15 @@ The arithmetic regression now generates the inspected N80 example from engineeri
 ## Fifth centering repair awaiting independent review
 
 Luna consolidated candidate, continuation, scalar and returned-certificate history ingestion. Focused arithmetic and controlled tests passed 835 assertions in 24.4 seconds, including a 192-case adapter matrix. Source SHA-256 is `5f1d7c1288b6a08b504c909ee855577648963c1e4932b5fde2bb8c2f2d6e85d3`; test SHA-256 is `9bd451799c736ecad250d2e38b63a857c87cdab03c0bcc8c5947ac5edf343de0`. The bounded Astra review is retained under `centering-astra-review-v5/`. No optimizer or real profile fit has been run on this candidate. The v4 defects remain open until independent review accepts the repairs.
+
+## Fifth review remains blocked
+
+Astra completed the v5 review in 441.30 seconds with both frozen hashes unchanged. All four v4 reproductions now pass. Four neighboring failures remain: returned polish continuation histories can be dropped and permit false acceptance; missing bound-candidate maximum fields still throw in diagnostics; missing scalar coordinates still throw; and a scalar centered-callback exception loses already retained histories. The review passed 613 independent arithmetic assertions and preserved the model, starts, budgets and thresholds, but did not accept the source. Exact reproductions and limits are retained in `centering-astra-review-v5/review.md` and its events.
+
+Luna owns a v6 repair that inventories every returned record and consuming path. Tests must exercise the actual wrappers and diagnostics, not only the shared history helper. No numerical fit or study is authorized by the prior 835-assertion pass.
+
+## Sixth source review, 2026-10-03
+
+Astra completed v6 in 601.95 seconds with both frozen hashes unchanged. It reproduced a native refusal-policy regression: a legitimate failed BFGS start without terminal centered likelihood was refused unconditionally, even when its retained history was noncompetitive. Baseline `00e14939` accepted the corresponding controlled nuisance result. Four additional partial-record failures concerned optimizer-status diagnostics, malformed contacts, returned centered history and incomplete resolved certificates. Native occurrence of the policy regression in N=80 remains untested; the other cases use injected adapters.
+
+The 593 retained centering assertions passed. Full likelihood, free-Ve gradient, cache, LR score, ratio path, target scan, five-target guard, cutoff and starts matched the baseline. The changed refusal behavior prevents source acceptance. Luna owns the narrow repair in profile source/tests, with native producer schemas governing required and optional fields. No N=80 replay or allocated study ran. Evidence: `.unlazy/arc1-gaussian-reliability/evidence/centering-astra-review-v6/`.

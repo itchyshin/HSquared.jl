@@ -1,6 +1,6 @@
 # INCOMPLETE rolling progress report: Arc1 Gaussian reliability
 
-This interim implementation-versus-evidence record leaves programme acceptance open. It does not close a gate, release a source freeze, authorize a study, or imply capability promotion. Current state is anchored to Julia HEAD `1f5643ad816954479140b217bdfbc399a3d45fdf` and isolated R HEAD `4c8457bc7690e22087fe6985017d5bb0bec39afb`, checked 2026-10-02.
+This interim implementation-versus-evidence record leaves programme acceptance open. It does not close a gate, release a source freeze, authorize a study, or imply capability promotion. Current state is anchored to Julia HEAD `0e29fd02` and isolated R HEAD `4c8457bc7690e22087fe6985017d5bb0bec39afb`, checked 2026-10-03 UTC. Earlier evidence paragraphs retain their dated source snapshots; the latest checkpoint and the update below govern active work.
 
 ## 1. Goal
 
@@ -8,16 +8,19 @@ Record the Arc1 programme's current implementation, exact evidence, unresolved d
 
 ## 2. Implemented
 
+Update at 2026-10-03 00:06 UTC: the observation-only FA diagnostics passed 217 parent assertions in 11.87 seconds with unchanged hashes and are retained in local commit `0e29fd02`. The v6 profile source (`4a3f7e7f…`, tests `3c7ef153…`) passed 881 worker assertions in 42.0 seconds and failed Astra review v6 on a native failed-start policy regression plus four neighboring adapter defects. Luna owns repairs; no current-source full profile fit has run. The third checker review completed in 622.64 seconds with all 18 hashes unchanged: launcher identities, returned failures and cache removal were accepted, while native reference transport, start derivation, maximum provenance and retained seed/raw-result bindings remain blocked. Luna owns those repairs. The first G7 runner also needs a scratch docs environment pinned to the current source and complete transitive input freezing before real checks.
+
+
 The worktree contains experimental Julia FA objective, selector, profile, bootstrap, interfaces, simulation/reference, and evidence-checking components, plus paired R controls and uncertainty extraction. The interfaces are explicit opt-ins; defaults and `public_covered_count = 7` remain unchanged. The experimental guide states that general `cov = fa()` formula syntax is not opened and that reliability, calibration, and release claims are unsupported.
 
 Evidence exists for bounded components and engineering examples, but it is version-specific. The initial S0 record was a plan with no implementation or execution evidence; later implementation and engineering receipts supersede that dated description, but do not satisfy acceptance. In particular:
 
 - The objective leaf receipt records 70 assertions and `ARC1_OBJECTIVES_PASS` against its own recorded source hashes (`objective-core-receipt.json`). Those hashes predate current `src/arc1_fa.jl`; the receipt is historical component evidence. Current-source G1 evidence is still absent.
 - A parent replay recorded 672 combined objective, optimizer, profile, bootstrap, and interface assertions in 28.73 seconds and a 12-record profile fixture forming all five targets in 28.02 seconds. Its profile source/test hashes were `ab47c2ea7610ec56dd7b3d638408a6228f73cf00ed73bdc0272478921c34ddc9` and `50fc90b156aae9cebc325c2778acf76188f3a9ee49ae9f2b0a6f042e3b6a97c2`. Current profile hashes are below and differ from that replay. This establishes those recorded fixtures only.
-- The expanded reference source/test pair currently remains `sim/arc1/reference.jl` SHA-256 `894e477df9365af289d6eca48bcd7d6597344366d4ebd2fe31770a14ef369fa8` and `test/arc1_simulation_reference.jl` SHA-256 `e461fae6bf116a962cf38b86740143e294aceec1647c1ab37b1717e133859dd1`. Astra accepted that bounded source repair, and the parent replayed 143 assertions in 11.80 seconds. One retained N=80 engineering comparison then completed 86 rows, with K0/K1 shortfalls `2.2737367544323206e-13` and `1.7053025658242404e-13`. It records one best-found engineering comparison; it says nothing about study-level reliability.
+- The previously accepted expanded reference source/test pair was `sim/arc1/reference.jl` SHA-256 `894e477df9365af289d6eca48bcd7d6597344366d4ebd2fe31770a14ef369fa8` and `test/arc1_simulation_reference.jl` SHA-256 `e461fae6bf116a962cf38b86740143e294aceec1647c1ab37b1717e133859dd1`. Astra accepted that bounded source repair, and the parent replayed 143 assertions in 11.80 seconds. One retained N=80 engineering comparison then completed 86 rows, with K0/K1 shortfalls `2.2737367544323206e-13` and `1.7053025658242404e-13`. It records one best-found engineering comparison; it says nothing about study-level reliability.
 - A later 16-example engineering bootstrap scaling run formed 6/16 `B=19` intervals. There were 21 failed inner selectors among 304 fixed attempts. Eight failed selections had no eligible converged K1 start; thirteen retained a better finite K1 result that failed numerical acceptance. The evidence does not identify one cause for all failures. These are engineering inputs, not allocated study seeds, and do not estimate coverage.
 - Astra's v4 review replayed 157 arithmetic assertions on v4-reviewed profile source SHA-256 `5768e810b067ac02764b888fc65acc4dc1fe985cb8194f80c177100870883c70` and test SHA-256 `276420266e7a9e9fa0ee9090951063203dc6e0dc90f1c1064ff50d92e9a5998d`. It reproduced four source defects. The profile test now generates its N=80 data without the former ignored binary fixture. The v4 review was blocked; its passing arithmetic assertions do not accept that profile source.
-- The most recent Astra checker review used an 11-file frozen input set and ended blocked after 572.70 seconds. It reproduced unresolved reference-parameter/history checks, launcher identity rewriting, inspector trust of duplicated summaries, returned-failure/artifact inconsistency, and a stale-artifact pilot cache. Exact reviewed hashes are in `evidence/scientific-checkers-astra-review-v2/receipt.json`; later edits leave those findings pending a review of the current checker sources.
+- The second Astra checker review used an 11-file frozen input set and ended blocked after 572.70 seconds. It reproduced unresolved reference-parameter/history checks, launcher identity rewriting, inspector trust of duplicated summaries, returned-failure/artifact inconsistency, and a stale-artifact pilot cache. Exact reviewed hashes are in `evidence/scientific-checkers-astra-review-v2/receipt.json`; later edits leave those findings pending a review of the current checker sources.
 - The fixed-coordinate high-precision pre-run regenerated three response vectors from retained outer fits and seeds, then compared Float64 objective/gradients with an independent 256-bit calculation. It completed in 8.53 seconds; these five source hashes matched before/after: `src/arc1_bootstrap.jl` `a95ebc3ecfc1ee5b1633bd78884b7f6094bf1f7b1efcf7bfbb86275610578825`, `src/arc1_fa.jl` `e890cdd7b771bf82c099ff2db94aa75393e44a61d9c361d2f7e54cc359e15895`, `src/fa_rank_selection.jl` `98680a96ca307f3c75e3ed02d5451976e5b238231fa1da1ffc0b469138db0320`, `sim/arc1/independent_dgp.jl` `f8161346578b6d7410facff6046f8f696d3577cf401287af7a79b63c164d5f3f`, and `src/multivariate.jl` `d425b0c6c75d97969bcad58af235c8662748a8d3265130d8ed468249cef35091`. The report records close objective agreement and gradient differences around `1e-17`, while selected Float64 perturbations were refused despite finite independent values. The original selector's consumed responses cannot be proven byte-identical because its inner design fingerprints were not retained. This supports the exact objective/gradient at those saved points and clarifies one representation boundary; it explains no broader share of selector failures and changes no admissibility rule.
 - R commit `4c8457b` includes the experimental controls, help, and paired live tests. The focused dense-cap control replay passed 40 assertions with one optional transport skip and no warnings; an R source build completed in 14.19 seconds. A prior required-live uncertainty replay passed in 70.45 seconds on its recorded older Julia/R source hashes. Final-source live parity and full package checks remain unverified.
 
@@ -105,6 +108,7 @@ Julia implementation and tests:
 - `tools/arc1_manifest.py`
 - `tools/arc1_oracles.py` (canonical copy of the reviewed synthetic-tested runner; added in this report continuation)
 - `tools/arc1_receipt_check.py`
+- `tools/arc1_package_checks.py`
 
 Isolated R checkout (`/private/tmp/hsquared-auto-fa-r-20261001`, HEAD `4c8457bc7690e22087fe6985017d5bb0bec39afb`):
 
@@ -134,8 +138,8 @@ Recorded checks reviewed (not rerun here):
 
 - `parent-integrated-components/receipt.json`: exit 0, 672 combined assertions, 28.73 seconds, with its exact source hashes. Its profile hashes differ from current profile source/test hashes.
 - `parent-profile-ab47/receipt.json`: exit 0, 29.89 seconds; checkpoint identifies a 12-record fixture on which all five profile targets formed. Its recorded implementation source predates the current blocked profile candidate.
-- `centering-astra-review-v4/receipt.json` and `review.md`: exit 0 after 533.03 seconds with current profile source and test hashes unchanged. Verdict: four remaining profile-history/adapter defects; no fit ran.
-- `parent-reference-repaired/receipt.json`: exit 0, 143 assertions in 11.80 seconds at the current accepted reference/test hashes. Its paired engineering reference run is one N=80 dataset only.
+- `centering-astra-review-v4/receipt.json` and `review.md`: exit 0 after 533.03 seconds with its frozen profile source and test hashes unchanged. Verdict: four remaining profile-history/adapter defects; no fit ran.
+- `parent-reference-repaired/receipt.json`: exit 0, 143 assertions in 11.80 seconds at its recorded accepted reference/test hashes. Its paired engineering reference run is one N=80 dataset only.
 - `parent-live-uncertainty-tuples/receipt.json`: exit 0 in 70.45 seconds with unchanged then-current hashes. The R uncertainty source hash in that receipt is `5bfce9b0555c3c3f6c1fba6cf64724b34b9fdfd81261656d3d8b1a80b193d454`; current R source is different. It is not final-source G6 evidence.
 - `/private/tmp/arc1-r-controls-dense-cap.log` and R commit `4c8457b`: 40 focused assertions, one optional transport skip, no warning/failure; R build succeeded in 14.189 seconds. Full R check and current-source live parity remain pending.
 - `totoro-fa-scaling` and `bootstrap-scaling-diagnosis` receipts/logs: 16 B=19 engineering examples, six intervals formed, 21/304 inner selectors failed; detailed failure counts and the unqualified runtime projection are in `compute-prerun.md` and its retained receipts.
@@ -151,7 +155,7 @@ The Arc1 ledger `.unlazy/arc1-gaussian-reliability/GATES.md` still marks every g
 
 There is meaningful adversarial evidence for bounded components. Astra's profile v4 controlled cases exercised terminal-only history, returned certificate history, inactive/missing scalar history flags, and invalid scalar coordinates; they reproduced four live defects despite the preceding 157 arithmetic assertions passing. This shows those cases detect important failures, and that the broader test suite had missed them.
 
-The checker review replayed five source-traced adversaries (altered encoded reference parameters, rewritten returned identities, inconsistent artifact summaries, legitimate returned failures rejected by the checker, and stale artifact reuse). The defects remain unresolved. Earlier parent receipts include synthetic fresh-process transport and receipt tests, but those do not prove the current launcher/checker rejects every adversarial artifact. No complete current-source negative-control campaign passed.
+The checker review replayed five source-traced adversaries (altered encoded reference parameters, rewritten returned identities, inconsistent artifact summaries, legitimate returned failures rejected by the checker, and stale artifact reuse). The third review accepted identity handling, returned failures and removal of stale caching; four other groups remain unresolved as recorded above. Earlier parent receipts include synthetic fresh-process transport and receipt tests, but those do not prove the current launcher/checker rejects every adversarial artifact. No complete current-source negative-control campaign passed.
 
 ## 7a. Issue Ledger
 
@@ -182,7 +186,7 @@ The project `route.py` lookup found no manifest for this worktree's absolute pat
 
 - All original gates G0–G8 remain open. The approved programme is not complete.
 - No allocated development, pilot, confirmation, or calibration study has run. Engineering-only fits, B=19 runs, and a single expanded-reference comparison do not change that statement.
-- The current profile source is blocked on the four v4 review findings. No current-source full profile wrapper replay follows.
+- Astra v6 found a native failed-start refusal-policy regression and four neighboring adapter defects. Luna owns repairs; full wrapper and retained N=80 fit replays remain pending.
 - The current reference/checker/executor path still needs fresh independent review after repairs and a frozen transitive source set. Current checker source is not accepted for study admission.
 - Bootstrap formation was poor in the 16-example engineering batch; population formation and coverage are unknown. Rank-selection reliability is unknown.
 - Paired R/Julia live checks and failure/interruption behavior must be rerun on the final frozen sources; the prior 70.45-second live pass is source-specific and stale relative to current code.
@@ -191,6 +195,10 @@ The project `route.py` lookup found no manifest for this worktree's absolute pat
 - `public_covered_count` remains seven. No reliability, calibration, production-readiness, broad formula-support, release, or promotion claim is supported.
 
 ## 11. Team Learning
+
+Actual execution used `gpt-6-astra` at high effort for scientific decisions and independent source challenges, and `gpt-6-luna` for implementation and testing. The current Luna reference/profile worker runs at high effort; the simulation/checker and documentation workers run at medium effort. These are real delegated workers. The parent coordinates file ownership, checks returned evidence and creates local checkpoints. Rose is the claim-versus-evidence lens applied by the documentation worker, not a separate running agent. Once the native agent limit was reached, bounded Astra reviews used the inspected CLI launcher. No more than three children, including those CLI reviews, run at once.
+
+Totoro supplied the retained CPU engineering measurements through its existing SSH socket. The scaling check compared four with sixteen workers, each using four Julia threads and one BLAS thread. Those processes have ended. Local arithmetic and controlled tests use the thread limits recorded in their receipts. No GPU or allocated scientific campaign ran.
 
 Memory receipt: for this report audit, I used the repository instructions, checkpoint, gate ledger, source reviews, retained receipts, and the active lane lease as technical sources. `route.py` returned no LOAD-FIRST manifest for this absolute worktree path; that lookup describes this report pass. Golden Set: not run; this report pass did not repair a known-mistake class. No memory files were edited because this rolling report owns only the assigned lane file.
 
