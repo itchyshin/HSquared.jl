@@ -91,3 +91,45 @@ Luna owns a v6 repair that inventories every returned record and consuming path.
 Astra completed v6 in 601.95 seconds with both frozen hashes unchanged. It reproduced a native refusal-policy regression: a legitimate failed BFGS start without terminal centered likelihood was refused unconditionally, even when its retained history was noncompetitive. Baseline `00e14939` accepted the corresponding controlled nuisance result. Four additional partial-record failures concerned optimizer-status diagnostics, malformed contacts, returned centered history and incomplete resolved certificates. Native occurrence of the policy regression in N=80 remains untested; the other cases use injected adapters.
 
 The 593 retained centering assertions passed. Full likelihood, free-Ve gradient, cache, LR score, ratio path, target scan, five-target guard, cutoff and starts matched the baseline. The changed refusal behavior prevents source acceptance. Luna owns the narrow repair in profile source/tests, with native producer schemas governing required and optional fields. No N=80 replay or allocated study ran. Evidence: `.unlazy/arc1-gaussian-reliability/evidence/centering-astra-review-v6/`.
+
+## Seventh review stopped at its time bound, 2026-10-03
+
+The v7 focused suite passed 898 assertions in 34.9 seconds at source `4abaed25…` and tests `25591bb5…`. Astra's review reached its 660-second bound before emitting a final report. Exit status is 124, both frozen hashes matched, and all visible test commands completed. The prepared prose in its final prose-check command is retained as `review-draft-recovered.txt`, explicitly separate from a completed review.
+
+Its retained counterexamples establish four repair targets. A native candidate-24 certificate with difference responses scaled by 16 resolves at centered spread `9.251266419596504e-12`, but a validator incorrectly refuses its full-scale diagnostic spread `9.5367431640625e-7`. Three injected-adapter probes discard a higher terminal centered value, lose accumulated history/tag on malformed polish input, or let a post-run callback exception escape without a structured history record. Interruptions propagated. Luna owns these narrow repairs; a fresh completed review is required before any fit replay.
+
+
+## V8 repair and independent review started, 2026-10-03 UTC
+
+Luna repaired the four retained v7 findings and passed 915 focused assertions in 38.0 seconds. Frozen source SHA-256 is `d0dc1419b26526b23893e1d652b5f2e837549f5f17f5c981236521eadd9a1ff7`; test SHA-256 is `0dd638ec21c5607aa18f0aaf6eb820bd83b7c0abd440cf2a7540a7df11d29c5c`. The portable native certificate fixture did not reproduce the historical full-likelihood spread. A separate diagnostic-only override tests that centered proof governs the centered route while the noncentered route still refuses excessive full spread. This distinction is retained explicitly.
+
+Astra's new read-only review has a 780-second cap, including a reserved report interval. Initial sandbox startup failed before review because Codex could not write its local state database; that receipt is retained separately. The authorized retry is running. No completed verdict exists yet, and the saved N80 fit remains unrun. Evidence is `.unlazy/arc1-gaussian-reliability/evidence/centering-astra-review-v8/`.
+
+
+## V8 verdict and V9 narrow repair
+
+The completed v8 Astra review took 537.10 seconds with both source hashes unchanged. It found two malformed injected-adapter failures: an optional non-Boolean diagnostic flag threw after validation, and an inconsistent bound/contact record concealed a terminal centered maximum. Neither shape is emitted by valid native producers. Native history controls passed; the review confirmed unchanged baseline full-likelihood, gradient, LR, cache and search functions. One independent test process used default Julia 1.12.6 and timed out; it supplies no passing evidence.
+
+Luna repaired the two record checks and passed 922 assertions on explicitly verified Julia 1.10.0 in 38.6 seconds. Source SHA-256 is `4d7cbb6faac96d769af8229f19f9d92d28ad6107737e89d9df85c968a0abca1c`; test SHA-256 is `1a9374798f5eb6e3fc5f8d875fedf6d4a5766c80bdfc0fab96ae60999d9de1d7`. A seven-minute Astra delta review is running under `centering-astra-review-v9/`. No acceptance or actual N80 fit is claimed.
+
+
+## V9 source acceptance and engineering replay
+
+Astra accepted the bounded repair in 284.05 seconds with both reviewed hashes unchanged. Independent Julia 1.10.0 controls passed 626 assertions in 44.56 seconds of process time, within the 60-second cap. The reviewer verified the two malformed-record repairs and native producer compatibility. Fresh named-function comparisons found unchanged full-likelihood, gradient, LR, cache, point-fit, ratio-nuisance, target-search and five-target-guard bodies against the baseline. This is not whole-file equivalence or coverage evidence.
+
+The saved N80 replay has now started on those exact profile hashes, using the exact Julia 1.10.0 executable and a 120-second process-group timeout. Its prior engineering runtime was about 65 seconds. The launcher also checks `VERSION` inside the process and retains the executable hash. No result is claimed until the receipt and all five target statuses are inspected. All scientific gates remain open.
+
+
+The saved replay completed with exit zero in 68.54 seconds, including 63.12 seconds in the profile call. Point-fit status was `ok`; additive variance, permanent-environment variance, residual variance, heritability and repeatability all formed with status `ok`. Input, source and executable hashes were unchanged. The exported interval table was read back from the retained `profile.jls` and had finite ordered bounds for all five targets. This closes the saved engineering regression, not any study-level coverage or formation requirement. Local commit `361f77cb` retains the accepted profile source and tests.
+
+## Six-case engineering follow-up, 2026-10-03
+
+The accepted v9 source completed six Totoro engineering cases in 308.75 seconds, with every process exiting zero and all source/input/result hashes verified. These were separate engineering seeds. Twenty-eight of 30 target intervals formed. In the near-zero-additive cases, N160 residual variance and N320 permanent-environment variance remained unformed with `nuisance_unresolved`. No allocated study seed or gate result follows from these counts. Full records are retained under `.unlazy/arc1-gaussian-reliability/evidence/repeatability-size-prerun-totoro-20261003T032000Z/`.
+
+Astra independently inspected the actual failed candidates and evaluated their fixed coordinates at 128 and 256 bits. The original candidate-to-face deficits remain approximately `1.69891308e-8`, `1.42095406e-8`, and `1.53685648e-8`, each above the frozen `1e-8` certificate limit. Most of each deficit persists after exact-zero projection. This supports remaining-coordinate optimization error under the retained transformed representation, not a Float64 cancellation explanation. The closely matching best-uncertified rows reported in the initial extraction belong to different candidates. Centered mode uses its centered spread as the active criterion; the full spread is diagnostic. The N320 exact-zero residual face is structurally singular and noncompetitive, not evidence of a separate finite unresolved optimum.
+
+The v1 rule correctly preserves these refusals. Its original-inclusive spread cannot become compliant by replacing a terminal point after refinement. Broader continuation eligibility or a certificate that preserves earlier values as historical maxima rather than permanent equality constraints would be a new numerical policy. No such policy is adopted here. Scientific estimands, exact REML, LR cutoff, zero-reduced models, all historical maxima and every formation/coverage criterion remain unchanged.
+
+Parent authorized only Astra's staged observational diagnostic: replay the three indicated ordinary starts, then at most one remaining-coordinate refinement per start within its unused 2,000-iteration allowance. Estimate 15 to 30 seconds after loading, stop at the estimate boundary and retain partial evidence, hard process-group cap 60 seconds, one Julia thread and BLAS one. No whole profile, new data, study seed, source change or acceptance change is authorized. Original certificate failures must remain failed. Luna prepares the script for parent inspection before launch.
+
+Independent review and exact staged plan: `.unlazy/arc1-gaussian-reliability/evidence/profile-size-boundary-astra-review/review.md` and `candidate-refinement-plan.md`. Astra's arithmetic took 6.07 seconds and all ten frozen hashes remained unchanged. Proposed future policy identifiers in that review are proposals only. Any later adoption needs an explicit recorded numerical-policy decision, corresponding protocol/version changes, adversarial history/budget checks and independent review before study admission.

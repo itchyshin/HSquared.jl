@@ -35,3 +35,19 @@ Luna owns repairs across the full S3 path, including `run_cell.py`. The next fre
 Astra completed the v3 review in 622.64 seconds; all 18 frozen hashes matched. It accepted the repaired launcher identity checks, returned-failure handling and complete removal of qualification caching. Four groups still block source acceptance: native tagged-matrix/anchor transport, reference starts tied to retained sample variances (including floor clamping), full maximum-vector/rank/chronology provenance, and seed/raw-engine bindings in the retained artifact inspector. The latter counterexample reached the inspector body; native file-pipeline acceptance was not demonstrated.
 
 Luna simulation owns the next bounded repair. Tests must exercise native producer-to-serialization-to-checker paths, including actual start constructors and reference recorder shapes. No fitted study or campaign is authorized by these synthetic checks. The semantic digest is a defensible replacement for reserialized-byte comparison, but all data and result bindings must pass review before any manifest regeneration. Evidence: `.unlazy/arc1-gaussian-reliability/evidence/scientific-checkers-astra-review-v3/`.
+
+
+## S3 v4 transport candidate frozen, 2026-10-03 UTC
+
+The candidate uses retained artifact schema `arc1-full-result-v2` and semantic identity method `arc1-semantic-data-v2`. The identity covers DGP data and consumed response, design, incidence, IDs and pedigree arrays. Data-bearing artifacts must match the externally pinned seed string. Error-only pre-engine artifacts may omit consumed data and its identity. The inspector reprojects the raw selector, profile or bootstrap payload using the canonical producer projection; independent scientific checks still test penalties, formulas, denominators and start derivation. No legacy fallback or study admission is added.
+
+Reference transport now accepts native tagged column-major Julia matrices and includes anchor observation order. K0 start derivation uses retained-response sample variances with the frozen floor rule. Maximum records carry rank, full encoded coordinates, schedule identity and chronological order within each rank.
+
+Luna reports 20 scientific-checker tests, 65 Julia executor assertions, and one actual fake-engine JLS/store/receipt integration passed. The full integration asserted rejection of changed retained data seed and raw selector output. Separate profile-target and bootstrap-inner-seed mutations were rejected by the inspector. These synthetic checks establish no scientific reliability or coverage. The integration took 194.181 seconds against a 180-second estimate, without an enforced watchdog. It completed with exit zero; the overrun is retained, not described as a capped run.
+
+Astra v4 review is running with a 780-second process-group timeout. Its 18-file hash inventory and copied logs are in `.unlazy/arc1-gaussian-reliability/evidence/scientific-checkers-astra-review-v4/`. No current acceptance verdict exists. The candidate manifest remains stale and unadmitted, and all G0-G8 gates remain open.
+
+
+## S3 V5 accepted source
+
+Astra accepted the two-file row-schedule repair in 270.10 seconds with all 18 frozen hashes unchanged. Independent controls rejected nine malformed schedules and accepted two legitimate failure cases. Three Julia-produced JSON controls passed, including selected K1 indices 9-12 and a failed Nelder-Mead row reducing the final set to 9-11. These used injected objective and optimizer callbacks and do not prove numerical reliability. Local commit `952c725b` retains the accepted harness. No study or manifest admission followed.
