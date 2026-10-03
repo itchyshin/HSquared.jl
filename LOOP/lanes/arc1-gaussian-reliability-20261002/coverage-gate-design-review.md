@@ -1,5 +1,9 @@
 # Coverage gate operating characteristics: Astra reviewed
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 The design check precedes all studies. No simulated outcome from an allocated study has been inspected. The approved gates remain unchanged.
 
 For n=400 and the frozen requirement that the 90% Wilson interval lie wholly within [0.92,0.98], the independent receipt checker accepts all-attempt coverage counts 377 through 387 inclusive. Direct binomial summation at true coverage 0.95 gives a single-cell acceptance probability of 0.7571888505775669. For one target across nine independent cells each with true coverage 0.95, the joint probability is 0.08181593428633004. Correlated targets within a cell do not remove the requirement that this one target pass all nine independent cells.

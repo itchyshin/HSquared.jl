@@ -1,5 +1,9 @@
 # Simulation and execution review: required next repairs
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 The parent independently reproduced 30 Python component tests. These do not yet prove campaign execution or simulator covariance. Source inspection and an isolated counterexample found the following required work before any study is admitted.
 
 1. `Arc1AttemptStore.rows()` currently turns every started row without a result into an interrupted result. In the same live process, `begin(1)` followed by `rows()` creates that failure and makes `finish(1, success)` raise `FileExistsError`. Make progress reads read-only. Use explicit recovery with exclusive ownership/liveness protection; a concurrent caller must not declare an active attempt dead. Add a regression with an actively held attempt, progress reads, an overlapping worker and a genuinely dead owner. Preserve immutable completed failures and keep orphan recovery explicit.

@@ -1,6 +1,6 @@
 # Arc1 covariance representation decision
 
-Status: awaiting Shinichi's decision. This note authorizes no change to numerical admissibility.
+Status: superseded for candidate development by [the explicit versioned FA decision](fa-factor-policy-decision.md). The earlier user question is unanswered, not retrospectively approved. Astra reviewed the change as a same-model representation repair with a new opt-in policy and preserved v1/default routes. The historical evidence and original recommendation below remain intact. No numerical source changes or study adoption follow from this historical note alone.
 
 ## Observed problem
 

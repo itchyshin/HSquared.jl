@@ -1,5 +1,9 @@
 # Remaining execution and scientific checks
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 These are engineering tasks within the approved programme. They do not authorize an allocated study, confirmation run or campaign above three hours. Keep candidate manifests unadmitted until the numerical, interface and harness sources are frozen and independently checked.
 
 ## Expanded FA reference

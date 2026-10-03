@@ -1,5 +1,9 @@
 # Proposed next bounded scientific step: double-zero corner certificate
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 Current decision after the second diagnostic review: adopt a smaller pure fixed-coordinate measurement as the immediate next step. The full diagnostic script remains blocked; preserve both reviewed versions and their failed controls. The new script will record objective, gradient, forward-difference and score-spread measurements only, without acceptance or feasibility flags. This separates arithmetic observation from future production certification. The complete original certificate requirements below remain mandatory before any method can accept a profile. The scientific measurement contract is retained in `corner-pure-measurement-plan.md`. No v3 method is adopted.
 
 Status: proposal only. No new numerical computation or code change has been performed for this proposal. Preserve v1 and v2 meanings, artifacts and failed outcomes. Any adopted route needs a new explicit method identity and source freeze; do not silently change v2 or recast its refusals as passes.

@@ -1,5 +1,9 @@
 # Arc1 compute pre-run, 2026-10-02
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 Status: engineering measurements retained. No allocated development, pilot or confirmation study has run. Campaign admission remains held for code/checker reconciliation, the coverage-allocation decision and measured approval of any campaign above three hours.
 
 ## Frozen execution and results

@@ -1,5 +1,9 @@
 # Repeatability development execution preflight
 
+Current authorization clarification, 2026-10-03: the user explicitly approved implementation of the plan with 400 confirmation datasets per cell and unchanged acceptance criteria. Astra confirmed that the operating-characteristic calculation shows low joint certification power, not invalid inference or an impossible gate. The earlier recommendation for another allocation decision is superseded. Retain the warning and all failed gates. No 1600 allocation, seed or criterion change is adopted. Qualified pilots, matching source/protocol admission and approval of any campaign projected above three hours remain required.
+
+Historical record below; the clarification above governs the allocation authorization.
+
 Current status, 2026-10-03 06:37 UTC: explicit profile v2 passed independent source review, G1, required-live R parity, and the complete Julia/R/documentation package checks. The current source-bound ledger snapshot records G1/G6/G7 passed and six gates unmet. No allocated study seed has run. Contract metadata reconciliation is in progress because the previous scientific-contract object still described v1 while admission required v2. Regenerate and validate the complete freeze after reconciliation before any study admission. The bounded replay of two saved engineering inputs has separate authority and does not admit a study.
 
 The timing, failures and projections below are retained v1 engineering history. Their old G7-failed and all-gates-open statements describe that earlier snapshot. They do not supersede the current package receipt `20261003T061429Z-1a5ef047d4`. Later source changes require appropriate renewed verification. Campaign approval above three hours, the pending FA representation decision, and the confirmation-allocation decision remain separate boundaries.
