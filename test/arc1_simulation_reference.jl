@@ -2,6 +2,8 @@ using Test
 using HSquared
 
 include(joinpath(@__DIR__, "..", "sim", "arc1", "reference.jl"))
+include(joinpath(@__DIR__, "..", "sim", "arc1", "engine_io.jl"))
+include(joinpath(@__DIR__, "..", "sim", "arc1", "execute_attempt.jl"))
 
 module Arc1ReferenceFakeOptim
 struct NelderMead end
@@ -23,7 +25,7 @@ end
 
 module Arc1ReferenceFakeEngine
 using LinearAlgebra
-const FA_UNIQUENESS_FLOOR = 1e-6
+const FA_UNIQUENESS_FLOOR = 1e-4
 const Optim = Main.Arc1ReferenceFakeOptim
 const FAIL_NEXT_UNIQUENESS_MAP = Ref(false)
 function _fa_uniqueness_to_unconstrained(g)
@@ -152,6 +154,21 @@ end
     @test reference.k0_anchor.source_stage == :bfgs_initial
     @test reference.k0_anchor.start_name == Symbol("split_0.9")
     @test reference.k0_anchor.genetic_diagonal ≈ 0.9 .* diag(P)
+    @test reference.phenotypic_variances == diag(P)
+    @test reference.phenotypic_variance_method ==
+        "retained_Y_sample_variance_nonpositive_fallback_1"
+    @test reference.k0_anchor.observation_order > 0
+    @test occursin("\"layout\":\"julia_column_major\"",
+        arc1_json(reference.k0_anchor.residual_covariance))
+    @test all(row -> all(maximum -> maximum.rank == row.rank,
+        row.intermediate_maxima), reference.rows)
+    if haskey(ENV, "ARC1_NATIVE_AUDIT_OUT")
+        best = [reference.best_by_rank[rank] for rank in (0, 1)]
+        selection = (; candidate_summary=[(; rank=rank, loglik=best[rank + 1].loglik)
+            for rank in (0, 1)])
+        native_audit = arc1_reference_audit_from_raw(selection, reference)
+        write(ENV["ARC1_NATIVE_AUDIT_OUT"], arc1_json(native_audit) * "\n")
+    end
     @test all(c -> c.rank == 0, calls[1:10])
     @test all(c -> c.rank == 1, calls[11:end])
     unaccepted_k0 = only(filter(r -> r.rank == 0 && r.stage == :bfgs_initial &&
@@ -169,7 +186,7 @@ end
     @test getproperty.(reference.refinement_selection.k0_initial, :start_name) ==
         [Symbol("split_0.9"), Symbol("split_0.7"),
          Symbol("split_0.5"), Symbol("split_0.3")]
-    @test getproperty.(reference.refinement_selection.k1_initial, :schedule_index) == [1, 2, 3, 4]
+    @test getproperty.(reference.refinement_selection.k1_initial, :schedule_index) == [9, 10, 11, 12]
     @test occursin("no convergence or gradient-acceptance filter",
         reference.refinement_selection.predicate)
     k1_initial = only(filter(r -> r.rank == 1 && r.stage == :bfgs_initial &&

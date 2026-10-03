@@ -172,7 +172,7 @@ function arc1_reference_run!(rows, best, starts, rank, objective, optimizer,
                 if arc1_reference_finite_evaluation(ev)
                     point = (; params=Float64.(collect(params)),
                         objective=Float64(ev.objective), raw_objective=Float64(ev.raw_objective),
-                        loglik=Float64(ev.loglik), source,
+                        loglik=Float64(ev.loglik), rank, source,
                         schedule_index, observation_order=observation_counter[])
                     previous = tracker.best_evaluation
                     if previous === nothing || point.loglik > previous.loglik
@@ -410,6 +410,7 @@ end
 function arc1_fa_expanded_reference(engine::Module, Y, X, B;
         dataset_identity, phenotypic_covariance=arc1_reference_phenotypic_covariance(Y, X),
         optimizer=nothing, nelder_mead=nothing, gradient_assessor=nothing)
+    phenotypic_variances = Float64.(diag(Matrix{Float64}(phenotypic_covariance)))
     spectral = getfield(engine, :_arc1_fa_spectral_context)(Y, X, B)
     spectral.status == :ok || return (; status=:unsupported_input,
         reason=spectral.reason, dataset_identity, rows=NamedTuple[],
@@ -482,7 +483,8 @@ function arc1_fa_expanded_reference(engine::Module, Y, X, B;
                     residual_covariance=getfield(engine, :_chol_params_to_cov)(best_k0.params[5:14], 4),
                     loglik=best_k0.loglik, source=best_k0.start_name,
                     source_stage=best_k0.stage,
-                    observation_source=best_k0.observation_source)
+                    observation_source=best_k0.observation_source,
+                    observation_order=best_k0.observation_order)
             end
         end)
     if isempty(invalid_k0)
@@ -490,14 +492,18 @@ function arc1_fa_expanded_reference(engine::Module, Y, X, B;
             (; source=:analytic_split_fallback, split=0.5,
                genetic_diagonal=fallback_anchor === nothing ? nothing : fallback_anchor.genetic_diagonal,
                residual_covariance=fallback_anchor === nothing ? nothing : fallback_anchor.residual_covariance,
+               observation_order=nothing,
                status=fallback_anchor === nothing ? :invalid_initialization : :available) :
             (; source=:best_finite_reference_k0, split=missing,
                genetic_diagonal=anchor[].genetic_diagonal,
                residual_covariance=anchor[].residual_covariance,
                loglik=anchor[].loglik, start_name=anchor[].source,
                source_stage=anchor[].source_stage,
-               observation_source=anchor[].observation_source, status=:available)
+               observation_source=anchor[].observation_source,
+               observation_order=anchor[].observation_order, status=:available)
         return merge(result, (; starts_planned=Dict(0 => 6, 1 => 64),
+            phenotypic_variances,
+            phenotypic_variance_method="retained_Y_sample_variance_nonpositive_fallback_1",
             k0_anchor=anchor_record))
     end
     invalid_rows = [(; rank=0, start_name=s.name, stage=:start_generation,
@@ -509,17 +515,21 @@ function arc1_fa_expanded_reference(engine::Module, Y, X, B;
         for s in invalid_k0]
     return merge(result, (; rows=vcat(invalid_rows, result.rows),
         starts_planned=Dict(0 => 6, 1 => 64),
+        phenotypic_variances,
+        phenotypic_variance_method="retained_Y_sample_variance_nonpositive_fallback_1",
         k0_anchor=anchor[] === nothing ?
             (; source=:analytic_split_fallback, split=0.5,
                genetic_diagonal=fallback_anchor === nothing ? nothing : fallback_anchor.genetic_diagonal,
                residual_covariance=fallback_anchor === nothing ? nothing : fallback_anchor.residual_covariance,
+               observation_order=nothing,
                status=fallback_anchor === nothing ? :invalid_initialization : :available) :
             (; source=:best_finite_reference_k0, split=missing,
                genetic_diagonal=anchor[].genetic_diagonal,
                residual_covariance=anchor[].residual_covariance,
                loglik=anchor[].loglik, start_name=anchor[].source,
                source_stage=anchor[].source_stage,
-               observation_source=anchor[].observation_source, status=:available)))
+               observation_source=anchor[].observation_source,
+               observation_order=anchor[].observation_order, status=:available)))
 end
 
 function arc1_reference_rank_comparison(ordinary_loglik, reference; rank,

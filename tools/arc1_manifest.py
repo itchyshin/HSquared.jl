@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterator
 
+
 NAMESPACE = "h2-arc1-gaussian-reliability-20261002-v1"
 FA_SIGNALS = ("null", "weak", "strong")
 REPEATABILITY_SIGNALS = ("interior", "near_zero_pe", "near_zero_additive")
@@ -68,7 +69,17 @@ SCIENTIFIC_CONTRACT = {
     "allocation": {
         "fa_rank": {"N": [80, 160, 320], "signals": {"null": 0.0, "weak": 0.15, "strong": 0.7},
                                       "development": 30, "pilot": 30, "confirmation": 400},
-        "fa_rank_reference": {"preselected_confirmation_outer": [1, 20]},
+        "fa_rank_reference": {
+            "preselected_pilot_and_confirmation_outer": [1, 20],
+            "additional_flags": ["unusable selector or guard refusal", "selection.near_tie",
+                                 "candidate_summary[K0].near_floor",
+                                 "candidate_summary[K1].near_floor"],
+            "flag_mapping": {"near_tie": "recompute from frozen rank scores and 1e-6 tie tolerance",
+                             "near_floor": "retained selector candidate_summary field"},
+            "same_outer_data": True,
+            "available_rank_maximum_shortfall": 1e-4,
+            "unavailable_ordinary_rank_comparison": "required audit; comparison status not_applicable",
+        },
         "fa_interval": {"N": 160, "signals": {"null": 0.0, "weak": 0.15, "strong": 0.7},
                          "development": 30, "pilot": 30, "confirmation": 400,
                          "bootstrap_B": {"development": 19, "pilot": 199, "confirmation": 499},
@@ -82,7 +93,8 @@ SCIENTIFIC_CONTRACT = {
                           "records_per_offspring": 2},
         "boundary": {"N": 160, "signals": {"Va_zero": [0.0, 0.3, 0.7],
                                                   "Vpe_zero": [0.3, 0.0, 0.7]},
-                     "diagnostic_each": 200, "records_per_offspring": 2},
+                     "diagnostic_each": 200, "records_per_offspring": 2,
+                     "gate": "G5 descriptive exact-zero diagnostics; no nominal coverage threshold"},
     },
     "data_generating_process": {
         "pedigree": {"N_counts": "observed offspring", "sires": "N/8 unrelated founders",
@@ -151,8 +163,15 @@ SCIENTIFIC_CONTRACT = {
                                "K1_amplitudes": [0.025, 0.1, 0.25, 0.5, 0.7, 0.9, 0.97, 0.995],
                                "each_start": {"method": "BFGS", "line_search": "Hager-Zhang",
                                               "iterations": 10000},
-        "top_finite_solutions": 4,
-        "top_finite_solutions_scope": "per rank, independently for K0 and K1",
+                               "top_finite_solutions": 4,
+                               "top_finite_solutions_scope": "per rank, independently for K0 and K1",
+                               "audit_outer_indices": {"pilot": [1, 20], "confirmation": [1, 20]},
+                               "audit_additional_flagged_attempts": [
+                                   "unusable selector or guard refusal", "selection.near_tie",
+                                   "candidate_summary[K0].near_floor",
+                                   "candidate_summary[K1].near_floor"],
+                               "audit_uses_same_outer_data": True,
+                               "audit_comparison_when_ordinary_rank_unavailable": "not_applicable",
                                "refinement": [{"method": "Nelder-Mead", "iterations": 20000},
                                               {"method": "BFGS", "iterations": 10000}],
                                "maximum_raw_loglik_shortfall": 1e-4},
@@ -239,7 +258,8 @@ SCIENTIFIC_CONTRACT = {
                                 "failed_inner_attempts_are_retained": True,
                                 "outer_fit_failure": "record refusal stage and status; no inner attempts"},
         "fa_pilot": {"N": 160, "outer_per_signal": 30, "B": 199,
-                     "formed_min": 29, "all_target_all_attempt_coverage": [0.85, 1.0]},
+                     "formed_min": 29, "all_target_all_attempt_coverage": [0.85, 1.0],
+                     "coverage_success_min": 26, "denominator": 30},
         "endpoint_pilot": {"preselected_outer_count": 20, "nested_B": [199, 499, 999],
                            "primary_result_B": 199, "stability_results_B": [499, 999],
                            "each_prefix_has_independent_usability_check": True,
@@ -253,11 +273,16 @@ SCIENTIFIC_CONTRACT = {
     },
     "rank_selection_gate": {
         "allocation": "30 development + 30 pilot + 400 confirmation per each of 9 cells",
-        "pilot_screen": {"both_candidate_available_min": 29, "denominator": 30,
-                         "expanded_reference_all_good": True, "null_K1_max": 6,
+        "pilot_screen": {"numerical_eligibility_min": 29, "denominator": 30,
+                         "numerical_eligibility_requires": ["both candidates available",
+                             "selection_status selected", "complete frozen schedule",
+                             "all selector guards passed", "valid selected fit"],
+                         "report_raw_pair_availability_separately": True,
+                         "expanded_reference_all_good": True,
+                         "null_K1_max_by_N": {"80": 6, "160": 6, "320": 6},
                          "strong_N320_K1_min": 24},
         "confirmation": {"eligibility_wilson95_lower_min": 0.90,
-                         "null_K1_wilson95_upper_max": 0.20,
+                         "null_K1_wilson95_upper_max_by_N": {"80": 0.20, "160": 0.20, "320": 0.20},
                          "strong_N320_K1_wilson95_lower_min": 0.80,
                          "denominator": "all attempts including failed/unavailable"},
     },
@@ -268,6 +293,27 @@ SCIENTIFIC_CONTRACT = {
                        "null_pilot_K1_max": 6, "strong_N320_pilot_K1_min": 24,
                        "eligible_wilson95_lower_min": 0.90, "null_K1_wilson95_upper_max": 0.20,
                        "strong_N320_K1_wilson95_lower_min": 0.80},
+    "repeatability_gate": {
+        "pilot": {"target_cell_combinations": 45, "formed_min": 29,
+                  "coverage_success_min": 26, "denominator": 30,
+                  "coverage_is_all_attempt": True},
+        "confirmation": {"outer_per_cell": 400, "formation_fraction_min": 0.99,
+                         "coverage_wilson_confidence": 0.90,
+                         "coverage_wilson_bounds": [0.92, 0.98],
+                         "coverage_denominator": "all attempts including failures"},
+    },
+    "gate_output_semantics": {
+        "G2": {"pilot": "29/30 numerical eligibility in all nine cells plus required references",
+               "confirmation": "eligibility lower bound in all nine cells plus references and ordinary-K1 witness"},
+        "G3": {"pilot": "G2 pilot plus null K1 at most 6/30 for each N and strong N=320 at least 24/30",
+               "confirmation": "G2 confirmation plus null K1 upper bounds for each N and strong N=320 lower bound"},
+        "G5_exact_zero_diagnostics": "two 200-attempt boundary cells are required for confirmation and reported descriptively only",
+        "integrity": "separate from scientific qualification",
+        "pilot_qualification": "PASS or HOLD; a pass never admits confirmation",
+        "confirmation_scientific_result": "separate PASS or FAIL from pilot qualification",
+        "confirmation_allocation": "HOLD until explicit pre-study authorization",
+        "failure_denominator": "all allocated attempts; never replace failures",
+    },
     "global_failure_rule": "failed pilot holds confirmation; failed confirmation gate remains unmet",
 }
 
@@ -291,13 +337,19 @@ def _file_sha256(path: Path) -> str:
 
 def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: list[str],
                         julia_version: str, julia_threads: int, blas_threads: int,
-                        manifest_audit_root: Path | None = None) -> dict[str, object]:
+                        manifest_audit_root: Path | None = None,
+                        pilot_qualification: dict[str, object] | None = None,
+                        confirmation_allocation_decision: dict[str, object] | None = None) -> dict[str, object]:
     """Pin source, environment, exact seeds, and execution settings before a cell run."""
     root = root.resolve()
     if julia_version != "1.10.0":
         raise ValueError("Arc1 admitted run requires Julia 1.10.0")
     if julia_threads < 1 or blas_threads < 1:
         raise ValueError("thread counts must be positive integers")
+    confirmation_authorization = None
+    if cell.get("phase") == "confirmation":
+        confirmation_authorization = _validate_confirmation_authorization(
+            root, cell, pilot_qualification, confirmation_allocation_decision)
     manifest_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
     manifest_verification = verify_manifest(manifest_path, audit_root=manifest_audit_root or root)
     required = {"programme", "phase", "N", "signal"}
@@ -336,7 +388,73 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
             "threads": {"julia": julia_threads, "blas": blas_threads},
             "thread_environment": {"JULIA_NUM_THREADS": str(julia_threads),
                                    "OPENBLAS_NUM_THREADS": str(blas_threads)},
+            "confirmation_authorization": confirmation_authorization,
             "status": "admitted_before_execution"}
+
+
+def _validate_confirmation_authorization(root: Path, cell: dict[str, object],
+        pilot_qualification: dict[str, object] | None,
+        decision: dict[str, object] | None) -> dict[str, object]:
+    if not isinstance(pilot_qualification, dict) or not isinstance(decision, dict):
+        raise ValueError("confirmation admission requires pilot qualification and explicit allocation decision")
+    gates = {"fa_rank": ("G2", "G3"), "fa_interval": ("G4",),
+             "repeatability": ("G5",)}.get(str(cell.get("programme")))
+    if gates is None:
+        raise ValueError("confirmation programme has no frozen pilot qualification gate")
+    for gate in gates:
+        evidence = pilot_qualification.get(gate)
+        if not isinstance(evidence, dict):
+            raise ValueError(f"confirmation admission requires retained {gate} pilot evidence")
+        paths: dict[str, Path] = {}
+        hashes: dict[str, str] = {}
+        for kind in ("bundle", "pins", "result"):
+            raw_path, digest = evidence.get(f"{kind}_path"), evidence.get(f"{kind}_sha256")
+            if not isinstance(raw_path, str) or not isinstance(digest, str) or \
+                    not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise ValueError(f"confirmation admission requires hash-pinned {gate} pilot {kind} evidence")
+            path = Path(raw_path).resolve()
+            if not path.is_file() or _file_sha256(path) != digest:
+                raise ValueError(f"retained {gate} pilot {kind} evidence is missing or has changed")
+            paths[kind], hashes[kind] = path, digest
+        # No process-local qualification cache: every admission re-enters the
+        # complete aggregation path, which reinspects every referenced artifact.
+        try:
+            import arc1_gate_aggregate as gate_aggregate
+            bundle_value = json.loads(paths["bundle"].read_text(encoding="utf-8"))
+            pin_value = json.loads(paths["pins"].read_text(encoding="utf-8"))
+            if not isinstance(bundle_value, dict) or not isinstance(bundle_value.get("receipts"), list) or \
+                    not isinstance(pin_value, dict) or not isinstance(pin_value.get("pins"), dict):
+                raise ValueError("pilot bundle or independent pin ledger has an invalid schema")
+            for item in bundle_value["receipts"]:
+                cell_pin = item.get("cell") if isinstance(item, dict) else None
+                if not isinstance(cell_pin, dict):
+                    raise ValueError("pilot bundle has a malformed cell record")
+                key = "|".join((cell_pin.get("programme", ""), cell_pin.get("phase", ""),
+                                str(cell_pin.get("N", "")), cell_pin.get("signal", "")))
+                external = pin_value["pins"].get(key)
+                if not isinstance(external, dict) or \
+                        Path(str(external.get("expected_source_root", ""))).resolve() != root or \
+                        not isinstance(external.get("expected_admission"), dict):
+                    raise ValueError("pilot pins are not bound to this source root and admitted environment")
+            retained = json.loads(paths["result"].read_text(encoding="utf-8"))
+            recomputed = gate_aggregate.aggregate_gate_files(
+                gate, "pilot", paths["bundle"], paths["pins"])
+        except Exception as error:
+            raise ValueError(f"retained {gate} pilot evidence does not verify: {error}") from error
+        if (retained != recomputed or retained.get("gate") != gate or
+                retained.get("phase") != "pilot" or retained.get("integrity") != "PASS" or
+                retained.get("protocol_sha256") != contract_sha256() or
+                retained.get("pilot_qualification") != "PASS" or
+                retained.get("success_marker") != f"ARC1_{gate}_PILOT_QUALIFIED" or
+                retained.get("confirmation_allocation") != "HOLD"):
+            raise ValueError(f"retained {gate} pilot evidence is not a consistent passing source-bound qualification")
+    if (decision.get("schema") != "arc1-confirmation-allocation-decision-v1" or
+            decision.get("status") != "authorized" or decision.get("allocation_per_cell") != 400 or
+            decision.get("protocol_sha256") != contract_sha256() or
+            not isinstance(decision.get("decision_id"), str) or not decision["decision_id"].strip()):
+        raise ValueError("confirmation allocation is held without an explicit protocol-bound 400-cell decision")
+    return {"pilot_qualification": {gate: pilot_qualification[gate] for gate in gates},
+            "allocation_decision": dict(decision)}
 
 
 def validate_candidate_manifest(root: Path) -> None:
@@ -463,6 +581,12 @@ def verify_run_admission(root: Path, admission: dict[str, object], *, julia_vers
     cell = admission.get("cell")
     if not isinstance(cell, dict):
         raise ValueError("admission lacks a pinned cell")
+    if cell.get("phase") == "confirmation":
+        authorization = admission.get("confirmation_authorization")
+        if not isinstance(authorization, dict):
+            raise ValueError("confirmation run admission lacks its pilot/allocation authorization record")
+        _validate_confirmation_authorization(root, cell, authorization.get("pilot_qualification"),
+                                             authorization.get("allocation_decision"))
     expected_count = _cell_outer_count(cell)
     if admission.get("planned_attempts") != expected_count:
         raise ValueError("planned attempt count differs from the frozen allocation")

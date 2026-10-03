@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import argparse
 import hashlib
 import json
 import math
@@ -9,8 +10,11 @@ import multiprocessing
 import os
 import shutil
 import sys
+import subprocess
+import re
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +24,7 @@ sys.path.insert(0, str(ROOT / "sim" / "arc1"))
 import arc1_manifest
 import arc1_receipt_check as checker
 import runner as arc1_runner
+import run_cell as arc1_run_cell
 
 
 def _overlapping_store_worker(source_root, output_dir, admission, result_queue):
@@ -65,6 +70,20 @@ def candidate(label: str, available: bool = True, raw: float = -10.0) -> dict:
             "error_reason": None if available else "optimizer_failed"}
 
 
+def covariance_payload(diagonal: float = 0.25) -> dict:
+    return {"__arc1_array__": True, "dims": [4, 4], "layout": "julia_column_major",
+            "data": [diagonal if i == j else 0.0 for j in range(4) for i in range(4)]}
+
+
+def selector_guards(*, schedule_complete: bool = True, better_unaccepted: bool = False,
+                    nonnested: bool = False, witness_status: str = "passed",
+                    discrepancy: float | None = 0.0) -> dict:
+    return {"schedule_complete": schedule_complete, "better_unaccepted": better_unaccepted,
+            "nonnested": nonnested,
+            "nesting_witness": {"status": witness_status, "discrepancy": discrepancy,
+                                "tolerance": 1e-8}}
+
+
 def rank_receipt() -> tuple[dict, list[int]]:
     n = 30
     seeds = [arc1_manifest.seed_for(RANK_CELL["programme"], RANK_CELL["phase"],
@@ -79,7 +98,11 @@ def rank_receipt() -> tuple[dict, list[int]]:
                          "status": "ok" if eligible else "candidate_failure",
                          "success": eligible,
                          "failure_reason": None if eligible else "K1 optimizer failed",
-                         "eligible": eligible, "selected_rank": "K0" if eligible else None,
+                         "eligible": eligible, "selection_status": "selected" if eligible else "unavailable",
+                         "selected_rank": "K0" if eligible else None,
+                         "guard_results": selector_guards(schedule_complete=eligible,
+                             witness_status="passed" if eligible else "unavailable",
+                             discrepancy=0.0 if eligible else None),
                          "rank_candidates": {"K0": k0, "K1": k1}})
     receipt = {"schema": "arc1-attempt-receipt-v1", **RANK_CELL,
                "protocol_sha256": PROTOCOL_HASH, "source_hashes": dict(SOURCE_HASHES),
@@ -110,14 +133,21 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
             inner_rows.append({"inner_index": inner_index, "seed": inner_seed,
                                "status": "ok" if okay else "fit_failed", "success": okay,
                                "failure_reason": None if okay else "K1 bootstrap optimizer failed",
-                               "eligible": okay, "selected_rank": "K0" if okay else None,
+                               "eligible": okay, "selection_status": "selected" if okay else "unavailable",
+                               "selector_status": "selected" if okay else "unavailable",
+                               "selected_rank": "K0" if okay else None,
+                               "guard_results": selector_guards(schedule_complete=okay,
+                                   witness_status="passed" if okay else "unavailable",
+                                   discrepancy=0.0 if okay else None),
+                               "starts_planned": 19, "starts_attempted": 19 if okay else 3,
+                               "schedule_complete": okay,
                                "rank_candidates": {"K0": k0, "K1": k1},
-                               "selected_fit": ({"G_diag": [0.25 + inner_index * 1e-5] * 4,
-                                                 "R_diag": [0.25] * 4} if okay else None)})
+                               "selected_fit": ({"G_matrix": covariance_payload(0.25 + inner_index * 1e-5),
+                                                 "R_matrix": covariance_payload(0.25)} if okay else None)})
         usable_rows = [row for row in inner_rows if row["success"]]
         for trait in range(1, 5):
-            values = [row["selected_fit"]["G_diag"][trait - 1] /
-                      (row["selected_fit"]["G_diag"][trait - 1] + row["selected_fit"]["R_diag"][trait - 1])
+            values = [row["selected_fit"]["G_matrix"]["data"][(trait - 1) * 5] /
+                      (row["selected_fit"]["G_matrix"]["data"][(trait - 1) * 5] + row["selected_fit"]["R_matrix"]["data"][(trait - 1) * 5])
                       for row in usable_rows]
             target_intervals[f"h2_{trait}"] = {
                 "formed": True,
@@ -132,7 +162,8 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
         intervals = copy.deepcopy(intervals)
         attempts.append({"attempt_id": f"interval-{outer:03d}", "outer": outer, "seed": seed,
                          "status": "ok", "success": True,
-                         "outer_selection": {"eligible": True, "selected_rank": "K0",
+                         "outer_selection": {"eligible": True, "selection_status": "selected", "selected_rank": "K0",
+                                             "guard_results": selector_guards(),
                                              "rank_candidates": {"K0": candidate("K0", True, -10.0),
                                                                  "K1": candidate("K1", True, -10.0)}},
                          "bootstrap": {"stage": "started", "requested_B": B,
@@ -168,6 +199,399 @@ def verify(receipt: dict, *, cell: dict | None = None, seeds: list[int] | None =
 
 
 class Arc1ReceiptAdversaries(unittest.TestCase):
+    def test_actual_run_cell_closure_rejects_child_outer_seed_relabeling(self):
+        julia = shutil.which("julia")
+        self.assertIsNotNone(julia, "Julia is required for source-bound admission")
+        cell = dict(RANK_CELL)
+        with tempfile.TemporaryDirectory(prefix="arc1-run-cell-identity-") as temporary:
+            base = Path(temporary)
+            source = _copy_valid_source_tree(base / "source")
+            admission = arc1_manifest.build_run_admission(
+                source, cell, source_paths=[], julia_version="1.10.0",
+                julia_threads=1, blas_threads=1, manifest_audit_root=ROOT)
+            admission_path = base / "admission.json"
+            admission_path.write_text(json.dumps(admission), encoding="utf-8")
+            args = argparse.Namespace(source_root=source, output_root=base / "results",
+                admission=admission_path, outer=1, julia=julia, julia_threads=1,
+                blas_threads=1, timeout=10.0)
+
+            def wrong_child(_command, *, env, timeout_seconds, log_path):
+                log_path.write_text("synthetic mismatched child identity\n", encoding="utf-8")
+                return {"schema": "arc1-attempt-result-v1", "success": True,
+                        "status": "ok", "outer": 999, "seed": 999,
+                        "seed_string": "999", "exact_seed_string": "999"}
+
+            with mock.patch.object(arc1_run_cell, "_julia_version", return_value="1.10.0"), \
+                    mock.patch.object(arc1_run_cell, "launch_julia_attempt", side_effect=wrong_child):
+                row = arc1_run_cell.execute_cli(args)
+            self.assertFalse(row["success"])
+            self.assertEqual(row["status"], "error")
+            self.assertIn("returned outer 999", row["failure_reason"])
+            self.assertEqual(row["outer"], 1)
+            self.assertEqual(row["seed"], admission["expected_outer_seeds"][0])
+
+    def test_fresh_julia_json_to_durable_store_to_checker_fixture(self):
+        """Cross-language transport fixture; never admitted or reported as study evidence."""
+        julia = shutil.which("julia")
+        self.assertIsNotNone(julia, "Julia is required; this integration test must not skip")
+        version_result = subprocess.run([julia, "--version"], check=True, capture_output=True, text=True)
+        version = re.search(r"([0-9]+\.[0-9]+\.[0-9]+)", version_result.stdout).group(1)
+        cell = {"programme": "fa_rank", "phase": "pilot", "N": 80, "signal": "null"}
+        with tempfile.TemporaryDirectory(prefix="arc1-json-store-checker-") as temp:
+            base = Path(temp)
+            source = base / "source"
+            output = arc1_runner.cell_output_dir(base / "results", cell)
+            stdout_path = base / "child.stdout"
+            setup = base / "setup-fake-source.jl"
+            setup.write_text('''include(ARGS[1])
+_arc1_write_fake_engine(ARGS[2])
+''', encoding="utf-8")
+            depot = base / "depot"
+            depot.mkdir()
+            env = dict(os.environ, JULIA_DEPOT_PATH=os.pathsep.join(
+                [str(depot), str(Path.home() / ".julia")]),
+                JULIA_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
+            setup_result = subprocess.run([julia, "--startup-file=no", "--threads=1", f"--project={ROOT}",
+                str(setup), str(ROOT / "test/arc1_simulation_executor.jl"), str(source)],
+                capture_output=True, text=True, timeout=120, env=env)
+            self.assertEqual(setup_result.returncode, 0,
+                setup_result.stdout + "\n" + setup_result.stderr)
+            for relative in arc1_manifest.discover_admission_source_paths(ROOT):
+                if relative.startswith("src/") or relative.startswith("sim/arc1/manifests/"):
+                    continue
+                origin, target = ROOT / relative, source / relative
+                if origin.is_file() and not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(origin, target)
+            arc1_manifest.write_manifest(source / "sim/arc1/manifests", audit_root=ROOT)
+            admission = arc1_manifest.build_run_admission(source, cell, source_paths=[],
+                julia_version=version, julia_threads=1, blas_threads=1, manifest_audit_root=ROOT)
+            admission_path = base / "admission.toml"
+            attempt_dir = output / "attempts"
+            attempt_dir.mkdir(parents=True, exist_ok=True)
+            arc1_run_cell._toml_input(admission_path, mode="engineering_probe", source_root=source,
+                attempt_output=attempt_dir, artifact_path=attempt_dir / "fake.full.jls",
+                cell=cell, outer=21, seed=arc1_manifest.seed_for(
+                    cell["programme"], cell["phase"], cell["N"], cell["signal"], 21, 0, "data"),
+                bootstrap_seeds=[], admission=admission, blas_threads=1)
+            fixture = base / "run-fixture.jl"
+            fixture.write_text('''include(ARGS[1])
+root = ARGS[2]
+output = ARGS[3]
+seed = parse(UInt64, ARGS[4])
+config = TOML.parsefile(ARGS[6])
+cell = (; programme="fa_rank", phase="pilot", N=80, signal="null")
+mkpath(root); mkpath(output)
+_arc1_write_fake_engine(root)
+stdout, artifact = _arc1_run_fake_attempt(root, output, cell, seed, UInt64[];
+    outer=21, admission=config)
+write(ARGS[5], stdout)
+''', encoding="utf-8")
+            seed = arc1_manifest.seed_for("fa_rank", "pilot", 80, "null", 21, 0, "data")
+            julia_fixture = subprocess.run([julia, "--startup-file=no", "--threads=1", f"--project={ROOT}",
+                str(fixture), str(ROOT / "test/arc1_simulation_executor.jl"),
+                str(source), str(output), str(seed), str(stdout_path), str(admission_path)],
+                capture_output=True, text=True, timeout=180, env=env)
+            self.assertEqual(julia_fixture.returncode, 0,
+                julia_fixture.stdout + "\n" + julia_fixture.stderr)
+            child = json.loads(stdout_path.read_text(encoding="utf-8"))
+            self.assertEqual(child["schema"], "arc1-attempt-result-v1")
+            self.assertTrue(child["success"])
+            store = arc1_runner.Arc1AttemptStore(source, output, admission,
+                julia_version=version, julia_threads=1, blas_threads=1)
+            for index, allocated_seed in enumerate(admission["expected_outer_seeds"], start=1):
+                store.begin(index)
+                if index == 21:
+                    self.assertEqual(child["seed"], allocated_seed)
+                    payload = dict(child, full_result_path=child["artifact_path"],
+                                   full_result_sha256=child["artifact_sha256"])
+                else:
+                    payload = {"status": "error", "success": False,
+                               "failure_reason": "omitted synthetic integration-fixture row"}
+                store.finish(index, payload)
+            rows = store.rows()
+            store.close()
+            receipt = arc1_runner.assemble_cell_receipt(rows, admission,
+                source_root=source, artifact_root=output)
+            verified = checker.verify_receipt(receipt,
+                expected_seeds=admission["expected_outer_seeds"],
+                expected_source_hashes=admission["source_sha256"],
+                expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                expected_artifact_root=output, expected_source_root=source,
+                expected_admission=admission)
+            self.assertEqual(verified["attempts"], 30)
+            self.assertEqual(verified["failures"], 29)
+            retained = receipt["attempts"][20]
+            self.assertEqual(retained["selected_rank"], "K0")
+            self.assertEqual(retained["candidate_summary"]["K1"]["near_floor"], False)
+            self.assertEqual(retained["stored_row"]["result"], child["result"])
+            inspected = checker._inspect_full_artifacts(source, [Path(retained["artifact_path"])])
+            inspected_row = inspected[str(Path(retained["artifact_path"]).resolve())]
+            self.assertEqual(inspected_row["metadata"]["schema"], "arc1-full-result-v2")
+            self.assertTrue(inspected_row["data_seed_matches_metadata"])
+            self.assertTrue(inspected_row["raw_result_matches_derived_receipt"])
+            failed_output = arc1_runner.cell_output_dir(base / "returned-failure-results", cell)
+            failed_attempt_dir = failed_output / "attempts"
+            failed_attempt_dir.mkdir(parents=True)
+            failed_seed = admission["expected_outer_seeds"][0]
+            failed_config = base / "returned-failure.toml"
+            failed_artifact = failed_attempt_dir / "outer-0001.full.jls"
+            arc1_run_cell._toml_input(failed_config, mode="engineering_probe",
+                source_root=source, attempt_output=failed_attempt_dir,
+                artifact_path=failed_artifact, cell=cell, outer=1, seed=failed_seed,
+                bootstrap_seeds=[], admission=admission, blas_threads=1)
+            failed_run = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                f"--project={source}", str(source / "sim/arc1/execute_attempt.jl"),
+                str(failed_config)], capture_output=True, text=True, timeout=90,
+                env=dict(env, ARC1_FAKE_UNAVAILABLE="true"))
+            self.assertEqual(failed_run.returncode, 2, failed_run.stdout + "\n" + failed_run.stderr)
+            returned_failure = json.loads(failed_run.stdout)
+            self.assertFalse(returned_failure["success"])
+            self.assertEqual(returned_failure["status"], "selection_failed")
+            self.assertTrue(failed_artifact.is_file())
+            self.assertTrue(returned_failure["receipt_summary_path"])
+            failed_store = arc1_runner.Arc1AttemptStore(source, failed_output, admission,
+                julia_version=version, julia_threads=1, blas_threads=1)
+            for index, allocated_seed in enumerate(admission["expected_outer_seeds"], start=1):
+                failed_store.begin(index)
+                payload = (dict(returned_failure, full_result_path=returned_failure["artifact_path"],
+                                full_result_sha256=returned_failure["artifact_sha256"])
+                           if index == 1 else
+                           {"status": "error", "success": False,
+                            "failure_reason": "synthetic pre-engine fixture failure"})
+                failed_store.finish(index, payload)
+            failed_rows = failed_store.rows()
+            failed_store.close()
+            failed_receipt = arc1_runner.assemble_cell_receipt(failed_rows, admission,
+                source_root=source, artifact_root=failed_output)
+            failed_verified = checker.verify_receipt(failed_receipt,
+                expected_seeds=admission["expected_outer_seeds"],
+                expected_source_hashes=admission["source_sha256"],
+                expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                expected_artifact_root=failed_output, expected_source_root=source,
+                expected_admission=admission)
+            self.assertEqual(failed_verified["attempts"], 30)
+            self.assertEqual(failed_verified["failures"], 30)
+            self.assertEqual(failed_receipt["attempts"][0]["status"], "selection_failed")
+            self.assertIsNotNone(failed_receipt["attempts"][0]["receipt_summary_path"])
+            self.assertEqual(failed_receipt["attempts"][1]["status"], "error")
+            self.assertIsNone(failed_receipt["attempts"][1]["artifact_path"])
+            mutate_jls = base / "mutate-retained-data.jl"
+            mutate_jls.write_text('''using HSquared, Serialization
+artifact = open(deserialize, ARGS[1])
+artifact.data.Y[1, 1] += 1
+open(ARGS[2], "w") do io
+    serialize(io, artifact)
+end
+artifact = open(deserialize, ARGS[1])
+metadata = merge(artifact.metadata,
+    (; semantic_data_identity_sha256=repeat("0", 64)))
+artifact = merge(artifact, (; metadata))
+open(ARGS[3], "w") do io
+    serialize(io, artifact)
+end
+artifact = open(deserialize, ARGS[1])
+result = merge(artifact.result,
+    (; success=false, status="selection_failed", failure_reason="mutated retained result"))
+artifact = merge(artifact, (; result))
+open(ARGS[4], "w") do io
+    serialize(io, artifact)
+end
+artifact = open(deserialize, ARGS[1])
+driver = merge(artifact.metadata.driver_protocol_identity,
+    (; protocol_sha256=repeat("f", 64)))
+metadata = merge(artifact.metadata, (; driver_protocol_identity=driver))
+artifact = merge(artifact, (; metadata))
+open(ARGS[5], "w") do io
+    serialize(io, artifact)
+end
+artifact = open(deserialize, ARGS[1])
+data = merge(artifact.data, (; seed=UInt64(999)))
+artifact = merge(artifact, (; data))
+open(ARGS[6], "w") do io
+    serialize(io, artifact)
+end
+artifact = open(deserialize, ARGS[1])
+selection = merge(artifact.selection, (; selected_rank=1))
+artifact = merge(artifact, (; selection))
+open(ARGS[7], "w") do io
+    serialize(io, artifact)
+end
+''', encoding="utf-8")
+            changed_artifact = output / "attempts" / "changed-data.full.jls"
+            changed_metadata_artifact = output / "attempts" / "changed-metadata.full.jls"
+            stale_summary_artifact = output / "attempts" / "stale-summary.full.jls"
+            changed_driver_artifact = output / "attempts" / "changed-driver.full.jls"
+            changed_seed_artifact = output / "attempts" / "changed-seed.full.jls"
+            changed_selector_artifact = output / "attempts" / "changed-selector.full.jls"
+            mutation = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                f"--project={source}", str(mutate_jls), retained["artifact_path"],
+                str(changed_artifact), str(changed_metadata_artifact),
+                str(stale_summary_artifact), str(changed_driver_artifact),
+                str(changed_seed_artifact), str(changed_selector_artifact)],
+                capture_output=True, text=True, timeout=90, env=env)
+            self.assertEqual(mutation.returncode, 0, mutation.stdout + "\n" + mutation.stderr)
+            seed_inspection = checker._inspect_full_artifacts(source, [changed_seed_artifact])
+            self.assertFalse(seed_inspection[str(changed_seed_artifact.resolve())]["data_seed_matches_metadata"])
+            selector_inspection = checker._inspect_full_artifacts(source, [changed_selector_artifact])
+            self.assertFalse(selector_inspection[str(changed_selector_artifact.resolve())]
+                             ["raw_result_matches_derived_receipt"])
+            for programme, signal in (("repeatability", "near_zero_pe"),
+                                      ("fa_interval", "null")):
+                raw_cell = {"programme": programme, "phase": "engineering_probe",
+                            "N": 80, "signal": signal}
+                # This is a transport-only fixture over the already-pinned
+                # synthetic source tree; it is not a cell admission or study run.
+                raw_admission = admission
+                raw_output = arc1_runner.cell_output_dir(base / "raw-path-results", raw_cell)
+                raw_attempt_dir = raw_output / "attempts"
+                raw_attempt_dir.mkdir(parents=True, exist_ok=True)
+                raw_artifact = raw_attempt_dir / f"{programme}.full.jls"
+                raw_seed = 12345
+                raw_bootstrap_seeds = ([12345000 + j for j in range(1, 1000)]
+                    if programme == "fa_interval" else [])
+                raw_config = base / f"{programme}.toml"
+                arc1_run_cell._toml_input(raw_config, mode="engineering_probe",
+                    source_root=source, attempt_output=raw_attempt_dir,
+                    artifact_path=raw_artifact, cell=raw_cell, outer=1,
+                    seed=raw_seed, bootstrap_seeds=raw_bootstrap_seeds,
+                    admission=raw_admission, blas_threads=1)
+                raw_run = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                    f"--project={source}", str(source / "sim/arc1/execute_attempt.jl"),
+                    str(raw_config)], capture_output=True, text=True, timeout=120, env=env)
+                self.assertIn(raw_run.returncode, (0, 2), raw_run.stdout + "\n" + raw_run.stderr)
+                self.assertTrue(raw_artifact.is_file(), raw_run.stdout + "\n" + raw_run.stderr)
+                raw_inspected = checker._inspect_full_artifacts(source, [raw_artifact])
+                raw_row = raw_inspected[str(raw_artifact.resolve())]
+                self.assertTrue(raw_row["raw_result_matches_derived_receipt"],
+                    f"{programme}: {raw_row.get('raw_result_projection_difference')}")
+                mutation_script = base / f"mutate-{programme}.jl"
+                mutation_body = ('''using HSquared, Serialization
+artifact = open(deserialize, ARGS[1])
+targets = copy(artifact.profile.targets)
+targets[:heritability] = merge(targets[:heritability], (; status=:controlled_mutation))
+profile = merge(artifact.profile, (; targets))
+artifact = merge(artifact, (; profile))
+open(ARGS[2], "w") do io; serialize(io, artifact); end
+''' if programme == "repeatability" else '''using HSquared, Serialization
+artifact = open(deserialize, ARGS[1])
+attempts = copy(artifact.bootstrap_raw.attempts)
+attempts[1] = merge(attempts[1], (; seed=UInt64(1)))
+bootstrap_raw = merge(artifact.bootstrap_raw, (; attempts))
+artifact = merge(artifact, (; bootstrap_raw))
+open(ARGS[2], "w") do io; serialize(io, artifact); end
+''')
+                mutation_script.write_text(mutation_body, encoding="utf-8")
+                altered_raw_artifact = raw_attempt_dir / f"{programme}-raw-mutation.full.jls"
+                mutated = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                    f"--project={source}", str(mutation_script), str(raw_artifact),
+                    str(altered_raw_artifact)], capture_output=True, text=True, timeout=90, env=env)
+                self.assertEqual(mutated.returncode, 0, mutated.stdout + "\n" + mutated.stderr)
+                altered_inspected = checker._inspect_full_artifacts(source, [altered_raw_artifact])
+                self.assertFalse(altered_inspected[str(altered_raw_artifact.resolve())]
+                    ["raw_result_matches_derived_receipt"], programme)
+            for path, reason in ((changed_artifact, "semantic data identity differs"),
+                                 (changed_metadata_artifact, "semantic data identity differs"),
+                                 (stale_summary_artifact, "retained JLS result differs from its embedded receipt summary"),
+                                 (changed_driver_artifact, "full driver/protocol identity"),
+                                 (changed_seed_artifact,
+                                  "retained data seed differs from externally pinned metadata seed"),
+                                 (changed_selector_artifact,
+                                  "retained raw selector/profile/bootstrap output differs from its derived receipt")):
+                tampered = copy.deepcopy(receipt)
+                changed_row = tampered["attempts"][20]
+                changed_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+                changed_row["artifact_path"] = str(path)
+                changed_row["artifact_sha256"] = changed_hash
+                changed_row["stored_row"]["full_result_path"] = str(path)
+                changed_row["stored_row"]["full_result_sha256"] = changed_hash
+                with self.assertRaisesRegex(checker.ReceiptError, reason):
+                    checker.verify_receipt(tampered,
+                        expected_seeds=admission["expected_outer_seeds"],
+                        expected_source_hashes=admission["source_sha256"],
+                        expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                        expected_artifact_root=output, expected_source_root=source,
+                        expected_admission=admission)
+            adversary = copy.deepcopy(receipt)
+            forged = adversary["attempts"][20]
+            fake_artifact = output / "attempts" / "forged.full.jls"
+            shutil.copy2(ROOT / "README.md", fake_artifact)
+            fake_hash = hashlib.sha256(fake_artifact.read_bytes()).hexdigest()
+            forged["artifact_path"] = str(fake_artifact)
+            forged["artifact_sha256"] = fake_hash
+            forged["stored_row"]["full_result_path"] = str(fake_artifact)
+            forged["stored_row"]["full_result_sha256"] = fake_hash
+            with self.assertRaisesRegex(checker.ReceiptError, "Julia artifact inspection failed"):
+                checker.verify_receipt(adversary,
+                    expected_seeds=admission["expected_outer_seeds"],
+                    expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                    expected_artifact_root=output, expected_source_root=source,
+                    expected_admission=admission)
+
+    def test_confirmation_admission_refuses_without_pilot_and_explicit_400_decision(self):
+        cell = {"programme": "fa_rank", "phase": "confirmation", "N": 80, "signal": "null"}
+        kwargs = {"source_paths": [], "julia_version": "1.10.0",
+                  "julia_threads": 4, "blas_threads": 1}
+        with self.assertRaisesRegex(ValueError, "requires pilot qualification and explicit allocation decision"):
+            arc1_manifest.build_run_admission(ROOT, cell, **kwargs)
+        pilot = {gate: {"success_marker": f"ARC1_{gate}_PILOT_QUALIFIED",
+                        "pilot_qualification": "PASS",
+                        "protocol_sha256": PROTOCOL_HASH} for gate in ("G2", "G3")}
+        bad_decision = {"schema": "arc1-confirmation-allocation-decision-v1",
+            "status": "authorized", "allocation_per_cell": 400,
+            "protocol_sha256": PROTOCOL_HASH, "decision_id": "decision-1"}
+        with self.assertRaisesRegex(ValueError, "pilot bundle evidence"):
+            arc1_manifest.build_run_admission(ROOT, cell, pilot_qualification=pilot,
+                confirmation_allocation_decision=bad_decision, **kwargs)
+
+    def test_confirmation_admission_recomputes_retained_pilot_bundle(self):
+        cell = {"programme": "fa_rank", "phase": "confirmation", "N": 80, "signal": "null"}
+        with tempfile.TemporaryDirectory(prefix="arc1-forged-pilot-") as temporary:
+            folder = Path(temporary)
+            bundle = folder / "bundle.json"
+            pins = folder / "pins.json"
+            bundle.write_text(json.dumps({"receipts": []}), encoding="utf-8")
+            pins.write_text(json.dumps({"pins": {}}), encoding="utf-8")
+            forged_gates = {}
+            for gate in ("G2", "G3"):
+                result = folder / f"{gate}-result.json"
+                forged = {"gate": gate, "phase": "confirmation", "integrity": "FAIL",
+                    "integrity_cells": 0, "pilot_qualification": "PASS",
+                    "confirmation_result": "HOLD", "confirmation_allocation": "HOLD",
+                    "protocol_sha256": PROTOCOL_HASH,
+                    "success_marker": f"ARC1_{gate}_PILOT_QUALIFIED"}
+                result.write_text(json.dumps(forged), encoding="utf-8")
+                forged_gates[gate] = {
+                    "bundle_path": str(bundle), "bundle_sha256": hashlib.sha256(bundle.read_bytes()).hexdigest(),
+                    "pins_path": str(pins), "pins_sha256": hashlib.sha256(pins.read_bytes()).hexdigest(),
+                    "result_path": str(result), "result_sha256": hashlib.sha256(result.read_bytes()).hexdigest()}
+            decision = {"schema": "arc1-confirmation-allocation-decision-v1",
+                "status": "authorized", "allocation_per_cell": 400,
+                "protocol_sha256": PROTOCOL_HASH, "decision_id": "synthetic-forgery"}
+            with self.assertRaisesRegex(ValueError, "does not verify|missing one or more required cells"):
+                arc1_manifest.build_run_admission(ROOT, cell, source_paths=[],
+                    julia_version="1.10.0", julia_threads=4, blas_threads=1,
+                    pilot_qualification=forged_gates,
+                    confirmation_allocation_decision=decision)
+
+    def test_confirmation_admission_requires_programme_specific_pilot_gate(self):
+        decision = {"schema": "arc1-confirmation-allocation-decision-v1",
+            "status": "authorized", "allocation_per_cell": 400,
+            "protocol_sha256": PROTOCOL_HASH, "decision_id": "synthetic-cross-gate"}
+        rank_markers = {gate: {"success_marker": f"ARC1_{gate}_PILOT_QUALIFIED",
+            "pilot_qualification": "PASS", "protocol_sha256": PROTOCOL_HASH}
+            for gate in ("G2", "G3")}
+        for cell, expected_gate in (
+                ({"programme": "fa_interval", "phase": "confirmation", "N": 160,
+                  "signal": "null"}, "G4"),
+                ({"programme": "repeatability", "phase": "confirmation", "N": 80,
+                  "signal": "interior"}, "G5")):
+            with self.subTest(programme=cell["programme"]):
+                with self.assertRaisesRegex(ValueError, f"retained {expected_gate} pilot evidence"):
+                    arc1_manifest._validate_confirmation_authorization(
+                        ROOT, cell, rank_markers, decision)
+
     def test_canonical_seed_vectors_are_pinned(self):
         self.assertEqual(arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, 0, "data"),
                          5356929701607681179)
@@ -277,8 +701,20 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
                         "julia_version": "1.10.0", "julia_threads": 4,
                         "blas_runtime_threads": 1, "blas_vendor": "test-vendor",
                         "thread_environment": admission["thread_environment"]}
+            seed = admission["expected_outer_seeds"][0]
+            with self.assertRaisesRegex(ValueError, "different outer index"):
+                store.finish(1, {"outer": 2, "status": "ok", "success": True,
+                                 "observed_seed": seed, "execution_identity": identity})
+            with self.assertRaisesRegex(ValueError, "different UInt64 seed"):
+                store.finish(1, {"outer": 1, "seed": seed + 1, "status": "ok",
+                                 "success": True, "observed_seed": seed,
+                                 "execution_identity": identity})
+            with self.assertRaisesRegex(ValueError, "mismatched exact_seed_string"):
+                store.finish(1, {"outer": 1, "seed": seed, "exact_seed_string": str(seed + 1),
+                                 "status": "ok", "success": True,
+                                 "observed_seed": seed, "execution_identity": identity})
             completed = store.finish(1, {"status": "ok", "success": True,
-                                         "observed_seed": admission["expected_outer_seeds"][0],
+                                         "observed_seed": seed,
                                          "execution_identity": identity})
             self.assertEqual(completed["status"], "ok")
             store.close()
@@ -303,6 +739,74 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
             self.assertIn("fit failed", errored["failure_reason"])
             resumed.close()
 
+    def test_stored_executor_rows_assemble_and_roundtrip_through_receipt_checker(self):
+        with tempfile.TemporaryDirectory(prefix="arc1-receipt-assembly-") as temp:
+            temp_root = Path(temp)
+            root = _copy_valid_source_tree(temp_root / "source")
+            cell = dict(RANK_CELL)
+            admission = arc1_manifest.build_run_admission(
+                root, cell, source_paths=["sim/arc1/runner.py", "sim/arc1/run_cell.py",
+                                          "sim/arc1/execute_attempt.jl", "sim/arc1/engine_io.jl",
+                                          "sim/arc1/execution_identity.jl", "tools/arc1_receipt_check.py"],
+                julia_version="1.10.0", julia_threads=4, blas_threads=1,
+                manifest_audit_root=ROOT)
+            output_dir = arc1_runner.cell_output_dir(temp_root / "results", cell)
+            store = arc1_runner.Arc1AttemptStore(root, output_dir, admission,
+                julia_version="1.10.0", julia_threads=4, blas_threads=1)
+            source_identity = {path: digest for path, digest in admission["source_sha256"].items()
+                               if path.startswith("src/")}
+            identity = {"engine_package_uuid": "a0667dea-0f38-44e8-9150-4fda00624eac",
+                        "engine_module_path": str(root.resolve() / "src/HSquared.jl"),
+                        "loaded_module_names": ["HSquared"],
+                        "loaded_engine_source_sha256": source_identity,
+                        "source_sha256_at_load": source_identity,
+                        "source_sha256_after_load": source_identity,
+                        "environment_sha256": admission["environment_sha256"],
+                        "active_project": str(root.resolve() / "Project.toml"),
+                        "loaded_dependencies": [], "dependency_environment_verified": True,
+                        "julia_version": "1.10.0", "julia_threads": 4,
+                        "blas_runtime_threads": 1, "blas_vendor": "test-vendor",
+                        "thread_environment": admission["thread_environment"]}
+            synthetic, expected_seeds = rank_receipt()
+            for attempt in synthetic["attempts"]:
+                outer = attempt["outer"]
+                store.begin(outer)
+                artifact = store.directory / f"{outer:04d}.full.jls"
+                artifact.write_bytes(f"verified fake Julia artifact {outer}".encode())
+                payload = {"outer": outer, "seed": attempt["seed"],
+                           "status": attempt["status"], "success": attempt["success"],
+                           "failure_reason": attempt["failure_reason"],
+                           "result": {key: value for key, value in attempt.items()
+                                      if key not in {"attempt_id", "outer", "seed", "status", "success", "failure_reason"}},
+                           "execution_identity": identity,
+                           "full_result_path": str(artifact),
+                           "full_result_sha256": hashlib.sha256(artifact.read_bytes()).hexdigest()}
+                store.finish(outer, payload)
+            rows = store.rows()
+            store.close()
+            receipt = arc1_runner.assemble_cell_receipt(rows, admission,
+                source_root=root, artifact_root=output_dir)
+            self.assertEqual(receipt["attempts"][0]["stored_row"], rows[0])
+            with self.assertRaisesRegex(checker.ReceiptError, "artifact claims require"):
+                checker.verify_receipt(receipt, expected_seeds=expected_seeds,
+                    expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell)
+            failed_before_engine = copy.deepcopy(rows)
+            failed_before_engine[2].update(status="error", success=False,
+                failure_reason="Julia child failed before emitting an attempt result")
+            failed_before_engine[2].pop("result", None)
+            receipt_with_launch_failure = arc1_runner.assemble_cell_receipt(
+                failed_before_engine, admission, source_root=root, artifact_root=output_dir)
+            self.assertEqual(receipt_with_launch_failure["attempts"][2]["selection_status"], "not_run")
+            with self.assertRaisesRegex(checker.ReceiptError, "artifact claims require"):
+                checker.verify_receipt(receipt_with_launch_failure,
+                    expected_seeds=expected_seeds, expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell)
+            rows[0]["full_result_path"] = str(output_dir / "missing.jls")
+            with self.assertRaisesRegex(ValueError, "artifact is missing"):
+                arc1_runner.assemble_cell_receipt(rows, admission, source_root=root,
+                                                   artifact_root=output_dir)
+
     def test_valid_full_cell_receipt_counts_failed_candidate_in_all_attempt_denominator(self):
         receipt, seeds = rank_receipt()
         result = verify(receipt, seeds=seeds)
@@ -310,6 +814,18 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         self.assertEqual(result["failures"], 1)
         self.assertEqual(result["eligible_both_candidates"], 29)
         self.assertEqual(result["candidate_errors"]["K1"]["denominator"], 30)
+
+    def test_available_candidate_pair_is_separate_from_guarded_selector_outcome(self):
+        receipt, seeds = rank_receipt()
+        attempt = receipt["attempts"][0]
+        attempt.update(status="selection_failed", success=False,
+                       failure_reason="schedule_complete guard refused automatic selection",
+                       selection_status="unavailable", selected_rank=None)
+        pair_available, _ = checker._check_rank_decision(attempt, required=True)
+        self.assertTrue(pair_available)
+        result = verify(receipt, seeds=seeds)
+        self.assertEqual(result["eligible_both_candidates"], 29)
+        self.assertEqual(result["failures"], 2)
 
     def test_rejects_missing_attempt_even_when_failure_was_dropped(self):
         receipt, seeds = rank_receipt()
@@ -322,6 +838,30 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         receipt["planned_attempts"] = 29
         with self.assertRaisesRegex(checker.ReceiptError, "denominator"):
             verify(receipt, seeds=seeds)
+
+    def test_receipt_pins_must_crossbind_to_source_root_admission(self):
+        receipt, seeds = rank_receipt()
+        admission = {"cell": dict(RANK_CELL), "expected_outer_seeds": list(seeds),
+            "source_sha256": dict(SOURCE_HASHES), "protocol_sha256": PROTOCOL_HASH}
+        variants = []
+        changed = copy.deepcopy(admission)
+        changed["cell"]["N"] = 160
+        variants.append(changed)
+        changed = copy.deepcopy(admission)
+        changed["protocol_sha256"] = "e" * 64
+        variants.append(changed)
+        changed = copy.deepcopy(admission)
+        changed["source_sha256"]["engine"] = "e" * 64
+        variants.append(changed)
+        changed = copy.deepcopy(admission)
+        changed["expected_outer_seeds"][0] += 1
+        variants.append(changed)
+        for forged in variants:
+            with self.assertRaisesRegex(checker.ReceiptError, "pins differ from the source-root admission"):
+                checker.verify_receipt(receipt, expected_seeds=seeds,
+                    expected_source_hashes=SOURCE_HASHES,
+                    expected_protocol_sha256=PROTOCOL_HASH, expected_cell=RANK_CELL,
+                    expected_source_root=ROOT, expected_admission=forged)
 
     def test_rejects_duplicate_ids_and_seeds(self):
         receipt, seeds = rank_receipt()
@@ -415,14 +955,21 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
             rows.append({"inner_index": i, "seed": seed,
                          "status": "fit_failed" if failed else "ok", "success": not failed,
                          "failure_reason": "synthetic retained failure" if failed else None,
-                         "eligible": not failed, "selected_rank": "K0" if not failed else None,
+                         "eligible": not failed, "selection_status": "selected" if not failed else "unavailable",
+                         "selector_status": "selected" if not failed else "unavailable",
+                         "selected_rank": "K0" if not failed else None,
+                         "guard_results": selector_guards(schedule_complete=not failed,
+                             witness_status="passed" if not failed else "unavailable",
+                             discrepancy=0.0 if not failed else None),
+                         "starts_planned": 19, "starts_attempted": 19 if not failed else 3,
+                         "schedule_complete": not failed,
                          "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1", not failed)},
-                         "selected_fit": None if failed else {"G_diag": [0.25] * 4, "R_diag": [0.25] * 4}})
+                         "selected_fit": None if failed else {"G_matrix": covariance_payload(), "R_matrix": covariance_payload()}})
 
         def prefix_result(b):
             usable_rows = [row for row in rows[:b] if row["success"]]
-            values = [row["selected_fit"]["G_diag"][0] /
-                      (row["selected_fit"]["G_diag"][0] + row["selected_fit"]["R_diag"][0])
+            values = [row["selected_fit"]["G_matrix"]["data"][0] /
+                      (row["selected_fit"]["G_matrix"]["data"][0] + row["selected_fit"]["R_matrix"]["data"][0])
                       for row in usable_rows]
             formed = len(usable_rows) >= math.ceil(0.99 * b)
             intervals = {}
@@ -433,8 +980,8 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
                 if not formed:
                     item["refusal_status"] = "insufficient_usable_bootstrap"
                 else:
-                    vals = [r["selected_fit"]["G_diag"][trait - 1] /
-                            (r["selected_fit"]["G_diag"][trait - 1] + r["selected_fit"]["R_diag"][trait - 1])
+                    vals = [r["selected_fit"]["G_matrix"]["data"][(trait - 1) * 5] /
+                            (r["selected_fit"]["G_matrix"]["data"][(trait - 1) * 5] + r["selected_fit"]["R_matrix"]["data"][(trait - 1) * 5])
                             for r in usable_rows]
                     item["segments"] = [[checker._type7_quantile(vals, 0.025),
                                           checker._type7_quantile(vals, 0.975)]]
@@ -446,7 +993,8 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         self.assertFalse(primary["intervals"]["h2_1"]["formed"])
         self.assertTrue(prefix_result(999)["intervals"]["h2_1"]["formed"])
         attempt = {"outer": 1, "success": True,
-                   "outer_selection": {"eligible": True, "selected_rank": "K0",
+                   "outer_selection": {"eligible": True, "selection_status": "selected", "selected_rank": "K0",
+                                       "guard_results": selector_guards(),
                                        "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1")}},
                    "bootstrap": {"stage": "started", "requested_B": 199,
                                  "inner_attempts": rows, "usable_inner": 196,
@@ -500,6 +1048,21 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         boot["inner_attempts"].pop(0)
         with self.assertRaisesRegex(checker.ReceiptError, "every fixed-B inner attempt"):
             verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
+
+    def test_usable_bootstrap_inner_requires_exact_false_guards_and_certified_nesting(self):
+        for field, value in (("better_unaccepted", None),
+                             ("nonnested", None)):
+            receipt, seeds, inner = interval_attempts()
+            row = receipt["attempts"][1]["bootstrap"]["inner_attempts"][1]
+            row["guard_results"][field] = value
+            with self.assertRaises(checker.ReceiptError):
+                verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
+        for field, value in (("tolerance", 1e-4), ("discrepancy", 1.1e-8)):
+            receipt, seeds, inner = interval_attempts()
+            row = receipt["attempts"][1]["bootstrap"]["inner_attempts"][1]
+            row["guard_results"]["nesting_witness"][field] = value
+            with self.assertRaises(checker.ReceiptError):
+                verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
         receipt, seeds, inner = interval_attempts()
         receipt["attempts"][0]["bootstrap"]["usable_inner"] = 19
         with self.assertRaisesRegex(checker.ReceiptError, "usable count"):
@@ -508,12 +1071,29 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
     def test_bootstrap_recomputes_h2_estimands_and_percentile_endpoints(self):
         receipt, seeds, inner = interval_attempts()
         row = receipt["attempts"][1]["bootstrap"]["inner_attempts"][0]
-        row["selected_fit"]["G_diag"][0] = 0.4
+        row["selected_fit"]["G_matrix"]["data"][0] = 0.4
         with self.assertRaisesRegex(checker.ReceiptError, "endpoints do not match"):
             verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
         receipt, seeds, inner = interval_attempts()
-        del receipt["attempts"][1]["bootstrap"]["inner_attempts"][0]["selected_fit"]["R_diag"]
-        with self.assertRaisesRegex(checker.ReceiptError, "selected G/R diagonals"):
+        del receipt["attempts"][1]["bootstrap"]["inner_attempts"][0]["selected_fit"]["R_matrix"]
+        with self.assertRaisesRegex(checker.ReceiptError, "full selected G/R matrices"):
+            verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
+
+    def test_bootstrap_rejects_positive_diagonal_but_indefinite_covariance(self):
+        receipt, seeds, inner = interval_attempts()
+        fit = receipt["attempts"][1]["bootstrap"]["inner_attempts"][0]["selected_fit"]
+        fit["G_matrix"]["data"] = [0.25, 0.0, 0.0, 0.0,
+                                      0.30, 0.25, 0.0, 0.0,
+                                      0.0, 0.0, 0.25, 0.0,
+                                      0.0, 0.0, 0.0, 0.25]
+        with self.assertRaisesRegex(checker.ReceiptError, "symmetric"):
+            verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
+        # Keep symmetry and positive diagonal while violating strict PD.
+        fit["G_matrix"]["data"] = [0.25, 0.30, 0.0, 0.0,
+                                      0.30, 0.25, 0.0, 0.0,
+                                      0.0, 0.0, 0.25, 0.0,
+                                      0.0, 0.0, 0.0, 0.25]
+        with self.assertRaisesRegex(checker.ReceiptError, "positive definite"):
             verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
 
     def test_bootstrap_requires_nested_outer_selector_proof(self):
@@ -551,10 +1131,83 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
                    "planned_attempts": count, "attempts": attempts}
         receipt["attempts"][0]["profile_intervals"]["h2"].update(
             {"formed": True, "segments": [[0.2, 0.4]], "status": "formed"})
-        with self.assertRaisesRegex(checker.ReceiptError, "failed outer fit cannot form h2"):
+        with self.assertRaises(checker.ReceiptError):
             checker.verify_receipt(receipt, expected_seeds=seeds,
                                    expected_source_hashes=SOURCE_HASHES,
                                    expected_protocol_sha256=PROTOCOL_HASH, expected_cell=cell)
+
+    def test_profile_point_guard_binds_all_five_formed_targets(self):
+        cell = {"programme": "repeatability", "phase": "development", "N": 80,
+                "signal": "interior"}
+        seeds = [arc1_manifest.seed_for(cell["programme"], cell["phase"], cell["N"],
+            cell["signal"], i, 0, "data") for i in range(1, 31)]
+        formulae = checker._expected_interval_formulas(cell)
+        attempts = []
+        for i, seed in enumerate(seeds, 1):
+            intervals = {target: {"formed": True, "segments": [[0.0, 1.0]],
+                "status": "formed", "formula": formula} for target, formula in formulae.items()}
+            attempts.append({"attempt_id": f"formed-{i}", "outer": i, "seed": seed,
+                "status": "ok", "success": True, "failure_reason": None,
+                "profile_method": "profile_likelihood_ratio", "profile_lr_cutoff": 3.841458820694124,
+                "profile_method_version": "arc1_profile_v1", "point_fit_status": "ok",
+                "point_fit_not_optimal": False, "point_loglik": -10.0,
+                "max_constrained_loglik": -10.0, "point_identity": "a" * 64,
+                "reference_point_identity": "a" * 64, "source_identity": "b" * 64,
+                "reference_source_identity": "b" * 64,
+                "point_fit_diagnostic_identity": "c" * 64,
+                "target_diagnostics_identity": "d" * 64, "profile_intervals": intervals})
+        receipt = {"schema": "arc1-attempt-receipt-v1", **cell,
+            "protocol_sha256": PROTOCOL_HASH, "source_hashes": dict(SOURCE_HASHES),
+            "planned_attempts": 30, "attempts": attempts}
+        self.assertEqual(verify(receipt, cell=cell, seeds=seeds)["interval_targets"]["Va"]["formed"], 30)
+        for change, expected in (({"point_fit_not_optimal": True, "max_constrained_loglik": 0.0},
+                                  "nonoptimal common point fit"),
+                                 ({"reference_point_identity": "e" * 64}, "point-fit identities differ"),
+                                 ({"reference_source_identity": "e" * 64}, "source identity differs")):
+            adversarial = copy.deepcopy(receipt)
+            for row in adversarial["attempts"]:
+                row.update(change)
+            with self.assertRaisesRegex(checker.ReceiptError, expected):
+                verify(adversarial, cell=cell, seeds=seeds)
+
+    def test_pre_engine_profile_failure_never_fabricates_truth_as_point_estimate(self):
+        cell = {"programme": "repeatability", "phase": "development", "N": 80,
+                "signal": "interior"}
+        seeds = [arc1_manifest.seed_for(cell["programme"], cell["phase"], cell["N"],
+                                        cell["signal"], i, 0, "data") for i in range(1, 31)]
+        admission = {"cell": cell, "planned_attempts": 30,
+                    "expected_outer_seeds": seeds, "source_sha256": dict(SOURCE_HASHES),
+                    "protocol_sha256": PROTOCOL_HASH}
+        rows = [{"outer": i, "seed": seed, "status": "error", "success": False,
+                 "failure_reason": "Julia failed before emitting an attempt result"}
+                for i, seed in enumerate(seeds, 1)]
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt = arc1_runner.assemble_cell_receipt(rows, admission,
+                source_root=ROOT, artifact_root=Path(temporary))
+        checked = verify(receipt, cell=cell, seeds=seeds)
+        self.assertEqual(checked["attempts"], 30)
+        self.assertEqual(checked["failures"], 30)
+        failed = receipt["attempts"][0]
+        self.assertIsNone(failed["point_estimates"])
+        self.assertIsNone(failed["point_fit_not_optimal"])
+        rank_cell = {"programme": "fa_rank", "phase": "development", "N": 80,
+                     "signal": "null"}
+        rank_seeds = [arc1_manifest.seed_for(rank_cell["programme"], rank_cell["phase"],
+            rank_cell["N"], rank_cell["signal"], i, 0, "data") for i in range(1, 31)]
+        rank_admission = {"cell": rank_cell, "planned_attempts": 30,
+                          "expected_outer_seeds": rank_seeds,
+                          "source_sha256": dict(SOURCE_HASHES),
+                          "protocol_sha256": PROTOCOL_HASH}
+        rank_rows = [{"outer": i, "seed": seed, "status": "error", "success": False,
+                      "failure_reason": "Julia failed before emitting an attempt result"}
+                     for i, seed in enumerate(rank_seeds, 1)]
+        with tempfile.TemporaryDirectory() as temporary:
+            rank_receipt = arc1_runner.assemble_cell_receipt(rank_rows, rank_admission,
+                source_root=ROOT, artifact_root=Path(temporary))
+        guards = rank_receipt["attempts"][0]["guard_results"]
+        self.assertIsNone(guards["better_unaccepted"])
+        self.assertIsNone(guards["nonnested"])
+        self.assertEqual(guards["nesting_witness"]["status"], "not_evaluated")
 
     def test_bootstrap_rejects_wrong_inner_seed_or_decision_and_boolean_only_claim(self):
         receipt, seeds, inner = interval_attempts()
@@ -578,6 +1231,9 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         attempt = receipt["attempts"][0]
         attempt.update({"status": "outer_fit_failed", "success": False,
                         "failure_reason": "outer REML did not converge"})
+        attempt["outer_selection"].update({"selection_status": "unavailable",
+                                           "selected_rank": None,
+                                           "guard_results": selector_guards(nonnested=True)})
         attempt["bootstrap"] = {"stage": "not_started", "requested_B": 19,
                                  "refusal_status": "outer_fit_failed", "inner_attempts": [],
                                  "usable_inner": 0,

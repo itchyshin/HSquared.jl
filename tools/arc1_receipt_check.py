@@ -6,6 +6,9 @@ import argparse
 import hashlib
 import json
 import math
+import os
+import subprocess
+import tempfile
 from pathlib import Path
 from statistics import NormalDist
 from typing import Any, Iterable
@@ -15,6 +18,51 @@ import arc1_manifest as manifest
 
 class ReceiptError(ValueError):
     """Evidence is incomplete, inconsistent, or differs from independent pins."""
+
+
+def _inspect_full_artifacts(source_root: Path, paths: list[Path]) -> dict[str, dict[str, Any]]:
+    """Read actual Julia serialization metadata and its embedded receipt summary."""
+    if not paths:
+        return {}
+    source_root = source_root.resolve()
+    inspector = source_root / "sim/arc1/inspect_artifacts.jl"
+    _need(inspector.is_file(), "frozen source root lacks the full-artifact inspector")
+    with tempfile.TemporaryDirectory(prefix="arc1-artifact-inspect-") as temporary:
+        request = Path(temporary) / "artifacts.txt"
+        request.write_text("".join(f"{path.resolve()}\n" for path in paths), encoding="utf-8")
+        depot = Path(temporary) / "depot"
+        depot.mkdir()
+        julia = os.environ.get("ARC1_JULIA", "julia")
+        env = dict(os.environ)
+        env["JULIA_NUM_THREADS"] = "1"
+        env["OPENBLAS_NUM_THREADS"] = "1"
+        inherited_depots = env.get("JULIA_DEPOT_PATH", str(Path.home() / ".julia"))
+        env["JULIA_DEPOT_PATH"] = os.pathsep.join([str(depot), inherited_depots])
+        try:
+            completed = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                f"--project={source_root}", str(inspector), str(request)],
+                check=False, capture_output=True, text=True, timeout=120, env=env)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise ReceiptError(f"could not inspect retained Julia artifacts: {error}") from error
+    if completed.returncode != 0:
+        raise ReceiptError("Julia artifact inspection failed: " + completed.stderr[-2000:])
+    try:
+        decoded = json.loads(completed.stdout.splitlines()[-1])
+    except (IndexError, json.JSONDecodeError) as error:
+        raise ReceiptError("Julia artifact inspector returned no typed metadata") from error
+    _need(isinstance(decoded, list) and len(decoded) == len(paths),
+          "Julia artifact inspection did not return every requested artifact")
+    indexed = {}
+    for row in decoded:
+        _need(isinstance(row, dict) and isinstance(row.get("path"), str) and
+              isinstance(row.get("metadata"), dict),
+              "Julia artifact inspector returned malformed metadata")
+        path = str(Path(row["path"]).resolve())
+        _need(path not in indexed, "Julia artifact inspector returned a duplicate path")
+        indexed[path] = row
+    _need(set(indexed) == {str(path.resolve()) for path in paths},
+          "Julia artifact inspector returned different artifact paths")
+    return indexed
 
 
 def wilson_interval(successes: int, total: int, confidence: float = 0.95) -> tuple[float, float]:
@@ -125,6 +173,93 @@ def _check_interval_row(target: str, item: Any, expected_formula: str) -> None:
               f"refused/unresolved {target} interval must retain empty segments and refusal status")
 
 
+def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str, Any]) -> None:
+    """Bind formed profile targets to their one optimal unrestricted point fit."""
+    fields = ("point_fit_status", "point_fit_not_optimal", "point_loglik",
+              "max_constrained_loglik", "point_identity", "reference_point_identity",
+              "source_identity", "reference_source_identity", "point_fit_diagnostic_identity",
+              "target_diagnostics_identity", "profile_method_version")
+    present = [field in attempt for field in fields]
+    if not any(present):
+        _need(attempt.get("success") is False and all(not row.get("formed") for row in profile.values()),
+              "successful or formed profile evidence requires shared point-fit diagnostics")
+        return
+    _need(all(present), "profile receipt has incomplete shared point-fit diagnostics")
+    _need(attempt["point_fit_status"] in {"ok", "point_fit_unconverged", "not_run"},
+          "profile receipt has an unknown point-fit status")
+    if attempt["point_fit_status"] == "not_run":
+        _need(attempt["profile_method_version"] in (None, "arc1_profile_v1"),
+              "not-run profile method version is malformed")
+        _need(attempt.get("success") is False and all(not row["formed"] and
+              row["status"] == "outer_fit_failed" for row in profile.values()) and
+              all(attempt[field] is None for field in fields if field != "point_fit_status"),
+              "not-run point fit must retain null diagnostics and refused target rows")
+        return
+    _need(attempt["profile_method_version"] == "arc1_profile_v1",
+          "profile method version differs from the frozen common point-fit method")
+    _need(isinstance(attempt["point_fit_not_optimal"], bool),
+          "point_fit_not_optimal must be an explicit boolean")
+    _need(attempt["source_identity"] == attempt["reference_source_identity"],
+          "profile source identity differs from its reference source identity")
+    for key in ("source_identity", "reference_source_identity"):
+        _need(_sha256(attempt[key]), f"{key} must be a SHA-256 identity")
+    for key in ("point_fit_diagnostic_identity", "target_diagnostics_identity"):
+        _need(_sha256(attempt[key]), f"{key} must be a SHA-256 identity")
+    if attempt["point_fit_status"] == "ok":
+        _need(_sha256(attempt["point_identity"]) and
+              attempt["point_identity"] == attempt["reference_point_identity"],
+              "profile and reference point-fit identities differ")
+        point = attempt["point_loglik"]
+        maximum = attempt["max_constrained_loglik"]
+        _need(isinstance(point, (int, float)) and math.isfinite(point) and
+              isinstance(maximum, (int, float)) and math.isfinite(maximum),
+              "successful point fit must retain finite common and constrained maxima")
+        expected_not_optimal = maximum > point + 1e-7
+        _need(attempt["point_fit_not_optimal"] is expected_not_optimal,
+              "point-fit optimality flag disagrees with the shared constrained maximum")
+        if expected_not_optimal:
+            _need(all(not row["formed"] and row["status"] == "point_fit_not_optimal"
+                      for row in profile.values()),
+                  "nonoptimal common point fit cannot support formed profile intervals")
+        else:
+            _need(attempt.get("success") is True,
+                  "a converged optimal point fit must be retained as a successful attempt")
+    else:
+        _need(attempt.get("success") is False and all(
+              not row["formed"] and row["status"] == "outer_fit_failed" for row in profile.values()),
+              "failed common point fit cannot support formed profile intervals")
+        _need(attempt["point_fit_not_optimal"] is False and attempt["point_loglik"] is None and
+              attempt["point_identity"] is None and attempt["reference_point_identity"] is None,
+              "failed point fit must retain null point likelihood/identity and a false optimality flag")
+
+
+def _decode_covariance_matrix(value: Any, label: str) -> tuple[list[list[float]], list[list[float]]]:
+    """Validate a lossless Julia column-major matrix payload and strict PD."""
+    _need(isinstance(value, dict) and value.get("__arc1_array__") is True and
+          value.get("layout") == "julia_column_major" and value.get("dims") == [4, 4],
+          f"selected {label} covariance must retain tagged 4x4 dimensions and Julia layout")
+    data = value.get("data")
+    _need(isinstance(data, list) and len(data) == 16 and
+          all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in data),
+          f"selected {label} covariance must retain sixteen finite values")
+    matrix = [[float(data[c * 4 + r]) for c in range(4)] for r in range(4)]
+    for i in range(4):
+        for j in range(4):
+            _need(math.isclose(matrix[i][j], matrix[j][i], rel_tol=1e-12, abs_tol=1e-12),
+                  f"selected {label} covariance must be symmetric")
+    # Explicit Cholesky test; positive diagonals alone do not establish PD.
+    lower = [[0.0] * 4 for _ in range(4)]
+    for i in range(4):
+        for j in range(i + 1):
+            residual = matrix[i][j] - sum(lower[i][k] * lower[j][k] for k in range(j))
+            if i == j:
+                _need(residual > 0.0, f"selected {label} covariance must be positive definite")
+                lower[i][j] = math.sqrt(residual)
+            else:
+                lower[i][j] = residual / lower[j][j]
+    return matrix, lower
+
+
 def _type7_quantile(values: list[float], probability: float) -> float:
     """Julia Statistics.quantile's default Hyndman-Fan Type 7 rule."""
     _need(bool(values) and all(math.isfinite(v) for v in values), "quantile needs finite retained bootstrap estimates")
@@ -169,6 +304,34 @@ def _candidate_score(candidate: dict[str, Any], label: str, parameter_count: int
     return None
 
 
+def _check_selector_guards(attempt: dict[str, Any], *, selected: bool) -> None:
+    guards = attempt.get("guard_results")
+    _need(isinstance(guards, dict) and
+          {"schedule_complete", "better_unaccepted", "nonnested", "nesting_witness"}.issubset(guards),
+          "rank evidence must retain structured selector guard results")
+    for name in ("schedule_complete", "better_unaccepted", "nonnested"):
+        _need(guards.get(name) is None or isinstance(guards.get(name), bool),
+              f"selector guard {name} must be an explicit boolean or not-evaluated null")
+    witness = guards.get("nesting_witness")
+    _need(isinstance(witness, dict) and witness.get("status") in
+          {"passed", "failed", "unavailable", "not_evaluated"},
+          "nesting witness must retain a structured status")
+    tolerance = witness.get("tolerance")
+    _need(isinstance(tolerance, (int, float)) and math.isfinite(tolerance) and tolerance > 0,
+          "nesting witness must retain a finite positive tolerance")
+    discrepancy = witness.get("discrepancy")
+    _need(discrepancy is None or (isinstance(discrepancy, (int, float)) and math.isfinite(discrepancy)),
+          "nesting witness discrepancy must be finite or explicitly unavailable")
+    if witness["status"] == "passed":
+        _need(discrepancy is not None and discrepancy <= tolerance,
+              "passed nesting witness exceeds its retained tolerance")
+    if selected:
+        _need(guards["schedule_complete"] is True and guards["better_unaccepted"] is False and
+              guards["nonnested"] is False and witness["status"] == "passed" and
+              tolerance == 1e-8 and discrepancy is not None and 0.0 <= discrepancy <= 1e-8,
+              "selected rank conflicts with a retained selector guard")
+
+
 def _check_rank_decision(attempt: dict[str, Any], *, required: bool) -> tuple[bool, int]:
     candidates = attempt.get("rank_candidates")
     if candidates is None:
@@ -178,13 +341,23 @@ def _check_rank_decision(attempt: dict[str, Any], *, required: bool) -> tuple[bo
           "rank evidence must contain exactly K0 and K1 rows")
     s0 = _candidate_score(candidates["K0"], "K0", 14)
     s1 = _candidate_score(candidates["K1"], "K1", 18)
-    eligible = s0 is not None and s1 is not None
-    selected = None if not eligible else ("K1" if s1 < s0 - 1e-6 else "K0")
-    _need(attempt.get("eligible") is eligible,
+    pair_available = s0 is not None and s1 is not None
+    preferred = None if not pair_available else ("K1" if s1 < s0 - 1e-6 else "K0")
+    _need(attempt.get("eligible", attempt.get("both_candidates_available")) is pair_available,
           "attempt eligibility disagrees with K0/K1 candidate availability")
-    _need(attempt.get("selected_rank") == selected,
-          "selected rank disagrees with recomputed candidate scores and K0 tie rule")
-    return eligible, int(not candidates["K0"]["available"]) + int(not candidates["K1"]["available"])
+    selection_status = attempt.get("selection_status", attempt.get("selector_status"))
+    _need(isinstance(selection_status, str) and bool(selection_status),
+          "rank evidence must retain the selector outcome separately from candidate availability")
+    selected = attempt.get("selected_rank")
+    if selection_status == "selected":
+        _need(pair_available and selected == preferred,
+              "selected rank disagrees with recomputed candidate scores and K0 tie rule")
+        _check_selector_guards(attempt, selected=True)
+    else:
+        _need(selected is None,
+              "unusable selector outcome cannot retain a selected rank")
+        _check_selector_guards(attempt, selected=False)
+    return pair_available, int(not candidates["K0"]["available"]) + int(not candidates["K1"]["available"])
 
 
 def candidate_error_counts(attempts: list[dict[str, Any]]) -> dict[str, Any]:
@@ -270,10 +443,16 @@ def _check_inner_attempt(inner: dict[str, Any], inner_index: int, expected_seed:
           "bootstrap inner seed is missing, reordered, or replaced")
     _need(isinstance(inner.get("status"), str) and bool(inner["status"]),
           "every bootstrap inner attempt must retain an outcome status")
-    eligible, _ = _check_rank_decision(inner, required=True)
+    pair_available, _ = _check_rank_decision(inner, required=True)
     success = inner.get("success")
-    _need(isinstance(success, bool) and success is eligible,
-          "bootstrap inner success must agree with both-candidate availability")
+    selected = inner.get("selection_status", inner.get("selector_status")) == "selected"
+    _need(isinstance(success, bool) and success is (pair_available and selected),
+          "bootstrap inner usability must agree with candidate availability and selector outcome")
+    if success:
+        _check_selector_guards(inner, selected=True)
+        _need(inner.get("schedule_complete") is True and inner.get("starts_planned") == 19 and
+              inner.get("starts_attempted") == 19,
+              "usable bootstrap selector must retain the completed frozen 19-start schedule")
     _need((inner["status"] in {"ok", "success"}) is success,
           "bootstrap inner status and success fields disagree")
     if not success:
@@ -283,17 +462,15 @@ def _check_inner_attempt(inner: dict[str, Any], inner_index: int, expected_seed:
               "failed bootstrap inner attempt cannot retain a selected covariance fit")
     else:
         fit = inner.get("selected_fit")
-        _need(isinstance(fit, dict) and set(fit) == {"G_diag", "R_diag"},
-              "usable bootstrap inner attempt must retain selected G/R diagonals")
-        gd, rd = fit["G_diag"], fit["R_diag"]
-        _need(isinstance(gd, list) and isinstance(rd, list) and len(gd) == len(rd) == 4,
-              "selected FA fit must retain four G and R diagonal values")
-        _need(all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v > 0
-                  for v in gd + rd), "selected G/R diagonals must be finite and positive")
+        _need(isinstance(fit, dict) and set(fit) == {"G_matrix", "R_matrix"},
+              "usable bootstrap inner attempt must retain full selected G/R matrices")
+        G, _ = _decode_covariance_matrix(fit["G_matrix"], "G")
+        R, _ = _decode_covariance_matrix(fit["R_matrix"], "R")
+        gd, rd = [G[i][i] for i in range(4)], [R[i][i] for i in range(4)]
         h2 = [float(g) / (float(g) + float(r)) for g, r in zip(gd, rd)]
         _need(all(0 < v < 1 for v in h2), "selected covariance-derived h2 values must lie in (0,1)")
         inner["_computed_h2"] = h2
-    return eligible, 2 - int(inner["rank_candidates"]["K0"]["available"]) - int(inner["rank_candidates"]["K1"]["available"])
+    return pair_available, 2 - int(inner["rank_candidates"]["K0"]["available"]) - int(inner["rank_candidates"]["K1"]["available"])
 
 
 def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inner_seeds: list[int]) -> dict[str, Any]:
@@ -314,6 +491,12 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
               "bootstrap not_started must not claim inner attempts")
         _need(record.get("usable_inner") == 0,
               "bootstrap not_started has zero usable inner attempts")
+        outer_selection = attempt.get("outer_selection")
+        _need(isinstance(outer_selection, dict),
+              "bootstrap refusal must retain outer selector evidence")
+        _check_rank_decision(outer_selection, required=True)
+        _need(outer_selection.get("selection_status") != "selected",
+              "bootstrap refusal cannot claim a selected outer selector")
         intervals = record.get("intervals")
         targets = _expected_interval_truths(cell)
         formulas = _expected_interval_formulas(cell)
@@ -337,7 +520,8 @@ def _check_bootstrap(attempt: dict[str, Any], cell: dict[str, Any], expected_inn
     outer_selection = attempt.get("outer_selection")
     _need(isinstance(outer_selection, dict), "FA interval attempt must retain nested outer K0/K1 selection evidence")
     outer_eligible, _ = _check_rank_decision(outer_selection, required=True)
-    _need(outer_eligible is True, "bootstrap admission requires both outer selector candidates available")
+    _need(outer_eligible is True and outer_selection.get("selection_status") == "selected",
+          "bootstrap admission requires an available pair and a usable outer selector outcome")
     actual_seeds = [item["seed"] for item in inner_attempts]
     digest = hashlib.sha256("".join(f"{seed}\n" for seed in actual_seeds).encode("ascii")).hexdigest()
     _need(record.get("inner_seed_sha256") == digest,
@@ -411,6 +595,9 @@ def verify_receipt(
     expected_source_hashes: dict[str, str], expected_protocol_sha256: str,
     expected_cell: dict[str, Any],
     expected_bootstrap_inner_seeds: dict[int, list[int]] | None = None,
+    expected_artifact_root: Path | None = None,
+    expected_source_root: Path | None = None,
+    expected_admission: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Verify one cell-phase receipt against external cell, seed, source, and protocol pins.
 
@@ -446,11 +633,55 @@ def verify_receipt(
                                    expected_cell["N"], expected_cell["signal"], outer, 0, "data")
                  for outer in range(1, expected_count + 1)]
     _need(expected == canonical, "external outer seed pin differs from canonical seed manifest")
+    if expected_admission is not None:
+        _need(expected_source_root is not None and isinstance(expected_admission, dict),
+              "receipt cross-binding requires the frozen source root and run admission")
+        _need(expected_admission.get("cell") == expected_cell and
+              expected_admission.get("expected_outer_seeds") == expected and
+              expected_admission.get("source_sha256") == expected_source_hashes and
+              expected_admission.get("protocol_sha256") == expected_protocol_sha256,
+              "receipt pins differ from the source-root admission's cell, seeds, protocol, or source bytes")
+        threads = expected_admission.get("threads")
+        _need(isinstance(threads, dict), "run admission lacks execution thread pins")
+        try:
+            manifest.verify_run_admission(Path(expected_source_root), expected_admission,
+                julia_version=str(expected_admission.get("julia_version")),
+                julia_threads=int(threads["julia"]), blas_threads=int(threads["blas"]))
+        except (ValueError, KeyError, TypeError) as error:
+            raise ReceiptError(f"run admission is not valid against the frozen source root: {error}") from error
+        if expected_bootstrap_inner_seeds is not None:
+            admission_bootstrap = expected_admission.get("expected_bootstrap_seeds", {})
+            by_outer_seed = {canonical[i - 1]: admission_bootstrap.get(str(i))
+                             for i in range(1, expected_count + 1)}
+            _need(expected_bootstrap_inner_seeds == by_outer_seed,
+                  "bootstrap receipt seed pins differ from source-root run admission")
     _need(receipt.get("planned_attempts") == expected_count,
           "declared attempt denominator differs from the full frozen cell allocation")
     attempts = receipt.get("attempts")
     _need(isinstance(attempts, list) and len(attempts) == expected_count,
           "receipt is missing planned attempts or contains unexpected replacements")
+    artifact_fields = ("artifact_path", "artifact_sha256", "receipt_summary_path",
+                       "receipt_summary_sha256")
+    has_artifact_claims = any(isinstance(row, dict) and any(row.get(name) is not None
+                              for name in artifact_fields) for row in attempts)
+    artifact_metadata: dict[str, dict[str, Any]] = {}
+    if expected_artifact_root is None:
+        _need(not has_artifact_claims,
+              "artifact claims require an independently pinned artifact root and source admission")
+    else:
+        _need(expected_source_root is not None and isinstance(expected_admission, dict),
+              "full-artifact semantics require a frozen source root and run admission")
+        artifact_root = Path(expected_artifact_root).resolve()
+        paths = []
+        for row in attempts:
+            if not isinstance(row, dict) or row.get("artifact_path") is None:
+                continue
+            path = Path(row["artifact_path"]).resolve()
+            _need(path.is_relative_to(artifact_root) and path.is_file(),
+                  "retained full-result artifact is missing or outside the pinned output root")
+            paths.append(path)
+        artifact_metadata = _inspect_full_artifacts(Path(expected_source_root),
+            list(dict.fromkeys(paths)))
     attempt_ids: set[str] = set()
     actual_seeds: list[int] = []
     eligible_count = 0
@@ -476,6 +707,142 @@ def verify_receipt(
         _need(isinstance(attempt.get("success"), bool), f"attempt {attempt_id} must retain boolean success")
         _need((attempt["status"] in {"ok", "success"}) is attempt["success"],
               f"attempt {attempt_id} status and success fields disagree")
+        artifact_path = attempt.get("artifact_path")
+        artifact_sha = attempt.get("artifact_sha256")
+        if artifact_path is not None:
+            resolved_artifact = Path(artifact_path).resolve()
+            observed_row = artifact_metadata.get(str(resolved_artifact))
+            _need(isinstance(observed_row, dict),
+                  f"attempt {attempt_id} is not present in the inspected full artifacts")
+            metadata = observed_row["metadata"]
+            _need(metadata.get("schema") == "arc1-full-result-v2" and
+                  metadata.get("outer") == index and
+                  metadata.get("seed_string") == str(expected_seed) and
+                  metadata.get("cell") == expected_cell,
+                  f"attempt {attempt_id} artifact metadata differs from external outer/seed/cell pins")
+            driver_identity = metadata.get("driver_protocol_identity")
+            _need(isinstance(driver_identity, dict) and
+                  driver_identity.get("source_sha256") == expected_source_hashes and
+                  driver_identity.get("protocol_sha256") == expected_protocol_sha256 and
+                  (expected_admission is None or
+                   driver_identity.get("environment_sha256") == expected_admission.get("environment_sha256")),
+                  f"attempt {attempt_id} artifact lacks the externally pinned full driver/protocol identity")
+            _need(observed_row.get("receipt_summary_matches_retained_result") is True,
+                  f"attempt {attempt_id} retained JLS result differs from its embedded receipt summary "
+                  f"(result={observed_row.get('retained_result_summary_sha256')}, "
+                  f"embedded={observed_row.get('embedded_receipt_summary_sha256')})")
+            _need(observed_row.get("raw_result_matches_derived_receipt") is True,
+                  f"attempt {attempt_id} retained raw selector/profile/bootstrap output differs from its derived receipt")
+            _need(observed_row.get("reference_scale_matches_retained_y") is True,
+                  f"attempt {attempt_id} reference initialization scale differs from retained response data")
+            if observed_row.get("retained_data_present") is True:
+                _need(observed_row.get("data_seed_matches_metadata") is True,
+                      f"attempt {attempt_id} retained data seed differs from externally pinned metadata seed")
+            else:
+                _need(observed_row.get("data_seed_matches_metadata") is None,
+                      f"attempt {attempt_id} has inconsistent data-seed inspection without retained data")
+            _need(observed_row.get("semantic_data_identity_matches_recomputed") is True,
+                  f"attempt {attempt_id} semantic data identity differs from retained data/design values")
+            if observed_row.get("retained_result_present") is True:
+                _need(observed_row.get("data_identity_method") == "arc1-semantic-data-v2" and
+                      _sha256(observed_row.get("semantic_data_identity_sha256")) and
+                      observed_row.get("semantic_data_identity_sha256") ==
+                      observed_row.get("recomputed_semantic_data_identity_sha256"),
+                      f"attempt {attempt_id} retained-result semantic identity lacks its versioned digest")
+                _need(attempt.get("semantic_data_identity_sha256") ==
+                      observed_row.get("semantic_data_identity_sha256"),
+                      f"attempt {attempt_id} semantic identity differs between receipt and artifact")
+            else:
+                _need(not attempt["success"] and observed_row.get("semantic_data_identity_sha256") is None,
+                      f"attempt {attempt_id} lacks semantic identity despite retaining a result")
+            retained_identity = attempt.get("execution_identity")
+            _need(metadata.get("execution_identity") == retained_identity,
+                  f"attempt {attempt_id} artifact execution identity differs from its durable row")
+            if attempt["success"]:
+                _need(_sha256(attempt.get("data_identity_sha256")) and
+                      metadata.get("data_identity_sha256") == attempt["data_identity_sha256"],
+                      f"attempt {attempt_id} artifact data identity differs from its durable row")
+                _need(attempt.get("data_identity_method") == "arc1-semantic-data-v2",
+                      f"attempt {attempt_id} lacks the required semantic data identity method")
+                _need(_sha256(attempt.get("semantic_data_identity_sha256")) and
+                      metadata.get("semantic_data_identity_sha256") == attempt["semantic_data_identity_sha256"],
+                      f"attempt {attempt_id} semantic data identity differs from its durable row")
+            elif attempt.get("data_identity_sha256") is not None:
+                _need(metadata.get("data_identity_sha256") == attempt["data_identity_sha256"],
+                      f"attempt {attempt_id} artifact data identity differs from its durable row")
+            if attempt.get("semantic_data_identity_sha256") is not None:
+                _need(attempt.get("data_identity_method") == "arc1-semantic-data-v2",
+                      f"attempt {attempt_id} has an unknown semantic data identity method")
+                _need(metadata.get("semantic_data_identity_sha256") ==
+                      attempt["semantic_data_identity_sha256"],
+                          f"attempt {attempt_id} semantic data identity differs from its durable row")
+            artifact_summary = observed_row.get("receipt_summary")
+            if attempt["success"]:
+                _need(isinstance(artifact_summary, dict),
+                      f"attempt {attempt_id} full artifact lacks its embedded canonical receipt summary")
+                _need(metadata.get("receipt_summary_path") == attempt.get("receipt_summary_path") and
+                      metadata.get("receipt_summary_sha256") == attempt.get("receipt_summary_sha256"),
+                      f"attempt {attempt_id} embedded summary identity differs from external receipt pins")
+            elif artifact_summary is not None:
+                _need(isinstance(artifact_summary, dict) and
+                      artifact_summary.get("success") is False and
+                      observed_row.get("retained_result_success") is False and
+                      observed_row.get("retained_result_status") == attempt["status"] and
+                      artifact_summary.get("status") == attempt["status"],
+                      f"failed attempt {attempt_id} retained summary is not a matching returned failure")
+                _need(metadata.get("receipt_summary_path") == attempt.get("receipt_summary_path") and
+                      metadata.get("receipt_summary_sha256") == attempt.get("receipt_summary_sha256"),
+                      f"failed attempt {attempt_id} retained summary identity differs from external pins")
+        if expected_artifact_root is not None:
+            artifact_root = Path(expected_artifact_root).resolve()
+            if attempt["success"]:
+                _need(isinstance(artifact_path, str) and _sha256(artifact_sha),
+                      f"successful attempt {attempt_id} lacks a pinned full-result artifact")
+            if artifact_path is not None:
+                resolved_artifact = Path(artifact_path).resolve()
+                _need(resolved_artifact.is_relative_to(artifact_root) and resolved_artifact.is_file(),
+                      f"attempt {attempt_id} artifact is missing or outside the pinned output root")
+                observed_sha = hashlib.sha256(resolved_artifact.read_bytes()).hexdigest()
+                _need(observed_sha == artifact_sha,
+                      f"attempt {attempt_id} artifact bytes differ from the retained SHA-256")
+            has_summary_claim = attempt.get("receipt_summary_path") is not None or \
+                attempt.get("receipt_summary_sha256") is not None
+            if attempt["success"] or has_summary_claim:
+                summary_path = attempt.get("receipt_summary_path")
+                summary_sha = attempt.get("receipt_summary_sha256")
+                _need(isinstance(summary_path, str) and _sha256(summary_sha),
+                      f"attempt {attempt_id} has incomplete canonical receipt summary pins")
+                resolved_summary = Path(summary_path).resolve()
+                _need(resolved_summary.is_relative_to(artifact_root) and resolved_summary.is_file(),
+                      f"attempt {attempt_id} summary is missing or outside the pinned output root")
+                summary_bytes = resolved_summary.read_bytes()
+                _need(hashlib.sha256(summary_bytes).hexdigest() == summary_sha,
+                      f"attempt {attempt_id} summary bytes differ from the retained SHA-256")
+                try:
+                    summary = json.loads(summary_bytes.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                    raise ReceiptError(f"attempt {attempt_id} summary is not valid UTF-8 JSON") from error
+                stored = attempt.get("stored_row")
+                wrapper = stored.get("result") if isinstance(stored, dict) else None
+                nested = wrapper.get("result") if isinstance(wrapper, dict) else None
+                _need(isinstance(summary, dict) and
+                      (summary == nested if isinstance(nested, dict) else summary == wrapper),
+                      f"attempt {attempt_id} summary differs from its durable Julia result mapping")
+                _need(summary == artifact_metadata[str(Path(artifact_path).resolve())].get("receipt_summary"),
+                      f"attempt {attempt_id} sidecar summary differs from the embedded full-artifact summary")
+                for name, value in summary.items():
+                    if name in attempt:
+                        _need(attempt[name] == value,
+                              f"attempt {attempt_id} flattened {name} differs from its retained summary")
+        if expected_source_root is not None or expected_admission is not None:
+            _need(expected_source_root is not None and isinstance(expected_admission, dict),
+                  "execution identity verification needs both source root and admitted environment pins")
+            identity = attempt.get("execution_identity")
+            if attempt["success"]:
+                _need(isinstance(identity, dict),
+                      f"successful attempt {attempt_id} lacks loaded execution identity")
+            if identity is not None:
+                manifest.verify_execution_identity(Path(expected_source_root), expected_admission, identity)
         if not attempt["success"]:
             failed_count += 1
             _need(isinstance(attempt.get("failure_reason"), str) and bool(attempt["failure_reason"]),
@@ -487,8 +854,9 @@ def verify_receipt(
             eligible_count += eligible
             for label in candidate_errors:
                 candidate_errors[label] += not attempt["rank_candidates"][label]["available"]
-            _need(attempt["success"] is eligible,
-                  "rank attempt success must agree with both-candidate eligibility")
+            selected = attempt.get("selection_status") == "selected"
+            _need(attempt["success"] is (eligible and selected),
+                  "rank attempt success must agree with pair availability and selector outcome")
         elif "rank_candidates" in attempt or "selected_rank" in attempt or "eligible" in attempt:
             _need(False, "rank evidence is unexpected for this externally pinned programme")
 
@@ -514,6 +882,7 @@ def verify_receipt(
             _need(attempt.get("profile_method") == "profile_likelihood_ratio" and
                   attempt.get("profile_lr_cutoff") == 3.841458820694124,
                   "profile receipt must identify the frozen likelihood-ratio method and cutoff")
+            _check_profile_point_diagnostics(attempt, profile)
             formulas = _expected_interval_formulas(expected_cell)
             for target, item in profile.items():
                 _check_interval_row(target, item, formulas[target])
@@ -553,13 +922,21 @@ def verify_file(receipt_path: Path, pins_path: Path) -> dict[str, Any]:
           "external pin file is missing required independent pin fields")
     _need(isinstance(pins["expected_seeds"], list) and isinstance(pins["source_hashes"], dict)
           and isinstance(pins["cell"], dict), "external pin fields have invalid shapes")
+    if any(key in pins for key in ("artifact_root", "source_root", "admission")):
+        _need(all(isinstance(pins.get(key), str) and pins[key]
+                  for key in ("artifact_root", "source_root")) and
+              isinstance(pins.get("admission"), dict),
+              "artifact and execution pins require artifact_root, source_root, and admission")
     bootstrap_pins = pins.get("bootstrap_inner_seeds", {})
     _need(isinstance(bootstrap_pins, dict), "bootstrap inner seed pins must be an object")
     return verify_receipt(receipt, expected_seeds=pins["expected_seeds"],
                           expected_source_hashes=pins["source_hashes"],
                           expected_protocol_sha256=pins["protocol_sha256"],
                           expected_cell=pins["cell"],
-                          expected_bootstrap_inner_seeds={int(k): v for k, v in bootstrap_pins.items()})
+                          expected_bootstrap_inner_seeds={int(k): v for k, v in bootstrap_pins.items()},
+                          expected_artifact_root=Path(pins["artifact_root"]) if pins.get("artifact_root") else None,
+                          expected_source_root=Path(pins["source_root"]) if pins.get("source_root") else None,
+                          expected_admission=pins.get("admission"))
 
 
 def main() -> None:
