@@ -1,4 +1,9 @@
-using Test, HSquared, LinearAlgebra, SparseArrays
+using Test, HSquared, LinearAlgebra, SparseArrays, Serialization, SHA
+
+module Arc1ProfileEngineeringFixture
+using LinearAlgebra, Random
+include(joinpath(@__DIR__, "..", "sim", "arc1", "independent_dgp.jl"))
+end
 
 # The production module include is owned by the integration lane. This test is
 # therefore runnable against the frozen source without changing src/HSquared.jl.
@@ -10,6 +15,15 @@ if !isfile(ARC1_SOURCE)
 else
     isdefined(HSquared, :_arc1_profile_context) || Base.include(HSquared, ARC1_SOURCE)
 const H = HSquared
+
+struct Arc1PostRunCallbackResult
+    minimizer::Vector{Float64}
+    stopped_by::NamedTuple
+    termination_code::Symbol
+    iterations::Int
+end
+H.Optim.minimizer(result::Arc1PostRunCallbackResult) = result.minimizer
+H.Optim.converged(::Arc1PostRunCallbackResult) = true
 
 function _arc1_test_data()
     na = 6
@@ -185,6 +199,920 @@ end
         @test tiny_fit.beta ≈ tiny_oracle.beta atol = 1e-6
     end
 
+    @testset "fixed residual variance centering is exact and gated" begin
+        na = 8
+        n = 2na
+        Zp = sparse(1:n, repeat(1:na, inner = 2), ones(n), n, na)
+        between = repeat([0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0], inner = 2)
+        Xp = hcat(ones(n), between)
+        contrast = isodd.(1:n) .* 2 .- 1
+        yp = 0.2 .+ 0.1 .* sin.(1:n) .+ 1.5 .* contrast
+        pair_context = H._arc1_profile_context(yp, Xp, Zp, Matrix{Float64}(I, na, na))
+        Ve = 9.814158264884749e-7
+        components = [8.732732243825042e-13, 0.7451281637812672, Ve]
+        @test H._arc1_profile_fixed_ve_centering_eligible(pair_context, 3, Ve)
+        @test !H._arc1_profile_fixed_ve_centering_eligible(pair_context, 1, Ve)
+        @test !H._arc1_profile_fixed_ve_centering_eligible(pair_context, 3, 0.0)
+        for invalid_tag in (missing, nothing, NaN, Inf, "not-a-variance", true)
+            invalid_record = (centering_ve = invalid_tag, centered_loglik = 10.0,
+                max_valid_centered_loglik = 10.0)
+            @test !H._arc1_profile_centering_tag_matches(invalid_record, Ve)
+            @test H._arc1_profile_centered_value(
+                invalid_record, :max_valid_centered_loglik, Ve) === nothing
+            @test H._arc1_profile_comparison_loglik(invalid_record, Ve) == -Inf
+        end
+
+        full = H._arc1_profile_reml(pair_context, components...)
+        centered = H._arc1_profile_centered_loglik(pair_context, components)
+        constant = H._arc1_profile_centering_constant(pair_context, Ve)
+        @test full.status == centered.status == :ok
+        @test maximum(abs, pair_context.transformed_design[(na + 1):(2na), :]) == 0.0
+        @test abs(centered.loglik + constant - full.loglik) <= 1e-7
+        @test abs(constant) > 1e7
+
+        record_level_X = hcat(Xp, repeat([1.0, -1.0], na))
+        nonzero_context = H._arc1_profile_context(yp, record_level_X, Zp,
+                                                   Matrix{Float64}(I, na, na))
+        @test !H._arc1_profile_fixed_ve_centering_eligible(nonzero_context, 3, Ve)
+
+        # Controlled adapters make every full likelihood tie at a large
+        # magnitude. The nuisance wrapper must select by the centered score,
+        # while retaining the original full likelihood and full maximum.
+        controlled_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base)
+            values[free] .= start
+            centered_value = 1.0e8 - ((values[1] - 0.5)^2 + (values[2] - 1.0)^2)
+            (loglik = 1.0e8, max_valid_loglik = 1.0e8,
+             centered_loglik = centered_value,
+             max_valid_centered_loglik = centered_value, centering_ve = base[3],
+             components = values, converged = true, gradient_norm = 0.0,
+             optimizer_status = "controlled", hit_bound = false)
+        end
+        controlled_scalar(ctx, make_components, scale; kwargs...) = begin
+            values = make_components(0.75)
+            centered_value = 1.0e8 - ((values[1] - 0.5)^2 + (values[2] - 1.0)^2)
+            (loglik = 1.0e8, max_valid_loglik = 1.0e8, status = :ok,
+             value = 0.75, centered_active = true, centered_loglik = centered_value,
+             max_valid_centered_loglik = centered_value, centering_ve = Ve,
+             candidates = Any[], physical_zero_endpoint_certificate = (status = :not_attempted,))
+        end
+        controlled_gradient(ctx, values; free_indices = collect(1:3)) =
+            (component_gradient = zeros(3), log_gradient = zeros(length(free_indices)))
+        controlled = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = controlled_bfgs, scalar_profile_runner = controlled_scalar,
+            loglik_runner = (ctx, values) -> (1.0e8, :ok),
+            gradient_runner = controlled_gradient)
+        @test controlled.status == :ok
+        @test only(controlled.nuisance_statuses).best_certified.components[1:2] == [0.5, 1.0]
+        @test controlled.centered_loglik == 1.0e8
+        @test controlled.loglik == controlled.max_valid_loglik == 1.0e8
+        @test controlled.max_valid_centered_loglik == 1.0e8
+
+        # A native optimizer exception has valid centered history but no
+        # terminal centered score. If that history is noncompetitive, the
+        # failed start must not change the baseline refusal policy.
+        native_failed_start = H._arc1_bfgs_candidate(pair_context,
+            [0.0, 0.0, Ve], [1, 2], [0.1, 0.1], 1.0;
+            centered_loglik_at = values ->
+                H._arc1_profile_centered_loglik_at(pair_context, values, Ve),
+            centering_ve = Ve,
+            optimizer_runner = (f, g, z) -> (f(z); error("controlled stop")))
+        stable_good_start(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start
+            merge(native_failed_start, (loglik = 1.0e8, max_valid_loglik = 1.0e8,
+                centered_loglik = 1.0e8, max_valid_centered_loglik = 1.0e8,
+                components = values, converged = true, gradient_norm = 0.0,
+                hit_bound = false, hit_bound_components = Any[],
+                optimizer_status = "controlled converged"))
+        end
+        native_calls = Ref(0)
+        native_then_good(ctx, base, free, start, scale) = begin
+            native_calls[] += 1
+            native_calls[] == 1 ? native_failed_start :
+                stable_good_start(ctx, base, free, start, scale)
+        end
+        native_failure_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = native_then_good,
+            scalar_profile_runner = controlled_scalar,
+            loglik_runner = (ctx, values) -> (1.0e8, :ok),
+            gradient_runner = controlled_gradient)
+        @test native_failed_start.centering_ve == Ve
+        @test !hasproperty(native_failed_start, :centered_loglik)
+        @test native_failure_result.status == :ok
+        native_search = only(native_failure_result.nuisance_statuses)
+        @test native_search.unresolved_competitor == false
+        @test isempty(native_search.invalid_centering_tag_indices)
+        @test !isempty(native_search.invalid_centered_record_indices)
+
+        # Missing native diagnostic metadata is rejected before the failure
+        # summary reads it, with the finite likelihood history retained.
+        missing_optimizer_status(ctx, base, free, start, scale) =
+            Base.structdiff(stable_good_start(ctx, base, free, start, scale),
+                NamedTuple{(:optimizer_status,)})
+        missing_optimizer_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = missing_optimizer_status,
+            scalar_profile_runner = controlled_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test missing_optimizer_result.status == :nuisance_unresolved
+        @test missing_optimizer_result.max_valid_loglik == 1.0e8
+        @test !isempty(only(missing_optimizer_result.nuisance_statuses).
+            invalid_bfgs_record_indices)
+
+        # Optional diagnostics may be omitted, but a present value must still
+        # have its declared Boolean type before the consumer reads it.
+        omitted_optional_boolean(ctx, base, free, start, scale) =
+            Base.structdiff(stable_good_start(ctx, base, free, start, scale),
+                NamedTuple{(:line_search_failed,)})
+        omitted_boolean_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = omitted_optional_boolean,
+            scalar_profile_runner = controlled_scalar,
+            loglik_runner = (ctx, values) -> (1.0e8, :ok),
+            gradient_runner = controlled_gradient)
+        @test omitted_boolean_result.status == :ok
+        malformed_optional_boolean(ctx, base, free, start, scale) = merge(
+            stable_good_start(ctx, base, free, start, scale),
+            (line_search_failed = nothing,))
+        malformed_boolean_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = malformed_optional_boolean,
+            scalar_profile_runner = controlled_scalar,
+            loglik_runner = (ctx, values) -> (1.0e8, :ok),
+            gradient_runner = controlled_gradient)
+        @test malformed_boolean_result.status == :nuisance_unresolved
+        @test !isempty(only(malformed_boolean_result.nuisance_statuses).
+            invalid_bfgs_record_indices)
+
+        # A converged terminal point cannot hide a better same-start history.
+        history_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+             centered_loglik = 0.0, max_valid_centered_loglik = 2e-7,
+             centering_ve = base[3], components = values, converged = true,
+             gradient_norm = 0.0, optimizer_status = "controlled", hit_bound = false)
+        end
+        low_scalar(ctx, make_components, scale; kwargs...) = begin
+            values = make_components(0.75)
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10, status = :ok,
+             value = 0.75, centered_active = true, centered_loglik = -1.0,
+             max_valid_centered_loglik = -1.0, centering_ve = Ve,
+             candidates = Any[], physical_zero_endpoint_certificate = (status = :not_attempted,))
+        end
+        historical = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = history_bfgs, scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test historical.centered_loglik == 0.0
+        @test historical.max_valid_centered_loglik == 2e-7
+        @test historical.max_valid_centered_loglik > historical.centered_loglik + 1e-8
+        @test historical.status == :nuisance_unresolved
+
+        # Scalar answers tagged at another Ve cannot donate either a score or a
+        # maximum to this fixed-Ve nuisance profile.
+        flat_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+             centered_loglik = 0.0, max_valid_centered_loglik = 0.0,
+             centering_ve = base[3], components = values, converged = true,
+             gradient_norm = 0.0, optimizer_status = "controlled", hit_bound = false)
+        end
+        wrong_tag_scalar(ctx, make_components, scale; kwargs...) = begin
+            values = make_components(0.75)
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10 + 1.0, status = :ok,
+             value = 0.75, centered_active = true, centered_loglik = 10.0,
+             max_valid_centered_loglik = 10.0, centering_ve = 2Ve,
+             candidates = Any[], physical_zero_endpoint_certificate = (status = :not_attempted,))
+        end
+        wrong_tag = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = flat_bfgs, scalar_profile_runner = wrong_tag_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test wrong_tag.status == :nuisance_unresolved
+        @test wrong_tag.centered_loglik == 0.0
+        @test wrong_tag.max_valid_centered_loglik == 0.0
+        @test wrong_tag.max_valid_loglik == -1.0e10 + 1.0
+        bad_face_diagnostics = filter(d -> d.kind == :exact_zero_face,
+            only(wrong_tag.nuisance_statuses).exact_zero_faces)
+        @test length(bad_face_diagnostics) == 2
+        @test all(d -> !d.centering_tag_valid, bad_face_diagnostics)
+        bad_face_diagnostic = first(bad_face_diagnostics)
+        @test !bad_face_diagnostic.centering_tag_valid
+        @test bad_face_diagnostic.source_centering_ve == 2Ve
+
+        # Missing and explicitly absent scalar tags return a refusal with
+        # retained full and centered maxima instead of throwing TypeError.
+        scalar_without_tag(ctx, make_components, scale; kwargs...) =
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10 + 1.0, status = :ok,
+             value = 0.75, centered_active = true, centered_loglik = 10.0,
+             max_valid_centered_loglik = 10.0, candidates = Any[],
+             physical_zero_endpoint_certificate = (status = :not_attempted,))
+        scalar_nothing_tag(ctx, make_components, scale; kwargs...) = merge(
+            scalar_without_tag(ctx, make_components, scale; kwargs...),
+            (centering_ve = nothing,))
+        scalar_missing_tag(ctx, make_components, scale; kwargs...) = merge(
+            scalar_without_tag(ctx, make_components, scale; kwargs...),
+            (centering_ve = missing,))
+        for bad_scalar in (scalar_without_tag, scalar_nothing_tag, scalar_missing_tag)
+            untagged = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+                bfgs_runner = flat_bfgs, scalar_profile_runner = bad_scalar,
+                loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+                gradient_runner = controlled_gradient)
+            @test untagged.status == :nuisance_unresolved
+            @test untagged.loglik == -1.0e10
+            @test untagged.max_valid_loglik == -1.0e10 + 1.0
+            @test untagged.max_valid_centered_loglik == 0.0
+            @test all(d -> !d.centering_tag_valid, only(untagged.nuisance_statuses).exact_zero_faces)
+        end
+
+        # A valid Ve tag authorizes the retained centered maximum even when
+        # the scalar's terminal centered score is invalid.
+        invalid_terminal_scalar(ctx, make_components, scale; kwargs...) = begin
+            values = make_components(0.75)
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10 + 1.0, status = :ok,
+             value = 0.75, centered_active = true, centered_loglik = -Inf,
+             max_valid_centered_loglik = 10.0, centering_ve = Ve,
+             candidates = Any[], physical_zero_endpoint_certificate = (status = :not_attempted,))
+        end
+        invalid_terminal = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = flat_bfgs, scalar_profile_runner = invalid_terminal_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test invalid_terminal.status == :nuisance_unresolved
+        @test invalid_terminal.max_valid_loglik == -1.0e10 + 1.0
+        @test invalid_terminal.max_valid_centered_loglik == 10.0
+        invalid_face = first(filter(d -> d.kind == :exact_zero_face,
+            only(invalid_terminal.nuisance_statuses).exact_zero_faces))
+        @test invalid_face.centering_tag_valid
+        @test !invalid_face.centered_score_valid
+
+        # A wrongly tagged BFGS historical maximum cannot enter the aggregate
+        # or be relabeled with the fixed-Ve tag returned to the caller.
+        wrong_tag_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+             centered_loglik = 0.0, max_valid_centered_loglik = 10.0,
+             centering_ve = 2Ve, components = values, converged = true,
+             gradient_norm = 0.0, optimizer_status = "controlled", hit_bound = false)
+        end
+        wrong_bfgs = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = wrong_tag_bfgs, scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test wrong_bfgs.status == :nuisance_unresolved
+        @test wrong_bfgs.max_valid_centered_loglik < 10.0
+        @test wrong_bfgs.centering_ve == Ve
+        @test only(wrong_bfgs.nuisance_statuses).unresolved_competitor == false
+        @test !isempty(only(wrong_bfgs.nuisance_statuses).invalid_centered_record_indices)
+
+        ordered_calls = Ref(0)
+        terminal_above_declared_max(ctx, base, free, start, scale) = begin
+            ordered_calls[] += 1
+            values = copy(base); values[free] .= start
+            first = ordered_calls[] == 1
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+             centered_loglik = first ? 2e-7 : 0.0,
+             max_valid_centered_loglik = 0.0, centering_ve = Ve,
+             components = values, converged = !first, hit_bound = false,
+             gradient_norm = 0.0, optimizer_status = "controlled",
+             hit_bound_components = Any[])
+        end
+        terminal_history_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = terminal_above_declared_max,
+            scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test terminal_history_result.status == :nuisance_unresolved
+        @test terminal_history_result.max_valid_centered_loglik == 2e-7
+        @test H._arc1_raw_competitor_is_competitive(
+            (converged = false, hit_bound = true, centered_loglik = 0.0,
+             max_valid_centered_loglik = -1.0, centering_ve = Ve), 0.0;
+            centering_ve = Ve)
+
+        # An inconsistent hit_bound/contact pair is rejected even when its
+        # terminal likelihood only ties the winner and its declared maximum
+        # is stale and lower.
+        bound_calls = Ref(0)
+        bound_control(ctx, base, free, start, scale) = begin
+            bound_calls[] += 1
+            values = copy(base); values[free] .= start
+            if bound_calls[] == 1
+                (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+                 centered_loglik = 0.0, max_valid_centered_loglik = -1.0,
+                 centering_ve = Ve, components = values, converged = false,
+                 hit_bound = true, hit_bound_components = Any[], gradient_norm = 0.0,
+                 optimizer_status = "inconsistent controlled bound")
+            else
+                (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+                 centered_loglik = 0.0, max_valid_centered_loglik = 0.0,
+                 centering_ve = Ve, components = values, converged = true,
+                 hit_bound = false, hit_bound_components = Any[], gradient_norm = 0.0,
+                 optimizer_status = "controlled converged")
+            end
+        end
+        inconsistent_bound_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = bound_control,
+            scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e10, :ok),
+            gradient_runner = controlled_gradient)
+        @test inconsistent_bound_result.status == :nuisance_unresolved
+        @test inconsistent_bound_result.max_valid_centered_loglik == 0.0
+        @test !isempty(only(inconsistent_bound_result.nuisance_statuses).
+            invalid_bfgs_record_indices)
+
+        # Continuation maximum tags are checked before their score or maximum
+        # can be merged into the accumulated same-Ve history.
+        continuation_candidate = (candidate_index = 1, loglik = -1.0e10,
+            max_valid_loglik = -1.0e10, centered_loglik = -1.0,
+            max_valid_centered_loglik = -1.0, centering_ve = Ve,
+            components = [0.2, 1e-13, Ve], converged = false,
+            optimizer_converged = true, gradient_norm = 0.0,
+            finite_difference_error = 0.0, analytic_gradient_valid = true,
+            line_search_failed = false, free_indices = [1, 2],
+            finite_difference_errors = Dict(1 => 0.0, 2 => Inf),
+            hit_bound = true, iterations = 20,
+            hit_bound_components = [(component = 2, side = :lower, value = 1e-13)])
+        initial_unresolved = (status = :projected_gradient_unresolved,
+            projected_loglik = -1.0e6, projected_centered_loglik = -1.0)
+        invalid_candidate_history = merge(continuation_candidate,
+            (loglik = -1.0e6 + 2e-7, max_valid_loglik = -1.0e6,
+             centered_loglik = -Inf, max_valid_centered_loglik = 2e-7))
+        invalid_candidate_full_max = Ref(-1.0e6)
+        invalid_candidate_centered_max = Ref(-1.0)
+        refused_candidate_history = H._arc1_projected_face_polish(pair_context,
+            invalid_candidate_history, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            initial_unresolved; maximum_seen = invalid_candidate_full_max,
+            centered_maximum_seen = invalid_candidate_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve)
+        @test refused_candidate_history.status == :candidate_centered_score_invalid
+        @test invalid_candidate_full_max[] == -1.0e6 + 2e-7
+        @test invalid_candidate_centered_max[] == 2e-7
+        @test refused_candidate_history.continuation.max_valid_centered_loglik == 2e-7
+
+        # The direct consumer rejects a malformed candidate before reading
+        # components, while retaining both independently valid histories.
+        malformed_candidate = merge(invalid_candidate_history,
+            (components = nothing,))
+        malformed_full_max, malformed_centered_max = Ref(-1.0e6), Ref(3e-7)
+        malformed_polish = H._arc1_projected_face_polish(pair_context,
+            malformed_candidate, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            initial_unresolved; maximum_seen = malformed_full_max,
+            centered_maximum_seen = malformed_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve)
+        @test malformed_polish.status == :candidate_record_invalid
+        @test malformed_full_max[] == -1.0e6 + 2e-7
+        @test malformed_centered_max[] == 3e-7
+        @test malformed_polish.continuation.max_valid_centered_loglik == 3e-7
+        @test malformed_polish.continuation.centering_ve == Ve
+
+        # Malformed contacts are checked before any `contact.component` read.
+        malformed_contact = merge(continuation_candidate,
+            (hit_bound_components = [(component = :bad, side = :lower)],))
+        contact_full_max, contact_centered_max = Ref(-1.0e10), Ref(3e-7)
+        refused_contact = H._arc1_projected_face_polish(pair_context,
+            malformed_contact, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            initial_unresolved; maximum_seen = contact_full_max,
+            centered_maximum_seen = contact_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve)
+        @test refused_contact.status == :candidate_record_invalid
+        @test refused_contact.continuation.max_valid_centered_loglik == 3e-7
+
+        # The direct returned refusal carries accumulated history, not only
+        # the invalid certificate's lower historical maximum.
+        bad_certificate = (status = :projected_gradient_unresolved,
+            max_valid_loglik = -1.0e10, centering_ve = Ve,
+            max_valid_centered_loglik = 2e-7)
+        certificate_centered_max = Ref(3e-7)
+        refused_certificate = H._arc1_projected_face_polish(pair_context,
+            continuation_candidate, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            bad_certificate; maximum_seen = Ref(-1.0e10),
+            centered_maximum_seen = certificate_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve)
+        @test refused_certificate.status == :initial_certificate_record_invalid
+        @test refused_certificate.continuation.max_valid_centered_loglik == 3e-7
+        @test refused_certificate.continuation.centering_ve == Ve
+
+        wrong_continuation_runner = (ctx, base, free, start, scale, budget) ->
+            (loglik = -1.0e10, max_valid_loglik = -1.0e10,
+             centered_loglik = 10.0, max_valid_centered_loglik = 10.0,
+             centering_ve = 2Ve, components = copy(base), free_indices = copy(free),
+             converged = true, gradient_norm = 0.0, optimizer_converged = true,
+             analytic_gradient_valid = true, line_search_failed = false,
+             finite_difference_errors = Dict(1 => 0.0), finite_difference_error = 0.0,
+             hit_bound = false, hit_bound_components = Any[], iterations = 5,
+             objective_evaluations = 1, gradient_evaluations = 1,
+             termination_code = :gradient_converged, stopped_by = :gradient,
+             optimizer_status = "converged")
+        continuation_full_max = Ref(-1.0e10)
+        continuation_centered_max = Ref(-1.0)
+        rejected_continuation = H._arc1_projected_face_polish(pair_context,
+            continuation_candidate, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            initial_unresolved; maximum_seen = continuation_full_max,
+            centered_maximum_seen = continuation_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve, continuation_runner = wrong_continuation_runner)
+        @test rejected_continuation.status == :continuation_centering_tag_mismatch
+        @test continuation_centered_max[] == -1.0
+        @test rejected_continuation.continuation.max_valid_loglik == -1.0e10
+
+        # Same-Ve centered history is ingested before an invalid terminal
+        # score refuses a continuation, and reaches the raw nuisance guard.
+        invalid_centered_continuation = (ctx, base, free, start, scale, budget) ->
+            (loglik = -1.0e6, max_valid_loglik = -1.0e6 + 2e-7,
+             centered_loglik = -Inf, max_valid_centered_loglik = 2e-7,
+             centering_ve = Ve, components = copy(base), iterations = 5,
+             optimizer_status = :exception_return, termination_code = :exception)
+        continuation_centered_max = Ref(-1.0)
+        rejected_invalid_centered_continuation = H._arc1_projected_face_polish(
+            pair_context, continuation_candidate, 3, 1.0, pair_context.residual_df,
+            Any[], nothing, initial_unresolved;
+            maximum_seen = Ref(-1.0e6), centered_maximum_seen = continuation_centered_max,
+            centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centering_ve = Ve, continuation_runner = invalid_centered_continuation)
+        @test rejected_invalid_centered_continuation.status == :continuation_centered_score_invalid
+        @test continuation_centered_max[] == 2e-7
+        @test rejected_invalid_centered_continuation.continuation.max_valid_centered_loglik == 2e-7
+
+        boundary_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start; values[1] = 1e-13
+            (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+             centered_loglik = 0.0, max_valid_centered_loglik = 0.0,
+             centering_ve = Ve, components = values, converged = false,
+             optimizer_converged = true, analytic_gradient_valid = true,
+             line_search_failed = false, gradient_norm = 0.0,
+             optimizer_status = "controlled", hit_bound = true,
+             hit_bound_components = [(component = 1, side = :lower, value = 1e-13)],
+             free_indices = copy(free), iterations = 5,
+             finite_difference_errors = Dict(1 => 0.0, 2 => Inf))
+        end
+        unresolved_certificate(args...; kwargs...) = (
+            status = :projected_gradient_unresolved, projected_loglik = -1.0e6,
+            projected_centered_loglik = -1.0)
+        centered_probe_polish(ctx, candidate, index, scale, df, faces, intersection, initial; kwargs...) =
+            H._arc1_projected_face_polish(ctx, candidate, index, scale, df, faces,
+                intersection, initial; continuation_runner = invalid_centered_continuation,
+                kwargs...)
+        raw_probe = H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+            bfgs_runner = boundary_bfgs, scalar_profile_runner = low_scalar,
+            certificate_runner = unresolved_certificate, polish_runner = centered_probe_polish,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test raw_probe.status == :nuisance_unresolved
+        @test raw_probe.max_valid_loglik == -1.0e6 + 2e-7
+        @test raw_probe.max_valid_centered_loglik == 2e-7
+        @test raw_probe.max_valid_centered_loglik > raw_probe.centered_loglik + 1e-8
+        probe_state = H._Arc1ProfileState(nothing, 1.0, -1.0e6,
+            Dict{Symbol,Dict{Float64,Any}}(), Dict{Symbol,Int}(), -Inf, Any[])
+        @test H._arc1_include_valid_profile_max!(probe_state, raw_probe) == -1.0e6 + 2e-7
+        all_targets = Dict{Symbol,Any}(name =>
+            (confidence_set = [(0.0, 1.0)], status = :finite_grid_resolved,
+             search_status = :finite_grid_resolved, formed = true)
+            for name in H._ARC1_PROFILE_TARGETS)
+        @test H._arc1_apply_point_fit_guard!(all_targets, -1.0e6 - 5e-7,
+            probe_state.max_constrained_loglik)
+        @test all(all_targets[name].search_status == :point_fit_not_optimal
+                  for name in H._ARC1_PROFILE_TARGETS)
+
+        # Adapter histories share one ingestion contract: finite full maxima
+        # survive any centered-tag failure, while centered maxima require the
+        # exact fixed-Ve tag and do not require a valid terminal score.
+        matrix_records = (
+            candidate = (max_valid_loglik = -8.0, loglik = NaN,
+                max_valid_centered_loglik = 2e-7, centered_loglik = -Inf,
+                centering_ve = Ve),
+            continuation = (max_valid_loglik = -7.0, loglik = -Inf,
+                max_valid_centered_loglik = 3e-7, centered_loglik = NaN,
+                centering_ve = Ve),
+            scalar = (max_valid_loglik = -6.0, loglik = -Inf,
+                max_valid_centered_loglik = 4e-7, centered_loglik = -Inf,
+                centered_active = false, centering_ve = Ve),
+            certificate = (max_valid_loglik = -5.0, loglik = NaN,
+                max_valid_centered_loglik = 5e-7, centered_loglik = -Inf,
+                status = :refused, centering_ve = Ve),
+        )
+        for (adapter, good_record) in pairs(matrix_records)
+            full_seen, centered_seen = Ref(-Inf), Ref(-Inf)
+            history = H._arc1_profile_record_likelihood_history!(full_seen,
+                good_record; centered_maximum = centered_seen, centering_ve = Ve)
+            @test history.centering_tag_valid
+            @test full_seen[] == good_record.max_valid_loglik
+            @test centered_seen[] == good_record.max_valid_centered_loglik
+
+            # Invalid, absent, or wrong tags never contaminate centered history;
+            # terminal-only centered evidence is the allowed max fallback.
+            for invalid_tag in (missing, nothing, 2Ve)
+                bad = merge(good_record, (centering_ve = invalid_tag,))
+                full_seen, centered_seen = Ref(-Inf), Ref(-Inf)
+                bad_history = H._arc1_profile_record_likelihood_history!(full_seen,
+                    bad; centered_maximum = centered_seen, centering_ve = Ve)
+                @test !bad_history.centering_tag_valid
+                @test full_seen[] == good_record.max_valid_loglik
+                @test centered_seen[] == -Inf
+            end
+            terminal_only = merge(good_record,
+                (centered_loglik = 6e-7, max_valid_centered_loglik = nothing))
+            @test H._arc1_profile_centered_value(terminal_only,
+                :max_valid_centered_loglik, Ve; fallback_field = :centered_loglik) == 6e-7
+        end
+
+        for adapter in (:candidate, :continuation, :scalar, :returned_certificate),
+            terminal_state in (:valid, :invalid, :missing),
+            full_history_present in (false, true),
+            centered_history_present in (false, true),
+            tag_state in (:correct, :wrong, :missing, :absent)
+            tag = tag_state === :correct ? Ve : tag_state === :wrong ? 2Ve : missing
+            record = (adapter = adapter, status = :controlled)
+            tag_state === :absent || (record = merge(record, (centering_ve = tag,)))
+            if terminal_state !== :missing
+                record = merge(record, (loglik = terminal_state === :valid ? -10.0 : NaN,
+                    centered_loglik = terminal_state === :valid ? 1e-7 : -Inf))
+            end
+            full_history_present &&
+                (record = merge(record, (max_valid_loglik = -9.0,)))
+            centered_history_present &&
+                (record = merge(record, (max_valid_centered_loglik = 3e-7,)))
+            full_seen, centered_seen = Ref(-Inf), Ref(-Inf)
+            H._arc1_profile_record_likelihood_history!(full_seen, record;
+                centered_maximum = centered_seen, centering_ve = Ve)
+            expected_full = full_history_present ? -9.0 :
+                terminal_state === :valid ? -10.0 : -Inf
+            @test full_seen[] == expected_full
+            centered_is_tagged = tag_state === :correct
+            expected_centered = !centered_is_tagged ? -Inf :
+                centered_history_present ? 3e-7 :
+                terminal_state === :valid ? 1e-7 : -Inf
+            @test centered_seen[] == expected_centered
+        end
+
+        # Candidate terminal-only evidence and a returned refusing certificate
+        # must reach the raw nuisance maximum and prevent false acceptance.
+        terminal_only_bfgs(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start
+            record = (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+                centered_loglik = 2e-7, centering_ve = Ve, components = values,
+                converged = false, gradient_norm = 0.0,
+                optimizer_status = "controlled", hit_bound = false)
+            record
+        end
+        terminal_only_candidate = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = terminal_only_bfgs,
+            scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test terminal_only_candidate.max_valid_centered_loglik == 2e-7
+        @test terminal_only_candidate.status == :nuisance_unresolved
+
+        boundary_bfgs_for_certificate(ctx, base, free, start, scale) = begin
+            values = copy(base); values[free] .= start; values[1] = 1e-13
+            merge(boundary_bfgs(ctx, base, free, start, scale), (components = values,))
+        end
+        for certificate_tag in (Ve, 2Ve, missing, :absent)
+            returned_history_certificate(args...; kwargs...) = begin
+                record = (status = :test_refusal,
+                    max_valid_loglik = -1.0e6 + 1.0,
+                    max_valid_centered_loglik = 7e-7, centered_loglik = -Inf)
+                certificate_tag === :absent ? record :
+                    merge(record, (centering_ve = certificate_tag,))
+            end
+            returned_certificate_history = H._arc1_raw_nuisance(pair_context,
+                :residual_variance, Ve, 1.0; bfgs_runner = boundary_bfgs_for_certificate,
+                scalar_profile_runner = low_scalar,
+                certificate_runner = returned_history_certificate,
+                loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                gradient_runner = controlled_gradient)
+            @test returned_certificate_history.max_valid_loglik == -1.0e6 + 1.0
+            @test returned_certificate_history.max_valid_centered_loglik ==
+                (certificate_tag === Ve ? 7e-7 : 0.0)
+            @test returned_certificate_history.status == :nuisance_unresolved
+        end
+
+        # Scalar history is tag-governed even when its own active flag is false
+        # or absent, and invalid coordinates return a structured refusal.
+        inactive_scalar(ctx, make_components, scale; kwargs...) =
+            (loglik = -1.0e6, max_valid_loglik = -1.0e6 + 2.0,
+             centered_loglik = -Inf, max_valid_centered_loglik = 8e-7,
+             centering_ve = Ve, status = :nuisance_unresolved, value = 0.75,
+             centered_active = false, candidates = Any[],
+             physical_zero_endpoint_certificate = (status = :not_attempted,))
+        for scalar_runner in (inactive_scalar,
+                (ctx, make_components, scale; kwargs...) ->
+                    Base.structdiff(inactive_scalar(ctx, make_components, scale; kwargs...),
+                        NamedTuple{(:centered_active,)}))
+            inactive_history = H._arc1_raw_nuisance(pair_context,
+                :residual_variance, Ve, 1.0; bfgs_runner = flat_bfgs,
+                scalar_profile_runner = scalar_runner,
+                loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                gradient_runner = controlled_gradient)
+            @test inactive_history.max_valid_centered_loglik == 8e-7
+            @test inactive_history.max_valid_loglik == -1.0e6 + 2.0
+        end
+
+        for scalar_tag in (Ve, 2Ve, missing, :absent)
+            invalid_scalar(ctx, make_components, scale; kwargs...) = begin
+                record = (loglik = -Inf, max_valid_loglik = -1.0e6 + 3.0,
+                    centered_loglik = -Inf, max_valid_centered_loglik = 9e-7,
+                    status = :nuisance_unresolved, value = NaN,
+                    centered_active = false, candidates = Any[],
+                    physical_zero_endpoint_certificate = (status = :not_attempted,))
+                scalar_tag === :absent ? record : merge(record, (centering_ve = scalar_tag,))
+            end
+            invalid_scalar_result = H._arc1_raw_nuisance(pair_context,
+                :residual_variance, Ve, 1.0; bfgs_runner = flat_bfgs,
+                scalar_profile_runner = invalid_scalar,
+                loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                gradient_runner = controlled_gradient)
+            @test invalid_scalar_result.status == :nuisance_unresolved
+            @test invalid_scalar_result.max_valid_loglik == -1.0e6 + 3.0
+            @test invalid_scalar_result.max_valid_centered_loglik ==
+                (scalar_tag === Ve ? 9e-7 : 0.0)
+            @test any(d -> d.status == :invalid_coordinate,
+                only(invalid_scalar_result.nuisance_statuses).exact_zero_faces)
+        end
+
+        # Histories returned by an injected polish continuation must be
+        # ingested by the wrapper before it decides the candidate's status.
+        for polish_tag in (Ve, 2Ve, missing, :absent)
+            returned_polish(args...; kwargs...) = begin
+                continuation = (status = :continuation_exception,
+                    max_valid_loglik = -1.0e6 + 4.0,
+                    max_valid_centered_loglik = 2e-7,
+                    centered_loglik = -Inf)
+                continuation = polish_tag === :absent ? continuation :
+                    merge(continuation, (centering_ve = polish_tag,))
+                (status = :polish_refused, continuation)
+            end
+            polish_history = H._arc1_raw_nuisance(pair_context,
+                :residual_variance, Ve, 1.0; bfgs_runner = boundary_bfgs,
+                scalar_profile_runner = low_scalar,
+                certificate_runner = unresolved_certificate,
+                polish_runner = returned_polish,
+                loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                gradient_runner = controlled_gradient)
+            @test polish_history.max_valid_loglik == -1.0e6 + 4.0
+            @test polish_history.max_valid_centered_loglik ==
+                (polish_tag === Ve ? 2e-7 : 0.0)
+            @test polish_history.status == :nuisance_unresolved
+        end
+
+        # A bound candidate may omit its explicit maximum; its finite terminal
+        # likelihood still feeds both diagnosis and the retained full maximum.
+        bound_candidate_without_max(ctx, base, free, start, scale) =
+            Base.structdiff(boundary_bfgs(ctx, base, free, start, scale),
+                NamedTuple{(:max_valid_loglik,)})
+        missing_candidate_max = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = bound_candidate_without_max,
+            scalar_profile_runner = low_scalar,
+            certificate_runner = (args...; kwargs...) -> (status = :test_refusal,),
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test missing_candidate_max.max_valid_loglik == -1.0e6
+        @test missing_candidate_max.status == :nuisance_unresolved
+        malformed_bfgs_record(ctx, base, free, start, scale) =
+            (max_valid_loglik = -1.0e6 + 7.0,
+             max_valid_centered_loglik = 5e-7, centering_ve = Ve)
+        malformed_candidate = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = malformed_bfgs_record,
+            scalar_profile_runner = low_scalar,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test malformed_candidate.status == :nuisance_unresolved
+        @test malformed_candidate.max_valid_loglik == -1.0e6 + 7.0
+        @test malformed_candidate.max_valid_centered_loglik == 5e-7
+
+        partial_certificate(args...; kwargs...) =
+            (max_valid_loglik = -1.0e6 + 8.0,
+             max_valid_centered_loglik = 6e-7, centering_ve = Ve)
+        partial_certificate_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = boundary_bfgs,
+            scalar_profile_runner = low_scalar,
+            certificate_runner = partial_certificate,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test partial_certificate_result.status == :nuisance_unresolved
+        @test partial_certificate_result.max_valid_loglik == -1.0e6 + 8.0
+        @test partial_certificate_result.max_valid_centered_loglik == 6e-7
+
+        partial_polish(args...; kwargs...) =
+            (status = :polish_refused, max_valid_loglik = -1.0e6 + 9.0,
+             max_valid_centered_loglik = 7e-7, centering_ve = Ve)
+        partial_polish_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = boundary_bfgs,
+            scalar_profile_runner = low_scalar,
+            certificate_runner = unresolved_certificate,
+            polish_runner = partial_polish,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test partial_polish_result.status == :nuisance_unresolved
+        @test partial_polish_result.max_valid_loglik == -1.0e6 + 9.0
+        @test partial_polish_result.max_valid_centered_loglik == 7e-7
+        no_max_bound = bound_candidate_without_max(pair_context,
+            [0.0, 0.0, Ve], [1, 2], [0.2, 1e-13], 1.0)
+        no_max_polish = H._arc1_projected_face_polish(pair_context,
+            no_max_bound, 3, 1.0, pair_context.residual_df, Any[], nothing,
+            (status = :not_eligible,); centered_loglik_at = components ->
+                H._arc1_profile_centered_loglik_at(pair_context, components, Ve),
+            centered_maximum_seen = Ref(-Inf), centering_ve = Ve)
+        @test no_max_polish.status == :not_eligible
+        @test no_max_polish.continuation.max_valid_loglik == -1.0e6
+
+        missing_scalar_value(ctx, make_components, scale; kwargs...) =
+            (loglik = -Inf, max_valid_loglik = -1.0e6 + 5.0,
+             centered_loglik = -Inf, max_valid_centered_loglik = 3e-7,
+             centering_ve = Ve, status = :nuisance_unresolved,
+             centered_active = false, candidates = Any[],
+             physical_zero_endpoint_certificate = (status = :not_attempted,))
+        missing_value_result = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = flat_bfgs,
+            scalar_profile_runner = missing_scalar_value,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test missing_value_result.status == :nuisance_unresolved
+        @test missing_value_result.max_valid_loglik == -1.0e6 + 5.0
+        @test missing_value_result.max_valid_centered_loglik == 3e-7
+        @test any(d -> d.status == :invalid_coordinate,
+            only(missing_value_result.nuisance_statuses).exact_zero_faces)
+
+        # The scalar engine catches a later centered callback failure and
+        # returns histories retained by earlier valid evaluations.
+        callback_calls = Ref(0)
+        throwing_centered_callback(components) = begin
+            callback_calls[] += 1
+            callback_calls[] == 1 ? (2e-7, :ok) :
+                throw(ErrorException("controlled centered callback failure"))
+        end
+        scalar_callback_runner(ctx, make_components, scale; kwargs...) =
+            H._arc1_scalar_profile_max(ctx, make_components, scale;
+                profile_loglik_at = components -> (-1.0e6 + 6.0, :ok),
+                centered_loglik_at = throwing_centered_callback,
+                centering_ve = Ve)
+        callback_history = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = flat_bfgs,
+            scalar_profile_runner = scalar_callback_runner,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test callback_calls[] >= 2
+        @test callback_history.status == :nuisance_unresolved
+        @test callback_history.max_valid_loglik == -1.0e6 + 6.0
+        @test callback_history.max_valid_centered_loglik == 2e-7
+
+        post_run_calls = Ref(0)
+        post_run_callback(components) = begin
+            post_run_calls[] += 1
+            post_run_calls[] == 1 ? (2e-7, :ok) :
+                throw(ErrorException("post-run centered callback failure"))
+        end
+        post_run = H._arc1_bfgs_candidate(pair_context, [0.0, 0.0, Ve], [1, 2],
+            [0.1, 0.1], 1.0; centered_loglik_at = post_run_callback,
+            centering_ve = Ve,
+            optimizer_runner = (objective, gradient, start) -> begin
+                objective(start)
+                Arc1PostRunCallbackResult(copy(start), (ls_failed = false,),
+                                          :controlled, 7)
+            end)
+        @test post_run_calls[] == 2
+        @test !post_run.converged
+        @test post_run.max_valid_centered_loglik == 2e-7
+        @test post_run.centering_ve == Ve
+        @test post_run.optimizer_status == "post-run centered callback failure"
+        @test post_run.iterations == 7
+
+        interrupt_post_run_calls = Ref(0)
+        interrupt_post_run_callback(components) = begin
+            interrupt_post_run_calls[] += 1
+            interrupt_post_run_calls[] == 1 ? (2e-7, :ok) : throw(InterruptException())
+        end
+        @test_throws InterruptException H._arc1_bfgs_candidate(pair_context,
+            [0.0, 0.0, Ve], [1, 2], [0.1, 0.1], 1.0;
+            centered_loglik_at = interrupt_post_run_callback, centering_ve = Ve,
+            optimizer_runner = (objective, gradient, start) -> begin
+                objective(start)
+                Arc1PostRunCallbackResult(copy(start), (ls_failed = false,),
+                                          :controlled, 7)
+            end)
+        @test interrupt_post_run_calls[] == 2
+
+        interrupt_calls = Ref(0)
+        interrupting_centered_callback(components) = begin
+            interrupt_calls[] += 1
+            interrupt_calls[] == 1 ? (2e-7, :ok) : throw(InterruptException())
+        end
+        interrupt_scalar_runner(ctx, make_components, scale; kwargs...) =
+            H._arc1_scalar_profile_max(ctx, make_components, scale;
+                profile_loglik_at = components -> (-1.0e6, :ok),
+                centered_loglik_at = interrupting_centered_callback,
+                centering_ve = Ve)
+        @test_throws InterruptException H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; bfgs_runner = flat_bfgs,
+            scalar_profile_runner = interrupt_scalar_runner,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test interrupt_calls[] >= 2
+    end
+
+    @testset "retained N80 coordinates reproduce centered engine arithmetic" begin
+        data = Arc1ProfileEngineeringFixture.arc1_simulate_repeatability(
+            UInt64(2026100204), 80, :interior)
+        ped = H.Pedigree(copy(data.pedigree.ids), copy(data.pedigree.sire),
+            copy(data.pedigree.dam), collect(eachindex(data.pedigree.ids)))
+        record_ids = data.record_animal_ids
+        X80 = ones(length(record_ids), 1)
+        Z80 = zeros(length(record_ids), length(ped.ids))
+        for (i, id) in pairs(record_ids)
+            Z80[i, data.observed_id_to_row[id]] = 1.0
+        end
+        saved_context = H._arc1_profile_context(data.y, X80, Z80,
+            H.pedigree_inverse(ped))
+        rounded_response_fingerprint(values) = bytes2hex(sha256(join(
+            string.(round.(Float64.(vec(values)); digits = 12)), ",")))
+        @test data.seed == UInt64(2026100204)
+        @test rounded_response_fingerprint(data.y) ==
+            "2852964d10287545877a0396a5eacd72e5d9a54417a2929be846f5a701cd5708"
+        @test size(saved_context.transformed_design) == (length(record_ids), 1)
+        @test length(saved_context.transformed_response) == length(record_ids)
+            @test size(saved_context.transformed_design, 2) == 1
+            @test maximum(abs, saved_context.transformed_design[
+                (saved_context.nobserved_animals + 1):(2saved_context.nobserved_animals), :]) == 0.0
+            cases = (
+                ([8.732732243825042e-13, 0.7451281637812672, 9.814158264884749e-7],
+                 [0.0, 0.7451276801470778, 9.814158264884749e-7],
+                 -57.79606581137294, -57.796065811381126),
+                ([8.732732243825042e-13, 0.7450648653896434, 8.88276206174465e-5],
+                 [0.0, 0.7450842922916205, 8.88276206174465e-5],
+                 -57.79606582476545, -57.79606581137183))
+            for (candidate, face, candidate_expected, face_expected) in cases
+                candidate_center = H._arc1_profile_centered_loglik(saved_context, candidate)
+                face_center = H._arc1_profile_centered_loglik(saved_context, face)
+                candidate_full = H._arc1_profile_reml(saved_context, candidate...).loglik
+                constant = H._arc1_profile_centering_constant(saved_context, candidate[3])
+                @test candidate_center.status == face_center.status == :ok
+                @test candidate_center.loglik ≈ candidate_expected atol = 1e-9
+                @test face_center.loglik ≈ face_expected atol = 1e-9
+                @test candidate_full ≈ candidate_center.loglik + constant atol = 1e-7
+            end
+            c7 = cases[2]
+            @test H._arc1_profile_centered_loglik(saved_context, c7[1]).loglik -
+                H._arc1_profile_centered_loglik(saved_context, c7[2]).loglik < -1e-8
+
+            # The native certificate producer compares on the centered scale;
+            # a large but finite full-likelihood diagnostic spread must not
+            # reinstate its full-scale gate in the downstream validator.
+            m = saved_context.nobserved_animals
+            scaled_context = merge(saved_context, (transformed_response = vcat(
+                view(saved_context.transformed_response, 1:m),
+                16 .* view(saved_context.transformed_response, (m + 1):(2m))),))
+            candidate_values, face_values = cases[1][1], cases[1][2]
+            ve = candidate_values[3]
+            candidate_full = H._arc1_profile_reml(scaled_context,
+                candidate_values...).loglik
+            face_full = H._arc1_profile_reml(scaled_context, face_values...).loglik
+            candidate_centered = H._arc1_profile_centered_loglik(
+                scaled_context, candidate_values).loglik
+            face_centered = H._arc1_profile_centered_loglik(
+                scaled_context, face_values).loglik
+            candidate_record = (loglik = candidate_full,
+                max_valid_loglik = candidate_full, centered_loglik = candidate_centered,
+                max_valid_centered_loglik = candidate_centered, centering_ve = ve,
+                components = copy(candidate_values), iterations = 50,
+                free_indices = [1, 2], hit_bound_components = [
+                    (component = 1, side = :lower, value = candidate_values[1])],
+                converged = false, hit_bound = true, optimizer_converged = true,
+                gradient_norm = 0.0, analytic_gradient_valid = true,
+                line_search_failed = false,
+                finite_difference_errors = Dict(1 => Inf, 2 => 0.0))
+            face_record = (zero_index = 1, status = :ok, loglik = face_full,
+                centered_loglik = face_centered,
+                max_valid_centered_loglik = face_centered, centering_ve = ve,
+                components = copy(face_values))
+            native_certificate = H._arc1_zero_bound_face_certificate(
+                candidate_record, 3, 1.0, scaled_context.residual_df, [face_record],
+                nothing, components ->
+                    H._arc1_loglik_for_components(scaled_context, components),
+                (components; free_indices) -> H._arc1_profile_objective_gradient(
+                    scaled_context, components; free_indices);
+                centered_loglik_at = components ->
+                    H._arc1_profile_centered_loglik_at(scaled_context, components, ve),
+                centering_ve = ve, historical_likelihoods = [candidate_full],
+                historical_centered_likelihoods = [candidate_centered])
+            @test native_certificate.status == :resolved_lower_bound_by_zero_face
+            @test native_certificate.likelihood_spread_centered <= 1e-8
+            @test H._arc1_profile_resolved_face_certificate_valid(
+                native_certificate, true)
+            controlled_full_spread = merge(native_certificate,
+                (likelihood_spread = 9.54e-7,))
+            @test H._arc1_profile_resolved_face_certificate_valid(
+                controlled_full_spread, true)
+            @test !H._arc1_profile_resolved_face_certificate_valid(
+                controlled_full_spread, false)
+    end
+
     @testset "paired reduced analytic gradient matches finite differences" begin
         components = [0.3, 0.2, 0.5]
         result = H._arc1_profile_objective_gradient(context, components)
@@ -314,7 +1242,9 @@ end
             (; component_gradient=zeros(3), loglik=point_loglik)
         certificate_runner = (args...) ->
             (; status=:projected_gradient_unresolved,
-               max_valid_loglik=point_loglik)
+               max_valid_loglik=point_loglik,
+               projected_loglik=point_loglik,
+               projected_centered_loglik=point_loglik)
         polish_runner = (ctx, candidate, index, scale, df, faces, intersection,
                          initial; maximum_seen, kwargs...) -> begin
             maximum_seen[] = point_loglik + 2e-7
@@ -345,6 +1275,38 @@ end
             @test all(!targets[t].formed && targets[t].confidence_set === nothing
                       for t in H._ARC1_PROFILE_TARGETS)
         end
+
+        # Status, likelihood, and components alone cannot stand in for a
+        # zero-face certificate's likelihood and derivative evidence.
+        cert_calls = Ref(0)
+        certificate_candidate(ctx, base, free, starts, scale) = begin
+            cert_calls[] += 1
+            bound = cert_calls[] == 1
+            (; loglik = point_loglik, max_valid_loglik = point_loglik,
+               components = [1.0, 1.0, 1.0], converged = !bound, hit_bound = bound,
+               hit_bound_components = bound ?
+                   [(component = 2, side = :lower, value = 1e-13)] : Any[],
+               gradient_norm = 0.0, optimizer_converged = true,
+               analytic_gradient_valid = true, line_search_failed = false,
+               optimizer_status = "controlled", iterations = 3,
+               free_indices = [2, 3], finite_difference_error = 0.0,
+               finite_difference_errors = Dict(2 => Inf, 3 => 0.0))
+        end
+        partial_resolved_certificate(args...; kwargs...) =
+            (status = :resolved_lower_bound_by_zero_face, loglik = point_loglik,
+             components = [1.0, 0.0, 1.0])
+        @test !H._arc1_profile_resolved_face_certificate_valid(
+            partial_resolved_certificate(), false)
+        partial_certificate_result = H._arc1_raw_nuisance(raw_mock_context,
+            :additive_variance, 1.0, 1.0; bfgs_runner = certificate_candidate,
+            scalar_profile_runner = scalar_profile_runner,
+            loglik_runner = loglik_runner, gradient_runner = gradient_runner,
+            certificate_runner = partial_resolved_certificate)
+        partial_certificate_diagnostics = only(filter(x -> x.kind == :raw_nuisance_search,
+            partial_certificate_result.nuisance_statuses))
+        @test partial_certificate_diagnostics.resolved_lower_bound_by_zero_face == 0
+        @test only(partial_certificate_diagnostics.lower_bound_resolutions).status ==
+              :certificate_record_invalid
     end
 
     @testset "resolved raw candidates report the polished gradient" begin
@@ -368,13 +1330,25 @@ end
                physical_zero_endpoint_certificate=nothing)
         end
         certificate_runner = (args...) ->
-            (; status=:projected_gradient_unresolved, max_valid_loglik=2.0)
+            (; status=:projected_gradient_unresolved, max_valid_loglik=2.0,
+               projected_loglik=2.0, projected_centered_loglik=2.0)
+        resolved_boundary_certificate = (
+            status = :resolved_lower_bound_by_zero_face, zero_indices = [2],
+            components = [1.0, 0.0, 1.0], projected_components = [1.0, 0.0, 1.0],
+            loglik = 2.0, original_loglik = 2.0, projected_loglik = 2.0,
+            face_loglik = 2.0, likelihood_spread = 0.0, centered_active = false,
+            candidate_centered_loglik = NaN, projected_centered_loglik = NaN,
+            face_centered_loglik = NaN, candidate_max_valid_centered_loglik = NaN,
+            likelihood_spread_centered = NaN, projected_log_gradient_norm = 0.0,
+            analytic_active_derivatives = Dict(2 => 1e-4),
+            forward_derivatives = Dict(2 => (1e-4, 1e-4)))
         polish_runner = (ctx, candidate, index, scale, df, faces, intersection,
                          initial; maximum_seen, kwargs...) -> begin
             (; status=:resolved_projected_face_polish, loglik=2.0,
                components=[1.0, 0.0, 1.0], max_valid_loglik=2.0,
-               boundary_certificate=(; status=:resolved_lower_bound_by_zero_face),
-               continuation=(; continuation_gradient_norm=7e-7,
+               boundary_certificate=resolved_boundary_certificate,
+               continuation=(; status=:resolved_projected_face_polish,
+                   continuation_gradient_norm=7e-7,
                    parent_candidate_index=candidate.candidate_index,
                    max_valid_loglik=2.0))
         end
@@ -553,6 +1527,13 @@ end
         @test maximum(abs(fd - certificate.analytic_active_derivatives[index])
                       for (index, estimates) in certificate.forward_derivatives
                       for fd in estimates) <= 5e-6
+        malformed_candidate_max = Ref(ll0)
+        malformed_certificate = H._arc1_zero_bound_face_certificate(
+            merge(candidate, (components = nothing,
+                max_valid_loglik = ll0 + 2e-8)), 1, s0, df, [face], nothing,
+            objective, gradient; maximum_seen = malformed_candidate_max)
+        @test malformed_certificate.status == :candidate_record_invalid
+        @test malformed_candidate_max[] == ll0 + 2e-8
         bad_remaining_gradient(components; free_indices) = begin
             component_gradient = [0.0, slope / s0, 2e-6]
             (component_gradient, log_gradient = component_gradient[free_indices] .*
@@ -632,6 +1613,89 @@ end
         @test face_result.components == different_face.components
         @test face_result.loglik == different_face.loglik
         @test face_result.projected_components == [2.0, 0.0, 3.0]
+    end
+
+    @testset "fixed-Ve certificates use centered values without relaxing limits" begin
+        df, s0, Ve = 159.0, 0.9601740644340048, 9.814158264884749e-7
+        analytic = 0.007596111699614222
+        centered_q(components) = 2.0 + analytic * components[1] / s0
+        centered_at(components) = (-df * centered_q(components), :ok)
+        large_constant = -1.7798907109322877e7
+        full_at(components) = (centered_at(components)[1] + large_constant, :ok)
+        gradient_at(components; free_indices) = begin
+            component_gradient = [analytic / s0, 0.0, 0.0]
+            (loglik = full_at(components)[1], component_gradient = component_gradient,
+             log_gradient = component_gradient[free_indices] .* components[free_indices])
+        end
+        face_components = [0.0, 0.7451276801470778, Ve]
+        face_center = centered_at(face_components)[1]
+        face = (status = :ok, zero_index = 1,
+                loglik = full_at(face_components)[1], centered_loglik = face_center,
+                centering_ve = Ve, components = face_components)
+        candidate_components = [8.732732243825042e-13, 0.7451281637812672, Ve]
+        candidate_center = centered_at(candidate_components)[1]
+        candidate = (loglik = full_at(candidate_components)[1],
+            centered_loglik = candidate_center, max_valid_loglik = full_at(candidate_components)[1],
+            max_valid_centered_loglik = candidate_center + 8.18e-12, centering_ve = Ve,
+            components = candidate_components, converged = false, optimizer_converged = true,
+            gradient_norm = 0.0, finite_difference_error = 0.0,
+            analytic_gradient_valid = true, line_search_failed = false,
+            free_indices = [1, 2], finite_difference_errors = Dict(1 => Inf, 2 => 0.0),
+            hit_bound_components = [(component = 1, side = :lower, value = candidate_components[1])])
+        certificate = H._arc1_zero_bound_face_certificate(candidate, 3, s0, df,
+            [face], nothing, full_at, gradient_at;
+            centered_loglik_at = centered_at, centering_ve = Ve,
+            historical_likelihoods = [candidate.max_valid_loglik],
+            historical_centered_likelihoods = [candidate.max_valid_centered_loglik])
+        @test certificate.status == :resolved_lower_bound_by_zero_face
+        @test certificate.likelihood_spread_centered <= 1e-8
+        @test certificate.analytic_active_derivatives[1] ≈ analytic atol = 1e-14
+        @test maximum(abs(fd - analytic) for fd in certificate.forward_derivatives[1]) < 5e-6
+        @test certificate.loglik == face.loglik
+
+        # The real saved candidate 7 has a centered candidate-to-face spread
+        # above the unchanged threshold and remains unresolved.
+        candidate7_components = [8.732732243825042e-13, 0.7450648653896434, 8.88276206174465e-5]
+        face7_components = [0.0, 0.7450842922916205, candidate7_components[3]]
+        candidate7_center = centered_at(candidate7_components)[1]
+        face7_center = candidate7_center + 1.3393630342542925e-8
+        c7 = merge(candidate, (components = candidate7_components,
+            loglik = full_at(candidate7_components)[1], centered_loglik = candidate7_center,
+            max_valid_loglik = full_at(candidate7_components)[1],
+            max_valid_centered_loglik = candidate7_center,
+            centering_ve = candidate7_components[3]))
+        face7 = merge(face, (components = face7_components,
+            loglik = full_at(face7_components)[1], centered_loglik = face7_center,
+            centering_ve = candidate7_components[3]))
+        refused = H._arc1_zero_bound_face_certificate(c7, 3, s0, df,
+            [face7], nothing, full_at, gradient_at;
+            centered_loglik_at = centered_at, centering_ve = candidate7_components[3])
+        @test refused.status == :face_likelihood_mismatch
+        @test refused.likelihood_spread_centered > 1e-8
+        @test refused.likelihood_spread_centered ≈ 1.3393630342542925e-8 atol = 2e-14
+        wrong_face_tag = merge(face, (centering_ve = 2Ve,))
+        wrong_face_certificate = H._arc1_zero_bound_face_certificate(candidate, 3, s0, df,
+            [wrong_face_tag], nothing, full_at, gradient_at;
+            centered_loglik_at = centered_at, centering_ve = Ve)
+        @test wrong_face_certificate.status == :centering_tag_mismatch_face
+        @test wrong_face_certificate.observed_centering_ve == 2Ve
+
+        # Even when the full likelihoods are indistinguishable at this scale,
+        # an improving same-Ve centered probe remains a competitive failure.
+        centered_probe = (loglik = large_constant, max_valid_loglik = large_constant,
+            centered_loglik = -2.0, max_valid_centered_loglik = -1.9999998,
+            centering_ve = Ve, converged = false, hit_bound = true)
+        @test H._arc1_raw_competitor_is_competitive(centered_probe, -2.0;
+            centering_ve = Ve)
+        wrong_ve_probe = merge(centered_probe, (centering_ve = 2Ve,))
+        @test !H._arc1_raw_competitor_is_competitive(wrong_ve_probe, -2.0;
+            centering_ve = Ve)
+        untagged_probe = (loglik = large_constant, max_valid_loglik = large_constant,
+            converged = false, hit_bound = true)
+        @test !H._arc1_raw_competitor_is_competitive(untagged_probe, -2.0;
+            centering_ve = Ve)
+        @test H._arc1_profile_comparison_loglik(centered_probe, Ve) == -2.0
+        @test H._arc1_profile_comparison_loglik(wrong_ve_probe, Ve) == -Inf
     end
 
     @testset "failed profile paths retain their best valid likelihood" begin
@@ -976,6 +2040,39 @@ end
             loglik_at = objective, gradient_at = exact_gradient,
             continuation_runner = mismatch_runner)
         @test mismatch.status == :face_likelihood_mismatch
+
+        # A converged-looking partial adapter record is refused after its
+        # returned history is ingested; it cannot reach the merger below.
+        partial_continuation_runner = (ctx, base, free, start, scale, budget) ->
+            (loglik = ll0 - 1.0, max_valid_loglik = ll0 + 2e-8,
+             components = copy(base), iterations = 4, converged = true,
+             free_indices = copy(free))
+        partial_continuation_max = Ref(ll0)
+        partial_continuation = H._arc1_projected_face_polish(context, original,
+            1, s0, df, [face], nothing, initial;
+            maximum_seen = partial_continuation_max, loglik_at = objective,
+            gradient_at = exact_gradient,
+            continuation_runner = partial_continuation_runner)
+        @test partial_continuation.status == :continuation_record_invalid
+        @test partial_continuation_max[] == ll0 + 2e-8
+
+        partial_initial_certificate = (status = :projected_gradient_unresolved,
+            max_valid_loglik = ll0 + 3e-8)
+        partial_certificate_max = Ref(ll0)
+        partial_certificate = H._arc1_projected_face_polish(context, original,
+            1, s0, df, [face], nothing, partial_initial_certificate;
+            maximum_seen = partial_certificate_max, loglik_at = objective,
+            gradient_at = exact_gradient)
+        @test partial_certificate.status == :initial_certificate_record_invalid
+        @test partial_certificate_max[] == ll0 + 3e-8
+        missing_status_max = Ref(ll0)
+        missing_status_certificate = H._arc1_projected_face_polish(context,
+            original, 1, s0, df, [face], nothing,
+            (max_valid_loglik = ll0 + 4e-8,);
+            maximum_seen = missing_status_max, loglik_at = objective,
+            gradient_at = exact_gradient)
+        @test missing_status_certificate.status == :initial_certificate_record_invalid
+        @test missing_status_max[] == ll0 + 4e-8
     end
 
     @testset "raw nuisance optimizer only stops on the gradient" begin
