@@ -354,6 +354,7 @@ def _julia_env() -> dict[str, str]:
         "OMP_NUM_THREADS": BLAS_THREAD_COUNT,
         "VECLIB_MAXIMUM_THREADS": BLAS_THREAD_COUNT,
         "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER": "0",
+        "ARC1_PROFILE_V3_ONLY": "0",
     }
 
 
@@ -902,9 +903,11 @@ class PackageRun:
         argv, env = _julia_command(capture_dir, self.test_sandbox)
         profile_test_source = (JULIA_ROOT / "test" / "arc1_profiles.jl").read_text(encoding="utf-8")
         if env.get("ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER") != "0" or \
+           env.get("ARC1_PROFILE_V3_ONLY") != "0" or \
            'if get(ENV, "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "0") != "1"' not in profile_test_source or \
+           'if get(ENV, "ARC1_PROFILE_V3_ONLY", "0") == "1"' not in profile_test_source or \
            'all-five Arc1 profile wrapper reports one shared point maximum' not in profile_test_source:
-            raise PackageCheckError("Arc1 all-five profile wrapper is not proven enabled by the frozen test source")
+            raise PackageCheckError("required Arc1 profile tests are not proven enabled by the frozen environment and test source")
         record = self.run_command("julia-pkg-test", argv, JULIA_ROOT, env, RUN_TIMEOUT_S["julia"],
                                   marker="ARC1_PACKAGE_JULIA_COMPONENT_PASS", component="julia")
         captured_project = capture_dir / "Project.toml"
@@ -1317,8 +1320,35 @@ def _synthetic_docs_frontend(root: Path) -> dict[str, Any]:
     }
 
 
+def _self_test_profile_environment_overrides() -> None:
+    """Inherited skip switches must lose to each G7 Julia/R command environment."""
+    inherited_names = ("ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "ARC1_PROFILE_V3_ONLY")
+    prior = {name: os.environ.get(name) for name in inherited_names}
+    try:
+        for name in inherited_names:
+            os.environ[name] = "1"
+        julia_overrides = _julia_env()
+        effective_julia = os.environ.copy()
+        effective_julia.update(julia_overrides)
+        assert all(julia_overrides[name] == "0" for name in inherited_names)
+        assert all(effective_julia[name] == "0" for name in inherited_names)
+        _, command_env = _julia_command(Path("/tmp/arc1-env-self-test"), {
+            "project_sha256": "a" * 64, "manifest_sha256": "b" * 64,
+        })
+        assert all(command_env[name] == "0" for name in inherited_names)
+        r_overrides = _r_env(Path("/tmp/arc1-env-self-test"), Path("/tmp/arc1-bootstrap-self-test"))
+        assert all(r_overrides[name] == "0" for name in inherited_names)
+    finally:
+        for name, value in prior.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
 def _self_test() -> None:
     assert sha256_file(Path(__file__)) == hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    _self_test_profile_environment_overrides()
     with tempfile.TemporaryDirectory(prefix="arc1-package-runner-selftest-") as temp:
         root = Path(temp)
         fake_julia = root / "julia"

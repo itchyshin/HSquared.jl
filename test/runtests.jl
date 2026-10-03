@@ -11212,6 +11212,13 @@ include(joinpath(@__DIR__, "arc1_interfaces.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_dgp.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_identity.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_executor.jl"))
+
+# Keep the accepted standalone native-transport fixture's engine_io methods and
+# constants isolated from the executor/reference tests that load the same file.
+module Arc1TransportT1Regression
+include(joinpath(@__DIR__, "arc1_transport_t1.jl"))
+end
+
 include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
 include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))

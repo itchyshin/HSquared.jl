@@ -49,6 +49,7 @@ JULIA_DEPOT = "/private/tmp/hsquared-arc1-bootstrap-depot:/Users/z3437171/.julia
 JULIA_THREADS = "4"
 BLAS_THREADS = "1"
 PROFILE_WRAPPER = "0"
+PROFILE_V3_ONLY = "0"
 JULIA_TIMEOUT_S = 300
 R_TIMEOUT_S = 360
 VERSION_TIMEOUT_S = 20
@@ -285,9 +286,14 @@ def julia_driver_argv(test_path: Path) -> list[str]:
 
 
 def julia_env() -> dict[str, str]:
-    return {"JULIA_DEPOT_PATH": JULIA_DEPOT, "JULIA_NUM_THREADS": JULIA_THREADS,
-            "OPENBLAS_NUM_THREADS": BLAS_THREADS,
-            "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER": PROFILE_WRAPPER}
+    env = {"JULIA_DEPOT_PATH": JULIA_DEPOT, "JULIA_NUM_THREADS": JULIA_THREADS,
+           "OPENBLAS_NUM_THREADS": BLAS_THREADS,
+           "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER": PROFILE_WRAPPER,
+           "ARC1_PROFILE_V3_ONLY": PROFILE_V3_ONLY}
+    for name in ("ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "ARC1_PROFILE_V3_ONLY"):
+        if env[name] != "0":
+            raise OracleError(f"required Julia Arc1 profile tests are not enabled: {name}={env[name]!r}")
+    return env
 
 
 def terminate_group(proc: subprocess.Popen[Any]) -> str:
@@ -459,7 +465,8 @@ class Runner:
     def check_runtime(self, doc: dict[str, Any]) -> None:
         versions = (
             ("julia-version", ["julia", "--startup-file=no", "--version"], JULIA_ROOT,
-             {k: v for k, v in julia_env().items() if k != "ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER"}),
+             {k: v for k, v in julia_env().items()
+              if k not in {"ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "ARC1_PROFILE_V3_ONLY"}}),
             ("rscript-version", ["Rscript", "--version"], R_ROOT,
              {"OPENBLAS_NUM_THREADS": BLAS_THREADS}),)
         actual = {}
@@ -543,10 +550,31 @@ class Runner:
         return code
 
 
+def _self_test_profile_environment_overrides() -> None:
+    """Inherited skip switches must lose to the explicit G1/G6 command environment."""
+    inherited_names = ("ARC1_SKIP_EXPENSIVE_PROFILE_WRAPPER", "ARC1_PROFILE_V3_ONLY")
+    prior = {name: os.environ.get(name) for name in inherited_names}
+    try:
+        for name in inherited_names:
+            os.environ[name] = "1"
+        overrides = julia_env()
+        effective = os.environ.copy()
+        effective.update(overrides)
+        assert all(overrides[name] == "0" for name in inherited_names)
+        assert all(effective[name] == "0" for name in inherited_names)
+    finally:
+        for name, value in prior.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
 def self_test() -> None:
     assert hashlib.sha256(b"abc").hexdigest() == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     assert julia_argv(JULIA_TESTS[0])[:4] == ["julia", "--startup-file=no", "--project=.", "-e"]
     assert julia_argv(JULIA_TESTS[0])[-1] == str((JULIA_ROOT / JULIA_TESTS[0]).resolve())
+    _self_test_profile_environment_overrides()
     try:
         julia_argv("-e")
     except OracleError:
