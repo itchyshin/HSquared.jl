@@ -1,6 +1,6 @@
-# Proposed repeatability refinement revision
+# Adopted repeatability refinement revision
 
-Status: bounded implementation authorized after independent feasibility review, 2026-10-03. No numerical source has changed yet. The new method must pass independent source review and final certificates before any engineering or study result is accepted under it.
+Status: bounded implementation authorized after independent feasibility review, 2026-10-03. Implementation is in progress under disjoint numerical, interface and receipt ownership. The new method must pass independent source review and final certificates before any engineering or study result is accepted under it.
 
 The user authorized method revision through an explicit decision while preserving failed gates. The proposed revision stays within the Gaussian repeatability model and existing scientific criteria. It does not change the separately pending FA covariance-representation choice.
 
