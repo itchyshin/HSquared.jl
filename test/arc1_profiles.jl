@@ -84,6 +84,447 @@ end
     y, X, Z, Ainv, A = _arc1_test_data()
     context = H._arc1_profile_context(y, X, Z, Ainv)
 
+    @testset "v3 double-zero corner certificate uses native continuation evidence" begin
+        df, s0, ve = 20.0, 1.0, 1.25
+        full_score(c) = (-100.0 - 0.01c[1] - 0.02c[2], :ok)
+        centered_score(c) = (; loglik=first(full_score(c)) - 2.0, status=:ok)
+        gradient_score(c; free_indices=1:3) = begin
+            ll, _ = full_score(c)
+            g = [0.01 / df, 0.02 / df, 0.0]
+            (; loglik=ll, component_gradient=g, log_gradient=g[free_indices] .* c[free_indices])
+        end
+        native_pair(first_contact, second_contact; original_iterations=3,
+                    continuation_iterations=1, changes=NamedTuple()) = begin
+            floor = s0 * 2.0^-40
+            original_components = [0.01, 0.02, ve]
+            original_components[first_contact] = floor
+            original_contact = (component=first_contact, side=:lower,
+                value=floor, log_value=log(floor))
+            continuation_components = copy(original_components)
+            continuation_components[second_contact] = floor
+            original_ll, _ = full_score(original_components)
+            continuation_ll, _ = full_score(continuation_components)
+            original = merge((loglik=original_ll, max_valid_loglik=original_ll,
+                centered_loglik=original_ll-2, max_valid_centered_loglik=original_ll-2,
+                centering_ve=ve, components=original_components, converged=false,
+                optimizer_converged=true, optimizer_status="converged",
+                termination_code=H.Optim.TerminationCode.NoObjectiveChange,
+                analytic_gradient_valid=true, line_search_failed=false,
+                iterations=original_iterations, free_indices=[1,2],
+                finite_difference_errors=Dict(first_contact=>Inf, second_contact=>0.0),
+                gradient_norm=1e-2, hit_bound=true,
+                hit_bound_components=[original_contact]), changes)
+            continuation_contact = (component=second_contact, side=:lower,
+                value=floor, log_value=log(floor))
+            continuation = (loglik=continuation_ll, max_valid_loglik=continuation_ll,
+                centered_loglik=continuation_ll-2,
+                max_valid_centered_loglik=continuation_ll-2, centering_ve=ve,
+                components=continuation_components, converged=false,
+                optimizer_converged=true, optimizer_status="converged",
+                termination_code=H.Optim.TerminationCode.GradientNorm,
+                analytic_gradient_valid=true, line_search_failed=false,
+                iterations=continuation_iterations, free_indices=[second_contact],
+                finite_difference_errors=Dict(second_contact=>Inf),
+                gradient_norm=1e-12, hit_bound=true,
+                hit_bound_components=[continuation_contact])
+            # The retained producer face is the exact intersection [0, 0, Ve],
+            # independently optimized from the original positive candidate.
+            face_components=[0.0,0.0,ve]
+            face_ll, _=full_score(face_components)
+            face=(status=:ok,zero_index=first_contact,components=face_components,
+                loglik=face_ll,centered_loglik=face_ll-2,max_valid_loglik=face_ll,
+                max_valid_centered_loglik=face_ll-2,centering_ve=ve)
+            corner=[0.0,0.0,ve]; corner_ll,_=full_score(corner)
+            intersection=(status=:ok,components=corner,loglik=corner_ll,
+                centered_loglik=corner_ll-2,max_valid_loglik=corner_ll,
+                max_valid_centered_loglik=corner_ll-2,centering_ve=ve)
+            certificate=(status=:face_likelihood_mismatch,zero_indices=[first_contact],
+                centered_active=true,likelihood_spread=abs(original_ll-face_ll),
+                # This is a controlled native-shaped mismatch witness. Its
+                # optimizer score is deliberately distinct from the exact
+                # fixed-Ve face score, as required by v2 eligibility.
+                likelihood_spread_centered=2e-8,
+                centering_ve=ve,
+                candidate_max_valid_centered_loglik=original_ll-2,
+                components=face_components,loglik=face_ll)
+            (;original,continuation,face,intersection,certificate,corner)
+        end
+        @testset "both native lower-contact orders resolve only the physical corner" begin
+            for (first_contact,second_contact) in ((1,2),(2,1))
+                f=native_pair(first_contact,second_contact)
+                full_max=Ref(f.original.max_valid_loglik)
+                centered_max=Ref(f.original.max_valid_centered_loglik)
+                result=H._arc1_profile_v3_double_zero_corner_certificate(
+                    f.original,f.continuation,3,s0,df,[f.face],f.intersection,
+                    f.certificate,components->full_score(components),
+                    (components;free_indices)->gradient_score(components;free_indices),
+                    centered_score,ve;maximum_seen=full_max,
+                    centered_maximum_seen=centered_max)
+                @test result.status == :resolved_double_zero_corner
+                @test result.components == f.corner
+                @test result.loglik == first(full_score(f.corner))
+                @test result.centered_loglik == centered_score(f.corner).loglik
+                @test result.original_native.converged === false
+                @test result.returned_native.converged === false
+                @test result.original_native.termination_code ===
+                    H.Optim.TerminationCode.NoObjectiveChange
+                @test result.returned_native.termination_code ===
+                    H.Optim.TerminationCode.GradientNorm
+                @test result.iterations == (original=3, continuation=1, combined=4, allowance=1997)
+                @test length(result.forward_differences) == 6
+                @test all(r->r.centered_estimate > 0,
+                    result.forward_differences)
+                @test result.centered_score_spread <= 1e-8
+                @test full_max[] >= result.loglik
+                @test centered_max[] >= result.centered_loglik
+            end
+        end
+
+        @testset "native metadata, budget, and physical checks fail closed" begin
+            f=native_pair(1,2)
+            run(f;kwargs...) = H._arc1_profile_v3_double_zero_corner_certificate(
+                f.original,f.continuation,3,s0,df,[f.face],f.intersection,
+                f.certificate,components->full_score(components),
+                (components;free_indices)->gradient_score(components;free_indices),
+                centered_score,ve;maximum_seen=Ref(f.original.max_valid_loglik),
+                centered_maximum_seen=Ref(f.original.max_valid_centered_loglik),kwargs...)
+            wrong_enum=merge(f.continuation,(termination_code=:gradient_converged,))
+            @test run(merge(f,(continuation=wrong_enum,))).status == :continuation_native_record_invalid
+            @test run(merge(f,(continuation=merge(f.continuation,(converged=true,)),))).status == :continuation_native_record_invalid
+            @test run(merge(f,(continuation=merge(f.continuation,(iterations=1998,)),))).status == :combined_budget_exceeded
+            changed_held=copy(f.continuation.components); changed_held[1]+=eps()
+            @test run(merge(f,(continuation=merge(f.continuation,(components=changed_held,)),))).status == :held_component_changed
+            extra_contact=merge(f.continuation,(;hit_bound_components=[f.continuation.hit_bound_components[1],
+                (component=3,side=:lower,value=0.0,log_value=-Inf)]))
+            @test run(merge(f,(continuation=extra_contact,))).status == :continuation_native_record_invalid
+            negative_infinite_fd=merge(f.continuation,
+                (;finite_difference_errors=Dict(2=>-Inf)))
+            @test run(merge(f,(continuation=negative_infinite_fd,))).status ==
+                :continuation_contact_fd_mismatch
+            negative_norm_original=merge(f.original,(;gradient_norm=-1.0))
+            @test H._arc1_profile_v3_original_status(negative_norm_original,
+                f.certificate,3,s0,[f.face],ve) == :original_gradient_norm_invalid
+            negative_original_fd=merge(f.original,(;finite_difference_errors=
+                Dict(1=>-Inf,2=>0.0)))
+            @test H._arc1_profile_v3_original_status(negative_original_fd,
+                f.certificate,3,s0,[f.face],ve) != :eligible
+            bad_gradient=(components;free_indices)->merge(gradient_score(components;free_indices),
+                (;component_gradient=[5e-6/s0,0.02/df,0.0]))
+            @test H._arc1_profile_v3_double_zero_corner_certificate(f.original,f.continuation,
+                3,s0,df,[f.face],f.intersection,f.certificate,components->full_score(components),
+                bad_gradient,centered_score,ve;maximum_seen=Ref(-Inf),
+                centered_maximum_seen=Ref(-Inf)).status == :active_derivative_not_positive
+            wrong_certificate_ve=merge(f.certificate,(;centering_ve=ve+eps(ve)))
+            @test H._arc1_profile_v3_native_pair_status(f.original,f.continuation,
+                3,s0,df,wrong_certificate_ve,[f.face],ve) ==
+                    :initial_certificate_centering_tag_mismatch
+            wrong_zero=merge(f.certificate,(;zero_indices=[3]))
+            @test H._arc1_profile_v3_native_pair_status(f.original,f.continuation,
+                3,s0,df,wrong_zero,[f.face],ve) == :original_native_record_invalid
+            bad_probe(c)=begin
+                ll,_=full_score(c)
+                c[1] == s0*1e-4 && c[2] == 0.0 ?
+                    (first(full_score(f.corner))+2e-7,:ok) : (ll,:ok)
+            end
+            bad_centered_probe(c)=begin
+                ll,status=bad_probe(c)
+                (;loglik=ll-2.0,status)
+            end
+            rejected=H._arc1_profile_v3_double_zero_corner_certificate(
+                f.original,f.continuation,3,s0,df,[f.face],f.intersection,f.certificate,
+                bad_probe,(components;free_indices)->gradient_score(components;free_indices),
+                bad_centered_probe,ve;maximum_seen=Ref(-Inf),centered_maximum_seen=Ref(-Inf))
+            @test rejected.status == :better_corner_probe_likelihood
+            @test rejected.max_valid_loglik > first(full_score(f.corner))
+        end
+
+        @testset "complete producer histories and saved intersection evidence are fail-closed" begin
+            f=native_pair(1,2)
+            run(f;kwargs...) = H._arc1_profile_v3_double_zero_corner_certificate(
+                f.original,f.continuation,3,s0,df,[f.face],f.intersection,
+                f.certificate,components->full_score(components),
+                (components;free_indices)->gradient_score(components;free_indices),
+                centered_score,ve;maximum_seen=Ref(-Inf),
+                centered_maximum_seen=Ref(-Inf),kwargs...)
+            better_centered=merge(f.certificate,(;candidate_max_valid_centered_loglik=
+                centered_score(f.corner).loglik+2e-7))
+            retained=run(merge(f,(certificate=better_centered,)))
+            @test retained.status == :resolved_double_zero_corner
+            @test retained.max_valid_centered_loglik ==
+                centered_score(f.corner).loglik+2e-7
+            untagged=Base.structdiff(better_centered,(;centering_ve=ve))
+            refused=run(merge(f,(certificate=untagged,)))
+            @test refused.status == :centered_history_provenance_unresolved
+            @test refused.max_valid_loglik >= f.original.loglik
+            @test !isempty(refused.provenance_failures)
+
+            for bad_intersection in (
+                    merge(f.intersection,(;loglik=NaN)),
+                    merge(f.intersection,(;centered_loglik=NaN)),
+                    merge(f.intersection,(;centering_ve=ve+1)),
+                    merge(f.intersection,(;centered_loglik=f.intersection.centered_loglik+2e-8)))
+                result=run(merge(f,(intersection=bad_intersection,)))
+                @test result.status in (:intersection_evidence_invalid,
+                    :corner_score_spread_unresolved)
+            end
+            missing_score=Base.structdiff(f.intersection,(centered_loglik=f.intersection.centered_loglik,))
+            @test run(merge(f,(intersection=missing_score,))).status ==
+                :intersection_evidence_invalid
+            missing_full=Base.structdiff(f.intersection,(loglik=f.intersection.loglik,))
+            @test run(merge(f,(intersection=missing_full,))).status ==
+                :intersection_evidence_invalid
+            nested=merge(f.face,(;physical_zero_endpoint_certificate=(;
+                status=:refused,max_valid_loglik=25.0,
+                max_valid_centered_loglik=centered_score(f.corner).loglik+3e-7,
+                centering_ve=ve)))
+            nested_result=run(merge(f,(face=nested,)))
+            @test nested_result.max_valid_loglik >= 25.0
+            @test nested_result.max_valid_centered_loglik >=
+                centered_score(f.corner).loglik+3e-7
+        end
+
+        @testset "caller-owned evidence survives evaluator error and interrupt" begin
+            f=native_pair(1,2)
+            sink=Dict{Symbol,Any}()
+            sink_record=H._arc1_profile_v3_sink_record!(sink,:residual_variance,ve)
+            calls=Ref(0)
+            interrupting_centered(c) = begin
+                calls[] += 1
+                throw(InterruptException())
+            end
+            caught=nothing
+            try
+                H._arc1_profile_v3_double_zero_corner_certificate(
+                    f.original,f.continuation,3,s0,df,[f.face],f.intersection,
+                    f.certificate,components->(first(full_score(components))+2e-7,:ok),
+                    (components;free_indices)->gradient_score(components;free_indices),
+                    interrupting_centered,ve;maximum_seen=Ref(-Inf),
+                    centered_maximum_seen=Ref(-Inf),sink_record)
+            catch err
+                caught=err
+            end
+            @test caught isa InterruptException
+            @test calls[] == 1
+            @test length(sink[:arc1_profile_v3_evaluations]) == 1
+            events=only(sink[:arc1_profile_v3_evaluations])[:events]
+            @test length(events) == 2
+            @test events[1][:status] == :returned
+            @test events[1][:value] > first(full_score(f.corner))
+            @test events[2][:status] == :interrupted
+            @test events[2][:components] == f.continuation.components
+            @test only(sink[:arc1_profile_v3_evaluations])[:max_valid_loglik] ==
+                events[1][:value]
+            @test only(sink[:arc1_profile_v3_evaluations])[:max_valid_centered_loglik] >=
+                f.original.max_valid_centered_loglik
+        end
+
+        @testset "retained native continuation literal passes without inventing its omitted original" begin
+            saved_s0=1.0213678541957403
+            saved_df=319.0
+            saved_ve=1.3477029634204154
+            saved_floor=saved_s0*2.0^-40
+            saved_original_components=[0.007718128329318392,
+                9.289286519522098e-13,saved_ve]
+            saved_face=(status=:ok,zero_index=2,components=[0.0,0.0,saved_ve],
+                loglik=-171.35761740585306,centered_loglik=-102.0851168294925,
+                max_valid_loglik=-171.35761740585306,
+                max_valid_centered_loglik=-102.0851168294925,
+                centering_ve=saved_ve)
+            saved_initial=(status=:face_likelihood_mismatch,zero_indices=[2],
+                likelihood_spread=0.09417426962855302,centered_active=true,
+                likelihood_spread_centered=0.09417426962858144)
+            # The serialized reduction omitted the original optimizer flags.
+            # These fields are an explicit producer-shaped control, not claimed
+            # as observed native flags; observed original components/contact and
+            # the continuation below are copied from the retained witness.
+            saved_original=(loglik=-171.45179167548162,
+                max_valid_loglik=-171.4517867700702,
+                centered_loglik=-102.17928619370966,
+                max_valid_centered_loglik=-102.17928619370966,
+                centering_ve=saved_ve,components=saved_original_components,
+                converged=false,optimizer_converged=true,optimizer_status="converged",
+                termination_code=H.Optim.TerminationCode.NoObjectiveChange,
+                analytic_gradient_valid=true,line_search_failed=false,iterations=3,
+                free_indices=[1,2],finite_difference_errors=Dict(1=>0.0,2=>Inf),
+                gradient_norm=0.01,hit_bound=true,
+                hit_bound_components=[(component=2,side=:lower,
+                    value=9.289286519522098e-13,log_value=-27.70474445995877)])
+            saved_returned=(loglik=-171.35761740586906,
+                max_valid_loglik=-171.35761740586904,
+                centered_loglik=-102.08511682950854,
+                max_valid_centered_loglik=-102.08511682950851,
+                centering_ve=saved_ve,
+                components=[9.289286519522133e-13,9.289286519522098e-13,saved_ve],
+                converged=false,optimizer_converged=true,optimizer_status="converged",
+                termination_code=H.Optim.TerminationCode.GradientNorm,
+                analytic_gradient_valid=true,line_search_failed=false,iterations=1,
+                free_indices=[1],finite_difference_errors=Dict(1=>Inf),
+                gradient_norm=3.2892007033503394e-14,hit_bound=true,
+                hit_bound_components=[(component=1,side=:lower,
+                    value=9.289286519522133e-13,log_value=-27.704744459958768)])
+            @test saved_returned.hit_bound_components[1].value ==
+                saved_returned.components[1] > 0
+            @test saved_returned.hit_bound_components[1].value >= saved_floor
+            @test H._arc1_profile_v3_native_pair_status(saved_original,saved_returned,
+                3,saved_s0,saved_df,saved_initial,[saved_face],saved_ve) == :eligible
+        end
+
+        @testset "raw nuisance dispatches one v3 continuation without changing v1/v2" begin
+            y0, _, Z0, Ainv0, _ = _arc1_test_data()
+            na = size(Z0, 2)
+            Xpaired = hcat(ones(length(y0)), repeat(collect(1.0:na), inner=2))
+            ctx = H._arc1_profile_context(y0, Xpaired, Z0, Ainv0)
+            fixed_ve, scale = 1.25, 1.0
+            @test H._arc1_profile_fixed_ve_centering_eligible(ctx, 3, fixed_ve)
+            df0 = ctx.residual_df
+            floor = scale * 2.0^-40
+            score(c) = H._arc1_loglik_for_components(ctx, c)
+            centered(c) = H._arc1_profile_centered_loglik_at(ctx, c, fixed_ve)
+            gradient(c; free_indices=1:3) =
+                H._arc1_profile_objective_gradient(ctx, c; free_indices)
+            counts = Dict(:bfgs=>0, :certificate=>0, :continuation=>0)
+            bfgs = (context, base, free, starts, s) -> begin
+                counts[:bfgs] += 1
+                components = counts[:bfgs] == 1 ? [floor, 0.02, fixed_ve] :
+                    [0.0, 0.0, fixed_ve]
+                ll, status = score(components)
+                cen = centered(components)
+                counts[:bfgs] == 1 ?
+                    (loglik=ll,max_valid_loglik=ll,centered_loglik=cen.loglik,
+                     max_valid_centered_loglik=cen.loglik,centering_ve=fixed_ve,
+                     components,converged=false,optimizer_converged=true,
+                     optimizer_status="converged",
+                     termination_code=H.Optim.TerminationCode.NoObjectiveChange,
+                     analytic_gradient_valid=true,line_search_failed=false,
+                     iterations=3,free_indices=[1,2],
+                     finite_difference_errors=Dict(1=>Inf,2=>0.0),
+                     gradient_norm=1e-2,hit_bound=true,
+                     hit_bound_components=[(component=1,side=:lower,
+                         value=floor,log_value=log(floor))]) :
+                    (loglik=ll,max_valid_loglik=ll,centered_loglik=cen.loglik,
+                     max_valid_centered_loglik=cen.loglik,centering_ve=fixed_ve,
+                     components,converged=true,optimizer_converged=true,
+                     optimizer_status="converged",
+                     termination_code=H.Optim.TerminationCode.GradientNorm,
+                     analytic_gradient_valid=true,line_search_failed=false,
+                     iterations=1,free_indices=[1,2],
+                     finite_difference_errors=Dict(1=>0.0,2=>0.0),
+                     gradient_norm=0.0,hit_bound=false,
+                     hit_bound_components=Any[])
+            end
+            scalar = (context, make_components, s; kwargs...) -> begin
+                components = make_components(0.0)
+                ll, status = score(components); cen = centered(components)
+                (;status=:ok,value=0.0,loglik=ll,max_valid_loglik=ll,
+                  centered_loglik=cen.loglik,max_valid_centered_loglik=cen.loglik,
+                  centering_ve=fixed_ve,components,converged=true,
+                  gradient_norm=0.0,optimizer_status="converged",hit_bound=false,
+                  candidates=Any[],physical_zero_endpoint_certificate=nothing)
+            end
+            initial = (candidate, args...; kwargs...) -> begin
+                counts[:certificate] += 1
+                (;status=:face_likelihood_mismatch,zero_indices=[1],
+                  likelihood_spread=0.094,centered_active=true,
+                  likelihood_spread_centered=0.094,
+                  centering_ve=fixed_ve,
+                  candidate_max_valid_centered_loglik=candidate.max_valid_centered_loglik)
+            end
+            continuation = (context, base, free, start, s, allowance) -> begin
+                counts[:continuation] += 1
+                @test base == [floor,0.02,fixed_ve]
+                @test free == [2]
+                @test allowance == 1997
+                components = [floor,floor,fixed_ve]
+                ll,_=score(components); cen=centered(components)
+                (loglik=ll,max_valid_loglik=ll,centered_loglik=cen.loglik,
+                 max_valid_centered_loglik=cen.loglik,centering_ve=fixed_ve,
+                 components,converged=false,optimizer_converged=true,
+                 optimizer_status="converged",
+                 termination_code=H.Optim.TerminationCode.GradientNorm,
+                 analytic_gradient_valid=true,line_search_failed=false,
+                 iterations=1,free_indices=[2],finite_difference_errors=Dict(2=>Inf),
+                 gradient_norm=1e-12,hit_bound=true,
+                 hit_bound_components=[(component=2,side=:lower,
+                    value=floor,log_value=log(floor))])
+            end
+            common = (;bfgs_runner=bfgs,scalar_profile_runner=scalar,
+                loglik_runner=(context,components)->score(components),
+                gradient_runner=(context,components;free_indices=1:3)->
+                    gradient(components;free_indices),certificate_runner=initial,
+                refinement_runner=continuation)
+
+            v1=H._arc1_raw_nuisance(ctx,:residual_variance,fixed_ve,scale;
+                common...,method_version=:arc1_profile_v1)
+            @test v1.method_version == :arc1_profile_v1
+            @test counts[:continuation] == 0
+            counts[:bfgs]=0; counts[:certificate]=0
+            v2=H._arc1_raw_nuisance(ctx,:residual_variance,fixed_ve,scale;
+                common...,method_version=:arc1_profile_v2)
+            @test v2.method_version == :arc1_profile_v2
+            @test counts[:continuation] == 1
+            counts[:bfgs]=0; counts[:certificate]=0; counts[:continuation]=0
+            raw_sink=Dict{Symbol,Any}(
+                :requested_method_version=>"arc1_profile_v3",
+                :actual_method_version=>"arc1_profile_v3")
+            v3=H._arc1_raw_nuisance(ctx,:residual_variance,fixed_ve,scale;
+                common...,method_version=:arc1_profile_v3,
+                v3_evidence_sink=raw_sink)
+            @test v3.method_version == :arc1_profile_v3
+            @test v3.status == :ok
+            @test counts[:continuation] == 1
+            raw=only(filter(x->x.kind==:raw_nuisance_search,v3.nuisance_statuses))
+            @test raw.resolved_by_double_zero_corner == 1
+            @test only(raw.lower_bound_resolutions).double_zero_corner_certificate.status ==
+                :resolved_double_zero_corner
+            @test only(raw.lower_bound_resolutions).
+                double_zero_corner_certificate.returned_native.converged === false
+            @test raw_sink[:requested_method_version] == "arc1_profile_v3"
+            @test raw_sink[:actual_method_version] == "arc1_profile_v3"
+            @test !isempty(raw_sink[:arc1_profile_v3_evaluations])
+            @test all(ev->ev[:target]==:residual_variance &&
+                ev[:fixed_value]==fixed_ve && ev[:status] in (:ok,:nuisance_unresolved),
+                raw_sink[:arc1_profile_v3_evaluations])
+            @test any(ev->!isempty(ev[:producer_history]),
+                raw_sink[:arc1_profile_v3_evaluations])
+            corner_gradient = only(filter(event ->
+                get(event, :source_kind, nothing) === :gradient,
+                raw_sink[:arc1_profile_v3_evaluations][1][:events]))
+            @test corner_gradient[:kind] === :full
+            @test corner_gradient[:evaluation_valid] === true
+            @test corner_gradient[:value] isa Real
+            @test get(raw_sink[:arc1_profile_v3_evaluations][1],
+                :max_valid_loglik, -Inf) >= corner_gradient[:value]
+
+            nested_scalar = (context,make_components,s;kwargs...) -> begin
+                face=scalar(context,make_components,s;kwargs...)
+                endpoint=(status=:nuisance_unresolved,max_valid_loglik=100.0,
+                    max_valid_centered_loglik=face.centered_loglik+2e-7,
+                    centering_ve=fixed_ve)
+                merge(face,(;physical_zero_endpoint_certificate=endpoint))
+            end
+            nested_v3=H._arc1_raw_nuisance(ctx,:residual_variance,fixed_ve,scale;
+                common...,scalar_profile_runner=nested_scalar,
+                method_version=:arc1_profile_v3)
+            @test nested_v3.status == :nuisance_unresolved
+            @test nested_v3.max_valid_loglik >= 100.0
+            @test nested_v3.max_valid_centered_loglik > nested_v3.centered_loglik+1e-8
+
+            counts[:bfgs]=0; counts[:certificate]=0; counts[:continuation]=0
+            bad_original_bfgs = (args...) -> begin
+                candidate = bfgs(args...)
+                counts[:bfgs] == 1 ? merge(candidate,(;iterations=true)) : candidate
+            end
+            bad_v3=H._arc1_raw_nuisance(ctx,:residual_variance,fixed_ve,scale;
+                common...,bfgs_runner=bad_original_bfgs,method_version=:arc1_profile_v3)
+            @test counts[:continuation] == 0
+            bad_raw=only(filter(x->x.kind==:raw_nuisance_search,bad_v3.nuisance_statuses))
+            @test any(x->x.status==:original_iteration_count_invalid,
+                bad_raw.lower_bound_resolutions)
+        end
+    end
+
+    if get(ENV, "ARC1_PROFILE_V3_ONLY", "0") != "1"
+
     @testset "explicit v2 refinement eligibility uses native optimizer fields" begin
         native = H._arc1_bfgs_candidate(context, [1.0, 0.0, 0.0], [2, 3],
             [2.0^-40, 1.0], 1.0;
@@ -1440,6 +1881,139 @@ end
             loglik_runner = (ctx, values) -> (-1.0e6, :ok),
             gradient_runner = controlled_gradient)
         @test interrupt_calls[] >= 2
+
+        # Native scalar status variants and their nested producers are
+        # collected through the raw consumer, not only by the helper.
+        nested_history_certificate(args...; kwargs...) = (
+            status = :test_refusal,
+            max_valid_loglik = -1.0e6,
+            max_valid_centered_loglik = 40.0,
+            original_native_max_valid_centered_loglik = 5.0,
+            original_native_centering_ve = Ve,
+            candidates = [
+                (status = :exact_endpoint, evaluation_valid = true,
+                 centered_evaluation_valid = true, loglik = -1.0e6 + 1.0,
+                 centered_loglik = 10.0, centering_ve = Ve),
+                (status = :unresolved, evaluation_valid = true,
+                 centered_evaluation_valid = true, loglik = -1.0e6 + 2.0,
+                 centered_loglik = 11.0, centering_ve = Ve),
+                (status = :physical_zero_endpoint, evaluation_valid = true,
+                 centered_evaluation_valid = true, loglik = -1.0e6 + 3.0,
+                 centered_loglik = 12.0, centering_ve = Ve)],
+            physical_zero_endpoint_certificate = (
+                status = :endpoint_forward_derivative_unresolved,
+                endpoint_loglik = -1.0e6 + 4.0, endpoint_loglik_valid = true,
+                lower_loglik = -1.0e6 + 5.0, lower_loglik_valid = true,
+                forward_logliks = [-1.0e6 + 6.0, -1.0e6 + 7.0],
+                forward_logliks_valid = true),
+            point_scores = Dict(:saved_intersection =>
+                (; full = -1.0e6 + 8.0, centered = 20.0,
+                 centering_ve = Ve, evaluation_valid = true,
+                 centered_evaluation_valid = true)),
+            forward_differences = [(; points = [
+                (; full = -1.0e6 + 9.0, centered = 30.0, centering_ve = Ve)])],
+            observations = [
+                (kind = :full, value = -1.0e6 + 10.0, status = :returned,
+                 evaluation_valid = true),
+                (kind = :centered, value = 99.0, status = :returned,
+                 evaluation_valid = true)])
+        nested_history = H._arc1_raw_nuisance(pair_context,
+            :residual_variance, Ve, 1.0; method_version = :arc1_profile_v3,
+            v3_evidence_sink = Dict{Symbol,Any}(), bfgs_runner = boundary_bfgs,
+            scalar_profile_runner = low_scalar,
+            certificate_runner = nested_history_certificate,
+            loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+            gradient_runner = controlled_gradient)
+        @test nested_history.max_valid_loglik == -1.0e6 + 10.0
+        @test nested_history.max_valid_centered_loglik == 30.0
+        @test nested_history.status == :nuisance_unresolved
+        nested_diagnostic = only(nested_history.nuisance_statuses)
+        @test any(f -> f.reason == :centered_provenance_mismatch,
+            nested_diagnostic.v3_history_provenance_failures)
+
+        # V3 adds the strict corner route only for the centered residual
+        # target. Otherwise the inherited single v2 continuation still runs.
+        function inherited_v2_dispatch(ctx, target, fixed)
+            target_index = findfirst(==(target),
+                (:additive_variance, :permanent_environment_variance,
+                 :residual_variance))
+            contact_index = first(filter(i -> i != target_index, (1, 2)))
+            remaining_index = only(filter(i -> i != target_index &&
+                i != contact_index, 1:3))
+            contact_value = 2.0^-40
+            bfgs_calls = Ref(0)
+            continuation_calls = Ref(0)
+            native_candidate(ctx, base, free, start, scale) = begin
+                bfgs_calls[] += 1
+                values = copy(base)
+                values[contact_index] = contact_value
+                values[remaining_index] = 0.75
+                (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+                 components = values, converged = false, gradient_norm = 0.0,
+                 hit_bound = true,
+                 hit_bound_components = [(component = contact_index,
+                     side = :lower, value = contact_value)],
+                 optimizer_converged = true, optimizer_status = "converged",
+                 termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+                 analytic_gradient_valid = true, line_search_failed = false,
+                 iterations = 5, free_indices = copy(free),
+                 finite_difference_errors = Dict(contact_index => Inf,
+                     remaining_index => 0.0))
+            end
+            scalar(ctx, make_components, scale; kwargs...) =
+                (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+                 status = :ok, value = 0.75, candidates = Any[])
+            initial(args...; kwargs...) =
+                (status = :face_likelihood_mismatch,
+                 zero_indices = [contact_index], likelihood_spread = 1.0,
+                 centered_active = false)
+            continued(ctx, base, free, start, scale, allowance) = begin
+                continuation_calls[] += 1
+                error("controlled continuation stop")
+            end
+            raw = H._arc1_raw_nuisance(ctx, target, fixed, 1.0;
+                method_version = :arc1_profile_v3, bfgs_runner = native_candidate,
+                scalar_profile_runner = scalar, certificate_runner = initial,
+                refinement_runner = continued,
+                loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                gradient_runner = controlled_gradient)
+            @test bfgs_calls[] == length(H._ARC1_START_MULTIPLIERS)^2
+            @test continuation_calls[] > 0
+            @test raw.method_version == :arc1_profile_v3
+        end
+        inherited_v2_dispatch(pair_context, :additive_variance, 0.2)
+        inherited_v2_dispatch(pair_context, :permanent_environment_variance, 0.2)
+        inherited_v2_dispatch(nonzero_context, :residual_variance, Ve)
+
+        # The raw sink is caller-owned and updated before the next fallible
+        # callback. An interrupt on the intersection gradient cannot erase
+        # its already returned full likelihood or escape classification.
+        raw_interrupt_sink = Dict{Symbol,Any}()
+        raw_gradient_calls = Ref(0)
+        interrupt_on_intersection_gradient(ctx, values; free_indices = collect(1:3)) = begin
+            raw_gradient_calls[] += 1
+            raw_gradient_calls[] == 3 && throw(InterruptException())
+            (component_gradient = zeros(3), loglik = -1.0e6)
+        end
+        raw_interrupt = try
+            H._arc1_raw_nuisance(pair_context, :residual_variance, Ve, 1.0;
+                method_version = :arc1_profile_v3,
+                v3_evidence_sink = raw_interrupt_sink,
+                bfgs_runner = flat_bfgs, scalar_profile_runner = low_scalar,
+                loglik_runner = (ctx, values) ->
+                    (all(iszero, values[1:2]) ? 100.0 : -1.0e6, :ok),
+                gradient_runner = interrupt_on_intersection_gradient)
+            nothing
+        catch err
+            err
+        end
+        @test raw_interrupt isa InterruptException
+        @test raw_gradient_calls[] == 3
+        raw_interrupt_record = only(raw_interrupt_sink[:arc1_profile_v3_evaluations])
+        @test raw_interrupt_record[:status] == :interrupted
+        @test raw_interrupt_record[:max_valid_loglik] == 100.0
+        @test any(e -> e[:kind] == :raw_exception && e[:status] == :interrupted,
+            raw_interrupt_record[:events])
     end
 
     @testset "retained N80 coordinates reproduce centered engine arithmetic" begin
@@ -2249,9 +2823,13 @@ end
             s0, df, lower, lower_ll, Ref(lower_ll), objective, better_probe).status ==
             :better_probe_likelihood
         singular(components) = (NaN, :singular_proposal)
-        @test H._arc1_physical_zero_endpoint_certificate(make_components, 2, 3, 1,
-            s0, df, lower, lower_ll, Ref(lower_ll), singular, gradient).status ==
-            :physical_zero_endpoint_invalid
+        singular_certificate = H._arc1_physical_zero_endpoint_certificate(
+            make_components, 2, 3, 1, s0, df, lower, lower_ll, Ref(lower_ll),
+            singular, gradient)
+        @test singular_certificate.status == :physical_zero_endpoint_invalid
+        @test isnan(singular_certificate.endpoint_loglik)
+        @test !singular_certificate.endpoint_loglik_valid
+        @test singular_certificate.max_valid_loglik == lower_ll
         flat_gradient(components; free_indices) = merge(gradient(components; free_indices),
             (component_gradient = zeros(3),))
         @test H._arc1_physical_zero_endpoint_certificate(make_components, 2, 3, 1,
@@ -2536,5 +3114,440 @@ end
                                                                            cutoff = 3.0)
     end
     end
+    end
 end
+end
+
+# This contract-only entry point is deliberately outside the broad profile
+# test guard above. It exercises no whole-profile wrapper or Optim optimizer.
+if get(ENV, "ARC1_PROFILE_V3_ONLY", "0") == "1"
+    @testset "Arc1 v3 bounded producer, provenance, and callback contracts" begin
+        yv3, _, Zv3, Ainvv3, _ = _arc1_test_data()
+        na_v3 = size(Zv3, 2)
+        Xv3 = hcat(ones(length(yv3)), repeat(collect(1.0:na_v3), inner = 2))
+        ctx_v3 = H._arc1_profile_context(yv3, Xv3, Zv3, Ainvv3)
+        Ve_v3 = 1.25
+
+        @testset "native scalar callbacks are components-only" begin
+            full_calls, gradient_calls = Ref(0), Ref(0)
+            polynomial_full(components) = begin
+                full_calls[] += 1
+                (-10.0 - 0.01 * sum(components[1:2]), :ok)
+            end
+            polynomial_centered(components) =
+                (-7.0 - 0.01 * sum(components[1:2]), :ok)
+            polynomial_gradient(components; free_indices) = begin
+                gradient_calls[] += 1
+                (; loglik = -10.0 - 0.01 * sum(components[1:2]),
+                   component_gradient = [0.01 / ctx_v3.residual_df,
+                       0.01 / ctx_v3.residual_df, 0.0])
+            end
+            make_components(value) = [0.0, Float64(value), Ve_v3]
+            scalar = H._arc1_scalar_profile_max(ctx_v3, make_components, 1.0;
+                physical_zero_component = 2, target_component = 3,
+                held_zero_component = 1,
+                profile_loglik_at = polynomial_full,
+                profile_gradient_at = polynomial_gradient,
+                centered_loglik_at = polynomial_centered,
+                centering_ve = Ve_v3)
+            @test full_calls[] > 0
+            @test gradient_calls[] > 0
+            @test all(candidate.status != :brent for candidate in scalar.candidates)
+        end
+
+        function native_bfgs_v3(ctx, base, free, start, scale)
+            components = copy(base)
+            components[free] .= start
+            score = -20.0 - sum(components[1:2])
+            centered_score = -15.0 - sum(components[1:2])
+            return (loglik = score, max_valid_loglik = score,
+                centered_loglik = centered_score,
+                max_valid_centered_loglik = centered_score,
+                centering_ve = Ve_v3, components, converged = true,
+                optimizer_converged = true, optimizer_status = "converged",
+                termination_code = H.Optim.TerminationCode.GradientNorm,
+                analytic_gradient_valid = true, line_search_failed = false,
+                iterations = 1, free_indices = copy(free),
+                finite_difference_errors = Dict(i => 0.0 for i in free),
+                gradient_norm = 0.0, hit_bound = false,
+                hit_bound_components = Any[])
+        end
+        raw_loglik_v3(ctx, components) = (-20.0 - sum(components[1:2]), :ok)
+        raw_gradient_v3(ctx, components; free_indices = 1:3) =
+            (; loglik = first(raw_loglik_v3(ctx, components)),
+               component_gradient = [0.0, 0.0, 0.0])
+
+        @testset "raw caller binds callbacks to native scalar signatures" begin
+            full_calls, gradient_calls = Ref(0), Ref(0)
+            polynomial_full(components) = begin
+                full_calls[] += 1
+                (-10.0 - 0.01 * sum(components[1:2]), :ok)
+            end
+            polynomial_centered(components) =
+                (-7.0 - 0.01 * sum(components[1:2]), :ok)
+            function polynomial_gradient(ctx, components; free_indices = 1:3)
+                gradient_calls[] += 1
+                (; loglik = first(polynomial_full(components)),
+                   component_gradient = [0.01 / ctx_v3.residual_df,
+                       0.01 / ctx_v3.residual_df, 0.0])
+            end
+            raw_polynomial_full(ctx, components) = polynomial_full(components)
+            function native_scalar_consumer(ctx, make_components, scale;
+                    profile_loglik_at, profile_gradient_at, centering_ve,
+                    physical_zero_component, target_component, held_zero_component,
+                    kwargs...)
+                return H._arc1_scalar_profile_max(ctx, make_components, scale;
+                    profile_loglik_at, profile_gradient_at,
+                    centered_loglik_at = polynomial_centered, centering_ve,
+                    physical_zero_component, target_component, held_zero_component)
+            end
+                raw = H._arc1_raw_nuisance(ctx_v3, :residual_variance, Ve_v3, 1.0;
+                    method_version = :arc1_profile_v3, bfgs_runner = native_bfgs_v3,
+                    scalar_profile_runner = native_scalar_consumer,
+                    loglik_runner = raw_polynomial_full,
+                gradient_runner = polynomial_gradient)
+            @test full_calls[] > 0
+            @test gradient_calls[] > 0
+            @test raw.method_version == :arc1_profile_v3
+            @test all(d -> d.status != :scalar_callback_exception,
+                filter(d -> d.kind == :exact_zero_face, raw.nuisance_statuses))
+        end
+
+        @testset "native aliases are accepted and real container cycles refuse" begin
+            endpoint = (status = :endpoint_forward_derivative_unresolved,
+                loglik = -10.0, endpoint_loglik_valid = true,
+                centered_loglik = -7.0, endpoint_centered_loglik = -7.0,
+                endpoint_centered_loglik_valid = true, centering_ve = Ve_v3)
+            scalar_with_alias(ctx, make_components, scale; kwargs...) = begin
+                components = make_components(0.5)
+                (status = :nuisance_unresolved, value = 0.5,
+                 loglik = -30.0, max_valid_loglik = -30.0,
+                 centered_loglik = -25.0, max_valid_centered_loglik = -25.0,
+                 centering_ve = Ve_v3, components,
+                 candidates = [(boundary_certificate = endpoint,)],
+                 physical_zero_endpoint_certificate = endpoint)
+            end
+            alias_result = H._arc1_raw_nuisance(ctx_v3, :residual_variance,
+                Ve_v3, 1.0; method_version = :arc1_profile_v3,
+                bfgs_runner = native_bfgs_v3,
+                scalar_profile_runner = scalar_with_alias,
+                loglik_runner = raw_loglik_v3, gradient_runner = raw_gradient_v3)
+            alias_diagnostic = only(filter(d -> d.kind == :raw_nuisance_search,
+                alias_result.nuisance_statuses))
+            @test !any(f -> f.reason == :cycle_detected,
+                alias_diagnostic.v3_history_provenance_failures)
+
+            shared = (status = :ok, loglik = -1.0)
+            alias_record = (physical_zero_endpoint_certificate = shared,
+                candidates = [(boundary_certificate = shared,)])
+            alias_history = H._arc1_profile_v3_history!(Ref(-Inf), Ref(-Inf),
+                alias_record, Ve_v3)
+            @test isempty(alias_history.provenance_failures)
+            dictionary_cycle = Dict{Symbol,Any}()
+            dictionary_cycle[:observations] = dictionary_cycle
+            dictionary_history = H._arc1_profile_v3_history!(Ref(-Inf),
+                Ref(-Inf), (observations = dictionary_cycle,), Ve_v3)
+            @test any(f -> f.reason == :cycle_detected,
+                dictionary_history.provenance_failures)
+            vector_cycle = Any[]
+            push!(vector_cycle, vector_cycle)
+            vector_history = H._arc1_profile_v3_history!(Ref(-Inf), Ref(-Inf),
+                (observations = vector_cycle,), Ve_v3)
+            @test any(f -> f.reason == :cycle_detected,
+                vector_history.provenance_failures)
+        end
+
+        @testset "original centered maxima require original producer tags" begin
+            tag_cases = ((nothing, Ve_v3, 1.0), (2Ve_v3, Ve_v3, 1.0),
+                (Ve_v3, 2Ve_v3, 100.0), (Ve_v3, nothing, 100.0))
+            for (original_tag, current_tag, expected) in tag_cases
+                fields = (original_native_max_valid_centered_loglik = 100.0,
+                    max_valid_centered_loglik = 1.0)
+                original_tag === nothing ||
+                    (fields = merge(fields,
+                        (original_native_centering_ve = original_tag,)))
+                current_tag === nothing ||
+                    (fields = merge(fields, (centering_ve = current_tag,)))
+                full, centered = Ref(-Inf), Ref(-Inf)
+                history = H._arc1_profile_v3_history!(full, centered,
+                    fields, Ve_v3)
+                @test centered[] == expected
+                if original_tag !== Ve_v3 || current_tag !== Ve_v3
+                    @test !isempty(history.provenance_failures)
+                end
+            end
+
+            missing_original_bfgs(ctx, base, free, start, scale) =
+                merge(native_bfgs_v3(ctx, base, free, start, scale),
+                    (original_native_max_valid_centered_loglik = 100.0,))
+            scalar_below_original(ctx, make_components, scale; kwargs...) = begin
+                components = make_components(0.5)
+                (status = :nuisance_unresolved, value = 0.5,
+                 loglik = -30.0, max_valid_loglik = -30.0,
+                 centered_loglik = -25.0, max_valid_centered_loglik = -25.0,
+                 centering_ve = Ve_v3, components, candidates = Any[])
+            end
+            result = H._arc1_raw_nuisance(ctx_v3, :residual_variance,
+                Ve_v3, 1.0; method_version = :arc1_profile_v3,
+                bfgs_runner = missing_original_bfgs,
+                scalar_profile_runner = scalar_below_original,
+                loglik_runner = raw_loglik_v3, gradient_runner = raw_gradient_v3)
+            diagnostic = only(filter(d -> d.kind == :raw_nuisance_search,
+                result.nuisance_statuses))
+            @test result.status == :nuisance_unresolved
+            @test result.max_valid_centered_loglik < 100.0
+            @test any(f -> f.reason == :centered_provenance_mismatch,
+                diagnostic.v3_history_provenance_failures)
+        end
+
+        @testset "nested native producers retain only valid tagged histories" begin
+            nested_history_certificate(args...; kwargs...) = (
+                status = :test_refusal,
+                max_valid_loglik = -20.0,
+                max_valid_centered_loglik = -15.0,
+                original_native_max_valid_centered_loglik = -14.0,
+                original_native_centering_ve = Ve_v3,
+                candidates = [
+                    (status = :exact_endpoint, evaluation_valid = true,
+                     centered_evaluation_valid = true, loglik = -19.0,
+                     centered_loglik = -10.0, centering_ve = Ve_v3),
+                    (status = :unresolved, evaluation_valid = true,
+                     centered_evaluation_valid = true, loglik = -18.0,
+                     centered_loglik = -9.0, centering_ve = Ve_v3),
+                    (status = :physical_zero_endpoint, evaluation_valid = true,
+                     centered_evaluation_valid = true, loglik = -17.0,
+                     centered_loglik = -8.0, centering_ve = Ve_v3)],
+                physical_zero_endpoint_certificate = (
+                    status = :endpoint_forward_derivative_unresolved,
+                    endpoint_loglik = -16.0, endpoint_loglik_valid = true,
+                    lower_loglik = -15.0, lower_loglik_valid = true,
+                    forward_logliks = [-14.0, -13.0],
+                    forward_logliks_valid = true),
+                point_scores = Dict(:saved_intersection =>
+                    (; full = -12.0, centered = 1.0,
+                     centering_ve = Ve_v3, evaluation_valid = true,
+                     centered_evaluation_valid = true)),
+            forward_differences = [(; points = [
+                    (; full = -11.0, centered = 30.0,
+                     centering_ve = Ve_v3)])],
+                observations = [
+                    (kind = :full, value = -10.5, status = :returned,
+                     evaluation_valid = true),
+                    (kind = :centered, value = 99.0, status = :returned,
+                     evaluation_valid = true)])
+            scalar_for_nested(ctx, make_components, scale; kwargs...) = merge(
+                (status = :nuisance_unresolved, value = 0.5,
+                 loglik = -30.0, max_valid_loglik = -30.0,
+                 centered_loglik = -25.0, max_valid_centered_loglik = -25.0,
+                 centering_ve = Ve_v3, components = make_components(0.5)),
+                nested_history_certificate())
+            raw = H._arc1_raw_nuisance(ctx_v3, :residual_variance, Ve_v3,
+                1.0; method_version = :arc1_profile_v3,
+                bfgs_runner = native_bfgs_v3,
+                scalar_profile_runner = scalar_for_nested,
+                certificate_runner = nested_history_certificate,
+                loglik_runner = raw_loglik_v3, gradient_runner = raw_gradient_v3)
+            diagnostic = only(filter(d -> d.kind == :raw_nuisance_search,
+                raw.nuisance_statuses))
+            @test raw.max_valid_loglik == -10.5
+            @test raw.max_valid_centered_loglik == 30.0
+            @test raw.status == :nuisance_unresolved
+            @test any(f -> f.reason == :centered_provenance_mismatch,
+                diagnostic.v3_history_provenance_failures)
+        end
+
+        @testset "resolved and refused endpoint terminal scores survive raw collection" begin
+            floor = 2.0^-40
+            make_endpoint(value) = [0.0, Float64(value), Ve_v3]
+            full_score(components) = (-10.0 - 0.01 * components[2], :ok)
+            centered_score(components) = (-7.0 - 0.01 * components[2], :ok)
+            good_gradient(components; free_indices) =
+                (; loglik = first(full_score(components)),
+                   component_gradient = [0.0,
+                       0.01 / ctx_v3.residual_df, 0.0])
+            bad_gradient(components; free_indices) =
+                (; loglik = first(full_score(components)),
+                   component_gradient = [0.0, 0.0, 0.0])
+            function endpoint_certificate(gradient_at)
+                lower = make_endpoint(floor)
+                lower_full = first(full_score(lower))
+                lower_centered = first(centered_score(lower))
+                full_max = Ref(lower_full)
+                centered_max = Ref(lower_centered)
+                return H._arc1_physical_zero_endpoint_certificate(make_endpoint,
+                    2, 3, 1, 1.0, ctx_v3.residual_df, lower, lower_full,
+                    full_max, full_score, gradient_at;
+                    centered_loglik_at = centered_score, centering_ve = Ve_v3,
+                    lower_centered_loglik = lower_centered,
+                    centered_maximum_seen = centered_max)
+            end
+            resolved = endpoint_certificate(good_gradient)
+            refused = endpoint_certificate(bad_gradient)
+            @test resolved.status == :resolved_physical_zero_endpoint
+            @test refused.status == :endpoint_derivative_not_positive
+            @test resolved.endpoint_loglik_valid
+            @test refused.endpoint_loglik_valid
+            @test resolved.endpoint_centered_loglik_valid
+            @test refused.endpoint_centered_loglik_valid
+
+            function scalar_with_endpoint(endpoint_record)
+                function scalar(ctx, make_components, scale; kwargs...)
+                    components = make_components(0.5)
+                    return (status = :nuisance_unresolved, value = 0.5,
+                        loglik = -30.0, max_valid_loglik = -30.0,
+                        centered_loglik = -25.0, max_valid_centered_loglik = -25.0,
+                        centering_ve = Ve_v3, components, candidates = Any[],
+                        physical_zero_endpoint_certificate = endpoint_record)
+                end
+                scalar
+            end
+            function terminal_record(certificate)
+                if certificate.status == :resolved_physical_zero_endpoint
+                    return (status = certificate.status, loglik = certificate.loglik,
+                        endpoint_loglik_valid = certificate.endpoint_loglik_valid,
+                        centered_loglik = certificate.centered_loglik,
+                        endpoint_centered_loglik = certificate.endpoint_centered_loglik,
+                        endpoint_centered_loglik_valid =
+                            certificate.endpoint_centered_loglik_valid,
+                        centering_ve = Ve_v3)
+                end
+                return (status = certificate.status,
+                    endpoint_loglik = certificate.endpoint_loglik,
+                    endpoint_loglik_valid = certificate.endpoint_loglik_valid,
+                    endpoint_centered_loglik = certificate.endpoint_centered_loglik,
+                    endpoint_centered_loglik_valid =
+                        certificate.endpoint_centered_loglik_valid,
+                    centering_ve = Ve_v3)
+            end
+            for certificate in (resolved, refused)
+                record = terminal_record(certificate)
+                result = H._arc1_raw_nuisance(ctx_v3, :residual_variance,
+                    Ve_v3, 1.0; method_version = :arc1_profile_v3,
+                    bfgs_runner = native_bfgs_v3,
+                    scalar_profile_runner = scalar_with_endpoint(record),
+                    loglik_runner = raw_loglik_v3,
+                    gradient_runner = raw_gradient_v3)
+                @test result.max_valid_loglik >= -10.0
+                @test result.max_valid_centered_loglik >= -7.0
+            end
+            invalid_endpoint = (status = :resolved_physical_zero_endpoint,
+                loglik = 1e6, endpoint_loglik_valid = false,
+                centered_loglik = 1e6, endpoint_centered_loglik = 1e6,
+                endpoint_centered_loglik_valid = false, centering_ve = Ve_v3)
+            invalid_result = H._arc1_raw_nuisance(ctx_v3, :residual_variance,
+                Ve_v3, 1.0; method_version = :arc1_profile_v3,
+                bfgs_runner = native_bfgs_v3,
+                scalar_profile_runner = scalar_with_endpoint(invalid_endpoint),
+                loglik_runner = raw_loglik_v3, gradient_runner = raw_gradient_v3)
+            @test invalid_result.max_valid_loglik < 1e6
+            @test invalid_result.max_valid_centered_loglik < 1e6
+        end
+
+        @testset "inherited routes and interruption history remain covered" begin
+            ypair = [0.2 + 0.1sin(i) + 1.5 * (isodd(i) ? -1 : 1) for i in 1:16]
+            na_pair = 8
+            Zpair = sparse(1:16, repeat(1:na_pair, inner = 2), ones(16),
+                16, na_pair)
+            between = repeat([0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0], inner = 2)
+            Xpair = hcat(ones(16), between)
+            pair_context = H._arc1_profile_context(ypair, Xpair, Zpair,
+                Matrix{Float64}(I, na_pair, na_pair))
+            nonzero_context = H._arc1_profile_context(ypair,
+                hcat(Xpair, repeat([1.0, -1.0], na_pair)), Zpair,
+                Matrix{Float64}(I, na_pair, na_pair))
+            Ve_pair = 9.814158264884749e-7
+            @test H._arc1_profile_fixed_ve_centering_eligible(
+                pair_context, 3, Ve_pair)
+            @test !H._arc1_profile_fixed_ve_centering_eligible(
+                nonzero_context, 3, Ve_pair)
+
+            function inherited_v2_dispatch(context, target, fixed)
+                target_index = findfirst(==(target),
+                    (:additive_variance, :permanent_environment_variance,
+                     :residual_variance))
+                contact_index = first(filter(i -> i != target_index, (1, 2)))
+                remaining_index = only(filter(i -> i != target_index &&
+                    i != contact_index, 1:3))
+                contact_value = 2.0^-40
+                bfgs_calls = Ref(0)
+                continuation_calls = Ref(0)
+                function native_candidate(ctx, base, free, start, scale)
+                    bfgs_calls[] += 1
+                    values = copy(base)
+                    values[contact_index] = contact_value
+                    values[remaining_index] = 0.75
+                    (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+                     components = values, converged = false, gradient_norm = 0.0,
+                     hit_bound = true,
+                     hit_bound_components = [(component = contact_index,
+                         side = :lower, value = contact_value)],
+                     optimizer_converged = true, optimizer_status = "converged",
+                     termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+                     analytic_gradient_valid = true, line_search_failed = false,
+                     iterations = 5, free_indices = copy(free),
+                     finite_difference_errors = Dict(contact_index => Inf,
+                         remaining_index => 0.0))
+                end
+                scalar(ctx, make_components, scale; kwargs...) =
+                    (loglik = -1.0e6, max_valid_loglik = -1.0e6,
+                     status = :ok, value = 0.75, candidates = Any[])
+                initial(args...; kwargs...) =
+                    (status = :face_likelihood_mismatch,
+                     zero_indices = [contact_index], likelihood_spread = 1.0,
+                     centered_active = false)
+                function continued(ctx, base, free, start, scale, allowance)
+                    continuation_calls[] += 1
+                    @test allowance <= 2000
+                    error("controlled continuation stop")
+                end
+                result = H._arc1_raw_nuisance(context, target, fixed, 1.0;
+                    method_version = :arc1_profile_v3,
+                    bfgs_runner = native_candidate,
+                    scalar_profile_runner = scalar,
+                    certificate_runner = initial,
+                    refinement_runner = continued,
+                    loglik_runner = (ctx, values) -> (-1.0e6, :ok),
+                    gradient_runner = raw_gradient_v3)
+                @test bfgs_calls[] == length(H._ARC1_START_MULTIPLIERS)^2
+                @test continuation_calls[] > 0
+                @test result.method_version == :arc1_profile_v3
+            end
+            inherited_v2_dispatch(pair_context, :additive_variance, 0.2)
+            inherited_v2_dispatch(pair_context,
+                :permanent_environment_variance, 0.2)
+            inherited_v2_dispatch(nonzero_context, :residual_variance, Ve_pair)
+
+            sink = Dict{Symbol,Any}()
+            gradient_calls = Ref(0)
+            function interrupt_intersection(ctx, components; free_indices = 1:3)
+                gradient_calls[] += 1
+                gradient_calls[] == 3 && throw(InterruptException())
+                return (; loglik = 100.0, component_gradient = zeros(3))
+            end
+            scalar_for_interrupt(ctx, make_components, scale; kwargs...) = begin
+                components = make_components(0.5)
+                (status = :nuisance_unresolved, value = 0.5,
+                 loglik = -30.0, max_valid_loglik = -30.0,
+                 centered_loglik = -25.0, max_valid_centered_loglik = -25.0,
+                 centering_ve = Ve_v3, components, candidates = Any[])
+            end
+            thrown = try
+                H._arc1_raw_nuisance(ctx_v3, :residual_variance, Ve_v3, 1.0;
+                    method_version = :arc1_profile_v3, v3_evidence_sink = sink,
+                    bfgs_runner = native_bfgs_v3,
+                    scalar_profile_runner = scalar_for_interrupt,
+                    loglik_runner = (ctx, values) ->
+                        (all(iszero, values[1:2]) ? 100.0 : -20.0, :ok),
+                    gradient_runner = interrupt_intersection)
+                nothing
+            catch err
+                err
+            end
+            @test thrown isa InterruptException
+            @test gradient_calls[] == 3
+            event_record = only(sink[:arc1_profile_v3_evaluations])
+            @test event_record[:status] == :interrupted
+            @test event_record[:max_valid_loglik] == 100.0
+        end
+    end
 end

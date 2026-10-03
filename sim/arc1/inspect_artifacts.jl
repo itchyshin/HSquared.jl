@@ -3,16 +3,45 @@ using Serialization
 using SHA
 using UUIDs
 
-const ARC1_HSQUARED_UUID = UUID("a0667dea-0f38-44e8-9150-4fda00624eac")
-
 length(ARGS) == 1 || error("usage: inspect_artifacts.jl request-path")
 artifact_paths = readlines(ARGS[1])
 isempty(artifact_paths) && error("artifact request is empty")
 source_root = realpath(dirname(dirname(dirname(@__FILE__))))
 Pkg.activate(source_root; io=devnull)
+include(joinpath(source_root, "sim", "arc1", "execution_identity.jl"))
 Base.require(Base.PkgId(ARC1_HSQUARED_UUID, "HSquared"))
 include(joinpath(source_root, "sim", "arc1", "engine_io.jl"))
 include(joinpath(source_root, "sim", "arc1", "execute_attempt.jl"))
+
+function arc1_inspector_loaded_engine_identity_matches(metadata, source_root)
+    try
+        runtime = metadata.execution_identity
+        module_object = only([mod for (_, mod) in Base.loaded_modules
+                              if nameof(mod) === :HSquared &&
+                                 getfield(mod, :_ARC1_SOURCE_IDENTITY) isa AbstractString])
+        module_source_identity = string(getfield(module_object, :_ARC1_SOURCE_IDENTITY))
+        module_path = realpath(pathof(module_object))
+        package_id = only([id for (id, mod) in Base.loaded_modules if mod === module_object])
+        source_pins = Dict{String,String}(String(k) => String(v)
+            for (k, v) in pairs(runtime.source_sha256_at_load))
+        environment_pins = Dict{String,String}(String(k) => String(v)
+            for (k, v) in pairs(runtime.environment_sha256))
+        loaded_source = _arc1_snapshot(source_root, source_pins)
+        loaded_environment = _arc1_environment_snapshot(source_root)
+        runtime.engine_package_uuid == string(package_id.uuid) == string(ARC1_HSQUARED_UUID) &&
+            runtime.engine_module_path == module_path == realpath(joinpath(source_root, "src", "HSquared.jl")) &&
+            "HSquared" in runtime.loaded_module_names &&
+            runtime.loaded_engine_source_sha256 == source_pins ==
+                runtime.source_sha256_after_load == loaded_source &&
+            environment_pins == loaded_environment &&
+            runtime.active_project == realpath(joinpath(source_root, "Project.toml")) &&
+            runtime.dependency_environment_verified === true &&
+            hasproperty(metadata, :loaded_arc1_source_identity) &&
+            metadata.loaded_arc1_source_identity == module_source_identity
+    catch
+        false
+    end
+end
 
 rows = Any[]
 for artifact_path in artifact_paths
@@ -62,10 +91,90 @@ for artifact_path in artifact_paths
         string(retained_result.status) : hasproperty(metadata, :status) ? string(metadata.status) : nothing
     retained_success = retained_result !== nothing && hasproperty(retained_result, :success) ?
         Bool(retained_result.success) : hasproperty(metadata, :status) ? false : nothing
+    requested_profile_version = hasproperty(metadata, :requested_profile_method_version) ?
+        metadata.requested_profile_method_version : nothing
+    metadata_profile_version = hasproperty(metadata, :profile_method_version) ?
+        metadata.profile_method_version : nothing
+    retained_v3_evidence = payload !== nothing && hasproperty(payload, :v3_profile_evidence) ?
+        payload.v3_profile_evidence : nothing
+    loaded_engine_source_identity_matches = arc1_inspector_loaded_engine_identity_matches(metadata, source_root)
+    retained_v3_evidence_dict = retained_v3_evidence isa AbstractDict ? retained_v3_evidence : nothing
+    v3_actual = retained_v3_evidence_dict === nothing ? nothing :
+        get(retained_v3_evidence_dict, :actual_method_version, nothing)
+    v3_source = retained_v3_evidence_dict === nothing ? nothing :
+        get(retained_v3_evidence_dict, :source_identity, nothing)
+    v3_records = retained_v3_evidence_dict === nothing ? Any[] :
+        get(retained_v3_evidence_dict, :arc1_profile_v3_evaluations, Any[])
+    loaded_engine = only([mod for (_, mod) in Base.loaded_modules
+                          if nameof(mod) === :HSquared &&
+                             getfield(mod, :_ARC1_SOURCE_IDENTITY) isa AbstractString])
+    loaded_source_identity = string(getfield(loaded_engine, :_ARC1_SOURCE_IDENTITY))
+    retained_result_source_identity = retained_result !== nothing &&
+        hasproperty(retained_result, :source_identity) ? retained_result.source_identity : nothing
+    retained_result_reference_source_identity = retained_result !== nothing &&
+        hasproperty(retained_result, :reference_source_identity) ?
+            retained_result.reference_source_identity : nothing
+    retained_result_identity_matches = if requested_profile_version != "arc1_profile_v3"
+        true
+    elseif retained_result === nothing
+        get(metadata, :status, nothing) in ("error", "interrupted")
+    else
+        retained_profile_version = hasproperty(retained_result, :profile_method_version) ?
+            string(retained_result.profile_method_version) : nothing
+        retained_result_identity = hasproperty(retained_result, :source_identity) ?
+            retained_result.source_identity : nothing
+        retained_reference_identity = hasproperty(retained_result, :reference_source_identity) ?
+            retained_result.reference_source_identity : nothing
+        retained_profile_version == "arc1_profile_v3" &&
+            retained_result_identity == loaded_source_identity &&
+            retained_reference_identity == loaded_source_identity
+    end
+    sink_identity_matches = if requested_profile_version != "arc1_profile_v3"
+        retained_v3_evidence === nothing
+    elseif retained_v3_evidence_dict === nothing ||
+           get(retained_v3_evidence_dict, :requested_method_version, nothing) != requested_profile_version
+        false
+    elseif v3_actual === nothing
+        v3_source === nothing && isempty(v3_records) && metadata_profile_version === nothing
+    else
+        v3_actual == "arc1_profile_v3" && v3_source == loaded_source_identity &&
+            metadata_profile_version == "arc1_profile_v3" &&
+            (!haskey(retained_v3_evidence_dict, :returned_method_version) ||
+             retained_v3_evidence_dict[:returned_method_version] == "arc1_profile_v3")
+    end
+    v3_evidence_identity_matches = sink_identity_matches &&
+        (requested_profile_version != "arc1_profile_v3" ||
+         (loaded_engine_source_identity_matches && retained_result_identity_matches))
+    v3_evidence_partial_present = retained_v3_evidence isa AbstractDict &&
+        !isempty(get(retained_v3_evidence, :arc1_profile_v3_evaluations, Any[]))
+    retained_profile_version = retained_result !== nothing && hasproperty(retained_result, :profile_method_version) ?
+        string(retained_result.profile_method_version) : nothing
+    profile_method_identity_matches = requested_profile_version === nothing ?
+        metadata_profile_version === nothing && retained_profile_version === nothing :
+        retained_profile_version !== nothing ?
+            metadata_profile_version == requested_profile_version == retained_profile_version &&
+                get(metadata, :profile_method_version_mismatch, false) !== true :
+            get(metadata, :profile_method_version_mismatch, false) !== true &&
+                (metadata_profile_version == requested_profile_version ||
+                 (metadata_profile_version === nothing &&
+                  get(metadata, :status, nothing) in ("error", "interrupted")))
     push!(rows, (; path, metadata, receipt_summary=summary,
         retained_result_present=retained_result !== nothing,
         retained_result_status=retained_status, retained_result_success=retained_success,
         retained_data_present=retained_data !== nothing,
+        profile_method_identity_matches,
+        retained_v3_evidence_present=retained_v3_evidence !== nothing,
+        # Keep the actual retained sink available to the independent checker.
+        # This is deliberately projected from JLS bytes, not copied from the
+        # stored receipt summary, so native enum/tuple/dict leaves remain
+        # auditable at the artifact boundary.
+        v3_evidence_records=retained_v3_evidence_dict,
+        v3_evidence_identity_matches,
+        retained_result_identity_matches,
+        retained_result_source_identity,
+        retained_result_reference_source_identity,
+        loaded_engine_source_identity_matches,
+        v3_evidence_partial_present,
         data_seed_matches_metadata=data_seed_matches,
         raw_result_matches_derived_receipt=raw_result_matches,
         raw_result_projection_difference,

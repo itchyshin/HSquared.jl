@@ -9,15 +9,24 @@ using HSquared
     method_ped = normalize_pedigree(["a"], ["0"], ["0"])
     @test_throws ArgumentError arc1_profile_repeatability(
         [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
-        method = "arc1_profile_v3")
-    @test_throws ArgumentError arc1_profile_repeatability(
-        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
         method = :arc1_profile_v2)
 
     @test HSquared._arc1_profile_method_version("arc1_profile_v1") === :arc1_profile_v1
     @test HSquared._arc1_profile_method_version("arc1_profile_v2") === :arc1_profile_v2
-    @test_throws ArgumentError HSquared._arc1_profile_method_version("arc1_profile_v3")
+    @test HSquared._arc1_profile_method_version("arc1_profile_v3") === :arc1_profile_v3
     @test_throws ArgumentError HSquared._arc1_profile_method_version(:arc1_profile_v2)
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        method="arc1_profile_v1", v3_evidence_sink=Dict{Symbol,Any}())
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        method="arc1_profile_v3", v3_evidence_sink=Dict{Symbol,Int}())
+    preflight_sink = Dict{Symbol,Any}()
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        ids=["wrong"], method="arc1_profile_v3", v3_evidence_sink=preflight_sink)
+    @test preflight_sink[:requested_method_version] == "arc1_profile_v3"
+    @test !haskey(preflight_sink, :actual_method_version)
 
     fake = (method = "arc1_profile_v1", method_version = :arc1_profile_v1,
         source_identity = "same",
@@ -35,6 +44,13 @@ using HSquared
         targets = Dict(:heritability => (confidence_set = [(0.1, 0.8)],
             status = :finite_grid_resolved, formed = true)))
     rows = arc1_confint(fake)
+    fake_v3 = merge(fake, (method = "arc1_profile_v3",
+                           method_version = :arc1_profile_v3))
+    @test length(arc1_confint(fake_v3)) == 1
+    @test_throws ArgumentError arc1_confint(merge(fake_v3,
+        (method_version = :arc1_profile_v2,)))
+    missing_v3_identity = Base.structdiff(fake_v3, NamedTuple{(:method_version,)}((:arc1_profile_v3,)))
+    @test_throws ArgumentError arc1_confint(missing_v3_identity)
     fake_v2 = merge(fake, (method = "arc1_profile_v2",
                            method_version = :arc1_profile_v2))
     @test length(arc1_confint(fake_v2)) == 1

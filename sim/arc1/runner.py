@@ -328,11 +328,21 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
                      "max_constrained_loglik", "point_identity", "reference_point_identity",
                      "source_identity", "reference_source_identity",
                      "point_fit_diagnostic_identity", "profile_method_version",
+                     "profile_source_identity",
                      "requested_profile_method_version", "profile_method_version_mismatch",
+                     "v3_profile_evidence", "v3_evidence_retention_error",
                      "target_diagnostics_identity", "data_identity_method",
                      "semantic_data_identity_sha256", "selection", "candidate_summary"):
             if name in result:
                 attempt[name] = result[name]
+        # Engine-level method-entry identity survives a point-fit refusal or
+        # interruption. Keep it separate from the completed-result summary,
+        # which is absent for terminal failures.
+        for name in ("profile_method_version", "profile_source_identity",
+                     "profile_method_version_mismatch", "v3_profile_evidence",
+                     "v3_evidence_retention_error"):
+            if name in stored:
+                attempt[name] = stored[name]
         if "data_identity_sha256" in stored:
             attempt["data_identity_sha256"] = stored["data_identity_sha256"]
         if "semantic_data_identity_sha256" in stored:
@@ -398,7 +408,9 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
                 point_loglik=None, max_constrained_loglik=None, point_estimates=None,
                 point_identity=None, reference_point_identity=None,
                 source_identity=None, reference_source_identity=None,
-                point_fit_diagnostic_identity=None, profile_method_version=None,
+                point_fit_diagnostic_identity=None,
+                profile_method_version=attempt.get("profile_method_version"),
+                profile_source_identity=attempt.get("profile_source_identity"),
                 requested_profile_method_version=admission.get("profile_method_version"),
                 target_diagnostics_identity=None)
         attempts.append(attempt)

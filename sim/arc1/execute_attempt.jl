@@ -303,6 +303,8 @@ function arc1_json_receipt(result)
         return (; success=result.success, status=result.status, failure_reason=result.failure_reason,
             profile_method=result.profile_method, profile_lr_cutoff=result.profile_lr_cutoff,
             profile_intervals=result.profile_intervals, point_estimates=result.point_estimates,
+            v3_profile_evidence=hasproperty(result, :v3_profile_evidence) ?
+                result.v3_profile_evidence : nothing,
             profile_method_version=result.profile_method_version,
             point_fit_status=result.point_fit_status,
             point_fit_not_optimal=result.point_fit_not_optimal,
@@ -391,7 +393,8 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
                                environment_hashes::Dict{String,String},
                                cell::Dict{String,Any}, outer::Int, seed::UInt64,
                                bootstrap_seed_strings::Vector{String},
-                               requested_profile_method_version::Union{Nothing,String})
+                               requested_profile_method_version::Union{Nothing,String};
+                               v3_evidence_sink=nothing)
     programme = cell["programme"]
     n = Int(cell["N"])
     started = time_ns()
@@ -445,17 +448,23 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
             (; data, design, selection, result, reference_raw=raw_reference[])
         kind = programme == "fa_rank" ? "fa_rank" : "fa_interval"
     elseif programme in ("repeatability", "boundary")
-        requested_profile_method_version == "arc1_profile_v2" ||
-            throw(ArgumentError("profile attempt must explicitly request arc1_profile_v2"))
+        requested_profile_method_version == "arc1_profile_v3" ||
+            throw(ArgumentError("profile attempt must explicitly request arc1_profile_v3"))
         data = arc1_simulate_repeatability(seed, n, Symbol(cell["signal"]))
         design = arc1_repeatability_design(engine, data)
         profile = getfield(engine, :arc1_profile_repeatability)(design.y, design.X,
             design.Z, design.pedigree; ids=design.ids,
-            method=requested_profile_method_version)
-        String(profile.method_version) == requested_profile_method_version ||
+            method=requested_profile_method_version,
+            v3_evidence_sink)
+        actual_version = hasproperty(profile, :method_version) ?
+            string(profile.method_version) : nothing
+        v3_evidence_sink[:returned_method_version] = actual_version
+        actual_version == requested_profile_method_version ||
             throw(ArgumentError("profile engine returned a method version different from the admitted request"))
-        result = arc1_repeatability_result(profile)
-        model = (; data, design, profile, result)
+        result = merge(arc1_repeatability_result(profile),
+            (; v3_profile_evidence=v3_evidence_sink))
+        model = (; data, design, profile, result,
+                 v3_profile_evidence=v3_evidence_sink)
         kind = "repeatability"
     else
         throw(ArgumentError("unsupported Arc1 programme: $(repr(programme))"))
@@ -501,6 +510,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
     pre_identity = arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes)
     requested_profile_method_version = isempty(String(get(config, "profile_method_version", ""))) ?
         nothing : String(config["profile_method_version"])
+    v3_evidence_sink = requested_profile_method_version == "arc1_profile_v3" ?
+        Dict{Symbol,Any}(:requested_method_version => requested_profile_method_version) : nothing
     try
         cell = Dict{String,Any}(String(k) => v for (k,v) in config["cell"])
         seed = parse(UInt64, String(config["seed"]))
@@ -508,11 +519,11 @@ if abspath(PROGRAM_FILE) == @__FILE__
         profile_programme = config["cell"]["programme"] in ("repeatability", "boundary")
         profile_programme == (requested_profile_method_version !== nothing) ||
             error("profile method admission pin does not match the requested programme")
-        profile_programme && requested_profile_method_version != "arc1_profile_v2" &&
-            error("profile attempt requires explicit arc1_profile_v2")
+        profile_programme && requested_profile_method_version != "arc1_profile_v3" &&
+            error("profile attempt requires explicit arc1_profile_v3")
         summary = arc1_execute_attempt(engine, loaded_engine, engine_hashes, environment_hashes,
             cell, Int(config["outer"]), seed, bootstrap_seed_strings,
-            requested_profile_method_version)
+            requested_profile_method_version; v3_evidence_sink)
         post_identity = arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes)
         pre_identity == post_identity || error("runtime identity changed during Arc1 outer attempt")
         receipt_summary = merge(arc1_json_receipt(summary.result),
@@ -520,6 +531,10 @@ if abspath(PROGRAM_FILE) == @__FILE__
         receipt_summary_path = String(config["artifact_path"]) * ".summary.json"
         receipt_summary_text = arc1_json(receipt_summary) * "\n"
         receipt_summary_sha = arc1_write_text_new(receipt_summary_path, receipt_summary_text)
+        actual_profile_method_version_value = hasproperty(summary.result, :profile_method_version) ?
+            string(summary.result.profile_method_version) : nothing
+        profile_method_version_mismatch = requested_profile_method_version !== nothing &&
+            actual_profile_method_version_value != requested_profile_method_version
         artifact = merge(summary.artifact_payload, (; metadata=(; schema="arc1-full-result-v2",
             mode=String(config["mode"]), cell, outer=summary.outer,
             seed_string=summary.seed_string, julia_version=string(VERSION),
@@ -529,6 +544,9 @@ if abspath(PROGRAM_FILE) == @__FILE__
             semantic_data_identity_sha256=summary.semantic_data_identity_sha256,
             data_identity_method=summary.data_identity_method,
             requested_profile_method_version,
+            profile_method_version_mismatch,
+            profile_method_version=actual_profile_method_version_value,
+            loaded_arc1_source_identity=string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
             receipt_summary_sha256=receipt_summary_sha,
             receipt_summary_path=receipt_summary_path),
             receipt_summary))
@@ -541,35 +559,74 @@ if abspath(PROGRAM_FILE) == @__FILE__
             semantic_data_identity_sha256=summary.semantic_data_identity_sha256,
             data_identity_method=summary.data_identity_method,
             requested_profile_method_version,
+            profile_method_version_mismatch,
+            profile_method_version=actual_profile_method_version_value,
+            profile_source_identity=hasproperty(summary.result, :source_identity) ?
+                summary.result.source_identity : nothing,
             artifact_path=String(config["artifact_path"]),
             artifact_sha256=artifact_sha, elapsed_seconds=summary.elapsed_seconds,
             observed_ids=summary.observed_ids, record_ids=summary.record_ids,
             record_animal_ids=summary.record_animal_ids, truth=summary.truth,
             execution_identity=post_identity, result=receipt_summary,
             receipt_summary_path, receipt_summary_sha256=receipt_summary_sha)
-        write(stdout, arc1_json(receipt), '\n')
+        projection_error = arc1_emit_receipt(receipt; fallback_fields=(;
+            preserve_original_error=false, mode=String(config["mode"]),
+            outer=summary.outer, seed_string=summary.seed_string, status=summary.status,
+            failure_reason=summary.failure_reason, error_type="",
+            requested_profile_method_version,
+            profile_method_version=actual_profile_method_version_value,
+            profile_method_version_mismatch,
+            profile_source_identity=hasproperty(summary.result, :source_identity) ?
+                summary.result.source_identity : nothing,
+            loaded_arc1_source_identity=string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
+            artifact_path=String(config["artifact_path"]), artifact_sha256=artifact_sha,
+            retention_error=nothing))
+        projection_error === nothing || exit(2)
         summary.success || exit(2)
     catch error
         after_error_identity = try arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes) catch; nothing end
         failure_status = error isa InterruptException ? "interrupted" : "error"
         failure_reason = sprint(showerror, error)
-        profile_method_version_mismatch = occursin(
-            "profile engine returned a method version different from the admitted request", failure_reason)
+        actual_profile_method_version = v3_evidence_sink === nothing ? nothing :
+            get(v3_evidence_sink, :returned_method_version,
+                get(v3_evidence_sink, :actual_method_version, nothing))
+        profile_method_version_mismatch = v3_evidence_sink !== nothing &&
+            haskey(v3_evidence_sink, :returned_method_version) &&
+            actual_profile_method_version != requested_profile_method_version
+        evidence_retention_error = nothing
         failure_artifact = (; metadata=(; schema="arc1-full-result-v2",
             mode=String(config["mode"]), cell=config["cell"], outer=Int(config["outer"]),
             seed_string=String(config["seed"]), julia_version=string(VERSION),
             requested_profile_method_version=String(get(config, "profile_method_version", "")) == "" ?
                 nothing : String(config["profile_method_version"]),
             profile_method_version_mismatch,
+            profile_method_version=actual_profile_method_version,
+            loaded_arc1_source_identity=string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
             execution_identity=after_error_identity, status=failure_status,
             driver_protocol_identity,
             failure_reason, timing_seconds=nothing),
+            v3_profile_evidence=v3_evidence_sink,
             error=(; type=string(typeof(error)), message=failure_reason,
                    backtrace=string.(Base.stacktrace(catch_backtrace()))))
         failure_artifact_sha = try
             arc1_serialize_new(config["artifact_path"], failure_artifact)
-        catch
+        catch retention_error
+            evidence_retention_error = sprint(showerror, retention_error)
             nothing
+        end
+        if failure_artifact_sha === nothing && v3_evidence_sink !== nothing
+            # Keep the original error and status if a malformed sink cannot be
+            # serialized. The receipt reports that evidence retention failed.
+            fallback = (; metadata=merge(failure_artifact.metadata,
+                    (; v3_evidence_retention_error=evidence_retention_error)),
+                error=failure_artifact.error)
+            failure_artifact_sha = try
+                arc1_serialize_new(config["artifact_path"], fallback)
+            catch fallback_error
+                evidence_retention_error = string(evidence_retention_error,
+                    "; fallback artifact: ", sprint(showerror, fallback_error))
+                nothing
+            end
         end
         failure = (; schema="arc1-attempt-result-v1", mode=String(config["mode"]), success=false,
             status=failure_status,
@@ -577,10 +634,29 @@ if abspath(PROGRAM_FILE) == @__FILE__
             requested_profile_method_version=String(get(config, "profile_method_version", "")) == "" ?
                 nothing : String(config["profile_method_version"]),
             profile_method_version_mismatch,
+            profile_method_version=actual_profile_method_version,
+            profile_source_identity=v3_evidence_sink === nothing ? nothing :
+                get(v3_evidence_sink, :source_identity, nothing),
+            v3_profile_evidence=v3_evidence_sink,
+            v3_evidence_retention_error=evidence_retention_error,
             failure_reason, execution_identity=after_error_identity,
             artifact_path=String(config["artifact_path"]), artifact_sha256=failure_artifact_sha,
             error_type=string(typeof(error)))
-        write(stdout, arc1_json(failure), '\n')
+        arc1_emit_receipt(failure; fallback_fields=(;
+            preserve_original_error=true, mode=String(config["mode"]),
+            outer=Int(config["outer"]), seed_string=String(config["seed"]),
+            status=failure_status,
+            failure_reason, error_type=string(typeof(error)),
+            requested_profile_method_version=String(get(config, "profile_method_version", "")) == "" ?
+                nothing : String(config["profile_method_version"]),
+            profile_method_version=actual_profile_method_version,
+            profile_method_version_mismatch,
+            profile_source_identity=v3_evidence_sink === nothing ? nothing :
+                get(v3_evidence_sink, :source_identity, nothing),
+            loaded_arc1_source_identity=after_error_identity === nothing ? nothing :
+                string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
+            artifact_path=String(config["artifact_path"]), artifact_sha256=failure_artifact_sha,
+            retention_error=evidence_retention_error))
         exit(2)
     end
 end

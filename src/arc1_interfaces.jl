@@ -6,6 +6,7 @@
                                method="arc1_profile_v1")
 
 Fit the bounded `arc1_profile_v1` or explicitly selected `arc1_profile_v2`
+or `arc1_profile_v3`
 uncertainty path for a univariate Gaussian
 animal-plus-permanent-environment repeatability design. Each observed animal
 must have exactly two records. `X` must be finite and full column rank, with
@@ -21,15 +22,35 @@ and disconnected confidence-set segments are kept separately.
 function arc1_profile_repeatability(y::AbstractVector, X::AbstractMatrix,
                                     Z::AbstractMatrix, pedigree::Pedigree;
                                     ids = pedigree.ids,
-                                    method = "arc1_profile_v1")
+                                    method = "arc1_profile_v1",
+                                    v3_evidence_sink = nothing)
     method_version = _arc1_profile_method_version(method)
+    if v3_evidence_sink !== nothing
+        method_version === :arc1_profile_v3 || throw(ArgumentError(
+            "v3_evidence_sink is only valid with method=\"arc1_profile_v3\""))
+        v3_evidence_sink isa Dict{Symbol,Any} || throw(ArgumentError(
+            "v3_evidence_sink must be a mutable Dict{Symbol,Any}"))
+        key, value = :requested_method_version, "arc1_profile_v3"
+        if haskey(v3_evidence_sink, key) && v3_evidence_sink[key] != value
+            throw(ArgumentError("v3_evidence_sink contains a conflicting method identity"))
+        end
+        v3_evidence_sink[key] = value
+    end
     collect(ids) == pedigree.ids ||
         throw(ArgumentError("ids must match pedigree order exactly"))
     size(Z, 2) == length(pedigree.ids) ||
         throw(ArgumentError("Z columns must match pedigree order"))
     Ainv = pedigree_inverse(pedigree)
+    if v3_evidence_sink !== nothing
+        for (key, value) in ((:actual_method_version, String(method_version)),
+                             (:source_identity, _ARC1_SOURCE_IDENTITY))
+            haskey(v3_evidence_sink, key) && v3_evidence_sink[key] != value &&
+                throw(ArgumentError("v3_evidence_sink contains a conflicting method identity"))
+            v3_evidence_sink[key] = value
+        end
+    end
     result = _arc1_repeatability_profile_intervals(y, X, Z, Ainv;
-        method_version)
+        method_version, v3_evidence_sink)
     hasproperty(result, :method_version) && result.method_version === method_version ||
         throw(ArgumentError("Arc1 profile result method version does not match the requested method"))
     point_candidate = result.point_fit
@@ -77,9 +98,9 @@ end
 
 function _arc1_profile_method_version(method)
     method isa AbstractString || throw(ArgumentError(
-        "method must be the string \"arc1_profile_v1\" or \"arc1_profile_v2\""))
-    method in ("arc1_profile_v1", "arc1_profile_v2") || throw(ArgumentError(
-        "unsupported Arc1 profile method $(repr(method)); choose \"arc1_profile_v1\" or \"arc1_profile_v2\""))
+        "method must be the string \"arc1_profile_v1\", \"arc1_profile_v2\", or \"arc1_profile_v3\""))
+    method in ("arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3") || throw(ArgumentError(
+        "unsupported Arc1 profile method $(repr(method)); choose \"arc1_profile_v1\", \"arc1_profile_v2\", or \"arc1_profile_v3\""))
     return Symbol(method)
 end
 
@@ -129,7 +150,8 @@ end
 """
     arc1_confint(profile_result)
 
-Return the long interval table for an `arc1_profile_v1` or `arc1_profile_v2`
+Return the long interval table for an `arc1_profile_v1`, `arc1_profile_v2`,
+or `arc1_profile_v3`
 result. The five
 profiled estimands are additive variance, permanent-environment variance,
 residual variance, heritability, and repeatability. Disconnected formed
@@ -145,7 +167,7 @@ function arc1_confint(profile_result)
         _arc1_profile_method_version(profile_result.method)
     catch error
         error isa ArgumentError || rethrow()
-        throw(ArgumentError("arc1_confint requires an arc1_profile_v1 or arc1_profile_v2 result"))
+        throw(ArgumentError("arc1_confint requires an arc1_profile_v1, arc1_profile_v2, or arc1_profile_v3 result"))
     end
     hasproperty(profile_result, :method_version) &&
         profile_result.method_version === method_version ||

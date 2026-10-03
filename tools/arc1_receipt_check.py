@@ -189,7 +189,7 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
         return
     _need(all(present), "profile receipt has incomplete shared point-fit diagnostics")
     if expected_method_version is not None:
-        _need(expected_method_version == "arc1_profile_v2" and
+        _need(expected_method_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3"} and
               attempt.get("requested_profile_method_version") == expected_method_version,
               "profile attempt request differs from the source-admitted method version")
     elif "requested_profile_method_version" in attempt and attempt["requested_profile_method_version"] is not None:
@@ -201,9 +201,25 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
         allowed_unrun_versions = (None, expected_method_version) if expected_method_version else (None, "arc1_profile_v1")
         _need(attempt["profile_method_version"] in allowed_unrun_versions,
               "not-run profile method version is malformed")
+        # Method entry is provenance, not a completed point-fit diagnostic.
+        # An entered v3 call may be interrupted before a point fit exists.
+        if expected_method_version == "arc1_profile_v3":
+            _need(attempt.get("profile_source_identity") is None or
+                  _sha256(attempt.get("profile_source_identity")),
+                  "not-run v3 method source identity must be absent or a SHA-256")
+            if attempt["profile_method_version"] is None:
+                _need(attempt.get("profile_source_identity") is None,
+                      "pre-entry v3 failure cannot claim a loaded method source identity")
+            else:
+                _need(_sha256(attempt.get("profile_source_identity")),
+                      "entered v3 method must retain its loaded source identity")
+        null_point_fields = ("point_fit_not_optimal", "point_loglik",
+            "max_constrained_loglik", "point_identity", "reference_point_identity",
+            "source_identity", "reference_source_identity", "point_fit_diagnostic_identity",
+            "target_diagnostics_identity")
         _need(attempt.get("success") is False and all(not row["formed"] and
               row["status"] == "outer_fit_failed" for row in profile.values()) and
-              all(attempt[field] is None for field in fields if field != "point_fit_status"),
+              all(attempt[field] is None for field in null_point_fields),
               "not-run point fit must retain null diagnostics and refused target rows")
         return
     expected_method_version = expected_method_version or "arc1_profile_v1"
@@ -734,11 +750,35 @@ def verify_receipt(
                   f"attempt {attempt_id} artifact metadata differs from external outer/seed/cell pins")
             if expected_cell["programme"] in {"repeatability", "boundary"}:
                 expected_profile_version = (expected_admission or {}).get("profile_method_version")
-                _need(expected_profile_version == "arc1_profile_v2" and
+                _need(expected_profile_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3"} and
                       metadata.get("requested_profile_method_version") == expected_profile_version,
                       f"attempt {attempt_id} artifact does not retain the externally admitted profile method request")
                 _need(metadata.get("profile_method_version_mismatch") is not True,
                       f"attempt {attempt_id} retained a native profile method version mismatch")
+                actual_profile_version = metadata.get("profile_method_version")
+                if actual_profile_version is None:
+                    _need(metadata.get("status") in {"error", "interrupted"},
+                          f"attempt {attempt_id} lacks an actual profile method identity outside a pre-engine failure")
+                else:
+                    _need(actual_profile_version == expected_profile_version,
+                          f"attempt {attempt_id} actual profile method differs from the admitted request")
+                _need(observed_row.get("profile_method_identity_matches") is True,
+                      f"attempt {attempt_id} retained Julia method identity differs from request/actual output")
+                _need(observed_row.get("loaded_engine_source_identity_matches") is True,
+                      f"attempt {attempt_id} execution identity does not match the inspected loaded engine")
+                if actual_profile_version == "arc1_profile_v3":
+                    _need(observed_row.get("retained_v3_evidence_present") is True and
+                          observed_row.get("v3_evidence_identity_matches") is True and
+                          observed_row.get("loaded_engine_source_identity_matches") is True,
+                          f"attempt {attempt_id} entered v3 but did not retain matching caller-owned evidence identity")
+                    _need(attempt.get("v3_evidence_retention_error") is None,
+                          f"attempt {attempt_id} could not retain its v3 partial evidence")
+                    _need(attempt.get("profile_source_identity") ==
+                          metadata.get("loaded_arc1_source_identity"),
+                          f"attempt {attempt_id} canonical v3 source identity differs from loaded engine")
+                elif expected_profile_version == "arc1_profile_v3":
+                    _need(observed_row.get("v3_evidence_identity_matches") is True,
+                          f"attempt {attempt_id} pre-entry v3 sink contradicts its method state")
             driver_identity = metadata.get("driver_protocol_identity")
             _need(isinstance(driver_identity, dict) and
                   driver_identity.get("source_sha256") == expected_source_hashes and

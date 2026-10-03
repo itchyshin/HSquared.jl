@@ -3,6 +3,7 @@ using SHA
 using TOML
 using Serialization
 using LinearAlgebra
+using Optim
 
 const ARC1_EXECUTOR_REPO = normpath(joinpath(@__DIR__, ".."))
 
@@ -45,6 +46,8 @@ function _arc1_write_fake_engine(root)
     module HSquared
     using LinearAlgebra
     using Random
+    @enum FakeTerminationCode::UInt8 FakeNoObjectiveChange=7
+    const _ARC1_SOURCE_IDENTITY = "fake-loaded-source-v1"
     struct Pedigree
         ids::Vector{String}
         sire::Vector{Int}
@@ -77,23 +80,47 @@ function _arc1_write_fake_engine(root)
            near_tie=false,
            source_identity="fake-source-v1", reason=nothing)
     end
-    function arc1_profile_repeatability(y, X, Z, ped; ids, method="arc1_profile_v1")
+    function arc1_profile_repeatability(y, X, Z, ped; ids, method="arc1_profile_v1",
+                                       v3_evidence_sink=nothing)
+        returned_method = get(ENV, "ARC1_FAKE_PROFILE_WRONG_VERSION", "false") == "true" ?
+            :arc1_profile_v2 : Symbol(method)
+        if v3_evidence_sink !== nothing
+            get(ENV, "ARC1_FAKE_V3_MISSING_ACTUAL", "false") == "true" ||
+                (v3_evidence_sink[:actual_method_version] = String(returned_method))
+            v3_evidence_sink[:source_identity] =
+                get(ENV, "ARC1_FAKE_V3_WRONG_SOURCE", "false") == "true" ?
+                    "wrong-loaded-source" : _ARC1_SOURCE_IDENTITY
+            push!(get!(v3_evidence_sink, :arc1_profile_v3_evaluations, Any[]),
+                Dict{Symbol,Any}(:target => :heritability, :fixed_value => 0.0,
+                    :status => :interrupted,
+                    :events => [Dict{Symbol,Any}(:event => :interrupted,
+                        :components => [0.2, 0.1, 0.7], :value => -3.0,
+                        :termination_code => FakeNoObjectiveChange,
+                        :native_tuple => (missing, Inf, NaN),
+                        :native_dict => Dict(:reason => :line_search_stopped),
+                        :error => "InterruptException")],
+                    :producer_history => [Dict{Symbol,Any}(:stage => :bounded_probe)],
+                    :max_valid_loglik => -3.0,
+                    :max_valid_centered_loglik => -3.0))
+        end
+        get(ENV, "ARC1_FAKE_PROFILE_INTERRUPT", "false") == "true" && throw(InterruptException())
         targets = Dict{Symbol,Any}()
         for target in (:additive_variance, :permanent_environment_variance,
                        :residual_variance, :heritability, :repeatability)
             segments = target == :heritability ? [(0.1, 0.2), (0.4, 0.6)] : [(0.1, 0.6)]
             targets[target] = (; formed=true, confidence_set=segments, status=:formed)
         end
-        returned_method = get(ENV, "ARC1_FAKE_PROFILE_WRONG_VERSION", "false") == "true" ?
-            :arc1_profile_v1 : Symbol(method)
-        (; targets, cutoff=3.841458820694124, method_version=returned_method,
+        profile = (; targets, cutoff=3.841458820694124, method_version=returned_method,
            point_estimates=(; additive_variance=0.3, permanent_environment_variance=0.2,
              residual_variance=0.5, heritability=0.3, repeatability=0.5),
            point_fit=(; loglik=-3.0), point_fit_status=:ok,
            point_fit_candidate=(; iterations=23, optimizer_converged=false),
            max_constrained_loglik=-3.00001, point_fit_not_optimal=false,
            point_identity="point-id", reference_point_identity="point-id",
-           source_identity="fake-source-v1", reference_source_identity="fake-source-v1")
+           source_identity="fake-loaded-source-v1",
+           reference_source_identity="fake-loaded-source-v1")
+        get(ENV, "ARC1_FAKE_PROFILE_MISSING_VERSION", "false") == "true" ?
+            Base.structdiff(profile, (; method_version=returned_method)) : profile
     end
     function arc1_bootstrap(selection, Y, X, Z, ped; selector, B, seeds, ids, traits)
         attempts = [begin
@@ -120,6 +147,9 @@ end
 
 function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
                                 unavailable=false, wrong_profile_version=false,
+                                missing_profile_version=false,
+                                wrong_v3_source=false, missing_v3_actual=false,
+                                interrupt_profile=false,
                                 outer=1, admission=nothing)
     admitted_sources = admission === nothing ? nothing :
         get(admission, "source_sha256", get(admission, "source_hashes", nothing))
@@ -139,7 +169,7 @@ function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
         "attempt_output" => attempt_dir, "artifact_path" => artifact_path,
         "outer" => outer, "seed" => string(seed), "blas_threads" => 1,
         "profile_method_version" => cell.programme in ("repeatability", "boundary") ?
-            "arc1_profile_v2" : "",
+            "arc1_profile_v3" : "",
         "bootstrap_seeds" => string.(bootstrap_seeds),
         "cell" => Dict("programme" => cell.programme, "phase" => cell.phase,
                        "N" => cell.N, "signal" => cell.signal),
@@ -164,7 +194,11 @@ function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
                      "JULIA_DEPOT_PATH" => depot_path,
                      "OPENBLAS_NUM_THREADS" => "1", "JULIA_NUM_THREADS" => "1",
                      "ARC1_FAKE_UNAVAILABLE" => unavailable ? "true" : "false",
-                     "ARC1_FAKE_PROFILE_WRONG_VERSION" => wrong_profile_version ? "true" : "false")
+                     "ARC1_FAKE_PROFILE_WRONG_VERSION" => wrong_profile_version ? "true" : "false",
+                     "ARC1_FAKE_PROFILE_MISSING_VERSION" => missing_profile_version ? "true" : "false",
+                     "ARC1_FAKE_V3_WRONG_SOURCE" => wrong_v3_source ? "true" : "false",
+                     "ARC1_FAKE_V3_MISSING_ACTUAL" => missing_v3_actual ? "true" : "false",
+                     "ARC1_FAKE_PROFILE_INTERRUPT" => interrupt_profile ? "true" : "false")
     stdout = read(pipeline(ignorestatus(command), stderr=Base.stdout), String)
     return stdout, artifact_path
 end
@@ -188,7 +222,10 @@ end
         transport = (; seed, nothing_value=nothing, missing_value=missing,
                      nan=NaN, positive_infinity=Inf,
                      segments=[[(0.1,0.2),(0.4,0.7)]],
-                     ledger=[(; status=:interrupted, starts_attempted=UInt64(3))])
+                     ledger=[(; status=:interrupted, starts_attempted=UInt64(3),
+                              termination_code=Optim.TerminationCode.NoObjectiveChange,
+                              tuple_leaf=(missing, Inf, NaN),
+                              diagnostic_dict=Dict(:reason => :line_search_stopped))])
         encoded = arc1_json(transport)
         @test occursin(string(seed), encoded)
         @test occursin("\"nothing_value\":null", encoded)
@@ -196,6 +233,9 @@ end
         @test occursin("\"__arc1_float__\":\"NaN\"", encoded)
         @test occursin("\"__arc1_float__\":\"Inf\"", encoded)
         @test occursin("0.1,0.2", encoded) && occursin("0.4,0.7", encoded)
+        @test occursin("\"__arc1_enum__\"", encoded)
+        @test occursin("\"name\":\"NoObjectiveChange\"", encoded)
+        @test occursin("\"value\":", encoded)
         matrix_json = arc1_json([1 2 3; 4 5 6])
         @test occursin("\"dims\":[2,3]", matrix_json)
         @test occursin("\"layout\":\"julia_column_major\"", matrix_json)
@@ -210,8 +250,40 @@ end
             @test restored.missing_value === missing
             @test isnan(restored.nan) && restored.positive_infinity == Inf
             @test restored.segments == transport.segments
+            @test restored.ledger[1].termination_code ===
+                Optim.TerminationCode.NoObjectiveChange
+        @test isequal(restored.ledger[1].tuple_leaf, (missing, Inf, NaN))
             @test_throws ArgumentError arc1_serialize_new(path, transport)
         end
+        # A JLS artifact can preserve a native leaf that the JSON projection
+        # deliberately refuses. The terminal fallback must preserve the
+        # original interruption and identify the projection failure without
+        # retrying conversion of the unsafe sink.
+        native_with_unsupported_leaf = (; v3_profile_evidence=merge(
+            (; requested_method_version="arc1_profile_v3",
+               actual_method_version="arc1_profile_v3",
+               source_identity=repeat("a", 64),
+               arc1_profile_v3_evaluations=transport.ledger),
+            (; unsupported=Ref(17))))
+        @test_throws ArgumentError arc1_json(native_with_unsupported_leaf)
+        projected, projection_error = arc1_receipt_json(
+            (; status="interrupted", v3_profile_evidence=native_with_unsupported_leaf);
+            fallback_fields=(; preserve_original_error=true, mode="engineering_probe",
+                outer=1, seed_string="99", status="interrupted",
+                failure_reason="InterruptException", error_type="InterruptException",
+                requested_profile_method_version="arc1_profile_v3",
+                profile_method_version="arc1_profile_v3",
+                profile_method_version_mismatch=false,
+                profile_source_identity=repeat("a", 64),
+                loaded_arc1_source_identity=repeat("b", 64),
+                artifact_path="retained.jls", artifact_sha256="abc",
+                retention_error=nothing))
+        @test projection_error isa ArgumentError
+        @test occursin("\"status\":\"interrupted\"", projected)
+        @test occursin("\"error_type\":\"InterruptException\"", projected)
+        @test occursin("\"profile_method_version\":\"arc1_profile_v3\"", projected)
+        @test occursin("\"artifact_path\":\"retained.jls\"", projected)
+        @test occursin("receipt_projection_error", projected)
     end
 
     @testset "fresh-process fake-engine wiring and evidence" begin
@@ -251,30 +323,81 @@ end
             @test occursin("0.1,0.2", repeat_stdout) && occursin("0.4,0.6", repeat_stdout)
             @test occursin("\"point_fit_status\":\"ok\"", repeat_stdout)
             @test occursin("\"point_fit_not_optimal\":false", repeat_stdout)
-            @test occursin("\"profile_method_version\":\"arc1_profile_v2\"", repeat_stdout)
-            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", repeat_stdout)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v3\"", repeat_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"", repeat_stdout)
             @test occursin("\"max_constrained_loglik\":-3.00001", repeat_stdout)
             @test occursin("target_diagnostics_identity", repeat_stdout)
             @test isfile(repeat_artifact)
             inspected_profile = _arc1_inspect_fake_artifact(root, repeat_artifact)
-            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", inspected_profile)
-            @test occursin("\"profile_method_version\":\"arc1_profile_v2\"", inspected_profile)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"", inspected_profile)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v3\"", inspected_profile)
+            @test occursin("\"loaded_engine_source_identity_matches\":true", inspected_profile)
+            @test occursin("\"retained_result_identity_matches\":true", inspected_profile)
+            @test occursin("\"receipt_summary_matches_retained_result\":true", inspected_profile)
 
             bad_profile_cell = (; programme="repeatability", phase="engineering_probe", N=16,
                                 signal="invalid")
             failed_profile_stdout, failed_profile_artifact = _arc1_run_fake_attempt(
                 root, output, bad_profile_cell, UInt64(20261003), UInt64[])
-            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"",
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"",
                            failed_profile_stdout)
+            @test occursin("\"profile_method_version\":null", failed_profile_stdout)
+            @test occursin("\"profile_method_version_mismatch\":false", failed_profile_stdout)
             @test !occursin("\"profile_method_version\":\"arc1_profile_v1\"", failed_profile_stdout)
             inspected_failure = _arc1_inspect_fake_artifact(root, failed_profile_artifact)
-            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", inspected_failure)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"", inspected_failure)
+            @test occursin("\"v3_evidence_identity_matches\":true", inspected_failure)
+            @test occursin("\"loaded_engine_source_identity_matches\":true", inspected_failure)
 
             mismatch_stdout, mismatch_artifact = _arc1_run_fake_attempt(root, output,
                 repeat_cell, UInt64(20261004), UInt64[]; wrong_profile_version=true)
             @test occursin("\"profile_method_version_mismatch\":true", mismatch_stdout)
-            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", mismatch_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"", mismatch_stdout)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v2\"", mismatch_stdout)
             @test isfile(mismatch_artifact)
+
+            missing_stdout, missing_artifact = _arc1_run_fake_attempt(root, output,
+                repeat_cell, UInt64(20261005), UInt64[]; missing_profile_version=true)
+            @test occursin("\"profile_method_version_mismatch\":true", missing_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"", missing_stdout)
+            @test occursin("\"profile_method_version\":null", missing_stdout)
+            @test isfile(missing_artifact)
+
+            interrupted_stdout, interrupted_artifact = _arc1_run_fake_attempt(root, output,
+                repeat_cell, UInt64(20261006), UInt64[]; interrupt_profile=true)
+            @test occursin("\"status\":\"interrupted\"", interrupted_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v3\"",
+                           interrupted_stdout)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v3\"", interrupted_stdout)
+            @test occursin("\"actual_method_version\":\"arc1_profile_v3\"", interrupted_stdout)
+            @test occursin("\"max_valid_centered_loglik\":-3.0", interrupted_stdout)
+            @test occursin("\"event\":\"interrupted\"", interrupted_stdout)
+            @test occursin("\"__arc1_enum__\"", interrupted_stdout)
+            @test occursin("\"name\":\"FakeNoObjectiveChange\"", interrupted_stdout)
+            @test !occursin("\"profile_intervals\":", interrupted_stdout)
+            @test isfile(interrupted_artifact)
+            inspected_interruption = _arc1_inspect_fake_artifact(root, interrupted_artifact)
+            @test occursin("\"retained_v3_evidence_present\":true", inspected_interruption)
+            @test occursin("\"v3_evidence_identity_matches\":true", inspected_interruption)
+            @test occursin("\"v3_evidence_partial_present\":true", inspected_interruption)
+            @test occursin("\"loaded_engine_source_identity_matches\":true", inspected_interruption)
+            @test occursin("\"actual_method_version\":\"arc1_profile_v3\"", inspected_interruption)
+            @test occursin("\"max_valid_centered_loglik\":-3.0", inspected_interruption)
+            @test occursin("\"termination_code\":{\"__arc1_enum__\":", inspected_interruption)
+            @test occursin("\"native_dict\":{\"reason\":\"line_search_stopped\"}", inspected_interruption)
+            @test occursin("\"native_tuple\":[{\"__arc1_type__\":\"missing\"},{\"__arc1_float__\":\"Inf\"},{\"__arc1_float__\":\"NaN\"}]", inspected_interruption)
+
+            wrong_source_cell = (; programme="repeatability", phase="engineering_probe", N=16,
+                                 signal="near_zero_pe")
+            _, wrong_source_path = _arc1_run_fake_attempt(root, output, wrong_source_cell,
+                UInt64(20261007), UInt64[]; interrupt_profile=true, wrong_v3_source=true)
+            wrong_source_output = _arc1_inspect_fake_artifact(root, wrong_source_path)
+            @test occursin("\"v3_evidence_identity_matches\":false", wrong_source_output)
+
+            _, missing_actual_path = _arc1_run_fake_attempt(root, output, wrong_source_cell,
+                UInt64(20261008), UInt64[]; interrupt_profile=true, missing_v3_actual=true)
+            missing_actual_output = _arc1_inspect_fake_artifact(root, missing_actual_path)
+            @test occursin("\"v3_evidence_identity_matches\":false", missing_actual_output)
 
             interval_cell = (; programme="fa_interval", phase="pilot", N=16, signal="null")
             inner = UInt64[typemax(UInt64) - i for i in 0:998]

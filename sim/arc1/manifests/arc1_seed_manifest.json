@@ -5510,10 +5510,10 @@
         "sha256": "2d7dbba43efacfd1654d52ab303c7e06a47216aca006bf2ae4c17ef772562039"
       },
       {
-        "bytes": 7011,
+        "bytes": 7298,
         "distinct_seed_context_literals": 0,
         "path": "test/arc1_interfaces.jl",
-        "sha256": "2f261d8ff1396cd7c4ef25dd101a6b6ca22afa1bf501b38c49fd1ddb24535541"
+        "sha256": "86cb5ae5c99939f5f21f1d4f3f7c83b88a01e6339ea21f91e442d4c9df57f0e4"
       },
       {
         "bytes": 25661,
@@ -5522,10 +5522,10 @@
         "sha256": "684f0ad2e3335f0c560e0fb122355f94fe89fc8e9f5a7dee78bdc7d73a001149"
       },
       {
-        "bytes": 144419,
+        "bytes": 163581,
         "distinct_seed_context_literals": 1,
         "path": "test/arc1_profiles.jl",
-        "sha256": "1b033615d55e4ea08b21147b407cf6a26a2ebd27af976ffbb8bd9c51d93b0b7b"
+        "sha256": "fff0fec7ec97bb57e7610260b07a073a5662b2b282f38916b3d14537d4fee8e2"
       },
       {
         "bytes": 3472,
@@ -5534,10 +5534,10 @@
         "sha256": "b2243b365c1b652dfb4944daf95373694bad291585b6cd48d783b83bfac6b6ea"
       },
       {
-        "bytes": 20087,
+        "bytes": 21179,
         "distinct_seed_context_literals": 2,
         "path": "test/arc1_simulation_executor.jl",
-        "sha256": "3b1ac6801ecc161be6c4018c89c4466284187abe01f8d4c8db7923de1adceb68"
+        "sha256": "f959e248680b3bb82dfe9ebba3e9a8d942a36b6d210d078490b05c596a835917"
       },
       {
         "bytes": 2884,
@@ -27138,7 +27138,7 @@
   "outer_csv": "arc1_outer_seeds.csv",
   "outer_csv_sha256": "4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf",
   "outer_rows": 10060,
-  "protocol_sha256": "f1afd786c6ab880e3ebd80da65d682a7560257b58b89302215b7db7ba70465c0",
+  "protocol_sha256": "a6a3b9b8e02cf9a573905d55c2b0a5d49df9f02d1b7218ba15bbe52fa0c5ef26",
   "reference_reuse": {
     "endpoint_outer_indices_by_signal": {
       "null": [
@@ -27743,10 +27743,11 @@
       },
       "lr_chisq1_cutoff": 3.841458820694124,
       "maximum_check_includes_valid_evaluations_from_failed_nuisance_searches": true,
-      "method_version": "arc1_profile_v2",
+      "method_version": "arc1_profile_v3",
       "method_version_policy": {
         "explicit_request_required": true,
         "preserve_v1_implementation_and_artifacts": true,
+        "preserve_v2_implementation_and_artifacts": true,
         "refuse_mismatch": true
       },
       "ordinary_point_fit": {
@@ -27884,8 +27885,50 @@
       ],
       "scale_reference": "s0=OLS residual sum of squares / residual df",
       "search_claim_limit": "finite_grid_resolved describes declared search only; narrower unsampled components are not ruled out",
-      "study_admission_method_version": "arc1_profile_v2",
-      "unresolved_evaluation": "do not interpolate across; retain disconnected components, domain, gaps, refinement history, brackets, tail evidence, and nuisance statuses"
+      "study_admission_method_version": "arc1_profile_v3",
+      "unresolved_evaluation": "do not interpolate across; retain disconnected components, domain, gaps, refinement history, brackets, tail evidence, and nuisance statuses",
+      "v3_corner_certificate": {
+        "centered_score_spread_max": 1e-08,
+        "context": "existing fixed-Ve centering-eligible repeatability profile",
+        "continuation": "single remaining-genetic-coordinate continuation only",
+        "continuation_budget": "2000 minus original iterations; combined maximum 2000",
+        "directional_probes": {
+          "analytic_agreement_max": 5e-06,
+          "directions": [
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0.5,
+              0.5
+            ]
+          ],
+          "formula": "(-3*q0 + 4*q1 - q2)/(2*h)",
+          "nonnegative": true,
+          "pairwise_difference_max": 5e-06,
+          "probe_likelihood_excess_max": 1e-08,
+          "steps": [
+            0.0001,
+            1e-05
+          ]
+        },
+        "fixed_residual_variance": true,
+        "physical_component_derivatives": "s0*dq/dVa and s0*dq/dVpe, each strictly greater than 5e-6",
+        "preserve_original_native_convergence_flags_and_optimizer_metadata": true,
+        "requires_all_v2_eligibility_predicates": true,
+        "requires_exact_corner_intersection_and_matching_face": true,
+        "scope": "fixed-positive-residual exact two-genetic-zero corner only",
+        "scope_does_not_establish_global_optimum": true,
+        "shared_unrestricted_point_guard": "complete full-loglik history; excess greater than 1e-7 refuses",
+        "target": "residual_variance",
+        "target_index": 3,
+        "winner_history_guard": "complete same-Ve centered history cannot exceed certified winner by more than 1e-8"
+      }
     },
     "rank_selection": {
       "aic_penalty": {

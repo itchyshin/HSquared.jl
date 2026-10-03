@@ -183,13 +183,14 @@ SCIENTIFIC_CONTRACT = {
                                "statuses": ["unconverged", "nuisance_unresolved", "singular", "unbracketed"],
                                "disconnected_profile_sets": "report all components"},
     "profile_search": {
-        "method_version": "arc1_profile_v2",
+        "method_version": "arc1_profile_v3",
         "default_method_version": "arc1_profile_v1",
-        "study_admission_method_version": "arc1_profile_v2",
+        "study_admission_method_version": "arc1_profile_v3",
         "method_version_policy": {
             "explicit_request_required": True,
             "refuse_mismatch": True,
             "preserve_v1_implementation_and_artifacts": True,
+            "preserve_v2_implementation_and_artifacts": True,
         },
         "confidence": 0.95,
         "lr_chisq1_cutoff": 3.841458820694124,
@@ -330,6 +331,32 @@ SCIENTIFIC_CONTRACT = {
                 "nuisance_winner": "independently_certified_exact_zero_face",
             },
         },
+        "v3_corner_certificate": {
+            "scope": "fixed-positive-residual exact two-genetic-zero corner only",
+            "target": "residual_variance",
+            "target_index": 3,
+            "fixed_residual_variance": True,
+            "context": "existing fixed-Ve centering-eligible repeatability profile",
+            "requires_all_v2_eligibility_predicates": True,
+            "continuation": "single remaining-genetic-coordinate continuation only",
+            "continuation_budget": "2000 minus original iterations; combined maximum 2000",
+            "preserve_original_native_convergence_flags_and_optimizer_metadata": True,
+            "requires_exact_corner_intersection_and_matching_face": True,
+            "centered_score_spread_max": 1e-8,
+            "physical_component_derivatives": "s0*dq/dVa and s0*dq/dVpe, each strictly greater than 5e-6",
+            "directional_probes": {
+                "directions": [[1, 0], [0, 1], [0.5, 0.5]],
+                "steps": [1e-4, 1e-5],
+                "formula": "(-3*q0 + 4*q1 - q2)/(2*h)",
+                "nonnegative": True,
+                "analytic_agreement_max": 5e-6,
+                "pairwise_difference_max": 5e-6,
+                "probe_likelihood_excess_max": 1e-8,
+            },
+            "winner_history_guard": "complete same-Ve centered history cannot exceed certified winner by more than 1e-8",
+            "shared_unrestricted_point_guard": "complete full-loglik history; excess greater than 1e-7 refuses",
+            "scope_does_not_establish_global_optimum": True,
+        },
         "reduced_models": ["zero additive variance", "zero permanent-environment variance",
                            "h2 zero", "repeatability zero"],
         "unresolved_evaluation": "do not interpolate across; retain disconnected components, domain, gaps, refinement history, brackets, tail evidence, and nuisance statuses",
@@ -436,8 +463,8 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
     if julia_threads < 1 or blas_threads < 1:
         raise ValueError("thread counts must be positive integers")
     profile_programme = cell.get("programme") in {"repeatability", "boundary"}
-    if profile_programme and profile_method_version != "arc1_profile_v2":
-        raise ValueError("repeatability/boundary admission requires explicit arc1_profile_v2")
+    if profile_programme and profile_method_version != "arc1_profile_v3":
+        raise ValueError("repeatability/boundary admission requires explicit arc1_profile_v3")
     if not profile_programme and profile_method_version is not None:
         raise ValueError("profile method version is only valid for repeatability/boundary cells")
     confirmation_authorization = None
@@ -677,8 +704,8 @@ def verify_run_admission(root: Path, admission: dict[str, object], *, julia_vers
     if not isinstance(cell, dict):
         raise ValueError("admission lacks a pinned cell")
     profile_programme = cell.get("programme") in {"repeatability", "boundary"}
-    if profile_programme and admission.get("profile_method_version") != "arc1_profile_v2":
-        raise ValueError("profile run admission lacks the frozen arc1_profile_v2 method pin")
+    if profile_programme and admission.get("profile_method_version") != "arc1_profile_v3":
+        raise ValueError("profile run admission lacks the frozen arc1_profile_v3 method pin")
     if not profile_programme and admission.get("profile_method_version") is not None:
         raise ValueError("non-profile run admission carries an unexpected profile method pin")
     if cell.get("phase") == "confirmation":

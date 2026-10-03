@@ -27,6 +27,13 @@ function arc1_json(value)
     value === nothing && return "null"
     value === missing && return "{\"__arc1_type__\":\"missing\"}"
     value isa Bool && return value ? "true" : "false"
+    if value isa Enum
+        # Keep Julia enum identity explicit instead of relying on Integer
+        # subtyping or rejecting optimizer-native diagnostic leaves.
+        return "{\"__arc1_enum__\":{\"type\":" *
+            arc1_json_escape(string(typeof(value))) * ",\"name\":" *
+            arc1_json_escape(string(value)) * ",\"value\":" * string(Int(value)) * "}}"
+    end
     value isa Integer && return string(value) # UInt64 stays an exact decimal token.
     value isa AbstractFloat && return isfinite(value) ? string(value) :
         "{\"__arc1_float__\":" * arc1_json_escape(string(value)) * "}"
@@ -50,6 +57,48 @@ function arc1_json(value)
                ",\"layout\":\"julia_column_major\",\"data\":" * data * "}"
     end
     throw(ArgumentError("unsupported Arc1 JSON transport value $(typeof(value)); retain it in the Julia artifact"))
+end
+
+"""Project one receipt; a failed projection yields a primitive-only terminal record."""
+function arc1_receipt_json(receipt; fallback_fields)
+    try
+        return arc1_json(receipt), nothing
+    catch projection_error
+        # This fallback is deliberately assembled only from scalar strings,
+        # booleans, and nulls. Do not retry conversion of the failed payload.
+        safe_text(value, default="") = value isa AbstractString ? String(value) : default
+        safe_optional_text(value) = value isa AbstractString ? String(value) : nothing
+        safe_integer(value, default=-1) = value isa Integer && !(value isa Bool) ? Int(value) : default
+        preserve_original = Bool(fallback_fields.preserve_original_error)
+        projection_message = sprint(showerror, projection_error)
+        retention = safe_text(fallback_fields.retention_error)
+        retention = isempty(retention) ? projection_message :
+            string(retention, "; JSON receipt projection failed: ", projection_message)
+        fallback = merge((; schema="arc1-attempt-result-v1", success=false,
+            mode=safe_text(fallback_fields.mode, "unknown"),
+            outer=safe_integer(fallback_fields.outer),
+            seed_string=safe_text(fallback_fields.seed_string),
+            status=preserve_original ? safe_text(fallback_fields.status, "error") : "error",
+            failure_reason=preserve_original ? safe_text(fallback_fields.failure_reason, projection_message) : projection_message,
+            error_type=preserve_original ? safe_text(fallback_fields.error_type, "unknown") : string(typeof(projection_error)),
+            requested_profile_method_version=safe_optional_text(fallback_fields.requested_profile_method_version),
+            profile_method_version=safe_optional_text(fallback_fields.profile_method_version),
+            profile_method_version_mismatch=fallback_fields.profile_method_version_mismatch === true,
+            profile_source_identity=safe_optional_text(fallback_fields.profile_source_identity),
+            loaded_arc1_source_identity=safe_optional_text(fallback_fields.loaded_arc1_source_identity),
+            artifact_path=safe_text(fallback_fields.artifact_path, ""),
+            artifact_sha256=safe_optional_text(fallback_fields.artifact_sha256),
+            v3_evidence_retention_error=string(retention)),
+            (; receipt_projection_error=projection_message))
+        return arc1_json(fallback), projection_error
+    end
+end
+
+"""Write one receipt; if projection fails, emit a primitive-only terminal record."""
+function arc1_emit_receipt(receipt; fallback_fields)
+    text, projection_error = arc1_receipt_json(receipt; fallback_fields)
+    write(stdout, text, '\n')
+    return projection_error
 end
 
 function arc1_artifact_sha256(path::AbstractString)

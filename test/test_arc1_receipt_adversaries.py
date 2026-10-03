@@ -199,14 +199,18 @@ def verify(receipt: dict, *, cell: dict | None = None, seeds: list[int] | None =
 
 
 class Arc1ReceiptAdversaries(unittest.TestCase):
-    def test_profile_search_contract_matches_explicit_v2_admission_without_changing_v1_default(self):
+    def test_profile_search_contract_selects_v3_without_changing_v1_or_v2_meanings(self):
         profile = arc1_manifest.SCIENTIFIC_CONTRACT["profile_search"]
-        self.assertEqual(profile["method_version"], "arc1_profile_v2")
+        self.assertEqual(profile["method_version"], "arc1_profile_v3")
         self.assertEqual(profile["default_method_version"], "arc1_profile_v1")
-        self.assertEqual(profile["study_admission_method_version"], "arc1_profile_v2")
+        self.assertEqual(profile["study_admission_method_version"], "arc1_profile_v3")
         self.assertTrue(profile["method_version_policy"]["explicit_request_required"])
         self.assertTrue(profile["method_version_policy"]["refuse_mismatch"])
         self.assertTrue(profile["method_version_policy"]["preserve_v1_implementation_and_artifacts"])
+        self.assertTrue(profile["method_version_policy"]["preserve_v2_implementation_and_artifacts"])
+        self.assertEqual(profile["v3_corner_certificate"]["target"], "residual_variance")
+        self.assertEqual(profile["v3_corner_certificate"]["target_index"], 3)
+        self.assertEqual(profile["v3_corner_certificate"]["fixed_residual_variance"], True)
 
         refinement = profile["positive_bound_refinement"]
         self.assertEqual(refinement["name"], "positive_bound_refine_v1")
@@ -531,7 +535,7 @@ end
                 # synthetic source tree; it is not a cell admission or study run.
                 raw_admission = dict(admission)
                 raw_admission["profile_method_version"] = (
-                    "arc1_profile_v2" if programme == "repeatability" else None)
+                    "arc1_profile_v3" if programme == "repeatability" else None)
                 raw_output = arc1_runner.cell_output_dir(base / "raw-path-results", raw_cell)
                 raw_attempt_dir = raw_output / "attempts"
                 raw_attempt_dir.mkdir(parents=True, exist_ok=True)
@@ -554,6 +558,13 @@ end
                 raw_row = raw_inspected[str(raw_artifact.resolve())]
                 self.assertTrue(raw_row["raw_result_matches_derived_receipt"],
                     f"{programme}: {raw_row.get('raw_result_projection_difference')}")
+                if programme == "repeatability":
+                    self.assertEqual(raw_row["metadata"]["requested_profile_method_version"],
+                                     "arc1_profile_v3")
+                    self.assertEqual(raw_row["metadata"]["profile_method_version"],
+                                     "arc1_profile_v3")
+                    self.assertIs(raw_row["metadata"]["profile_method_version_mismatch"], False)
+                    self.assertIs(raw_row["profile_method_identity_matches"], True)
                 mutation_script = base / f"mutate-{programme}.jl"
                 mutation_body = ('''using HSquared, Serialization
 artifact = open(deserialize, ARGS[1])
@@ -562,6 +573,10 @@ targets[:heritability] = merge(targets[:heritability], (; status=:controlled_mut
 profile = merge(artifact.profile, (; targets))
 artifact = merge(artifact, (; profile))
 open(ARGS[2], "w") do io; serialize(io, artifact); end
+artifact = open(deserialize, ARGS[1])
+metadata = merge(artifact.metadata, (; profile_method_version="arc1_profile_v2"))
+artifact = merge(artifact, (; metadata))
+open(ARGS[3], "w") do io; serialize(io, artifact); end
 ''' if programme == "repeatability" else '''using HSquared, Serialization
 artifact = open(deserialize, ARGS[1])
 attempts = copy(artifact.bootstrap_raw.attempts)
@@ -572,13 +587,19 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
 ''')
                 mutation_script.write_text(mutation_body, encoding="utf-8")
                 altered_raw_artifact = raw_attempt_dir / f"{programme}-raw-mutation.full.jls"
+                altered_method_artifact = raw_attempt_dir / f"{programme}-method-mutation.full.jls"
                 mutated = subprocess.run([julia, "--startup-file=no", "--threads=1",
                     f"--project={source}", str(mutation_script), str(raw_artifact),
-                    str(altered_raw_artifact)], capture_output=True, text=True, timeout=90, env=env)
+                    str(altered_raw_artifact), str(altered_method_artifact)],
+                    capture_output=True, text=True, timeout=90, env=env)
                 self.assertEqual(mutated.returncode, 0, mutated.stdout + "\n" + mutated.stderr)
                 altered_inspected = checker._inspect_full_artifacts(source, [altered_raw_artifact])
                 self.assertFalse(altered_inspected[str(altered_raw_artifact.resolve())]
                     ["raw_result_matches_derived_receipt"], programme)
+                if programme == "repeatability":
+                    altered_method = checker._inspect_full_artifacts(source, [altered_method_artifact])
+                    self.assertIs(altered_method[str(altered_method_artifact.resolve())]
+                                  ["profile_method_identity_matches"], False)
             for path, reason in ((changed_artifact, "semantic data identity differs"),
                                  (changed_metadata_artifact, "semantic data identity differs"),
                                  (stale_summary_artifact, "retained JLS result differs from its embedded receipt summary"),
@@ -740,23 +761,27 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                                                    julia_threads=4, blas_threads=1)
             repeatability_cell = {"programme": "repeatability", "phase": "development",
                                   "N": 80, "signal": "interior"}
-            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v2"):
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v3"):
                 arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
                     julia_version="1.10.0", julia_threads=1, blas_threads=1,
                     manifest_audit_root=ROOT)
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v3"):
+                arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
+                    julia_version="1.10.0", julia_threads=1, blas_threads=1,
+                    manifest_audit_root=ROOT, profile_method_version="arc1_profile_v2")
             profile_admission = arc1_manifest.build_run_admission(
                 root, repeatability_cell, source_paths=[], julia_version="1.10.0",
                 julia_threads=1, blas_threads=1, manifest_audit_root=ROOT,
-                profile_method_version="arc1_profile_v2")
+                profile_method_version="arc1_profile_v3")
             arc1_manifest.verify_run_admission(root, profile_admission, julia_version="1.10.0",
                                                 julia_threads=1, blas_threads=1)
-            for wrong_version in ("arc1_profile_v1", None):
+            for wrong_version in ("arc1_profile_v1", "arc1_profile_v2", None):
                 altered_profile = copy.deepcopy(profile_admission)
                 if wrong_version is None:
                     del altered_profile["profile_method_version"]
                 else:
                     altered_profile["profile_method_version"] = wrong_version
-                with self.assertRaisesRegex(ValueError, "frozen arc1_profile_v2"):
+                with self.assertRaisesRegex(ValueError, "frozen arc1_profile_v3"):
                     arc1_manifest.verify_run_admission(root, altered_profile, julia_version="1.10.0",
                                                        julia_threads=1, blas_threads=1)
             legacy_profile = copy.deepcopy(profile_admission)
@@ -1300,18 +1325,18 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             with self.assertRaisesRegex(checker.ReceiptError, expected):
                 verify(adversarial, cell=cell, seeds=seeds)
 
-    def test_v2_profile_admission_binds_native_version_and_preserves_pre_engine_request(self):
+    def test_v3_profile_admission_binds_requested_actual_and_pre_engine_identity(self):
         cell = {"programme": "repeatability", "phase": "development", "N": 80,
                 "signal": "interior"}
         seeds = [arc1_manifest.seed_for(cell["programme"], cell["phase"], cell["N"],
             cell["signal"], i, 0, "data") for i in range(1, 31)]
         formulas = checker._expected_interval_formulas(cell)
-        with tempfile.TemporaryDirectory(prefix="arc1-profile-v2-admission-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="arc1-profile-v3-admission-") as temporary:
             base = Path(temporary)
             source = _copy_valid_source_tree(base / "source")
             admission = arc1_manifest.build_run_admission(source, cell, source_paths=[],
                 julia_version="1.10.0", julia_threads=1, blas_threads=1,
-                manifest_audit_root=ROOT, profile_method_version="arc1_profile_v2")
+                manifest_audit_root=ROOT, profile_method_version="arc1_profile_v3")
             engine_sources = {name: digest for name, digest in admission["source_sha256"].items()
                               if name.startswith("src/")}
             runtime_identity = {"engine_package_uuid": "a0667dea-0f38-44e8-9150-4fda00624eac",
@@ -1329,11 +1354,11 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             for i, seed in enumerate(seeds, 1):
                 intervals = {target: {"formed": True, "segments": [[0.0, 1.0]],
                     "status": "formed", "formula": formula} for target, formula in formulas.items()}
-                attempts.append({"attempt_id": f"v2-{i}", "outer": i, "seed": seed,
+                attempts.append({"attempt_id": f"v3-{i}", "outer": i, "seed": seed,
                     "status": "ok", "success": True, "failure_reason": None,
                     "profile_method": "profile_likelihood_ratio", "profile_lr_cutoff": 3.841458820694124,
-                    "requested_profile_method_version": "arc1_profile_v2",
-                    "profile_method_version": "arc1_profile_v2", "point_fit_status": "ok",
+                    "requested_profile_method_version": "arc1_profile_v3",
+                    "profile_method_version": "arc1_profile_v3", "point_fit_status": "ok",
                     "point_fit_not_optimal": False, "point_loglik": -10.0,
                     "max_constrained_loglik": -10.0, "point_identity": "a" * 64,
                     "reference_point_identity": "a" * 64, "source_identity": "b" * 64,
@@ -1354,16 +1379,17 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
 
             self.assertEqual(verify_admitted(receipt)["interval_targets"]["Va"]["formed"], 30)
             wrong_native = copy.deepcopy(receipt)
-            wrong_native["attempts"][0]["profile_method_version"] = "arc1_profile_v1"
+            wrong_native["attempts"][0]["profile_method_version"] = "arc1_profile_v2"
             with self.assertRaisesRegex(checker.ReceiptError, "method version"):
                 verify_admitted(wrong_native)
             wrong_request = copy.deepcopy(receipt)
-            wrong_request["attempts"][0]["requested_profile_method_version"] = "arc1_profile_v1"
+            wrong_request["attempts"][0]["requested_profile_method_version"] = "arc1_profile_v2"
             with self.assertRaisesRegex(checker.ReceiptError, "request differs"):
                 verify_admitted(wrong_request)
             wrong_native_failure = copy.deepcopy(receipt)
             wrong_native_failure["attempts"][0].update(profile_method_version_mismatch=True,
-                success=False, status="error", failure_reason="native method mismatch")
+                profile_method_version="arc1_profile_v2", success=False, status="error",
+                failure_reason="native method mismatch")
             with self.assertRaisesRegex(checker.ReceiptError, "native profile method version differs"):
                 verify_admitted(wrong_native_failure)
 
@@ -1374,9 +1400,48 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                 pre_engine = arc1_runner.assemble_cell_receipt(error_rows, admission,
                     source_root=source, artifact_root=Path(artifacts))
             self.assertEqual(pre_engine["attempts"][0]["requested_profile_method_version"],
-                             "arc1_profile_v2")
+                             "arc1_profile_v3")
             self.assertIsNone(pre_engine["attempts"][0]["profile_method_version"])
             self.assertEqual(verify_admitted(pre_engine)["failures"], 30)
+
+            entered_rows = [{"outer": i, "seed": seed, "status": "interrupted",
+                "success": False, "failure_reason": "synthetic interrupt after method entry",
+                "requested_profile_method_version": "arc1_profile_v3",
+                "profile_method_version": "arc1_profile_v3",
+                "profile_source_identity": "f" * 64,
+                "v3_profile_evidence": {"requested_method_version": "arc1_profile_v3",
+                    "actual_method_version": "arc1_profile_v3",
+                    "source_identity": "f" * 64, "arc1_profile_v3_evaluations": []}}
+                for i, seed in enumerate(seeds, 1)]
+            with tempfile.TemporaryDirectory(dir=base) as artifacts:
+                entered = arc1_runner.assemble_cell_receipt(entered_rows, admission,
+                    source_root=source, artifact_root=Path(artifacts))
+            entered_attempt = entered["attempts"][0]
+            self.assertEqual(entered_attempt["profile_method_version"], "arc1_profile_v3")
+            self.assertEqual(entered_attempt["profile_source_identity"], "f" * 64)
+            self.assertEqual(entered_attempt["point_fit_status"], "not_run")
+            self.assertTrue(all(not target["formed"] for target in
+                                entered_attempt["profile_intervals"].values()))
+            checker._check_profile_point_diagnostics(entered_attempt,
+                entered_attempt["profile_intervals"], expected_method_version="arc1_profile_v3")
+
+    def test_explicit_historical_v2_identity_remains_checkable(self):
+        cell = {"programme": "repeatability", "N": 80}
+        profile = {target: {"formed": False, "segments": [], "status": "outer_fit_failed",
+            "refusal_status": "fit failed", "formula": formula} for target, formula in
+            checker._expected_interval_formulas(cell).items()}
+        attempt = {"success": True, "profile_method_version": "arc1_profile_v2",
+            "requested_profile_method_version": "arc1_profile_v2", "point_fit_status": "ok",
+            "point_fit_not_optimal": False, "point_loglik": -10.0,
+            "max_constrained_loglik": -10.0, "point_identity": "a" * 64,
+            "reference_point_identity": "a" * 64, "source_identity": "b" * 64,
+            "reference_source_identity": "b" * 64, "point_fit_diagnostic_identity": "c" * 64,
+            "target_diagnostics_identity": "d" * 64}
+        checker._check_profile_point_diagnostics(attempt, profile,
+            expected_method_version="arc1_profile_v2")
+        with self.assertRaisesRegex(checker.ReceiptError, "request differs"):
+            checker._check_profile_point_diagnostics(attempt, profile,
+                expected_method_version="arc1_profile_v3")
 
     def test_pre_engine_profile_failure_never_fabricates_truth_as_point_estimate(self):
         cell = {"programme": "repeatability", "phase": "development", "N": 80,
