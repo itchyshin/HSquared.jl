@@ -1,4 +1,4 @@
-Current status (2026-10-01T11:39:00+00:00): Julia PR #401 and R PR #259 are merged. Exact merge-commit Julia Linux/Windows jobs on Julia 1.10/latest, Julia Documenter deployment, R CMD check, and R pkgdown passed. The three installed exact-source evidence modes passed on the reviewed candidate; final source and runner hashes match the Julia merge tree. V3 is closed within the bounded programme scope; A2/E1 dispositions and residual findings remain as recorded. Numerical source aggregate 59d4a803 is unchanged by the reviewed test corrections. Public covered count remains seven, and no capability promotion or release action occurred. Historical states below retain their original scope and timestamps.
+Current status (2026-10-03): the non-GPU H2 project needs a fresh Ultra Plan before further implementation. The bounded automatic FA-rank design contract is complete; Gaussian-reliability Arc 1 remains incomplete with G0–G8 open. The stopped Codex continuation recorded profile-v4 HOLD, a canonical G7 checker failure before tests, three consumed development attempts, and no pilot or confirmation. Public covered count remains seven. See the Active Lane Split and `docs/dev-log/handover/2026-10-03-codex-handover.md`; historical states below retain their original scope and timestamps.
 
 # Coordination Board
 
@@ -75,6 +75,11 @@ remains held for approval at its recorded 8.1-hour estimate.
 - R lane: sibling repository, `hsquared`.
 - Coordinator lane: shared issue ledger, public-claim wording, and
   cross-repo contract checks.
+
+Current handovers and deferred menus:
+- Julia Arc 1 and the fresh non-GPU planning intake: `docs/dev-log/handover/2026-10-03-codex-handover.md`; detailed stopped-fork evidence: `.unlazy/arc1-gaussian-reliability/evidence/fork-stop-checkpoint-20261003/checkpoint.md`. Keep G0–G8 open.
+- R twin Arc 1 state: `/private/tmp/hsquared-arc1-r-20261003`, branch `codex/arc1-gaussian-reliability-20261003`; source/check receipts and exact limits are in `docs/dev-log/after-task/2026-10-03-arc1-gaussian-reliability-handoff.md`. Preserve the original Dropbox `hsquared` checkout.
+- Coordinator work remains this shared board and cross-twin contract ledger. The new Ultra Plan must retain both package lanes and their outstanding menus; it does not authorize source changes.
 
 ### 2026-09-26: #237 Julia MV+PE fitter (experimental, no flip)
 
@@ -1786,3 +1791,7 @@ The deadline was honored and its incomplete review checkpoint retained. The huma
 ## Automatic FA rank bounded paired completion, 2026-10-02
 
 All eight original gates pass after the accepted O1 comparator repair. Focused proof is 249/13; full Julia/R checks, mandatory live twin parity/interruption, all three V7 source lenses, final Luna mechanical reconciliation and whole report CLI pass. Tested source is Julia 3ef362b1/R 2108c0d. Local documentation/receipt commits close the owned lane; protected files and original R dirty work remain intact. Covered count stays seven; scientific reliability, ordinary selected-K1 execution and selection-adjusted coverage remain unproved. No default activation, campaign, promotion, push, release or deployment.
+
+## Arc 1 Gaussian reliability handoff, 2026-10-03
+
+The later broad Gaussian reliability Arc 1 is active on Julia branch `codex/arc1-gaussian-reliability-20261002` and isolated R branch `codex/arc1-gaussian-reliability-20261003`. It is separate from the completed bounded automatic-rank programme. G0-G8 remain open. Current manual Julia and R package results are retained and source-matched to the independently reviewed freeze, but the canonical G7 package checker has not admitted them. No confirmation study has run. A live lane lease and overlapping worktrees were reported by preflight, so ownership must be confirmed before overlapping implementation continues. Resume details: `docs/dev-log/after-task/2026-10-03-arc1-gaussian-reliability-handoff.md`.
