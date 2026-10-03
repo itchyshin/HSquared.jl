@@ -339,13 +339,19 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
                         julia_version: str, julia_threads: int, blas_threads: int,
                         manifest_audit_root: Path | None = None,
                         pilot_qualification: dict[str, object] | None = None,
-                        confirmation_allocation_decision: dict[str, object] | None = None) -> dict[str, object]:
+                        confirmation_allocation_decision: dict[str, object] | None = None,
+                        profile_method_version: str | None = None) -> dict[str, object]:
     """Pin source, environment, exact seeds, and execution settings before a cell run."""
     root = root.resolve()
     if julia_version != "1.10.0":
         raise ValueError("Arc1 admitted run requires Julia 1.10.0")
     if julia_threads < 1 or blas_threads < 1:
         raise ValueError("thread counts must be positive integers")
+    profile_programme = cell.get("programme") in {"repeatability", "boundary"}
+    if profile_programme and profile_method_version != "arc1_profile_v2":
+        raise ValueError("repeatability/boundary admission requires explicit arc1_profile_v2")
+    if not profile_programme and profile_method_version is not None:
+        raise ValueError("profile method version is only valid for repeatability/boundary cells")
     confirmation_authorization = None
     if cell.get("phase") == "confirmation":
         confirmation_authorization = _validate_confirmation_authorization(
@@ -376,7 +382,7 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
         if not file.is_relative_to(root) or not file.is_file():
             raise ValueError(f"admission source is missing or outside repository: {relative}")
         hashes[rel.as_posix()] = _file_sha256(file)
-    return {"schema": "arc1-run-admission-v1", "protocol_sha256": contract_sha256(),
+    return {"schema": "arc1-run-admission-v2", "protocol_sha256": contract_sha256(),
             "cell": dict(cell), "planned_attempts": count, "expected_outer_seeds": outer_seeds,
             "expected_bootstrap_seeds": bootstrap_seeds,
             "source_sha256": hashes,
@@ -388,6 +394,7 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
             "threads": {"julia": julia_threads, "blas": blas_threads},
             "thread_environment": {"JULIA_NUM_THREADS": str(julia_threads),
                                    "OPENBLAS_NUM_THREADS": str(blas_threads)},
+            "profile_method_version": profile_method_version,
             "confirmation_authorization": confirmation_authorization,
             "status": "admitted_before_execution"}
 
@@ -552,7 +559,7 @@ def verify_run_admission(root: Path, admission: dict[str, object], *, julia_vers
                          julia_threads: int, blas_threads: int) -> None:
     """Fail closed on protocol, source, dependency, seed, or execution drift at resume."""
     root = root.resolve()
-    if admission.get("schema") != "arc1-run-admission-v1":
+    if admission.get("schema") != "arc1-run-admission-v2":
         raise ValueError("unsupported Arc1 run admission schema")
     if admission.get("protocol_sha256") != contract_sha256():
         raise ValueError("Arc1 canonical protocol changed since run admission")
@@ -581,6 +588,11 @@ def verify_run_admission(root: Path, admission: dict[str, object], *, julia_vers
     cell = admission.get("cell")
     if not isinstance(cell, dict):
         raise ValueError("admission lacks a pinned cell")
+    profile_programme = cell.get("programme") in {"repeatability", "boundary"}
+    if profile_programme and admission.get("profile_method_version") != "arc1_profile_v2":
+        raise ValueError("profile run admission lacks the frozen arc1_profile_v2 method pin")
+    if not profile_programme and admission.get("profile_method_version") is not None:
+        raise ValueError("non-profile run admission carries an unexpected profile method pin")
     if cell.get("phase") == "confirmation":
         authorization = admission.get("confirmation_authorization")
         if not isinstance(authorization, dict):

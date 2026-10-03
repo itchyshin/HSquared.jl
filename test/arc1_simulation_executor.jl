@@ -77,14 +77,16 @@ function _arc1_write_fake_engine(root)
            near_tie=false,
            source_identity="fake-source-v1", reason=nothing)
     end
-    function arc1_profile_repeatability(y, X, Z, ped; ids)
+    function arc1_profile_repeatability(y, X, Z, ped; ids, method="arc1_profile_v1")
         targets = Dict{Symbol,Any}()
         for target in (:additive_variance, :permanent_environment_variance,
                        :residual_variance, :heritability, :repeatability)
             segments = target == :heritability ? [(0.1, 0.2), (0.4, 0.6)] : [(0.1, 0.6)]
             targets[target] = (; formed=true, confidence_set=segments, status=:formed)
         end
-        (; targets, cutoff=3.841458820694124, method_version=:arc1_profile_v1,
+        returned_method = get(ENV, "ARC1_FAKE_PROFILE_WRONG_VERSION", "false") == "true" ?
+            :arc1_profile_v1 : Symbol(method)
+        (; targets, cutoff=3.841458820694124, method_version=returned_method,
            point_estimates=(; additive_variance=0.3, permanent_environment_variance=0.2,
              residual_variance=0.5, heritability=0.3, repeatability=0.5),
            point_fit=(; loglik=-3.0), point_fit_status=:ok,
@@ -117,7 +119,8 @@ function _arc1_write_fake_engine(root)
 end
 
 function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
-                                unavailable=false, outer=1, admission=nothing)
+                                unavailable=false, wrong_profile_version=false,
+                                outer=1, admission=nothing)
     admitted_sources = admission === nothing ? nothing :
         get(admission, "source_sha256", get(admission, "source_hashes", nothing))
     admitted_protocol = admission === nothing ? nothing :
@@ -135,6 +138,8 @@ function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
         "mode" => "engineering_probe", "source_root" => root,
         "attempt_output" => attempt_dir, "artifact_path" => artifact_path,
         "outer" => outer, "seed" => string(seed), "blas_threads" => 1,
+        "profile_method_version" => cell.programme in ("repeatability", "boundary") ?
+            "arc1_profile_v2" : "",
         "bootstrap_seeds" => string.(bootstrap_seeds),
         "cell" => Dict("programme" => cell.programme, "phase" => cell.phase,
                        "N" => cell.N, "signal" => cell.signal),
@@ -158,9 +163,21 @@ function _arc1_run_fake_attempt(root, output, cell, seed, bootstrap_seeds;
     command = addenv(`$(Base.julia_cmd()) --startup-file=no --threads=1 --project=$root $(joinpath(root,"sim","arc1","execute_attempt.jl")) $input`,
                      "JULIA_DEPOT_PATH" => depot_path,
                      "OPENBLAS_NUM_THREADS" => "1", "JULIA_NUM_THREADS" => "1",
-                     "ARC1_FAKE_UNAVAILABLE" => unavailable ? "true" : "false")
+                     "ARC1_FAKE_UNAVAILABLE" => unavailable ? "true" : "false",
+                     "ARC1_FAKE_PROFILE_WRONG_VERSION" => wrong_profile_version ? "true" : "false")
     stdout = read(pipeline(ignorestatus(command), stderr=Base.stdout), String)
     return stdout, artifact_path
+end
+
+function _arc1_inspect_fake_artifact(root, artifact_path)
+    request = artifact_path * ".inspect.txt"
+    write(request, artifact_path * "\n")
+    command = `$(Base.julia_cmd()) --startup-file=no --threads=1 --project=$root $(joinpath(root,"sim","arc1","inspect_artifacts.jl")) $request`
+    depot = joinpath(dirname(dirname(artifact_path)), "depot")
+    mkpath(depot)
+    env = Dict("JULIA_DEPOT_PATH" => string(depot, Sys.iswindows() ? ';' : ':', first(DEPOT_PATH)),
+        "OPENBLAS_NUM_THREADS" => "1", "JULIA_NUM_THREADS" => "1")
+    return read(pipeline(addenv(command, env...), stderr=Base.stdout), String)
 end
 
 @testset "Arc1 source-bound one-attempt executor" begin
@@ -234,10 +251,30 @@ end
             @test occursin("0.1,0.2", repeat_stdout) && occursin("0.4,0.6", repeat_stdout)
             @test occursin("\"point_fit_status\":\"ok\"", repeat_stdout)
             @test occursin("\"point_fit_not_optimal\":false", repeat_stdout)
-            @test occursin("\"profile_method_version\":\"arc1_profile_v1\"", repeat_stdout)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v2\"", repeat_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", repeat_stdout)
             @test occursin("\"max_constrained_loglik\":-3.00001", repeat_stdout)
             @test occursin("target_diagnostics_identity", repeat_stdout)
             @test isfile(repeat_artifact)
+            inspected_profile = _arc1_inspect_fake_artifact(root, repeat_artifact)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", inspected_profile)
+            @test occursin("\"profile_method_version\":\"arc1_profile_v2\"", inspected_profile)
+
+            bad_profile_cell = (; programme="repeatability", phase="engineering_probe", N=16,
+                                signal="invalid")
+            failed_profile_stdout, failed_profile_artifact = _arc1_run_fake_attempt(
+                root, output, bad_profile_cell, UInt64(20261003), UInt64[])
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"",
+                           failed_profile_stdout)
+            @test !occursin("\"profile_method_version\":\"arc1_profile_v1\"", failed_profile_stdout)
+            inspected_failure = _arc1_inspect_fake_artifact(root, failed_profile_artifact)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", inspected_failure)
+
+            mismatch_stdout, mismatch_artifact = _arc1_run_fake_attempt(root, output,
+                repeat_cell, UInt64(20261004), UInt64[]; wrong_profile_version=true)
+            @test occursin("\"profile_method_version_mismatch\":true", mismatch_stdout)
+            @test occursin("\"requested_profile_method_version\":\"arc1_profile_v2\"", mismatch_stdout)
+            @test isfile(mismatch_artifact)
 
             interval_cell = (; programme="fa_interval", phase="pilot", N=16, signal="null")
             inner = UInt64[typemax(UInt64) - i for i in 0:998]

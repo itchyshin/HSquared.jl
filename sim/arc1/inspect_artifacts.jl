@@ -35,7 +35,9 @@ for artifact_path in artifact_paths
     retained_data = payload !== nothing && hasproperty(payload, :data) ? payload.data : nothing
     retained_design = payload !== nothing && hasproperty(payload, :design) ? payload.design : nothing
     retained_receipt_json = retained_result === nothing ? nothing :
-        arc1_json(arc1_json_receipt(retained_result))
+        arc1_json(merge(arc1_json_receipt(retained_result),
+            (; requested_profile_method_version=hasproperty(metadata, :requested_profile_method_version) ?
+                metadata.requested_profile_method_version : nothing)))
     embedded_receipt_json = summary === nothing ? nothing : arc1_json(summary)
     summary_matches = summary === nothing ? retained_result === nothing :
         retained_result !== nothing && retained_receipt_json == embedded_receipt_json

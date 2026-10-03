@@ -2,9 +2,11 @@
 # experimental interfaces explicit and separate from legacy intervals.
 
 """
-    arc1_profile_repeatability(y, X, Z, pedigree; ids=pedigree.ids)
+    arc1_profile_repeatability(y, X, Z, pedigree; ids=pedigree.ids,
+                               method="arc1_profile_v1")
 
-Fit the bounded `arc1_profile_v1` uncertainty path for a univariate Gaussian
+Fit the bounded `arc1_profile_v1` or explicitly selected `arc1_profile_v2`
+uncertainty path for a univariate Gaussian
 animal-plus-permanent-environment repeatability design. Each observed animal
 must have exactly two records. `X` must be finite and full column rank, with
 fewer columns than response rows; the interface does not require an
@@ -18,13 +20,18 @@ and disconnected confidence-set segments are kept separately.
 """
 function arc1_profile_repeatability(y::AbstractVector, X::AbstractMatrix,
                                     Z::AbstractMatrix, pedigree::Pedigree;
-                                    ids = pedigree.ids)
+                                    ids = pedigree.ids,
+                                    method = "arc1_profile_v1")
+    method_version = _arc1_profile_method_version(method)
     collect(ids) == pedigree.ids ||
         throw(ArgumentError("ids must match pedigree order exactly"))
     size(Z, 2) == length(pedigree.ids) ||
         throw(ArgumentError("Z columns must match pedigree order"))
     Ainv = pedigree_inverse(pedigree)
-    result = _arc1_repeatability_profile_intervals(y, X, Z, Ainv)
+    result = _arc1_repeatability_profile_intervals(y, X, Z, Ainv;
+        method_version)
+    hasproperty(result, :method_version) && result.method_version === method_version ||
+        throw(ArgumentError("Arc1 profile result method version does not match the requested method"))
     point_candidate = result.point_fit
     materialized = point_candidate === nothing ?
         (; fit=nothing, candidate=nothing, status=:unavailable, reason=nothing) :
@@ -52,7 +59,8 @@ function arc1_profile_repeatability(y::AbstractVector, X::AbstractMatrix,
          heritability = vc.sigma_a2 / total,
          repeatability = (vc.sigma_a2 + vc.sigma_pe2) / total)
     end
-    return merge(result, (method = "arc1_profile_v1", point_estimates = estimates,
+    return merge(result, (method = String(method_version), method_version,
+        point_estimates = estimates,
         source_identity = _ARC1_SOURCE_IDENTITY,
         reference_source_identity = _ARC1_SOURCE_IDENTITY,
         point_fit_not_optimal = hasproperty(result, :point_fit_not_optimal) ?
@@ -65,6 +73,14 @@ function arc1_profile_repeatability(y::AbstractVector, X::AbstractMatrix,
         reference_point_identity = point === nothing ? nothing : bytes2hex(sha256(repr((
             point.loglik, point.variance_components,
         ))))))
+end
+
+function _arc1_profile_method_version(method)
+    method isa AbstractString || throw(ArgumentError(
+        "method must be the string \"arc1_profile_v1\" or \"arc1_profile_v2\""))
+    method in ("arc1_profile_v1", "arc1_profile_v2") || throw(ArgumentError(
+        "unsupported Arc1 profile method $(repr(method)); choose \"arc1_profile_v1\" or \"arc1_profile_v2\""))
+    return Symbol(method)
 end
 
 function _arc1_materialize_point_fit(y, X, Z, Ainv, point)
@@ -113,7 +129,8 @@ end
 """
     arc1_confint(profile_result)
 
-Return the long interval table for an `arc1_profile_v1` result. The five
+Return the long interval table for an `arc1_profile_v1` or `arc1_profile_v2`
+result. The five
 profiled estimands are additive variance, permanent-environment variance,
 residual variance, heritability, and repeatability. Disconnected formed
 confidence-set segments produce separate rows; refused estimands remain as
@@ -122,8 +139,17 @@ the candidate nominal 95% cutoff; coverage remains unvalidated. This reports
 computational formation only.
 """
 function arc1_confint(profile_result)
-    hasproperty(profile_result, :method) && profile_result.method == "arc1_profile_v1" ||
-        throw(ArgumentError("arc1_confint requires an arc1_profile_v1 result"))
+    hasproperty(profile_result, :method) ||
+        throw(ArgumentError("arc1_confint requires an Arc1 profile result"))
+    method_version = try
+        _arc1_profile_method_version(profile_result.method)
+    catch error
+        error isa ArgumentError || rethrow()
+        throw(ArgumentError("arc1_confint requires an arc1_profile_v1 or arc1_profile_v2 result"))
+    end
+    hasproperty(profile_result, :method_version) &&
+        profile_result.method_version === method_version ||
+        throw(ArgumentError("Arc1 profile method version does not match its method identity"))
     profile_result.source_identity == profile_result.reference_source_identity ||
         throw(ArgumentError("profile and reference point source identities differ"))
     profile_result.point_identity == profile_result.reference_point_identity ||

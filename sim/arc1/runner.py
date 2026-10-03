@@ -328,6 +328,7 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
                      "max_constrained_loglik", "point_identity", "reference_point_identity",
                      "source_identity", "reference_source_identity",
                      "point_fit_diagnostic_identity", "profile_method_version",
+                     "requested_profile_method_version", "profile_method_version_mismatch",
                      "target_diagnostics_identity", "data_identity_method",
                      "semantic_data_identity_sha256", "selection", "candidate_summary"):
             if name in result:
@@ -398,6 +399,7 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
                 point_identity=None, reference_point_identity=None,
                 source_identity=None, reference_source_identity=None,
                 point_fit_diagnostic_identity=None, profile_method_version=None,
+                requested_profile_method_version=admission.get("profile_method_version"),
                 target_diagnostics_identity=None)
         attempts.append(attempt)
     return {"schema": "arc1-attempt-receipt-v1", **cell,

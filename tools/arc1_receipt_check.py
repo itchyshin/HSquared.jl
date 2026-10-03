@@ -173,8 +173,11 @@ def _check_interval_row(target: str, item: Any, expected_formula: str) -> None:
               f"refused/unresolved {target} interval must retain empty segments and refusal status")
 
 
-def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str, Any]) -> None:
+def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str, Any], *,
+                                     expected_method_version: str | None = None) -> None:
     """Bind formed profile targets to their one optimal unrestricted point fit."""
+    _need(attempt.get("profile_method_version_mismatch") is not True,
+          "native profile method version differs from the admitted request")
     fields = ("point_fit_status", "point_fit_not_optimal", "point_loglik",
               "max_constrained_loglik", "point_identity", "reference_point_identity",
               "source_identity", "reference_source_identity", "point_fit_diagnostic_identity",
@@ -185,18 +188,27 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
               "successful or formed profile evidence requires shared point-fit diagnostics")
         return
     _need(all(present), "profile receipt has incomplete shared point-fit diagnostics")
+    if expected_method_version is not None:
+        _need(expected_method_version == "arc1_profile_v2" and
+              attempt.get("requested_profile_method_version") == expected_method_version,
+              "profile attempt request differs from the source-admitted method version")
+    elif "requested_profile_method_version" in attempt and attempt["requested_profile_method_version"] is not None:
+        _need(attempt["requested_profile_method_version"] == attempt.get("profile_method_version"),
+              "profile request and produced method version disagree")
     _need(attempt["point_fit_status"] in {"ok", "point_fit_unconverged", "not_run"},
           "profile receipt has an unknown point-fit status")
     if attempt["point_fit_status"] == "not_run":
-        _need(attempt["profile_method_version"] in (None, "arc1_profile_v1"),
+        allowed_unrun_versions = (None, expected_method_version) if expected_method_version else (None, "arc1_profile_v1")
+        _need(attempt["profile_method_version"] in allowed_unrun_versions,
               "not-run profile method version is malformed")
         _need(attempt.get("success") is False and all(not row["formed"] and
               row["status"] == "outer_fit_failed" for row in profile.values()) and
               all(attempt[field] is None for field in fields if field != "point_fit_status"),
               "not-run point fit must retain null diagnostics and refused target rows")
         return
-    _need(attempt["profile_method_version"] == "arc1_profile_v1",
-          "profile method version differs from the frozen common point-fit method")
+    expected_method_version = expected_method_version or "arc1_profile_v1"
+    _need(attempt["profile_method_version"] == expected_method_version,
+          "profile method version differs from the source-admitted common point-fit method")
     _need(isinstance(attempt["point_fit_not_optimal"], bool),
           "point_fit_not_optimal must be an explicit boolean")
     _need(attempt["source_identity"] == attempt["reference_source_identity"],
@@ -720,6 +732,13 @@ def verify_receipt(
                   metadata.get("seed_string") == str(expected_seed) and
                   metadata.get("cell") == expected_cell,
                   f"attempt {attempt_id} artifact metadata differs from external outer/seed/cell pins")
+            if expected_cell["programme"] in {"repeatability", "boundary"}:
+                expected_profile_version = (expected_admission or {}).get("profile_method_version")
+                _need(expected_profile_version == "arc1_profile_v2" and
+                      metadata.get("requested_profile_method_version") == expected_profile_version,
+                      f"attempt {attempt_id} artifact does not retain the externally admitted profile method request")
+                _need(metadata.get("profile_method_version_mismatch") is not True,
+                      f"attempt {attempt_id} retained a native profile method version mismatch")
             driver_identity = metadata.get("driver_protocol_identity")
             _need(isinstance(driver_identity, dict) and
                   driver_identity.get("source_sha256") == expected_source_hashes and
@@ -882,7 +901,12 @@ def verify_receipt(
             _need(attempt.get("profile_method") == "profile_likelihood_ratio" and
                   attempt.get("profile_lr_cutoff") == 3.841458820694124,
                   "profile receipt must identify the frozen likelihood-ratio method and cutoff")
-            _check_profile_point_diagnostics(attempt, profile)
+            expected_profile_version = (expected_admission or {}).get("profile_method_version")
+            if expected_admission is not None:
+                _need(attempt.get("requested_profile_method_version") == expected_profile_version,
+                      "profile receipt request differs from the source-admitted method version")
+            _check_profile_point_diagnostics(attempt, profile,
+                expected_method_version=expected_profile_version)
             formulas = _expected_interval_formulas(expected_cell)
             for target, item in profile.items():
                 _check_interval_row(target, item, formulas[target])

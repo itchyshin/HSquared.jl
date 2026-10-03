@@ -25,6 +25,15 @@ end
 H.Optim.minimizer(result::Arc1PostRunCallbackResult) = result.minimizer
 H.Optim.converged(::Arc1PostRunCallbackResult) = true
 
+struct Arc1NativePostRunCallbackResult
+    minimizer::Vector{Float64}
+    stopped_by::NamedTuple
+    termination_code::Any
+    iterations::Int
+end
+H.Optim.minimizer(result::Arc1NativePostRunCallbackResult) = result.minimizer
+H.Optim.converged(::Arc1NativePostRunCallbackResult) = true
+
 function _arc1_test_data()
     na = 6
     n = 2na
@@ -74,6 +83,422 @@ end
 @testset "Arc1 repeatability profile exact objective" begin
     y, X, Z, Ainv, A = _arc1_test_data()
     context = H._arc1_profile_context(y, X, Z, Ainv)
+
+    @testset "explicit v2 refinement eligibility uses native optimizer fields" begin
+        native = H._arc1_bfgs_candidate(context, [1.0, 0.0, 0.0], [2, 3],
+            [2.0^-40, 1.0], 1.0;
+            optimizer_runner = (objective, gradient!, start) ->
+                Arc1NativePostRunCallbackResult(copy(start), (ls_failed = false,),
+                    H.Optim.TerminationCode.NoObjectiveChange, 13))
+        @test native.optimizer_status == "converged"
+        @test native.termination_code == H.Optim.TerminationCode.NoObjectiveChange
+        @test native.optimizer_converged
+        @test !native.line_search_failed
+        @test !native.converged
+        @test native.hit_bound_components ==
+            [(component = 2, side = :lower, value = native.components[2],
+              log_value = log(2.0^-40))]
+
+        face = (status = :ok, zero_index = 2, loglik = -10.0,
+            components = [0.7, 0.0, 0.9])
+        candidate = (loglik = -10.0 - 2e-7, max_valid_loglik = -10.0 - 2e-7,
+            components = [0.7, 1e-13, 0.9], converged = false,
+            optimizer_converged = true, optimizer_status = "converged",
+            termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+            analytic_gradient_valid = true, line_search_failed = false,
+            iterations = 13, free_indices = [2, 3],
+            finite_difference_errors = Dict(2 => Inf, 3 => 4e-6),
+            hit_bound = true,
+            hit_bound_components = [(component = 2, side = :lower, value = 1e-13)])
+        initial = (status = :face_likelihood_mismatch,
+            zero_indices = [2], likelihood_spread = 2e-7,
+            centered_active = false, likelihood_spread_centered = NaN)
+        @test H._arc1_profile_v2_refinement_eligible(candidate, initial, 1, [face])
+        @test !H._arc1_profile_v2_refinement_eligible(
+            merge(candidate, (termination_code = :gradient_converged,)), initial, 1, [face])
+        @test !H._arc1_profile_v2_refinement_eligible(
+            merge(candidate, (optimizer_converged = false,)), initial, 1, [face])
+        @test !H._arc1_profile_v2_refinement_eligible(
+            merge(candidate, (line_search_failed = true,)), initial, 1, [face])
+        @test !H._arc1_profile_v2_refinement_eligible(
+            merge(candidate, (finite_difference_errors = Dict(2 => Inf, 3 => 5.1e-6),)),
+            initial, 1, [face])
+        @test !H._arc1_profile_v2_refinement_eligible(
+            merge(candidate, (hit_bound_components = [(component = 2, side = :upper,
+                value = 1e-13)],)), initial, 1, [face])
+        @test_throws ArgumentError H._arc1_raw_nuisance(
+            (residual_df = 5,), :additive_variance, 1.0, 1.0;
+            method_version = :unknown)
+    end
+
+    @testset "v2 positive-bound continuation is one fixed-coordinate certified step" begin
+        df, s0 = 20.0, 1.0
+        objective(components) = begin
+            ll = -100.0 - 0.02 * components[2] - (components[3] - 1.0)^2
+            (ll, :ok)
+        end
+        gradient(components; free_indices) = begin
+            component_gradient = [0.0, 0.02 / df,
+                2 * (components[3] - 1.0) / df]
+            ll, _ = objective(components)
+            (loglik = ll, component_gradient = component_gradient,
+             log_gradient = component_gradient[free_indices] .* components[free_indices])
+        end
+        face = (status = :ok, zero_index = 2, loglik = -100.0,
+            components = [1.0, 0.0, 1.0])
+        candidate = (candidate_index = 8, loglik = first(objective([1.0, 1e-13, 1.01])),
+            max_valid_loglik = first(objective([1.0, 1e-13, 1.01])),
+            components = [1.0, 1e-13, 1.01], converged = false,
+            optimizer_converged = true, optimizer_status = "converged",
+            termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+            analytic_gradient_valid = true, line_search_failed = false,
+            gradient_norm = 0.02, iterations = 13, free_indices = [2, 3],
+            finite_difference_errors = Dict(2 => Inf, 3 => 0.0), hit_bound = true,
+            hit_bound_components = [(component = 2, side = :lower, value = 1e-13)])
+        initial = (status = :face_likelihood_mismatch, zero_indices = [2],
+            centered_active = false,
+            likelihood_spread = abs(candidate.loglik - face.loglik),
+            max_valid_loglik = candidate.max_valid_loglik)
+        continuation_calls = Ref(0)
+        runner = (ctx, base, free, start, scale, allowance) -> begin
+            continuation_calls[] += 1
+            @test base == [1.0, 1e-13, 1.01]
+            @test free == [3]
+            @test start == [1.01]
+            @test allowance == 1987
+            ll, _ = objective([1.0, 1e-13, 1.0])
+            (loglik = ll, max_valid_loglik = ll, components = [1.0, 1e-13, 1.0],
+             free_indices = [3], converged = true, gradient_norm = 0.0,
+             optimizer_converged = true, analytic_gradient_valid = true,
+             line_search_failed = false, finite_difference_errors = Dict(3 => 0.0),
+             hit_bound = false, hit_bound_components = Any[], iterations = 1,
+             termination_code = H.Optim.TerminationCode.GradientNorm,
+             optimizer_status = "converged", objective_evaluations = 4,
+             gradient_evaluations = 2)
+        end
+        seen = Ref(candidate.max_valid_loglik)
+        refined = H._arc1_positive_bound_refinement((residual_df = df,), candidate,
+            1, s0, df, [face], nothing, initial, objective, gradient;
+            maximum_seen = seen, continuation_runner = runner)
+        @test refined.status == :resolved_positive_bound_refine
+        @test refined.components == face.components
+        @test refined.loglik == face.loglik
+        @test refined.continuation.original_iterations == 13
+        @test refined.continuation.continuation_iterations == 1
+        @test refined.continuation.combined_iterations == 14
+        @test continuation_calls[] == 1
+        @test seen[] == face.loglik
+
+        better_history = merge(candidate, (max_valid_loglik = face.loglik + 2e-8,))
+        history_seen = Ref(better_history.max_valid_loglik)
+        blocked = H._arc1_positive_bound_refinement((residual_df = df,), better_history,
+            1, s0, df, [face], nothing, initial, objective, gradient;
+            maximum_seen = history_seen, continuation_runner = runner)
+        @test blocked.status == :candidate_maximum_mismatch
+        @test blocked.continuation.max_valid_loglik == face.loglik + 2e-8
+
+        exhausted = merge(candidate, (iterations = 2000,))
+        exhausted_calls = Ref(0)
+        no_budget = H._arc1_positive_bound_refinement((residual_df = df,), exhausted,
+            1, s0, df, [face], nothing, initial, objective, gradient;
+            maximum_seen = Ref(exhausted.max_valid_loglik),
+            continuation_runner = (args...) -> (exhausted_calls[] += 1))
+        @test no_budget.status == :not_eligible
+        @test exhausted_calls[] == 0
+
+        # A valid full-likelihood maximum survives a continuation exception;
+        # only a correctly tagged same-Ve centered maximum is admitted.
+        centered_candidate = merge(candidate, (components = [1e-13, 0.5, 0.9],
+            free_indices = [1, 2],
+            finite_difference_errors = Dict(1 => Inf, 2 => 0.0),
+            hit_bound_components = [(component = 1, side = :lower, value = 1e-13)],
+            max_valid_loglik = -4.5, centered_loglik = 1.0,
+            max_valid_centered_loglik = 2.0, centering_ve = 0.9))
+        centered_face = (status = :ok, zero_index = 1, loglik = -5.0,
+            components = [0.0, 0.5, 0.9], centered_loglik = 1.0,
+            max_valid_centered_loglik = 1.0, centering_ve = 0.9)
+        wrong_tag_certificate = (status = :face_likelihood_mismatch,
+            zero_indices = [1], centered_active = false, likelihood_spread = 2e-7,
+            max_valid_loglik = -4.0, max_valid_centered_loglik = 10.0,
+            centering_ve = 0.8)
+        full_history = Ref(-5.0)
+        centered_history = Ref(-Inf)
+        exception = H._arc1_positive_bound_refinement((residual_df = df,),
+            centered_candidate, 3, s0, df, [centered_face], nothing,
+            wrong_tag_certificate, objective, gradient;
+            maximum_seen = full_history, centered_maximum_seen = centered_history,
+            centered_loglik_at = components -> (1.0, :ok), centering_ve = 0.9,
+            continuation_runner = (args...) -> error("controlled v2 continuation error"))
+        @test exception.status == :continuation_exception
+        @test full_history[] == -4.0
+        @test centered_history[] == 2.0
+        @test exception.continuation.max_valid_loglik == -4.0
+        @test exception.continuation.max_valid_centered_loglik == 2.0
+        @test exception.continuation.original_native_max_valid_centered_loglik == 2.0
+        @test exception.continuation.original_native_centering_ve == 0.9
+
+        failed_return = H._arc1_positive_bound_refinement((residual_df = df,), candidate,
+            1, s0, df, [face], nothing, initial, objective, gradient;
+            maximum_seen = Ref(candidate.max_valid_loglik),
+            continuation_runner = (ctx, base, free, start, scale, allowance) ->
+                (loglik = -100.0, components = [1.0, 1e-13, 1.0], iterations = 7,
+                 free_indices = [3], converged = false, optimizer_converged = false,
+                 gradient_norm = 2e-5, analytic_gradient_valid = true,
+                 line_search_failed = false, finite_difference_errors = Dict(3 => 0.0),
+                 hit_bound_components = Any[], optimizer_status = "not_converged"))
+        @test failed_return.status == :continuation_unresolved
+        @test failed_return.continuation.continuation_iterations == 7
+        @test failed_return.continuation.combined_iterations == 20
+    end
+
+    @testset "raw nuisance enters positive-bound refinement only for explicit v2" begin
+        df = 20.0
+        mock = (residual_df = df,)
+        objective(components) = (-100.0 - 0.02 * components[2] -
+            (components[3] - 1.0)^2, :ok)
+        gradient(components; free_indices = 1:3) = begin
+            component_gradient = [0.0, 0.02 / df,
+                2 * (components[3] - 1.0) / df]
+            ll, _ = objective(components)
+            (loglik = ll, component_gradient = component_gradient,
+             log_gradient = component_gradient[free_indices] .* components[free_indices])
+        end
+        bfgs_calls, certificate_calls, refinement_calls = Ref(0), Ref(0), Ref(0)
+        bfgs = (ctx, base, free, starts, scale) -> begin
+            bfgs_calls[] += 1
+            if bfgs_calls[] == 1
+                components = [1.0, 1e-13, 1.01]
+                ll, _ = objective(components)
+                return (loglik = ll, max_valid_loglik = ll, components,
+                    converged = false, optimizer_converged = true,
+                    optimizer_status = "converged",
+                    termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+                    analytic_gradient_valid = true, line_search_failed = false,
+                    gradient_norm = 0.02, iterations = 13, free_indices = [2, 3],
+                    finite_difference_errors = Dict(2 => Inf, 3 => 0.0),
+                    hit_bound = true,
+                    hit_bound_components = [(component = 2, side = :lower,
+                        value = 1e-13)])
+            end
+            components = [1.0, 0.5, 0.5]
+            ll, _ = objective(components)
+            (loglik = ll, max_valid_loglik = ll, components, converged = true,
+             optimizer_status = "converged", hit_bound = false,
+             hit_bound_components = Any[], gradient_norm = 0.0)
+        end
+        scalar = (ctx, make_components, scale; kwargs...) -> begin
+            zero_index = kwargs[:held_zero_component]
+            value = zero_index == 2 ? 1.0 : 0.5
+            components = make_components(value)
+            ll, _ = objective(components)
+            (status = :ok, value, loglik = ll, max_valid_loglik = ll,
+             components, converged = true, gradient_norm = 0.0,
+             optimizer_status = "converged", hit_bound = false, candidates = Any[],
+             physical_zero_endpoint_certificate = nothing)
+        end
+        initial_certificate = (candidate, args...) -> begin
+            certificate_calls[] += 1
+            (status = :face_likelihood_mismatch, zero_indices = [2],
+             likelihood_spread = abs(candidate.loglik + 100.0),
+             centered_active = false, max_valid_loglik = candidate.max_valid_loglik)
+        end
+        refinement = (ctx, base, free, start, scale, allowance) -> begin
+            refinement_calls[] += 1
+            @test base == [1.0, 1e-13, 1.01]
+            @test free == [3]
+            @test start == [1.01]
+            @test allowance == 1987
+            components = [1.0, 1e-13, 1.0]
+            ll, _ = objective(components)
+            (loglik = ll, max_valid_loglik = ll, components, free_indices = [3],
+             converged = true, optimizer_converged = true,
+             optimizer_status = "converged", termination_code = H.Optim.TerminationCode.GradientNorm,
+             gradient_norm = 0.0, analytic_gradient_valid = true,
+             line_search_failed = false, finite_difference_errors = Dict(3 => 0.0),
+             hit_bound = false, hit_bound_components = Any[], iterations = 1,
+             objective_evaluations = 4, gradient_evaluations = 2)
+        end
+        common = (; bfgs_runner = bfgs, scalar_profile_runner = scalar,
+            loglik_runner = (ctx, components) -> objective(components),
+            gradient_runner = (ctx, components; free_indices = 1:3) ->
+                gradient(components; free_indices),
+            certificate_runner = initial_certificate, refinement_runner = refinement)
+        v1 = H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common..., method_version = :arc1_profile_v1)
+        @test v1.method_version == :arc1_profile_v1
+        @test v1.status in (:ok, :nuisance_unresolved)
+        @test refinement_calls[] == 0
+        @test certificate_calls[] == 1
+        bfgs_calls[] = 0
+        certificate_calls[] = 0
+        default = H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common...)
+        @test default.method_version == :arc1_profile_v1
+        @test default.status == v1.status
+        @test default.loglik == v1.loglik
+        @test default.max_valid_loglik == v1.max_valid_loglik
+        @test refinement_calls[] == 0
+        bfgs_calls[] = 0
+        certificate_calls[] = 0
+        v2 = H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common..., method_version = :arc1_profile_v2)
+        @test v2.method_version == :arc1_profile_v2
+        @test v2.status == :ok
+        @test only(filter(x -> x.kind == :raw_nuisance_search,
+            v2.nuisance_statuses)).resolved_by_positive_bound_refine == 1
+        @test refinement_calls[] == 1
+        @test certificate_calls[] == 1
+        @test v2.max_valid_loglik == -100.0
+    end
+
+    @testset "v2 rejects superior refinement history and rechecks projected free gradients" begin
+        df = 20.0
+        mock = (residual_df = df,)
+        mode = Ref(:plain)
+        objective(components) = begin
+            ll = -100.0 - 0.02 * components[2] - (components[3] - 1.0)^2
+            if mode[] == :late_history && components[3] == 1.0
+                components[2] == 1e-4 && (ll = -100.0 + 2e-7)
+                components[2] == 2e-4 && (ll = -100.0 + 4.8e-6)
+            elseif mode[] == :projected_fd && components[2] == 0.0
+                ll -= 0.01 * (components[3] - 1.0)
+            end
+            (ll, :ok)
+        end
+        gradient(components; free_indices = 1:3) = begin
+            component_gradient = [0.0, 0.02 / df,
+                2 * (components[3] - 1.0) / df]
+            ll, _ = objective(components)
+            (loglik = ll, component_gradient = component_gradient,
+             log_gradient = component_gradient[free_indices] .* components[free_indices])
+        end
+        bfgs_calls, certificate_calls, refinement_calls, polish_calls =
+            Ref(0), Ref(0), Ref(0), Ref(0)
+        bfgs = (ctx, base, free, starts, scale) -> begin
+            bfgs_calls[] += 1
+            components = bfgs_calls[] == 1 ? [1.0, 1e-13, 1.01] : [1.0, 0.5, 0.5]
+            ll, _ = objective(components)
+            if bfgs_calls[] == 1
+                return (loglik = ll, max_valid_loglik = ll, components,
+                    converged = false, optimizer_converged = true,
+                    optimizer_status = "converged",
+                    termination_code = H.Optim.TerminationCode.NoObjectiveChange,
+                    analytic_gradient_valid = true, line_search_failed = false,
+                    gradient_norm = 0.02, iterations = 13, free_indices = [2, 3],
+                    finite_difference_errors = Dict(2 => Inf, 3 => 0.0),
+                    hit_bound = true,
+                    hit_bound_components = [(component = 2, side = :lower,
+                        value = 1e-13)])
+            end
+            (loglik = ll, max_valid_loglik = ll, components, converged = true,
+             optimizer_status = "converged", hit_bound = false,
+             hit_bound_components = Any[], gradient_norm = 0.0)
+        end
+        scalar = (ctx, make_components, scale; kwargs...) -> begin
+            zero_index = kwargs[:held_zero_component]
+            value = zero_index == 2 ? 1.0 : 0.5
+            components = make_components(value)
+            ll, _ = objective(components)
+            (status = :ok, value, loglik = ll, max_valid_loglik = ll,
+             components, converged = true, gradient_norm = 0.0,
+             optimizer_status = "converged", hit_bound = false, candidates = Any[],
+             physical_zero_endpoint_certificate = nothing)
+        end
+        refinement = (ctx, base, free, start, scale, allowance) -> begin
+            refinement_calls[] += 1
+            components = [1.0, 1e-13, 1.0]
+            ll, _ = objective(components)
+            (loglik = ll, max_valid_loglik = ll, components, free_indices = [3],
+             converged = true, optimizer_converged = true,
+             optimizer_status = "converged",
+             termination_code = H.Optim.TerminationCode.GradientNorm,
+             gradient_norm = 0.0, analytic_gradient_valid = true,
+             line_search_failed = false, finite_difference_errors = Dict(3 => 0.0),
+             hit_bound = false, hit_bound_components = Any[], iterations = 1,
+             objective_evaluations = 4, gradient_evaluations = 2)
+        end
+        common = (; bfgs_runner = bfgs, scalar_profile_runner = scalar,
+            loglik_runner = (ctx, components) -> objective(components),
+            gradient_runner = (ctx, components; free_indices = 1:3) ->
+                gradient(components; free_indices), refinement_runner = refinement)
+
+        mode[] = :late_history
+        bfgs_calls[] = 0; certificate_calls[] = 0; refinement_calls[] = 0
+        late_certificate = (candidate, args...) -> begin
+            certificate_calls[] += 1
+            if certificate_calls[] == 1
+                return (status = :face_likelihood_mismatch, zero_indices = [2],
+                    likelihood_spread = 2e-7, centered_active = false,
+                    max_valid_loglik = candidate.max_valid_loglik)
+            end
+            H._arc1_zero_bound_face_certificate(candidate, args...)
+        end
+        late = H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common..., certificate_runner = late_certificate,
+            method_version = :arc1_profile_v2)
+        late_search = only(filter(x -> x.kind == :raw_nuisance_search,
+            late.nuisance_statuses))
+        @test late.status == :nuisance_unresolved
+        @test late.max_valid_loglik > late.loglik + 1e-8
+        @test late_search.resolved_by_positive_bound_refine == 1
+        @test late_search.unresolved_competitor
+
+        mode[] = :projected_fd
+        bfgs_calls[] = 0; certificate_calls[] = 0; refinement_calls[] = 0
+        projected_certificate = (candidate, index, scale, residual_df, faces,
+                                 intersection, loglik_at, gradient_at; kwargs...) -> begin
+            certificate_calls[] += 1
+            certificate_calls[] == 1 && return (status = :face_likelihood_mismatch,
+                zero_indices = [2], likelihood_spread = 2e-7,
+                centered_active = false, max_valid_loglik = candidate.max_valid_loglik)
+            H._arc1_zero_bound_face_certificate(candidate, index, scale, residual_df,
+                faces, intersection, loglik_at, gradient_at; kwargs...)
+        end
+        projected = H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common..., certificate_runner = projected_certificate,
+            method_version = :arc1_profile_v2)
+        projected_search = only(filter(x -> x.kind == :raw_nuisance_search,
+            projected.nuisance_statuses))
+        @test projected.status == :nuisance_unresolved
+        @test projected_search.resolved_by_positive_bound_refine == 0
+        @test any(x -> hasproperty(x, :status) &&
+            x.status == :remaining_finite_difference_unresolved,
+            projected_search.lower_bound_resolutions)
+
+        mode[] = :chain
+        bfgs_calls[] = 0; certificate_calls[] = 0; refinement_calls[] = 0
+        polish_runner = (args...; kwargs...) -> begin
+            polish_calls[] += 1
+            (; status = :projected_gradient_unresolved,
+               continuation = (; status = :projected_gradient_unresolved))
+        end
+        chained_certificate = (candidate, index, scale, residual_df, faces,
+                              intersection, loglik_at, gradient_at; kwargs...) -> begin
+            certificate_calls[] += 1
+            certificate_calls[] == 1 ?
+                (status = :face_likelihood_mismatch, zero_indices = [2],
+                 likelihood_spread = 2e-7, centered_active = false,
+                 max_valid_loglik = candidate.max_valid_loglik) :
+                (status = :projected_gradient_unresolved, zero_indices = [2],
+                 max_valid_loglik = candidate.max_valid_loglik)
+        end
+        chain_gradient = (ctx, components; free_indices = 1:3) -> begin
+            result = gradient(components; free_indices)
+            if components[2] == 0.0
+                derivative = copy(result.component_gradient)
+                derivative[3] = 2e-6 / components[3]
+                result = merge(result, (component_gradient = derivative,
+                    log_gradient = derivative[free_indices] .* components[free_indices]))
+            end
+            result
+        end
+        H._arc1_raw_nuisance(mock, :additive_variance, 1.0, 1.0;
+            common..., gradient_runner = chain_gradient,
+            certificate_runner = chained_certificate,
+            polish_runner = polish_runner, method_version = :arc1_profile_v2)
+        @test refinement_calls[] == 1
+        @test polish_calls[] == 0
+    end
 
     @testset "positive components agree with independent dense REML oracle" begin
         for (Va, Vpe, Ve) in ((0.3, 0.2, 0.5), (1.1, 0.05, 0.7))

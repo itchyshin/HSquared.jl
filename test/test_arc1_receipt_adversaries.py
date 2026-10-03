@@ -442,7 +442,9 @@ end
                             "N": 80, "signal": signal}
                 # This is a transport-only fixture over the already-pinned
                 # synthetic source tree; it is not a cell admission or study run.
-                raw_admission = admission
+                raw_admission = dict(admission)
+                raw_admission["profile_method_version"] = (
+                    "arc1_profile_v2" if programme == "repeatability" else None)
                 raw_output = arc1_runner.cell_output_dir(base / "raw-path-results", raw_cell)
                 raw_attempt_dir = raw_output / "attempts"
                 raw_attempt_dir.mkdir(parents=True, exist_ok=True)
@@ -632,6 +634,8 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                 root, cell, source_paths=["sim/arc1/independent_dgp.jl", "tools/arc1_manifest.py",
                                           "tools/arc1_receipt_check.py"],
                 julia_version="1.10.0", julia_threads=4, blas_threads=1, manifest_audit_root=ROOT)
+            self.assertEqual(admission["schema"], "arc1-run-admission-v2")
+            self.assertIsNone(admission["profile_method_version"])
             arc1_manifest.verify_run_admission(root, admission, julia_version="1.10.0",
                                                julia_threads=4, blas_threads=1)
             altered = copy.deepcopy(admission)
@@ -647,6 +651,32 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             with self.assertRaisesRegex(ValueError, "bootstrap seed partition"):
                 arc1_manifest.verify_run_admission(root, altered, julia_version="1.10.0",
                                                    julia_threads=4, blas_threads=1)
+            repeatability_cell = {"programme": "repeatability", "phase": "development",
+                                  "N": 80, "signal": "interior"}
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v2"):
+                arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
+                    julia_version="1.10.0", julia_threads=1, blas_threads=1,
+                    manifest_audit_root=ROOT)
+            profile_admission = arc1_manifest.build_run_admission(
+                root, repeatability_cell, source_paths=[], julia_version="1.10.0",
+                julia_threads=1, blas_threads=1, manifest_audit_root=ROOT,
+                profile_method_version="arc1_profile_v2")
+            arc1_manifest.verify_run_admission(root, profile_admission, julia_version="1.10.0",
+                                                julia_threads=1, blas_threads=1)
+            for wrong_version in ("arc1_profile_v1", None):
+                altered_profile = copy.deepcopy(profile_admission)
+                if wrong_version is None:
+                    del altered_profile["profile_method_version"]
+                else:
+                    altered_profile["profile_method_version"] = wrong_version
+                with self.assertRaisesRegex(ValueError, "frozen arc1_profile_v2"):
+                    arc1_manifest.verify_run_admission(root, altered_profile, julia_version="1.10.0",
+                                                       julia_threads=1, blas_threads=1)
+            legacy_profile = copy.deepcopy(profile_admission)
+            legacy_profile["schema"] = "arc1-run-admission-v1"
+            with self.assertRaisesRegex(ValueError, "unsupported Arc1 run admission schema"):
+                arc1_manifest.verify_run_admission(root, legacy_profile, julia_version="1.10.0",
+                                                   julia_threads=1, blas_threads=1)
             csv_path = root / "sim/arc1/manifests/arc1_outer_seeds.csv"
             csv_path.write_text(csv_path.read_text().replace("5356929701607681179", "5356929701607681178", 1))
             json_path = root / "sim/arc1/manifests/arc1_seed_manifest.json"
@@ -1169,6 +1199,84 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                 row.update(change)
             with self.assertRaisesRegex(checker.ReceiptError, expected):
                 verify(adversarial, cell=cell, seeds=seeds)
+
+    def test_v2_profile_admission_binds_native_version_and_preserves_pre_engine_request(self):
+        cell = {"programme": "repeatability", "phase": "development", "N": 80,
+                "signal": "interior"}
+        seeds = [arc1_manifest.seed_for(cell["programme"], cell["phase"], cell["N"],
+            cell["signal"], i, 0, "data") for i in range(1, 31)]
+        formulas = checker._expected_interval_formulas(cell)
+        with tempfile.TemporaryDirectory(prefix="arc1-profile-v2-admission-") as temporary:
+            base = Path(temporary)
+            source = _copy_valid_source_tree(base / "source")
+            admission = arc1_manifest.build_run_admission(source, cell, source_paths=[],
+                julia_version="1.10.0", julia_threads=1, blas_threads=1,
+                manifest_audit_root=ROOT, profile_method_version="arc1_profile_v2")
+            engine_sources = {name: digest for name, digest in admission["source_sha256"].items()
+                              if name.startswith("src/")}
+            runtime_identity = {"engine_package_uuid": "a0667dea-0f38-44e8-9150-4fda00624eac",
+                "engine_module_path": str((source / "src/HSquared.jl").resolve()),
+                "loaded_module_names": ["HSquared"],
+                "source_sha256_at_load": engine_sources,
+                "source_sha256_after_load": engine_sources,
+                "loaded_engine_source_sha256": engine_sources,
+                "environment_sha256": admission["environment_sha256"],
+                "active_project": str((source / "Project.toml").resolve()),
+                "loaded_dependencies": [], "dependency_environment_verified": True,
+                "julia_version": "1.10.0", "julia_threads": 1, "blas_runtime_threads": 1,
+                "thread_environment": admission["thread_environment"], "blas_vendor": "synthetic-test"}
+            attempts = []
+            for i, seed in enumerate(seeds, 1):
+                intervals = {target: {"formed": True, "segments": [[0.0, 1.0]],
+                    "status": "formed", "formula": formula} for target, formula in formulas.items()}
+                attempts.append({"attempt_id": f"v2-{i}", "outer": i, "seed": seed,
+                    "status": "ok", "success": True, "failure_reason": None,
+                    "profile_method": "profile_likelihood_ratio", "profile_lr_cutoff": 3.841458820694124,
+                    "requested_profile_method_version": "arc1_profile_v2",
+                    "profile_method_version": "arc1_profile_v2", "point_fit_status": "ok",
+                    "point_fit_not_optimal": False, "point_loglik": -10.0,
+                    "max_constrained_loglik": -10.0, "point_identity": "a" * 64,
+                    "reference_point_identity": "a" * 64, "source_identity": "b" * 64,
+                    "reference_source_identity": "b" * 64,
+                    "point_fit_diagnostic_identity": "c" * 64,
+                    "target_diagnostics_identity": "d" * 64, "profile_intervals": intervals,
+                    "execution_identity": runtime_identity})
+            receipt = {"schema": "arc1-attempt-receipt-v1", **cell,
+                "protocol_sha256": admission["protocol_sha256"],
+                "source_hashes": admission["source_sha256"],
+                "planned_attempts": 30, "attempts": attempts}
+
+            def verify_admitted(candidate):
+                return checker.verify_receipt(candidate, expected_seeds=seeds,
+                    expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                    expected_source_root=source, expected_admission=admission)
+
+            self.assertEqual(verify_admitted(receipt)["interval_targets"]["Va"]["formed"], 30)
+            wrong_native = copy.deepcopy(receipt)
+            wrong_native["attempts"][0]["profile_method_version"] = "arc1_profile_v1"
+            with self.assertRaisesRegex(checker.ReceiptError, "method version"):
+                verify_admitted(wrong_native)
+            wrong_request = copy.deepcopy(receipt)
+            wrong_request["attempts"][0]["requested_profile_method_version"] = "arc1_profile_v1"
+            with self.assertRaisesRegex(checker.ReceiptError, "request differs"):
+                verify_admitted(wrong_request)
+            wrong_native_failure = copy.deepcopy(receipt)
+            wrong_native_failure["attempts"][0].update(profile_method_version_mismatch=True,
+                success=False, status="error", failure_reason="native method mismatch")
+            with self.assertRaisesRegex(checker.ReceiptError, "native profile method version differs"):
+                verify_admitted(wrong_native_failure)
+
+            error_rows = [{"outer": i, "seed": seed, "status": "error", "success": False,
+                "failure_reason": "Julia failed before emitting an attempt result"}
+                for i, seed in enumerate(seeds, 1)]
+            with tempfile.TemporaryDirectory(dir=base) as artifacts:
+                pre_engine = arc1_runner.assemble_cell_receipt(error_rows, admission,
+                    source_root=source, artifact_root=Path(artifacts))
+            self.assertEqual(pre_engine["attempts"][0]["requested_profile_method_version"],
+                             "arc1_profile_v2")
+            self.assertIsNone(pre_engine["attempts"][0]["profile_method_version"])
+            self.assertEqual(verify_admitted(pre_engine)["failures"], 30)
 
     def test_pre_engine_profile_failure_never_fabricates_truth_as_point_estimate(self):
         cell = {"programme": "repeatability", "phase": "development", "N": 80,

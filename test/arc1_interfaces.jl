@@ -6,8 +6,21 @@ using HSquared
         [1.0, 2.0], ones(2, 1), ones(2, 1),
         normalize_pedigree(["a", "b"], ["0", "0"], ["0", "0"]);
         ids = ["wrong", "ids"])
+    method_ped = normalize_pedigree(["a"], ["0"], ["0"])
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        method = "arc1_profile_v3")
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        method = :arc1_profile_v2)
 
-    fake = (method = "arc1_profile_v1", source_identity = "same",
+    @test HSquared._arc1_profile_method_version("arc1_profile_v1") === :arc1_profile_v1
+    @test HSquared._arc1_profile_method_version("arc1_profile_v2") === :arc1_profile_v2
+    @test_throws ArgumentError HSquared._arc1_profile_method_version("arc1_profile_v3")
+    @test_throws ArgumentError HSquared._arc1_profile_method_version(:arc1_profile_v2)
+
+    fake = (method = "arc1_profile_v1", method_version = :arc1_profile_v1,
+        source_identity = "same",
         reference_source_identity = "same",
         point_identity = "fit-1", reference_point_identity = "fit-1",
         # Faithful `_arc1_point_fit` result: the selected candidate retains
@@ -22,6 +35,13 @@ using HSquared
         targets = Dict(:heritability => (confidence_set = [(0.1, 0.8)],
             status = :finite_grid_resolved, formed = true)))
     rows = arc1_confint(fake)
+    fake_v2 = merge(fake, (method = "arc1_profile_v2",
+                           method_version = :arc1_profile_v2))
+    @test length(arc1_confint(fake_v2)) == 1
+    @test_throws ArgumentError arc1_confint(merge(fake_v2,
+        (method_version = :arc1_profile_v1,)))
+    @test_throws ArgumentError arc1_confint(merge(fake_v2,
+        (method = "arc1_profile_v3",)))
     @test HSquared._arc1_interface_variance_components(fake.point_fit) ==
           (sigma_a2 = 0.2, sigma_pe2 = 0.2, sigma_e2 = 0.6)
     tiny_ped = normalize_pedigree(["a", "b", "c", "d"], fill("0", 4), fill("0", 4))

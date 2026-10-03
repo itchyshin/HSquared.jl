@@ -17,6 +17,20 @@ import run_cell
 
 
 class ExecutorTransportTests(unittest.TestCase):
+    def test_child_profile_method_is_crossbound_without_relabeling_returned_results(self):
+        returned = {"schema": "arc1-attempt-result-v1",
+                    "requested_profile_method_version": "arc1_profile_v2"}
+        run_cell._check_returned_attempt_identity(returned, 1, 11, "arc1_profile_v2")
+        with self.assertRaisesRegex(ValueError, "different requested profile method"):
+            run_cell._check_returned_attempt_identity({"schema": "arc1-attempt-result-v1",
+                "requested_profile_method_version": "arc1_profile_v1"}, 1, 11, "arc1_profile_v2")
+        pre_engine = {"status": "error", "success": False}
+        run_cell._check_returned_attempt_identity(pre_engine, 1, 11, "arc1_profile_v2")
+        self.assertEqual(pre_engine["requested_profile_method_version"], "arc1_profile_v2")
+        with self.assertRaisesRegex(ValueError, "different requested profile method"):
+            run_cell._check_returned_attempt_identity({"status": "error",
+                "requested_profile_method_version": "arc1_profile_v1"}, 1, 11, "arc1_profile_v2")
+
     def test_toml_input_preserves_large_seed_as_exact_string(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
@@ -24,12 +38,14 @@ class ExecutorTransportTests(unittest.TestCase):
                 "source_sha256": {"src/HSquared.jl": "a" * 64},
                 "environment_sha256": {"Project.toml": "b" * 64,
                                        "Manifest.toml": "c" * 64},
+                "profile_method_version": "arc1_profile_v2",
+                "protocol_sha256": "d" * 64,
             }
             path = base / "attempt.input.toml"
             run_cell._toml_input(
                 path, mode="engineering_probe", source_root=base,
                 attempt_output=base / "out", artifact_path=base / "out/full.jls",
-                cell={"programme": "fa_rank", "phase": "engineering_probe",
+                cell={"programme": "repeatability", "phase": "engineering_probe",
                       "N": 16, "signal": "weak"}, outer=1,
                 seed=2**64 - 1, bootstrap_seeds=[2**64 - 1],
                 admission=admission, blas_threads=1,
@@ -38,12 +54,13 @@ class ExecutorTransportTests(unittest.TestCase):
             self.assertIn('seed = "18446744073709551615"', text)
             self.assertIn('bootstrap_seeds = ["18446744073709551615"]', text)
             self.assertIn('mode = "engineering_probe"', text)
+            self.assertIn('profile_method_version = "arc1_profile_v2"', text)
             self.assertIn('"src/HSquared.jl" = "' + "a" * 64 + '"', text)
             with self.assertRaises(FileExistsError):
                 run_cell._toml_input(
                     path, mode="engineering_probe", source_root=base,
                     attempt_output=base / "out", artifact_path=base / "out/full.jls",
-                    cell={"programme": "fa_rank", "phase": "engineering_probe",
+                    cell={"programme": "repeatability", "phase": "engineering_probe",
                           "N": 16, "signal": "weak"}, outer=1,
                     seed=1, bootstrap_seeds=[], admission=admission, blas_threads=1,
                 )

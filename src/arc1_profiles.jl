@@ -3,7 +3,14 @@
 # the coordinator after the profile contract is reviewed.
 
 const _ARC1_PROFILE_METHOD_VERSION = :arc1_profile_v1
+const _ARC1_PROFILE_METHOD_VERSIONS = (:arc1_profile_v1, :arc1_profile_v2)
 const _ARC1_PROFILE_CUTOFF_95 = 3.841458820694124
+
+function _arc1_validate_profile_method_version(method_version::Symbol)
+    method_version in _ARC1_PROFILE_METHOD_VERSIONS ||
+        throw(ArgumentError("unsupported Arc1 profile method version: $method_version"))
+    return method_version
+end
 
 function _arc1_profile_context(y::AbstractVector, X::AbstractMatrix,
                                Z::AbstractMatrix, Ainv::AbstractMatrix)
@@ -373,6 +380,214 @@ function _arc1_profile_resolved_polish_certificate_valid(record, centered_active
         record.polished_boundary_certificate, centered_active)
 end
 
+function _arc1_profile_v2_refinement_eligible(candidate, initial_certificate,
+        target_index::Int, faces)
+    hasproperty(initial_certificate, :status) &&
+        initial_certificate.status == :face_likelihood_mismatch || return false
+    required = (:components, :converged, :optimizer_converged, :optimizer_status,
+        :termination_code, :analytic_gradient_valid, :line_search_failed,
+        :iterations, :free_indices, :finite_difference_errors, :hit_bound,
+        :hit_bound_components)
+    all(field -> hasproperty(candidate, field), required) || return false
+    candidate.converged isa Bool && !candidate.converged || return false
+    candidate.optimizer_converged === true || return false
+    candidate.optimizer_status == "converged" || return false
+    candidate.termination_code == Optim.TerminationCode.NoObjectiveChange || return false
+    candidate.analytic_gradient_valid === true || return false
+    candidate.line_search_failed === false || return false
+    candidate.iterations isa Integer && 0 <= candidate.iterations < 2000 || return false
+    candidate.hit_bound === true || return false
+    contacts = candidate.hit_bound_components
+    _arc1_profile_bound_contacts_valid(contacts) && length(contacts) == 1 || return false
+    contact = only(contacts)
+    contact.component in (1, 2) && contact.component != target_index &&
+        contact.side === :lower || return false
+    candidate.components isa AbstractVector && length(candidate.components) == 3 &&
+        all(x -> x isa Real && !(x isa Bool) && isfinite(x) && x >= 0,
+            candidate.components) || return false
+    candidate.components[contact.component] > 0 || return false
+    free = candidate.free_indices
+    free isa AbstractVector && length(free) == 2 &&
+        sort(Int.(free)) == sort(filter(!=(target_index), 1:3)) || return false
+    remaining = filter(i -> i != contact.component && i != target_index, Int.(free))
+    length(remaining) == 1 || return false
+    errors = candidate.finite_difference_errors
+    errors isa AbstractDict || return false
+    contact_error = get(errors, contact.component, NaN)
+    contact_error isa Real && !(contact_error isa Bool) &&
+        ((isfinite(contact_error) && contact_error <= 5e-6) || contact_error == Inf) ||
+        return false
+    remaining_error = get(errors, only(remaining), NaN)
+    remaining_error isa Real && !(remaining_error isa Bool) &&
+        isfinite(remaining_error) && remaining_error <= 5e-6 || return false
+
+    zero_indices = initial_certificate.zero_indices
+    zero_indices isa AbstractVector && length(zero_indices) == 1 &&
+        only(zero_indices) == contact.component || return false
+    spread = get(initial_certificate, :centered_active, false) ?
+        get(initial_certificate, :likelihood_spread_centered, NaN) :
+        get(initial_certificate, :likelihood_spread, NaN)
+    spread isa Real && !(spread isa Bool) && isfinite(spread) && spread > 1e-8 ||
+        return false
+    matching_faces = filter(face -> hasproperty(face, :zero_index) &&
+        face.zero_index == contact.component && hasproperty(face, :status) &&
+        face.status == :ok, faces)
+    length(matching_faces) == 1 || return false
+    face = only(matching_faces)
+    hasproperty(face, :components) && face.components isa AbstractVector &&
+        length(face.components) == 3 && all(x -> x isa Real && !(x isa Bool) &&
+        isfinite(x) && x >= 0, face.components) || return false
+    hasproperty(face, :loglik) && face.loglik isa Real &&
+        !(face.loglik isa Bool) && isfinite(face.loglik) || return false
+    face.components[contact.component] == 0.0 &&
+        face.components[target_index] == candidate.components[target_index] || return false
+    return true
+end
+
+function _arc1_positive_bound_refinement(context, candidate, target_index::Int,
+        s0::Float64, residual_df::Real, faces, intersection, initial_certificate,
+        loglik_at, gradient_at; maximum_seen::Base.RefValue{Float64},
+        centered_maximum_seen::Union{Nothing,Base.RefValue{Float64}} = nothing,
+        centered_loglik_at = nothing, centering_ve = nothing,
+        continuation_runner = nothing)
+    candidate_history = _arc1_profile_record_likelihood_history!(maximum_seen,
+        candidate; centered_maximum = centered_maximum_seen, centering_ve)
+    _arc1_profile_record_likelihood_history!(maximum_seen, initial_certificate;
+        centered_maximum = centered_maximum_seen, centering_ve)
+    centered_active = centered_loglik_at !== nothing && centered_maximum_seen !== nothing &&
+        centering_ve !== nothing && candidate_history.centering_tag_valid
+    report(status; kwargs...) = merge((status = status,
+        parent_candidate_index = get(candidate, :candidate_index, missing),
+        original_iterations = hasproperty(candidate, :iterations) ? candidate.iterations : 0,
+        continuation_iterations = 0,
+        combined_iterations = hasproperty(candidate, :iterations) ? candidate.iterations : 0,
+        original_max_valid_loglik = candidate_history.max_valid_loglik,
+        original_native_max_valid_centered_loglik = hasproperty(candidate,
+            :max_valid_centered_loglik) ? candidate.max_valid_centered_loglik : missing,
+        original_native_centering_ve = hasproperty(candidate, :centering_ve) ?
+            candidate.centering_ve : missing,
+        max_valid_loglik = maximum_seen[], initial_certificate = initial_certificate),
+        centered_active ? (; max_valid_centered_loglik = centered_maximum_seen[],
+            centering_ve = Float64(centering_ve)) : NamedTuple(), (; kwargs...))
+    _arc1_profile_v2_refinement_eligible(candidate, initial_certificate,
+        target_index, faces) || return (status = :not_eligible,
+                                  continuation = report(:not_eligible))
+    contact_index = only(candidate.hit_bound_components).component
+    remaining = only(filter(i -> i != target_index && i != contact_index,
+        Int.(candidate.free_indices)))
+    allowance = 2000 - Int(candidate.iterations)
+    base = copy(candidate.components)
+    continuation = try
+        continuation_runner === nothing ?
+            _arc1_bfgs_candidate(context, base, [remaining], [base[remaining]], s0;
+                max_iterations = allowance,
+                centered_loglik_at = centered_active ? centered_loglik_at : nothing,
+                centering_ve = centered_active ? centering_ve : nothing) :
+            continuation_runner(context, base, [remaining], [base[remaining]], s0,
+                allowance)
+    catch err
+        err isa InterruptException && rethrow()
+        return (status = :continuation_exception,
+            continuation = report(:continuation_exception,
+                error = sprint(showerror, err), remaining_indices = [remaining],
+                iteration_allowance = allowance,
+                continuation_iterations = missing, combined_iterations = missing))
+    end
+    continuation_history = _arc1_profile_record_likelihood_history!(maximum_seen,
+        continuation; centered_maximum = centered_maximum_seen, centering_ve)
+    continuation_iterations = hasproperty(continuation, :iterations) &&
+        continuation.iterations isa Integer && !(continuation.iterations isa Bool) &&
+        continuation.iterations >= 0 ? Int(continuation.iterations) : missing
+    combined_iterations = ismissing(continuation_iterations) ? missing :
+        Int(candidate.iterations) + continuation_iterations
+    continuation_record(status; kwargs...) = report(status;
+        returned_continuation = continuation,
+        starting_projection = base,
+        returned_components = hasproperty(continuation, :components) ?
+                              continuation.components : nothing,
+        continuation_loglik = hasproperty(continuation, :loglik) ?
+                              continuation.loglik : -Inf,
+        continuation_gradient_norm = hasproperty(continuation, :gradient_norm) ?
+                                     continuation.gradient_norm : Inf,
+        termination_code = hasproperty(continuation, :termination_code) ?
+                           continuation.termination_code : :missing,
+        stopped_by = hasproperty(continuation, :stopped_by) ? continuation.stopped_by : nothing,
+        original_iterations = Int(candidate.iterations),
+        continuation_iterations = continuation_iterations,
+        combined_iterations = combined_iterations,
+        iteration_allowance = allowance,
+        objective_evaluations = hasproperty(continuation, :objective_evaluations) ?
+                                continuation.objective_evaluations : 0,
+        gradient_evaluations = hasproperty(continuation, :gradient_evaluations) ?
+                               continuation.gradient_evaluations : 0,
+        max_valid_loglik = maximum_seen[],
+        continuation_status = hasproperty(continuation, :optimizer_status) ?
+                              continuation.optimizer_status : :missing,
+        new_bound_contacts = hasproperty(continuation, :hit_bound_components) ?
+                             continuation.hit_bound_components : Any[], kwargs...)
+    valid = _arc1_profile_face_candidate_valid(continuation) &&
+        hasproperty(continuation, :optimizer_status) &&
+        continuation.optimizer_status == "converged" &&
+        hasproperty(continuation, :termination_code) &&
+        continuation.free_indices == [remaining] && continuation.converged &&
+        continuation.optimizer_converged && continuation.analytic_gradient_valid &&
+        !continuation.line_search_failed && continuation.gradient_norm <= 1e-6 &&
+        continuation.iterations <= allowance &&
+        isempty(continuation.hit_bound_components) &&
+        continuation.components[target_index] == candidate.components[target_index] &&
+        continuation.components[contact_index] == candidate.components[contact_index] &&
+        continuation.components[remaining] > 0 &&
+        haskey(continuation.finite_difference_errors, remaining) &&
+        isfinite(continuation.finite_difference_errors[remaining]) &&
+        continuation.finite_difference_errors[remaining] <= 5e-6
+    valid || return (status = :continuation_unresolved,
+        continuation = continuation_record(:continuation_unresolved,
+            max_valid_centered_loglik = centered_active ? centered_maximum_seen[] : NaN))
+
+    merged_fd = merge(candidate.finite_difference_errors,
+        continuation.finite_difference_errors)
+    terminal = merge(candidate, continuation, (; components = copy(continuation.components),
+        free_indices = [contact_index, remaining], finite_difference_errors = merged_fd,
+        hit_bound = true, hit_bound_components = copy(candidate.hit_bound_components),
+        max_valid_loglik = maximum_seen[], max_valid_centered_loglik =
+            centered_active ? centered_maximum_seen[] : -Inf,
+        centered_loglik = centered_active ? continuation.centered_loglik : -Inf,
+        centering_ve = centered_active ? Float64(centering_ve) : missing))
+    certificate = try
+        _arc1_zero_bound_face_certificate(terminal, target_index, s0, residual_df,
+            faces, intersection, loglik_at, gradient_at;
+            centered_loglik_at = centered_active ? centered_loglik_at : nothing,
+            centering_ve = centered_active ? centering_ve : nothing,
+            maximum_seen, centered_maximum_seen = centered_active ?
+                centered_maximum_seen : nothing,
+            validate_projected_free_fd = true)
+    catch err
+        err isa InterruptException && rethrow()
+        return (status = :recertification_exception,
+            continuation = continuation_record(:recertification_exception,
+                error = sprint(showerror, err)))
+    end
+    _arc1_profile_record_likelihood_history!(maximum_seen, certificate;
+        centered_maximum = centered_maximum_seen, centering_ve)
+    accepted = certificate.status == :resolved_lower_bound_by_zero_face &&
+        _arc1_profile_resolved_face_certificate_valid(certificate, centered_active)
+    accepted || return (status = certificate.status,
+        continuation = continuation_record(certificate.status,
+            boundary_certificate = certificate,
+            max_valid_centered_loglik = centered_active ? centered_maximum_seen[] : NaN))
+    result = (status = :resolved_positive_bound_refine, loglik = continuation.loglik,
+        components = copy(continuation.components), max_valid_loglik = maximum_seen[],
+        boundary_certificate = certificate,
+        continuation = continuation_record(:resolved_positive_bound_refine,
+            boundary_certificate = certificate,
+            max_valid_centered_loglik = centered_active ? centered_maximum_seen[] : NaN))
+    result = merge(result, (; loglik = certificate.loglik,
+        components = copy(certificate.components)))
+    return centered_active ? merge(result, (; centered_loglik = certificate.face_centered_loglik,
+            max_valid_centered_loglik = centered_maximum_seen[],
+            centering_ve = Float64(centering_ve))) : result
+end
+
 function _arc1_profile_invalid_bfgs_record(record, history; centered_active::Bool,
         fixed_ve::Real)
     normalized = (loglik = -Inf, max_valid_loglik = history.max_valid_loglik,
@@ -545,7 +760,13 @@ mutable struct _Arc1ProfileState
     evaluation_counts::Dict{Symbol,Int}
     max_constrained_loglik::Float64
     nuisance_statuses::Vector{Any}
+    method_version::Symbol
 end
+
+_Arc1ProfileState(context, s0, point_loglik, caches, evaluation_counts,
+    max_constrained_loglik, nuisance_statuses) = _Arc1ProfileState(context,
+    s0, point_loglik, caches, evaluation_counts, max_constrained_loglik,
+    nuisance_statuses, _ARC1_PROFILE_METHOD_VERSION)
 
 _arc1_point_fit_not_optimal(point_loglik::Real, constrained_loglik::Real) =
     constrained_loglik > point_loglik + 1e-7
@@ -615,7 +836,8 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
         centered_loglik_at = nothing, centering_ve::Union{Nothing,Real} = nothing,
         historical_centered_likelihoods::AbstractVector{<:Real} = Float64[],
         maximum_seen::Union{Nothing,Base.RefValue{Float64}} = nothing,
-        centered_maximum_seen::Union{Nothing,Base.RefValue{Float64}} = nothing)
+        centered_maximum_seen::Union{Nothing,Base.RefValue{Float64}} = nothing,
+        validate_projected_free_fd::Bool = false)
     candidate_history = _arc1_profile_likelihood_history(candidate;
         centering_ve = centering_ve)
     if maximum_seen !== nothing
@@ -799,6 +1021,30 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
     q0 = q_at(projected)
     isfinite(q0) || return (status = :active_derivative_nonfinite,
                             zero_indices = zero_indices)
+    projected_remaining_fd_errors = Dict{Int,Float64}()
+    if validate_projected_free_fd
+        for (j, index) in pairs(free_indices)
+            eta = log(projected[index])
+            step = 1e-5 * max(1.0, abs(eta))
+            plus, minus = copy(projected), copy(projected)
+            plus[index] *= exp(step)
+            minus[index] *= exp(-step)
+            qplus, qminus = q_at(plus), q_at(minus)
+            finite_difference = isfinite(qplus) && isfinite(qminus) ?
+                (qplus - qminus) / (2step) : Inf
+            analytic = grad.log_gradient[j]
+            error = isfinite(finite_difference) && isfinite(analytic) ?
+                abs(finite_difference - analytic) : Inf
+            projected_remaining_fd_errors[index] = error
+            isfinite(error) && error <= 5e-6 ||
+                return (status = :remaining_finite_difference_unresolved,
+                    zero_indices = zero_indices,
+                    projected_remaining_finite_difference_errors =
+                        copy(projected_remaining_fd_errors),
+                    projected_remaining_finite_difference = finite_difference,
+                    projected_remaining_analytic = analytic, step)
+        end
+    end
     for index in zero_indices
         analytic = s0 * grad.component_gradient[index]
         isfinite(analytic) && analytic > 5e-6 ||
@@ -843,6 +1089,8 @@ function _arc1_zero_bound_face_certificate(candidate, target_index::Int, s0::Flo
             candidate_max_valid_centered_loglik = candidate_centered_maximum,
             likelihood_spread_centered = centered_spread,
             projected_log_gradient_norm = projected_gradient_norm,
+            projected_remaining_finite_difference_errors =
+                projected_remaining_fd_errors,
             analytic_active_derivatives = analytic_active,
             forward_derivatives = forward_active)
 end
@@ -1161,7 +1409,8 @@ function _arc1_profile_cache!(state::_Arc1ProfileState, target::Symbol, value::F
     count = get(state.evaluation_counts, target, 0)
     if count >= 4097
         return (loglik = -Inf, status = :unresolved_search_budget,
-                      nuisance_statuses = Any[:target_evaluation_budget])
+                nuisance_statuses = Any[:target_evaluation_budget],
+                method_version = state.method_version)
     end
     state.evaluation_counts[target] = count + 1
     result = _arc1_profile_at_uncached(state, target, value)
@@ -1837,7 +2086,9 @@ function _arc1_scalar_profile_max(context, make_components, s0::Float64;
 end
 
 function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::Float64;
+        method_version::Symbol = _ARC1_PROFILE_METHOD_VERSION,
         bfgs_runner = nothing,
+        refinement_runner = nothing,
         scalar_profile_runner = (ctx, make_components, scale; kwargs...) ->
             _arc1_scalar_profile_max(ctx, make_components, scale; kwargs...),
         loglik_runner = (ctx, components) -> _arc1_loglik_for_components(ctx, components),
@@ -1849,12 +2100,14 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
         polish_runner = (ctx, candidate, index, scale, df, faces, intersection, initial; kwargs...) ->
             _arc1_projected_face_polish(ctx, candidate, index, scale, df,
                 faces, intersection, initial; kwargs...))
+    _arc1_validate_profile_method_version(method_version)
     target_index = findfirst(==(target),
         (:additive_variance, :permanent_environment_variance, :residual_variance))
     target_index === nothing && throw(ArgumentError("unknown raw variance target"))
-    target_index == 3 && fixed_value == 0 &&
+        target_index == 3 && fixed_value == 0 &&
         return (loglik = -Inf, status = :singular_proposal,
-                nuisance_statuses = Any[:residual_zero_boundary])
+                nuisance_statuses = Any[:residual_zero_boundary],
+                method_version = method_version)
     centered_active = _arc1_profile_fixed_ve_centering_eligible(
         context, target_index, fixed_value)
     centered_loglik_at = centered_active ?
@@ -2068,7 +2321,8 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
         status = :nuisance_unresolved, nuisance_statuses = diagnostics),
         centered_active ? (centered_active = true,
             max_valid_centered_loglik = max_valid_centered_loglik,
-            centering_ve = fixed_value) : NamedTuple())
+            centering_ve = fixed_value) : NamedTuple(),
+        (; method_version))
     resolved_lower_bound = falses(length(candidates))
     resolved_candidates = Any[]
     resolution_diagnostics = Any[]
@@ -2125,7 +2379,32 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
                 centering_ve = centered_active ? fixed_value : nothing)
             current_status = hasproperty(current, :status) ? current.status :
                 :certificate_record_invalid
-            if current_status == :projected_gradient_unresolved
+            positive_bound_refinement = nothing
+            positive_bound_refinement_attempted = false
+            if method_version == :arc1_profile_v2 &&
+               current_status == :face_likelihood_mismatch &&
+               (!centered_active || _arc1_profile_centering_tag_matches(
+                   candidate, fixed_value))
+                positive_bound_refinement_attempted = true
+                positive_bound_refinement = _arc1_positive_bound_refinement(
+                    context, merge(candidate, (; candidate_index = i)), target_index,
+                    s0, context.residual_df, exact_zero_faces, exact_zero_intersection,
+                    current, loglik_at, gradient_at; maximum_seen = local_probe_maximum,
+                    centered_maximum_seen = centered_active ?
+                        local_probe_centered_maximum : nothing,
+                    centered_loglik_at = centered_active ? centered_loglik_at : nothing,
+                    centering_ve = centered_active ? fixed_value : nothing,
+                    continuation_runner = refinement_runner)
+                _arc1_profile_record_likelihood_history!(local_probe_maximum,
+                    positive_bound_refinement;
+                    centered_maximum = local_probe_centered_maximum,
+                    centering_ve = centered_active ? fixed_value : nothing)
+                current = merge(positive_bound_refinement,
+                    (; initial_certificate = current))
+                current_status = positive_bound_refinement.status
+            end
+            if !positive_bound_refinement_attempted &&
+               current_status == :projected_gradient_unresolved
                 polish = try
                     polish_runner(context,
                         merge(candidate, (; candidate_index = i)), target_index, s0,
@@ -2204,6 +2483,12 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
             elseif current_status == :resolved_projected_face_polish &&
                    !_arc1_profile_resolved_polish_certificate_valid(current, centered_active)
                 current = merge(current, (status = :certificate_record_invalid,))
+            elseif current_status == :resolved_positive_bound_refine &&
+                   (!_arc1_profile_resolved_face_certificate_valid(
+                       current.boundary_certificate, centered_active) ||
+                    !hasproperty(current, :components) ||
+                    !hasproperty(current, :loglik))
+                current = merge(current, (status = :certificate_record_invalid,))
             end
             current_status = hasproperty(current, :status) ? current.status :
                 :certificate_record_invalid
@@ -2247,6 +2532,11 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
             required = _arc1_profile_resolved_polish_certificate_valid(
                 certificate, centered_active)
             required || (certificate_status = :certificate_record_invalid)
+        elseif certificate_status == :resolved_positive_bound_refine
+            required = hasproperty(certificate, :boundary_certificate) &&
+                _arc1_profile_resolved_face_certificate_valid(
+                    certificate.boundary_certificate, centered_active)
+            required || (certificate_status = :certificate_record_invalid)
         end
         normalized_certificate = hasproperty(certificate, :status) ?
             merge(certificate, (status = certificate_status,)) :
@@ -2260,7 +2550,8 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
             initial_certificate = initial_certificate,
             projected_face_polish = projected_face_polish), normalized_certificate))
         certificate_status in (:resolved_lower_bound_by_zero_face,
-                               :resolved_projected_face_polish) || continue
+                               :resolved_projected_face_polish,
+                               :resolved_positive_bound_refine) || continue
         resolved_lower_bound[i] = true
         if certificate_status == :resolved_lower_bound_by_zero_face
             push!(resolved_candidates, merge(candidate, (; loglik = certificate.loglik,
@@ -2273,7 +2564,7 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
                     local_probe_centered_maximum[] : NaN,
                 centering_ve = centered_active ? fixed_value : NaN,
                 boundary_certificate = certificate)))
-        else
+        elseif certificate_status == :resolved_projected_face_polish
             push!(resolved_candidates, merge(candidate, (; loglik = certificate.polished_loglik,
                 components = certificate.polished_components, converged = true, hit_bound = false,
                 original_gradient_norm = candidate.gradient_norm,
@@ -2289,6 +2580,21 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
                 centering_ve = centered_active ? fixed_value : NaN,
                 boundary_certificate = certificate.polished_boundary_certificate,
                 projected_face_polish = projected_face_polish)))
+        else
+            boundary = certificate.boundary_certificate
+            push!(resolved_candidates, merge(candidate, (; loglik = boundary.loglik,
+                components = copy(boundary.components), converged = true, hit_bound = false,
+                resolved_lower_bound_by_zero_face = true,
+                resolved_by_positive_bound_refine = true,
+                max_valid_loglik = local_probe_maximum[],
+                centered_loglik = centered_active ?
+                    centered_loglik_at(boundary.components).loglik : NaN,
+                max_valid_centered_loglik = centered_active ?
+                    local_probe_centered_maximum[] : NaN,
+                centering_ve = centered_active ? fixed_value : NaN,
+                boundary_certificate = boundary,
+                positive_bound_refinement = certificate.continuation,
+                original_certificate = certificate.initial_certificate)))
         end
     end
     max_valid_loglik = max(max_valid_loglik, certificate_maximum[])
@@ -2303,13 +2609,17 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
         nuisance_statuses = merge((; raw_candidates = diagnostics),
             (; lower_bound_resolutions = resolution_diagnostics))),
         centered_active ? (max_valid_centered_loglik = max_valid_centered_loglik,
-            centering_ve = fixed_value) : NamedTuple())
+            centering_ve = fixed_value) : NamedTuple(),
+        (; method_version))
     best = certified[argmax(comparison_score.(certified))]
     best_comparison = comparison_score(best)
     unresolved_competitor = any(i -> !resolved_lower_bound[i] &&
         _arc1_raw_competitor_is_competitive(comparison_candidates[i], best_comparison;
             centering_ve = centered_active ? fixed_value : nothing),
         eachindex(comparison_candidates))
+    historical_full_competitor = method_version == :arc1_profile_v2 && !centered_active &&
+        max_valid_loglik > best.loglik + 1e-8
+    unresolved_competitor |= historical_full_competitor
     invalid_centering_tag_indices = centered_active ? findall(c ->
         !_arc1_profile_centering_tag_matches(c, fixed_value), candidates) : Int[]
     historical_centered_competitor = centered_active &&
@@ -2372,6 +2682,7 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
          stopped_by = hasproperty(c, :stopped_by) ? c.stopped_by : missing)
     end
     raw_search_status = (kind = :raw_nuisance_search,
+                method_version = method_version,
                 exact_zero_faces = exact_zero_faces,
                 exact_zero_intersection = exact_zero_intersection,
                 lower_bound_resolutions = resolution_diagnostics,
@@ -2379,6 +2690,9 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
                 resolved_by_projected_face_polish = count(c ->
                     hasproperty(c, :resolved_by_projected_face_polish) &&
                     c.resolved_by_projected_face_polish, resolved_candidates),
+                resolved_by_positive_bound_refine = count(c ->
+                    hasproperty(c, :resolved_by_positive_bound_refine) &&
+                    c.resolved_by_positive_bound_refine, resolved_candidates),
                 best_certified = (loglik = best.loglik, components = best.components,
                     gradient_norm = best.gradient_norm,
                     original_gradient_norm = hasproperty(best, :original_gradient_norm) ?
@@ -2401,6 +2715,7 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
                 winner_hit_bound = best.hit_bound,
                 winner_gradient_norm = best.gradient_norm,
                 unresolved_competitor = unresolved_competitor,
+                historical_full_competitor = historical_full_competitor,
                 invalid_bfgs_record_indices = findall(d ->
                     d.kind == :positive_bfgs && !d.record_valid, diagnostics))
     if centered_active
@@ -2412,7 +2727,8 @@ function _arc1_raw_nuisance(context, target::Symbol, fixed_value::Float64, s0::F
              invalid_centering_tag_indices = invalid_centering_tag_indices))
     end
     result = (loglik = best.loglik, max_valid_loglik = max_valid_loglik,
-        status = status, nuisance_statuses = [raw_search_status])
+        status = status, nuisance_statuses = [raw_search_status],
+        method_version = method_version)
     return centered_active ? merge(result, (
         centered_loglik = best_comparison,
         max_valid_centered_loglik = max_valid_centered_loglik,
@@ -2556,12 +2872,14 @@ function _arc1_ratio_nuisance(context, target::Symbol, ratio::Float64,
 end
 
 function _arc1_profile_at_uncached(state::_Arc1ProfileState, target::Symbol, value::Float64)
+    _arc1_validate_profile_method_version(state.method_version)
     if target in (:heritability, :repeatability)
         result = _arc1_ratio_nuisance(state.context, target, value, state.s0,
                                       state.nuisance_statuses)
-        return result
+        return merge(result, (; method_version = state.method_version))
     end
-    return _arc1_raw_nuisance(state.context, target, value, state.s0)
+    return _arc1_raw_nuisance(state.context, target, value, state.s0;
+        method_version = state.method_version)
 end
 
 function _arc1_profile_at(state::_Arc1ProfileState, target::Symbol, value::Float64)
@@ -2852,11 +3170,14 @@ end
 function _arc1_repeatability_profile_intervals(y::AbstractVector, X::AbstractMatrix,
                                               Z::AbstractMatrix, Ainv::AbstractMatrix;
                                               level::Real = 0.95,
-                                              cutoff::Real = _ARC1_PROFILE_CUTOFF_95)
-    level == 0.95 || throw(ArgumentError("arc1_profile_v1 supports only level=0.95"))
+                                              cutoff::Real = _ARC1_PROFILE_CUTOFF_95,
+                                              method_version::Symbol = _ARC1_PROFILE_METHOD_VERSION)
+    _arc1_validate_profile_method_version(method_version)
+    level == 0.95 || throw(ArgumentError("Arc1 profile methods support only level=0.95"))
     cutoff == _ARC1_PROFILE_CUTOFF_95 ||
-        throw(ArgumentError("arc1_profile_v1 uses the fixed chi-square cutoff 3.841458820694124"))
-    context = _arc1_profile_context(y, X, Z, Ainv)
+        throw(ArgumentError("Arc1 profile methods use the fixed chi-square cutoff 3.841458820694124"))
+    context = merge(_arc1_profile_context(y, X, Z, Ainv),
+        (; method_version = method_version))
     ols_beta = qr(context.X) \ context.y
     ols_residual = context.y - context.X * ols_beta
     s0 = dot(ols_residual, ols_residual) / context.residual_df
@@ -2871,7 +3192,7 @@ function _arc1_repeatability_profile_intervals(y::AbstractVector, X::AbstractMat
                 targets = targets, cutoff = Float64(cutoff), level = Float64(level),
                 s0 = s0, max_constrained_loglik = NaN,
                 point_fit_not_optimal = false,
-                method_version = _ARC1_PROFILE_METHOD_VERSION,
+                method_version = method_version,
                 estimand = context.estimand,
                 loglik_convention = context.loglik_convention,
                 loglik_full_constant_offset = context.loglik_full_constant_offset,
@@ -2883,7 +3204,8 @@ function _arc1_repeatability_profile_intervals(y::AbstractVector, X::AbstractMat
     end
 
     state = _Arc1ProfileState(context, s0, point.fit.loglik,
-        Dict{Symbol,Dict{Float64,Any}}(), Dict{Symbol,Int}(), point.fit.loglik, Any[])
+        Dict{Symbol,Dict{Float64,Any}}(), Dict{Symbol,Int}(), point.fit.loglik,
+        Any[], method_version)
     targets = Dict{Symbol,Any}()
     for target in _ARC1_PROFILE_TARGETS
         estimate = _arc1_target_estimate(point.fit.components, target)
@@ -2899,7 +3221,7 @@ function _arc1_repeatability_profile_intervals(y::AbstractVector, X::AbstractMat
             max_constrained_loglik = state.max_constrained_loglik,
             point_fit_not_optimal = _arc1_point_fit_not_optimal(point.fit.loglik,
                                                                  state.max_constrained_loglik),
-            method_version = _ARC1_PROFILE_METHOD_VERSION,
+            method_version = method_version,
             estimand = context.estimand,
             loglik_convention = context.loglik_convention,
             loglik_full_constant_offset = context.loglik_full_constant_offset,

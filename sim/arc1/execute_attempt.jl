@@ -390,7 +390,8 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
                                engine_hashes::Dict{String,String},
                                environment_hashes::Dict{String,String},
                                cell::Dict{String,Any}, outer::Int, seed::UInt64,
-                               bootstrap_seed_strings::Vector{String})
+                               bootstrap_seed_strings::Vector{String},
+                               requested_profile_method_version::Union{Nothing,String})
     programme = cell["programme"]
     n = Int(cell["N"])
     started = time_ns()
@@ -444,10 +445,15 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
             (; data, design, selection, result, reference_raw=raw_reference[])
         kind = programme == "fa_rank" ? "fa_rank" : "fa_interval"
     elseif programme in ("repeatability", "boundary")
+        requested_profile_method_version == "arc1_profile_v2" ||
+            throw(ArgumentError("profile attempt must explicitly request arc1_profile_v2"))
         data = arc1_simulate_repeatability(seed, n, Symbol(cell["signal"]))
         design = arc1_repeatability_design(engine, data)
         profile = getfield(engine, :arc1_profile_repeatability)(design.y, design.X,
-            design.Z, design.pedigree; ids=design.ids)
+            design.Z, design.pedigree; ids=design.ids,
+            method=requested_profile_method_version)
+        String(profile.method_version) == requested_profile_method_version ||
+            throw(ArgumentError("profile engine returned a method version different from the admitted request"))
         result = arc1_repeatability_result(profile)
         model = (; data, design, profile, result)
         kind = "repeatability"
@@ -493,15 +499,24 @@ if abspath(PROGRAM_FILE) == @__FILE__
     include(joinpath(root, "sim", "arc1", "independent_dgp.jl"))
     include(joinpath(root, "sim", "arc1", "engine_io.jl"))
     pre_identity = arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes)
+    requested_profile_method_version = isempty(String(get(config, "profile_method_version", ""))) ?
+        nothing : String(config["profile_method_version"])
     try
         cell = Dict{String,Any}(String(k) => v for (k,v) in config["cell"])
         seed = parse(UInt64, String(config["seed"]))
         bootstrap_seed_strings = String[String(s) for s in get(config, "bootstrap_seeds", String[])]
+        profile_programme = config["cell"]["programme"] in ("repeatability", "boundary")
+        profile_programme == (requested_profile_method_version !== nothing) ||
+            error("profile method admission pin does not match the requested programme")
+        profile_programme && requested_profile_method_version != "arc1_profile_v2" &&
+            error("profile attempt requires explicit arc1_profile_v2")
         summary = arc1_execute_attempt(engine, loaded_engine, engine_hashes, environment_hashes,
-            cell, Int(config["outer"]), seed, bootstrap_seed_strings)
+            cell, Int(config["outer"]), seed, bootstrap_seed_strings,
+            requested_profile_method_version)
         post_identity = arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes)
         pre_identity == post_identity || error("runtime identity changed during Arc1 outer attempt")
-        receipt_summary = arc1_json_receipt(summary.result)
+        receipt_summary = merge(arc1_json_receipt(summary.result),
+            (; requested_profile_method_version))
         receipt_summary_path = String(config["artifact_path"]) * ".summary.json"
         receipt_summary_text = arc1_json(receipt_summary) * "\n"
         receipt_summary_sha = arc1_write_text_new(receipt_summary_path, receipt_summary_text)
@@ -513,6 +528,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             data_identity_sha256=summary.data_identity_sha256,
             semantic_data_identity_sha256=summary.semantic_data_identity_sha256,
             data_identity_method=summary.data_identity_method,
+            requested_profile_method_version,
             receipt_summary_sha256=receipt_summary_sha,
             receipt_summary_path=receipt_summary_path),
             receipt_summary))
@@ -524,6 +540,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             data_identity_sha256=summary.data_identity_sha256,
             semantic_data_identity_sha256=summary.semantic_data_identity_sha256,
             data_identity_method=summary.data_identity_method,
+            requested_profile_method_version,
             artifact_path=String(config["artifact_path"]),
             artifact_sha256=artifact_sha, elapsed_seconds=summary.elapsed_seconds,
             observed_ids=summary.observed_ids, record_ids=summary.record_ids,
@@ -536,9 +553,14 @@ if abspath(PROGRAM_FILE) == @__FILE__
         after_error_identity = try arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes) catch; nothing end
         failure_status = error isa InterruptException ? "interrupted" : "error"
         failure_reason = sprint(showerror, error)
+        profile_method_version_mismatch = occursin(
+            "profile engine returned a method version different from the admitted request", failure_reason)
         failure_artifact = (; metadata=(; schema="arc1-full-result-v2",
             mode=String(config["mode"]), cell=config["cell"], outer=Int(config["outer"]),
             seed_string=String(config["seed"]), julia_version=string(VERSION),
+            requested_profile_method_version=String(get(config, "profile_method_version", "")) == "" ?
+                nothing : String(config["profile_method_version"]),
+            profile_method_version_mismatch,
             execution_identity=after_error_identity, status=failure_status,
             driver_protocol_identity,
             failure_reason, timing_seconds=nothing),
@@ -552,6 +574,9 @@ if abspath(PROGRAM_FILE) == @__FILE__
         failure = (; schema="arc1-attempt-result-v1", mode=String(config["mode"]), success=false,
             status=failure_status,
             outer=Int(config["outer"]), seed_string=String(config["seed"]),
+            requested_profile_method_version=String(get(config, "profile_method_version", "")) == "" ?
+                nothing : String(config["profile_method_version"]),
+            profile_method_version_mismatch,
             failure_reason, execution_identity=after_error_identity,
             artifact_path=String(config["artifact_path"]), artifact_sha256=failure_artifact_sha,
             error_type=string(typeof(error)))

@@ -37,6 +37,7 @@ def _toml_input(path: Path, *, mode: str, source_root: Path, attempt_output: Pat
              "artifact_path = " + _toml_string(str(artifact_path.resolve())),
              f"outer = {outer}", f"seed = {_toml_string(str(seed))}",
              f"blas_threads = {blas_threads}",
+             "profile_method_version = " + _toml_string(str(admission.get("profile_method_version") or "")),
              "protocol_sha256 = " + _toml_string(str(admission["protocol_sha256"])),
              "bootstrap_seeds = [" + ", ".join(_toml_string(str(x)) for x in bootstrap_seeds) + "]", "",
              "[cell]"]
@@ -219,7 +220,8 @@ def execute_cli(args: argparse.Namespace) -> dict[str, Any]:
                        str(input_path)]
             result = launch_julia_attempt(command, env=env, timeout_seconds=args.timeout,
                                           log_path=log_path)
-            _check_returned_attempt_identity(result, _outer, seed)
+            _check_returned_attempt_identity(result, _outer, seed,
+                                             admission.get("profile_method_version"))
             result.setdefault("outer", _outer)
             result.setdefault("seed", seed)
             result.setdefault("exact_seed_string", str(seed))
@@ -232,7 +234,8 @@ def execute_cli(args: argparse.Namespace) -> dict[str, Any]:
         return runner.execute_one(store, outer, executor)
 
 
-def _check_returned_attempt_identity(result: dict[str, Any], outer: int, seed: int) -> None:
+def _check_returned_attempt_identity(result: dict[str, Any], outer: int, seed: int,
+                                     profile_method_version: str | None = None) -> None:
     """Reject child identity mismatches before adding request-side fallback fields."""
     returned_outer = result.get("outer")
     if returned_outer is not None and (type(returned_outer) is not int or returned_outer != outer):
@@ -245,6 +248,17 @@ def _check_returned_attempt_identity(result: dict[str, Any], outer: int, seed: i
         returned = result.get(field)
         if returned is not None and returned != str(seed):
             raise ValueError(f"Julia child returned {field} {returned!r}; requested {seed}")
+    returned_method = result.get("requested_profile_method_version")
+    if returned_method is not None and returned_method != profile_method_version:
+        raise ValueError("Julia child returned a different requested profile method version")
+    if result.get("schema") == "arc1-attempt-result-v1":
+        if returned_method != profile_method_version:
+            raise ValueError("completed Julia attempt omitted or changed its requested profile method version")
+    else:
+        # Launcher/pre-engine failures may have no Julia result payload. Bind
+        # their requested method to the trusted admission, while preserving any
+        # conflicting value returned by a child as a hard error above.
+        result["requested_profile_method_version"] = profile_method_version
 
 
 def main() -> int:
