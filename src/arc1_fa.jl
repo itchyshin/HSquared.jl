@@ -53,8 +53,48 @@ mutable struct _Arc1LineSearchStats
     objective_evaluations::Int
     rejected_trials::Int
     domain_restarts::Int
+    observation_events::Union{Nothing,Vector{Any}}
+    diagnostic_context::Any
+    search_baseline::Any
+    search_index::Int
 end
-_Arc1LineSearchStats() = _Arc1LineSearchStats(0, 0, 0, 0)
+_Arc1LineSearchStats(; observation_events = nothing) =
+    _Arc1LineSearchStats(0, 0, 0, 0, observation_events, nothing, nothing, 0)
+
+function _arc1_observation!(stats::_Arc1LineSearchStats, stage::Symbol, reason::AbstractString;
+                            coordinates = nothing, direction = nothing, step = nothing,
+                            value = nothing, slope = nothing, outcome = nothing)
+    events = stats.observation_events
+    events === nothing && return nothing
+    context = stats.diagnostic_context
+    if context !== nothing
+        coordinates === nothing && (coordinates = context.coordinates)
+        direction === nothing && (direction = context.direction)
+        step === nothing && (step = context.step)
+        value === nothing && (value = context.value)
+        slope === nothing && (slope = context.slope)
+    end
+    baseline = stats.search_baseline
+    counters = baseline === nothing ?
+        (; callback_requests = 0, objective_evaluations = 0, rejected_trials = 0,
+           domain_restarts = 0) :
+        (; callback_requests = stats.callback_requests - baseline.callback_requests,
+           objective_evaluations = stats.objective_evaluations - baseline.objective_evaluations,
+           rejected_trials = stats.rejected_trials - baseline.rejected_trials,
+           domain_restarts = stats.domain_restarts - baseline.domain_restarts)
+    push!(events, (; search_index = stats.search_index, stage, reason = String(reason), outcome,
+        coordinates = coordinates === nothing ? nothing : copy(coordinates),
+        direction = direction === nothing ? nothing : copy(direction), step, value, slope, counters))
+    return nothing
+end
+
+function _arc1_requested_trial!(stats::_Arc1LineSearchStats, origin, direction, step)
+    stats.observation_events === nothing && return nothing
+    trial = origin .+ step .* direction
+    stats.diagnostic_context = (; coordinates = copy(trial), direction = copy(direction),
+        step = Float64(step), value = nothing, slope = nothing)
+    trial
+end
 
 struct _Arc1DomainTrial <: Exception
     alpha::Float64
@@ -79,8 +119,25 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
     original_x = copy(x)
     original_direction = copy(direction)
     original_guess = Float64(alpha)
+    if search.stats.observation_events !== nothing
+        search.stats.search_index += 1
+        search.stats.search_baseline = (; callback_requests = search.stats.callback_requests,
+            objective_evaluations = search.stats.objective_evaluations,
+            rejected_trials = search.stats.rejected_trials,
+            domain_restarts = search.stats.domain_restarts)
+        search.stats.diagnostic_context = (; coordinates = copy(original_x),
+            direction = copy(original_direction), step = nothing, value = phi0, slope = dphi0)
+    end
 
-    function reset_origin()
+    function set_origin_context!()
+        if search.stats.observation_events !== nothing
+            search.stats.diagnostic_context = (; coordinates = copy(original_x),
+                direction = copy(original_direction), step = nothing, value = phi0, slope = dphi0)
+        end
+        nothing
+    end
+    function reset_origin(update_context = true)
+        update_context && set_origin_context!()
         copyto!(xnew, original_x)
         try
             NLS.value_gradient!(df, original_x)
@@ -94,7 +151,11 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
         nothing
     end
     function restore_origin(reason)
-        reset_origin()
+        # The terminal refusal describes the restored origin, even when the
+        # immediately preceding event was a rejected trial.
+        set_origin_context!()
+        _arc1_observation!(search.stats, :line_search_terminal, reason; outcome = :failed)
+        reset_origin(false)
         throw(LSE(reason, 0.0))
     end
 
@@ -110,19 +171,28 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
         xnew .= original_x
         phi_raw, phidphi_raw = search.make_pair(df, xnew, original_x, original_direction)
         function request!(a)
+            observed_trial = _arc1_requested_trial!(search.stats, original_x,
+                original_direction, a)
             callbacks_this_search < search.max_callback_requests || begin
                 search.stats.rejected_trials += 1
+                _arc1_observation!(search.stats, :line_search_rejection,
+                    "line-search callback budget exhausted"; step = a, outcome = :rejected)
                 throw(_Arc1DomainTrial(Float64(a), "line-search callback budget exhausted", :budget))
             end
             isfinite(a) && a > 0 || begin
                 search.stats.rejected_trials += 1
+                _arc1_observation!(search.stats, :line_search_rejection,
+                    "line-search trial step is nonfinite or nonpositive"; step = a,
+                    outcome = :rejected)
                 throw(_Arc1DomainTrial(Float64(a), "line-search trial step is nonfinite or nonpositive", :invalid_step))
             end
             callbacks_this_search += 1
             search.stats.callback_requests += 1
-            trial = original_x .+ a .* original_direction
+            trial = observed_trial === nothing ? original_x .+ a .* original_direction : observed_trial
             all(isfinite, trial) || begin
                 search.stats.rejected_trials += 1
+                _arc1_observation!(search.stats, :line_search_rejection,
+                    "line-search parameter vector is nonfinite"; outcome = :rejected)
                 throw(_Arc1DomainTrial(Float64(a), "line-search parameter vector is nonfinite", :invalid_step))
             end
             nothing
@@ -130,8 +200,14 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
         function phi_guard(a)
             request!(a)
             value = phi_raw(a)
+            if search.stats.observation_events !== nothing
+                search.stats.diagnostic_context = merge(search.stats.diagnostic_context,
+                    (; value, slope = nothing))
+            end
             isfinite(value) || begin
                 search.stats.rejected_trials += 1
+                _arc1_observation!(search.stats, :line_search_rejection,
+                    "objective callback returned a nonfinite value"; outcome = :rejected)
                 throw(_Arc1DomainTrial(Float64(a), "objective callback returned a nonfinite value", :domain))
             end
             return value
@@ -139,10 +215,15 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
         function phidphi_guard(a)
             request!(a)
             value, slope = phidphi_raw(a)
+            if search.stats.observation_events !== nothing
+                search.stats.diagnostic_context = merge(search.stats.diagnostic_context,
+                    (; value, slope))
+            end
             (isfinite(value) && isfinite(slope)) || begin
                 search.stats.rejected_trials += 1
                 why = !isfinite(value) ? "joint value/gradient callback returned a nonfinite value" :
                       "directional slope is nonfinite"
+                _arc1_observation!(search.stats, :line_search_rejection, why; outcome = :rejected)
                 throw(_Arc1DomainTrial(Float64(a), why, :domain))
             end
             return value, slope
@@ -169,6 +250,8 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
                 cap = newcap
                 continue
             elseif err isa LSE
+                _arc1_observation!(search.stats, :hager_zhang_terminal,
+                    "Hager-Zhang failed: $(err.message)"; outcome = :failed)
                 restore_origin("Hager-Zhang failed: $(err.message)")
             else
                 reset_origin()
@@ -206,6 +289,12 @@ function (search::_Arc1DomainHagerZhang)(df, x, direction, alpha, xnew, phi0, dp
         approximate_wolfe = (2 * 0.1 - 1) * dphi0 >= slope >= 0.9 * dphi0 && value <= phi_lim
         (wolfe || approximate_wolfe) ||
             restore_origin("Hager-Zhang returned a finite step that satisfies neither Wolfe condition")
+        if search.stats.observation_events !== nothing
+            _arc1_observation!(search.stats, :hager_zhang_terminal,
+                "Hager-Zhang returned a step satisfying an independently checked Wolfe condition";
+                coordinates = original_x .+ step .* original_direction,
+                direction = original_direction, step, value, slope, outcome = :accepted)
+        end
         copyto!(xnew, original_x .+ step .* original_direction)
         return step, value
     end
@@ -527,11 +616,20 @@ end
 
 function _arc1_fa_bfgs(ctx::_Arc1FASpectralContext, params0, k;
                        iterations = 2_000, optimizer_tol = 1e-8,
-                       final_gradient_tol = 1e-6, evaluation_callback = nothing)
+                       final_gradient_tol = 1e-6, evaluation_callback = nothing,
+                       observation_events = nothing)
     iterations isa Integer && iterations > 0 || throw(ArgumentError("iterations must be positive"))
     optimizer_tol > 0 || throw(ArgumentError("optimizer tolerance must be positive"))
+    observation_events === nothing || observation_events isa Vector{Any} ||
+        throw(ArgumentError("observation_events must be nothing or Vector{Any}"))
+    line_search_stats = _Arc1LineSearchStats(; observation_events)
     initial = _arc1_fa_exact_objective_gradient(ctx, params0, k)
     evaluation_callback === nothing || evaluation_callback(copy(Float64.(params0)), initial)
+    if initial.status != :ok
+        _arc1_observation!(line_search_stats, :evaluator_rejection, initial.reason;
+            coordinates = Float64.(params0), value = initial.objective,
+            outcome = initial.status)
+    end
     initial.status == :ok || return merge(
         _arc1_fa_assess_optimizer_result((; phat = params0,
             optimizer_converged = false, iterations = 0,
@@ -541,7 +639,6 @@ function _arc1_fa_bfgs(ctx::_Arc1FASpectralContext, params0, k;
         (; algorithm = :bfgs_hager_zhang, status = :failed,
            accepted = false, final_status = initial.status, reason = initial.reason))
 
-    line_search_stats = _Arc1LineSearchStats()
     last_x = copy(Float64.(params0))
     last_value = initial
     function evaluate(x)
@@ -549,6 +646,14 @@ function _arc1_fa_bfgs(ctx::_Arc1FASpectralContext, params0, k;
             last_x .= x
             line_search_stats.objective_evaluations += 1
             last_value = _arc1_fa_exact_objective_gradient(ctx, x, k)
+            if last_value.status != :ok
+                context = line_search_stats.diagnostic_context
+                slope = context === nothing || !all(isfinite, last_value.gradient) ? nothing :
+                    dot(last_value.gradient, context.direction)
+                _arc1_observation!(line_search_stats, :evaluator_rejection,
+                    last_value.reason; coordinates = Float64.(x),
+                    value = last_value.objective, slope, outcome = last_value.status)
+            end
             evaluation_callback === nothing || evaluation_callback(copy(Float64.(x)), last_value)
         end
         last_value

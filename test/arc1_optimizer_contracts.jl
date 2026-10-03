@@ -39,18 +39,26 @@ end
 
 function _arc1_direct_linesearch(f, derivative; x0 = 0.0, alpha = 1.0,
                                  max_domain_restarts = 32,
-                                 max_callback_requests = 256, make_pair = nothing)
+                                 max_callback_requests = 256, make_pair = nothing,
+                                 observation_events = nothing, evaluate_observer = nothing,
+                                 line_search_stats = nothing)
     NLS = HSquared.Optim.NLSolversBase
     x = [Float64(x0)]
+    stats = line_search_stats === nothing ?
+        HSquared._Arc1LineSearchStats(; observation_events) : line_search_stats
+    objective = z -> begin
+        value = f(z[1])
+        evaluate_observer === nothing || evaluate_observer(stats, z[1], value)
+        value
+    end
     g! = function (g, z)
         g[1] = derivative(z[1])
         g
     end
-    df = NLS.OnceDifferentiable(z -> f(z[1]), g!, x)
+    df = NLS.OnceDifferentiable(objective, g!, x)
     phi0, grad0 = NLS.value_gradient!(df, x)
     dphi0 = grad0[1]
     xnew = copy(x)
-    stats = HSquared._Arc1LineSearchStats()
     options = (; max_domain_restarts, max_callback_requests)
     ls = make_pair === nothing ? HSquared._Arc1DomainHagerZhang(stats; options...) :
         HSquared._Arc1DomainHagerZhang(stats; options..., make_pair)
@@ -99,6 +107,17 @@ end
                                out.final_gradient_inf_norm <= 1e-6 &&
                                maximum(out.numerical_gradient_inf_norms) <= 5e-6 &&
                                maximum(out.numerical_gradient_discrepancies) <= 5e-6)
+        observed_events = Any[]
+        observed = HSquared._arc1_fa_bfgs(ctx, p, 1; iterations = 2,
+                                          observation_events = observed_events)
+        @test observed.phat == out.phat
+        @test observed.status == out.status
+        @test observed.accepted == out.accepted
+        @test observed.objective == out.objective
+        @test observed.raw_objective == out.raw_objective
+        @test observed.line_search_stats == out.line_search_stats
+        @test any(event -> event.stage == :hager_zhang_terminal &&
+                           event.outcome == :accepted, observed_events)
     end
 
     @testset "invalid proposal sentinels and nonconverged points cannot pass" begin
@@ -111,6 +130,21 @@ end
         @test !out.accepted
         @test out.status == :failed
         @test out.final_status == :invalid_proposal
+        invalid_events = Any[]
+        observed_invalid = HSquared._arc1_fa_bfgs(ctx, pinvalid, 1; iterations = 2,
+            observation_events = invalid_events)
+        @test observed_invalid.status == out.status
+        @test observed_invalid.final_status == out.final_status
+        @test observed_invalid.raw_objective == out.raw_objective
+        @test hasproperty(observed_invalid, :line_search_stats) ==
+              hasproperty(out, :line_search_stats) == false
+        invalid_event = only(filter(event -> event.stage == :evaluator_rejection,
+                                    invalid_events))
+        @test invalid_event.reason == out.reason
+        @test invalid_event.coordinates == pinvalid
+        @test invalid_event.coordinates !== pinvalid
+        @test invalid_event.counters == (callback_requests = 0,
+            objective_evaluations = 0, rejected_trials = 0, domain_restarts = 0)
 
         # A finite optimizer result with an inaccurate final score must fail
         # the policy criterion, regardless of the optimizer's status flag.
@@ -126,6 +160,29 @@ end
     end
 
     @testset "guarded Hager-Zhang restarts only on invalid trials" begin
+        # Invalid requests retain their own coordinates and unknown callback
+        # results before the request guard decides whether to reject them.
+        invalid_request_events = Any[]
+        invalid_request_stats = HSquared._Arc1LineSearchStats(
+            ; observation_events = invalid_request_events)
+        invalid_trial = HSquared._arc1_requested_trial!(invalid_request_stats,
+            [0.0], [1.0], NaN)
+        @test isnan(invalid_trial[1])
+        invalid_request = invalid_request_stats.diagnostic_context
+        @test all(isnan, invalid_request.coordinates) && all(isnan, invalid_trial)
+        @test invalid_request.direction == [1.0]
+        @test isnan(invalid_request.step)
+        @test invalid_request.value === nothing && invalid_request.slope === nothing
+        HSquared._arc1_observation!(invalid_request_stats, :line_search_rejection,
+            "line-search trial step is nonfinite or nonpositive"; step = NaN,
+            outcome = :rejected)
+        invalid_event = only(invalid_request_events)
+        @test isnan(invalid_event.coordinates[1]) && isnan(invalid_event.step)
+        @test invalid_event.value === nothing && invalid_event.slope === nothing
+        unobserved_stats = HSquared._Arc1LineSearchStats()
+        @test HSquared._arc1_requested_trial!(unobserved_stats, [0.0], [1.0], NaN) === nothing
+        @test unobserved_stats.diagnostic_context === nothing
+
         # The endpoints are valid, while secant/bisection trials through the
         # open interval are outside the objective domain.
         bad_interval(x) = 0.74 < x < 0.76
@@ -175,6 +232,28 @@ end
         @test budgeted.stats.callback_requests == 1
         @test budgeted.xnew == [0.0]
 
+        # A rejected requested step is reported at that trial, even when the
+        # callback budget refuses it before objective evaluation. The
+        # terminal event then reports the restored origin.
+        budget_events = Any[]
+        budget_refused = _arc1_direct_linesearch(x -> (x - 1)^2, x -> 2(x - 1);
+            x0 = 0.0, alpha = 0.5, max_callback_requests = 0,
+            observation_events = budget_events)
+        rejection = only(filter(event -> event.stage == :line_search_rejection,
+                                budget_events))
+        terminal = only(filter(event -> event.stage == :line_search_terminal,
+                               budget_events))
+        @test rejection.coordinates == [0.5]
+        @test rejection.direction == [1.0]
+        @test rejection.step == 0.5
+        @test rejection.value === nothing && rejection.slope === nothing
+        @test terminal.coordinates == [0.0]
+        @test terminal.direction == [1.0]
+        @test terminal.step === nothing
+        @test terminal.value == budget_refused.phi0
+        @test terminal.slope == budget_refused.dphi0
+        @test budget_refused.xnew == [0.0]
+
         # A regular quadratic still returns an independently verified Wolfe
         # step and does not need a domain restart.
         valid = _arc1_direct_linesearch(x -> (x - 1)^2, x -> 2(x - 1))
@@ -182,6 +261,69 @@ end
         @test valid.value[1] ≈ 1.0 atol = 1e-12
         @test valid.stats.domain_restarts == 0
         @test valid.stats.rejected_trials == 0
+
+        # Observation is opt-in and does not alter callbacks, counters, the
+        # returned Wolfe point, or the exact evaluator reason retained by the
+        # synthetic adapter.
+        observe_rejection = function (stats, x, value)
+            isfinite(value) || HSquared._arc1_observation!(stats,
+                :evaluator_rejection, "synthetic residual covariance lost PD";
+                coordinates = [x], value, outcome = :invalid_residual_covariance)
+            nothing
+        end
+        plain = _arc1_direct_linesearch(f, df)
+        events = Any[]
+        watched = _arc1_direct_linesearch(f, df; observation_events = events,
+                                          evaluate_observer = observe_rejection)
+        @test watched.error === nothing
+        @test watched.value == plain.value
+        @test watched.xnew == plain.xnew
+        @test (watched.stats.callback_requests, watched.stats.objective_evaluations,
+               watched.stats.rejected_trials, watched.stats.domain_restarts) ==
+              (plain.stats.callback_requests, plain.stats.objective_evaluations,
+               plain.stats.rejected_trials, plain.stats.domain_restarts)
+        evaluator_events = filter(event -> event.stage == :evaluator_rejection, events)
+        @test !isempty(evaluator_events)
+        @test all(event.reason == "synthetic residual covariance lost PD" for event in evaluator_events)
+        @test all(event.coordinates !== nothing && event.direction !== nothing &&
+                  event.step !== nothing && event.value !== nothing && hasproperty(event, :slope) &&
+                  event.counters.callback_requests > 0 for event in evaluator_events)
+        @test events[1].coordinates !== events[2].coordinates
+        preserved = copy(events[2].coordinates)
+        events[1].coordinates[1] = -999.0
+        @test events[2].coordinates == preserved
+        @test events[1].direction !== events[2].direction
+
+        shared_events = Any[]
+        shared_stats = HSquared._Arc1LineSearchStats(; observation_events = shared_events)
+        first_search = _arc1_direct_linesearch(x -> (x - 1)^2, x -> 2(x - 1);
+            observation_events = shared_events, line_search_stats = shared_stats)
+        first_request_count = shared_stats.callback_requests
+        second_search = _arc1_direct_linesearch(x -> (x - 1)^2, x -> 2(x - 1);
+            observation_events = shared_events, line_search_stats = shared_stats)
+        terminal_events = filter(event -> event.stage == :hager_zhang_terminal, shared_events)
+        @test first_search.error === nothing && second_search.error === nothing
+        @test [event.search_index for event in terminal_events] == [1, 2]
+        @test terminal_events[1].counters.callback_requests == first_request_count
+        @test terminal_events[2].counters.callback_requests ==
+              shared_stats.callback_requests - first_request_count
+
+        # Terminal Hager-Zhang failure logs preserve the refusal reason and
+        # the same restored iterate/cache as the observer-free path.
+        plain_failure = _arc1_direct_linesearch(always_bad, always_bad_grad;
+            max_domain_restarts = 1, max_callback_requests = 256)
+        failure_events = Any[]
+        logged_failure = _arc1_direct_linesearch(always_bad, always_bad_grad;
+            max_domain_restarts = 1, max_callback_requests = 256,
+            observation_events = failure_events)
+        @test sprint(showerror, plain_failure.error) == sprint(showerror, logged_failure.error)
+        @test logged_failure.xnew == plain_failure.xnew == [0.0]
+        @test (logged_failure.stats.callback_requests, logged_failure.stats.objective_evaluations,
+               logged_failure.stats.rejected_trials, logged_failure.stats.domain_restarts) ==
+              (plain_failure.stats.callback_requests, plain_failure.stats.objective_evaluations,
+               plain_failure.stats.rejected_trials, plain_failure.stats.domain_restarts)
+        @test any(event -> event.stage == :line_search_terminal && event.outcome == :failed &&
+                           occursin("restart budget exhausted", event.reason), failure_events)
 
         # An unexpected exception at ARC1's final value/gradient check must
         # propagate only after restoring xnew and the differentiated cache.
