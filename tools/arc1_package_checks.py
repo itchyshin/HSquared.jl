@@ -6,12 +6,15 @@ explicit gate selection. The runner has a fixed command allowlist and no
 freeze-generation mode. ``--self-test`` uses synthetic files and disposable
 Python/Julia child processes; it never launches project tests or docs builds.
 
-Freeze format: ``hsquared-arc1-package-freeze-v2`` with an independent review
+Freeze format: ``hsquared-arc1-package-freeze-v3`` with an independent review
 record, exact Julia/R roots and runtime pins, complete ``files`` inventories,
 and independently reviewed hashes for the resolved Julia test sandbox and
 JuliaCall bootstrap environment. R/all freezes require the latter so the
 bridge can initialize without using the frozen target project as its setup env.
-The runner has no candidate-freeze generation mode.
+The v3 freeze adds ``docs_frontend`` for docs/all gates: exact external
+package.json and package-lock.json files, a symlink-aware ``node_modules``
+tree hash, and NodeJS_20_jll Node/npm paths, hashes, and version outputs. The
+runner has no candidate-freeze generation mode.
 
 Required JSON fields are ``review: {status: "reviewed", reviewer,
 reviewed_at_utc, review_receipt_path, review_receipt_sha256}``, ``roots:
@@ -20,7 +23,9 @@ rscript, rscript_executable}``, ``files: {julia: {relative_path: sha256},
 r: {relative_path: sha256}}``, and ``julia_test_sandbox`` with absolute
 Project.toml/Manifest.toml paths and SHA-256 values. R/all additionally require
 ``julia_call_bootstrap`` with absolute Project.toml/Manifest.toml paths and
-SHA-256 values. The review receipt, sandbox files, and bootstrap files must be
+SHA-256 values. Docs/all additionally require ``docs_frontend`` with absolute
+package/lock/tree/runtime paths and their exact hashes/version strings. The
+review receipt, sandbox files, bootstrap files, and frontend paths must be
 existing external files whose bytes match their digests.
 Runtime strings are exact output from the fixed version commands; executable
 paths are resolved paths.
@@ -37,6 +42,7 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -54,8 +60,13 @@ BLAS_THREAD_COUNT = "1"
 R_PATH = "/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 RUN_TIMEOUT_S = {"julia": 600, "r": 480, "docs": 180}
 COMMAND_TIMEOUT_S = {"version": 20}
-SCHEMA = "hsquared-arc1-package-freeze-v2"
+SCHEMA = "hsquared-arc1-package-freeze-v3"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+DOCS_FRONTEND_KEYS = {
+    "package_json_path", "package_json_sha256", "package_lock_path", "package_lock_sha256",
+    "node_modules_path", "node_modules_tree_sha256", "node_path", "node_sha256", "node_version",
+    "npm_cli_path", "npm_cli_sha256", "npm_version",
+}
 
 JULIA_TREES = (
     "src", "test", "sim", "comparator", "ext", "tools", "docs/src", "docs/design",
@@ -247,6 +258,90 @@ def validate_freeze(doc: Any, expected_roots: dict[str, str], file_map: dict[str
             doc.get("julia_call_bootstrap"), required=gate in {"r", "all"})
     except _oracle.OracleError as exc:
         raise PackageCheckError(str(exc)) from exc
+    frontend = doc.get("docs_frontend")
+    if gate in {"docs", "all"} or frontend is not None:
+        validate_docs_frontend(frontend)
+
+
+def _external_file(spec: dict[str, Any], path_key: str, digest_key: str, *, expected_name: str | None = None) -> Path:
+    value = spec.get(path_key)
+    path = Path(value) if isinstance(value, str) else Path()
+    if not path.is_absolute() or path.is_symlink() or not path.is_file():
+        raise PackageCheckError(f"docs_frontend {path_key} must be an existing absolute nonsymlink file")
+    if path.is_relative_to(EVIDENCE_ROOT):
+        raise PackageCheckError(f"docs_frontend {path_key} must be outside runner-created evidence")
+    if expected_name is not None and path.name != expected_name:
+        raise PackageCheckError(f"docs_frontend {path_key} must name {expected_name}")
+    digest = spec.get(digest_key)
+    if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest) or sha256_file(path) != digest:
+        raise PackageCheckError(f"docs_frontend {digest_key} does not match its external file")
+    return path
+
+
+def validate_docs_frontend(spec: Any, *, verify_runtime: bool = True) -> dict[str, Any]:
+    """Validate the independently frozen VitePress package, lock, tree, and JLL tools."""
+    if not isinstance(spec, dict) or set(spec) != DOCS_FRONTEND_KEYS:
+        raise PackageCheckError("freeze needs exact docs_frontend package, lock, tree, and Node/npm pins")
+    package = _external_file(spec, "package_json_path", "package_json_sha256", expected_name="package.json")
+    lockfile = _external_file(spec, "package_lock_path", "package_lock_sha256", expected_name="package-lock.json")
+    node_modules_value = spec.get("node_modules_path")
+    node_modules = Path(node_modules_value) if isinstance(node_modules_value, str) else Path()
+    if not node_modules.is_absolute() or node_modules.is_symlink() or not node_modules.is_dir():
+        raise PackageCheckError("docs_frontend node_modules_path must be an existing absolute nonsymlink directory")
+    if node_modules.is_relative_to(EVIDENCE_ROOT):
+        raise PackageCheckError("docs_frontend node_modules_path must be outside runner-created evidence")
+    if package.parent != lockfile.parent or package.parent != node_modules.parent:
+        raise PackageCheckError("docs_frontend package.json, lock, and node_modules must share one external root")
+    for path_key, digest_key in (("node_path", "node_sha256"), ("npm_cli_path", "npm_cli_sha256")):
+        value = spec.get(path_key)
+        path = Path(value) if isinstance(value, str) else Path()
+        if not path.is_absolute() or path.is_symlink() or not path.is_file() or path.is_relative_to(EVIDENCE_ROOT):
+            raise PackageCheckError(f"docs_frontend {path_key} must be an external absolute nonsymlink file")
+        digest = spec.get(digest_key)
+        if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest) or sha256_file(path) != digest:
+            raise PackageCheckError(f"docs_frontend {digest_key} does not match its external executable input")
+    for version_key in ("node_version", "npm_version"):
+        if not isinstance(spec.get(version_key), str) or not spec[version_key].strip():
+            raise PackageCheckError(f"docs_frontend {version_key} must pin exact runtime output")
+    actual_tree = frontend_tree_hash(node_modules)
+    if actual_tree != spec.get("node_modules_tree_sha256"):
+        raise PackageCheckError("docs_frontend node_modules tree hash does not match its external tree")
+    try:
+        package_doc = json.loads(package.read_text(encoding="utf-8"))
+        lock_doc = json.loads(lockfile.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PackageCheckError(f"docs_frontend package metadata is invalid JSON: {exc}") from exc
+    lock_root = lock_doc.get("packages", {}).get("")
+    if not isinstance(lock_root, dict) or lock_doc.get("lockfileVersion") != 3:
+        raise PackageCheckError("docs_frontend lock must be npm lockfileVersion 3 with a root package record")
+    for group in ("dependencies", "devDependencies", "optionalDependencies"):
+        if package_doc.get(group, {}) != lock_root.get(group, {}):
+            raise PackageCheckError(f"docs_frontend lock root does not match package.json {group}")
+    resolved = [item for name, item in lock_doc.get("packages", {}).items()
+                if name and isinstance(item, dict) and "resolved" in item]
+    if not resolved or any(not isinstance(item.get("integrity"), str) or not item["integrity"]
+                           for item in resolved):
+        raise PackageCheckError("docs_frontend lock must integrity-pin every resolved dependency")
+    if any(not item["resolved"].startswith("https://registry.npmjs.org/") for item in resolved):
+        raise PackageCheckError("docs_frontend lock contains a dependency outside registry.npmjs.org")
+    if verify_runtime:
+        node_path = Path(spec["node_path"])
+        npm_cli = Path(spec["npm_cli_path"])
+        for label, argv, expected in (
+            ("Node", [str(node_path), "--version"], spec["node_version"]),
+            ("npm", [str(node_path), str(npm_cli), "--version"], spec["npm_version"]),
+        ):
+            try:
+                result = subprocess.run(argv, check=False, capture_output=True, text=True, timeout=10)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                raise PackageCheckError(f"docs_frontend {label} version probe failed: {exc}") from exc
+            actual = result.stdout.strip()
+            if result.returncode != 0 or actual != expected:
+                raise PackageCheckError(f"docs_frontend {label} runtime drift: expected {expected!r}, got {actual!r}")
+    return {"package_json_sha256": spec["package_json_sha256"],
+            "package_lock_sha256": spec["package_lock_sha256"],
+            "node_modules_tree_sha256": actual_tree,
+            "node_version": spec["node_version"], "npm_version": spec["npm_version"]}
 
 
 def _julia_env() -> dict[str, str]:
@@ -413,7 +508,8 @@ def _julia_string(path: Path) -> str:
     return json.dumps(str(path.resolve()), ensure_ascii=False)
 
 
-def make_local_docs_script(source: str, *, repo: Path, scratch_docs: Path, output_docs: Path) -> str:
+def make_local_docs_script(source: str, *, repo: Path, scratch_docs: Path, output_docs: Path,
+                           redirect_probe: Path, frontend: dict[str, Any]) -> str:
     """Transform only the frozen make script's fixed setup, helpers, and deploy tail."""
     start = "using Pkg\n\nPkg.develop(PackageSpec(path = joinpath(@__DIR__, \"..\")))\nPkg.instantiate()\n\n"
     if source.count(start) != 1:
@@ -422,8 +518,14 @@ def make_local_docs_script(source: str, *, repo: Path, scratch_docs: Path, outpu
     package_import = "using DocumenterVitepress\nusing HSquared\n"
     package_assertion = (
         "using DocumenterVitepress\nusing HSquared\n"
+        "using TOML\n"
         f"@assert realpath(pathof(HSquared)) == realpath({_julia_string(repo / 'src' / 'HSquared.jl')}) "
         "\"docs environment loaded HSquared outside the frozen Julia source root\"\n"
+        "const _arc1_jll_node = DocumenterVitepress.node(adjust_PATH = false, adjust_LIBPATH = false)\n"
+        f"@assert realpath(_arc1_jll_node.exec[1]) == realpath({_julia_string(Path(frontend['node_path']))}) "
+        "\"DocumenterVitepress NodeJS_20_jll Node differs from the reviewed frontend pin\"\n"
+        f"@assert realpath(DocumenterVitepress.npm) == realpath({_julia_string(Path(frontend['npm_cli_path']))}) "
+        "\"DocumenterVitepress NodeJS_20_jll npm differs from the reviewed frontend pin\"\n"
     )
     if source.count(package_import) != 1:
         raise PackageCheckError("docs/make.jl package imports differ from the reviewed transformation")
@@ -448,13 +550,37 @@ def make_local_docs_script(source: str, *, repo: Path, scratch_docs: Path, outpu
         '    build = "build",\n',
         1,
     )
+    vitepress_format = "format = MarkdownVitepress(\n"
+    local_vitepress_format = (
+        "format = MarkdownVitepress(\n"
+        "        install_npm = false,\n"
+        "        build_vitepress = true,\n"
+        f"        inventory_version = TOML.parsefile({_julia_string(repo / 'Project.toml')})[\"version\"],\n"
+    )
+    if source.count(vitepress_format) != 1:
+        raise PackageCheckError("docs/make.jl must contain one standard MarkdownVitepress format block")
+    source = source.replace(vitepress_format, local_vitepress_format, 1)
     redirect = (
         'include(joinpath(@__DIR__, "legacy_reference_redirect.jl"))\n'
         "write_legacy_dev_reference_redirect!(@__DIR__)"
     )
     scratch_redirect = (
         f"include({_julia_string(repo / 'docs' / 'legacy_reference_redirect.jl')})\n"
-        f"write_legacy_dev_reference_redirect!({_julia_string(output_docs)})"
+        f"const _arc1_generated_bases = readlines({_julia_string(output_docs / 'build' / 'bases.txt')})\n"
+        "@assert _arc1_generated_bases == [\"\"] \"local docs build expected one blank base\"\n"
+        f"cd({_julia_string(scratch_docs)}) do\n"
+        "    DocumenterVitepress.node(adjust_PATH = true, adjust_LIBPATH = true) do _\n"
+        "        run(`$(DocumenterVitepress.npm) run env -- vitepress build build/.documenter`)\n"
+        "    end\n"
+        "end\n"
+        f"const _arc1_validation_html = {_julia_string(output_docs / 'build' / '1' / 'validation-status.html')}\n"
+        "@assert isfile(_arc1_validation_html) \"VitePress did not write build/1/validation-status.html\"\n"
+        "println(\"ARC1_PACKAGE_DOCS_HTML_BUILT\")\n"
+        f"write_legacy_dev_reference_redirect!({_julia_string(output_docs)})\n"
+        f"const _arc1_redirect_probe = {_julia_string(redirect_probe)}\n"
+        "mkpath(joinpath(_arc1_redirect_probe, \"build\"))\n"
+        "write(joinpath(_arc1_redirect_probe, \"build\", \"bases.txt\"), \"dev\\n\")\n"
+        "write_legacy_dev_reference_redirect!(_arc1_redirect_probe)"
     )
     if source.count(redirect) != 1:
         raise PackageCheckError("docs/make.jl legacy redirect call differs from reviewed transformation")
@@ -502,19 +628,42 @@ def prepare_docs_environment(run_dir: Path) -> Path:
     return env_root
 
 
-def _docs_command(run_dir: Path) -> tuple[list[str], dict[str, str]]:
+def copy_docs_frontend(spec: dict[str, Any], scratch_docs: Path) -> dict[str, str]:
+    """Copy the frozen npm package into the scratch site without dereferencing links."""
+    expected = validate_docs_frontend(spec, verify_runtime=False)
+    package = Path(spec["package_json_path"])
+    lockfile = Path(spec["package_lock_path"])
+    node_modules = Path(spec["node_modules_path"])
+    shutil.copyfile(package, scratch_docs / "package.json")
+    shutil.copyfile(lockfile, scratch_docs / "package-lock.json")
+    shutil.copytree(node_modules, scratch_docs / "node_modules", symlinks=True)
+    actual = {
+        "package_json_sha256": sha256_file(scratch_docs / "package.json"),
+        "package_lock_sha256": sha256_file(scratch_docs / "package-lock.json"),
+        "node_modules_tree_sha256": frontend_tree_hash(scratch_docs / "node_modules"),
+    }
+    if any(actual[key] != expected[key] for key in actual):
+        raise PackageCheckError("copied docs frontend differs from its independently frozen package inputs")
+    return actual
+
+
+def _docs_command(run_dir: Path, frontend: dict[str, Any]) -> tuple[list[str], dict[str, str]]:
     scratch_docs = run_dir / "scratch-docs"
     scratch_docs.mkdir()
     shutil.copytree(JULIA_ROOT / "docs" / "src", scratch_docs / "src")
+    copy_docs_frontend(frontend, scratch_docs)
     docs_environment = prepare_docs_environment(run_dir)
     output_docs = scratch_docs
     make_source = (JULIA_ROOT / "docs" / "make.jl").read_text(encoding="utf-8")
     transformed = make_local_docs_script(
-        make_source, repo=JULIA_ROOT, scratch_docs=scratch_docs, output_docs=output_docs
+        make_source, repo=JULIA_ROOT, scratch_docs=scratch_docs, output_docs=output_docs,
+        redirect_probe=run_dir / "legacy-redirect-contract", frontend=frontend,
     )
     script = run_dir / "local-docs-make.jl"
     script.write_text(transformed, encoding="utf-8")
-    return ([JULIA_BIN, "--startup-file=no", f"--project={docs_environment}", str(script)], _julia_env())
+    env = _julia_env()
+    env.update({"GOMAXPROCS": "2", "UV_THREADPOOL_SIZE": "2"})
+    return ([JULIA_BIN, "--startup-file=no", f"--project={docs_environment}", str(script)], env)
 
 
 class PackageRun:
@@ -530,6 +679,7 @@ class PackageRun:
         self.test_sandbox: dict[str, Any] | None = None
         self.julia_call_bootstrap: dict[str, Any] | None = None
         self.julia_call_bootstrap_dir: Path | None = None
+        self.docs_frontend: dict[str, Any] | None = None
         self.runner_hash = sha256_file(RUNNER)
         EVIDENCE_ROOT.mkdir(parents=True, exist_ok=True)
         stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -575,6 +725,7 @@ class PackageRun:
             raise PackageCheckError("independent review receipt SHA-256 does not match the freeze")
         self.expected = doc["files"]
         self.test_sandbox = doc["julia_test_sandbox"]
+        self.docs_frontend = doc.get("docs_frontend")
         self.julia_call_bootstrap = _oracle.validate_julia_call_bootstrap(
             doc.get("julia_call_bootstrap"), required=self.gate in {"r", "all"})
         self.meta.update({"freeze_path": str(self.freeze_path), "freeze_sha256": self.freeze_hash,
@@ -585,6 +736,8 @@ class PackageRun:
                               "manifest_sha256": self.test_sandbox["manifest_sha256"],
                           },
                           "julia_call_bootstrap_expected": self.julia_call_bootstrap,
+                          "docs_frontend_expected": (validate_docs_frontend(self.docs_frontend)
+                                                      if self.docs_frontend is not None else None),
                           "input_counts": {key: len(value) for key, value in self.file_map.items()}})
         self.verify_inputs("initial")
         return doc
@@ -609,6 +762,8 @@ class PackageRun:
                 _oracle.validate_julia_call_bootstrap(self.julia_call_bootstrap, required=True)
             except _oracle.OracleError as exc:
                 raise PackageCheckError(str(exc)) from exc
+        if self.docs_frontend is not None:
+            validate_docs_frontend(self.docs_frontend, verify_runtime=False)
         current = build_file_map()
         actual_keys = {group: set(paths) for group, paths in current.items()}
         expected_keys = {group: set(paths) for group, paths in self.file_map.items()}
@@ -830,14 +985,34 @@ class PackageRun:
         source_page_before = sha256_file(source_page)
         existing_build = JULIA_ROOT / "docs" / "build"
         build_before = tree_hash(existing_build) if existing_build.exists() else None
-        argv, env = _docs_command(self.out)
+        if self.docs_frontend is None:
+            raise PackageCheckError("docs build requires independently frozen npm frontend inputs")
+        argv, env = _docs_command(self.out, self.docs_frontend)
+        copied_frontend = {
+            "package_json_sha256": sha256_file(self.out / "scratch-docs" / "package.json"),
+            "package_lock_sha256": sha256_file(self.out / "scratch-docs" / "package-lock.json"),
+            "node_modules_tree_sha256": frontend_tree_hash(self.out / "scratch-docs" / "node_modules"),
+        }
         docs_environment = self.out / "docs-environment"
+        self.meta["docs_frontend_resource_caps"] = {
+            key: env[key] for key in ("GOMAXPROCS", "UV_THREADPOOL_SIZE")
+        }
         self.meta["docs_environment_sha256"] = {
             "Project.toml": sha256_file(docs_environment / "Project.toml"),
             "Manifest.toml": sha256_file(docs_environment / "Manifest.toml"),
         }
-        self.run_command("julia-local-docs", argv, JULIA_ROOT, env,
-                         RUN_TIMEOUT_S["docs"], marker="ARC1_PACKAGE_DOCS_COMPONENT_PASS", component="docs")
+        docs_record = self.run_command("julia-local-docs", argv, JULIA_ROOT, env,
+                                       RUN_TIMEOUT_S["docs"], marker="ARC1_PACKAGE_DOCS_COMPONENT_PASS", component="docs")
+        docs_log = (self.out / docs_record["log"]).read_text(encoding="utf-8", errors="replace")
+        if "ARC1_PACKAGE_DOCS_HTML_BUILT" not in docs_log:
+            raise PackageCheckError("docs script did not retain its post-build HTML marker")
+        scratch_frontend_after = {
+            "package_json_sha256": sha256_file(self.out / "scratch-docs" / "package.json"),
+            "package_lock_sha256": sha256_file(self.out / "scratch-docs" / "package-lock.json"),
+            "node_modules_tree_sha256": frontend_tree_hash(self.out / "scratch-docs" / "node_modules"),
+        }
+        if scratch_frontend_after != copied_frontend:
+            raise PackageCheckError("Documenter/VitePress modified the frozen scratch frontend inputs")
         if sha256_file(source_page) != source_page_before:
             raise PackageCheckError("source validation-status page changed during isolated docs build")
         build_after = tree_hash(existing_build) if existing_build.exists() else None
@@ -848,27 +1023,30 @@ class PackageRun:
             raise PackageCheckError("Documenter did not create the isolated output tree")
         if not (output_build / "bases.txt").is_file():
             raise PackageCheckError("Documenter output lacks bases.txt; legacy redirect could not be checked")
-        redirects = list(output_build.rglob("reference.html")) + list(output_build.rglob("reference/index.html"))
-        if not redirects or not all("Moved to" in p.read_text(errors="replace") for p in redirects):
-            raise PackageCheckError("legacy redirect helper did not retain expected redirect output")
+        actual_redirects = validate_legacy_redirect_outputs(output_build)
+        redirect_probe_build = self.out / "legacy-redirect-contract" / "build"
+        probe_redirects = validate_legacy_redirect_outputs(redirect_probe_build)
         scratch_status = self.out / "scratch-docs" / "src" / "validation-status.md"
         scratch_text = scratch_status.read_text(encoding="utf-8")
         if "<!-- BEGIN GENERATED validation-status-table -->" not in scratch_text or \
            "<!-- END GENERATED validation-status-table -->" not in scratch_text:
             raise PackageCheckError("scratch validation status output lacks its generated table markers")
-        rendered_status = list(output_build.rglob("validation-status.html"))
-        if not rendered_status:
+        rendered_status = output_build / "1" / "validation-status.html"
+        if not rendered_status.is_file():
             raise PackageCheckError("Documenter output did not render validation-status.html")
-        rendered_text = rendered_status[0].read_text(encoding="utf-8", errors="replace")
+        rendered_text = rendered_status.read_text(encoding="utf-8", errors="replace")
         if "Validation Status" not in rendered_text:
             raise PackageCheckError("rendered validation-status page lacks its expected heading")
         self.meta["docs_source_status_sha256"] = source_page_before
+        self.meta["docs_frontend_scratch_sha256"] = scratch_frontend_after
         self.meta["docs_scratch_status_sha256"] = sha256_file(scratch_status)
         self.meta["docs_rendered_status_pages"] = [
-            {"path": str(p.relative_to(output_build)), "sha256": sha256_file(p)} for p in rendered_status
+            {"path": str(rendered_status.relative_to(output_build)), "sha256": sha256_file(rendered_status)}
         ]
         self.meta["docs_preexisting_build_hash"] = build_before
         self.meta["docs_output_tree_hash"] = tree_hash(output_build)
+        self.meta["legacy_redirect_probe_sha256"] = tree_hash(self.out / "legacy-redirect-contract")
+        self.meta["legacy_redirects"] = {"actual_build": actual_redirects, "dev_probe": probe_redirects}
         self.meta["docs_environment_after_sha256"] = {
             "Project.toml": sha256_file(docs_environment / "Project.toml"),
             "Manifest.toml": sha256_file(docs_environment / "Manifest.toml"),
@@ -940,6 +1118,60 @@ def tree_hash(path: Path) -> str:
             entries.append(("directory", rel, ""))
         elif item.is_file():
             entries.append(("file", rel, sha256_file(item)))
+    return hashlib.sha256(json.dumps(entries, separators=(",", ":")).encode()).hexdigest()
+
+
+def validate_legacy_redirect_outputs(build_dir: Path) -> dict[str, Any]:
+    """Check redirect files against the bases for which the helper emits them."""
+    bases_file = build_dir / "bases.txt"
+    if not bases_file.is_file():
+        raise PackageCheckError("Documenter output lacks bases.txt; legacy redirect could not be checked")
+    bases = [base for base in bases_file.read_text(encoding="utf-8").splitlines() if base]
+    expected: dict[Path, str] = {}
+    for index, base in enumerate(bases, start=1):
+        if base == "dev":
+            version_dir = build_dir / str(index) / "reference"
+            expected[version_dir.parent / "reference.html"] = "../stable/api.html"
+            expected[version_dir / "index.html"] = "../../stable/api.html"
+    actual = set(build_dir.rglob("reference.html")) | set(build_dir.rglob("reference/index.html"))
+    if actual != set(expected):
+        raise PackageCheckError(
+            "legacy redirect files differ from bases.txt: "
+            f"expected {[str(p.relative_to(build_dir)) for p in sorted(expected)]}, "
+            f"found {[str(p.relative_to(build_dir)) for p in sorted(actual)]}"
+        )
+    for path, target in expected.items():
+        content = path.read_text(encoding="utf-8", errors="replace")
+        refresh = f'<meta http-equiv="refresh" content="0; url={target}">'
+        if "Moved to" not in content or f'href="{target}"' not in content or refresh not in content:
+            raise PackageCheckError(f"legacy redirect has unexpected target or content: {path}")
+    return {"bases": bases, "redirects": [str(p.relative_to(build_dir)) for p in sorted(expected)]}
+
+
+def frontend_tree_hash(path: Path) -> str:
+    """Hash a frozen npm tree while recording, and containing, its bin symlinks."""
+    if path.is_symlink() or not path.is_dir():
+        raise PackageCheckError(f"unsafe frontend directory to hash: {path}")
+    entries: list[tuple[str, str, str]] = [
+        ("directory", ".", f"{stat.S_IMODE(path.stat().st_mode):04o}")
+    ]
+    root = path.resolve()
+    for item in sorted(path.rglob("*")):
+        rel = item.relative_to(path).as_posix()
+        if item.is_symlink():
+            try:
+                target = item.resolve(strict=True)
+            except OSError as exc:
+                raise PackageCheckError(f"broken symlink in frontend tree: {item}") from exc
+            if not target.is_relative_to(root):
+                raise PackageCheckError(f"frontend symlink escapes frozen tree: {item} -> {target}")
+            entries.append(("symlink", rel,
+                            f"{stat.S_IMODE(item.lstat().st_mode):04o}:{os.readlink(item)}"))
+        elif item.is_dir():
+            entries.append(("directory", rel, f"{stat.S_IMODE(item.stat().st_mode):04o}"))
+        elif item.is_file():
+            entries.append(("file", rel,
+                            f"{stat.S_IMODE(item.stat().st_mode):04o}:{sha256_file(item)}"))
     return hashlib.sha256(json.dumps(entries, separators=(",", ":")).encode()).hexdigest()
 
 
@@ -1045,6 +1277,46 @@ def _self_test_package_run(root: Path) -> None:
         build_file_map = original_builder
 
 
+def _synthetic_docs_frontend(root: Path) -> dict[str, Any]:
+    """Create a tiny local fixture for freeze, symlink, copy, and runtime checks."""
+    package_root = root / "synthetic-frontend"
+    node_modules = package_root / "node_modules"
+    vitepress = node_modules / "vitepress"
+    (vitepress / "bin").mkdir(parents=True)
+    (vitepress / "package.json").write_text('{"name":"vitepress","version":"1.6.4"}\n', encoding="utf-8")
+    (vitepress / "bin" / "vitepress.js").write_text("// synthetic CLI\n", encoding="utf-8")
+    (node_modules / ".bin").mkdir()
+    (node_modules / ".bin" / "vitepress").symlink_to("../vitepress/bin/vitepress.js")
+    dependencies = {"vitepress": "1.6.4"}
+    package_path = package_root / "package.json"
+    package_path.write_text(json.dumps({"dependencies": dependencies}) + "\n", encoding="utf-8")
+    lock_path = package_root / "package-lock.json"
+    lock_path.write_text(json.dumps({
+        "name": "synthetic-docs", "lockfileVersion": 3,
+        "packages": {
+            "": {"dependencies": dependencies},
+            "node_modules/vitepress": {
+                "version": "1.6.4",
+                "resolved": "https://registry.npmjs.org/vitepress/-/vitepress-1.6.4.tgz",
+                "integrity": "sha512-syntheticfixture",
+            },
+        },
+    }) + "\n", encoding="utf-8")
+    node_path = package_root / "node"
+    npm_cli = package_root / "npm-cli.js"
+    fake_node = "#!/usr/bin/env python3\nimport sys\nprint('v20.12.2' if len(sys.argv) == 2 else '10.5.0')\n"
+    node_path.write_text(fake_node, encoding="utf-8")
+    npm_cli.write_text("# synthetic npm version command\n", encoding="utf-8")
+    node_path.chmod(0o755)
+    return {
+        "package_json_path": str(package_path), "package_json_sha256": sha256_file(package_path),
+        "package_lock_path": str(lock_path), "package_lock_sha256": sha256_file(lock_path),
+        "node_modules_path": str(node_modules), "node_modules_tree_sha256": frontend_tree_hash(node_modules),
+        "node_path": str(node_path), "node_sha256": sha256_file(node_path), "node_version": "v20.12.2",
+        "npm_cli_path": str(npm_cli), "npm_cli_sha256": sha256_file(npm_cli), "npm_version": "10.5.0",
+    }
+
+
 def _self_test() -> None:
     assert sha256_file(Path(__file__)) == hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     with tempfile.TemporaryDirectory(prefix="arc1-package-runner-selftest-") as temp:
@@ -1105,6 +1377,53 @@ def _self_test() -> None:
         sandbox_manifest = sandbox_root / "Manifest.toml"
         sandbox_project.write_text('name = "SyntheticTestEnv"\n', encoding="utf-8")
         sandbox_manifest.write_text('manifest_format = "2.0"\n', encoding="utf-8")
+        docs_frontend = _synthetic_docs_frontend(root)
+        validated_frontend = validate_docs_frontend(docs_frontend)
+        assert validated_frontend["node_modules_tree_sha256"] == docs_frontend["node_modules_tree_sha256"]
+        copied_frontend_root = root / "copied-frontend"
+        copied_frontend_root.mkdir()
+        copied_frontend = copy_docs_frontend(docs_frontend, copied_frontend_root)
+        assert copied_frontend == {
+            "package_json_sha256": docs_frontend["package_json_sha256"],
+            "package_lock_sha256": docs_frontend["package_lock_sha256"],
+            "node_modules_tree_sha256": docs_frontend["node_modules_tree_sha256"],
+        }
+        assert (copied_frontend_root / "node_modules" / ".bin" / "vitepress").is_symlink()
+        bad_frontend = dict(docs_frontend)
+        bad_frontend.pop("node_modules_tree_sha256")
+        try:
+            validate_docs_frontend(bad_frontend)
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("missing docs frontend tree pin was accepted")
+        bad_frontend = dict(docs_frontend, package_json_sha256="0" * 64)
+        try:
+            validate_docs_frontend(bad_frontend)
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("drifted docs frontend package pin was accepted")
+        bad_frontend = dict(docs_frontend, node_version="v99.0.0")
+        try:
+            validate_docs_frontend(bad_frontend)
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("drifted docs frontend Node version was accepted")
+        outside_target = root / "outside-link-target"
+        outside_target.write_text("outside", encoding="utf-8")
+        link = Path(docs_frontend["node_modules_path"]) / ".bin" / "vitepress"
+        link.unlink()
+        link.symlink_to(outside_target)
+        try:
+            frontend_tree_hash(Path(docs_frontend["node_modules_path"]))
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("external docs frontend symlink was accepted")
+        link.unlink()
+        link.symlink_to("../vitepress/bin/vitepress.js")
         bootstrap_template = _oracle.JULIA_CALL_BOOTSTRAP_TEMPLATE
         bootstrap_spec = {
             "project_path": str((bootstrap_template / "Project.toml").resolve()),
@@ -1138,9 +1457,19 @@ def _self_test() -> None:
                 "manifest_sha256": sha256_file(sandbox_manifest),
             },
             "julia_call_bootstrap": bootstrap_spec,
+            "docs_frontend": docs_frontend,
         }
         validate_freeze(freeze, freeze["roots"], inventory)
         validate_freeze(freeze, freeze["roots"], inventory, gate="r")
+        validate_freeze(freeze, freeze["roots"], inventory, gate="docs")
+        missing_frontend = json.loads(json.dumps(freeze))
+        del missing_frontend["docs_frontend"]
+        try:
+            validate_freeze(missing_frontend, freeze["roots"], inventory, gate="docs")
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("docs gate accepted a freeze without frontend pins")
         bad_sandbox_freeze = json.loads(json.dumps(freeze))
         bad_sandbox_freeze["julia_test_sandbox"]["project_sha256"] = "0" * 64
         try:
@@ -1208,7 +1537,8 @@ def _self_test() -> None:
                 raise AssertionError("empty or skipped synthetic Julia summary was accepted")
         julia_probe = subprocess.run(
             [JULIA_BIN, "--startup-file=no", "-e",
-             'using Test; @testset "Arc1 synthetic parser" begin @test true end'],
+             'using Test; @testset "Arc1 synthetic parser" begin @test true; '
+             '@test_throws ProcessFailedException run(`/usr/bin/false`) end'],
             cwd=root, env={**os.environ, **_julia_env()},
             capture_output=True, text=True, timeout=20, check=False,
         )
@@ -1265,6 +1595,31 @@ def _self_test() -> None:
         else:
             raise AssertionError("required Arc1 testset with zero assertions was accepted")
 
+        redirect_build = root / "redirect-check" / "build"
+        redirect_build.mkdir(parents=True)
+        (redirect_build / "bases.txt").write_text("\n", encoding="utf-8")
+        blank_redirects = validate_legacy_redirect_outputs(redirect_build)
+        assert blank_redirects == {"bases": [], "redirects": []}
+        (redirect_build / "bases.txt").write_text("\ndev\n", encoding="utf-8")
+        try:
+            validate_legacy_redirect_outputs(redirect_build)
+        except PackageCheckError:
+            pass
+        else:
+            raise AssertionError("missing dev redirect files were accepted")
+        (redirect_build / "1" / "reference").mkdir(parents=True)
+        (redirect_build / "1" / "reference.html").write_text(
+            '<meta http-equiv="refresh" content="0; url=../stable/api.html">'
+            '<p>Moved to <a href="../stable/api.html">API reference</a>.</p>', encoding="utf-8")
+        (redirect_build / "1" / "reference" / "index.html").write_text(
+            '<meta http-equiv="refresh" content="0; url=../../stable/api.html">'
+            '<p>Moved to <a href="../../stable/api.html">API reference</a>.</p>', encoding="utf-8")
+        dev_redirects = validate_legacy_redirect_outputs(redirect_build)
+        assert dev_redirects == {
+            "bases": ["dev"],
+            "redirects": ["1/reference/index.html", "1/reference.html"],
+        }
+
         _self_test_package_run(root)
         docs_source = (JULIA_ROOT / "docs" / "make.jl").read_text(encoding="utf-8")
         original_docs_project = sha256_file(JULIA_ROOT / "docs" / "Project.toml")
@@ -1278,20 +1633,34 @@ def _self_test() -> None:
         assert sha256_file(JULIA_ROOT / "docs" / "Manifest.toml") == original_docs_manifest
         command_root = root / "assembled-docs-command"
         command_root.mkdir()
-        docs_argv, _ = _docs_command(command_root)
+        docs_argv, docs_env = _docs_command(command_root, docs_frontend)
         assert docs_argv[0] == JULIA_BIN and docs_argv[1] == "--startup-file=no"
         assert docs_argv[2].startswith("--project=")
         assert str(command_root / "docs-environment") == docs_argv[2].removeprefix("--project=")
         assert "--project=docs" not in docs_argv
+        assert docs_env["GOMAXPROCS"] == "2" and docs_env["UV_THREADPOOL_SIZE"] == "2"
         transformed = make_local_docs_script(
-            docs_source, repo=JULIA_ROOT, scratch_docs=root / "docs-scratch", output_docs=root / "docs-output"
+            docs_source, repo=JULIA_ROOT, scratch_docs=root / "docs-scratch", output_docs=root / "docs-output",
+            redirect_probe=root / "redirect-probe", frontend=docs_frontend,
         )
+        transformed_path = root / "transformed-docs-selftest.jl"
+        transformed_path.write_text(transformed, encoding="utf-8")
+        parse_probe = subprocess.run(
+            [JULIA_BIN, "--startup-file=no", "-e",
+             f"Meta.parseall(read({_julia_string(transformed_path)}, String)); println(\"DOCS_SCRIPT_PARSE_PASS\")"],
+            cwd=root, env={**os.environ, **_julia_env()}, capture_output=True, text=True, timeout=20, check=False,
+        )
+        assert parse_probe.returncode == 0 and "DOCS_SCRIPT_PARSE_PASS" in parse_probe.stdout, parse_probe.stderr
         assert "DocumenterVitepress.deploydocs" not in transformed
         assert "Pkg.develop" not in transformed and "Pkg.instantiate" not in transformed
         assert "write_validation_status_table!(" in transformed
         assert "write_legacy_dev_reference_redirect!(" in transformed
         assert "pathof(HSquared)" in transformed
         assert str(JULIA_ROOT / "src" / "HSquared.jl") in transformed
+        assert "install_npm = false" in transformed and "build_vitepress = true" in transformed
+        assert "TOML.parsefile(" in transformed and str(JULIA_ROOT / "Project.toml") in transformed
+        assert "DocumenterVitepress.node(adjust_PATH = false" in transformed
+        assert docs_frontend["node_path"] in transformed and docs_frontend["npm_cli_path"] in transformed
         command_source = Path(docs_argv[-1]).read_text(encoding="utf-8")
         assert "DocumenterVitepress.deploydocs" not in command_source
         assert "pathof(HSquared)" in command_source
@@ -1299,7 +1668,18 @@ def _self_test() -> None:
         assert f"root = {_julia_string(root / 'docs-scratch')}" in transformed
         assert 'source = "src"' in transformed and 'build = "build"' in transformed
         assert f"write_legacy_dev_reference_redirect!({_julia_string(root / 'docs-output')})" in transformed
-    print("synthetic_cases=pass,nonzero,missing_marker,timeout,interrupt,input_mutation,bootstrap_mutation,julia_summary,empty_summary,broken_summary,docs_env_rebase,test_sandbox_match,test_sandbox_mismatch_before_tests")
+        assert f"const _arc1_redirect_probe = {_julia_string(root / 'redirect-probe')}" in transformed
+        assert 'write(joinpath(_arc1_redirect_probe, "build", "bases.txt"), "dev\\n")' in transformed
+        assert f"const _arc1_generated_bases = readlines({_julia_string(root / 'docs-output' / 'build' / 'bases.txt')})" in transformed
+        assert '@assert _arc1_generated_bases == [""]' in transformed
+        assert f"cd({_julia_string(root / 'docs-scratch')}) do" in transformed
+        assert "DocumenterVitepress.node(adjust_PATH = true, adjust_LIBPATH = true) do _" in transformed
+        assert "run(`$(DocumenterVitepress.npm) run env -- vitepress build build/.documenter`)" in transformed
+        assert f"_arc1_validation_html = {_julia_string(root / 'docs-output' / 'build' / '1' / 'validation-status.html')}" in transformed
+        assert '@assert isfile(_arc1_validation_html)' in transformed
+        assert "ARC1_PACKAGE_DOCS_HTML_BUILT" in transformed
+        assert transformed.index("ARC1_PACKAGE_DOCS_HTML_BUILT") < transformed.index("ARC1_PACKAGE_DOCS_COMPONENT_PASS")
+    print("synthetic_cases=pass,nonzero,missing_marker,timeout,interrupt,input_mutation,bootstrap_mutation,julia_summary,empty_summary,broken_summary,docs_env_rebase,test_sandbox_match,test_sandbox_mismatch_before_tests,frontend_missing_pin,frontend_version_drift,frontend_tree_copy,frontend_symlink_escape,blank_base_redirects,missing_dev_redirect,valid_dev_redirects,manual_docs_argv_cwd,html_required_before_pass_marker,run_failure_propagation,node_resource_caps")
     print("ARC1_PACKAGE_CHECKS_SYNTHETIC_SELFTEST_PASS")
 
 
