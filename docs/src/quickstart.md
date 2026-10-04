@@ -3,7 +3,9 @@
 !!! warning "Experimental · engine utilities, not a formula API"
     `HSquared.jl` is the computational twin of [hsquared](https://itchyshin.github.io/hsquared/).
     Applied users type the R formula. These pages document the engine.
-    Not in Julia General — `Pkg.add(url=...)` only; do **not** `Pkg.add("HSquared")`
+    Not in Julia General — install with
+    `Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")`;
+    do **not** `Pkg.add("HSquared")`
     by name. `public_covered_count` is a claims-register label; read
     [`validation_status()`](validation-status.md) rather than a screenshot.
 
