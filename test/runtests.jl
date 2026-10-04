@@ -4778,12 +4778,12 @@ end
     @test scan.k ≈ 0.98 atol = 1e-12
     @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
     @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
-    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
-    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1.3 / 2.8), sqrt(1.3 / 4.0)] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1.3 / 2.8), 0.5 / sqrt(1.3 / 4.0)] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
-    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
-    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
-    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.p_values ≈ [0.07473539790247391, 0.3804550407754143] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.14947079580494782, 0.7609100815508286] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.14947079580494782, 0.3804550407754143] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
     scan_table = marker_scan_table(scan)
     @test scan_table.target == :direct_marker_scan
@@ -4823,17 +4823,17 @@ end
     @test significance.adjusted_p_threshold == 0.1
     @test significance.bh_q_threshold == 0.1
     @test significance.raw_significant == [true, false]
-    @test significance.bonferroni_significant == [true, false]
-    @test significance.bh_significant == [true, false]
+    @test significance.bonferroni_significant == [false, false]
+    @test significance.bh_significant == [false, false]
     @test significance.n_raw_significant == 1
-    @test significance.n_bonferroni_significant == 1
-    @test significance.n_bh_significant == 1
+    @test significance.n_bonferroni_significant == 0
+    @test significance.n_bh_significant == 0
     @test significance.raw_marker_ids == ["m1"]
-    @test significance.bonferroni_marker_ids == ["m1"]
-    @test significance.bh_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == String[]
+    @test significance.bh_marker_ids == String[]
     @test significance.raw_scan_indices == [1]
-    @test significance.bonferroni_scan_indices == [1]
-    @test significance.bh_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == Int[]
+    @test significance.bh_scan_indices == Int[]
     @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
     @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
     @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
@@ -4937,11 +4937,11 @@ end
         Matrix{Float64}(I, 1, 1),
         M,
         2.0,
-        1.0;
+        1.3;
         marker_ids = ["m1", "m2"],
     )
     @test fixed_reduction.target == :mixed_model_marker_scan
-    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.3)
     @test fixed_reduction.marker_ids == scan.marker_ids
     @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
     @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
@@ -5976,6 +5976,7 @@ end
     @test ph[end] == "genome_wide_p_value"
     sf = genome_wide_marker_scan(yf, ones(length(yf), 1), Mf;
                                  n_permutations = 300, alpha = 0.05,
+                                 sigma_e2 = 1.0,
                                  marker_ids = fmids, rng = MersenneTwister(20264200))
     @test sf.marker_ids == vec(pr[:, 1])
     @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8          # deterministic

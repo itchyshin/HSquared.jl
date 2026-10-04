@@ -34,6 +34,7 @@ y = 2.0 .+ 0.9 .* gc .+ randn(rng, n)
 marker_ids = ["m$(j)" for j in 1:m]
 
 scan = genome_wide_marker_scan(y, X, markers; n_permutations = NPERM, alpha = ALPHA,
+                               sigma_e2 = 1.0,
                                marker_ids = marker_ids, rng = MersenneTwister(SEED))
 
 write_table(joinpath(OUTDIR, "phenotypes.csv"), ["id", "y"],
