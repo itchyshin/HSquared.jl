@@ -31,6 +31,14 @@ additive genetic effect `a ~ N(0, σ²a·A)` and a permanent-environment effect
 `pe ~ N(0, σ²pe·I)` sharing the record→animal incidence `Z` (repeated records are
 needed to separate `a` from `pe`).
 
+Payload-v2 (`parse_payload_v2`) picks that route from the independent-block
+count (HSquared.jl #352). One pedigree block goes to `:animal`.
+Two independent blocks go to `:two_effect` (animal + permanent environment
+when the second block is iid and shares the animal incidence).
+Three or more independent blocks go to `:multi_effect`.
+Two effects are not rejected. `fit_repeatability_reml` is the dedicated
+`Z2 = Z1`, `A2 = I` special case of that two-effect kernel.
+
 ```@example qg
 using HSquared, LinearAlgebra
 

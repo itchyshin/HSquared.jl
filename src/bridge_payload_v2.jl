@@ -263,15 +263,27 @@ end
 # Dispatch resolution — §6 dispatch table
 # ---------------------------------------------------------------------------
 
-# Determine dispatch symbol from the resolved block list.
-# §6:
-#   one pedigree/identity block → :animal
-#   two independent blocks → :two_effect
-#   K ≥ 3 independent blocks → :multi_effect
-#   one correlated block (+ optional independent) → :direct_maternal
-#   multivariate Y (one pedigree) → :multivariate
-#   multivariate Y (pedigree + iid PE) → :multivariate_repeatability
-#   one coefcov block → :coefcov (frozen slot, parser validates but doesn't run)
+"""
+    _resolve_dispatch(blocks, is_multivariate) → Symbol
+
+Choose the existing payload-v2 estimator from the resolved block list
+(HSquared.jl #352). This adds no estimator.
+
+Univariate independent blocks:
+
+- 1 pedigree block → `:animal`
+- 2 independent blocks → `:two_effect` (animal + permanent environment when
+  the second block is iid; also common environment / maternal environment)
+- 3 or more independent blocks → `:multi_effect`
+
+Two effects are not rejected. `fit_repeatability_reml` is the dedicated
+`Z2 = Z1`, `A2 = I` special case of that two-effect kernel.
+
+Other existing arms: one correlated block → `:direct_maternal`; multivariate
+`Y` with one pedigree block → `:multivariate`; multivariate `Y` with pedigree
++ iid → `:multivariate_repeatability`; one `coefcov` block → `:coefcov`
+(frozen slot).
+"""
 function _resolve_dispatch(blocks, is_multivariate::Bool)
     types = [b.type for b in blocks]
     n_correlated = count(==("correlated"), types)
@@ -362,6 +374,11 @@ but no `random_effects` is lifted to a two-block list.
 
 The §2 grammar table governs which block types are accepted; unknown types
 raise an `ArgumentError`.
+
+Independent-block count (HSquared.jl #352): 1 pedigree block → `:animal`;
+2 independent blocks → `:two_effect` (animal + permanent environment when
+the second block is iid); 3 or more independent blocks → `:multi_effect`.
+Two effects are not rejected.
 
 CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §6):
 no new estimator is added here.
