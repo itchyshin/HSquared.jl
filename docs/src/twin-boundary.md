@@ -93,8 +93,9 @@ Intentional asymmetry: R articles include comparator vignettes, Gryphon, QTL/GWA
 status, inheritance systems, and GPU roadmap slices with no Julia mirror page yet.
 Julia [Developer](roadmap.md) routes hold backend roadmap detail R users rarely need
 on first read. Engine API lookup:
-[Reference (stable API)](https://itchyshin.github.io/HSquared.jl/stable/api.html)
-(`/dev/reference/` redirects there after deploy).
+[Reference (latest development API)](https://itchyshin.github.io/HSquared.jl/dev/api.html).
+The stable reference is the API snapshot from the latest tagged release and can
+therefore omit functions merged after that tag.
 
 ## Reporting route-scoped results
 

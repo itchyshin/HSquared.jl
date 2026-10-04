@@ -8,10 +8,9 @@
   version or capability change.
 
 None of the entries below change any capability status, row count, or
-package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
-(`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
-is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
-this pass and belongs to the release owner.)
+package version. `public_covered_count` stays **7**, and no entry below touches
+`Project.toml`. The package version is `0.9.0`; its released section is recorded
+below.
 
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
@@ -105,6 +104,13 @@ this pass and belongs to the release owner.)
   `boundary` stricter, never clear it. Both now name the actual lever: a
   different `initial`, which recentres the log-scale search bracket/rail.
   Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
+
+## 0.9.0 (experimental)
+
+This release retained the experimental package status and did not authorize a
+new covered-capability count. It consolidated the Julia engine and R-bridge
+contracts present at the 0.9.0 tag; subsequent development remains under
+Unreleased above.
 
 ## 0.8.0 (experimental)
 
