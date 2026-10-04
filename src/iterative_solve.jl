@@ -1496,9 +1496,18 @@ function fit_multi_effect(
     end
 
     if chosen === :exact
-        unused = _unused_exact_route_keywords(
-            nprobe, shared_probes, compute_loglik, slq_probes, slq_steps, verbose,
-        )
+        # :auto callers historically forward compute_loglik/verbose as matrix-free
+        # defaults. Those two are dropped here; a direct method = :exact call
+        # still names every unused keyword (#435).
+        unused = if method === :auto
+            _unused_exact_route_keywords(
+                nprobe, shared_probes, nothing, slq_probes, slq_steps, nothing,
+            )
+        else
+            _unused_exact_route_keywords(
+                nprobe, shared_probes, compute_loglik, slq_probes, slq_steps, verbose,
+            )
+        end
         isempty(unused) ||
             throw(ArgumentError("the :exact route does not use $(join(unused, ", "))"))
         res = fit_sparse_multi_effect_aireml(y, X, effects; kwargs...)
