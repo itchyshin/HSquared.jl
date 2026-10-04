@@ -302,10 +302,70 @@ function _mv_fd_step(h::Real)
     return hf
 end
 
+function _mv_coordinate_steps(x::AbstractVector, h)
+    n = length(x)
+    if h isa Real
+        return fill(_mv_fd_step(h), n)
+    end
+    hs = collect(h)
+    length(hs) == n ||
+        throw(ArgumentError("finite-difference steps must match the coordinate length"))
+    return map(_mv_fd_step, hs)
+end
+
+# #425: log-Cholesky packs log(L_ii) on the diagonal and raw L_ij off it.
+# Off-diagonals are in sqrt(variance) units, so an absolute h = 1e-4 is a
+# unit-of-y step. Map to Cholesky-factor coordinates, apply the same
+# relative floor as `_uncertainty_component_steps`, then map diagonal
+# steps back with d log L = dL / L.
+function _mv_logchol_component_steps(theta::AbstractVector, t::Integer, fd_step::Real)
+    t >= 1 || throw(ArgumentError("trait count must be a positive integer"))
+    nblock = t * (t + 1) ÷ 2
+    nblock > 0 && length(theta) % nblock == 0 ||
+        throw(ArgumentError("log-Cholesky parameter length must be a multiple of t(t+1)/2"))
+    step = _mv_fd_step(fd_step)
+    Lcoords = Vector{Float64}(undef, length(theta))
+    isdiag = falses(length(theta))
+    nblocks = length(theta) ÷ nblock
+    for b in 0:(nblocks - 1)
+        idx = 1
+        for j in 1:t, i in j:t
+            k = b * nblock + idx
+            if i == j
+                Lii = exp(Float64(theta[k]))
+                (isfinite(Lii) && Lii > 0) ||
+                    throw(ArgumentError("log-Cholesky diagonal must map to a finite positive factor"))
+                Lcoords[k] = Lii
+                isdiag[k] = true
+            else
+                Lij = Float64(theta[k])
+                isfinite(Lij) ||
+                    throw(ArgumentError("log-Cholesky off-diagonal must be a finite factor entry"))
+                Lcoords[k] = Lij
+            end
+            idx += 1
+        end
+    end
+    hL = _uncertainty_component_steps(Lcoords, step)
+    h = copy(hL)
+    @inbounds for k in eachindex(h)
+        if isdiag[k]
+            h[k] = hL[k] / Lcoords[k]
+        end
+    end
+    all(x -> isfinite(x) && x > 0, h) ||
+        throw(ArgumentError("fd_step must produce finite positive log-Cholesky steps"))
+    return h
+end
+
 function _mv_fd_points(x, h)
     xf = Float64.(collect(x))
     all(isfinite, xf) || throw(ArgumentError("finite-difference coordinates must be finite Float64 values"))
-    all(v -> isfinite(v + h) && isfinite(v - h) && v + h != v && v - h != v, xf) ||
+    hs = h isa AbstractVector ? Float64.(collect(h)) : fill(Float64(h), length(xf))
+    length(hs) == length(xf) ||
+        throw(ArgumentError("finite-difference steps must match the coordinate length"))
+    all(i -> isfinite(xf[i] + hs[i]) && isfinite(xf[i] - hs[i]) &&
+             xf[i] + hs[i] != xf[i] && xf[i] - hs[i] != xf[i], eachindex(xf)) ||
         throw(ArgumentError("finite-difference perturbations must be finite and distinct from their coordinates"))
     return xf
 end
@@ -1604,40 +1664,40 @@ function nested_lrt(loglik_constrained::Real, loglik_full::Real; df::Integer,
 end
 
 # Central finite-difference Hessian of a scalar function.
-function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
-    h = _mv_fd_step(h)
+function _fd_hessian(f, x::AbstractVector; h = 1e-4)
+    h = _mv_coordinate_steps(x, h)
     x = _mv_fd_points(x, h)
     n = length(x)
     H = zeros(n, n)
     f0 = f(x)
     @inbounds for i in 1:n
-        xp = collect(float.(x)); xp[i] += h
-        xm = collect(float.(x)); xm[i] -= h
-        H[i, i] = (f(xp) - 2 * f0 + f(xm)) / h^2
+        xp = collect(float.(x)); xp[i] += h[i]
+        xm = collect(float.(x)); xm[i] -= h[i]
+        H[i, i] = (f(xp) - 2 * f0 + f(xm)) / h[i]^2
     end
     @inbounds for i in 1:n, j in (i + 1):n
-        xpp = collect(float.(x)); xpp[i] += h; xpp[j] += h
-        xpm = collect(float.(x)); xpm[i] += h; xpm[j] -= h
-        xmp = collect(float.(x)); xmp[i] -= h; xmp[j] += h
-        xmm = collect(float.(x)); xmm[i] -= h; xmm[j] -= h
-        H[i, j] = (f(xpp) - f(xpm) - f(xmp) + f(xmm)) / (4 * h^2)
+        xpp = collect(float.(x)); xpp[i] += h[i]; xpp[j] += h[j]
+        xpm = collect(float.(x)); xpm[i] += h[i]; xpm[j] -= h[j]
+        xmp = collect(float.(x)); xmp[i] -= h[i]; xmp[j] += h[j]
+        xmm = collect(float.(x)); xmm[i] -= h[i]; xmm[j] -= h[j]
+        H[i, j] = (f(xpp) - f(xpm) - f(xmp) + f(xmm)) / (4 * h[i] * h[j])
         H[j, i] = H[i, j]
     end
     return H
 end
 
 # Central finite-difference Jacobian of a vector-valued function.
-function _fd_jacobian(g, x::AbstractVector; h::Real = 1e-4)
-    h = _mv_fd_step(h)
+function _fd_jacobian(g, x::AbstractVector; h = 1e-4)
+    h = _mv_coordinate_steps(x, h)
     x = _mv_fd_points(x, h)
     n = length(x)
     g0 = g(x)
     m = length(g0)
     J = zeros(m, n)
     @inbounds for j in 1:n
-        xp = collect(float.(x)); xp[j] += h
-        xm = collect(float.(x)); xm[j] -= h
-        J[:, j] = (g(xp) .- g(xm)) ./ (2 * h)
+        xp = collect(float.(x)); xp[j] += h[j]
+        xm = collect(float.(x)); xm[j] -= h[j]
+        J[:, j] = (g(xp) .- g(xm)) ./ (2 * h[j])
     end
     return J
 end
@@ -1711,12 +1771,13 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,
         _chol_params_to_cov(@view(θ[1:ng]), t),
         _chol_params_to_cov(@view(θ[ng + 1:end]), t))
-    H = -_fd_hessian(loglik, phat; h = fd_step)
+    hs = _mv_logchol_component_steps(phat, t, fd_step)
+    H = -_fd_hessian(loglik, phat; h = hs)
     Hsym = Symmetric((H + transpose(H)) / 2)
     (all(isfinite, H) && isposdef(Hsym)) ||
         throw(ArgumentError("observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable"))
     Σθ = inv(Hsym)
-    J = _fd_jacobian(θ -> _mv_quantities(θ, t, ng), phat; h = fd_step)
+    J = _fd_jacobian(θ -> _mv_quantities(θ, t, ng), phat; h = hs)
     Σg = J * Σθ * transpose(J)
     se = sqrt.(max.(diag(Σg), 0.0))
 
