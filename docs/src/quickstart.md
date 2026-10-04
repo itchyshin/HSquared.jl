@@ -260,6 +260,13 @@ BLUP(fit).values
 heritability(fit)
 ```
 
+!!! warning "Syntax demonstration, not a heritability estimate"
+    This three-animal toy response is exactly explained by its fixed-effect
+    design. Both fitted variance components are therefore near zero, and the
+    displayed heritability is an unstable ratio of two near-zero numbers. It
+    carries no information about population heritability and must not be
+    interpreted or reported.
+
 ```@example quickstart
 prediction_error_variance(fit).values
 ```
