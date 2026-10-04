@@ -1028,6 +1028,13 @@ sign flips from returned metadata but does not impose a rotation or
 lower-triangular identification constraint; for `rank > 1`, loadings remain
 rotation-nonunique and should not be interpreted as uniquely identified factors.
 
+The optimizer still searches the full raw loading vector (`t * rank` entries for
+`:lowrank`, plus `t` uniqueness parameters for `:factor_analytic`). It does not
+remove the `K(K-1)/2` rotational degrees of freedom of `Λ`. Those flat
+directions do not change `G0 = ΛΛ'` (or `ΛΛ' + Ψ`). `_mv_nparams` subtracts
+them for LRT reporting only; `converged` and the search itself still use the
+unreduced parameter count (HSquared.jl #340).
+
 Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
 validated by deterministic self-consistency checks (the `t = 1` reduction
 recovers the univariate REML estimate; the multivariate REML log-likelihood is on
