@@ -4,7 +4,7 @@ using Test
     root = normpath(joinpath(@__DIR__, ".."))
     changelog = read(joinpath(root, "docs", "src", "changelog.md"), String)
 
-    @test occursin("including the current R\n  formula bridge", changelog)
+    @test occursin(r"including the current R\r?\n  formula bridge", changelog)
     @test occursin("still obtain it through the selected inverse", changelog)
     @test occursin("Fixed #370/#371", changelog)
     @test occursin("multi-effect K-effect route", changelog)
