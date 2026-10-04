@@ -11152,6 +11152,9 @@ include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
+# #436: payload-v2 arms must error when they ignore fit kwargs.
+include(joinpath(@__DIR__, "test_payload_v2_ignored_kwargs.jl"))
+
 # hsquared#212 (engine half): initial/iterations threading through payload-v2
 # multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
 include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
