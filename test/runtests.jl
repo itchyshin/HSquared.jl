@@ -14,6 +14,7 @@ include("test_pedigree_inbred_known_parent.jl")
 include("test_ordered_probit_cutpoint_rails.jl")
 include("test_ai_reml_em_warmup_posdef.jl")
 include("test_issue_405_quickstart_docs.jl")
+include("test_issue_414_heritability_docs.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 

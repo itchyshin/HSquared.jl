@@ -3951,8 +3951,11 @@ end
 """
     heritability(fit)
 
-Return simple narrow-sense heritability for the Phase 1 univariate Gaussian
-animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
+Return narrow-sense heritability for the univariate Gaussian animal model:
+`sigma_a2 / (sigma_a2 + sigma_e2)`. Fixed-effect variance is not included in
+the denominator. For fit types that estimate permanent-environment,
+common-environment, or maternal variance, those fitted components are included
+in the corresponding heritability denominator.
 Components must be finite and nonnegative, with at least one positive. The
 ratio is scaled before summation to avoid overflow in the total variance.
 """

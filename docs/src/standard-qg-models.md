@@ -44,8 +44,10 @@ r = repeatability_mme(y, X, Z, Ainv, 1.0, 0.5, 2.0)
 ```
 
 `fit_repeatability_reml` estimates the three variance components by REML and
-returns the **repeatability coefficient** `t = (σ²a + σ²pe)/total` and the
-heritability `h² = σ²a/total`:
+returns the **repeatability coefficient**
+`t = (σ²a + σ²pe)/(σ²a + σ²pe + σ²e)` and the heritability
+`h² = σ²a/(σ²a + σ²pe + σ²e)`. Fixed-effect variance is outside both
+denominators:
 
 ```@example qg
 fit = fit_repeatability_reml(y, X, Z, Ainv)
