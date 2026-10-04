@@ -146,4 +146,4 @@ history from release status. [Mission control](mission-control.md) is a
 developer dashboard, not a first-click applied path.
 
 For a side-by-side map of pkgdown articles vs these pages, see
-[Twin boundary: documentation map](twin-boundary.md#documentation-map-applied-journey).
+[Twin boundary: documentation map](twin-boundary.md#Documentation-map-applied-journey).
