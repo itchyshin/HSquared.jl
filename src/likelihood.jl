@@ -1630,6 +1630,15 @@ AIC / LRT against sparse / `gaussian_loglik` routes.
 Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
 model-spec mapping are not part of this function. On small data the optimum can
 sit on a boundary (a variance → 0).
+
+`converged` is `Optim.converged` for NelderMead: the simplex objective spread
+fell below `g_tol`. It is not a score, information-rank, or multi-start check.
+When the two random effects are linearly dependent on the residual (the usual
+animal + dam case where each dam has one sire, so A = 0.5 I + 0.5 D among
+phenotyped animals), only two combinations of (Va, Vdam, Ve) are identified.
+Different starts can then return different h2 values at the same log-likelihood.
+Read `ratio1` as one point on that ridge, not a unique heritability
+(HSquared.jl #416).
 """
 function fit_two_effect_reml(
     y::AbstractVector,

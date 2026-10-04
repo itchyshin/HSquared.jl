@@ -78,7 +78,16 @@ ce = two_effect_mme(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2), 1.0, 0.5, 2.0)
 ```
 
 `fit_two_effect_reml` estimates the variances and the two ratios (`ratio1`,
-`ratio2` — e.g. `h²` and the common-environment `c²`):
+`ratio2` — e.g. `h²` and the common-environment `c²`).
+
+`converged = true` here means the Nelder-Mead simplex contracted. It does not
+mean the three variances are separately identified. The common-environment
+leg (`A2 = I`, groups assigned independently of the pedigree) is identified
+on the covered design. The animal + dam design is often not: when each dam
+has exactly one sire, A = 0.5 I + 0.5 D among phenotyped animals, so only
+`0.5 Va + Ve` and `0.5 Va + Vdam` are estimable. Different starts can then
+return heritabilities from 0 to about 0.5 at the same REML log-likelihood.
+Nothing in the returned `converged` flag names that ridge.
 
 ```@example qg
 cf = fit_two_effect_reml(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2))
