@@ -115,6 +115,17 @@ function _require_pcg_convergence(relative_residual::Real, tol::Real)
     return nothing
 end
 
+# MC-REML stops on a relative variance-component change, not a REML score.
+# A finite Hutchinson band is required before that stop may be certified;
+# one probe leaves `trace_mcse` undefined (NaN) and cannot certify.
+function _mc_reml_relative_change_converged(rel::Real, trace_mcse::AbstractVector, tol::Real)
+    return rel < tol && all(isfinite, trace_mcse)
+end
+
+function _mc_reml_optimizer_status(converged::Bool)
+    return converged ? "fixed_point_relchange" : "not_converged"
+end
+
 # Sparse QR rejects rank-deficient fixed-effect blocks without densifying X.
 function _require_full_fixed_effect_rank(X::SparseMatrixCSC)
     size(X, 2) == 0 && return nothing
@@ -772,7 +783,9 @@ Uses REML score fixed-point updates with the form used by `fit_sparse_multi_effe
 with the trace terms MC-estimated. A FIXED probe `seed` is reused across iterations
 (correlated sampling), so the iteration is reproducible for a given seed. This is a stochastic
 REML fixed-point iteration, not an EM ascent guarantee; `converged` reports small relative changes
-in variance components and does not establish a unique or global optimum.
+in variance components when the Hutchinson `trace_mcse` is finite (`nprobe > 1`). It does not
+establish a unique or global optimum. `optimizer_status` is `"fixed_point_relchange"` for that
+stop, never `"converged"`.
 
 Returns a `NamedTuple` containing the fitted variance components, ratios, `beta`, random effects,
 and convergence diagnostics. `trace_mcse` is the Monte-Carlo standard error of the final trace
@@ -879,7 +892,7 @@ function fit_multi_effect_mc_reml(
         sigmas = newsig
         sigma_e2 = newe
         if rel < tol
-            converged = true
+            converged = _mc_reml_relative_change_converged(rel, trace_mcse, tol)
             break
         end
     end
@@ -929,6 +942,7 @@ function fit_multi_effect_mc_reml(
         trace_mcse = trace_mcse,
         trace_evaluation_variance_components = trace_evaluation_variance_components,
         converged = converged,
+        optimizer_status = _mc_reml_optimizer_status(converged),
         iterations = iters,
         estimator = :matrix_free_mc_em_reml,
     ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, p))
@@ -1308,6 +1322,8 @@ so the iteration is reproducible for a given seed. This wrapper returns an
 `AnimalModelFit` and does not expose the low-level `trace_mcse` field. Use
 [`fit_multi_effect_mc_reml`](@ref) to inspect trace Monte-Carlo error; that error is not a
 gradient or variance-component standard error and excludes PCG solve error.
+A relative-change stop is labelled `optimizer_status = "fixed_point_relchange"`, not
+`"converged"`.
 
 `compute_loglik = true` (default) evaluates the EXACT [`sparse_reml_loglik`](@ref) ONCE at the
 returned estimate. That costs two sparse Choleskys and NO selected inverse — cheap relative
@@ -1394,7 +1410,7 @@ function fit_matrix_free_reml(
         likelihood,
         (sigma_a2 = Float64(sigma_a2), sigma_e2 = Float64(sigma_e2)),
         fit.converged,
-        fit.converged ? "converged" : "not_converged",
+        fit.optimizer_status,
         fit.iterations,
         :matrix_free_reml,
         false,
