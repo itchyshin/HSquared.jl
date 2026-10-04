@@ -4793,17 +4793,47 @@ function _relationship_diag(spec::AnimalModelSpec, method::Symbol = :auto)
     return _relationship_diag(spec.Ainv, method)
 end
 
-function _bootstrap_usable_refit(fit)
-    fit.converged || return false
+function _bootstrap_refit_status(fit)
+    fit.converged || return :nonconverged
     sa = Float64(fit.variance_components.sigma_a2)
     se = Float64(fit.variance_components.sigma_e2)
-    return isfinite(sa) && isfinite(se) && sa > 0 && se > 0
+    (isfinite(sa) && isfinite(se)) || return :invalid
+    (sa > 0 && se > 0) || return :boundary
+    return :usable
+end
+
+_bootstrap_usable_refit(fit) = _bootstrap_refit_status(fit) === :usable
+
+# Only expected numerical failures are dropped. Anything else, including
+# InterruptException, MethodError, and BoundsError, is rethrown.
+function _bootstrap_handle_refit_error(err)
+    _likelihood_proposal_failure(err) || rethrow(err)
+    return nothing
+end
+
+function _bootstrap_require_enough_replicates(
+    n_converged::Integer,
+    n_boot::Integer;
+    min_converged::Integer,
+    min_converged_rate::Real,
+)
+    n_converged >= min_converged || throw(ArgumentError(
+        "bootstrap interval requires at least min_converged = $min_converged " *
+        "interior replicates; n_converged = $n_converged of n_boot = $n_boot",
+    ))
+    rate = n_boot == 0 ? 0.0 : n_converged / n_boot
+    rate >= min_converged_rate || throw(ArgumentError(
+        "bootstrap interval requires n_converged / n_boot >= min_converged_rate = " *
+        "$min_converged_rate; n_converged = $n_converged of n_boot = $n_boot",
+    ))
+    return nothing
 end
 
 """
     bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
         n_boot = 1000, estimator = :sparse_reml,
-        rng = Random.MersenneTwister(0x48324352), max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
+        rng = Random.MersenneTwister(0x48324352), max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS),
+        min_converged = 2, min_converged_rate = 0.0)
 
 Parametric (Gaussian) bootstrap percentile confidence intervals for `sigma_a2`,
 `sigma_e2`, and `h² = σ²a/(σ²a+σ²e)` of a fitted univariate Gaussian REML animal
@@ -4814,16 +4844,21 @@ Mechanism: at the fitted `(β, σ²a, σ²e)`, simulate Gaussian responses over 
 SUPPLIED relationship — `a* = chol(inv(Ainv)).L · randn · √σ²a`,
 `e* = randn · √σ²e`, `y* = Xβ + Za* + e*` — refit each replicate with the SAME REML
 estimator (`:sparse_reml` → [`fit_sparse_reml`](@ref); `:ai_reml` →
-[`fit_ai_reml`](@ref)), and take percentile endpoints from the converged replicate
+[`fit_ai_reml`](@ref)), and take percentile endpoints from the interior replicate
 vectors via the in-package type-7 `_empirical_upper_quantile` (no `Statistics`
-dependency). A replicate whose refit throws (`PosDefException`, etc.) or returns a
-non-finite/boundary variance is DROPPED and counted: `n_converged` reports how many
-of `n_boot` survived (non-convergence is surfaced, not hidden).
+dependency). A replicate is dropped only for an expected numerical failure
+(the same predicate as `_likelihood_proposal_failure`), a non-converged refit, or
+a non-finite/boundary variance. Any other exception is rethrown. The returned
+tuple reports `n_converged` plus `n_dropped_error`, `n_dropped_boundary`, and
+`n_dropped_nonconverged`. The percentile interval is therefore conditional on
+interior refits; the call throws when `n_converged < min_converged` (default 2)
+or when `n_converged / n_boot < min_converged_rate` (default 0).
 
 Returns a `NamedTuple`: `sigma_a2`, `sigma_e2`, `heritability` (the point estimates
 from `fit`); `sigma_a2_ci`, `sigma_e2_ci`, `heritability_ci` (each `(lower, upper)`);
-`level`, `n_boot`, `n_converged`, `method = :parametric_bootstrap_percentile`; and
-`replicates` (the per-component converged-replicate vectors).
+`level`, `n_boot`, `n_converged`, the three drop counts,
+`method = :parametric_bootstrap_percentile`; and `replicates` (the per-component
+interior-replicate vectors).
 
 The interval FUNCTION is deterministic: `rng` defaults to a fixed-seed
 `MersenneTwister`, so the result is reproducible at the call site (only opt-in sim
@@ -4843,10 +4878,18 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
                                                n_boot::Integer = 1000,
                                                estimator::Symbol = :sparse_reml,
                                                rng::AbstractRNG = Random.MersenneTwister(0x48324352),
-                                               max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS)
+                                               max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+                                               min_converged::Integer = 2,
+                                               min_converged_rate::Real = 0.0)
     _require_converged_univariate_uncertainty(fit, "bootstrap_variance_component_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     n_boot > 0 || throw(ArgumentError("n_boot must be a positive integer"))
+    min_converged > 0 || throw(ArgumentError("min_converged must be a positive integer"))
+    0 <= min_converged_rate <= 1 ||
+        throw(ArgumentError("min_converged_rate must be in [0, 1]"))
+    min_converged <= n_boot || throw(ArgumentError(
+        "min_converged = $min_converged cannot exceed n_boot = $n_boot",
+    ))
     estimator in (:sparse_reml, :ai_reml) ||
         throw(ArgumentError("estimator must be :sparse_reml or :ai_reml"))
     spec = fit.spec
@@ -4867,28 +4910,47 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
     refit = estimator === :sparse_reml ? fit_sparse_reml : fit_ai_reml
 
     sa = Float64[]; se = Float64[]; hh = Float64[]
+    n_dropped_error = 0
+    n_dropped_boundary = 0
+    n_dropped_nonconverged = 0
     for _ in 1:n_boot
         ystar = mu .+ Z * (LA * randn(rng, q) .* sqrt(s2a)) .+ randn(rng, n) .* sqrt(s2e)
         try
             spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML,
                                        relationship_diag = spec.relationship_diag)
             fb = refit(spec_b)
-            _bootstrap_usable_refit(fb) || continue
-            sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
-            hhb = _gaussian_variance_fraction(sab, seb)
-            push!(sa, sab); push!(se, seb); push!(hh, hhb)
-        catch
-            # PosDefException / non-converged refit → dropped, surfaced via n_converged
+            status = _bootstrap_refit_status(fb)
+            if status === :usable
+                sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
+                hhb = _gaussian_variance_fraction(sab, seb)
+                push!(sa, sab); push!(se, seb); push!(hh, hhb)
+            elseif status === :nonconverged
+                n_dropped_nonconverged += 1
+            elseif status === :boundary
+                n_dropped_boundary += 1
+            else
+                n_dropped_error += 1
+            end
+        catch err
+            _bootstrap_handle_refit_error(err)
+            n_dropped_error += 1
         end
     end
     n_conv = length(sa)
-    n_conv > 0 ||
-        throw(ArgumentError("no bootstrap replicate converged to a finite interior optimum; no interval is reported"))
+    _bootstrap_require_enough_replicates(
+        n_conv,
+        Int(n_boot);
+        min_converged = Int(min_converged),
+        min_converged_rate = Float64(min_converged_rate),
+    )
     plo = (1 - level) / 2; phi = (1 + level) / 2
     _ci(v) = (lower = _empirical_upper_quantile(v, plo), upper = _empirical_upper_quantile(v, phi))
     return (sigma_a2 = s2a, sigma_e2 = s2e, heritability = h2,
             sigma_a2_ci = _ci(sa), sigma_e2_ci = _ci(se), heritability_ci = _ci(hh),
             level = Float64(level), n_boot = Int(n_boot), n_converged = n_conv,
+            n_dropped_error = n_dropped_error,
+            n_dropped_boundary = n_dropped_boundary,
+            n_dropped_nonconverged = n_dropped_nonconverged,
             method = :parametric_bootstrap_percentile,
             replicates = (sigma_a2 = sa, sigma_e2 = se, heritability = hh))
 end
