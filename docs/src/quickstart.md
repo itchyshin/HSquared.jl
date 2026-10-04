@@ -303,9 +303,11 @@ For checking R formula parity before fitting, the R twin also exposes
 `model_spec()`. It validates `animal(1 | id, pedigree = ped)` and previews the
 bridge payload and Julia targets without executing Julia.
 
-## What Does Not Work Yet
+## Julia Entry Points and Remaining Gaps
 
-The high-level fitting functions are placeholders.
+The generic Julia `fit_animal_model` entry point remains a placeholder. The
+specialized Julia fitters, including `fit_ai_reml`, are implemented; the R
+package dispatches supported models to those fitters through its bridge.
 
 ```@example quickstart
 try
@@ -315,23 +317,25 @@ catch err
 end
 ```
 
-Sparse production optimization, AI-REML, production sparse reliability,
-production sparse prediction error variance, and relationship-object
-marshalling beyond sparse `Z` remain Phase 1 targets.
+Large-pedigree performance hardening, production-scale reliability and
+prediction-error variance, and relationship-object marshalling beyond sparse
+`Z` remain development targets.
 
-## R Syntax Parity Target
+## R Syntax
 
-The planned bridge target is that R users write the public `hsquared` syntax and
-select the Julia engine from R:
+R users write the public `hsquared` syntax. The standard supported route selects
+the Julia engine automatically; explicit experimental targets use
+`hs_control(engine = "julia")`:
 
 ```r
 hsquared(
   y ~ sex + age + animal(1 | id, pedigree = ped),
   data = dat,
   family = gaussian(),
-  engine = "julia"
+  control = hs_control(engine = "julia")
 )
 ```
 
-That is not executable yet. The current Julia utilities are the engine pieces
-needed underneath that bridge.
+This R call is executable when the R and Julia packages are installed and the
+local Julia project is configured. The Julia package supplies the engine pieces;
+the R package owns formula parsing and the public user interface.

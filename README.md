@@ -227,7 +227,9 @@ Ainv = pedigree_inverse(ped)
 It is no longer unconnected: this `Ainv` is what an `animal_model_spec` is
 built from, and so what the covered AI-REML fitter (`fit_ai_reml`) and the
 sparse MME path consume. What it is not is a *public* fitting entry point —
-`hsquared()` is still an honest Phase 0 placeholder that throws (see below).
+the generic Julia `hsquared()` entry point remains a placeholder that throws,
+while supported user-facing fits run through the R package and its Julia bridge
+(see below).
 
 The first Julia data container mirrors the R `hs_data()` input contract:
 
