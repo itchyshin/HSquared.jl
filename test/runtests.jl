@@ -11214,6 +11214,8 @@ include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
 include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
 include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
 include(joinpath(@__DIR__, "test_sweep_dense_and_newton.jl"))
+# #439: fit_laplace_reml must error when a family does not use a supplied control.
+include(joinpath(@__DIR__, "test_laplace_reml_unused_controls.jl"))
 include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
 include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
 include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))

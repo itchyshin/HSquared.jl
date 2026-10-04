@@ -1261,6 +1261,9 @@ keyword — a common scalar denominator OR a per-record integer vector of length
 (`BetaBinomialResponse`); it requires BOTH `n_trials` (scalar) and `rho`
 (the fixed overdispersion `ρ ∈ (0,1)`), estimates `sigma_a2` (Brent) at that supplied
 fixed ρ, and is Laplace-only (`marginal = :variational` is rejected).
+A control this family does not use (`rho` outside `:beta_binomial`, `n_trials`
+outside `:binomial`/`:beta_binomial`, `theta_init` outside `:nbinom`/`:gamma`,
+`initial.sigma_e2` outside `:gaussian`) is an error, not a silent drop.
 `family = :bernoulli_probit` is the binary threshold / liability-scale model
 (`BernoulliProbitResponse`, probit link `Φ(η)`); it estimates the single `sigma_a2`
 (Brent) and is also Laplace-only (its variational expected information is
@@ -1316,14 +1319,29 @@ and sets `boundary = true`; pass an `initial` on the scale of the data (or read
 not the public default, not wired into the R formula path, no R model-spec, no
 external comparator.
 """
+function _unused_laplace_family_controls(family::Symbol, n_trials, rho, theta_init, initial)
+    unused = String[]
+    family === :beta_binomial || rho === nothing || push!(unused, "rho")
+    (family === :binomial || family === :beta_binomial) || n_trials === nothing ||
+        push!(unused, "n_trials")
+    (family === :nbinom || family === :gamma) || theta_init === nothing ||
+        push!(unused, "theta_init")
+    if family !== :gaussian && initial !== nothing && hasproperty(initial, :sigma_e2)
+        push!(unused, "initial.sigma_e2")
+    end
+    return unused
+end
+
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
-                          theta_init::Real = 1.0, iterations::Integer = 200,
+                          theta_init = nothing, iterations::Integer = 200,
                           restart_check::Bool = false)
     family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, :gamma) ||
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, or :gamma"))
+    unused = _unused_laplace_family_controls(family, n_trials, rho, theta_init, initial)
+    isempty(unused) || throw(ArgumentError("family = :$(family) does not use $(join(unused, ", "))"))
     # probit (threshold) is Laplace-only at this slice: its variational expected
     # information is response-dependent (−E[ℓ″] varies with the sign s = 2y−1), which
     # the y-free `_fam_expected_weight` signature cannot carry — a VA kernel is
@@ -1393,15 +1411,16 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         # profiled jointly by NelderMead. Laplace-only (the NB ELBO has no closed form).
         mm isa Laplace ||
             throw(ArgumentError("family = :nbinom supports only marginal = :laplace at this slice (the NB variational ELBO has no closed form); got :$(marginal)"))
-        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
+        theta0 = theta_init === nothing ? 1.0 : Float64(theta_init)
+        (sa0 > 0 && theta0 > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
         # ±8-log-unit safety rail on BOTH (log σ²a, log θ), matching :gamma (#327): an
         # uninformative design can otherwise run θ to the degenerate Poisson limit.
-        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        lsa0 = log(sa0); lth0 = log(theta0)
         function objnb(p)
             (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + θ safety rails
             -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), NegativeBinomialResponse(exp(p[2]))).loglik
         end
-        res = optimize(objnb, log.([sa0, Float64(theta_init)]), NelderMead(),
+        res = optimize(objnb, log.([sa0, theta0]), NelderMead(),
                        Optim.Options(iterations = iterations))
         pmin = Optim.minimizer(res); sa2, theta = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
@@ -1474,8 +1493,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             throw(ArgumentError("family = :gamma supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
         all(yi -> yi > 0, y) ||
             throw(ArgumentError("family = :gamma requires strictly positive responses"))
-        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
-        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        theta0 = theta_init === nothing ? 1.0 : Float64(theta_init)
+        (sa0 > 0 && theta0 > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
+        lsa0 = log(sa0); lth0 = log(theta0)
         function objg(p)
             (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + ν safety rails
             m = try
@@ -1486,7 +1506,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             end
             (m === nothing || !isfinite(m.loglik)) ? 1.0e12 : -m.loglik
         end
-        res = optimize(objg, log.([sa0, Float64(theta_init)]), NelderMead(),
+        res = optimize(objg, log.([sa0, theta0]), NelderMead(),
                        Optim.Options(iterations = iterations))
         pmin = Optim.minimizer(res); sa2, shape = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, GammaResponse(shape))
