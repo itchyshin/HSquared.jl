@@ -654,20 +654,38 @@ function fit_snp_blup_reml(
             loglik = fit.likelihood.loglik, converged = fit.converged)
 end
 
+function _resolve_scan_sigma_e2(sigma_e2, y_resid::AbstractVector, n::Int, p::Int)
+    if sigma_e2 === nothing
+        df = n - p
+        df > 0 ||
+            throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
+        estimated = dot(y_resid, y_resid) / df
+        isfinite(estimated) && estimated > 0 ||
+            throw(ArgumentError("estimated residual variance must be finite and positive"))
+        return estimated, :estimated
+    end
+    sigma_e2_f = Float64(sigma_e2)
+    isfinite(sigma_e2_f) && sigma_e2_f > 0 ||
+        throw(ArgumentError("sigma_e2 must be finite and positive"))
+    return sigma_e2_f, :supplied
+end
+
 """
     single_marker_scan(y, X, markers; allele_frequencies = nothing,
-                       sigma_e2 = 1.0, marker_ids = nothing)
+                       sigma_e2 = nothing, marker_ids = nothing)
 
-Fixed-effect single-marker scan for biallelic marker dosages at a supplied
-residual variance.
+Fixed-effect single-marker scan for biallelic marker dosages.
 
 Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
-Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
-contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
+Gaussian linear model `y = Xβ + marker * α + e`. If `sigma_e2` is omitted, the
+residual variance is the OLS residual mean square of `y` on `X`. A supplied
+value must be finite and positive. The returned `NamedTuple` contains
+`marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
 `p_values`, `bonferroni_p_values`, `bh_q_values`, `lod_scores`,
-`denominators`, `p`, and `k`. `p_values` are approximate two-sided
-Gaussian/Wald p-values implied by the supplied residual variance.
+`denominators`, `p`, `k`, `sigma_e2_used`, and
+`sigma_e2_source = :supplied | :estimated`. `p_values` are approximate
+two-sided Gaussian/Wald p-values implied by `sigma_e2_used`.
 `bonferroni_p_values` and `bh_q_values` are deterministic Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set. `lod_scores` are
 known-variance fixed-effect LOD-equivalent scores, computed as
@@ -684,7 +702,7 @@ function single_marker_scan(
     X::AbstractMatrix,
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     marker_ids = nothing,
 )
     yv = Float64.(y)
@@ -695,9 +713,6 @@ function single_marker_scan(
     n > p || throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
-    sigma_e2_f = Float64(sigma_e2)
-    isfinite(sigma_e2_f) && sigma_e2_f > 0 ||
-        throw(ArgumentError("sigma_e2 must be finite and positive"))
 
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
     size(cm.W, 1) == n ||
@@ -715,6 +730,7 @@ function single_marker_scan(
         throw(ArgumentError("X must have full column rank"))
     Xty = transpose(Xmat) * yv
     y_resid = yv - Xmat * (XtX \ Xty)
+    sigma_e2_f, sigma_e2_source = _resolve_scan_sigma_e2(sigma_e2, y_resid, n, p)
 
     effects = zeros(Float64, size(cm.W, 2))
     standard_errors = similar(effects)
@@ -757,6 +773,8 @@ function single_marker_scan(
         denominators = denominators,
         p = cm.p,
         k = cm.k,
+        sigma_e2_used = sigma_e2_f,
+        sigma_e2_source = sigma_e2_source,
     )
 end
 
@@ -2912,7 +2930,7 @@ end
 
 """
     genome_wide_marker_scan(y, X, markers; n_permutations = 1000, alpha = 0.05,
-                            sigma_e2 = 1.0, allele_frequencies = nothing,
+                            sigma_e2 = nothing, allele_frequencies = nothing,
                             marker_ids = nothing, rng = Random.default_rng())
 
 Fixed-effect single-marker scan with a per-dataset residual-permutation null.
@@ -2921,6 +2939,9 @@ then builds a PER-DATASET residual-permutation null of the per-scan MAXIMUM chi-
 (permute the residuals of `y` on `X`, re-scan `n_permutations` times) and returns the
 add-one empirical genome-wide p-value ([`genome_wide_pvalue`](@ref)) for the
 observed maximum AND for each marker, plus the `(1 - alpha)` permutation threshold.
+`sigma_e2` follows [`single_marker_scan`](@ref): omitted means the OLS residual
+mean square of `y` on `X`. The returned fields include `sigma_e2_used` and
+`sigma_e2_source`. Permutation scans reuse that same residual variance.
 
 The null is rebuilt for each dataset. Exact/conservative permutation interpretation
 requires exchangeability under the permitted permutations. The evidenced calibration
@@ -2944,14 +2965,13 @@ function genome_wide_marker_scan(
     markers::AbstractMatrix;
     n_permutations::Integer = 1000,
     alpha::Real = 0.05,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     marker_ids = nothing,
     rng::AbstractRNG = Random.default_rng(),
 )
     n_permutations > 0 || throw(ArgumentError("n_permutations must be positive"))
     alpha_value = _checked_genome_wide_alpha(alpha)
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
 
     scan = single_marker_scan(y, X, markers; sigma_e2 = sigma_e2,
                               allele_frequencies = allele_frequencies,
@@ -2967,7 +2987,7 @@ function genome_wide_marker_scan(
     null_max = Vector{Float64}(undef, n_permutations)
     for i in 1:n_permutations
         yp = fitted .+ resid[randperm(rng, n)]
-        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = sigma_e2,
+        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = scan.sigma_e2_used,
                                 allele_frequencies = allele_frequencies,
                                 marker_ids = marker_ids)
         null_max[i] = _scan_max_statistic(sc; statistic = :chisq)
@@ -2991,6 +3011,8 @@ function genome_wide_marker_scan(
         denominators = scan.denominators,
         p = scan.p,
         k = scan.k,
+        sigma_e2_used = scan.sigma_e2_used,
+        sigma_e2_source = scan.sigma_e2_source,
         genome_wide_p_values = genome_wide_p_values,
         genome_wide_threshold = thr.threshold,
         genome_wide_p_min = genome_wide_p_min,

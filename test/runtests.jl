@@ -11189,6 +11189,7 @@ include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
 include("test_issue_437_nonconverged_uncertainty.jl")
+include("test_issue_438_marker_scan_sigma_e2.jl")
 include("test_api_docstrings.jl")
 include("test_aireml_workspace_reuse.jl")
 
