@@ -601,8 +601,7 @@ this is exactly the result of `fit_animal_model(…)`.
 
 `initial` and `iterations` (hsquared#212) are forwarded ONLY to the
 `:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls
-this dispatcher previously hardcoded with neither, silently discarding
-`engine_control\$initial`/`\$iterations` from the R side. Default `nothing`
+this dispatcher previously hardcoded with neither. Default `nothing`
 for both reproduces the exact pre-#212-fix call (each underlying fitter's own
 default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
 `fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). For
@@ -610,10 +609,12 @@ default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
 default `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's
 `fit_multi_effect`, which itself forwards `kwargs...` to whichever engine it
 selects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,
-or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). Every
-other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises
-`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is
-silently ignored, matching the pre-existing byte-identical default path.
+or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). A
+supplied `initial`, `iterations`, or non-default `scale_method` on any other
+wired arm (`:animal`, `:two_effect`, `:multivariate_repeatability`; also
+non-default `scale_method` on `:direct_maternal`) raises `ArgumentError` and
+names the unsupported keyword (HSquared.jl#436). `:multivariate` and
+`:coefcov` still raise `Phase0NotImplementedError`.
 
 The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
 `Phase0NotImplementedError` for it (§6: "no coefcov payload fitting route is
@@ -625,12 +626,33 @@ function fit_payload_v2(payload; scale_method::Symbol = :dense,
     return _dispatch_fit(parsed; scale_method = scale_method, initial = initial, iterations = iterations)
 end
 
+# Honour table for fit_payload_v2 kwargs (HSquared.jl#436). A supplied
+# initial / iterations / non-default scale_method is either forwarded by the
+# arm or rejected here with the keyword named.
+function _reject_unsupported_fit_kwargs(dispatch::Symbol;
+                                        scale_method::Symbol,
+                                        initial,
+                                        iterations)
+    honours_initial = dispatch in (:multi_effect, :direct_maternal)
+    honours_iterations = dispatch in (:multi_effect, :direct_maternal)
+    honours_scale_method = dispatch === :multi_effect
+    unsupported = String[]
+    !honours_initial && initial !== nothing && push!(unsupported, "initial")
+    !honours_iterations && iterations !== nothing && push!(unsupported, "iterations")
+    !honours_scale_method && scale_method !== :dense && push!(unsupported, "scale_method")
+    isempty(unsupported) && return nothing
+    throw(ArgumentError(
+        "payload-v2 $dispatch dispatch does not support $(join(unsupported, ", "))"))
+end
+
 function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
                        initial = nothing, iterations::Union{Nothing,Integer} = nothing)
     dispatch = parsed.dispatch
     blocks   = parsed.blocks
     X        = parsed.X
     method   = parsed.method
+    _reject_unsupported_fit_kwargs(dispatch; scale_method = scale_method,
+                                   initial = initial, iterations = iterations)
 
     if dispatch in (:two_effect, :multi_effect, :direct_maternal,
                     :multivariate_repeatability) && method !== :REML
