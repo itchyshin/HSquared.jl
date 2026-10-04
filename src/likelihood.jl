@@ -1734,7 +1734,10 @@ end
 
 function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)
     step = _validate_uncertainty_fd_step(fd_step)
-    h = step .* max.(abs.(theta), 1e-3)
+    component_scale = maximum(abs, theta)
+    (isfinite(component_scale) && component_scale > 0) ||
+        throw(ArgumentError("variance components must have a finite positive scale"))
+    h = step .* max.(abs.(theta), 1e-3 * component_scale)
     all(x -> isfinite(x) && x > 0, h) ||
         throw(ArgumentError("fd_step must produce finite positive component steps"))
     return h
@@ -1813,8 +1816,8 @@ end
 
 # Observed REML information = −Hessian of the REML loglik `f` at the variance
 # vector `theta` (length `d`), by central finite differences with a
-# component-relative step `fd_step · max(|θ_i|, 1e-3)`. Shared by the two-effect
-# and K-effect ratio-interval paths.
+# component-relative step `fd_step · max(|θ_i|, 1e-3 max_j |θ_j|)`. Shared by
+# the two-effect and K-effect ratio-interval paths.
 #
 # PERFORMANCE. The loop runs the UPPER TRIANGLE only (`j in i:d`) and mirrors
 # each cell, cutting `4·d²` evaluations of `f` to `4·d·(d+1)/2` — at `d = K+1 = 3`
@@ -3455,7 +3458,7 @@ function direct_maternal_interval(
     end
 
     # observed information = −Hessian of the REML loglik (central finite differences)
-    h = fd_step .* max.(abs.(theta), 1e-3)
+    h = _uncertainty_component_steps(theta, fd_step)
     H = zeros(4, 4)
     for i in 1:4, j in 1:4
         ei = zeros(4); ei[i] = h[i]
