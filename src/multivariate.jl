@@ -1007,6 +1007,24 @@ Non-finite or empty-trait inputs are rejected up front (see
 [`multivariate_mme`](@ref)), so the optimizer never returns plausible-looking
 covariances from `Inf`/`NaN` data; check `converged` for genuine boundary cases.
 """
+# (q*t)^2 is the Kronecker genetic covariance; N^2 is the marginal V.
+# Count observed records before either matrix is allocated.
+function _check_multivariate_dense_cells(Y, q::Integer, t::Integer, max_dense_cells::Integer)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+    n = size(Y, 1)
+    N = 0
+    @inbounds for i in 1:n, k in 1:t
+        _is_present(Y[i, k]) && (N += 1)
+    end
+    dense_cells = (q * t)^2 + N^2
+    dense_cells <= max_dense_cells ||
+        throw(ArgumentError(
+            "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
+        ))
+    return nothing
+end
+
 function fit_multivariate_reml(
     Y::AbstractMatrix,
     X::AbstractMatrix,
@@ -1018,6 +1036,7 @@ function fit_multivariate_reml(
     traits = nothing,
     genetic_structure::Symbol = :unstructured,
     rank = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     n = size(Y, 1)
     t = size(Y, 2)
@@ -1029,6 +1048,7 @@ function fit_multivariate_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
     aids = _mv_labels(ids, q, "ids")
     tlabels = _mv_labels(traits, t, "traits")
+    _check_multivariate_dense_cells(Y, q, t, max_dense_cells)
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
@@ -1274,6 +1294,7 @@ function fit_multivariate_repeatability_reml(
     iterations::Integer = 2_000,
     ids = nothing,
     traits = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     n = size(Y, 1)
     t = size(Y, 2)
@@ -1285,6 +1306,7 @@ function fit_multivariate_repeatability_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
     aids = _mv_labels(ids, q, "ids")
     tlabels = _mv_labels(traits, t, "traits")
+    _check_multivariate_dense_cells(Y, q, t, max_dense_cells)
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))

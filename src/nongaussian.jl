@@ -945,12 +945,40 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
         H = [transpose(Xd)*WX transpose(Xd)*WZ
              transpose(Zd)*WX (transpose(Zd)*WZ .+ P0)]
         step = Symmetric(H) \ grad
-        beta .+= step[1:p]
-        m .+= step[(p + 1):end]
-        if gnorm < tol && covariance_result.converged
+        step_beta = step[1:p]
+        step_m = step[(p + 1):end]
+        # Same scaled step test and backtracking line search as
+        # laplace_marginal_loglik. An absolute gradient test from beta = 0,
+        # m = 0 takes a full Newton step that can leave the ELBO.
+        step_eta = Xd * step_beta .+ Zd * step_m
+        step_penalty = sqrt(max(dot(step_m, P0 * step_m), 0.0))
+        current_penalty = sqrt(max(dot(m, P0 * m), 0.0))
+        step_scale = hypot(norm(step_eta), step_penalty)
+        current_scale = hypot(norm(ηbar), current_penalty)
+        if step_scale <= tol * (1 + current_scale) && covariance_result.converged
             converged = true
             break
         end
+        current_objective = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n) -
+                            0.5 * dot(m, P0 * m)
+        alpha = 1.0
+        accepted = false
+        for _ in 1:64
+            beta_candidate = beta .+ alpha .* step_beta
+            m_candidate = m .+ alpha .* step_m
+            eta_candidate = Xd * beta_candidate .+ Zd * m_candidate
+            objective_candidate = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], eta_candidate[i], v[i]) for i in 1:n) -
+                                  0.5 * dot(m_candidate, P0 * m_candidate)
+            allowance = 1e-12 * (1 + abs(current_objective))
+            if isfinite(objective_candidate) && objective_candidate >= current_objective - allowance
+                beta .= beta_candidate
+                m .= m_candidate
+                accepted = true
+                break
+            end
+            alpha *= 0.5
+        end
+        accepted || break
     end
 
     # ELBO and gradient at the returned mode
@@ -960,7 +988,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     S, v = covariance_result.S, covariance_result.v
     g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
     gnorm = norm(vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m))
-    converged = converged && covariance_result.converged && gnorm < tol
+    converged = converged && covariance_result.converged
     Ell = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n)
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
     logdet_S = covariance === :diagonal ? sum(log, diag(S)) : logdet(cholesky(Symmetric(S)))
