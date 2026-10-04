@@ -714,8 +714,17 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
             (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
         if scale_method === :auto
             effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in blocks]
-            return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
-                                    compute_loglik = true, verbose = false, multi_effect_kwargs...)
+            # compute_loglik and verbose are matrix-free-only (#435). :auto still
+            # selects :exact at validation scale (K == 1 or N <= direct_max_n).
+            K = length(effects)
+            N = size(X, 2) + sum(size(pair[2], 1) for pair in effects)
+            if K == 1 || N <= 200_000
+                return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
+                                        multi_effect_kwargs...)
+            else
+                return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
+                                        compute_loglik = true, verbose = false, multi_effect_kwargs...)
+            end
         elseif scale_method === :dense
             effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
             return fit_multi_effect_reml(y, X, effects; ids = per_block_ids, multi_effect_kwargs...)
