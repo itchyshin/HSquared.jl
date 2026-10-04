@@ -2959,6 +2959,10 @@ checks, but its scale/performance is NOT yet benchmarked (measure-first;
 `sim/phase5_sparse_aireml_benchmark.jl` is the opt-in scaffold) and it is NOT the
 public default fit path. On uninformative/non-identified data a component can
 approach the `σ²→0` boundary; numerical score accuracy there is unresolved.
+When boundary-triggered streamed scores would exceed the column budget, the
+iterate takes an EM step instead of aborting (#441). If that EM step cannot
+stay finite and positive, `status` is `boundary_score_unresolved` and
+`boundary` is missing rather than a share-rule verdict from that iterate.
 Inspect `converged` before using a returned estimate.
 """
 function fit_sparse_multi_effect_aireml(
@@ -3092,8 +3096,29 @@ function fit_sparse_multi_effect_aireml(
         # as fit_ai_reml, generalized to K blocks + a joint effective residual df).
         score = _multi_reml_scores(ws, factor, sigmas, sigma_e2, e, traces, us)
         if score === nothing
-            boundary_score_unresolved = true
-            break
+            # Streamed AI scores would exceed the column budget. Take the same
+            # closed-form EM update as the warmup so non-boundary components
+            # keep moving instead of returning this iterate (#441).
+            newsig = similar(sigmas)
+            ok = true
+            for i in 1:K
+                uAu = dot(us[i], Ainvs[i] * us[i])
+                newsig[i] = (uAu + traces[i]) / qs[i]
+                (isfinite(newsig[i]) && newsig[i] > 0) || (ok = false)
+            end
+            dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
+            newe = dot(e, e) / dfe
+            if !(ok && isfinite(newe) && newe > 0 &&
+                 _finite_positive_variance_update(newsig, newe))
+                boundary_score_unresolved = true
+                break
+            end
+            last_relative_change = max(maximum(abs.(newsig .- sigmas) ./ sigmas),
+                                       abs(newe - sigma_e2) / sigma_e2)
+            sigmas = newsig
+            sigma_e2 = newe
+            last_relative_change < tol && break
+            continue
         end
 
         if last_relative_change < tol &&
@@ -3153,7 +3178,9 @@ function fit_sparse_multi_effect_aireml(
         loglik = loglik,
         converged = converged,
         iterations = iters,
-        boundary = [s / total < 1e-6 for s in sigmas],
+        boundary = boundary_score_unresolved ?
+            Union{Missing, Bool}[missing for _ in 1:K] :
+            [s / total < 1e-6 for s in sigmas],
         status = status,
         estimator = :sparse_multi_effect_aireml,
     ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, nfixed))
