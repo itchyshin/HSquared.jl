@@ -12,6 +12,7 @@ include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
 include("test_selinv_trace_contracts.jl")
 include("test_pedigree_inbred_known_parent.jl")
 include("test_ordered_probit_cutpoint_rails.jl")
+include("test_ai_reml_em_warmup_posdef.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 

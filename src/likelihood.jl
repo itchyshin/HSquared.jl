@@ -538,8 +538,10 @@ an *identified* problem this is **optimum-invariant** (the converged estimates a
 unchanged) and improves robustness to poor starting values; `em_warmup = 0` is
 byte-identical to the pre-warm-start path. It does NOT change the σ²→0 /
 non-identified boundary behaviour (there the fit still returns `converged = false`),
-and on a non-identified surface the warm-start can shift the non-converged
-estimate — read the `converged` flag, not the value.
+and on a non-identified surface the warm-start can shift the non-converged estimate.
+If a warm-start update makes the next mixed-model system non-positive-definite,
+the fitter returns the last factorable variances with `converged = false` and
+`optimizer_status = "non_positive_definite"` — read the flag, not the value.
 """
 function fit_ai_reml(
     spec::AnimalModelSpec;
@@ -603,6 +605,8 @@ function _fit_ai_reml_diagnostics(
     last_newton_step = (NaN, NaN)
     boundary_score_fallbacks = 0
     termination_reason = "iteration_limit"
+    last_factorable_sigma_a2 = sigma_a2
+    last_factorable_sigma_e2 = sigma_e2
 
     # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
     # REML score: σ²a = (u'A⁻¹u + tr(A⁻¹C^uu))/q and σ²e = e'e/(n − p − q + tr(A⁻¹C^uu)/σ²a).
@@ -621,6 +625,8 @@ function _fit_ai_reml_diagnostics(
             err isa LinearAlgebra.PosDefException && break
             rethrow(err)
         end
+        last_factorable_sigma_a2 = sigma_a2
+        last_factorable_sigma_e2 = sigma_e2
         solution = factor \ rhs
         u = solution[(nfixed + 1):end]
         e = y .- X * solution[1:nfixed] .- Z * u
@@ -641,7 +647,19 @@ function _fit_ai_reml_diagnostics(
         iters = it
         lhs, rhs, _ = _sparse_mme_from_cross_products(cp, sigma_a2, sigma_e2)
         factorizations += 1
-        factor = cholesky(Symmetric(lhs); check = true)
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            if err isa LinearAlgebra.PosDefException && em_steps > 0
+                sigma_a2 = last_factorable_sigma_a2
+                sigma_e2 = last_factorable_sigma_e2
+                termination_reason = "non_positive_definite"
+                break
+            end
+            rethrow(err)
+        end
+        last_factorable_sigma_a2 = sigma_a2
+        last_factorable_sigma_e2 = sigma_e2
         solution = factor \ rhs
         beta = solution[1:nfixed]
         u = solution[(nfixed + 1):end]
@@ -734,7 +752,7 @@ function _fit_ai_reml_diagnostics(
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
-    status = termination_reason == "boundary_score_unresolved" ? termination_reason :
+    status = termination_reason in ("boundary_score_unresolved", "non_positive_definite") ? termination_reason :
              (converged ? "converged" : "not_converged")
     fit = AnimalModelFit(
         result_spec,
