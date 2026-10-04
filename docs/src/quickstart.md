@@ -339,3 +339,19 @@ hsquared(
 This R call is executable when the R and Julia packages are installed and the
 local Julia project is configured. The Julia package supplies the engine pieces;
 the R package owns formula parsing and the public user interface.
+
+## Non-Gaussian marginal caveat
+
+The experimental Poisson and binomial animal-model route defaults to the
+Laplace marginal approximation. For binary data with one record per latent
+animal effect, a converged interior Laplace fit can still underestimate the
+additive latent variance. On the 874-record *Plodia* pupation full-sib dataset
+reported in issue #430, Laplace estimated `V_A = 0.872`, 42% below an
+exact-likelihood reference (`V_A = 1.500`); the package's variational fit gave
+`V_A = 1.502` but was substantially slower on that dataset. This is one
+dataset-specific bias measurement, not a universal correction factor.
+
+For consequential binary analyses, compare `marginal = :laplace` with
+`marginal = :variational` and report the chosen approximation. Their objective
+values are not directly comparable: the variational value is an evidence lower
+bound, while the Laplace value approximates the marginal log likelihood.
