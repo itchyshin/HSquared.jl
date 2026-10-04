@@ -4327,12 +4327,14 @@ end
 
 Plot-ready data for the variance-component + heritability forest figure (plotting
 set B): tidy parallel vectors `(term, estimate, lo, hi, panel, level,
-interval_method, interval_status, supplied = false)` shaped to drop directly into
-the R `hs_gg_forest` contract. The variance-component rows (`sigma_a2`, `sigma_e2`)
+interval_method, interval_status, interval_reason, supplied = false)` shaped to
+drop directly into the R `hs_gg_forest` contract. The variance-component rows (`sigma_a2`, `sigma_e2`)
 carry asymptotic `estimate ± z·SE` — NOT clamped, since an asymptotic CI can cross
 zero (surfaced, never hidden); the `h2` row carries the logit-delta
 [`heritability_interval`](@ref) (always in `(0,1)`). `lo`/`hi` are `NaN` where the
-interval is unavailable (no fabricated whiskers); `interval_status` is
+interval is unavailable (no fabricated whiskers); `interval_reason` records `"ok"`
+or the expected numerical/argument failure for each row. Unexpected exceptions,
+including interrupts and programming errors, are rethrown. `interval_status` is
 `"experimental_asymptotic"` (NOT coverage-calibrated) when any interval is present,
 else `"none"`. `interval_method` is a coarse roll-up tag (`"asymptotic_reml"`):
 the VC-row whiskers are normal-Wald on the raw variance scale, the `h2`-row whisker
@@ -4342,26 +4344,44 @@ descriptive supplied-`K_g`/`G` plot-data sets. Intervals are REML-only; a non-RE
 fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
+function _plot_interval_failure_reason(err)
+    if err isa ArgumentError
+        return "argument_error: $(sprint(showerror, err))"
+    elseif err isa PosDefException
+        return "non_positive_definite_information"
+    elseif err isa SingularException
+        return "singular_information"
+    elseif err isa DomainError
+        return "domain_error: $(sprint(showerror, err))"
+    end
+    rethrow(err)
+end
+
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
+    _require_converged_univariate_uncertainty(fit, "variance_components_plot_data")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     vc = variance_components(fit)
     h2 = heritability(fit)
     z = _standard_normal_quantile((1 + level) / 2)
     vc_lo = [NaN, NaN]
     vc_hi = [NaN, NaN]
+    vc_reason = "ok"
     try
         se = variance_component_standard_errors(fit)
         vc_lo = [vc.sigma_a2 - z * se.sigma_a2, vc.sigma_e2 - z * se.sigma_e2]
         vc_hi = [vc.sigma_a2 + z * se.sigma_a2, vc.sigma_e2 + z * se.sigma_e2]
-    catch
+    catch err
+        vc_reason = _plot_interval_failure_reason(err)
     end
     h2_lo = NaN
     h2_hi = NaN
+    h2_reason = "ok"
     try
         ci = heritability_interval(fit; level = level)
         h2_lo = ci.lower
         h2_hi = ci.upper
-    catch
+    catch err
+        h2_reason = _plot_interval_failure_reason(err)
     end
     has_interval = any(isfinite, vc_lo) || isfinite(h2_lo)
     return (term = ["sigma_a2", "sigma_e2", "h2"],
@@ -4372,6 +4392,7 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
             level = Float64(level),
             interval_method = has_interval ? "asymptotic_reml" : "none",
             interval_status = has_interval ? "experimental_asymptotic" : "none",
+            interval_reason = [vc_reason, vc_reason, h2_reason],
             supplied = false)
 end
 

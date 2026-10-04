@@ -3851,7 +3851,8 @@ end
     @test pd.supplied === false                                   # ESTIMATED, not supplied
     @test pd.level == 0.95
     @test propertynames(pd) ==
-          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status, :supplied)
+          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status,
+           :interval_reason, :supplied)
     # interval consistency: matches the extractors when available, else NaN / "none"
     local h2ci
     try
@@ -11191,6 +11192,7 @@ include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
 include("test_issue_432_bootstrap_interval.jl")
+include("test_issue_433_plot_interval_errors.jl")
 include("test_issue_437_nonconverged_uncertainty.jl")
 include("test_issue_438_marker_scan_sigma_e2.jl")
 include("test_api_docstrings.jl")
