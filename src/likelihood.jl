@@ -4268,9 +4268,15 @@ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
     target(h) = 2 * (llmax - _profile_reml_loglik(spec, h)) - q
-    lower = _profile_root(target, 1e-6, h2)
-    upper = _profile_root(target, 1 - 1e-6, h2)
-    return (heritability = h2, lower = lower, upper = upper, level = level, method = :profile)
+    lo_bound = 1e-6
+    up_bound = 1 - 1e-6
+    lower = _profile_root(target, lo_bound, h2)
+    upper = _profile_root(target, up_bound, h2)
+    lower_clamped = target(lo_bound) <= 0
+    upper_clamped = target(up_bound) <= 0
+    return (heritability = h2, lower = lower, upper = upper, level = level,
+            lower_clamped = lower_clamped, upper_clamped = upper_clamped,
+            method = :profile)
 end
 
 """
@@ -4281,13 +4287,15 @@ Experimental two-sided confidence interval for `h²` of a REML
 
 `method = :delta` (default) builds the interval on the logit scale (delta method)
 and back-transforms, so it always lies in `(0, 1)`; it returns
-`(heritability, lower, upper, level, se, method)`.
+`(heritability, lower, upper, level, se, lower_clamped, upper_clamped, method)`.
 
 `method = :profile` inverts the REML likelihood-ratio statistic: it profiles the
 REML log-likelihood over the total variance at each fixed `h²` and reports the
 `h²` range where `2·(ℓmax − ℓprofile(h²)) ≤ χ²₁,level`. Endpoints that reach the
 `(0, 1)` search bounds are clamped. It returns
-`(heritability, lower, upper, level, method)` (no `se`).
+`(heritability, lower, upper, level, lower_clamped, upper_clamped, method)` (no
+`se`). The `*_clamped` flags report endpoints that reached the numerical search
+rails rather than a likelihood-ratio crossing.
 Nonfinite profile targets or an invalid point-estimate anchor throw an
 `ArgumentError`; they are not reported as numeric endpoints.
 
@@ -4311,7 +4319,9 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
     se_eta = se / (h2 * (1 - h2))
     lower = 1 / (1 + exp(-(eta - z * se_eta)))
     upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (heritability = h2, lower = lower, upper = upper, level = level, se = se, method = :delta)
+    return (heritability = h2, lower = lower, upper = upper, level = level, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            method = :delta)
 end
 
 function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
