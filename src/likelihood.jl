@@ -543,6 +543,13 @@ If a warm-start update makes the next mixed-model system non-positive-definite,
 the fitter returns the last factorable variances with `converged = false` and
 `optimizer_status = "non_positive_definite"` — read the flag, not the value.
 
+When the selected-inverse score is cancellation-dominated and the pedigree has
+more than 512 animals (`_AI_REML_BOUNDARY_TRACE_MAX_COLUMNS`), AI-REML stops
+with `optimizer_status = "boundary_score_unresolved"` and returns the iterate.
+That iterate is not a certified REML optimum. Use [`fit_sparse_reml`](@ref) or
+raise `em_warmup` on the same spec when the optimum is at or near `σ²a = 0`
+(HSquared.jl #407).
+
 A founders-only pedigree (`A = I`) with one record per animal does not identify
 `σ²a` separately from `σ²e`. The REML surface is then a ridge in `σ²a + σ²e`,
 and the reported `h²` follows the start ratio. The fitter warns and still
@@ -734,6 +741,7 @@ function _fit_ai_reml_diagnostics(
             if nrandom > _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS
                 ai_score_a = ai_score_e = ai_score_norm = NaN
                 termination_reason = "boundary_score_unresolved"
+                @warn _BOUNDARY_SCORE_UNRESOLVED_MSG
                 break
             end
             boundary_score_fallbacks += 1
