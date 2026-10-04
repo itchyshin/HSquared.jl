@@ -542,6 +542,12 @@ and on a non-identified surface the warm-start can shift the non-converged estim
 If a warm-start update makes the next mixed-model system non-positive-definite,
 the fitter returns the last factorable variances with `converged = false` and
 `optimizer_status = "non_positive_definite"` — read the flag, not the value.
+
+A founders-only pedigree (`A = I`) with one record per animal does not identify
+`σ²a` separately from `σ²e`. The REML surface is then a ridge in `σ²a + σ²e`,
+and the reported `h²` follows the start ratio. The fitter warns and still
+returns the iterate; `converged = true` is not an identified heritability
+(HSquared.jl #422).
 """
 function fit_ai_reml(
     spec::AnimalModelSpec;
@@ -566,6 +572,52 @@ end
 # type and every fitted value while the study can consume counters recorded at
 # the point where the corresponding event actually occurs.
 const _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS = 512
+
+function _is_identity_precision(Ainv)
+    A = sparse(Float64.(Ainv))
+    n = size(A, 1)
+    size(A, 2) == n || return false
+    n == 0 && return false
+    return A == sparse(1.0I, n, n)
+end
+
+function _single_record_incidence(Z)
+    Zs = sparse(Z)
+    n, q = size(Zs)
+    row_nz = zeros(Int, n)
+    col_nz = zeros(Int, q)
+    rows = rowvals(Zs)
+    vals = nonzeros(Zs)
+    for col in 1:q
+        for idx in nzrange(Zs, col)
+            iszero(vals[idx]) && continue
+            row_nz[rows[idx]] += 1
+            col_nz[col] += 1
+        end
+    end
+    return all(==(1), row_nz) && all(c -> c == 0 || c == 1, col_nz)
+end
+
+function _animal_residual_split_unidentifiable(Z, Ainv)
+    return _is_identity_precision(Ainv) && _single_record_incidence(Z)
+end
+
+const _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG =
+    "animal and residual variances are not separately identifiable when the " *
+    "relationship is the identity (founders-only pedigree, A = I) and each " *
+    "animal has one record. The REML log-likelihood depends only on Va + Ve, " *
+    "so h2 follows the start ratio rescaled to the phenotypic total. Read " *
+    "converged as a stationary point on that ridge, not as an identified " *
+    "heritability."
+
+const _BOUNDARY_SCORE_UNRESOLVED_MSG =
+    "AI-REML stopped with boundary_score_unresolved: the selected-inverse " *
+    "score became cancellation-dominated and the pedigree has more than " *
+    string(_AI_REML_BOUNDARY_TRACE_MAX_COLUMNS) *
+    " animals, so the fallback boundary score was not run. The returned " *
+    "variances and log-likelihood are the iterate at abort, not a certified " *
+    "REML optimum. Use fit_sparse_reml on the same spec when the optimum " *
+    "is at or near Va = 0."
 
 function _fit_ai_reml_diagnostics(
     spec::AnimalModelSpec;
@@ -594,6 +646,9 @@ function _fit_ai_reml_diagnostics(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    if _animal_residual_split_unidentifiable(Z, Ainv)
+        @warn _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG
+    end
     cp = _sparse_mme_cross_products(sparse(X), Z, Ainv, y)
     factorizations = 0
     em_steps = 0
