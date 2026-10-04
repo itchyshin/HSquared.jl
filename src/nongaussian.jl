@@ -1243,6 +1243,19 @@ function _three_field_binomial_trials(
     return copy(n_trials)
 end
 
+function _unused_laplace_family_controls(family::Symbol, n_trials, rho, theta_init, initial)
+    unused = String[]
+    family === :beta_binomial || rho === nothing || push!(unused, "rho")
+    (family === :binomial || family === :beta_binomial) || n_trials === nothing ||
+        push!(unused, "n_trials")
+    (family === :nbinom || family === :gamma) || theta_init === nothing ||
+        push!(unused, "theta_init")
+    if family !== :gaussian && initial !== nothing && hasproperty(initial, :sigma_e2)
+        push!(unused, "initial.sigma_e2")
+    end
+    return unused
+end
+
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200,
@@ -1319,19 +1332,6 @@ and sets `boundary = true`; pass an `initial` on the scale of the data (or read
 not the public default, not wired into the R formula path, no R model-spec, no
 external comparator.
 """
-function _unused_laplace_family_controls(family::Symbol, n_trials, rho, theta_init, initial)
-    unused = String[]
-    family === :beta_binomial || rho === nothing || push!(unused, "rho")
-    (family === :binomial || family === :beta_binomial) || n_trials === nothing ||
-        push!(unused, "n_trials")
-    (family === :nbinom || family === :gamma) || theta_init === nothing ||
-        push!(unused, "theta_init")
-    if family !== :gaussian && initial !== nothing && hasproperty(initial, :sigma_e2)
-        push!(unused, "initial.sigma_e2")
-    end
-    return unused
-end
-
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,

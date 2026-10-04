@@ -783,30 +783,6 @@ end
 # Public: result_payload_v2
 # ---------------------------------------------------------------------------
 
-"""
-    result_payload_v2(fit, parsed::ParsedPayloadV2) → NamedTuple
-
-Build the block-structured result payload (§5) from an estimator fit and the
-`ParsedPayloadV2` produced by `parse_payload_v2`.
-
-**Single-pedigree-block fast path (§5):** when `dispatch == :animal`, the
-fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
-to preserve the complete flat v0.1 fields and current R extractors. Partial
-raw tuples are rejected rather than exposed as incomplete legacy results.
-
-For multi-block fits the result carries:
-- `variance_components.blocks` — ordered list of per-block variance records.
-- `variance_components.residual` — scalar σ²e for univariate fits; the
-  experimental multivariate-repeatability route carries a trait covariance matrix.
-- `random_effects` — ordered list of `(name, ids, values)` records.
-- `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
-
-The experimental multivariate-repeatability extension labels its matrix columns
-with top-level `traits`. It is Julia-only until the R normalizer and parity tests
-support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
-
-CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
-"""
 function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance::Integer;
                                         direct_maternal::Bool = false)
     parsed.method === :REML || throw(ArgumentError(
@@ -848,6 +824,30 @@ function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance
     return (df = p + n_variance, nobs = n, diagnostics = diagnostics)
 end
 
+"""
+    result_payload_v2(fit, parsed::ParsedPayloadV2) → NamedTuple
+
+Build the block-structured result payload (§5) from an estimator fit and the
+`ParsedPayloadV2` produced by `parse_payload_v2`.
+
+**Single-pedigree-block fast path (§5):** when `dispatch == :animal`, the
+fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
+to preserve the complete flat v0.1 fields and current R extractors. Partial
+raw tuples are rejected rather than exposed as incomplete legacy results.
+
+For multi-block fits the result carries:
+- `variance_components.blocks` — ordered list of per-block variance records.
+- `variance_components.residual` — scalar σ²e for univariate fits; the
+  experimental multivariate-repeatability route carries a trait covariance matrix.
+- `random_effects` — ordered list of `(name, ids, values)` records.
+- `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
+
+The experimental multivariate-repeatability extension labels its matrix columns
+with top-level `traits`. It is Julia-only until the R normalizer and parity tests
+support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
+
+CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
+"""
 function result_payload_v2(fit, parsed::ParsedPayloadV2)
     dispatch = parsed.dispatch
     blocks = parsed.blocks

@@ -466,14 +466,14 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
     return C
 end
 
-# Heywood interior bound for fitted FA uniqueness (0.8 S3).
-# ψ_i is a genetic VARIANCE in the squared units of trait i. This frozen,
-# absolute 1e-4 floor is not equivariant to rescaling a trait near the bound.
-# Parameterization: ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i), so min(ψ̂) ≥ 1e-4
-# in floating point (exp can underflow to zero at the floor).
-# Matches the frozen S2 pass cut
-# (`docs/dev-log/decisions/2026-09-03-v08-s2-fa-recovery-gate-prereg.md`).
-# The constructor above still accepts any positive Ψ (truth DGPs, diagnostics).
+"""
+    FA_UNIQUENESS_FLOOR
+
+Heywood interior bound for fitted factor-analytic uniqueness (`1e-4`). Each
+fitted uniqueness is parameterized as `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)`,
+so `min(ψ̂) ≥ 1e-4` in the absolute trait-specific genetic-variance units of
+the fit. The bound is not scale-equivariant near the floor.
+"""
 const FA_UNIQUENESS_FLOOR = 1e-4
 
 """
@@ -974,6 +974,24 @@ function _multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
                                 Matrix(Float64.(Matrix(G0))), Matrix(Float64.(Matrix(R0))))
 end
 
+# (q*t)^2 is the Kronecker genetic covariance; N^2 is the marginal V.
+# Count observed records before either matrix is allocated.
+function _check_multivariate_dense_cells(Y, q::Integer, t::Integer, max_dense_cells::Integer)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+    n = size(Y, 1)
+    N = 0
+    @inbounds for i in 1:n, k in 1:t
+        _is_present(Y[i, k]) && (N += 1)
+    end
+    dense_cells = (q * t)^2 + N^2
+    dense_cells <= max_dense_cells ||
+        throw(ArgumentError(
+            "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
+        ))
+    return nothing
+end
+
 """
     fit_multivariate_reml(Y, X, Z, Ainv; initial = nothing, iterations = 2000,
                           ids = nothing, traits = nothing,
@@ -1074,24 +1092,6 @@ Non-finite or empty-trait inputs are rejected up front (see
 [`multivariate_mme`](@ref)), so the optimizer never returns plausible-looking
 covariances from `Inf`/`NaN` data; check `converged` for genuine boundary cases.
 """
-# (q*t)^2 is the Kronecker genetic covariance; N^2 is the marginal V.
-# Count observed records before either matrix is allocated.
-function _check_multivariate_dense_cells(Y, q::Integer, t::Integer, max_dense_cells::Integer)
-    max_dense_cells > 0 ||
-        throw(ArgumentError("max_dense_cells must be a positive integer"))
-    n = size(Y, 1)
-    N = 0
-    @inbounds for i in 1:n, k in 1:t
-        _is_present(Y[i, k]) && (N += 1)
-    end
-    dense_cells = (q * t)^2 + N^2
-    dense_cells <= max_dense_cells ||
-        throw(ArgumentError(
-            "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
-        ))
-    return nothing
-end
-
 function fit_multivariate_reml(
     Y::AbstractMatrix,
     X::AbstractMatrix,

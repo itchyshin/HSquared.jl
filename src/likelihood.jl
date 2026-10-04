@@ -4505,6 +4505,19 @@ function variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
     return _variance_component_interval_profile(fit; level = level)
 end
 
+function _plot_interval_failure_reason(err)
+    if err isa ArgumentError
+        return "argument_error: $(sprint(showerror, err))"
+    elseif err isa PosDefException
+        return "non_positive_definite_information"
+    elseif err isa SingularException
+        return "singular_information"
+    elseif err isa DomainError
+        return "domain_error: $(sprint(showerror, err))"
+    end
+    rethrow(err)
+end
+
 """
     variance_components_plot_data(fit::AnimalModelFit; level = 0.95)
 
@@ -4527,19 +4540,6 @@ descriptive supplied-`K_g`/`G` plot-data sets. Intervals are REML-only; a non-RE
 fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
-function _plot_interval_failure_reason(err)
-    if err isa ArgumentError
-        return "argument_error: $(sprint(showerror, err))"
-    elseif err isa PosDefException
-        return "non_positive_definite_information"
-    elseif err isa SingularException
-        return "singular_information"
-    elseif err isa DomainError
-        return "domain_error: $(sprint(showerror, err))"
-    end
-    rethrow(err)
-end
-
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     _require_converged_univariate_uncertainty(fit, "variance_components_plot_data")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
