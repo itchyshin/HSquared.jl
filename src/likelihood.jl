@@ -3579,63 +3579,113 @@ function fit_repeatability_reml(
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
+function _repeatability_boundary_interval(t, level, converged)
+    return (
+        repeatability = t,
+        lower = NaN,
+        upper = NaN,
+        level = level,
+        se = NaN,
+        converged = converged,
+        boundary = true,
+        lower_clamped = false,
+        upper_clamped = false,
+    )
+end
+
+# Interval from an already-fitted repeatability REML result. The public
+# function refits, then lands here so a constructed near-boundary or
+# non-converged fit can be checked without relying on NelderMead.
+function _repeatability_interval_from_fit(
+    fit,
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    level::Real,
+    fd_step::Real,
+    boundary_tol::Real,
+)
+    vc = fit.variance_components
+    theta = Float64[vc.sigma_a2, vc.sigma_pe2, vc.sigma_e2]
+    total = sum(theta)
+    t = (theta[1] + theta[2]) / total
+    converged = fit.converged === true
+    converged || return _repeatability_boundary_interval(t, level, false)
+    (all(isfinite, theta) && isfinite(total) && total > 0) ||
+        return _repeatability_boundary_interval(t, level, true)
+    h = _uncertainty_component_steps(theta, fd_step)
+    on_boundary = any(theta[i] / total <= boundary_tol for i in eachindex(theta)) ||
+                  !all(theta .- 2 .* h .> 0) ||
+                  !(boundary_tol < t < 1 - boundary_tol)
+    on_boundary && return _repeatability_boundary_interval(t, level, true)
+
+    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+    Xd = Matrix{Float64}(X)
+    Zd = Matrix{Float64}(Z)
+    yv = Float64.(y)
+    loglik(p) = _repeatability_dense(yv, Xd, Zd, A, p[1], p[2], p[3])[1]
+    info = _reml_fd_information(loglik, theta, fd_step)
+    if !(all(isfinite, info) && isposdef(info))
+        return _repeatability_boundary_interval(t, level, true)
+    end
+    covar = inv(info)
+    g = [theta[3] / total^2, theta[3] / total^2, -(theta[1] + theta[2]) / total^2]
+    se = sqrt(max(dot(g, covar * g), 0.0))
+    (isfinite(se) && se > 0) || return _repeatability_boundary_interval(t, level, true)
+
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(t / (1 - t))
+    se_eta = se / (t * (1 - t))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (
+        repeatability = t,
+        lower = lower,
+        upper = upper,
+        level = level,
+        se = se,
+        converged = true,
+        boundary = false,
+        lower_clamped = lower <= 1e-6,
+        upper_clamped = upper >= 1 - 1e-6,
+    )
+end
+
 """
     repeatability_interval(y, X, Z, Ainv; level = 0.95, initial = ..., iterations = 200,
-                           ids = nothing, fd_step = 1e-4)
+                           ids = nothing, fd_step = 1e-4, boundary_tol = 1e-6)
 
 Asymptotic delta-method confidence interval for the repeatability
 `t = (σ²a + σ²pe) / (σ²a + σ²pe + σ²e)` of the repeatability / permanent-environment
 animal model. Fits by REML ([`fit_repeatability_reml`](@ref)), forms the observed
 information as the central finite-difference Hessian of the REML log-likelihood at
 the optimum, and applies the delta method to `t` on the logit scale (so the
-interval lies in `(0, 1)`). Returns `(repeatability, lower, upper, level, se)`.
+interval lies in `(0, 1)`). Returns
+`(repeatability, lower, upper, level, se, converged, boundary, lower_clamped, upper_clamped)`.
 
 Experimental, asymptotic. `t` is the well-identified summary of this model (the
 `σ²a`/`σ²pe` split is weakly identified, so a per-component SE is unreliable, but
-`t` is stable). Throws if the REML information is not positive definite (a flat
-surface / boundary optimum), or if `t` is on the `(0, 1)` boundary.
+`t` is stable). A non-converged fit, a component too close to zero for a
+finite-difference step that stays positive, or a repeatability on the `(0, 1)`
+rail returns `NaN` limits with `boundary = true` rather than a number from
+outside the parameter space.
 """
 function repeatability_interval(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix, Ainv::AbstractMatrix;
     level::Real = 0.95,
     initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
     iterations::Integer = 200, ids = nothing, fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    boundary_tol = _validate_boundary_tol(boundary_tol)
     fit = fit_repeatability_reml(y, X, Z, Ainv; initial = initial, iterations = iterations, ids = ids)
-    vc = fit.variance_components
-    theta = [vc.sigma_a2, vc.sigma_pe2, vc.sigma_e2]
-
-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
-    Xd = Matrix{Float64}(X); Zd = Matrix{Float64}(Z); yv = Float64.(y)
-    loglik(t) = _repeatability_dense(yv, Xd, Zd, A, t[1], t[2], t[3])[1]
-
-    # observed information = −Hessian of the REML loglik (central finite differences)
-    h = fd_step .* max.(theta, 1e-3)
-    H = zeros(3, 3)
-    for i in 1:3, j in 1:3
-        ei = zeros(3); ei[i] = h[i]
-        ej = zeros(3); ej[j] = h[j]
-        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
-                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
-    end
-    info = Symmetric(-H)
-    isposdef(info) ||
-        throw(ArgumentError("repeatability interval undefined: REML information is not positive definite (flat surface / boundary optimum)"))
-    covar = inv(info)
-
-    total = sum(theta)
-    t = (theta[1] + theta[2]) / total
-    0 < t < 1 || throw(ArgumentError("repeatability estimate is on the (0, 1) boundary; interval undefined"))
-    # delta-method gradient of t = (σ²a + σ²pe)/total wrt (σ²a, σ²pe, σ²e)
-    g = [theta[3] / total^2, theta[3] / total^2, -(theta[1] + theta[2]) / total^2]
-    se = sqrt(max(dot(g, covar * g), 0.0))
-
-    z = _standard_normal_quantile((1 + level) / 2)
-    eta = log(t / (1 - t)); se_eta = se / (t * (1 - t))
-    lower = 1 / (1 + exp(-(eta - z * se_eta)))
-    upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (repeatability = t, lower = lower, upper = upper, level = level, se = se)
+    return _repeatability_interval_from_fit(
+        fit, y, X, Z, Ainv;
+        level = level, fd_step = fd_step, boundary_tol = boundary_tol,
+    )
 end
 
 """
