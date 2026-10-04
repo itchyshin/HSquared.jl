@@ -1448,15 +1448,15 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         # configurations where the penalized-IRLS Hessian degenerates (a category with
         # ~0 probability under every record); return a large finite penalty so the
         # optimizer walks away from those regions rather than throwing.
-        # Safety rail on σ²a: threshold models weakly identify the breeding-value
-        # variance on uninformative data (it is confounded with the fixed unit probit
-        # residual absent relatedness/replication), so the MLE can run to the boundary.
-        # Confine the search to log(sa0) ± 8 (σ²a within ~3000× of the start) — the same
-        # bounded-search spirit as the single-component Brent path. A returned estimate
-        # at the rail is a self-describing "not credibly identified at this design" signal.
+        # Safety rails on every jointly estimated coordinate: threshold models weakly
+        # identify both the breeding-value variance and cutpoint increments on
+        # uninformative data. Confine log(σ²a) to log(sa0) ± 8 and every log-increment
+        # δ to its zero start ± 8. A returned estimate at any rail is a self-describing
+        # "not credibly identified at this design" signal.
         logsa0 = log(sa0)
         function objord(p)
-            abs(p[1] - logsa0) > 8.0 && return 1.0e12    # σ²a safety rail
+            (abs(p[1] - logsa0) > 8.0 || any(abs.(p[2:end]) .> 8.0)) &&
+                return 1.0e12                           # σ²a + cutpoint-increment rails
             m = try
                 laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]),
                                         OrderedProbitResponse(_cuts(@view p[2:end])))
@@ -1474,7 +1474,10 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             res = optimize(objord, vcat(log(sa0), zeros(ndelta)), NelderMead(),
                            Optim.Options(iterations = iterations))
             pmin = Optim.minimizer(res); sa2 = exp(pmin[1]); thetahat = _cuts(pmin[2:end])
-            abs(pmin[1] - logsa0) >= 8.0 - 1e-6
+            abs(pmin[1] - logsa0) >= 8.0 - 1e-6 ||
+                # NelderMead can settle just inside a discontinuous penalty rail
+                # once objective differences are below its stopping tolerance.
+                any(abs.(pmin[2:end]) .>= 8.0 - 1e-3)
         end
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, OrderedProbitResponse(thetahat))
         NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
