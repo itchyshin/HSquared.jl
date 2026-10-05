@@ -1676,6 +1676,31 @@ function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
     return loglik, Vector{Float64}(beta), u1, u2
 end
 
+const _TWO_EFFECT_UNIT_START_OFF_SCALE_MSG =
+    "two-effect default starts are (sigma1, sigma2, sigma_e2) = (1, 1, 1). " *
+    "NelderMead from that unit-scale start can stop at a wrong near-zero-h2 " *
+    "point when the response variance is far from 1, still with converged = true. " *
+    "Pass initial on the scale of y, or rescale y. REML itself is " *
+    "scale-equivariant; the green flag is not."
+
+function _two_effect_unit_start_off_scale(y, sigma1, sigma2, sigma_e2)
+    sigma1 == 1.0 && sigma2 == 1.0 && sigma_e2 == 1.0 || return false
+    n = length(y)
+    n < 2 && return false
+    μ = 0.0
+    for yi in y
+        μ += Float64(yi)
+    end
+    μ /= n
+    ss = 0.0
+    for yi in y
+        d = Float64(yi) - μ
+        ss += d * d
+    end
+    v = ss / (n - 1)
+    return isfinite(v) && (v >= 100.0 || (v > 0 && v <= 1e-4))
+end
+
 """
     fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
                         ids1 = nothing, ids2 = nothing)
@@ -1704,6 +1729,14 @@ phenotyped animals), only two combinations of (Va, Vdam, Ve) are identified.
 Different starts can then return different h2 values at the same log-likelihood.
 Read `ratio1` as one point on that ridge, not a unique heritability
 (HSquared.jl #416).
+
+Default starts are `(sigma1, sigma2, sigma_e2) = (1, 1, 1)`. REML is
+scale-equivariant, but NelderMead from that unit-scale start can stop at a
+wrong near-zero-h2 point when `var(y)` is far from 1, still with
+`converged = true` (HSquared.jl #413). The fitter warns in that case; pass
+an `initial` on the scale of the response (or rescale `y`) rather than
+reading the green flag as an identified optimum. Recorded recovery evidence
+used the unit-scale start, so the default is unchanged.
 """
 function fit_two_effect_reml(
     y::AbstractVector,
@@ -1719,6 +1752,9 @@ function fit_two_effect_reml(
 )
     starts = [_likelihood_positive("initial sigma1", initial.sigma1), _likelihood_positive("initial sigma2", initial.sigma2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+    if _two_effect_unit_start_off_scale(y, starts[1], starts[2], starts[3])
+        @warn _TWO_EFFECT_UNIT_START_OFF_SCALE_MSG
+    end
     n = length(y)
     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
