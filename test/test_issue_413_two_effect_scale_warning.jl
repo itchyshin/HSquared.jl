@@ -4,7 +4,6 @@
 
 using HSquared
 using LinearAlgebra
-using Logging
 using Test
 
 @testset "issue 413 two-effect unit-scale start is warned" begin
@@ -30,10 +29,10 @@ using Test
     X = ones(8, 1)
     Z2 = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
 
-    @test_logs (:warn, r"unit-scale start") min_level = Logging.Warn begin
+    @test_logs (:warn, r"unit-scale start") min_level = Base.CoreLogging.Warn begin
         fit_two_effect_reml(y_big, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2); iterations = 1)
     end
-    @test_logs min_level = Logging.Warn begin
+    @test_logs min_level = Base.CoreLogging.Warn begin
         fit_two_effect_reml(
             y_big,
             X,
