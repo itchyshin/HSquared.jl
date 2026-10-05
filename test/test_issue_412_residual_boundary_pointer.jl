@@ -25,6 +25,19 @@ function _mrode3_animal_spec()
     return animal_model_spec(y, X, Z, pedigree_inverse(ped); ids = ped.ids, method = :REML)
 end
 
+function _interior_animal_spec()
+    ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"],
+    )
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    X = ones(8, 1)
+    Z = sparse(1.0I, 8, 8)
+    return animal_model_spec(y, X, Z, pedigree_inverse(ped); ids = ped.ids, method = :REML)
+end
+
 @testset "issue 412 residual-boundary AI-REML points at fit_sparse_reml" begin
     help = read(joinpath(@__DIR__, "..", "src", "likelihood.jl"), String)
     @test occursin("residual boundary", help)
@@ -59,4 +72,16 @@ end
           (sparse.variance_components.sigma_a2 + sparse.variance_components.sigma_e2) <=
           HSquared._AI_REML_RESIDUAL_BOUNDARY_SHARE
     @test sparse.likelihood.loglik > fit.likelihood.loglik
+
+    # The Mrode-3 records above have a residual-boundary REML optimum. The
+    # 8-animal pedigree used by the Phase 1 AI-REML recovery tests is interior.
+    interior = @test_logs min_level = Logging.Warn begin
+        HSquared._fit_ai_reml_diagnostics(_interior_animal_spec())
+    end
+    interior_fit = interior.fit
+    interior_vc = interior_fit.variance_components
+    interior_share = interior_vc.sigma_e2 / (interior_vc.sigma_a2 + interior_vc.sigma_e2)
+    @test interior_fit.converged
+    @test interior_fit.optimizer_status == "converged"
+    @test interior_share > HSquared._AI_REML_RESIDUAL_BOUNDARY_SHARE
 end
