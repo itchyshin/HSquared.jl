@@ -4624,8 +4624,10 @@ tracking fill-in; no dense matrix is formed),
 which matches the dense MME inverse diagonal to machine precision for
 well-conditioned validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks
 these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
-the opportunistic per-extractor enrichment is no longer required. The PEV is
-computed once here and reused by `reliability` (no second factorization). Since
+the opportunistic per-extractor enrichment is no longer required. The Henderson
+MME is solved once here and shared by `breeding_values` and `fitted_values`
+(no second factorization). The PEV is computed once here and reused by
+`reliability` (no second factorization). Since
 #350 the `reliability` denominator also reads the animal self-relationships
 `diag(inv(Ainv))` through the sparse selected inverse of `Ainv`, so for a sparse
 (pedigree) `Ainv` no dense matrix is formed anywhere in this payload; a dense
@@ -4635,8 +4637,9 @@ claim, not a production large-pedigree reliability claim.
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
-    bv = breeding_values(fit)
-    predictions = fitted_values(fit)
+    mme = henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2)
+    bv = breeding_values(mme)
+    predictions = fitted_values(mme)
     pev = prediction_error_variance(fit; method = :auto)
     rel = reliability(fit; method = :auto, pev = pev)
 
