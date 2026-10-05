@@ -1378,8 +1378,11 @@ BLUPs/EBVs at supplied positive variance components.
 
 This forms the sparse equation system
 `[X'R^-1X  X'R^-1Z; Z'R^-1X  Z'R^-1Z + Ainv / sigma_a2]` with
-`R = sigma_e2 I`. It is a supplied-variance solver and does not optimize
-variance components.
+`R = sigma_e2 I`. The coefficient matrix is symmetric positive definite by
+construction, so the solve uses `cholesky(Symmetric(lhs))`, the same factor
+[`sparse_reml_loglik`](@ref) and [`fit_ai_reml`](@ref) already use. A
+non-positive-definite coefficient matrix throws `PosDefException`. It is a
+supplied-variance solver and does not optimize variance components.
 """
 function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
@@ -1389,8 +1392,7 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     result_spec = _likelihood_result_spec(original_spec, spec)
 
     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
-
-    solution = lhs \ rhs
+    solution = cholesky(Symmetric(lhs); check = true) \ rhs
     _likelihood_check_finite("MME solution", solution)
     nfixed = size(spec.X, 2)
     beta = Vector{Float64}(solution[1:nfixed])

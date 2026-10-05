@@ -20,6 +20,7 @@ include("test_issue_414_heritability_docs.jl")
 include("test_issue_417_api_reference_docs.jl")
 include("test_issue_418_changelog_claims.jl")
 include("test_issue_430_laplace_caveat_docs.jl")
+include("test_issue_357_henderson_mme_cholesky.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
