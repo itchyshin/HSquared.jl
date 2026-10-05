@@ -550,6 +550,14 @@ That iterate is not a certified REML optimum. Use [`fit_sparse_reml`](@ref) or
 raise `em_warmup` on the same spec when the optimum is at or near `σ²a = 0`
 (HSquared.jl #407).
 
+When the REML optimum is on the residual boundary (`σ²e → 0`), AI-REML often
+does not converge. The iterate can sit at a start-dependent point and the REML
+log-likelihood can get worse with more iterations. If the returned residual
+share is at or near zero, the fitter warns and still returns the iterate with
+`converged = false`. Use [`fit_sparse_reml`](@ref) on the same spec
+(HSquared.jl #412). This is a different failure from the q > 512
+`boundary_score_unresolved` abort (#407).
+
 A founders-only pedigree (`A = I`) with one record per animal does not identify
 `σ²a` separately from `σ²e`. The REML surface is then a ridge in `σ²a + σ²e`,
 and the reported `h²` follows the start ratio. The fitter warns and still
@@ -625,6 +633,15 @@ const _BOUNDARY_SCORE_UNRESOLVED_MSG =
     "variances and log-likelihood are the iterate at abort, not a certified " *
     "REML optimum. Use fit_sparse_reml on the same spec when the optimum " *
     "is at or near Va = 0."
+
+const _AI_REML_RESIDUAL_BOUNDARY_SHARE = 1e-6
+
+const _RESIDUAL_BOUNDARY_UNRESOLVED_MSG =
+    "AI-REML did not converge with residual variance at or near zero. The " *
+    "returned variances and log-likelihood are the last iterate, not a " *
+    "certified REML optimum; more iterations can make the log-likelihood " *
+    "worse. Use fit_sparse_reml on the same spec when the REML optimum is " *
+    "on the residual boundary (Ve -> 0)."
 
 function _fit_ai_reml_diagnostics(
     spec::AnimalModelSpec;
@@ -812,6 +829,14 @@ function _fit_ai_reml_diagnostics(
         rel_change = max(abs(a_new - sigma_a2) / sigma_a2, abs(e_new - sigma_e2) / sigma_e2)
         last_relative_change = rel_change
         sigma_a2, sigma_e2 = a_new, e_new
+    end
+
+    residual_share = sigma_e2 / (sigma_a2 + sigma_e2)
+    if !converged &&
+       termination_reason != "boundary_score_unresolved" &&
+       isfinite(residual_share) &&
+       residual_share <= _AI_REML_RESIDUAL_BOUNDARY_SHARE
+        @warn _RESIDUAL_BOUNDARY_UNRESOLVED_MSG
     end
 
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
