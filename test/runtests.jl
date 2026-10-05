@@ -11,6 +11,15 @@ using JSON3   # P0.5 payload-v2 cross-lane parity testset
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
 include("test_selinv_trace_contracts.jl")
 include("test_pedigree_inbred_known_parent.jl")
+include("test_ordered_probit_cutpoint_rails.jl")
+include("test_ai_reml_em_warmup_posdef.jl")
+include("test_issue_404_readme_install.jl")
+include("test_issue_405_quickstart_docs.jl")
+include("test_issue_406_quickstart_h2_caveat.jl")
+include("test_issue_414_heritability_docs.jl")
+include("test_issue_417_api_reference_docs.jl")
+include("test_issue_418_changelog_claims.jl")
+include("test_issue_430_laplace_caveat_docs.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -3850,7 +3859,8 @@ end
     @test pd.supplied === false                                   # ESTIMATED, not supplied
     @test pd.level == 0.95
     @test propertynames(pd) ==
-          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status, :supplied)
+          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status,
+           :interval_reason, :supplied)
     # interval consistency: matches the extractors when available, else NaN / "none"
     local h2ci
     try
@@ -4778,12 +4788,12 @@ end
     @test scan.k ≈ 0.98 atol = 1e-12
     @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
     @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
-    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
-    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1.3 / 2.8), sqrt(1.3 / 4.0)] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1.3 / 2.8), 0.5 / sqrt(1.3 / 4.0)] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
-    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
-    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
-    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.p_values ≈ [0.07473539790247391, 0.3804550407754143] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.14947079580494782, 0.7609100815508286] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.14947079580494782, 0.3804550407754143] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
     scan_table = marker_scan_table(scan)
     @test scan_table.target == :direct_marker_scan
@@ -4823,17 +4833,17 @@ end
     @test significance.adjusted_p_threshold == 0.1
     @test significance.bh_q_threshold == 0.1
     @test significance.raw_significant == [true, false]
-    @test significance.bonferroni_significant == [true, false]
-    @test significance.bh_significant == [true, false]
+    @test significance.bonferroni_significant == [false, false]
+    @test significance.bh_significant == [false, false]
     @test significance.n_raw_significant == 1
-    @test significance.n_bonferroni_significant == 1
-    @test significance.n_bh_significant == 1
+    @test significance.n_bonferroni_significant == 0
+    @test significance.n_bh_significant == 0
     @test significance.raw_marker_ids == ["m1"]
-    @test significance.bonferroni_marker_ids == ["m1"]
-    @test significance.bh_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == String[]
+    @test significance.bh_marker_ids == String[]
     @test significance.raw_scan_indices == [1]
-    @test significance.bonferroni_scan_indices == [1]
-    @test significance.bh_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == Int[]
+    @test significance.bh_scan_indices == Int[]
     @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
     @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
     @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
@@ -4937,11 +4947,11 @@ end
         Matrix{Float64}(I, 1, 1),
         M,
         2.0,
-        1.0;
+        1.3;
         marker_ids = ["m1", "m2"],
     )
     @test fixed_reduction.target == :mixed_model_marker_scan
-    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.3)
     @test fixed_reduction.marker_ids == scan.marker_ids
     @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
     @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
@@ -5976,6 +5986,7 @@ end
     @test ph[end] == "genome_wide_p_value"
     sf = genome_wide_marker_scan(yf, ones(length(yf), 1), Mf;
                                  n_permutations = 300, alpha = 0.05,
+                                 sigma_e2 = 1.0,
                                  marker_ids = fmids, rng = MersenneTwister(20264200))
     @test sf.marker_ids == vec(pr[:, 1])
     @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8          # deterministic
@@ -11152,6 +11163,9 @@ include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
+# #436: payload-v2 arms must error when they ignore fit kwargs.
+include(joinpath(@__DIR__, "test_payload_v2_ignored_kwargs.jl"))
+
 # hsquared#212 (engine half): initial/iterations threading through payload-v2
 # multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
 include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
@@ -11185,6 +11199,14 @@ include("test_fa_weak_direction.jl")
 include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
+include("test_issue_432_bootstrap_interval.jl")
+include("test_issue_433_plot_interval_errors.jl")
+include("test_issue_434_repeatability_interval.jl")
+include("test_issue_425_fd_step_scale.jl")
+include("test_issue_428_heritability_profile_clamping.jl")
+include("test_issue_437_nonconverged_uncertainty.jl")
+include("test_issue_438_marker_scan_sigma_e2.jl")
+include("test_issue_427_mc_reml_status.jl")
 include("test_api_docstrings.jl")
 include("test_aireml_workspace_reuse.jl")
 
@@ -11207,9 +11229,15 @@ include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
 include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_boundary_score_contracts.jl"))
+include(joinpath(@__DIR__, "test_issue_441_keffect_boundary_cap.jl"))
 include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
 include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
 include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
+include(joinpath(@__DIR__, "test_sweep_dense_and_newton.jl"))
+# #439: fit_laplace_reml must error when a family does not use a supplied control.
+include(joinpath(@__DIR__, "test_laplace_reml_unused_controls.jl"))
+# #435: fit_multi_effect must error when the :exact route is given a dropped keyword.
+include(joinpath(@__DIR__, "test_fit_multi_effect_exact_unused_keywords.jl"))
 include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
 include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
 include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))

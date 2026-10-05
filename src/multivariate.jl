@@ -302,10 +302,70 @@ function _mv_fd_step(h::Real)
     return hf
 end
 
+function _mv_coordinate_steps(x::AbstractVector, h)
+    n = length(x)
+    if h isa Real
+        return fill(_mv_fd_step(h), n)
+    end
+    hs = collect(h)
+    length(hs) == n ||
+        throw(ArgumentError("finite-difference steps must match the coordinate length"))
+    return map(_mv_fd_step, hs)
+end
+
+# #425: log-Cholesky packs log(L_ii) on the diagonal and raw L_ij off it.
+# Off-diagonals are in sqrt(variance) units, so an absolute h = 1e-4 is a
+# unit-of-y step. Map to Cholesky-factor coordinates, apply the same
+# relative floor as `_uncertainty_component_steps`, then map diagonal
+# steps back with d log L = dL / L.
+function _mv_logchol_component_steps(theta::AbstractVector, t::Integer, fd_step::Real)
+    t >= 1 || throw(ArgumentError("trait count must be a positive integer"))
+    nblock = t * (t + 1) ÷ 2
+    nblock > 0 && length(theta) % nblock == 0 ||
+        throw(ArgumentError("log-Cholesky parameter length must be a multiple of t(t+1)/2"))
+    step = _mv_fd_step(fd_step)
+    Lcoords = Vector{Float64}(undef, length(theta))
+    isdiag = falses(length(theta))
+    nblocks = length(theta) ÷ nblock
+    for b in 0:(nblocks - 1)
+        idx = 1
+        for j in 1:t, i in j:t
+            k = b * nblock + idx
+            if i == j
+                Lii = exp(Float64(theta[k]))
+                (isfinite(Lii) && Lii > 0) ||
+                    throw(ArgumentError("log-Cholesky diagonal must map to a finite positive factor"))
+                Lcoords[k] = Lii
+                isdiag[k] = true
+            else
+                Lij = Float64(theta[k])
+                isfinite(Lij) ||
+                    throw(ArgumentError("log-Cholesky off-diagonal must be a finite factor entry"))
+                Lcoords[k] = Lij
+            end
+            idx += 1
+        end
+    end
+    hL = _uncertainty_component_steps(Lcoords, step)
+    h = copy(hL)
+    @inbounds for k in eachindex(h)
+        if isdiag[k]
+            h[k] = hL[k] / Lcoords[k]
+        end
+    end
+    all(x -> isfinite(x) && x > 0, h) ||
+        throw(ArgumentError("fd_step must produce finite positive log-Cholesky steps"))
+    return h
+end
+
 function _mv_fd_points(x, h)
     xf = Float64.(collect(x))
     all(isfinite, xf) || throw(ArgumentError("finite-difference coordinates must be finite Float64 values"))
-    all(v -> isfinite(v + h) && isfinite(v - h) && v + h != v && v - h != v, xf) ||
+    hs = h isa AbstractVector ? Float64.(collect(h)) : fill(Float64(h), length(xf))
+    length(hs) == length(xf) ||
+        throw(ArgumentError("finite-difference steps must match the coordinate length"))
+    all(i -> isfinite(xf[i] + hs[i]) && isfinite(xf[i] - hs[i]) &&
+             xf[i] + hs[i] != xf[i] && xf[i] - hs[i] != xf[i], eachindex(xf)) ||
         throw(ArgumentError("finite-difference perturbations must be finite and distinct from their coordinates"))
     return xf
 end
@@ -406,14 +466,14 @@ function factor_analytic_covariance(loadings::AbstractMatrix, uniqueness)
     return C
 end
 
-# Heywood interior bound for fitted FA uniqueness (0.8 S3).
-# ψ_i is a genetic VARIANCE in the squared units of trait i. This frozen,
-# absolute 1e-4 floor is not equivariant to rescaling a trait near the bound.
-# Parameterization: ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i), so min(ψ̂) ≥ 1e-4
-# in floating point (exp can underflow to zero at the floor).
-# Matches the frozen S2 pass cut
-# (`docs/dev-log/decisions/2026-09-03-v08-s2-fa-recovery-gate-prereg.md`).
-# The constructor above still accepts any positive Ψ (truth DGPs, diagnostics).
+"""
+    FA_UNIQUENESS_FLOOR
+
+Heywood interior bound for fitted factor-analytic uniqueness (`1e-4`). Each
+fitted uniqueness is parameterized as `ψ_i = FA_UNIQUENESS_FLOOR + exp(θ_i)`,
+so `min(ψ̂) ≥ 1e-4` in the absolute trait-specific genetic-variance units of
+the fit. The bound is not scale-equivariant near the floor.
+"""
 const FA_UNIQUENESS_FLOOR = 1e-4
 
 """
@@ -914,6 +974,24 @@ function _multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
                                 Matrix(Float64.(Matrix(G0))), Matrix(Float64.(Matrix(R0))))
 end
 
+# (q*t)^2 is the Kronecker genetic covariance; N^2 is the marginal V.
+# Count observed records before either matrix is allocated.
+function _check_multivariate_dense_cells(Y, q::Integer, t::Integer, max_dense_cells::Integer)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+    n = size(Y, 1)
+    N = 0
+    @inbounds for i in 1:n, k in 1:t
+        _is_present(Y[i, k]) && (N += 1)
+    end
+    dense_cells = (q * t)^2 + N^2
+    dense_cells <= max_dense_cells ||
+        throw(ArgumentError(
+            "dense validation path would allocate at least $(dense_cells) dense covariance/relationship cells; increase max_dense_cells for tiny validation work or wait for the sparse production solver",
+        ))
+    return nothing
+end
+
 """
     fit_multivariate_reml(Y, X, Z, Ainv; initial = nothing, iterations = 2000,
                           ids = nothing, traits = nothing,
@@ -968,6 +1046,13 @@ sign flips from returned metadata but does not impose a rotation or
 lower-triangular identification constraint; for `rank > 1`, loadings remain
 rotation-nonunique and should not be interpreted as uniquely identified factors.
 
+The optimizer still searches the full raw loading vector (`t * rank` entries for
+`:lowrank`, plus `t` uniqueness parameters for `:factor_analytic`). It does not
+remove the `K(K-1)/2` rotational degrees of freedom of `Λ`. Those flat
+directions do not change `G0 = ΛΛ'` (or `ΛΛ' + Ψ`). `_mv_nparams` subtracts
+them for LRT reporting only; `converged` and the search itself still use the
+unreduced parameter count (HSquared.jl #340).
+
 Experimental, dense/validation-scale, REML-only, Gaussian. The REML estimator is
 validated by deterministic self-consistency checks (the `t = 1` reduction
 recovers the univariate REML estimate; the multivariate REML log-likelihood is on
@@ -1018,6 +1103,7 @@ function fit_multivariate_reml(
     traits = nothing,
     genetic_structure::Symbol = :unstructured,
     rank = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     n = size(Y, 1)
     t = size(Y, 2)
@@ -1029,6 +1115,7 @@ function fit_multivariate_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
     aids = _mv_labels(ids, q, "ids")
     tlabels = _mv_labels(traits, t, "traits")
+    _check_multivariate_dense_cells(Y, q, t, max_dense_cells)
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
@@ -1274,6 +1361,7 @@ function fit_multivariate_repeatability_reml(
     iterations::Integer = 2_000,
     ids = nothing,
     traits = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     n = size(Y, 1)
     t = size(Y, 2)
@@ -1285,6 +1373,7 @@ function fit_multivariate_repeatability_reml(
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
     aids = _mv_labels(ids, q, "ids")
     tlabels = _mv_labels(traits, t, "traits")
+    _check_multivariate_dense_cells(Y, q, t, max_dense_cells)
 
     p = size(X, 2)
     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
@@ -1582,40 +1671,40 @@ function nested_lrt(loglik_constrained::Real, loglik_full::Real; df::Integer,
 end
 
 # Central finite-difference Hessian of a scalar function.
-function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
-    h = _mv_fd_step(h)
+function _fd_hessian(f, x::AbstractVector; h = 1e-4)
+    h = _mv_coordinate_steps(x, h)
     x = _mv_fd_points(x, h)
     n = length(x)
     H = zeros(n, n)
     f0 = f(x)
     @inbounds for i in 1:n
-        xp = collect(float.(x)); xp[i] += h
-        xm = collect(float.(x)); xm[i] -= h
-        H[i, i] = (f(xp) - 2 * f0 + f(xm)) / h^2
+        xp = collect(float.(x)); xp[i] += h[i]
+        xm = collect(float.(x)); xm[i] -= h[i]
+        H[i, i] = (f(xp) - 2 * f0 + f(xm)) / h[i]^2
     end
     @inbounds for i in 1:n, j in (i + 1):n
-        xpp = collect(float.(x)); xpp[i] += h; xpp[j] += h
-        xpm = collect(float.(x)); xpm[i] += h; xpm[j] -= h
-        xmp = collect(float.(x)); xmp[i] -= h; xmp[j] += h
-        xmm = collect(float.(x)); xmm[i] -= h; xmm[j] -= h
-        H[i, j] = (f(xpp) - f(xpm) - f(xmp) + f(xmm)) / (4 * h^2)
+        xpp = collect(float.(x)); xpp[i] += h[i]; xpp[j] += h[j]
+        xpm = collect(float.(x)); xpm[i] += h[i]; xpm[j] -= h[j]
+        xmp = collect(float.(x)); xmp[i] -= h[i]; xmp[j] += h[j]
+        xmm = collect(float.(x)); xmm[i] -= h[i]; xmm[j] -= h[j]
+        H[i, j] = (f(xpp) - f(xpm) - f(xmp) + f(xmm)) / (4 * h[i] * h[j])
         H[j, i] = H[i, j]
     end
     return H
 end
 
 # Central finite-difference Jacobian of a vector-valued function.
-function _fd_jacobian(g, x::AbstractVector; h::Real = 1e-4)
-    h = _mv_fd_step(h)
+function _fd_jacobian(g, x::AbstractVector; h = 1e-4)
+    h = _mv_coordinate_steps(x, h)
     x = _mv_fd_points(x, h)
     n = length(x)
     g0 = g(x)
     m = length(g0)
     J = zeros(m, n)
     @inbounds for j in 1:n
-        xp = collect(float.(x)); xp[j] += h
-        xm = collect(float.(x)); xm[j] -= h
-        J[:, j] = (g(xp) .- g(xm)) ./ (2 * h)
+        xp = collect(float.(x)); xp[j] += h[j]
+        xm = collect(float.(x)); xm[j] -= h[j]
+        J[:, j] = (g(xp) .- g(xm)) ./ (2 * h[j])
     end
     return J
 end
@@ -1689,12 +1778,13 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,
         _chol_params_to_cov(@view(θ[1:ng]), t),
         _chol_params_to_cov(@view(θ[ng + 1:end]), t))
-    H = -_fd_hessian(loglik, phat; h = fd_step)
+    hs = _mv_logchol_component_steps(phat, t, fd_step)
+    H = -_fd_hessian(loglik, phat; h = hs)
     Hsym = Symmetric((H + transpose(H)) / 2)
     (all(isfinite, H) && isposdef(Hsym)) ||
         throw(ArgumentError("observed information is not finite positive-definite at the estimate (flat/boundary optimum); standard errors are unavailable"))
     Σθ = inv(Hsym)
-    J = _fd_jacobian(θ -> _mv_quantities(θ, t, ng), phat; h = fd_step)
+    J = _fd_jacobian(θ -> _mv_quantities(θ, t, ng), phat; h = hs)
     Σg = J * Σθ * transpose(J)
     se = sqrt.(max.(diag(Σg), 0.0))
 

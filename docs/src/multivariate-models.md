@@ -230,7 +230,11 @@ The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but
 does not identify rotations or make loading columns uniquely interpretable. The
-current policy is recorded in
+optimizer still searches the full raw loading vector. It does not drop the
+`K(K-1)/2` rotational degrees of freedom of `Λ` for `rank = K >= 2`.
+`_mv_nparams` subtracts those directions for likelihood-ratio reporting only.
+`converged` is still a Nelder-Mead simplex-spread test on the unreduced
+parameter vector. The current policy is recorded in
 `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`.
 A passing or revised calibration protocol, covariance standard errors,
 external-comparator parity, and R-facing multivariate / covariance-structure

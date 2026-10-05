@@ -115,6 +115,17 @@ function _require_pcg_convergence(relative_residual::Real, tol::Real)
     return nothing
 end
 
+# MC-REML stops on a relative variance-component change, not a REML score.
+# A finite Hutchinson band is required before that stop may be certified;
+# one probe leaves `trace_mcse` undefined (NaN) and cannot certify.
+function _mc_reml_relative_change_converged(rel::Real, trace_mcse::AbstractVector, tol::Real)
+    return rel < tol && all(isfinite, trace_mcse)
+end
+
+function _mc_reml_optimizer_status(converged::Bool)
+    return converged ? "fixed_point_relchange" : "not_converged"
+end
+
 # Sparse QR rejects rank-deficient fixed-effect blocks without densifying X.
 function _require_full_fixed_effect_rank(X::SparseMatrixCSC)
     size(X, 2) == 0 && return nothing
@@ -772,7 +783,9 @@ Uses REML score fixed-point updates with the form used by `fit_sparse_multi_effe
 with the trace terms MC-estimated. A FIXED probe `seed` is reused across iterations
 (correlated sampling), so the iteration is reproducible for a given seed. This is a stochastic
 REML fixed-point iteration, not an EM ascent guarantee; `converged` reports small relative changes
-in variance components and does not establish a unique or global optimum.
+in variance components when the Hutchinson `trace_mcse` is finite (`nprobe > 1`). It does not
+establish a unique or global optimum. `optimizer_status` is `"fixed_point_relchange"` for that
+stop, never `"converged"`.
 
 Returns a `NamedTuple` containing the fitted variance components, ratios, `beta`, random effects,
 and convergence diagnostics. `trace_mcse` is the Monte-Carlo standard error of the final trace
@@ -879,7 +892,7 @@ function fit_multi_effect_mc_reml(
         sigmas = newsig
         sigma_e2 = newe
         if rel < tol
-            converged = true
+            converged = _mc_reml_relative_change_converged(rel, trace_mcse, tol)
             break
         end
     end
@@ -929,6 +942,7 @@ function fit_multi_effect_mc_reml(
         trace_mcse = trace_mcse,
         trace_evaluation_variance_components = trace_evaluation_variance_components,
         converged = converged,
+        optimizer_status = _mc_reml_optimizer_status(converged),
         iterations = iters,
         estimator = :matrix_free_mc_em_reml,
     ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, p))
@@ -1308,6 +1322,8 @@ so the iteration is reproducible for a given seed. This wrapper returns an
 `AnimalModelFit` and does not expose the low-level `trace_mcse` field. Use
 [`fit_multi_effect_mc_reml`](@ref) to inspect trace Monte-Carlo error; that error is not a
 gradient or variance-component standard error and excludes PCG solve error.
+A relative-change stop is labelled `optimizer_status = "fixed_point_relchange"`, not
+`"converged"`.
 
 `compute_loglik = true` (default) evaluates the EXACT [`sparse_reml_loglik`](@ref) ONCE at the
 returned estimate. That costs two sparse Choleskys and NO selected inverse — cheap relative
@@ -1394,13 +1410,24 @@ function fit_matrix_free_reml(
         likelihood,
         (sigma_a2 = Float64(sigma_a2), sigma_e2 = Float64(sigma_e2)),
         fit.converged,
-        fit.converged ? "converged" : "not_converged",
+        fit.optimizer_status,
         fit.iterations,
         :matrix_free_reml,
         false,
         true,
         :estimated_matrix_free_mc_reml,
     )
+end
+
+function _unused_exact_route_keywords(nprobe, shared_probes, compute_loglik, slq_probes, slq_steps, verbose)
+    unused = String[]
+    nprobe === nothing || push!(unused, "nprobe")
+    shared_probes === nothing || push!(unused, "shared_probes")
+    compute_loglik === nothing || push!(unused, "compute_loglik")
+    slq_probes === nothing || push!(unused, "slq_probes")
+    slq_steps === nothing || push!(unused, "slq_steps")
+    verbose === nothing || push!(unused, "verbose")
+    return unused
 end
 
 """
@@ -1435,7 +1462,9 @@ The chosen engine's `NamedTuple` gains a `dispatch` field (`:exact` | `:matrix_f
 
 EXPERIMENTAL. The multi-effect matrix-free result includes `loglik` (`NaN` unless requested,
 stochastic when enabled) and `trace_mcse` for trace-estimation error. These describe different
-quantities. `nprobe` and other keywords forward to the chosen engine.
+quantities. `nprobe`, `shared_probes`, `compute_loglik`, `slq_probes`, `slq_steps`, and
+`verbose` are used only on the matrix-free route; supplying one of them on the `:exact`
+route is an error that names the unused keyword.
 """
 function fit_multi_effect(
     y::AbstractVector,
@@ -1443,12 +1472,12 @@ function fit_multi_effect(
     effects::AbstractVector;
     method::Symbol = :auto,
     direct_max_n::Integer = 200_000,
-    nprobe::Integer = 64,
-    verbose::Bool = true,
-    shared_probes::Bool = false,
-    compute_loglik::Bool = false,
-    slq_probes::Integer = 20,
-    slq_steps::Integer = 40,
+    nprobe::Union{Nothing,Integer} = nothing,
+    verbose::Union{Nothing,Bool} = nothing,
+    shared_probes::Union{Nothing,Bool} = nothing,
+    compute_loglik::Union{Nothing,Bool} = nothing,
+    slq_probes::Union{Nothing,Integer} = nothing,
+    slq_steps::Union{Nothing,Integer} = nothing,
     kwargs...,
 )
     method in (:auto, :exact, :matrix_free) ||
@@ -1467,18 +1496,38 @@ function fit_multi_effect(
     end
 
     if chosen === :exact
+        # :auto callers historically forward compute_loglik/verbose as matrix-free
+        # defaults. Those two are dropped here; a direct method = :exact call
+        # still names every unused keyword (#435).
+        unused = if method === :auto
+            _unused_exact_route_keywords(
+                nprobe, shared_probes, nothing, slq_probes, slq_steps, nothing,
+            )
+        else
+            _unused_exact_route_keywords(
+                nprobe, shared_probes, compute_loglik, slq_probes, slq_steps, verbose,
+            )
+        end
+        isempty(unused) ||
+            throw(ArgumentError("the :exact route does not use $(join(unused, ", "))"))
         res = fit_sparse_multi_effect_aireml(y, X, effects; kwargs...)
         return merge(res, (dispatch = :exact,))
     else
-        if verbose
+        nprobe_val = something(nprobe, 64)
+        verbose_val = something(verbose, true)
+        shared_probes_val = something(shared_probes, false)
+        compute_loglik_val = something(compute_loglik, false)
+        slq_probes_val = something(slq_probes, 20)
+        slq_steps_val = something(slq_steps, 40)
+        if verbose_val
             @info("fit_multi_effect: problem exceeds the direct-factorization budget " *
                   "(N=$N, K=$K > direct_max_n=$direct_max_n) — using matrix-free Monte-Carlo REML; " *
                   "trace estimates carry Monte-Carlo standard errors, not variance-component uncertainty. " *
                   "Override with method=:exact to force the exact (fill-limited) path.")
         end
-        res = fit_multi_effect_mc_reml(y, X, effects; nprobe = nprobe, shared_probes = shared_probes,
-                                       compute_loglik = compute_loglik, slq_probes = slq_probes,
-                                       slq_steps = slq_steps, kwargs...)
+        res = fit_multi_effect_mc_reml(y, X, effects; nprobe = nprobe_val, shared_probes = shared_probes_val,
+                                       compute_loglik = compute_loglik_val, slq_probes = slq_probes_val,
+                                       slq_steps = slq_steps_val, kwargs...)
         return merge(res, (dispatch = :matrix_free,))
     end
 end

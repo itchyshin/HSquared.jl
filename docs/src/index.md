@@ -52,8 +52,9 @@ features:
     Version number tracks covered capability, not maturity. **Not** in the
     Julia General registry. An earlier attempt
     ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
-    v0.5.0) was closed. Install with `Pkg.add(url=...)` only — do **not**
-    use `Pkg.add("HSquared")` by name.
+    v0.5.0) was closed. Install with
+    `Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")` only —
+    do **not** use `Pkg.add("HSquared")` by name.
     `public_covered_count` is **7** (R-public; G10 multivariate + the explicit
     `target = "genomic"` 0.7 genomic-GREML route).
     **0.9.0 is an experimental GitHub release, not a Julia General registration.**
@@ -90,13 +91,18 @@ live ladder; do not read this page as a capability dump.
 
 ## Install
 
-HSquared is **not** in the Julia General registry. Do **not** use
-`Pkg.add("HSquared")` by name.
+Needs Julia 1.10 or newer (`Project.toml` compat). HSquared is **not**
+in the Julia General registry. Do **not** use `Pkg.add("HSquared")` by
+name.
 
 ```julia
 using Pkg
 Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")
 ```
+
+For the R package `hsquared`, clone this repository instead of
+`Pkg.add` and run `Pkg.instantiate()` in the clone. Point
+`HSQUARED_JULIA_PROJECT` at that clone.
 
 ## First engine utility
 
@@ -146,4 +152,4 @@ history from release status. [Mission control](mission-control.md) is a
 developer dashboard, not a first-click applied path.
 
 For a side-by-side map of pkgdown articles vs these pages, see
-[Twin boundary: documentation map](twin-boundary.md#documentation-map-applied-journey).
+[Twin boundary: documentation map](twin-boundary.md#Documentation-map-applied-journey).

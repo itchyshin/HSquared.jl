@@ -9,7 +9,8 @@ R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 > capability, not maturity. Not in the Julia General registry. An earlier
 > attempt
 > ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
-> v0.5.0) was closed. Install with `Pkg.add(url=...)` only — do **not** use
+> v0.5.0) was closed. Install from GitHub with the command in
+> [Install](#install) — do **not** use
 > `Pkg.add("HSquared")` by name. `public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
 
 I used language-model tools (Claude, Codex, and Cursor) on substantial
@@ -17,8 +18,8 @@ parts of this engine: source, tests, and docs. I review the code I
 ship, and I am responsible for it. Tests and Documenter run in CI.
 This 0.9.0 release is experimental. It is not a production engine and
 it is not version 1.0. HSquared is not in the Julia General registry
-yet; until a later registration actually merges, install with
-`Pkg.add(url=...)` only.
+yet; until a later registration actually merges, install from the
+GitHub URL in [Install](#install) only.
 
 `HSquared.jl` is the Julia engine twin of the R package `hsquared`.
 This is not the package you type a formula into.
@@ -27,6 +28,21 @@ R users: start at [hsquared](https://github.com/itchyshin/hsquared)
 (`y ~ sex + age + animal(1 | id, pedigree = ped)`), or the
 [hsquared pkgdown site](https://itchyshin.github.io/hsquared/).
 That is the applied-user interface. This repository is the engine.
+
+## Install
+
+Needs Julia 1.10 or newer (`Project.toml` compat). Not in Julia General.
+
+```julia
+using Pkg
+Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")
+```
+
+Do **not** run `Pkg.add("HSquared")` by name.
+
+For the R package `hsquared`, clone this repository instead of `Pkg.add`
+and run `Pkg.instantiate()` in the clone. Point `HSQUARED_JULIA_PROJECT`
+at that clone (hsquared#261).
 
 This engine already has experimental validation-scale fitting: pedigree
 checks, sparse `Ainv`, low-level REML and Henderson MME solves, and
@@ -42,7 +58,8 @@ default. Read `validation_status()` before treating any path as production.
 **Experimental 0.9.0 release.** Version number only. Not in Julia General. An
 earlier attempt
 ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
-v0.5.0) was closed. Use `Pkg.add(url=...)` only; do **not** use
+v0.5.0) was closed. Use the GitHub `Pkg.add` command in
+[Install](#install) only; do **not** use
 `Pkg.add("HSquared")` by name. Not production-ready.
 `public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
 Language-model tools were used on this package; I review the code I ship.
@@ -227,7 +244,9 @@ Ainv = pedigree_inverse(ped)
 It is no longer unconnected: this `Ainv` is what an `animal_model_spec` is
 built from, and so what the covered AI-REML fitter (`fit_ai_reml`) and the
 sparse MME path consume. What it is not is a *public* fitting entry point —
-`hsquared()` is still an honest Phase 0 placeholder that throws (see below).
+the generic Julia `hsquared()` entry point remains a placeholder that throws,
+while supported user-facing fits run through the R package and its Julia bridge
+(see below).
 
 The first Julia data container mirrors the R `hs_data()` input contract:
 

@@ -31,6 +31,14 @@ additive genetic effect `a ~ N(0, σ²a·A)` and a permanent-environment effect
 `pe ~ N(0, σ²pe·I)` sharing the record→animal incidence `Z` (repeated records are
 needed to separate `a` from `pe`).
 
+Payload-v2 (`parse_payload_v2`) picks that route from the independent-block
+count (HSquared.jl #352). One pedigree block goes to `:animal`.
+Two independent blocks go to `:two_effect` (animal + permanent environment
+when the second block is iid and shares the animal incidence).
+Three or more independent blocks go to `:multi_effect`.
+Two effects are not rejected. `fit_repeatability_reml` is the dedicated
+`Z2 = Z1`, `A2 = I` special case of that two-effect kernel.
+
 ```@example qg
 using HSquared, LinearAlgebra
 
@@ -44,8 +52,10 @@ r = repeatability_mme(y, X, Z, Ainv, 1.0, 0.5, 2.0)
 ```
 
 `fit_repeatability_reml` estimates the three variance components by REML and
-returns the **repeatability coefficient** `t = (σ²a + σ²pe)/total` and the
-heritability `h² = σ²a/total`:
+returns the **repeatability coefficient**
+`t = (σ²a + σ²pe)/(σ²a + σ²pe + σ²e)` and the heritability
+`h² = σ²a/(σ²a + σ²pe + σ²e)`. Fixed-effect variance is outside both
+denominators:
 
 ```@example qg
 fit = fit_repeatability_reml(y, X, Z, Ainv)
@@ -76,7 +86,16 @@ ce = two_effect_mme(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2), 1.0, 0.5, 2.0)
 ```
 
 `fit_two_effect_reml` estimates the variances and the two ratios (`ratio1`,
-`ratio2` — e.g. `h²` and the common-environment `c²`):
+`ratio2` — e.g. `h²` and the common-environment `c²`).
+
+`converged = true` here means the Nelder-Mead simplex contracted. It does not
+mean the three variances are separately identified. The common-environment
+leg (`A2 = I`, groups assigned independently of the pedigree) is identified
+on the covered design. The animal + dam design is often not: when each dam
+has exactly one sire, A = 0.5 I + 0.5 D among phenotyped animals, so only
+`0.5 Va + Ve` and `0.5 Va + Vdam` are estimable. Different starts can then
+return heritabilities from 0 to about 0.5 at the same REML log-likelihood.
+Nothing in the returned `converged` flag names that ridge.
 
 ```@example qg
 cf = fit_two_effect_reml(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2))

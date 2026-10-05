@@ -8,30 +8,38 @@
   version or capability change.
 
 None of the entries below change any capability status, row count, or
-package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
-(`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
-is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
-this pass and belongs to the release owner.)
+package version. `public_covered_count` stays **7**, and no entry below touches
+`Project.toml`. The package version is `0.9.0`; its released section is recorded
+below.
 
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
   (Meuwissen & Luo) for Henderson's rules, so the spec now carries them
-  (`animal_model_spec(...; relationship_diag)`, attached by the payload-v2 bridge) and
-  `method = :auto` reads them instead of a selected inverse of `Ainv`. Values unchanged to
+  (`animal_model_spec(...; relationship_diag)`) and `method = :auto` reads them instead of
+  a selected inverse of `Ainv`. The payload-v2 route carries this diagonal when it builds a
+  pedigree block in Julia; callers that pass only `Ainv`, including the current R
+  formula bridge, still obtain it through the selected inverse. Values are unchanged to
   1e-10; explicit `:selinv` and `:dense` keep their own paths. Szymon Drobniak.
 - Fixed #350: `prediction_error_variance` and `reliability` default to `method = :auto`,
   which takes the sparse Takahashi selected-inverse path for a sparse `Ainv` and the
   dense path for a dense genomic `Ginv` (`:selinv` and `:dense` stay explicit; the
   recursion over a dense factor is 67x slower than `inv`), and `reliability` reads `diag(inv(Ainv))` through the selected inverse of
   `Ainv` instead of forming the dense inverse, so `result_payload` and
-  `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv` (q = 5,000:
-  5.9 s / 832 MB → 0.008 s / 33 MB and 11.4 s / 1.8 GB → 0.004 s / 20 MB; numerics
-  unchanged to machine precision). Szymon Drobniak (finding). The selected-inverse path
+  `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv`.
+  The original q = 5,000 timing was removed because its pedigree generator, call script,
+  and hardware were not recorded; it was not a reproducible package benchmark. Numerics
+  are unchanged to machine precision. Szymon Drobniak (finding). The selected-inverse path
   refuses a numerically singular coefficient matrix (e.g. a duplicated column of `X`) with a
   named `ArgumentError`, using a relative-pivot test (`L_ii² / C_ii`) that is invariant to the
   units of a covariate: a well-posed fit with a covariate stored at magnitude 10⁶ or more is
   not refused, and neither is a degenerate-but-well-posed boundary fit (the guard's floor is
   `eps`-level, 1e-15; a duplicated column of `X` measures 7.4e-18).
+- Fixed #370/#371: K-effect post-fit uncertainty can call
+  `multi_effect_uncertainty` once and reuse one covariance calculation for component
+  standard errors, ratio standard errors, and sum-ratio intervals. This applies only to
+  the multi-effect K-effect route; the univariate animal-model route is unchanged.
+  Performance figures from an undistributed great-tit dataset are intentionally omitted
+  here because readers cannot reproduce them from this repository.
 - Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
   `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
   The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
@@ -96,6 +104,13 @@ this pass and belongs to the release owner.)
   `boundary` stricter, never clear it. Both now name the actual lever: a
   different `initial`, which recentres the log-scale search bracket/rail.
   Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
+
+## 0.9.0 (experimental)
+
+This release retained the experimental package status and did not authorize a
+new covered-capability count. It consolidated the Julia engine and R-bridge
+contracts present at the 0.9.0 tag; subsequent development remains under
+Unreleased above.
 
 ## 0.8.0 (experimental)
 
