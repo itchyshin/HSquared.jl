@@ -13,8 +13,10 @@ import csv
 import hashlib
 import importlib
 import json
+import os
 import re
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +27,8 @@ PACKAGE_RUN_SCHEMA = "hsquared-arc1-package-check-run-v1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 REQUIRED_R_TESTS = (
     "test-arc1-controls.R", "test-arc1-live-parity.R",
+    "test-arc1-bootstrap-v2-live.R", "test-arc1-profile-v4-live.R",
+    "test-arc1-profile-v4-transport-isolation.R",
     "test-arc1-uncertainty-controls.R", "test-arc1-uncertainty-live.R",
 )
 ORACLE_JULIA_TESTS = (
@@ -54,6 +58,24 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _canonical_preflight_sha256(path: Path) -> str:
+    """Rebuild the runner's sorted TOML canonical bytes without volatile root keys."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ReceiptError(f"cannot read retained preflight TOML for canonical verification: {exc}") from exc
+    retained: list[str] = []
+    in_table = False
+    for line in lines:
+        if line.startswith("["):
+            in_table = True
+        if not in_table and (line.startswith("created_at_utc = ") or
+                             line.startswith("canonical_sha256 = ")):
+            continue
+        retained.append(line)
+    return _sha_bytes("".join(retained).encode("utf-8"))
 
 
 def _pinned_file(path: Path, expected_sha256: str, label: str) -> bytes:
@@ -135,7 +157,7 @@ def _parse_csv_results(path: Path, label: str) -> None:
           f"{label} columns are incomplete or unexpected")
     names = [row.get("file", "") for row in rows]
     _need(len(rows) == len(REQUIRED_R_TESTS) and set(names) == set(REQUIRED_R_TESTS) and
-          len(set(names)) == len(names), f"{label} does not have exactly the four required Arc1 test files")
+          len(set(names)) == len(names), f"{label} does not have exactly the {len(REQUIRED_R_TESTS)} required Arc1 test files")
     for row in rows:
         try:
             counts = {name: int(row[name]) for name in
@@ -338,6 +360,94 @@ def _verify_oracle(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: di
               "G6 executed environment is not bound to the retained R results and reviewed thread limits")
 
 
+def _validate_retained_registry_inventory(report: dict[str, Any], adapter: Any) -> None:
+    """Check registry inventory completeness and internal pins without reading its files."""
+    registries = report.get("registries")
+    _need(isinstance(registries, list) and registries,
+          "G7 retained no-install preflight registry inventory is missing")
+    tarball_mode = report.get("registry_tarball_mode")
+    depot_path = report.get("depot_path")
+    _need(isinstance(tarball_mode, bool) and isinstance(depot_path, list) and depot_path and
+          all(isinstance(item, str) and Path(item).is_absolute() for item in depot_path),
+          "G7 retained no-install preflight registry mode or depot identity is malformed")
+    expected_paths = adapter._registry_candidates(depot_path, tarball_mode)
+    seen_paths: set[str] = set()
+    for row in registries:
+        _need(isinstance(row, dict), "G7 retained registry record is malformed")
+        path = row.get("registry_path")
+        descriptor = row.get("descriptor_path")
+        payload = row.get("payload_path")
+        name, uuid = row.get("name"), row.get("uuid")
+        _need(isinstance(path, str) and Path(path).is_absolute() and path not in seen_paths and
+              isinstance(descriptor, str) and Path(descriptor).is_absolute() and
+              isinstance(payload, str) and Path(payload).is_absolute() and
+              isinstance(name, str) and name and isinstance(uuid, str) and
+              re.fullmatch(r"[0-9a-fA-F-]{36}", uuid) is not None,
+              "G7 retained registry identity or paths are malformed")
+        seen_paths.add(path)
+        _need(isinstance(row.get("compressed"), bool) and
+              re.fullmatch(r"[0-9a-f]{64}", str(row.get("descriptor_sha256", ""))) is not None and
+              re.fullmatch(r"[0-9a-f]{64}", str(row.get("payload_sha256", ""))) is not None and
+              re.fullmatch(r"[0-9a-f]{40}", str(row.get("git_tree_sha1", ""))) is not None and
+              row.get("observed_tree_sha1") == row.get("git_tree_sha1") and
+              isinstance(row.get("repo"), str) and row["repo"].startswith("https://"),
+              "G7 retained registry content pins or identity are malformed")
+        if row["compressed"]:
+            _need(Path(descriptor) == Path(path) and Path(payload).parent == Path(path).parent and
+                  Path(payload).name.endswith((".tar.gz", ".tgz")),
+                  "G7 retained compressed registry paths are inconsistent")
+        else:
+            _need(Path(descriptor) == Path(path) / "Registry.toml" and Path(payload) == Path(path),
+                  "G7 retained unpacked registry paths are inconsistent")
+    _need(seen_paths == expected_paths,
+          "G7 retained registry inventory omits or duplicates a depot registry")
+
+
+def _validate_retained_preflight_snapshot(path: Path, expected_sha256: str,
+                                         expected: dict[str, Any], adapter: Any) -> dict[str, Any]:
+    """Validate frozen preflight semantics while allowing later registry-file updates.
+
+    The package validator checks the retained Manifest, path sources, dependency closure,
+    artifact selection and overrides before it inspects registry bytes. Only the three
+    registry-content mismatch errors at the end of that validator are eligible for the
+    historical-snapshot path below. All other failures remain fatal.
+    """
+    raw = _pinned_file(path, expected_sha256, "G7 retained no-install preflight snapshot")
+    try:
+        report = tomllib.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
+        raise ReceiptError(f"G7 retained no-install preflight TOML is invalid: {error}") from error
+    _need(report.get("schema") == "arc1-julia-noinstall-preflight-v1" and
+          report.get("status") == "passed", "G7 retained no-install preflight lacks passed status")
+    for key in ("freeze_sha256", "runner_sha256", "driver_sha256", "sandbox",
+                "load_path", "depot_path", "julia_executable", "julia_launcher_sha256",
+                "julia_version", "julia_runtime_executable", "julia_runtime_executable_sha256"):
+        _need(report.get(key) == expected.get(key),
+              f"G7 retained no-install preflight {key} differs from frozen identity")
+    host_identity = expected.get("host_identity")
+    _need(isinstance(host_identity, dict), "G7 frozen Julia host identity is missing")
+    for key, value in host_identity.items():
+        report_key = "julia_runtime_executable" if key == "julia_runtime_executable" else key
+        report_value = report.get(report_key)
+        if key == "julia_runtime_executable_sha256":
+            report_value = report.get(key)
+        _need(report_value == value, f"G7 retained no-install preflight host identity differs for {key}")
+    try:
+        adapter.validate_noinstall_preflight_receipt(path, expected_sha256, expected)
+    except Exception as error:
+        allowed_registry_drift = {
+            "reachable registry descriptor content changed",
+            "reachable registry tree or identity differs from its content",
+            "reachable registry payload content changed",
+        }
+        _need(str(error) in allowed_registry_drift,
+              f"G7 retained no-install preflight semantic validation failed: {error}")
+        _validate_retained_registry_inventory(report, adapter)
+    _need(report.get("canonical_sha256") == _canonical_preflight_sha256(path),
+          "G7 retained no-install preflight canonical digest is invalid")
+    return report
+
+
 def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: dict[str, Any],
                     adapter: Any, frozen_files: dict[str, dict[str, str]]) -> None:
     _need(receipt.get("schema") == PACKAGE_RUN_SCHEMA and receipt.get("gate_selection") == "all",
@@ -357,17 +467,18 @@ def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: d
           "G7 requires Julia, R, and docs as the complete passed component set")
     _need(receipt.get("input_counts") == {key: len(value) for key, value in frozen_files.items()},
           "package receipt input counts differ from the reviewed inventory")
-    expected_names = ["julia-version", "rscript-version", "julia-pkg-test", "r-arc1-mandatory-live",
+    expected_names = ["julia-version", "rscript-version", "julia-direct-test-suite", "r-arc1-mandatory-live",
                       "r-cmd-check", "julia-local-docs"]
     sandbox = freeze.get("julia_test_sandbox")
     _need(isinstance(sandbox, dict), "package freeze lacks its reviewed Julia test sandbox")
-    julia_argv, expected_julia_env = adapter._julia_command(run_dir / "julia-test-sandbox", sandbox)
+    julia_driver_path = run_dir / "julia-test-driver.jl"
+    julia_argv, expected_julia_env = adapter._julia_command(julia_driver_path, sandbox)
     docs_argv = [adapter.JULIA_BIN, "--startup-file=no",
                  f"--project={run_dir / 'docs-environment'}", str(run_dir / "local-docs-make.jl")]
     expected_argv = {
         "julia-version": adapter._version_command("julia"),
         "rscript-version": adapter._version_command("rscript"),
-        "julia-pkg-test": julia_argv,
+        "julia-direct-test-suite": julia_argv,
         "r-arc1-mandatory-live": [adapter.RSCRIPT_BIN, "--vanilla", str(run_dir / "r-arc1-live-driver.R")],
         "r-cmd-check": [adapter.RSCRIPT_BIN, "--vanilla", str(run_dir / "r-package-check-driver.R")],
         "julia-local-docs": docs_argv,
@@ -375,13 +486,11 @@ def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: d
     logs = _check_command_logs(run_dir, receipt.get("commands"), expected_names, frozen_files,
                                package=True, julia_root=str(adapter.JULIA_ROOT), r_root=str(adapter.R_ROOT),
                                expected_argv=expected_argv)
-    julia_env = logs["julia-pkg-test"]["record"].get("env_overrides")
+    julia_env = logs["julia-direct-test-suite"]["record"].get("env_overrides")
     _need(isinstance(julia_env, dict) and julia_env == expected_julia_env and
-          julia_env.get("ARC1_TEST_SANDBOX_CAPTURE_DIR") == str(run_dir / "julia-test-sandbox") and
-          julia_env.get("ARC1_TEST_SANDBOX_PROJECT_SHA256") == sandbox.get("project_sha256") and
-          julia_env.get("ARC1_TEST_SANDBOX_MANIFEST_SHA256") == sandbox.get("manifest_sha256") and
+          julia_env.get("JULIA_LOAD_PATH") == "@:@stdlib" and
           julia_env.get("JULIA_NUM_THREADS") == "1" and julia_env.get("OPENBLAS_NUM_THREADS") == "1",
-          "G7 Julia test environment is not bound to the retained sandbox and one-thread limits")
+          "G7 Julia direct-test environment is not isolated to the reviewed sandbox and one-thread limits")
     r_live_env = logs["r-arc1-mandatory-live"]["record"].get("env_overrides")
     _need(isinstance(r_live_env, dict) and
           r_live_env.get("ARC1_ORACLE_PACKAGE_ROOT") == str(adapter.R_ROOT) and
@@ -403,16 +512,25 @@ def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: d
     for name in ("julia-version", "rscript-version"):
         _need(freeze["runtime"][name.removesuffix("-version")] in logs[name]["output"],
               f"{name} log does not match the frozen runtime")
-    _need("ARC1_TEST_SANDBOX_VERIFIED" in logs["julia-pkg-test"]["output"] and
-          "ARC1_PACKAGE_JULIA_COMPONENT_PASS" in logs["julia-pkg-test"]["output"],
-          "G7 Julia package log lacks the sandbox and success markers")
-    summary = receipt.get("julia_test_summary")
+    _need("ARC1_TEST_SANDBOX_VERIFIED" in logs["julia-direct-test-suite"]["output"] and
+          "ARC1_LOADED_HSQUARED_SOURCE_VERIFIED" in logs["julia-direct-test-suite"]["output"] and
+          "ARC1_PACKAGE_JULIA_COMPONENT_PASS" in logs["julia-direct-test-suite"]["output"],
+          "G7 Julia direct-test log lacks sandbox, source-identity, or success markers")
     expected_testsets = tuple(adapter.REQUIRED_ARC1_TESTSETS)
+    try:
+        parsed_log_summary = adapter.parse_julia_test_output(
+            logs["julia-direct-test-suite"]["output"],
+            required_arc1_testsets=expected_testsets)
+    except Exception as error:
+        raise ReceiptError(f"G7 retained Julia log has no valid passing Test Summary evidence: {error}") from error
+    summary = receipt.get("julia_test_summary")
     expected_sets = set(expected_testsets)
     _need(isinstance(summary, dict) and summary.get("required_arc1_testsets") == list(expected_testsets),
           "G7 Julia summary does not report the complete required Arc1 testset set")
     records = summary.get("summary_records")
     _need(isinstance(records, list), "G7 Julia testset summary is missing")
+    _need(summary == parsed_log_summary,
+          "G7 Julia receipt test summary differs from the hashed Julia log summaries")
     by_set = {row.get("testset"): row for row in records if isinstance(row, dict)}
     _need(set(by_set) >= expected_sets, "G7 Julia summary omits a required Arc1 testset")
     for name in expected_sets:
@@ -439,6 +557,107 @@ def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: d
               "project_sha256": sandbox["project_sha256"],
               "manifest_sha256": sandbox["manifest_sha256"], "capture_dir": str(capture)},
           "G7 Julia component sandbox metadata differs from retained capture")
+    _need(component_receipts["julia"].get("test_sandbox_after_sha256") == {
+              "project_sha256": sandbox["project_sha256"],
+              "manifest_sha256": sandbox["manifest_sha256"]},
+          "G7 Julia reviewed test sandbox changed during direct test execution")
+    _need(component_receipts["julia"].get("test_sandbox_capture_after_sha256") == {
+              "project_sha256": sandbox["project_sha256"],
+              "manifest_sha256": sandbox["manifest_sha256"]},
+          "G7 Julia retained test sandbox capture changed during direct test execution")
+    driver = _safe_artifact(run_dir, "julia-test-driver.jl", "G7 Julia direct-test driver")
+    driver_source = driver.read_text(encoding="utf-8")
+    expected_driver = adapter.julia_test_driver_source(
+        sandbox, capture, freeze_sha256=receipt["freeze_sha256"],
+        expected_julia_executable=receipt["runtime_expected"]["julia_executable"],
+        expected_julia_version=receipt["runtime_expected"]["julia"].removeprefix("julia version "),
+        source_file_inventory=frozen_files["julia"])
+    _need(driver_source == expected_driver,
+          "G7 Julia direct-test driver differs from the current reviewed runner")
+    _need(not any(operation in driver_source for operation in
+                  ("Pkg.test", "Pkg.resolve", "Pkg.instantiate", "Pkg.add", "Pkg.update",
+                   "Pkg.develop", "Pkg.rm", "Pkg.build", "Pkg.precompile")),
+          "G7 Julia direct-test driver invokes package resolution or installation")
+    driver_hash = sha256_file(driver)
+    expected_driver_record = {"path": driver.name, "sha256": driver_hash}
+    _need(receipt.get("julia_test_driver") == expected_driver_record and
+          component_receipts["julia"].get("test_driver") == expected_driver_record,
+          "G7 Julia direct-test driver is not bound to its retained hashes")
+    preflight_log = logs["julia-direct-test-suite"]["output"]
+    marker_values: dict[str, str] = {}
+    for marker in ("ARC1_NO_INSTALL_PREFLIGHT_BEFORE_SHA256",
+                   "ARC1_NO_INSTALL_PREFLIGHT_AFTER_SHA256",
+                   "ARC1_NO_INSTALL_PREFLIGHT_CANONICAL_SHA256"):
+        found = re.findall(rf"^{marker}=([0-9a-f]{{64}})$", preflight_log, flags=re.MULTILINE)
+        _need(len(found) == 1, f"G7 Julia log must contain exactly one {marker} marker")
+        marker_values[marker] = found[0]
+    _need(preflight_log.count("ARC1_NO_INSTALL_PREFLIGHT_IDENTICAL") == 1,
+          "G7 Julia log lacks one before/after no-install preflight identity marker")
+    before_preflight = _safe_artifact(capture, "julia-noinstall-preflight-before.toml",
+                                      "G7 before-test no-install preflight")
+    after_preflight = _safe_artifact(capture, "julia-noinstall-preflight-after.toml",
+                                     "G7 after-test no-install preflight")
+    before_sha = sha256_file(before_preflight)
+    after_sha = sha256_file(after_preflight)
+    _need(before_sha == marker_values["ARC1_NO_INSTALL_PREFLIGHT_BEFORE_SHA256"] and
+          after_sha == marker_values["ARC1_NO_INSTALL_PREFLIGHT_AFTER_SHA256"],
+          "G7 retained no-install preflight hashes differ from the Julia test log")
+    preflight_receipt = receipt.get("julia_noinstall_preflight")
+    expected_preflight_receipt = {
+        "schema": "arc1-julia-noinstall-preflight-v1", "status": "passed",
+        "created_at_utc": None, "receipt_path": str(before_preflight), "receipt_sha256": before_sha,
+        "post_test_receipt_path": str(after_preflight), "post_test_receipt_sha256": after_sha,
+        "canonical_sha256": marker_values["ARC1_NO_INSTALL_PREFLIGHT_CANONICAL_SHA256"],
+        "canonical_equal": True, "log_marker": "ARC1_NO_INSTALL_PREFLIGHT_IDENTICAL",
+    }
+    _need(isinstance(preflight_receipt, dict), "G7 top-level no-install preflight receipt is missing")
+    expected_preflight_receipt["created_at_utc"] = preflight_receipt.get("created_at_utc")
+    _need(preflight_receipt == expected_preflight_receipt and
+          component_receipts["julia"].get("noinstall_preflight") == preflight_receipt,
+          "G7 no-install preflight receipt pointers or component binding differ from retained evidence")
+    julia_launcher = Path(receipt["runtime_expected"]["julia_executable"]).resolve()
+    julia_version = receipt["runtime_expected"]["julia"].removeprefix("julia version ")
+    try:
+        host_identity = adapter._probe_julia_host_identity(
+            julia_launcher, expected_version=julia_version)
+    except (OSError, ValueError, RuntimeError) as error:
+        raise ReceiptError(f"G7 pinned Julia host identity probe failed: {error}") from error
+    expected_preflight = {
+        "freeze_sha256": receipt["freeze_sha256"], "runner_sha256": receipt["runner_sha256"],
+        "driver_sha256": driver_hash,
+        "sandbox": {"project_path": str(Path(sandbox["project_path"]).resolve()),
+                    "project_sha256": sandbox["project_sha256"],
+                    "manifest_path": str(Path(sandbox["manifest_path"]).resolve()),
+                    "manifest_sha256": sandbox["manifest_sha256"]},
+        "source_root": str(adapter.JULIA_ROOT.resolve()),
+        "source_files": dict(frozen_files["julia"]),
+        "load_path": expected_julia_env["JULIA_LOAD_PATH"].split(os.pathsep),
+        "depot_path": expected_julia_env["JULIA_DEPOT_PATH"].split(os.pathsep),
+        "julia_executable": str(julia_launcher),
+        "julia_launcher_sha256": sha256_file(julia_launcher),
+        "julia_version": julia_version,
+        "julia_runtime_executable": host_identity["julia_runtime_executable"],
+        "julia_runtime_executable_sha256": host_identity["julia_runtime_executable_sha256"],
+        "host_identity": host_identity,
+    }
+    before_report = _validate_retained_preflight_snapshot(
+        before_preflight, before_sha, expected_preflight, adapter)
+    after_report = _validate_retained_preflight_snapshot(
+        after_preflight, after_sha, expected_preflight, adapter)
+    _need(before_report.get("canonical_sha256") == marker_values["ARC1_NO_INSTALL_PREFLIGHT_CANONICAL_SHA256"] and
+          after_report.get("canonical_sha256") == marker_values["ARC1_NO_INSTALL_PREFLIGHT_CANONICAL_SHA256"] and
+          before_report.get("canonical_sha256") == after_report.get("canonical_sha256"),
+          "G7 before/after no-install preflight reports do not share the logged canonical identity")
+    before_substantive = {key: value for key, value in before_report.items()
+                          if key not in {"created_at_utc", "canonical_sha256"}}
+    after_substantive = {key: value for key, value in after_report.items()
+                         if key not in {"created_at_utc", "canonical_sha256"}}
+    _need(before_substantive == after_substantive,
+          "G7 before/after no-install preflight substantive reports differ")
+    _need(before_report.get("created_at_utc") == preflight_receipt.get("created_at_utc") and
+          _canonical_preflight_sha256(before_preflight) == before_report.get("canonical_sha256") and
+          _canonical_preflight_sha256(after_preflight) == after_report.get("canonical_sha256"),
+          "G7 no-install preflight canonical digest or recorded timestamp is invalid")
     bootstrap_spec = freeze.get("julia_call_bootstrap")
     bootstrap_dir = _safe_directory(run_dir, "julia-call-bootstrap", "G7 JuliaCall bootstrap copy")
     bootstrap_hashes = {name: sha256_file(_safe_artifact(bootstrap_dir, name, f"G7 bootstrap {name}"))
@@ -450,7 +669,7 @@ def _verify_package(gate: str, receipt: dict[str, Any], run_dir: Path, freeze: d
                                                       "initial_sha256": expected_bootstrap},
           "G7 JuliaCall bootstrap copy or receipt differs from the reviewed environment")
     for name, command_name, log_key, hash_key in (
-        ("julia", "julia-pkg-test", "log", "log_sha256"),
+        ("julia", "julia-direct-test-suite", "log", "log_sha256"),
         ("r", "r-arc1-mandatory-live", "live_log", "live_log_sha256"),
         ("docs", "julia-local-docs", "log", "log_sha256"),
     ):
