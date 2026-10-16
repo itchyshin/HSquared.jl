@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-10-16 recovered Arc 1 component checks
+
+On the recovered Julia source, the complete `Pkg.test()` suite passed (log SHA-256 `2f5f35bb78aae5ea08bf1b4375ca41638222bcce737877d23b284615bc8c0013`). Python evidence-checker adversaries passed 46/46. An isolated Documenter/VitePress render completed with exit 0 and generated the expected validation-status and legacy-redirect pages. That docs run used an empty scratch Git repository, `remotes=nothing`, and synthetic scratch package metadata; it is a component check only, not canonical G7. The normal package-checker self-test remains blocked because its reviewed JuliaCall bootstrap template is absent from retained evidence. No scientific gate or study status advances.
+
 ## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
 
 The approved200-seed Totoro FA primary is COMPLETE and immutable:110 recovered,20 G-error classifications,11 R-error classifications and59 nonconverged, with all200 attempts retained. The recovery rate is55%, MCSE3.52percentage points, Wilson95%48.1%–61.7%; no aggregate pass cutoff was declared. No restart, GPU or new campaign.
