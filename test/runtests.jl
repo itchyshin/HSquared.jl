@@ -11325,6 +11325,8 @@ module E1EvolvabilityFinite
     include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
 end
 
+include("test_issue_410_mv_se_hoist.jl")
+
 # Preserve original specification identity while computing validated buffers.
 include("likelihood_original_spec_regression.jl")
 
