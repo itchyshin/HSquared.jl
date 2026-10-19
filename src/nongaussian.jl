@@ -1084,7 +1084,10 @@ the negative-binomial `theta` is ESTIMATED and rides in `variance_components`),
 `method` (`"laplace"`/`"variational"`,
 resolved through the internal `MarginalMethod` dispatch from the stored marginal
 symbol), `variance_components`, `fixed_effects`, `breeding_values = (ids, values)`,
-`loglik`, and `converged`.
+`loglik`, and `converged`. `converged` is `fit.converged && !fit.boundary`: the 11-field
+shape cannot carry `boundary`, so a fit whose variance estimate sits at the search
+boundary reports `converged = false` rather than a start-value-dependent estimate as
+converged (#345; see [`fit_laplace_reml`](@ref) and #327).
 
 The payload shape is deliberately **family-uniform** and therefore carries NO
 `heritability` field: a `NonGaussianFit` computes none, and h² is left to the
@@ -1109,7 +1112,7 @@ function nongaussian_result_payload(fit::NonGaussianFit)
         fixed_effects = copy(fit.beta),
         breeding_values = (ids = copy(fit.ids), values = copy(fit.breeding_values)),
         loglik = fit.marginal_loglik,
-        converged = fit.converged,
+        converged = fit.converged && !fit.boundary,
     )
 end
 

@@ -11339,3 +11339,4 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
