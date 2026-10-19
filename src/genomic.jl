@@ -563,7 +563,7 @@ Brent profile on `Vg / (Vg + Ve)`; `optimizer_status` is `"spectral_converged"` 
 `iterations` counts Brent iterations. It hands the fit to the dense AI-REML route
 whenever the model is not of that form, the spectrum is non-positive or non-finite, or
 the optimum sits on the `Vg` / `Ve` boundary. `solver = :dense_ai_reml` forces the dense
-route for validation. `target = :sparse_reml` is always dense.
+route for validation. `target = :sparse_reml` is always dense, and the single-step wrappers pin `:dense_ai_reml`.
 
 Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
 selected-inversion advantage); no external comparator, no R model-spec.
@@ -2768,7 +2768,7 @@ function fit_single_step_reml(
     Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
     return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 """
@@ -2878,7 +2878,7 @@ function fit_metafounder_single_step_reml(
                                             blend_weight = blend_weight, ridge = ridge,
                                             max_relationship_cache = max_relationship_cache)
     return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 # ---------------------------------------------------------------------------
