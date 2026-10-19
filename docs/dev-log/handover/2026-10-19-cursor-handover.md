@@ -32,6 +32,12 @@ The focused G2 pass is the only new code-test result. The prior exact failures a
 - **Git landing:** the handoff gate reported 116 uncommitted status groups before the two handoff files, 59 unpushed commits on detached HEAD, 179 unpushed commits across other branches, and unmet GATES. The complete dirty tree is carried over locally at the Julia path above. Nothing was pushed. The local handover commit stages only the two handover files; all other paths remain carried over. Pushing this branch would publish its 59 existing unpushed commits, so the handoff stays local and Cursor must open the same checkout.
 - **Current leases:** `codex-arc1-v4-lineage-20261019` remains active on the integration/evidence subtree, shared checkpoint/status files, and listed Julia/R implementation files. Do not edit or release its paths. The prior setup and R-memory leases belong to the outgoing Codex work and should be released after confirming their exact IDs. A separate handover-file lease is held by `codex-arc1-cursor-handover-20261019` and should also be released after the handoff is committed or abandoned.
 
+### Other checkout boundary
+
+The attached Codex project worktree at `/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl` is detached at `e1df4c6e4972edf1c9ecc7c691d4c147e1e32017` (`Codex worktree snapshot: startup-cleanup`) and has only a generated `tools/__pycache__/arc1_oracles.cpython-314.pyc` modification. It does not contain this recovery state. Do not continue Arc 1 there or carry that generated file into this handoff. Use `/private/tmp/HSquared.jl-arc1-recovery-20261015`.
+
+The competing ref `refs/codex/snapshots/564ba33dddfbae7c96aea6c65d81d2806ee849f9` is a separate snapshot with differing G2 source and test edits. Review its lineage read-only before resolving ownership; neither snapshot should be overwritten by assumption.
+
 The current G2 source has a finite-domain line-search cap refinement. The focused tests pass, and the independent review found no blocker for a connected feasible interval. It cautioned that this does not guarantee recovery across disconnected feasible regions. Resolve the competing snapshot lineage and source ownership before editing either shared G2 file.
 
 ## Key Decisions and Rationale
