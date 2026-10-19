@@ -583,6 +583,10 @@ function fit_gblup_reml(
         throw(ArgumentError("solver must be :spectral or :dense_ai_reml"))
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
     if solver == :spectral && target == :ai_reml
+        # `initial` is unused by the spectral profile; validate it as the dense route would.
+        sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
+        _finite_positive_variance_float64("initial sigma_a2", sigma_a2)
+        _finite_positive_variance_float64("initial sigma_e2", sigma_e2)
         fit = _fit_genomic_spectral_reml(spec)
         fit === nothing || return fit
     end
