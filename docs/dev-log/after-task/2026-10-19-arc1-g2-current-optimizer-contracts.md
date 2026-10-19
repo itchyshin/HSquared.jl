@@ -40,7 +40,7 @@ The suite includes a bounded narrow-domain line-search case and directly checks 
 
 - Verified: current-source deterministic optimizer contracts pass 289/289.
 - Open: G2 optimizer and rank-selection reliability across its design cells; G3 rank-selection confirmation; G4 FA interval calibration; G5 repeatability interval calibration; and G8 independent final reconciliation.
-- G0, G1, G6, and G7 remain met only for their recorded evidence identities. This test did not refresh any of those gates.
+- G0 and G1 are met. G6 and G7 are currently unchecked because the profile-v4 integration reopened them; their earlier passes remain valid only for their named source freezes. G2-G5 and G8 remain open. This test did not refresh any of those gates.
 
 ## 8. Consistency Audit
 
@@ -52,7 +52,7 @@ The first attempt to tee the rerun failed because the new evidence directory did
 
 ## 10. Known Residuals
 
-This result gives no G2 credit and establishes no study rate. Outer44 remains unlaunched because its reviewed candidate uses a stale source lock, older owner and conversation authorizations do not bind the reviewed source lock, and the remote preflight is stale. The v4 source-lineage lane still owns shared checkpoint and gate paths. The existing Cursor handover document is under a separate live lease.
+This result gives no G2 credit and establishes no study rate. Outer44 remains unlaunched because its reviewed candidate uses a stale source lock, older owner and conversation authorizations do not bind the reviewed source lock, and the remote preflight is stale. G6 and G7 need fresh current-source evidence after the profile-v4 integration. The v4 source-lineage lane still owns shared checkpoint and gate paths. The existing Cursor handover document is under a separate live lease.
 
 ## 11. Team Learning
 
