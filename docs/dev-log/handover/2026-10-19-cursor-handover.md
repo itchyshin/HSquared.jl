@@ -30,7 +30,7 @@ The focused G2 pass is the only new code-test result. The prior exact failures a
 - **R checkout:** `/private/tmp/hsquared-arc1-r-branch-20261015`, branch `codex/arc1-gaussian-reliability-20261003`, HEAD `52bb0d2029ae7f166fb6062641b55e5f9dd9ec8a`, five commits ahead of its remote with modified source and untracked evidence. Preserve the original Dropbox R checkout.
 - **Other lane:** the coordination lane owns cross-repo status and public-claim wording. The board is `docs/dev-log/coordination-board.md`, section `Active Lane Split`.
 - **Git landing:** the handoff gate reported 116 uncommitted status groups before the two handoff files, 59 unpushed commits on detached HEAD, 179 unpushed commits across other branches, and unmet GATES. The complete dirty tree is carried over locally at the Julia path above. Nothing was pushed. The local handover commit stages only the two handover files; all other paths remain carried over. Pushing this branch would publish its 59 existing unpushed commits, so the handoff stays local and Cursor must open the same checkout.
-- **Current leases:** `codex-arc1-v4-lineage-20261019` remains active on the integration/evidence subtree, shared checkpoint/status files, and listed Julia/R implementation files. Do not edit or release its paths. The prior setup and R-memory leases belong to the outgoing Codex work and should be released after confirming their exact IDs. A separate handover-file lease is held by `codex-arc1-cursor-handover-20261019` and should also be released after the handoff is committed or abandoned.
+- **Lease registry at handoff:** the final registry readback reports no live leases. Earlier in this session `codex-arc1-v4-lineage-20261019` was reported active, so ownership may have changed or its lease may have expired. Rerun lane preflight and inspect the lease registry on resume; claim a narrow lease before editing any shared source, test, checkpoint, or evidence path. Do not assume the earlier lease still protects those paths.
 
 ### Other checkout boundary
 
@@ -82,7 +82,7 @@ Stage no pre-existing files. In particular, do not stage `evidence/`, `LOOP/`, g
 - The recovery checkout is local-only and carries a large dirty evidence tree. A clean clone will not contain it. The Cursor session must use the exact local folder.
 - `handoff_gate.sh <repo>` failed on uncommitted/unpushed state and unmet gates. This is declared, not resolved. Handover artifacts should be committed locally on a short handover branch only after `handoff_gate.sh --handoff` validates this document. No push is authorized by this handoff.
 - Lane preflight reports a newer `startup-cleanup` snapshot with differing G2 source/test edits. The diff was inspected, but ownership/integration remains unresolved.
-- The v4-lineage lease remains active on shared files. Re-read the registry before editing. Do not release that lease.
+- Earlier preflight reported a v4-lineage lease, but the final lease-registry readback is empty. Reconcile ownership with a fresh preflight and narrow lease before editing shared files.
 - The current working-tree snapshot in `AGENTS.md` and portions of the coordination board are stale relative to GATES. Do not update the shared pointer until the active v4 lease and multi-lane status are reconciled.
 
 ## Gotchas and Failed Approaches
