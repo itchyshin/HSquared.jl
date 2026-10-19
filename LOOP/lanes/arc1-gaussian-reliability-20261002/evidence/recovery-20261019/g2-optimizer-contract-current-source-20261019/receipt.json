@@ -1,0 +1,26 @@
+{
+  "schema": "arc1-g2-focused-optimizer-contract-test-v1",
+  "recorded_at_utc": "2026-10-19T22:42:04Z",
+  "worktree": "/private/tmp/HSquared.jl-arc1-recovery-20261015",
+  "head": "b9de1cab7e73731168ecd1655334c3a91d107a5c",
+  "command": "julia --compiled-modules=no --project=. -e 'using Test; include(\"test/arc1_optimizer_contracts.jl\")'",
+  "exit_code": 0,
+  "result": {
+    "testset": "ARC1 optimizer and opt-in policy contracts",
+    "passed": 289,
+    "failed": 0,
+    "total": 289,
+    "elapsed_seconds": 12.2
+  },
+  "julia_version": "1.10.0",
+  "sha256": {
+    "src/arc1_fa.jl": "35eb9e1a9f8f44b1149b5c352a05c6fbf21849dfab6c9a76488a2910681b732f",
+    "test/arc1_optimizer_contracts.jl": "df39249b82d143c7cebec133cccfeb6e5be73b3cc85560c438f1a2624699787b",
+    "Project.toml": "93422d9228f3e2d6c5170e2b6055bf8bccf6bef59f4189edfa9f68adbe32af5d",
+    "Manifest.toml": "421dbda588a1ad70aa82c433fa97f172286d6f0da7076b5b9c5ac7638615e2ad",
+    "optimizer-contracts.log": "c394173a6f935bd752aead62c2e39d6d028f05c40b2a59203ea3b60ad2d3d151"
+  },
+  "seed_or_model_fit_run": false,
+  "gate_credit": false,
+  "scope_note": "Focused deterministic optimizer contract evidence only. This is not optimizer reliability evidence, candidate admission, G2 completion, or G7 package verification."
+}
