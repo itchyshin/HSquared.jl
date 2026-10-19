@@ -1,0 +1,117 @@
+ M AGENTS.md
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/after-task-progress.md
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/checks/arc1-acceptance-ledger.md
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/repeatability-execution-preflight.md
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/tests/test_verify_retained_checks.py
+ M LOOP/lanes/arc1-gaussian-reliability-20261002/verify_retained_checks.py
+ M ROADMAP.md
+ M docs/design/arc1-experimental-usage.md
+ M docs/design/capability-status.md
+ M docs/design/validation-debt-register.md
+ M docs/dev-log/check-log.md
+ M docs/dev-log/coordination-board.md
+ M docs/dev-log/phase-snapshot-archive.md
+ M sim/arc1/engine_io.jl
+ M sim/arc1/execute_attempt.jl
+ M sim/arc1/execution_identity.jl
+ M sim/arc1/inspect_artifacts.jl
+ M sim/arc1/manifest-revisions.md
+ M sim/arc1/manifests/arc1_outer_seeds.csv
+ M sim/arc1/manifests/arc1_seed_manifest.json
+ M sim/arc1/reference.jl
+ M sim/arc1/run_cell.py
+ M src/arc1_fa.jl
+ M src/arc1_interfaces.jl
+ M src/arc1_profiles.jl
+ M src/fa_rank_selection.jl
+ M test/arc1_interfaces.jl
+ M test/arc1_optimizer_contracts.jl
+ M test/arc1_profiles.jl
+ M test/arc1_simulation_executor.jl
+ M test/arc1_simulation_identity.jl
+ M test/arc1_simulation_reference.jl
+ M test/runtests.jl
+ M test/test_arc1_executor.py
+ M test/test_arc1_receipt_adversaries.py
+ M test/test_arc1_scientific_gates.py
+ M tools/arc1_gate_aggregate.py
+ M tools/arc1_manifest.py
+ M tools/arc1_oracles.py
+ M tools/arc1_package_checks.py
+ M tools/arc1_receipt_check.py
+?? LOOP/lanes/arc1-gaussian-reliability-20261002/__pycache__/
+?? LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/
+?? LOOP/lanes/arc1-gaussian-reliability-20261002/tests/__pycache__/
+?? docs/design/arc1-profile-v4-development-admission.md
+?? docs/dev-log/after-task/2026-10-15-arc1-resume-audit.md
+?? docs/dev-log/after-task/2026-10-16-arc1-g6-live-autofa-extension.md
+?? docs/dev-log/after-task/2026-10-16-arc1-g7-continuation.md
+?? docs/dev-log/after-task/2026-10-16-arc1-gate-checker-tests.md
+?? docs/dev-log/after-task/2026-10-16-arc1-julia-package-check.md
+?? docs/dev-log/after-task/2026-10-16-g1-objective-recovery-recheck.md
+?? docs/dev-log/after-task/2026-10-17-arc1-g7-r-root-override.md
+?? docs/dev-log/after-task/2026-10-17-arc1-manifest-audit-refresh.md
+?? docs/dev-log/after-task/2026-10-17-arc1-outer39-review.md
+?? docs/dev-log/after-task/2026-10-17-arc1-outer39-singleton.md
+?? docs/dev-log/after-task/2026-10-17-arc1-outer40-singleton.md
+?? docs/dev-log/after-task/2026-10-17-g5-current-source-replay.md
+?? docs/dev-log/after-task/2026-10-18-arc1-current-source-revalidation.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g1-current-source-pass.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-domain-cap-recovery.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-exact-secant-predicate-audit.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-final-direction-scan.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-linecap-gap-diagnostic.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-multidim-boundary-diagnostic.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-outer42-replay-diagnostic.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-scalar-boundary-diagnostic.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g2-uniqueness-gradient-boundary.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g3-g4-checker-audit.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g6-current-combined-rerun.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g6-g7-current-freeze-reverification.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g6-ledger-closeout.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g6-package-bound-proof.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g6-r-uncertainty-current-rerun.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g7-current-source-pass.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g7-overestimate-interrupted.md
+?? docs/dev-log/after-task/2026-10-18-arc1-g7-package-receipt-verifier.md
+?? docs/dev-log/after-task/2026-10-18-arc1-outer42-singleton.md
+?? docs/dev-log/after-task/2026-10-18-arc1-outer44-launch-chain-review.md
+?? docs/dev-log/after-task/2026-10-18-g5-totoro-prior-attempt-audit.md
+?? docs/dev-log/after-task/2026-10-18-g5-v4-engineering-repair.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g2-current-julia-suite-pass.assessment.json
+?? docs/dev-log/after-task/2026-10-19-arc1-g2-current-julia-suite-pass.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g2-outer44-v3-review.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g3-g4-aggregate-pin-tests.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g5-highprecision.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g5-v4-boundary-tests.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g6-g7-v5-pass.md
+?? docs/dev-log/after-task/2026-10-19-arc1-g7-v6-package-check.md
+?? docs/dev-log/after-task/2026-10-19-arc1-r-memory-cap-failure.md
+?? docs/dev-log/after-task/2026-10-19-arc1-v4-lineage-reconciliation.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-current-source-revalidation.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g1-current-source-pass.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g2-exact-secant-predicate-audit.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g2-final-direction-scan.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g2-linecap-gap-diagnostic.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g2-outer42-replay-diagnostic.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g2-uniqueness-gradient-boundary.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g6-current-combined-rerun.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g6-g7-current-freeze-reverification.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g6-package-bound-proof.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-g6-r-uncertainty-current-rerun.md
+?? docs/dev-log/check-log.d/2026-10-18-arc1-outer42-singleton.md
+?? docs/dev-log/check-log.d/2026-10-18-g5-v4-engineering.md
+?? docs/dev-log/check-log.d/2026-10-19-arc1-g2-current-julia-suite.md
+?? docs/dev-log/evidence/2026-10-18-g5-v4-final/
+?? docs/dev-log/handover/2026-10-19-cursor-handover-working-tree.txt
+?? extension-identity-regression.jl
+?? sim/arc1/__pycache__/
+?? test/__pycache__/
+?? test/arc1_profiles_ownership.jl
+?? test/arc1_profiles_v4.jl
+?? test/arc1_profiles_v4_tail.jl
+?? test/arc1_v4_no_fit_artifact_fixture.jl
+?? test/test_arc1_manifest_amendment.py
+?? test/test_arc1_package_checks.py
+?? tools/__pycache__/
