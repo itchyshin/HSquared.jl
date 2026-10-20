@@ -11340,3 +11340,5 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+
+include("test_metafounder_animal_model_guards.jl")
