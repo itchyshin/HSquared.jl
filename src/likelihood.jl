@@ -4335,6 +4335,16 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    # HSquared.jl #422: on a non-identified ridge (A = I, one record per animal) the
+    # information matrix is singular, so its inverse is meaningless (SE 2e7, a
+    # negative variance, or an h2 SE clipped to 0.0). Refuse instead.
+    (_animal_residual_split_unidentifiable(fit.spec.Z, fit.spec.Ainv) ||
+     !isposdef(Symmetric(info))) &&
+        throw(ArgumentError(
+            "variance_component_covariance: the average-information matrix is not " *
+            "positive definite (sigma_a2 and sigma_e2 are not separately " *
+            "identifiable, e.g. a founders-only pedigree); standard errors and " *
+            "intervals are undefined"))
     return inv(info)
 end
 
