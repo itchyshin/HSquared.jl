@@ -4318,6 +4318,22 @@ function _require_converged_univariate_uncertainty(
     return nothing
 end
 
+# #422: with A = I and one record per animal, Va and Ve are not separately
+# identified, so an SE or interval for them (or h2) is not meaningful. Kept apart
+# from the converged guard so `variance_components_plot_data` can degrade to
+# points-only (its inner interval calls record the refusal as `interval_reason`).
+function _require_identified_univariate_uncertainty(
+    fit::AnimalModelFit,
+    caller::AbstractString,
+)
+    _require_converged_univariate_uncertainty(fit, caller)
+    _animal_residual_split_unidentifiable(fit.spec.Z, fit.spec.Ainv) &&
+        throw(ArgumentError(
+            "$caller is not available: " * _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG,
+        ))
+    return nothing
+end
+
 """
     variance_component_covariance(fit)
 
@@ -4327,7 +4343,7 @@ large-sample approximation and is unreliable on small samples, where the REML
 surface is flat and the matrix is ill-conditioned. Experimental; REML only.
 """
 function variance_component_covariance(fit::AnimalModelFit)
-    _require_converged_univariate_uncertainty(fit, "variance_component_covariance")
+    _require_identified_univariate_uncertainty(fit, "variance_component_covariance")
     fit.spec.method == :REML ||
         throw(ArgumentError("variance_component_covariance requires a REML fit"))
     info = _reml_information_matrix(
@@ -4345,7 +4361,7 @@ Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
 `NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
 """
 function variance_component_standard_errors(fit::AnimalModelFit)
-    _require_converged_univariate_uncertainty(fit, "variance_component_standard_errors")
+    _require_identified_univariate_uncertainty(fit, "variance_component_standard_errors")
     cov = variance_component_covariance(fit)
     return (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
 end
@@ -4358,7 +4374,7 @@ for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see th
 caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit)
-    _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
+    _require_identified_univariate_uncertainty(fit, "heritability_standard_error")
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
     cov = variance_component_covariance(fit)
@@ -4489,7 +4505,7 @@ Both are large-sample approximations: on small samples the REML surface is flat,
 so the intervals are wide.
 """
 function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta)
-    _require_converged_univariate_uncertainty(fit, "heritability_interval")
+    _require_identified_univariate_uncertainty(fit, "heritability_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     if method === :profile
         return _heritability_interval_profile(fit; level = level)
@@ -4561,7 +4577,7 @@ Experimental, asymptotic, REML only; no coverage calibration.
 """
 function variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
                                      method::Symbol = :profile)
-    _require_converged_univariate_uncertainty(fit, "variance_component_interval")
+    _require_identified_univariate_uncertainty(fit, "variance_component_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     method === :profile ||
         throw(ArgumentError("variance_component_interval supports method = :profile only"))
