@@ -11340,3 +11340,5 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+
+include("test_issue_409_profile_interval_hoist.jl")
