@@ -11211,6 +11211,7 @@ include("test_issue_428_heritability_profile_clamping.jl")
 include("test_issue_437_nonconverged_uncertainty.jl")
 include("test_issue_438_marker_scan_sigma_e2.jl")
 include("test_issue_427_mc_reml_status.jl")
+include("test_issue_422_singular_information_se.jl")
 include("test_api_docstrings.jl")
 include("test_aireml_workspace_reuse.jl")
 

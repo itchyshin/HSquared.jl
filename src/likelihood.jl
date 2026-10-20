@@ -4335,6 +4335,15 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    # A (numerically) singular information matrix means the components lie on a
+    # flat ridge (HSquared.jl #422); inv() would give a meaningless covariance.
+    evals = eigvals(info)
+    evals[1] > 1e-8 * evals[end] ||
+        throw(ArgumentError(
+            "variance_component_covariance: the average-information matrix is " *
+            "singular, so the variance components are not identified and no " *
+            "covariance is returned",
+        ))
     return inv(info)
 end
 
