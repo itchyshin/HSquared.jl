@@ -4335,6 +4335,17 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    # A singular information matrix means the two components are not separately
+    # identified (e.g. founders-only A = I, HSquared.jl #422); inv() of it gives
+    # throws, 2e7-sized SEs, or an indefinite matrix that yields SE = 0.
+    eigs = eigvals(Symmetric(Matrix(info)))
+    (all(isfinite, eigs) && first(eigs) > 1e-10 * last(eigs) > 0) ||
+        throw(ArgumentError(
+            "variance_component_covariance: the average-information matrix is singular " *
+            "or ill-conditioned (smallest/largest eigenvalue = " *
+            "$(last(eigs) > 0 ? first(eigs) / last(eigs) : NaN)); the variance " *
+            "components are not separately identified, so no standard error is returned",
+        ))
     return inv(info)
 end
 
