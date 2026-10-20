@@ -4335,6 +4335,16 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    # A singular information matrix (e.g. the founders-only A = I ridge, HSquared.jl
+    # #422) has no meaningful inverse: withhold it rather than return 1e14 entries,
+    # an indefinite matrix, or a SingularException.
+    evals = eigvals(info)
+    (all(isfinite, evals) && evals[1] > 1e-10 * evals[end]) ||
+        throw(ArgumentError(
+            "variance_component_covariance: the average-information matrix is " *
+            "singular or ill-conditioned, so the variance components are not " *
+            "identified at this optimum; standard errors and intervals are withheld",
+        ))
     return inv(info)
 end
 
