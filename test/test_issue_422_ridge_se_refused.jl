@@ -5,7 +5,6 @@
 
 using HSquared
 using LinearAlgebra
-using Logging
 using Random
 using SparseArrays
 using Test
@@ -22,7 +21,7 @@ using Test
         y = 2 .+ 0.5 .* male .+ randn(n)
         X = hcat(ones(n), Float64.(male))
         spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
-        fit = with_logger(NullLogger()) do
+        fit = Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
             fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
         end
         fit.converged === true || continue
