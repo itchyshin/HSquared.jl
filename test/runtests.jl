@@ -9043,7 +9043,7 @@ end
     @test pp.breeding_values.ids == ped.ids
     @test pp.breeding_values.values == fp.breeding_values
     @test pp.loglik == fp.marginal_loglik
-    @test pp.converged == fp.converged
+    @test pp.converged == (fp.converged && !fp.boundary)   # #345: boundary fits report converged = false
     # HONESTY: NO heritability field (the payload shape is family-uniform)
     @test !hasproperty(pp, :heritability)
 
