@@ -11340,3 +11340,6 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+
+# qtl_table marker_spec / HSData / total_variance / trait paths, isolated namespace.
+include("test_qtl_table_marker_paths.jl")
