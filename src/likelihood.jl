@@ -4283,12 +4283,16 @@ function _standard_normal_quantile(p::Real)
     end
 end
 
+# Call counter for `_reml_information_matrix`, read by the #408 reuse test.
+const _REML_INFO_CALLS = Ref(0)
+
 # 2x2 average-information (AI) matrix for (sigma_a2, sigma_e2) of the REML
 # objective at the given variance components — the same AI metric fit_ai_reml
 # uses. Its inverse is the asymptotic variance-component covariance. (Recomputed
 # here rather than shared with the fit_ai_reml hot loop, which also needs the
 # score and reuses its factor.)
 function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    _REML_INFO_CALLS[] += 1
     X = Float64.(spec.X)
     Z = sparse(Float64.(spec.Z))
     y = Float64.(spec.y)
@@ -4359,9 +4363,12 @@ caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit)
     _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
+    return _heritability_se_from_cov(fit, variance_component_covariance(fit))
+end
+
+function _heritability_se_from_cov(fit::AnimalModelFit, cov)
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
-    cov = variance_component_covariance(fit)
     denom = (sigma_a2 + sigma_e2)^2
     g = [sigma_e2 / denom, -sigma_a2 / denom]
     return sqrt(max(0.0, dot(g, cov * g)))
@@ -4496,10 +4503,18 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
     end
     method === :delta ||
         throw(ArgumentError("method must be :delta or :profile"))
+    return _heritability_interval_delta(
+        fit, level, () -> variance_component_covariance(fit))
+end
+
+# Delta-method interval with the covariance supplied lazily, so a caller that
+# already holds it (variance_components_plot_data) does not rebuild the
+# information matrix. The boundary check still runs before the covariance is read.
+function _heritability_interval_delta(fit::AnimalModelFit, level::Real, covfun)
     h2 = heritability(fit)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
-    se = heritability_standard_error(fit)
+    se = _heritability_se_from_cov(fit, covfun())
     z = _standard_normal_quantile((1 + level) / 2)
     eta = log(h2 / (1 - h2))
     se_eta = se / (h2 * (1 - h2))
@@ -4612,8 +4627,13 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     vc_lo = [NaN, NaN]
     vc_hi = [NaN, NaN]
     vc_reason = "ok"
+    # One information matrix feeds both the variance-component and h2 intervals (#408);
+    # a failure is kept and re-thrown at each use so the per-panel reasons are unchanged.
+    cov_result = try variance_component_covariance(fit) catch err; err end
+    cov_get() = cov_result isa Exception ? throw(cov_result) : cov_result
     try
-        se = variance_component_standard_errors(fit)
+        cov = cov_get()
+        se = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
         vc_lo = [vc.sigma_a2 - z * se.sigma_a2, vc.sigma_e2 - z * se.sigma_e2]
         vc_hi = [vc.sigma_a2 + z * se.sigma_a2, vc.sigma_e2 + z * se.sigma_e2]
     catch err
@@ -4623,7 +4643,7 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     h2_hi = NaN
     h2_reason = "ok"
     try
-        ci = heritability_interval(fit; level = level)
+        ci = _heritability_interval_delta(fit, level, cov_get)
         h2_lo = ci.lower
         h2_hi = ci.upper
     catch err
