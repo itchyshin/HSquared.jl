@@ -11340,3 +11340,6 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+
+# Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
+include("test_builders_gmax_legendre.jl")
