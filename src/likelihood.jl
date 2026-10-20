@@ -4318,6 +4318,21 @@ function _require_converged_univariate_uncertainty(
     return nothing
 end
 
+# A singular information matrix (founders-only ridge, HSquared.jl #422) gives an
+# `inv` that throws, or a finite inverse of arbitrary sign: SE 0.0 or 1e7. Refuse
+# it instead. The threshold is far above rounding (about 1e-16) and far below any
+# identified fit.
+function _require_identified_information(info, caller::AbstractString)
+    ev = eigvals(Symmetric(Matrix(info)))
+    (all(isfinite, ev) && first(ev) > 1e-10 * last(ev)) ||
+        throw(ArgumentError(
+            "$caller: the average-information matrix is singular, so the " *
+            "variance components are not identified (for example a " *
+            "founders-only pedigree, A = I); no standard error is reported",
+        ))
+    return nothing
+end
+
 """
     variance_component_covariance(fit)
 
@@ -4335,6 +4350,7 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    _require_identified_information(info, "variance_component_covariance")
     return inv(info)
 end
 
