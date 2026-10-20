@@ -11250,6 +11250,7 @@ include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
 include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
 include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
 include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+include(joinpath(@__DIR__, "test_fit_snp_blup_reml_options.jl"))
 include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
 include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
 
