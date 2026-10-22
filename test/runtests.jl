@@ -11343,3 +11343,5 @@ end
 
 # Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
 include("test_builders_gmax_legendre.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
