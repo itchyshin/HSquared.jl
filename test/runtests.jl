@@ -11342,3 +11342,5 @@ include("pcg_true_residual_regression.jl")
 end
 
 include("test_metafounder_animal_model_guards.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
