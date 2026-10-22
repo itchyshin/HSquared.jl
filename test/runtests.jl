@@ -11343,3 +11343,5 @@ end
 
 # qtl_table marker_spec / HSData / total_variance / trait paths, isolated namespace.
 include("test_qtl_table_marker_paths.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
