@@ -19,10 +19,13 @@ include("test_issue_406_quickstart_h2_caveat.jl")
 include("test_issue_414_heritability_docs.jl")
 include("test_issue_417_api_reference_docs.jl")
 include("test_issue_418_changelog_claims.jl")
+include("test_issue_419_docs_fragment.jl")
 include("test_issue_430_laplace_caveat_docs.jl")
+include("test_issue_421_sparse_laplace.jl")
 include("test_issue_357_henderson_mme_cholesky.jl")
 include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_416_weak_identifiability_warning.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -10786,12 +10789,10 @@ end
     @test all(path -> isnothing(path) || path isa String, values(probe))
 end
 
-# ============================================================================
-# P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
+# =====================================================================# P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
 # CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
 # this contract-only slice does not change the validation_status() row count or public_covered_count.
-# ============================================================================
-@testset "payload-v2 parser (P0.3)" begin
+# =====================================================================@testset "payload-v2 parser (P0.3)" begin
     # Shared small pedigree fixture (same as Phase 3 two-effect testset).
     # 4 animals: founders 1,2; offspring 3,4 (parents 1,2).
     ped_ids  = [1, 2, 3, 4]
@@ -11203,11 +11204,13 @@ include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
 include("test_issue_432_bootstrap_interval.jl")
+include("test_issue_422_ridge_se_refused.jl")
 include("test_issue_433_plot_interval_errors.jl")
 include("test_issue_434_repeatability_interval.jl")
 include("test_issue_425_fd_step_scale.jl")
 include("test_issue_428_heritability_profile_clamping.jl")
 include("test_issue_437_nonconverged_uncertainty.jl")
+include("test_issue_415_two_effect_sparse_route.jl")
 include("test_issue_438_marker_scan_sigma_e2.jl")
 include("test_issue_427_mc_reml_status.jl")
 include("test_api_docstrings.jl")
@@ -11249,6 +11252,7 @@ include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
 include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
 include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
 include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+include(joinpath(@__DIR__, "test_fit_snp_blup_reml_options.jl"))
 include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
 include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
 
@@ -11288,6 +11292,10 @@ module E1GenomicContracts
     include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
 end
 
+module E1Issue420SpectralGreml
+    include(joinpath(@__DIR__, "test_issue_420_spectral_greml.jl"))
+end
+
 module E1MultivariateContracts
     include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
 end
@@ -11324,6 +11332,8 @@ module E1EvolvabilityFinite
     include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
 end
 
+include("test_issue_410_mv_se_hoist.jl")
+
 # Preserve original specification identity while computing validated buffers.
 include("likelihood_original_spec_regression.jl")
 
@@ -11340,3 +11350,7 @@ module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
 include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
+
+include("test_metafounder_animal_model_guards.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))

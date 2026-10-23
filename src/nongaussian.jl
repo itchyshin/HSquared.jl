@@ -686,7 +686,9 @@ only genetic effects. The integral must be proper; current necessary guards
 and local mode convergence do not establish propriety for every design.
 
 Returns `(loglik, beta, u, converged, gradient_norm, iterations)`.
-Experimental, dense, validation-scale. For `GaussianResponse` the integral is
+Experimental, validation-scale. `Z`, `Ainv` and the joint Hessian are held as
+sparse matrices and factored with CHOLMOD (dense inputs are accepted and
+converted). For `GaussianResponse` the integral is
 exact and equals `sparse_reml_loglik` under the same fixed-effect measure and
 likelihood normalization. That Gaussian REML reduction does not define a
 non-Gaussian REML or AI-REML objective. The historical `fit_laplace_reml` name
@@ -696,6 +698,141 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
                                  Ainv::AbstractMatrix, sigma_a2::Real,
                                  family::ResponseFamily;
                                  tol::Real = 1e-10, maxiter::Integer = 100)
+    sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
+    tol = _finite_positive_float64("tol", tol)
+    maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
+    yv = Float64.(y)
+    Xd = Matrix{Float64}(X)
+    Zs = SparseMatrixCSC{Float64,Int}(sparse(Z))
+    n = length(yv)
+    p = size(Xd, 2)
+    q = size(Zs, 2)
+    size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Zs, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    size(Ainv, 1) == q == size(Ainv, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    Ai, logdet_Ainv = _sparse_relationship_precision(Ainv, q)
+    _check_counts(family, yv)
+    _check_flat_effect_integral(family, yv, Xd)
+
+    Xs = sparse(Xd)
+    Xt = sparse(transpose(Xd))
+    Zt = sparse(transpose(Zs))
+    Aiu = Ai ./ sigma_a2                    # sparse prior precision
+    # `Zt * (w .* Zs)` stores every structural entry whatever the weights, so the
+    # pattern of H is fixed and the CHOLMOD symbolic analysis is reused.
+    function joint_hessian(w)
+        WZ = Diagonal(w) * Zs
+        return [Xt*(Diagonal(w)*Xs) Xt*WZ
+                Zt*(Diagonal(w)*Xs) (Zt*WZ + Aiu)]
+    end
+    fac = nothing
+    function factor!(H)
+        HS = Symmetric(H)
+        if fac === nothing || !(fac isa SparseArrays.CHOLMOD.Factor)
+            fac = cholesky(HS; check = false)
+        else
+            fac = try
+                cholesky!(fac, HS; check = false)
+            catch
+                cholesky(HS; check = false)
+            end
+        end
+        return fac
+    end
+
+    beta = zeros(p)
+    u = zeros(q)
+    gnorm = Inf
+    iters = 0
+    converged = false
+    for it in 1:maxiter
+        iters = it
+        η = Xd * beta .+ Zs * u
+        s = [_fam_score(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+        w = [_fam_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+        Aiu_vec = (Ai * u) ./ sigma_a2
+        grad = vcat(transpose(Xd) * s, Zt * s .- Aiu_vec)
+        gnorm = norm(grad)
+        H = joint_hessian(w)
+        f = factor!(H)
+        step = issuccess(f) ? (f \ grad) : (Symmetric(Matrix(H)) \ grad)
+        step_u = step[(p + 1):end]
+        step_eta = Xd * step[1:p] .+ Zs * step_u
+        step_penalty = sqrt(max(dot(step_u, Ai * step_u) / sigma_a2, 0.0))
+        current_penalty = sqrt(max(dot(u, Ai * u) / sigma_a2, 0.0))
+        # Scale the stopping rule in predictor and random-effect penalty units,
+        # not raw coefficients, so rescaling a fixed-effect column is harmless.
+        step_scale = hypot(norm(step_eta), step_penalty)
+        current_scale = hypot(norm(η), current_penalty)
+        if step_scale <= tol * (1 + current_scale)
+            converged = true
+            break
+        end
+        current_objective = sum(_fam_loglik(_fam_record(family, i), yv[i], η[i]) for i in 1:n) -
+                            0.5 * dot(u, Ai * u) / sigma_a2
+        alpha = 1.0
+        accepted = false
+        for _ in 1:64
+            beta_candidate = beta .+ alpha .* step[1:p]
+            u_candidate = u .+ alpha .* step_u
+            eta_candidate = Xd * beta_candidate .+ Zs * u_candidate
+            objective_candidate = sum(_fam_loglik(_fam_record(family, i), yv[i], eta_candidate[i]) for i in 1:n) -
+                                  0.5 * dot(u_candidate, Ai * u_candidate) / sigma_a2
+            allowance = 1e-12 * (1 + abs(current_objective))
+            if isfinite(objective_candidate) && objective_candidate >= current_objective - allowance
+                beta .= beta_candidate
+                u .= u_candidate
+                accepted = true
+                break
+            end
+            alpha *= 0.5
+        end
+        accepted || break
+    end
+
+    η = Xd * beta .+ Zs * u
+    w = [_fam_observed_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+    f = factor!(joint_hessian(w))
+    issuccess(f) || throw(PosDefException(0))
+    cond = sum(_fam_loglik(_fam_record(family, i), yv[i], η[i]) for i in 1:n)
+    quad_u = dot(u, Ai * u) / sigma_a2
+    logdet_H = logdet(f)
+    loglik = cond - 0.5 * quad_u - 0.5 * q * log(sigma_a2) + 0.5 * logdet_Ainv +
+             0.5 * p * log(2π) - 0.5 * logdet_H
+    return (loglik = converged ? loglik : NaN, beta = beta, u = u, converged = converged,
+            gradient_norm = gnorm, iterations = iters)
+end
+
+# Sparse-aware twin of `_check_relationship_precision`: the same finiteness,
+# symmetry (relative 1e-10) and positive-definiteness checks, with the accepted
+# matrix averaged with its transpose, but without densifying a sparse `Ainv`.
+# Dense input keeps the dense checks, then is converted. Returns the sparse
+# precision and `logdet(Ainv)` from the same Cholesky factor.
+function _sparse_relationship_precision(Ainv::AbstractMatrix, q::Integer)
+    if !(Ainv isa SparseMatrixCSC)
+        Ad = _check_relationship_precision(Ainv, q)
+        return sparse(Ad), logdet(cholesky(Symmetric(Ad)))
+    end
+    size(Ainv) == (q, q) || throw(ArgumentError("Ainv must be $q×$q"))
+    q > 0 || throw(ArgumentError("Ainv must have positive dimension"))
+    all(isfinite, nonzeros(Ainv)) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
+    As = SparseMatrixCSC{Float64,Int}(Ainv)
+    scale = isempty(nonzeros(As)) ? 0.0 : maximum(abs, nonzeros(As))
+    dif = As - sparse(transpose(As))
+    all(<=(1e-10 * scale), abs.(nonzeros(dif))) ||
+        throw(ArgumentError("Ainv must be symmetric (relative tolerance 1e-10)"))
+    Ms = (As + sparse(transpose(As))) ./ 2
+    fa = cholesky(Symmetric(Ms); check = false)
+    issuccess(fa) || throw(ArgumentError("Ainv must be positive definite"))
+    return Ms, logdet(fa)
+end
+
+# Dense reference implementation retained for `test/test_issue_421_sparse_laplace.jl`
+# (the pre-#421 algorithm: dense Z, Ainv and joint Hessian). Not used by the engine.
+function _laplace_marginal_loglik_dense(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                                        Ainv::AbstractMatrix, sigma_a2::Real,
+                                        family::ResponseFamily;
+                                        tol::Real = 1e-10, maxiter::Integer = 100)
     sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
     tol = _finite_positive_float64("tol", tol)
     maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
@@ -1379,7 +1516,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     # then store the canonical symbol. Value-preserving for :laplace/:variational.
     mm = _marginal_method(marginal)
     marginal = _marginal_method_symbol(mm)
-    Ainv = _check_relationship_precision(Ainv, size(Z, 2))
+    Ainv = Ainv isa SparseMatrixCSC ? first(_sparse_relationship_precision(Ainv, size(Z, 2))) :
+           _check_relationship_precision(Ainv, size(Z, 2))
     margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
     val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
