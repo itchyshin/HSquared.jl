@@ -7470,12 +7470,53 @@ end
     hi = direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.99).variance_components.sigma_ad
     @test (hi.upper - hi.lower) > (lo.upper - lo.lower)
 
+    # #411: values recorded from origin/main (full 4x4 FD loop) before the upper-triangle
+    # fill; the mirrored fill must reproduce them to 1e-8.
+    snap = (
+        sigma_ad = (1.5099266480113802, 0.76316416520001851, 0.014152368721860986, 3.0057009273008992),
+        sigma_am = (0.74271223414558873, 0.42584985268632219, -0.091938140614193142, 1.5773626089053705),
+        sigma_dm = (-0.67187484998862168, 0.52548206514437756, -1.7018007730236677, 0.35805107304642447),
+        sigma_e2 = (0.80124068329755549, 0.41069041397913414, -0.0036977375463412843, 1.6061791041414524),
+    )
+    for k in keys(snap)
+        c = getfield(ci.variance_components, k)
+        @test collect((c.estimate, c.se, c.lower, c.upper)) ≈ collect(snap[k]) rtol = 1e-8
+    end
+    for (c, v) in ((ci.genetic_correlation, (-0.63445404531225391, 0.25534523105910412, -0.9196083794958555, 0.088578392826410834)),
+                   (ci.direct_heritability, (0.63388902557904869, 0.27678947684009136, 0.09139161923541983, 1.1763864319226776)),
+                   (ci.maternal_ratio, (0.3118013282355403, 0.15804245443311493, 0.0020438092685930997, 0.62155884720248755)),
+                   (ci.total_heritability, (0.36669553356883156, 0.15244171131797002, 0.067915269403079015, 0.6654757977345841)))
+        @test collect((c.estimate, c.se, c.lower, c.upper)) ≈ collect(v) rtol = 1e-8
+    end
+
     # argument guard: level ∈ (0, 1)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.0)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 1.0)
     # boundary/flat-surface guard: tiny uninformative data → information not PD
     @test_throws ArgumentError direct_maternal_interval([1.0, 2.0, 1.5, 2.5], ones(4, 1),
         Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4))
+end
+
+@testset "direct_maternal FD information fills the upper triangle only (#411)" begin
+    # A smooth non-quadratic surface with off-diagonal curvature; calls are counted.
+    ncalls = Ref(0)
+    f(t) = (ncalls[] += 1; -0.5 * (t[1]^2 + 2t[2]^2 + 3t[3]^2 + 4t[4]^2) +
+            0.3 * t[1] * t[2] - 0.2 * t[2] * t[3] + 0.1 * t[3] * t[4] + 0.05 * t[1]^2 * t[4])
+    theta = [1.5, 0.7, -0.6, 0.8]
+    h = HSquared._uncertainty_component_steps(theta, 1e-4)
+    H = HSquared._direct_maternal_fd_hessian(f, theta, h)
+    # 10 upper-triangle cells x 4 evaluations, not 16 x 4
+    @test ncalls[] == 40
+    @test H == transpose(H)
+    # agrees with the full d x d central-difference loop it replaces
+    Hfull = zeros(4, 4)
+    for i in 1:4, j in 1:4
+        ei = zeros(4); ei[i] = h[i]
+        ej = zeros(4); ej[j] = h[j]
+        Hfull[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                       f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    @test H ≈ Hfull rtol = 1e-8
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin
