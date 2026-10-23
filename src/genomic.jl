@@ -539,7 +539,8 @@ end
 
 """
     fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
-                   target = :ai_reml, iterations = nothing, ids = nothing)
+                   target = :ai_reml, iterations = nothing, ids = nothing,
+                   solver = :spectral)
 
 GBLUP with REML-estimated variance components: build the genomic animal-model
 spec (genomic precision `Ginv` in the `Ainv` slot) and estimate `(sigma_a2,
@@ -556,6 +557,14 @@ and `fit_variance_components`'s is 1000) via [`fit_animal_model`](@ref)'s
 call is byte-identical to the pre-#212-fix behaviour (each target's own
 hardcoded default).
 
+`solver = :spectral` (default, hsquared issue 420) fits the single-genomic-effect model
+(`Z = I`, `target = :ai_reml`) by one eigen-decomposition of `Ginv` and a bounded 1-D
+Brent profile on `Vg / (Vg + Ve)`; `optimizer_status` is `"spectral_converged"` and
+`iterations` counts Brent iterations. It hands the fit to the dense AI-REML route
+whenever the model is not of that form, the spectrum is non-positive or non-finite, or
+the optimum sits on the `Vg` / `Ve` boundary. `solver = :dense_ai_reml` forces the dense
+route for validation. `target = :sparse_reml` is always dense, and the single-step wrappers pin `:dense_ai_reml`.
+
 Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
 selected-inversion advantage); no external comparator, no R model-spec.
 """
@@ -568,10 +577,89 @@ function fit_gblup_reml(
     target::Symbol = :ai_reml,
     iterations::Union{Nothing,Integer} = nothing,
     ids = nothing,
+    solver::Symbol = :spectral,
 )
+    solver in (:spectral, :dense_ai_reml) ||
+        throw(ArgumentError("solver must be :spectral or :dense_ai_reml"))
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
+    if solver == :spectral && target == :ai_reml
+        # `initial` is unused by the spectral profile; validate it as the dense route would.
+        sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
+        _finite_positive_variance_float64("initial sigma_a2", sigma_a2)
+        _finite_positive_variance_float64("initial sigma_e2", sigma_e2)
+        fit = _fit_genomic_spectral_reml(spec)
+        fit === nothing || return fit
+    end
     iterations === nothing && return fit_animal_model(spec; target = target, initial = initial)
     return fit_animal_model(spec; target = target, initial = initial, iterations = iterations)
+end
+
+# Spectral REML for y = Xb + g + e, g ~ N(0, Vg K), K = Ginv^-1 (hsquared issue 420).
+# Q = Ginv = U L U' gives K = U L^-1 U'; the REML loglik then depends only on L, U'y and
+# U'X, so each evaluation is O(n p^2). Profile on r = Vg / (Vg + Ve) in [0, 1]
+# (delta = Ve / Vg = (1 - r) / r, bounded for Brent), then Vg = r T, Ve = (1 - r) T with
+# T the closed-form total variance and beta the GLS estimate.
+const _GENOMIC_EIGEN_CALLS = Ref(0)
+
+# Counted O(n^3) factorisation; `nothing` when the spectrum is not finite and positive.
+function _genomic_eigen(M::AbstractMatrix)
+    _GENOMIC_EIGEN_CALLS[] += 1
+    decomposition = try
+        eigen(Symmetric(Matrix{Float64}(M)))
+    catch
+        return nothing
+    end
+    all(isfinite, decomposition.values) && all(>(0), decomposition.values) || return nothing
+    return decomposition
+end
+
+const _GENOMIC_SPECTRAL_RATIO_EDGE = 1e-6
+
+# Returns an `AnimalModelFit`, or `nothing` whenever the dense AI-REML route must decide
+# (ineligible model, non-positive/non-finite spectrum, failed profile, or an optimum on
+# or next to the Vg / Ve boundary, so boundary behaviour is the dense route's).
+function _fit_genomic_spectral_reml(spec::AnimalModelSpec)
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    spec.method == :REML && n > p || return nothing
+    size(spec.Z) == (n, n) && size(spec.Ainv) == (n, n) || return nothing
+    Z = spec.Z
+    (Z isa SparseMatrixCSC ? Z == sparse(1.0I, n, n) : Z == I(n)) || return nothing
+    y = try Vector{Float64}(spec.y) catch; return nothing end
+    X = try Matrix{Float64}(spec.X) catch; return nothing end
+    Q = try Matrix{Float64}(spec.Ainv) catch; return nothing end
+    all(isfinite, y) && all(isfinite, X) && all(isfinite, Q) || return nothing
+    isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) || return nothing
+    decomposition = _genomic_eigen(Q)
+    decomposition === nothing && return nothing
+    kernel_eigenvalues = 1 ./ decomposition.values
+    vectors_t = transpose(decomposition.vectors)
+    context = (eigenvalues = kernel_eigenvalues, y = vectors_t * y, X = vectors_t * X,
+               n = n, p = p)
+    value(r) = (part = _genomic_profile_reml(context, r); part === nothing ? Inf : -part.loglik)
+    grid = collect(0.0:0.05:1.0)
+    values = value.(grid)
+    best = argmin(values)
+    isfinite(values[best]) || return nothing
+    (best == 1 || best == length(grid)) && return nothing
+    lo, hi = grid[best - 1], grid[best + 1]
+    optimum = Optim.optimize(value, lo, hi, Optim.Brent(); rel_tol = 1e-12, abs_tol = 1e-12)
+    ratio = Optim.minimizer(optimum)
+    part = _genomic_profile_reml(context, ratio)
+    part === nothing && return nothing
+    _GENOMIC_SPECTRAL_RATIO_EDGE < ratio < 1 - _GENOMIC_SPECTRAL_RATIO_EDGE || return nothing
+    sigma_a2 = ratio * part.t_hat
+    sigma_e2 = (1 - ratio) * part.t_hat
+    all(isfinite, (sigma_a2, sigma_e2)) && sigma_a2 > 0 && sigma_e2 > 0 || return nothing
+    weights = 1 ./ (ratio .* kernel_eigenvalues .+ (1 - ratio))
+    beta = Symmetric(transpose(context.X) * (weights .* context.X)) \
+           (transpose(context.X) * (weights .* context.y))
+    all(isfinite, beta) || return nothing
+    likelihood = GaussianLikelihoodResult(part.loglik, Vector{Float64}(beta), sigma_a2,
+                                          sigma_e2, :REML, n, p)
+    return AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                          true, "spectral_converged", Optim.iterations(optimum),
+                          :variance_components, false, false, :estimated_spectral_reml)
 end
 
 """
@@ -2684,7 +2772,7 @@ function fit_single_step_reml(
     Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
     return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 """
@@ -2794,7 +2882,7 @@ function fit_metafounder_single_step_reml(
                                             blend_weight = blend_weight, ridge = ridge,
                                             max_relationship_cache = max_relationship_cache)
     return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 # ---------------------------------------------------------------------------
