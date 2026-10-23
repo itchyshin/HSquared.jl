@@ -52,7 +52,11 @@ function _likelihood_block_ids(ids, qs)
             for i in eachindex(qs)]
 end
 
+# Counts validations so tests can assert hoisting (e.g. profile intervals).
+const _VALIDATED_SPEC_CALLS = Ref(0)
+
 function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
+    _VALIDATED_SPEC_CALLS[] += 1
     spec.family isa GaussianFamily || throw(ArgumentError("family must be GaussianFamily()"))
     normalized_method = _coerce_method(method)
     normalized_method in (:ML, :REML) || throw(ArgumentError("method must be :ML or :REML"))
@@ -4391,7 +4395,29 @@ end
 # `sparse_reml_loglik`; the search bracket is anchored on the phenotypic-variance
 # scale of `y`. `h2` must be strictly interior to `(0, 1)`. Used by the
 # profile-likelihood heritability interval.
-function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
+# Validate the spec once per interval and reuse the validated spec, Ainv and
+# log|Ainv| across every profile evaluation (mirrors the hoist in `fit_sparse_reml`).
+function _profile_reml_context(spec::AnimalModelSpec)
+    p = size(spec.X, 2)
+    p < length(spec.y) ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    validated, factor = _likelihood_validated_spec(spec)
+    Ainv = sparse(Float64.(validated.Ainv))
+    return (spec = validated, Ainv = Ainv, logdet_Ainv = logdet(factor))
+end
+
+# Same numerics as the public `sparse_reml_loglik`, minus the per-call validation.
+function _profile_reml_eval(ctx, sigma_a2::Real, sigma_e2::Real)
+    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
+    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+    return _sparse_reml_loglik(ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv)
+end
+
+_profile_reml_loglik(spec::AnimalModelSpec, h2::Real) =
+    _profile_reml_loglik(_profile_reml_context(spec), h2)
+
+function _profile_reml_loglik(ctx::NamedTuple, h2::Real)
+    spec = ctx.spec
     0 < h2 < 1 || throw(ArgumentError("h2 must be in (0, 1)"))
     y = Float64.(spec.y)
     n = length(y)
@@ -4400,7 +4426,7 @@ function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
     function objective(logV)
         V = exp(logV)
         try
-            return -sparse_reml_loglik(spec, h2 * V, (1 - h2) * V).loglik
+            return -_profile_reml_eval(ctx, h2 * V, (1 - h2) * V).loglik
         catch err
             err isa PosDefException && return Inf
             rethrow()
@@ -4415,7 +4441,11 @@ end
 # `_profile_reml_loglik` (which profiles total variance at fixed h²); a 1-D
 # maximization reusing `sparse_reml_loglik`, bracketed on the phenotypic variance
 # of `y`. Used by `variance_component_interval`.
-function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
+_profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real) =
+    _profile_reml_loglik_sigma_a2(_profile_reml_context(spec), sigma_a2)
+
+function _profile_reml_loglik_sigma_a2(ctx::NamedTuple, sigma_a2::Real)
+    spec = ctx.spec
     sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
     y = Float64.(spec.y)
     n = length(y)
@@ -4424,7 +4454,7 @@ function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
     function objective(logE)
         sigma_e2 = exp(logE)
         try
-            return -sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik
+            return -_profile_reml_eval(ctx, sigma_a2, sigma_e2).loglik
         catch err
             err isa PosDefException && return Inf
             rethrow()
@@ -4461,6 +4491,13 @@ function _profile_root(target, bound::Real, anchor::Real)
     throw(ArgumentError("profile root did not resolve within the bisection budget"))
 end
 
+# Memoize a profile target so the bound/anchor values `_profile_root` already
+# evaluated are not recomputed for the clamped flags.
+function _memoized_profile_target(f)
+    cache = Dict{Float64,Float64}()
+    return x -> get!(() -> Float64(f(x)), cache, Float64(x))
+end
+
 function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     fit.spec.method == :REML ||
         throw(ArgumentError("profile heritability interval requires a REML fit"))
@@ -4468,10 +4505,11 @@ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik(spec, h2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(h) = 2 * (llmax - _profile_reml_loglik(spec, h)) - q
+    target = _memoized_profile_target(h -> 2 * (llmax - _profile_reml_loglik(ctx, h)) - q)
     lo_bound = 1e-6
     up_bound = 1 - 1e-6
     lower = _profile_root(target, lo_bound, h2)
@@ -4535,10 +4573,11 @@ function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
     sigma_a2 > 0 ||
         throw(ArgumentError("sigma_a2 estimate is on the boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik_sigma_a2(spec, sigma_a2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(v) = 2 * (llmax - _profile_reml_loglik_sigma_a2(spec, v)) - q
+    target = _memoized_profile_target(v -> 2 * (llmax - _profile_reml_loglik_sigma_a2(ctx, v)) - q)
     lo_bound = sigma_a2 * 1e-4
     up_bound = sigma_a2 * 1e4
     lower = _profile_root(target, lo_bound, sigma_a2)

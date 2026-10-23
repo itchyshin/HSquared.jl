@@ -11354,6 +11354,7 @@ end
 include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
 include("test_hsdata_idmap_specs_status_rows.jl")
 
+include("test_issue_409_profile_interval_hoist.jl")
 include("test_issue_340_lowrank_rotation.jl")
 # Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
 include("test_builders_gmax_legendre.jl")
