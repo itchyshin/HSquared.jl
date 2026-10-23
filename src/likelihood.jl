@@ -1805,6 +1805,7 @@ function fit_two_effect_reml(
     Z2d = Matrix{Float64}(Z2s)
     e1ids = _likelihood_effect_ids(e1ids, n1, "ids1")
     e2ids = _likelihood_effect_ids(e2ids, n2, "ids2")
+    _warn_weak_identifiability((Z1d, Z2d), (A1, A2), n, ("effect 1", "effect 2"))
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -2261,6 +2262,7 @@ function fit_multi_effect_reml(
     yv, Xs = _likelihood_design(y, X)
     Xd = Matrix{Float64}(Xs)
     ZAs = [(Zds[i], As[i]) for i in 1:K]
+    _warn_weak_identifiability(Zds, As, n, ["effect $i" for i in 1:K])
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -4322,6 +4324,21 @@ function _require_converged_univariate_uncertainty(
     return nothing
 end
 
+# A singular information matrix (founders-only ridge, HSquared.jl #422) gives an
+# `inv` that throws, or a finite inverse of arbitrary sign: SE 0.0 or 1e7. Refuse
+# it instead. The threshold is far above rounding (about 1e-16) and far below any
+# identified fit.
+function _require_identified_information(info, caller::AbstractString)
+    ev = eigvals(Symmetric(Matrix(info)))
+    (all(isfinite, ev) && first(ev) > 1e-10 * last(ev)) ||
+        throw(ArgumentError(
+            "$caller: the average-information matrix is singular, so the " *
+            "variance components are not identified (for example a " *
+            "founders-only pedigree, A = I); no standard error is reported",
+        ))
+    return nothing
+end
+
 """
     variance_component_covariance(fit)
 
@@ -4339,6 +4356,7 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    _require_identified_information(info, "variance_component_covariance")
     return inv(info)
 end
 
@@ -5243,4 +5261,45 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
             n_dropped_nonconverged = n_dropped_nonconverged,
             method = :parametric_bootstrap_percentile,
             replicates = (sigma_a2 = sa, sigma_e2 = se, heritability = hh))
+end
+
+# --- #416 fit-free identifiability pre-check (warning only; no result fields) ---
+#
+# Stack vec(Z_i K_i Z_i') for each random effect plus the identity over the observed
+# records. If the stack has numerical rank below K + 1, the variance components are
+# not all separable and REML sits on a flat ridge (for example animal + dam when each
+# dam has one sire and only offspring are phenotyped: A = 0.5 I + 0.5 D).
+const _WEAK_IDENTIFIABILITY_RELTOL = 1e-8
+const _WEAK_IDENTIFIABILITY_MAX_CELLS = 4e7
+
+function _weak_identifiability_rank(Zs, Ks, n::Integer)
+    K = length(Zs)
+    n^2 * (K + 1) > _WEAK_IDENTIFIABILITY_MAX_CELLS && return nothing
+    M = zeros(Float64, n^2, K + 1)
+    for i in 1:K
+        Zi = Matrix{Float64}(Zs[i])
+        M[:, i] = vec(Zi * Matrix{Float64}(Ks[i]) * transpose(Zi))
+    end
+    M[:, K + 1] = vec(Matrix{Float64}(I, n, n))
+    s = svdvals(M)
+    isempty(s) && return nothing
+    smax = first(s)
+    (isfinite(smax) && smax > 0) || return nothing
+    return count(>(_WEAK_IDENTIFIABILITY_RELTOL * smax), s)
+end
+
+function _warn_weak_identifiability(Zs, Ks, n::Integer, names)
+    K = length(Zs)
+    r = _weak_identifiability_rank(Zs, Ks, n)
+    (r === nothing || r >= K + 1) && return nothing
+    comps = join(names, ", ")
+    @warn "variance components ($(comps), residual) are not all identifiable from " *
+          "these records: the stacked vec(Z K Z') matrices have numerical rank " *
+          "$(r) < $(K + 1). V_A cannot be separated from the confounded component " *
+          "(for example a dam effect when each dam has one sire and only " *
+          "offspring are phenotyped). REML is flat along a ridge, so heritability " *
+          "along it is arbitrary and start-dependent, and converged = true does " *
+          "not mean a unique optimum. Cross-fostering or repeated records are " *
+          "needed to separate them (HSquared.jl #416)."
+    return nothing
 end
