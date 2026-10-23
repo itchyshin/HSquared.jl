@@ -4285,16 +4285,12 @@ function _standard_normal_quantile(p::Real)
     end
 end
 
-# Call counter for `_reml_information_matrix`, read by the #408 reuse test.
-const _REML_INFO_CALLS = Ref(0)
-
 # 2x2 average-information (AI) matrix for (sigma_a2, sigma_e2) of the REML
 # objective at the given variance components — the same AI metric fit_ai_reml
 # uses. Its inverse is the asymptotic variance-component covariance. (Recomputed
 # here rather than shared with the fit_ai_reml hot loop, which also needs the
 # score and reuses its factor.)
 function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
-    _REML_INFO_CALLS[] += 1
     X = Float64.(spec.X)
     Z = sparse(Float64.(spec.Z))
     y = Float64.(spec.y)
@@ -4637,6 +4633,10 @@ fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
+    return _variance_components_plot_data(fit, level, variance_component_covariance)
+end
+
+function _variance_components_plot_data(fit::AnimalModelFit, level, covariance_builder)
     _require_converged_univariate_uncertainty(fit, "variance_components_plot_data")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     vc = variance_components(fit)
@@ -4647,7 +4647,7 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     vc_reason = "ok"
     # One information matrix feeds both the variance-component and h2 intervals (#408);
     # a failure is kept and re-thrown at each use so the per-panel reasons are unchanged.
-    cov_result = try variance_component_covariance(fit) catch err; err end
+    cov_result = try covariance_builder(fit) catch err; err end
     cov_get() = cov_result isa Exception ? throw(cov_result) : cov_result
     try
         cov = cov_get()

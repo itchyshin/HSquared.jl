@@ -17,9 +17,15 @@ using Test, HSquared, LinearAlgebra
     fit = fit_ai_reml(spec)
     @test fit.converged
 
-    HSquared._REML_INFO_CALLS[] = 0
-    pd = variance_components_plot_data(fit)
-    @test HSquared._REML_INFO_CALLS[] == 1
+    # Count the per-call covariance builder locally. The production likelihood
+    # path must not carry a mutable global counter just for this assertion.
+    covariance_calls = Ref(0)
+    covariance_builder = fitted -> begin
+        covariance_calls[] += 1
+        variance_component_covariance(fitted)
+    end
+    pd = HSquared._variance_components_plot_data(fit, 0.95, covariance_builder)
+    @test covariance_calls[] == 1
 
     # Same numbers as the standalone extractors.
     se = variance_component_standard_errors(fit)

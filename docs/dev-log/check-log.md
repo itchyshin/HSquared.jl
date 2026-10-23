@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-10-23 issue 408 single information-matrix test instrumentation
+
+Removed the production `_REML_INFO_CALLS` mutable global and replaced the call-count assertion with a test-local covariance-builder closure passed to a private plotting-data helper. The public plotting-data method still builds the covariance once and preserves output behavior. Focused test passed 7/7; full Julia `Pkg.test()` exited 0 (`Testing HSquared tests passed`), including this testset 7/7; `git diff --check` passed. The after-task report structure check passed, but the complete canonical checker exited 1 on pre-existing UNMET gates in `GATES.md`; the absolute-path prose checker exited 0 with `FINDINGS: 0`. No public API or claim change; no capability or validation-debt status change. No commit, push, or merge. Report: [`after-task/2026-10-23-issue-408-single-information-matrix.md`](after-task/2026-10-23-issue-408-single-information-matrix.md).
+
 ## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
 
 The approved200-seed Totoro FA primary is COMPLETE and immutable:110 recovered,20 G-error classifications,11 R-error classifications and59 nonconverged, with all200 attempts retained. The recovery rate is55%, MCSE3.52percentage points, Wilson95%48.1%–61.7%; no aggregate pass cutoff was declared. No restart, GPU or new campaign.
