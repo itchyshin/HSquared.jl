@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-10-23 PR 464 edge-contract test refresh
+
+Refreshed the focused `g_max`, `legendre_design`, and `diagonal_covariance` test PR onto current `main` (`500518b`). The only merge conflict was the test-runner include block; resolution retains both the upstream #340 include and this PR's test include. The first refreshed head `d40e25f9be2c0f1ccf9bad4e393223c8c9f31eac` was pushed to the PR branch. Its Julia matrix run `39959442755` and docs run `39959442532` were queued at observation; the earlier pre-refresh CI matrix passed on its merge ref, while its `gh-pages` push was rejected because the remote had advanced. The after-task structure check passed; the full checker exited 1 because repository-wide Arc 1 gates remain UNMET in protected `GATES.md`. This follow-up updates only the closeout record; fresh checks must be read on its resulting head. The PR remains draft. No source, capability, validation-debt, or public-claim change. Coordination board left untouched under the active Arc 1 protection. Report: [`after-task/2026-10-23-pr-464-edge-contract-tests.md`](after-task/2026-10-23-pr-464-edge-contract-tests.md).
+
 ## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
 
 The approved200-seed Totoro FA primary is COMPLETE and immutable:110 recovered,20 G-error classifications,11 R-error classifications and59 nonconverged, with all200 attempts retained. The recovery rate is55%, MCSE3.52percentage points, Wilson95%48.1%–61.7%; no aggregate pass cutoff was declared. No restart, GPU or new campaign.
