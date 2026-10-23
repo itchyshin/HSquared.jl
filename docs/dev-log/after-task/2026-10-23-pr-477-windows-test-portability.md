@@ -28,7 +28,7 @@ Assumptions made without asking: none.
 - `git diff --check`: passed after the test edit.
 - `Rscript /Users/z3437171/shinichi-brain/tools/check-after-task.R /Users/z3437171/.codex/worktrees/pr477-portability/HSquared.jl/docs/dev-log/after-task/2026-10-23-pr-477-windows-test-portability.md`: structure passed; the checker warned that the acceptance ledger is not runnable in this checkout, so gate state is unknown.
 - `python3 /Users/z3437171/shinichi-brain/tools/slop_check.py /Users/z3437171/.codex/worktrees/pr477-portability/HSquared.jl/docs/dev-log/after-task/2026-10-23-pr-477-windows-test-portability.md`: zero findings.
-- Local Julia tests were not run because no Julia executable is available in this session (`julia: command not found`). The edited head has not yet been pushed, so CI for the revised test is still required.
+- Local Julia tests were not run because no Julia executable is available in this session (`julia: command not found`). Commit `8dc239c5fe2709540b583100e36800e9f3e93df8` has been pushed to PR #477; its Julia and Documenter checks are pending.
 
 ## 6. Tests of the Tests
 
@@ -49,7 +49,7 @@ Julia was unavailable locally, so the revised test must be validated by hosted C
 
 ## 10. Known Residuals
 
-The revised test has not yet run on Julia. The updated PR head must pass its full CI matrix and documentation check before merge. The PR remains draft until that evidence is available.
+The revised test has not yet run on Julia. The updated PR head must pass its full CI matrix and documentation check before merge. The PR remains draft until that evidence is available. Updating the PR description was attempted through the GitHub connector but was rejected with HTTP 403, so its existing test description still needs correction.
 
 ## 11. Team Learning
 
