@@ -27,7 +27,7 @@ The existing new test file and its focused coverage are unchanged. No source, pu
 - Live GitHub PR state before refresh: head `ba8f66289a6f34abc9e1c841b57de09b78c43d70`, draft, 3 commits ahead and 15 behind current `main`.
 - Existing CI on the old merge ref passed all four Julia version and operating-system jobs. The opt-in live-draw check was skipped.
 - Existing Documenter job built the documentation but failed at the `gh-pages` push because the remote branch had advanced. This does not validate the refreshed head.
-- The refreshed branch targets current main commit `500518bbedca86d79870807b6f39adcac5c23a4a`. Fresh hosted checks have not yet run.
+- The refreshed branch targets current main commit `500518bbedca86d79870807b6f39adcac5c23a4a`. Its first refreshed head `d40e25f9be2c0f1ccf9bad4e393223c8c9f31eac` was pushed. Julia matrix run `39959442755` and docs run `39959442532` were queued at the first post-push observation. This follow-up commit updates only the closeout record, so current-head checks must be verified after it is pushed.
 - `git diff --check` passed after resolving the include conflict.
 - The after-task structure check passed. The full canonical check exited 1 because the repository-wide Arc 1 `GATES.md` still contains UNMET gates; that protected ledger is outside this test-only PR.
 
@@ -49,11 +49,11 @@ The test-runner include block conflicted while merging current main. The conflic
 
 ## 10. Known Residuals
 
-No tests or documentation workflow have run on the refreshed branch. The PR must remain unmerged until its new required checks settle successfully and GitHub reports it mergeable.
+No test or documentation workflow has completed successfully on the refreshed branch yet. The PR must remain unmerged until required checks settle successfully on the final head and GitHub reports it mergeable.
 
 ## 11. Team Learning
 
-Test-only PRs can still require careful integration when several branches add includes to the shared test runner. Inspect both sides and preserve all distinct test modules. Next: push the refreshed branch to PR #464, then wait for and inspect Julia CI and Documenter results on that exact head. Merge only through the verified merge gate if the PR is no longer draft and every required check is settled green.
+Test-only PRs can still require careful integration when several branches add includes to the shared test runner. Inspect both sides and preserve all distinct test modules. Next: push this evidence correction, then inspect Julia CI and Documenter results on the resulting exact head. Merge only through the verified merge gate if the PR is no longer draft and every required check is settled green.
 
 ## 12. Cross-Product Coverage
 
