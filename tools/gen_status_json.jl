@@ -50,19 +50,15 @@ cachepath = joinpath(root, "tools", "status_cache.json")
 # --- validation count: refresh live, or read the cache -----------------------------
 if hasflag("--refresh-count")
     @eval using HSquared
-    rows = Base.invokelatest(HSquared.validation_status)
-    d = Dict{String,Int}()
-    for r in rows
-        s = string(getproperty(r, :status))
-        d[s] = get(d, s, 0) + 1
-    end
+    c = Base.invokelatest(HSquared.validation_status_counts)
     open(cachepath, "w") do io
         print(io, """{
-  "rows": $(length(rows)),
-  "covered": $(get(d,"covered",0)),
-  "covered_external": $(get(d,"covered_external",0)),
-  "partial": $(get(d,"partial",0)),
-  "planned": $(get(d,"planned",0)),
+  "rows": $(c.rows),
+  "covered": $(c.covered),
+  "covered_external": $(c.covered_external),
+  "covered_incl_external": $(c.covered_incl_external),
+  "partial": $(c.partial),
+  "planned": $(c.planned),
   "public_covered_count": 7,
   "refreshed_at": "$(Dates.format(now(), "yyyy-mm-dd"))",
   "refreshed_from_head": "$(trycmd(`git -C $root log -1 --format=%h`))",
@@ -76,6 +72,7 @@ end
 cache = isfile(cachepath) ? read(cachepath, String) : ""
 cnt(key) = (m = match(Regex("\"$key\"\\s*:\\s*(\\d+)"), cache); m === nothing ? -1 : parse(Int, m.captures[1]))
 rows, cov, covx, part, plan = cnt("rows"), cnt("covered"), cnt("covered_external"), cnt("partial"), cnt("planned")
+covxincl = cnt("covered_incl_external")
 refreshed = (m = match(r"\"refreshed_at\"\s*:\s*\"([^\"]*)\"", cache); m === nothing ? "?" : m.captures[1])
 
 # --- live git/gh facts for both repos ----------------------------------------------
@@ -110,7 +107,7 @@ status = """{
   "generator_version": "tools/gen_status_json.jl @ $(trycmd(`git -C $root log -1 --format=%h`))",
   "public_covered_count": 7,
   "honesty_assert": "Public-covered FITTING surface = 6: (1) v0.1 univariate Gaussian animal model (default path); (2) the opt-in common-environment two-effect model (engine=julia, target=two_effect; c² covered, maternal leg experimental); (3) the opt-in arbitrary-N independent random-effect model ((1|g); target=multi_effect; animal ratio = narrow-sense h², other blocks are variance-explained proportions NOT heritabilities; INDEPENDENT effects only, NOT correlated/RR/non-Gaussian); (4) the opt-in random-regression k=2 reaction-norm model (rr(); target=random_regression; K_g + h²(t) curve, POINT-ESTIMATE, NOT k≥3/not (x|g)/not non-Gaussian); (5) direct–maternal correlated 2×2 G animal model (maternal_genetic(); target=direct_maternal; opt-in; Willham total-h² labelled triple, direct h² ≠ total h², validation-scale/dense n≤1000, single relationship A, NOT the default); and (6) default-route t=2 unstructured multivariate Gaussian animal model (G10 R-public covered; k≥3 / diagonal stay experimental). All intervals asymptotic/delta-method, NOT coverage-calibrated. Everything else is experimental / partial / planned. Counts below are generated from validation_status(), never hand-typed.",
-  "validation": {"rows": $rows, "covered": $cov, "covered_external": $covx, "partial": $part, "planned": $plan, "source": "cache", "refreshed_at": "$refreshed"},
+  "validation": {"rows": $rows, "covered": $cov, "covered_external": $covx, "covered_incl_external": $covxincl, "partial": $part, "planned": $plan, "source": "cache", "refreshed_at": "$refreshed"},
   "repos": [
     {"name": "HSquared.jl", "branch": "$(jesc(jb))", "head": "$(jesc(jh))", "ci": "$(jesc(jci))"},
     {"name": "hsquared", "branch": "$(jesc(rb))", "head": "$(jesc(rh))", "ci": "$(jesc(rci))"}

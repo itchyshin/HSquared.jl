@@ -11352,7 +11352,10 @@ module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
 include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
+include("test_hsdata_idmap_specs_status_rows.jl")
 
+include("test_issue_340_lowrank_rotation.jl")
 include("test_metafounder_animal_model_guards.jl")
+include("test_status_row_types.jl")
 include("test_genetic_gllvm_mme_options.jl")
 include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
