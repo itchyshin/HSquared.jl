@@ -9046,7 +9046,7 @@ end
     @test pp.breeding_values.ids == ped.ids
     @test pp.breeding_values.values == fp.breeding_values
     @test pp.loglik == fp.marginal_loglik
-    @test pp.converged == fp.converged
+    @test pp.converged == (fp.converged && !fp.boundary)   # #345: boundary fits report converged = false
     # HONESTY: NO heritability field (the payload shape is family-uniform)
     @test !hasproperty(pp, :heritability)
 
@@ -11351,10 +11351,13 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
 include("test_hsdata_idmap_specs_status_rows.jl")
 
 include("test_issue_340_lowrank_rotation.jl")
 include("test_issue_408_plot_data_single_information.jl")
+# Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
+include("test_builders_gmax_legendre.jl")
 include("test_metafounder_animal_model_guards.jl")
 include("test_status_row_types.jl")
 include("test_genetic_gllvm_mme_options.jl")
