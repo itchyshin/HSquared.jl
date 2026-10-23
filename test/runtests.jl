@@ -11353,6 +11353,9 @@ module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
 include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
+
+# qtl_table marker_spec / HSData / total_variance / trait paths, isolated namespace.
+include("test_qtl_table_marker_paths.jl")
 include("test_hsdata_idmap_specs_status_rows.jl")
 
 include("test_issue_409_profile_interval_hoist.jl")
