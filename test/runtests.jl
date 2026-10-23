@@ -10789,10 +10789,12 @@ end
     @test all(path -> isnothing(path) || path isa String, values(probe))
 end
 
-# =====================================================================# P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
+# ============================================================================
+# P0.3 payload-v2 parser (docs/design/21-payload-v2-multiblock-schema.md §6)
 # CONTRACT-ONLY: reuses existing estimators, no new numerics, no covered change.
 # this contract-only slice does not change the validation_status() row count or public_covered_count.
-# =====================================================================@testset "payload-v2 parser (P0.3)" begin
+# ============================================================================
+@testset "payload-v2 parser (P0.3)" begin
     # Shared small pedigree fixture (same as Phase 3 two-effect testset).
     # 4 animals: founders 1,2; offspring 3,4 (parents 1,2).
     ped_ids  = [1, 2, 3, 4]
